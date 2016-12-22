@@ -1,0 +1,171 @@
+<html>
+  <head>
+    <script type="text/javascript">
+      var CLIENT_ID = '118820662035-o6k1c3k12opp9rp9giearb30mfv871qt.apps.googleusercontent.com';
+      var SCOPES = ["https://www.googleapis.com/auth/spreadsheets"];
+      var nextEventCol = "";
+
+      // check if user has authorized access to google sheets
+      function checkAuth() {
+        gapi.auth.authorize(
+          {
+            'client_id': CLIENT_ID,
+            'scope': SCOPES.join(' '),
+            'immediate': true
+          }, handleAuthResult);
+      }
+
+      // handle response from google auth server
+      function handleAuthResult(authResult) {
+        var authorizeDiv = document.getElementById('authorize-div');
+        if (authResult && !authResult.error) {
+          // Hide auth UI, then load client library.
+          authorizeDiv.style.display = 'none';
+          loadSheetsApi();
+        } else {
+          // Show auth UI, allowing the user to initiate authorization by
+          // clicking authorize button.
+          authorizeDiv.style.display = 'inline';
+        }
+      }
+
+      // initiate authorization when button is clicked
+      function handleAuthClick(event) {
+        gapi.auth.authorize(
+          {client_id: CLIENT_ID, scope: SCOPES, immediate: false},
+          handleAuthResult);
+        return false;
+      }
+
+      // load google sheets api
+      function loadSheetsApi() {
+        var discoveryUrl =
+            'https://sheets.googleapis.com/$discovery/rest?version=v4';
+        gapi.client.load(discoveryUrl).then(listEvents);
+      }
+
+      // convert column # to A1 notation
+      function columnToLetter(column) {
+        var temp, letter = '';
+        while (column > 0) {
+        temp = (column - 1) % 26;
+        letter = String.fromCharCode(temp + 65) + letter;
+        column = (column - temp - 1) / 26;
+        }
+      return letter;
+      }
+
+      // convert A1 notation to column #
+      function letterToColumn(letter) {
+        var column = 0, length = letter.length;
+        for (var i = 0; i < length; i++) {
+          column += (letter.charCodeAt(i) - 64) * Math.pow(26, length - i - 1);
+        }
+        return column;
+      }
+
+      // output list of all activists
+      function listActivists() {
+        gapi.client.sheets.spreadsheets.values.get({
+          spreadsheetId: '106M7H0nEJ9eOi8YePupKB9bZD3rEwqkzgadV_QJh0kI',
+          range: 'Activist Database!A2:L500',
+        }).then(function(response) {
+          var range = response.result;
+          if (range.values.length > 0) {
+            appendPre('Name, Status');
+            for (i = 0; i < range.values.length; i++) {
+              var row = range.values[i];
+              // Print columns A and I, which correspond to indices 0 and 8.
+              appendPre(row[0] + ', ' + row[8]);
+            }
+          } else {
+            appendPre('No data found.');
+          }
+        }, function(response) {
+          appendPre('Error: ' + response.result.error.message);
+        });
+      }
+
+      // output list of all events
+      function listEvents() {
+        gapi.client.sheets.spreadsheets.values.get({
+          spreadsheetId: '106M7H0nEJ9eOi8YePupKB9bZD3rEwqkzgadV_QJh0kI',
+          range: 'Events Database!B1:ZZ2',
+          majorDimension: 'COLUMNS',
+        }).then(function(response) {
+          var range = response.result;
+          if (range.values.length > 0) {
+            document.getElementById("loading").innerHTML = "";
+            appendPre('Col, Name, Date');
+            for (i = 0; i < range.values.length; i++) {
+              var col = range.values[i];
+              appendPre(i + ', ' + col[0] + ', ' + col[1]);
+              nextEventCol = columnToLetter(i + 2);
+            }
+            //appendPre('Next event col: ' + nextEventCol);
+          } else {
+            appendPre('No data found.');
+          }
+        }, function(response) {
+          appendPre('Error: ' + response.result.error.message);
+        });
+      }
+
+      // append div element with whatever data
+      function appendPre(message) {
+        var pre = document.getElementById('output');
+        var textContent = document.createTextNode(message + '\n');
+        pre.appendChild(textContent);
+      }
+
+      // test for learning correct format to update cells
+      function testUpdate(event) {
+        gapi.client.sheets.spreadsheets.values.update({
+          spreadsheetId: '106M7H0nEJ9eOi8YePupKB9bZD3rEwqkzgadV_QJh0kI',
+          range: 'Jake_test!A1:B2',
+          valueInputOption: 'USER_ENTERED',
+          values: [ ["123","456"],["789","000"] ]
+        }).then(function(response) {
+            document.getElementById("debug").innerHTML = "Update submited.";
+          });
+      }
+
+      // creates new event in ADB
+      function newEvent(event) {
+        var rangeToInsertInto = 'Jake_test!' + nextEventCol + '1:200';
+        var eventName = "Test Event";
+        var eventDate = "1/1/2017";
+        var eventTotal = "1";
+        var eventType = "Community";
+        var eventAttendees = "Test person";
+        alert("Inserting event into: " + rangeToInsertInto);
+        gapi.client.sheets.spreadsheets.values.update({
+          spreadsheetId: '106M7H0nEJ9eOi8YePupKB9bZD3rEwqkzgadV_QJh0kI',
+          range: rangeToInsertInto,
+          valueInputOption: 'USER_ENTERED',
+          majorDimension: 'COLUMNS',
+          values: [ [eventName,eventDate,eventTotal,eventType,eventAttendees] ]
+        }).then(function(response) {
+            // what to do after submit button pressed
+          });
+      }
+
+    </script>
+    <script src="https://apis.google.com/js/client.js?onload=checkAuth">
+    </script>
+  </head>
+  <body>
+    <div id="authorize-div" style="display: none">
+      <span>Authorize access to Google Sheets API</span>
+      <button id="authorize-button" onclick="handleAuthClick(event)">Authorize</button>
+    </div>
+    <div id="debug">
+        <button id="submit-button" onclick="newEvent(event)">Test submit event</button>
+    </div>
+    <div>
+      <h1>All Events</h1>
+      <span id="loading"><i>Loading... Please wait.</i></span>
+      <pre id="output"></pre>
+    </div>
+  </body>
+</html>
