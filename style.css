@@ -66,6 +66,12 @@ a:hover {
     box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24),0 17px 50px 0 rgba(0,0,0,0.19);
 }
 
+
+@media screen and (min-width: 720px) {
+    #mobile-menu { color: white; display: none; }
+}
+
 @media screen and (min-width: 0px) and (max-width: 720px) {
   #menu { display: none; }
+  #mobile-menu { color: white; }
 }
