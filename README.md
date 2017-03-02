@@ -16,7 +16,7 @@ Then, push your changes with `git push dokku master`.
 Run the following from your terminal:
 
 ```
-python testserver.py 9934
+python -m SimpleHTTPServer 9934
 ```
 
 And navigate to localhost:9934/event-new.html.
