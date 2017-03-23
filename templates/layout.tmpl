@@ -1,0 +1,24 @@
+<html>
+  <head>
+    <title>DxE Activist Database</title>
+    <link rel="stylesheet" type="text/css" href="static/css/style.css">
+    <link rel="stylesheet" href="static/external/awesomplete/awesomplete.css" />
+    <script src="static/external/awesomplete/awesomplete.js" async></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.js" integrity="sha256-DZAnKJ/6XZ9si04Hgrsxu/8s717jcIzLy3oi35EouyE=" crossorigin="anonymous"></script>
+    <script src="static/js/script.js"></script>
+  </head>
+  <body>
+    <div id="menu">
+      <img src="http://dxetech.org/dxe-logo.svg" alt="DxE" width="100" height="100" style="padding-left: 18px;"><br /><br />
+      <span class="menuText"><b>Events</b><br /></span>
+      <span class="menuText"><a href="event-new.html">&nbsp;&nbsp;- Add new</a><br /></span>
+      <span class="menuText"><a href="event-edit.html">&nbsp;&nbsp;- Edit existing</a><br /><br /></span>
+      <span class="menuText"><b>Activists</b><br /></span>
+      <span class="menuText"><a href="activist-new.html">&nbsp;&nbsp;- Add new</a><br /></span>
+      <span class="menuText"><a href="activist-edit.html">&nbsp;&nbsp;- Edit existing</a><br /></span>
+      <span class="menuText"><a href="activist-view.html">&nbsp;&nbsp;- View all</a><br /><br /></span>
+    </div>
+{{ yield }}
+
+  </body>
+</html>
