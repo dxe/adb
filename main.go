@@ -4,12 +4,24 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/urfave/negroni"
-	"github.com/unrolled/render"
 	"github.com/gorilla/mux"
+	"github.com/jmoiron/sqlx"
+	"github.com/unrolled/render"
+	"github.com/urfave/negroni"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
-var Render = render.New()
+func NewDB() *sqlx.DB {
+	db, err := sqlx.Open("sqlite3", "adb.db")
+	if err != nil {
+		panic(err)
+	}
+
+	return db
+}
+
+var DB = NewDB()
 
 func router() *mux.Router {
 	router := mux.NewRouter()
@@ -30,18 +42,32 @@ func IndexHandler(w http.ResponseWriter, req *http.Request) {
 	r.HTML(w, http.StatusOK, "event_new", nil)
 }
 
+func getAutocompleteNames() []string {
+	type Name struct {
+		Name string `db:"Name"`
+	}
+	names := []Name{}
+	err := DB.Select(&names, "SELECT Name FROM Activists")
+	if err != nil {
+		panic(err)
+	}
+
+	ret := []string{}
+	for _, n := range names {
+		ret = append(ret, n.Name)
+	}
+	return ret
+}
+
 func AutocompleteActivistsHandler(w http.ResponseWriter, req *http.Request) {
 	r := render.New()
-	names := []string{
-		"Samer Masterson", "Jake Hobbs", "Jake Something", "yoyoyo",
-	}
+	names := getAutocompleteNames()
 	r.JSON(w, http.StatusOK, map[string][]string{
 		"activist_names": names,
 	})
 }
 
 func UpdateEventHandler(w http.ResponseWriter, req *http.Request) {
-	
 }
 
 func main() {
