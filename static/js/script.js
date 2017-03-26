@@ -62,12 +62,13 @@ function newEvent(event) {
   $.ajax({
     url: "/update_event",
     method: "POST",
-    data: {
+    contentType: "application/json",
+    data: JSON.stringify({
       event_name: eventName,
       event_date: eventDate,
       event_type: eventType,
       attendees: attendees,
-    },
+    }),
     // TODO: deal with success and error
   });
 }

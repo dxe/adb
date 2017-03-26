@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -44,10 +45,10 @@ func IndexHandler(w http.ResponseWriter, req *http.Request) {
 
 func getAutocompleteNames() []string {
 	type Name struct {
-		Name string `db:"Name"`
+		Name string `db:"name"`
 	}
 	names := []Name{}
-	err := DB.Select(&names, "SELECT Name FROM Activists")
+	err := DB.Select(&names, "SELECT name FROM activists")
 	if err != nil {
 		panic(err)
 	}
@@ -67,7 +68,21 @@ func AutocompleteActivistsHandler(w http.ResponseWriter, req *http.Request) {
 	})
 }
 
+type Event struct {
+	EventName string   `json:"event_name"`
+	EventDate string   `json:"event_date"`
+	EventType string   `json:"event_type"`
+	Attendees []string `json:"attendees"`
+}
+
 func UpdateEventHandler(w http.ResponseWriter, req *http.Request) {
+	var e Event
+	err := json.NewDecoder(req.Body).Decode(&e)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(e)
 }
 
 func main() {
