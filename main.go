@@ -93,7 +93,7 @@ func (et EventType) Value() (driver.Value, error) {
 
 // Scan implements the sql.Scanner interface
 func (et EventType) Scan(src interface{}) error {
-	et = EventType(string(src.([]uint8)))
+	et = EventType(src.([]uint8))
 
 	return nil
 }
