@@ -1,4 +1,9 @@
 
 
 
- - Create a sqlite database with the same specs as mysql
+ - [ ] Create a sqlite database with the same specs as mysql
+ - [ ] check out: https://handsontable.com/
+ - [ ] (maybe) check out this excel js implementation: http://sheets.alhur.es/s/jyt8h3
+
+ - [ ] Save events correctly.
+ - [ ] Add user accounts (after talking this out more)

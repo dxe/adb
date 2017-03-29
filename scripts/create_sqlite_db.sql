@@ -1,15 +1,15 @@
 
 
 CREATE TABLE activists (
-  id int(8) NOT NULL,
+  id INTEGER PRIMARY KEY,
   name varchar(80) NOT NULL,
-  email varchar(80) DEFAULT NULL,
+  email varchar(80) NOT NULL DEFAULT '',
   chapter_id int(3) DEFAULT NULL,
-  phone varchar(20) DEFAULT NULL,
-  city varchar(40) DEFAULT NULL,
-  zipcode varchar(15) DEFAULT NULL,
-  country varchar(80) DEFAULT NULL,
-  facebook varchar(80) DEFAULT NULL,
+  phone varchar(20) NOT NULL DEFAULT '',
+  city varchar(40) NOT NULL DEFAULT '',
+  zipcode varchar(15) NOT NULL DEFAULT '',
+  country varchar(80) NOT NULL DEFAULT '',
+  facebook varchar(80) NOT NULL DEFAULT '',
   exclude_from_leaderboard tinyint(1) NOT NULL DEFAULT '0',
   core_staff tinyint(1) NOT NULL DEFAULT '0',
   global_team_member tinyint(1) NOT NULL DEFAULT '0',
@@ -30,7 +30,7 @@ INSERT INTO activists VALUES
 
 
 CREATE TABLE chapters (
-  id int(3) NOT NULL,
+  id INTEGER PRIMARY KEY,
   name varchar(30) DEFAULT NULL
 );
 
@@ -41,21 +41,18 @@ INSERT INTO chapters VALUES
 
 CREATE TABLE event_attendance (
   activist_id int(8) NOT NULL,
-  event_id int(8) NOT NULL,
-  timestamp datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  attendance_order int(8) NOT NULL
+  event_id int(8) NOT NULL
 );
 
 CREATE TABLE events (
-  id int(8) NOT NULL,
+  id INTEGER PRIMARY KEY,
   name varchar(60) NOT NULL,
   date date NOT NULL,
-  type_id int(2) NOT NULL,
-  chapter_id int(3) NOT NULL
+  type varchar(60) NOT NULL
 );
 
 CREATE TABLE event_type (
-  id int(2) NOT NULL,
+  id INTEGER PRIMARY KEY,
   name varchar(30) NOT NULL
 );
 
@@ -74,7 +71,7 @@ INSERT INTO event_type VALUES
 
 
 CREATE TABLE press (
-  id int(8) NOT NULL,
+  id INTEGER PRIMARY KEY,
   date date NOT NULL,
   outlet varchar(60) NOT NULL,
   url varchar(200) NOT NULL,
@@ -82,7 +79,7 @@ CREATE TABLE press (
 );
 
 CREATE TABLE working_group_members (
-  id int(4) NOT NULL,
+  id INTEGER PRIMARY KEY,
   working_group_id int(4) NOT NULL,
   activist_id int(8) NOT NULL,
   leader tinyint(1) NOT NULL DEFAULT '0'
@@ -97,7 +94,7 @@ INSERT INTO working_group_members VALUES
 
 
 CREATE TABLE working_groups (
-  id int(4) NOT NULL,
+  id INTEGER PRIMARY KEY,
   name varchar(30) DEFAULT NULL,
   short_name varchar(30) NOT NULL,
   chapter int(3) DEFAULT NULL
