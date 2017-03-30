@@ -38,8 +38,32 @@ func router() *mux.Router {
 
 	router.HandleFunc("/update_event", UpdateEventHandler)
 
+	router.HandleFunc("/list_events", ListEventsHandler)
+
 	router.PathPrefix("/static").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	return router
+}
+
+func GetEvents() ([]Event, error) {
+	var events []Event
+	// TODO: this doesn't work!
+	// 	err := DB.Select(&events, `SELECT (name, date, type)
+	// FROM events`)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	return events, nil
+}
+
+func ListEventsHandler(w http.ResponseWriter, req *http.Request) {
+	r := render.New()
+	events, err := GetEvents()
+	if err != nil {
+		panic(err)
+	}
+	r.JSON(w, http.StatusOK, map[string]interface{}{
+		"events": events,
+	})
 }
 
 func IndexHandler(w http.ResponseWriter, req *http.Request) {
@@ -183,8 +207,11 @@ func cleanEventData(body io.Reader) (Event, error) {
 }
 
 func InsertEvent(event Event) error {
-	// TODO: wrap in transaction
-	res, err := DB.NamedExec(`INSERT INTO events (name, date, type)
+	tx, err := DB.Beginx()
+	if err != nil {
+		return err
+	}
+	res, err := tx.NamedExec(`INSERT INTO events (name, date, type)
 VALUES (:name, :date, :type)`, event)
 	if err != nil {
 		return err
@@ -194,13 +221,13 @@ VALUES (:name, :date, :type)`, event)
 		return err
 	}
 	for _, u := range event.Attendees {
-		res, err = DB.Exec(`INSERT INTO event_attendance (activist_id, event_id)
+		res, err = tx.Exec(`INSERT INTO event_attendance (activist_id, event_id)
 VALUES ($1, $2)`, u.ID, id)
 		if err != nil {
 			return err
 		}
 	}
-	return nil
+	return tx.Commit()
 }
 
 type RawEvent struct {
