@@ -1,4 +1,4 @@
-package main
+package model
 
 import "github.com/jmoiron/sqlx"
 
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS event_attendance (
   event_id int(8) NOT NULL
 );
 
-CREATE TABLE events (
+CREATE TABLE IF NOT EXISTS events (
   id INTEGER PRIMARY KEY,
   name varchar(60) NOT NULL,
   date date NOT NULL,

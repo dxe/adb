@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/directactioneverywhere/adb/model"
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
 	"github.com/unrolled/render"
@@ -19,19 +20,8 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func NewDB() *sqlx.DB {
-	db, err := sqlx.Open("sqlite3", "adb.db")
-	if err != nil {
-		panic(err)
-	}
-
-	return db
-}
-
-var DB = NewDB()
-
 func router() *mux.Router {
-	main := MainController{db: NewDB()}
+	main := MainController{db: model.NewDB("adb.db")}
 
 	router := mux.NewRouter()
 	router.HandleFunc("/", main.IndexHandler)
@@ -101,8 +91,9 @@ func getAutocompleteNames(db *sqlx.DB) []string {
 		Name string `db:"name"`
 	}
 	names := []Name{}
-	err := db.Select(&names, "SELECT name FROM activists")
+	err := db.Select(&names, "SELECT name FROM activists ORDER BY name ASC")
 	if err != nil {
+		// TODO: return error
 		panic(err)
 	}
 
