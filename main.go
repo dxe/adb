@@ -31,20 +31,61 @@ func NewDB() *sqlx.DB {
 var DB = NewDB()
 
 func router() *mux.Router {
+	main := MainController{db: NewDB()}
+
 	router := mux.NewRouter()
-	router.HandleFunc("/", IndexHandler)
-
-	router.HandleFunc("/get_autocomplete_activist_names", AutocompleteActivistsHandler)
-
-	router.HandleFunc("/update_event", UpdateEventHandler)
-
-	router.HandleFunc("/list_events", ListEventsHandler)
+	router.HandleFunc("/", main.IndexHandler)
+	router.HandleFunc("/get_autocomplete_activist_names", main.AutocompleteActivistsHandler)
+	router.HandleFunc("/update_event", main.UpdateEventHandler)
+	router.HandleFunc("/list_events", main.ListEventsHandler)
 
 	router.PathPrefix("/static").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	return router
 }
 
-func GetEvents() ([]Event, error) {
+type MainController struct {
+	db *sqlx.DB
+}
+
+func (c MainController) ListEventsHandler(w http.ResponseWriter, req *http.Request) {
+	r := render.New()
+	events, err := GetEvents(c.db)
+	if err != nil {
+		panic(err)
+	}
+	r.JSON(w, http.StatusOK, map[string]interface{}{
+		"events": events,
+	})
+}
+
+func (c MainController) IndexHandler(w http.ResponseWriter, req *http.Request) {
+	r := render.New(render.Options{
+		Layout: "layout",
+	})
+	r.HTML(w, http.StatusOK, "event_new", nil)
+}
+
+func (c MainController) AutocompleteActivistsHandler(w http.ResponseWriter, req *http.Request) {
+	r := render.New()
+	names := getAutocompleteNames(c.db)
+	r.JSON(w, http.StatusOK, map[string][]string{
+		"activist_names": names,
+	})
+}
+
+func (c MainController) UpdateEventHandler(w http.ResponseWriter, req *http.Request) {
+	event, err := cleanEventData(c.db, req.Body)
+	if err != nil {
+		panic(err)
+	}
+
+	err = InsertEvent(c.db, event)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func GetEvents(db *sqlx.DB) ([]Event, error) {
 	var events []Event
 	// TODO: this doesn't work!
 	// 	err := DB.Select(&events, `SELECT (name, date, type)
@@ -55,30 +96,12 @@ func GetEvents() ([]Event, error) {
 	return events, nil
 }
 
-func ListEventsHandler(w http.ResponseWriter, req *http.Request) {
-	r := render.New()
-	events, err := GetEvents()
-	if err != nil {
-		panic(err)
-	}
-	r.JSON(w, http.StatusOK, map[string]interface{}{
-		"events": events,
-	})
-}
-
-func IndexHandler(w http.ResponseWriter, req *http.Request) {
-	r := render.New(render.Options{
-		Layout: "layout",
-	})
-	r.HTML(w, http.StatusOK, "event_new", nil)
-}
-
-func getAutocompleteNames() []string {
+func getAutocompleteNames(db *sqlx.DB) []string {
 	type Name struct {
 		Name string `db:"name"`
 	}
 	names := []Name{}
-	err := DB.Select(&names, "SELECT name FROM activists")
+	err := db.Select(&names, "SELECT name FROM activists")
 	if err != nil {
 		panic(err)
 	}
@@ -88,14 +111,6 @@ func getAutocompleteNames() []string {
 		ret = append(ret, n.Name)
 	}
 	return ret
-}
-
-func AutocompleteActivistsHandler(w http.ResponseWriter, req *http.Request) {
-	r := render.New()
-	names := getAutocompleteNames()
-	r.JSON(w, http.StatusOK, map[string][]string{
-		"activist_names": names,
-	})
 }
 
 var EventTypes map[string]bool = map[string]bool{
@@ -142,9 +157,9 @@ type User struct {
 	Facebook  string        `db:"facebook"`
 }
 
-func GetUser(name string) (User, error) {
+func GetUser(db *sqlx.DB, name string) (User, error) {
 	var user User
-	err := DB.Get(&user, `SELECT
+	err := db.Get(&user, `SELECT
   id, name, email, chapter_id, phone, city,
   zipcode, country, facebook
 FROM activists
@@ -157,23 +172,23 @@ WHERE
 	return user, nil
 }
 
-func GetOrCreateUser(name string) (User, error) {
-	user, err := GetUser(name)
+func GetOrCreateUser(db *sqlx.DB, name string) (User, error) {
+	user, err := GetUser(db, name)
 	if err == nil {
 		// We got a valid user, return them.
 		return user, nil
 	}
 
 	// There was an error, so try inserting the user first.
-	_, err = DB.Exec("INSERT INTO activists (name) VALUES ($1)", name)
+	_, err = db.Exec("INSERT INTO activists (name) VALUES ($1)", name)
 	if err != nil {
 		return User{}, nil
 	}
 
-	return GetUser(name)
+	return GetUser(db, name)
 }
 
-func cleanEventData(body io.Reader) (Event, error) {
+func cleanEventData(db *sqlx.DB, body io.Reader) (Event, error) {
 	var raw RawEvent
 	err := json.NewDecoder(body).Decode(&raw)
 	if err != nil {
@@ -196,7 +211,7 @@ func cleanEventData(body io.Reader) (Event, error) {
 
 	e.Attendees = []User{}
 	for _, attendee := range raw.Attendees {
-		user, err := GetOrCreateUser(strings.TrimSpace(attendee))
+		user, err := GetOrCreateUser(db, strings.TrimSpace(attendee))
 		if err != nil {
 			return Event{}, err
 		}
@@ -206,8 +221,8 @@ func cleanEventData(body io.Reader) (Event, error) {
 	return e, nil
 }
 
-func InsertEvent(event Event) error {
-	tx, err := DB.Beginx()
+func InsertEvent(db *sqlx.DB, event Event) error {
+	tx, err := db.Beginx()
 	if err != nil {
 		return err
 	}
@@ -242,18 +257,6 @@ type Event struct {
 	EventDate time.Time `db:"date"`
 	EventType EventType `db:"type"`
 	Attendees []User
-}
-
-func UpdateEventHandler(w http.ResponseWriter, req *http.Request) {
-	event, err := cleanEventData(req.Body)
-	if err != nil {
-		panic(err)
-	}
-
-	err = InsertEvent(event)
-	if err != nil {
-		panic(err)
-	}
 }
 
 func main() {
