@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html/template"
 	"io"
 	"net/http"
 	"strings"
@@ -14,7 +15,6 @@ import (
 	"github.com/directactioneverywhere/adb/model"
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
-	"github.com/unrolled/render"
 	"github.com/urfave/negroni"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -38,27 +38,39 @@ type MainController struct {
 }
 
 func (c MainController) ListEventsHandler(w http.ResponseWriter, req *http.Request) {
-	r := render.New()
 	events, err := GetEvents(c.db)
 	if err != nil {
 		panic(err)
 	}
-	r.JSON(w, http.StatusOK, map[string]interface{}{
+	writeJSON(w, map[string]interface{}{
 		"events": events,
 	})
 }
 
+var templates = template.Must(template.ParseGlob("templates/*.html"))
+
+func renderTemplate(w io.Writer, name string, data interface{}) {
+	if err := templates.ExecuteTemplate(w, name+".html", data); err != nil {
+		panic(err)
+	}
+}
+
+func writeJSON(w io.Writer, v interface{}) {
+	enc := json.NewEncoder(w)
+	enc.SetEscapeHTML(true)
+	err := enc.Encode(v)
+	if err != nil {
+		panic(err)
+	}
+}
+
 func (c MainController) IndexHandler(w http.ResponseWriter, req *http.Request) {
-	r := render.New(render.Options{
-		Layout: "layout",
-	})
-	r.HTML(w, http.StatusOK, "event_new", nil)
+	renderTemplate(w, "event_new", nil)
 }
 
 func (c MainController) AutocompleteActivistsHandler(w http.ResponseWriter, req *http.Request) {
-	r := render.New()
 	names := getAutocompleteNames(c.db)
-	r.JSON(w, http.StatusOK, map[string][]string{
+	writeJSON(w, map[string][]string{
 		"activist_names": names,
 	})
 }

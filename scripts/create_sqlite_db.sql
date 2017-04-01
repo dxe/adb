@@ -4,7 +4,7 @@ CREATE TABLE activists (
   id INTEGER PRIMARY KEY,
   name varchar(80) NOT NULL,
   email varchar(80) NOT NULL DEFAULT '',
-  chapter_id int(3) DEFAULT NULL,
+  chapter_id int DEFAULT NULL,
   phone varchar(20) NOT NULL DEFAULT '',
   city varchar(40) NOT NULL DEFAULT '',
   zipcode varchar(15) NOT NULL DEFAULT '',
@@ -48,26 +48,8 @@ CREATE TABLE events (
   id INTEGER PRIMARY KEY,
   name varchar(60) NOT NULL,
   date date NOT NULL,
-  type varchar(60) NOT NULL
+  event_type varchar(60) NOT NULL
 );
-
-CREATE TABLE event_type (
-  id INTEGER PRIMARY KEY,
-  name varchar(30) NOT NULL
-);
-
-INSERT INTO event_type VALUES
-(1, 'Working Group');
-INSERT INTO event_type VALUES
-(2, 'Community');
-INSERT INTO event_type VALUES
-(3, 'Protest');
-INSERT INTO event_type VALUES
-(4, 'Key Event');
-INSERT INTO event_type VALUES
-(5, 'Outreach');
-INSERT INTO event_type VALUES
-(6, 'Sanctuary');
 
 
 CREATE TABLE press (

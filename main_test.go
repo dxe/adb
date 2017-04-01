@@ -8,6 +8,7 @@ import (
 
 func TestAutocompleteActivistsHandler(t *testing.T) {
 	db := model.NewDB(":memory:")
+	defer db.Close()
 
 	_, err := GetOrCreateUser(db, "User One")
 	if err != nil {
