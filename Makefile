@@ -1,11 +1,14 @@
-.PHONY: run deps
+.PHONY: run deps test
 
 
 run: adb.db
 	go run main.go
 
-adb.db: scripts/create_db.sh scripts/create_sqlite_db.sql
-	./scripts/create_db.sh
+adb.db: ./model/db.go ./scripts/create_db.go
+	go run ./scripts/create_db.go
 
 deps:
 	go get github.com/directactioneverywhere/adb
+
+test:
+	go test ./...

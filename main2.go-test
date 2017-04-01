@@ -1,0 +1,16 @@
+package main
+
+import (
+	"fmt"
+
+	"github.com/directactioneverywhere/adb/model"
+)
+
+func main() {
+	db := model.NewDB("adb.db")
+	events, err := model.GetEvents(db)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(events)
+}
