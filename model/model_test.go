@@ -1,7 +1,6 @@
 package model
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -65,15 +64,14 @@ func TestGetEvents(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println(wantEvents)
-	fmt.Println(gotEvents)
-	fmt.Println(wantEvents[0].EventDate.Equal(gotEvents[0].EventDate))
+
 	assert.Len(t, wantEvents, 2)
 	assert.Len(t, gotEvents, 2)
 	for i := range wantEvents {
 		// We need to check time equality separately b/c
 		// assert.EqualValues doesn't call EventDate.Equal.
 		assert.True(t, wantEvents[i].EventDate.Equal(gotEvents[i].EventDate))
+
 		wantEvents[i].EventDate = time.Time{}
 		gotEvents[i].EventDate = time.Time{}
 		assert.EqualValues(t, wantEvents[i], gotEvents[i])
