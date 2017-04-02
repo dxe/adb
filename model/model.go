@@ -182,6 +182,8 @@ func CleanEventData(db *sqlx.DB, body io.Reader) (Event, error) {
 
 	// Strip spaces from front and back of all fields.
 	var e Event
+	e.ID = eventJSON.EventID
+
 	e.EventName = strings.TrimSpace(eventJSON.EventName)
 	t, err := time.Parse(EventDateLayout, eventJSON.EventDate)
 	if err != nil {

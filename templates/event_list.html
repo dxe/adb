@@ -5,7 +5,7 @@
   </div>
   <div id="main">
     {{ range $e := .Events }}
-      {{ $e.EventName }} </br>
+      {{ $e }} <a href="/update_event/{{ $e.ID }}">edit</a> <br/><br/>
     {{ end }}
   </div>
 </div>

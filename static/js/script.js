@@ -59,11 +59,14 @@ function newEvent(event) {
     return;
   }
 
+  var eventID = parseInt(document.getElementById('eventID').value);
+
   $.ajax({
     url: "/event/save",
     method: "POST",
     contentType: "application/json",
     data: JSON.stringify({
+      event_id: eventID,
       event_name: eventName,
       event_date: eventDate,
       event_type: eventType,
