@@ -33,13 +33,13 @@ type MainController struct {
 }
 
 func (c MainController) ListEventsHandler(w http.ResponseWriter, req *http.Request) {
-	// events, err := model.GetEvents(c.db)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// writeJSON(w, map[string]interface{}{
-	// 	"events": events,
-	// })
+	events, err := model.GetEvents(c.db)
+	if err != nil {
+		panic(err)
+	}
+	renderTemplate(w, "event_list", map[string]interface{}{
+		"Events": events,
+	})
 }
 
 var templates = template.Must(template.ParseGlob("templates/*.html"))
@@ -76,7 +76,7 @@ func (c MainController) UpdateEventHandler(w http.ResponseWriter, req *http.Requ
 		panic(err)
 	}
 
-	err = model.InsertNewEvent(c.db, event)
+	err = model.InsertEvent(c.db, event)
 	if err != nil {
 		panic(err)
 	}

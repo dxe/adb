@@ -21,18 +21,12 @@ type EventJSON struct {
 	Attendees []string `json:"attendees"`
 }
 
-type NewEvent struct {
-	EventName string    `db:"name"`
-	EventDate time.Time `db:"date"`
-	EventType EventType `db:"event_type"`
-	Attendees []User
-}
-
 type Event struct {
 	ID        int       `db:"id"`
 	EventName string    `db:"name"`
 	EventDate time.Time `db:"date"`
 	EventType EventType `db:"event_type"`
+	Attendees []User
 }
 
 func GetEvents(db *sqlx.DB) ([]Event, error) {
@@ -41,6 +35,22 @@ func GetEvents(db *sqlx.DB) ([]Event, error) {
 FROM events`)
 	if err != nil {
 		return nil, err
+	}
+
+	// Get attendees
+	for i := range events {
+		var attendees []User
+		err = db.Select(&attendees, `SELECT
+  a.id, a.name, a.email, a.chapter_id, a.phone, a.city, a.zipcode, a.country, a.facebook
+FROM activists a
+JOIN event_attendance et
+ON a.id = et.activist_id
+WHERE
+  et.event_id = $1`, events[i].ID)
+		if err != nil {
+			return nil, err
+		}
+		events[i].Attendees = attendees
 	}
 	return events, nil
 }
@@ -138,24 +148,24 @@ func GetOrCreateUser(db *sqlx.DB, name string) (User, error) {
 	return GetUser(db, name)
 }
 
-func CleanEventData(db *sqlx.DB, body io.Reader) (NewEvent, error) {
+func CleanEventData(db *sqlx.DB, body io.Reader) (Event, error) {
 	var eventJSON EventJSON
 	err := json.NewDecoder(body).Decode(&eventJSON)
 	if err != nil {
-		return NewEvent{}, err
+		return Event{}, err
 	}
 
 	// Strip spaces from front and back of all fields.
-	var e NewEvent
+	var e Event
 	e.EventName = strings.TrimSpace(eventJSON.EventName)
 	t, err := time.Parse(EventTypeLayout, eventJSON.EventDate)
 	if err != nil {
-		return NewEvent{}, err
+		return Event{}, err
 	}
 	e.EventDate = t
 	eventType, err := getEventType(eventJSON.EventType)
 	if err != nil {
-		return NewEvent{}, err
+		return Event{}, err
 	}
 	e.EventType = eventType
 
@@ -163,7 +173,7 @@ func CleanEventData(db *sqlx.DB, body io.Reader) (NewEvent, error) {
 	for _, attendee := range eventJSON.Attendees {
 		user, err := GetOrCreateUser(db, strings.TrimSpace(attendee))
 		if err != nil {
-			return NewEvent{}, err
+			return Event{}, err
 		}
 		e.Attendees = append(e.Attendees, user)
 	}
@@ -171,7 +181,7 @@ func CleanEventData(db *sqlx.DB, body io.Reader) (NewEvent, error) {
 	return e, nil
 }
 
-func InsertNewEvent(db *sqlx.DB, event NewEvent) error {
+func InsertEvent(db *sqlx.DB, event Event) error {
 	tx, err := db.Beginx()
 	if err != nil {
 		return err

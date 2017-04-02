@@ -37,23 +37,31 @@ func TestGetEvents(t *testing.T) {
 	db := NewDB(":memory:")
 	defer db.Close()
 
+	u1, err := GetOrCreateUser(db, "Hello")
+	assert.NoError(t, err)
+	u2, err := GetOrCreateUser(db, "Hi")
+	assert.NoError(t, err)
+
 	var wantEvents = []Event{{
 		ID:        1,
 		EventName: "event one",
 		EventDate: time.Now(),
 		EventType: "Working Group",
+		Attendees: []User{u1},
 	}, {
 		ID:        2,
 		EventName: "event two",
 		EventDate: time.Now(),
 		EventType: "Protest",
+		Attendees: []User{u1, u2},
 	}}
 
 	for _, e := range wantEvents {
-		err := InsertNewEvent(db, NewEvent{
+		err := InsertEvent(db, Event{
 			EventName: e.EventName,
 			EventDate: e.EventDate,
 			EventType: e.EventType,
+			Attendees: e.Attendees,
 		})
 		if err != nil {
 			t.Fatal(err)
