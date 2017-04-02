@@ -9,3 +9,6 @@
  - [ ] Add user accounts (after talking this out more)
  
  - [ ] Figure out how to write tests
+
+ - [ ] add attendees
+ - [ ] add event id to form

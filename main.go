@@ -6,6 +6,8 @@ import (
 	"html/template"
 	"io"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/directactioneverywhere/adb/model"
 	"github.com/gorilla/mux"
@@ -19,10 +21,13 @@ func router() *mux.Router {
 	main := MainController{db: model.NewDB("adb.db")}
 
 	router := mux.NewRouter()
-	router.HandleFunc("/", main.IndexHandler)
-	router.HandleFunc("/get_autocomplete_activist_names", main.AutocompleteActivistsHandler)
-	router.HandleFunc("/update_event", main.UpdateEventHandler)
+	router.HandleFunc("/", main.UpdateEventHandler)
+	router.HandleFunc("/update_event/{event_id:[0-9]+}", main.UpdateEventHandler)
 	router.HandleFunc("/list_events", main.ListEventsHandler)
+
+	// API
+	router.HandleFunc("/activist_names/get", main.AutocompleteActivistsHandler)
+	router.HandleFunc("/event/save", main.EventSaveHandler)
 
 	router.PathPrefix("/static").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	return router
@@ -42,7 +47,15 @@ func (c MainController) ListEventsHandler(w http.ResponseWriter, req *http.Reque
 	})
 }
 
-var templates = template.Must(template.ParseGlob("templates/*.html"))
+var templates = template.Must(template.New("").Funcs(
+	template.FuncMap{
+		"formatdate": func(date time.Time) string {
+			return date.Format(model.EventDateLayout)
+		},
+		"datenotzero": func(date time.Time) bool {
+			return !time.Time{}.Equal(date)
+		},
+	}).ParseGlob("templates/*.html"))
 
 func renderTemplate(w io.Writer, name string, data interface{}) {
 	if err := templates.ExecuteTemplate(w, name+".html", data); err != nil {
@@ -52,15 +65,29 @@ func renderTemplate(w io.Writer, name string, data interface{}) {
 
 func writeJSON(w io.Writer, v interface{}) {
 	enc := json.NewEncoder(w)
-	enc.SetEscapeHTML(true)
 	err := enc.Encode(v)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (c MainController) IndexHandler(w http.ResponseWriter, req *http.Request) {
-	renderTemplate(w, "event_new", nil)
+func (c MainController) UpdateEventHandler(w http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	var event model.Event
+	if eventIDStr, ok := vars["event_id"]; ok {
+		eventID, err := strconv.Atoi(eventIDStr)
+		if err != nil {
+			panic(err)
+		}
+		event, err = model.GetEvent(c.db, eventID)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	renderTemplate(w, "event_new", map[string]interface{}{
+		"Event": event,
+	})
 }
 
 func (c MainController) AutocompleteActivistsHandler(w http.ResponseWriter, req *http.Request) {
@@ -70,7 +97,7 @@ func (c MainController) AutocompleteActivistsHandler(w http.ResponseWriter, req 
 	})
 }
 
-func (c MainController) UpdateEventHandler(w http.ResponseWriter, req *http.Request) {
+func (c MainController) EventSaveHandler(w http.ResponseWriter, req *http.Request) {
 	event, err := model.CleanEventData(c.db, req.Body)
 	if err != nil {
 		panic(err)

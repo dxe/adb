@@ -6,20 +6,20 @@
   <div id="main">
     <form action="" id="eventForm">
       <label for="eventName"><b>Event name:</b><br /></label>
-      <input id="eventName"><br /><br />
+      <input id="eventName" value="{{ .Event.EventName }}"><br /><br />
 
       <label for="eventType"><b>Event type:</b><br /></label>
       <select id="eventType">
-        <option value="Working Group">Working Group</option>
-        <option value="Community">Community</option>
-        <option value="Protest">Protest</option>
-        <option value="Outreach">Outreach</option>
-        <option value="Key Event">Key Event</option>
+        <option value="Working Group" {{if (eq .Event.EventType "Working Group")}}selected{{end}}>Working Group</option>
+        <option value="Community" {{if (eq .Event.EventType "Community")}}selected{{end}}>Community</option>
+        <option value="Protest" {{if (eq .Event.EventType "Protest")}}selected{{end}}>Protest</option>
+        <option value="Outreach" {{if (eq .Event.EventType "Outreach")}}selected{{end}}>Outreach</option>
+        <option value="Key Event" {{if (eq .Event.EventType "Key Event")}}selected{{end}}>Key Event</option>
       </select>
       <br /><br />
 
       <label for="eventDate"><b>Event date:</b><br /></label>
-      <input id="eventDate" type="date"><br /><br />
+      <input id="eventDate" type="date" value="{{if .Event.EventDate | datenotzero }}{{.Event.EventDate | formatdate}}{{end}}"><br /><br />
 
       <label for="attendee1"><b>Attendees:</b><br /></label>
       <div id="attendee-rows"></div>

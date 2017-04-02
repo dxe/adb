@@ -30,9 +30,34 @@ type Event struct {
 }
 
 func GetEvents(db *sqlx.DB) ([]Event, error) {
+	return getEvents(db, 0)
+}
+
+func GetEvent(db *sqlx.DB, eventID int) (Event, error) {
+	if eventID == 0 {
+		return Event{}, errors.New("EventID for GetEvent cannot be zero")
+	}
+	events, err := getEvents(db, eventID)
+	if err != nil {
+		return Event{}, nil
+	} else if len(events) == 0 {
+		return Event{}, errors.New("Could not find any events")
+	} else if len(events) > 1 {
+		return Event{}, errors.New("Found too many events")
+	}
+	return events[0], nil
+}
+
+func getEvents(db *sqlx.DB, eventID int) ([]Event, error) {
 	var events []Event
-	err := db.Select(&events, `SELECT id, name, date, event_type
+	var err error
+	if eventID == 0 {
+		err = db.Select(&events, `SELECT id, name, date, event_type
 FROM events`)
+	} else {
+		err = db.Select(&events, `SELECT id, name, date, event_type
+FROM events WHERE id = $1`, eventID)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +106,7 @@ var EventTypes map[string]bool = map[string]bool{
 	"Key Event":     true,
 }
 
-var EventTypeLayout string = "2006-01-02"
+var EventDateLayout string = "2006-01-02"
 
 type EventType string
 
@@ -158,7 +183,7 @@ func CleanEventData(db *sqlx.DB, body io.Reader) (Event, error) {
 	// Strip spaces from front and back of all fields.
 	var e Event
 	e.EventName = strings.TrimSpace(eventJSON.EventName)
-	t, err := time.Parse(EventTypeLayout, eventJSON.EventDate)
+	t, err := time.Parse(EventDateLayout, eventJSON.EventDate)
 	if err != nil {
 		return Event{}, err
 	}

@@ -2,7 +2,7 @@ var ACTIVIST_NAMES = [];
 
 function updateAutocompleteNames() {
   $.ajax({
-    url: "/get_autocomplete_activist_names",
+    url: "/activist_names/get",
     method: "GET",
     dataType: "json",
     success: function(data) {
@@ -60,7 +60,7 @@ function newEvent(event) {
   }
 
   $.ajax({
-    url: "/update_event",
+    url: "/event/save",
     method: "POST",
     contentType: "application/json",
     data: JSON.stringify({
