@@ -24,6 +24,7 @@ func router() *mux.Router {
 	router.HandleFunc("/", main.UpdateEventHandler)
 	router.HandleFunc("/update_event/{event_id:[0-9]+}", main.UpdateEventHandler)
 	router.HandleFunc("/list_events", main.ListEventsHandler)
+	router.HandleFunc("/transposed_events_data", main.TransposedEventsDataHandler)
 
 	// API
 	router.HandleFunc("/activist_names/get", main.AutocompleteActivistsHandler)
@@ -87,6 +88,17 @@ func (c MainController) UpdateEventHandler(w http.ResponseWriter, req *http.Requ
 
 	renderTemplate(w, "event_new", map[string]interface{}{
 		"Event": event,
+	})
+}
+
+func (c MainController) TransposedEventsDataHandler(w http.ResponseWriter, req *http.Request) {
+	fmt.Println("hi")
+	events, err := model.GetEvents(c.db)
+	if err != nil {
+		panic(err)
+	}
+	renderTemplate(w, "transposed_events_data", map[string]interface{}{
+		"Events": events,
 	})
 }
 
