@@ -1,4 +1,9 @@
 
+ - [ ] Deploy
+ - [ ] Connect to mysql database
+ - [ ] Finish list events
+
+
 
 
  - [ ] Create a sqlite database with the same specs as mysql

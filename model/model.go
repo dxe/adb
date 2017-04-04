@@ -66,7 +66,7 @@ FROM events WHERE id = $1`, eventID)
 	for i := range events {
 		var attendees []User
 		err = db.Select(&attendees, `SELECT
-  a.id, a.name, a.email, a.chapter_id, a.phone, a.city, a.zipcode, a.country, a.facebook
+  a.id, a.name, a.email, a.chapter_id, a.phone, a.location, a.facebook
 FROM activists a
 JOIN event_attendance et
 ON a.id = et.activist_id
@@ -136,17 +136,14 @@ type User struct {
 	Email     string        `db:"email"`
 	ChapterID sql.NullInt64 `db:"chapter_id"`
 	Phone     string        `db:"phone"`
-	City      string        `db:"city"`
-	Zipcode   string        `db:"zipcode"`
-	Country   string        `db:"country"`
+	Location  string        `db:"location"`
 	Facebook  string        `db:"facebook"`
 }
 
 func GetUser(db *sqlx.DB, name string) (User, error) {
 	var user User
 	err := db.Get(&user, `SELECT
-  id, name, email, chapter_id, phone, city,
-  zipcode, country, facebook
+  id, name, email, chapter_id, phone, location, facebook
 FROM activists
 WHERE
   name = $1`, name)

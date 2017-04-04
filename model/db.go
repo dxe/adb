@@ -15,30 +15,28 @@ func CreateDatabase(db *sqlx.DB) {
 	db.MustExec(`
 CREATE TABLE IF NOT EXISTS activists (
   id INTEGER PRIMARY KEY,
-  name varchar(80) NOT NULL,
-  email varchar(80) NOT NULL DEFAULT '',
-  chapter_id int(3) DEFAULT NULL,
+  name VARCHAR(80) NOT NULL,
+  email VARCHAR(80) NOT NULL DEFAULT '',
+  chapter_id INTEGER DEFAULT NULL,
   phone varchar(20) NOT NULL DEFAULT '',
-  city varchar(40) NOT NULL DEFAULT '',
-  zipcode varchar(15) NOT NULL DEFAULT '',
-  country varchar(80) NOT NULL DEFAULT '',
-  facebook varchar(80) NOT NULL DEFAULT '',
-  exclude_from_leaderboard tinyint(1) NOT NULL DEFAULT '0',
-  core_staff tinyint(1) NOT NULL DEFAULT '0',
-  global_team_member tinyint(1) NOT NULL DEFAULT '0',
-  liberation_pledge tinyint(1) DEFAULT NULL
+  location TEXT NOT NULL DEFAULT '',
+  facebook VARCHAR(80) NOT NULL DEFAULT '',
+  exclude_from_leaderboard TINYINT(1) NOT NULL DEFAULT '0',
+  core_staff TINYINT(1) NOT NULL DEFAULT '0',
+  global_team_member TINYINT(1) NOT NULL DEFAULT '0',
+  liberation_pledge TINYINT(1) DEFAULT NULL
 );
 
 CREATE TABLE IF NOT EXISTS event_attendance (
-  activist_id int(8) NOT NULL,
-  event_id int(8) NOT NULL
+  activist_id INTEGER NOT NULL,
+  event_id INTEGER NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS events (
   id INTEGER PRIMARY KEY,
-  name varchar(60) NOT NULL,
-  date date NOT NULL,
-  event_type varchar(60) NOT NULL
+  name VARCHAR(60) NOT NULL,
+  date DATE NOT NULL,
+  event_type VARCHAR(60) NOT NULL
 );
 `)
 }
