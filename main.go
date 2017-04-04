@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -9,26 +10,103 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/coreos/go-oidc"
 	"github.com/directactioneverywhere/adb/model"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 	"github.com/jmoiron/sqlx"
+	"github.com/justinas/alice"
 	"github.com/urfave/negroni"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
+var sessionStore = sessions.NewCookieStore([]byte("replace-with-real-auth-secret"))
+
+func isAuthed(req *http.Request) bool {
+	authSession, err := sessionStore.Get(req, "auth-session")
+	if err != nil {
+		panic(err)
+	}
+	authed, ok := authSession.Values["authed"].(bool)
+	// We should always set "authed" to true, see setAuthSession.
+	return ok && authed
+}
+
+func setAuthSession(w http.ResponseWriter, req *http.Request, email string) error {
+	authSession, err := sessionStore.Get(req, "auth-session")
+	if err != nil {
+		return err
+	}
+	authSession.Options = &sessions.Options{
+		Path: "/",
+		// MaxAge is 30 days in seconds
+		MaxAge: 30 * // days
+			24 * // hours
+			60 * // minutes
+			60, // seconds
+		HttpOnly: true,
+	}
+	authSession.Values["authed"] = true
+	authSession.Values["email"] = email
+	return sessionStore.Save(req, w, authSession)
+}
+
+func authMiddleware(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if !isAuthed(req) {
+			http.Redirect(w, req, "/login", http.StatusFound)
+			return
+		}
+		// Request is authed at this point.
+		h.ServeHTTP(w, req)
+	})
+}
+
+func apiAuthMiddleware(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if !isAuthed(req) {
+			http.Error(w, http.StatusText(400), 400)
+			return
+		}
+		// Request is authed at this point.
+		h.ServeHTTP(w, req)
+	})
+}
+
+var validEmails = map[string]bool{
+	"samer@directactioneverywhere.com": true,
+	"jake@directactioneverywhere.com":  true,
+	"wayne@directactioneverywhere.com": true,
+	"nosefrog@gmail.com":               true,
+	"samer@dropbox.com":                true,
+}
+
+// TODO: Make this read from the database instead.
+func isValidEmail(email string) bool {
+	_, ok := validEmails[email]
+	return ok
+}
+
 func router() *mux.Router {
 	main := MainController{db: model.NewDB("adb.db")}
 
 	router := mux.NewRouter()
-	router.HandleFunc("/", main.UpdateEventHandler)
-	router.HandleFunc("/update_event/{event_id:[0-9]+}", main.UpdateEventHandler)
-	router.HandleFunc("/list_events", main.ListEventsHandler)
-	router.HandleFunc("/transposed_events_data", main.TransposedEventsDataHandler)
+	// Unauthed pages
+	router.HandleFunc("/login", main.LoginHandler)
 
-	// API
-	router.HandleFunc("/activist_names/get", main.AutocompleteActivistsHandler)
-	router.HandleFunc("/event/save", main.EventSaveHandler)
+	// Authed paged
+	router.Handle("/", alice.New(authMiddleware).ThenFunc(main.UpdateEventHandler))
+	router.Handle("/update_event/{event_id:[0-9]+}", alice.New(authMiddleware).ThenFunc(main.UpdateEventHandler))
+	router.Handle("/list_events", alice.New(authMiddleware).ThenFunc(main.ListEventsHandler))
+	router.Handle("/transposed_events_data", alice.New(authMiddleware).ThenFunc(main.TransposedEventsDataHandler))
+
+	// Unauthed API
+	router.HandleFunc("/tokensignin", main.TokenSignInHandler)
+
+	// Authed API
+	router.Handle("/activist_names/get", alice.New(apiAuthMiddleware).ThenFunc(main.AutocompleteActivistsHandler))
+	router.Handle("/event/save", alice.New(apiAuthMiddleware).ThenFunc(main.EventSaveHandler))
 
 	router.PathPrefix("/static").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	return router
@@ -36,6 +114,51 @@ func router() *mux.Router {
 
 type MainController struct {
 	db *sqlx.DB
+}
+
+func (c MainController) TokenSignInHandler(w http.ResponseWriter, req *http.Request) {
+	if err := req.ParseForm(); err != nil {
+		panic(err)
+	}
+
+	unverifiedIdToken := req.PostFormValue("idtoken")
+
+	tokenCtx := context.Background()
+
+	provider, err := oidc.NewProvider(tokenCtx, "https://accounts.google.com")
+	if err != nil {
+		panic(err)
+	}
+	verifier := provider.Verifier(&oidc.Config{
+		ClientID: "975059814880-lfffftbpt7fdl14cevtve8sjvh015udc.apps.googleusercontent.com",
+	})
+
+	idToken, err := verifier.Verify(tokenCtx, unverifiedIdToken)
+	if err != nil {
+		panic(err)
+	}
+	var claims struct {
+		Email string `json:"email"`
+	}
+	if err := idToken.Claims(&claims); err != nil {
+		panic(err)
+	}
+	if !isValidEmail(claims.Email) {
+		writeJSON(w, map[string]interface{}{
+			"redirect": false,
+			"message":  "Email is not valid",
+		})
+		return
+	}
+	// Email is valid
+	setAuthSession(w, req, claims.Email)
+	writeJSON(w, map[string]interface{}{
+		"redirect": true,
+	})
+}
+
+func (c MainController) LoginHandler(w http.ResponseWriter, req *http.Request) {
+	renderTemplate(w, "login", nil)
 }
 
 func (c MainController) ListEventsHandler(w http.ResponseWriter, req *http.Request) {
