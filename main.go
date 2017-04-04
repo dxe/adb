@@ -92,7 +92,6 @@ func (c MainController) UpdateEventHandler(w http.ResponseWriter, req *http.Requ
 }
 
 func (c MainController) TransposedEventsDataHandler(w http.ResponseWriter, req *http.Request) {
-	fmt.Println("hi")
 	events, err := model.GetEvents(c.db)
 	if err != nil {
 		panic(err)
