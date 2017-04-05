@@ -33,13 +33,13 @@ function newEvent(event) {
   // TODO: use modals
   var eventName = document.getElementById('eventName').value;
   if (eventName === "") {
-    alert("Error: Please enter event name!");
+    flashMessage("Error: Please enter event name!");
     return;
   }
 
   var eventDate = document.getElementById('eventDate').value;
   if (eventDate == "") {
-    alert("Error: Please enter date!");
+    flashMessage("Error: Please enter date!");
     return;
   }
 
@@ -55,7 +55,7 @@ function newEvent(event) {
   }
 
   if (attendees.length === 0) {
-    alert("Error: must enter attendees");
+    flashMessage("Error: must enter attendees");
     return;
   }
 
@@ -75,18 +75,18 @@ function newEvent(event) {
     success: function(data) {
       var parsed = JSON.parse(data);
       if (parsed.status == "error") {
-        alert("Error: " + parsed.message);
+        flashMessage("Error: " + parsed.message);
         return;
       }
       // status == "success"
       if (parsed.redirect) {
         window.location = parsed.redirect;
       } else {
-        alert("Saved!");
+        flashMessage("Saved!");
       }
     },
     error: function() {
-      alert("Error, did not save data");
+      flashMessage("Error, did not save data");
     },
   });
 }

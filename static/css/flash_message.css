@@ -1,0 +1,12 @@
+#flash {
+    z-index:5500;
+    position:fixed;
+    margin-left: 25%;
+    margin-right: 25%;
+    background-color:#000;
+    color:#FFF;
+    width: 50%;
+    text-align:center;
+    opacity:0.8;
+    display: none;
+}
