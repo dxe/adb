@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/coreos/go-oidc"
+	oidc "github.com/coreos/go-oidc"
 	"github.com/directactioneverywhere/adb/model"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -234,13 +234,33 @@ func (c MainController) AutocompleteActivistsHandler(w http.ResponseWriter, req 
 func (c MainController) EventSaveHandler(w http.ResponseWriter, req *http.Request) {
 	event, err := model.CleanEventData(c.db, req.Body)
 	if err != nil {
-		panic(err)
+		writeJSON(w, map[string]string{
+			"status":  "error",
+			"message": err.Error(),
+		})
+		return
 	}
 
-	err = model.InsertEvent(c.db, event)
+	// Events with no event ID are new events.
+	isNewEvent := event.ID == 0
+
+	eventID, err := model.InsertUpdateEvent(c.db, event)
 	if err != nil {
-		panic(err)
+		writeJSON(w, map[string]string{
+			"status":  "error",
+			"message": err.Error(),
+		})
+		return
 	}
+
+	out := map[string]string{
+		"status":   "success",
+		"redirect": "",
+	}
+	if isNewEvent {
+		out["redirect"] = fmt.Sprintf("/update_event/%d", eventID)
+	}
+	writeJSON(w, out)
 }
 
 func main() {

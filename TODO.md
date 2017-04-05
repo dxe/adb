@@ -17,3 +17,7 @@
 
  - [ ] add attendees
  - [ ] add event id to form
+
+
+ - pick working group from dropdown?
+ - bug: double saving?

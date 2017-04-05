@@ -205,26 +205,89 @@ func CleanEventData(db *sqlx.DB, body io.Reader) (Event, error) {
 	return e, nil
 }
 
-func InsertEvent(db *sqlx.DB, event Event) error {
+func InsertUpdateEvent(db *sqlx.DB, event Event) (eventID int, err error) {
+	if event.ID == 0 {
+		return insertEvent(db, event)
+	}
+	return updateEvent(db, event)
+}
+
+func insertEvent(db *sqlx.DB, event Event) (eventID int, err error) {
 	tx, err := db.Beginx()
 	if err != nil {
-		return err
+		return 0, err
 	}
 	res, err := tx.NamedExec(`INSERT INTO events (name, date, event_type)
 VALUES (:name, :date, :event_type)`, event)
 	if err != nil {
-		return err
+		tx.Rollback()
+		return 0, err
 	}
 	id, err := res.LastInsertId()
 	if err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+
+	if err := insertEventAttendance(tx, int(id), event.Attendees); err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+	if err := tx.Commit(); err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+	return int(id), nil
+}
+
+func updateEvent(db *sqlx.DB, event Event) (eventID int, err error) {
+	tx, err := db.Beginx()
+	if err != nil {
+		return 0, err
+	}
+	_, err = tx.NamedExec(`UPDATE events
+SET
+  name = :name,
+  date = :date,
+  event_type = :event_type
+WHERE
+  id = :id`, event)
+	if err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+
+	if err := insertEventAttendance(tx, event.ID, event.Attendees); err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+	if err := tx.Commit(); err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+	return event.ID, nil
+}
+
+func insertEventAttendance(tx *sqlx.Tx, eventID int, attendees []User) error {
+	// First, delete all previous attendees for the event.
+	_, err := tx.Exec(`DELETE FROM event_attendance
+WHERE event_id = $1`, eventID)
+	if err != nil {
 		return err
 	}
-	for _, u := range event.Attendees {
-		res, err = tx.Exec(`INSERT INTO event_attendance (activist_id, event_id)
-VALUES ($1, $2)`, u.ID, id)
+	seen := map[int]bool{}
+	// Then re-add all attendees.
+	for _, u := range attendees {
+		// Ignore duplicates
+		if _, exists := seen[u.ID]; exists {
+			continue
+		}
+		seen[u.ID] = true
+		_, err = tx.Exec(`INSERT INTO event_attendance (activist_id, event_id)
+VALUES ($1, $2)`, u.ID, eventID)
 		if err != nil {
 			return err
 		}
 	}
-	return tx.Commit()
+	return nil
 }

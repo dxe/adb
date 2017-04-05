@@ -57,7 +57,7 @@ func TestGetEvents(t *testing.T) {
 	}}
 
 	for _, e := range wantEvents {
-		err := InsertEvent(db, Event{
+		_, err := InsertUpdateEvent(db, Event{
 			EventName: e.EventName,
 			EventDate: e.EventDate,
 			EventType: e.EventType,
@@ -84,4 +84,78 @@ func TestGetEvents(t *testing.T) {
 		gotEvents[i].EventDate = time.Time{}
 		assert.EqualValues(t, wantEvents[i], gotEvents[i])
 	}
+}
+
+func TestInsertUpdateEvent(t *testing.T) {
+	db := NewDB(":memory:")
+	defer db.Close()
+
+	u1, err := GetOrCreateUser(db, "Hello")
+	assert.NoError(t, err)
+	u2, err := GetOrCreateUser(db, "Hi")
+	assert.NoError(t, err)
+
+	event := Event{
+		EventName: "event one",
+		EventDate: time.Now(),
+		EventType: "Working Group",
+		Attendees: []User{u1},
+	}
+
+	eventID, err := InsertUpdateEvent(db, event)
+	assert.NoError(t, err)
+	assert.Equal(t, eventID, 1)
+
+	var events []Event
+	assert.NoError(t,
+		db.Select(&events, "select * from events where name = 'event one'"))
+
+	assert.Equal(t, len(events), 1)
+
+	var attendees []int
+	assert.NoError(t,
+		db.Select(&attendees, "select activist_id from event_attendance where event_id = 1"))
+	assert.Equal(t, len(attendees), 1)
+
+	event.ID = 1
+	event.Attendees = []User{u1, u2}
+
+	eventID, err = InsertUpdateEvent(db, event)
+	assert.NoError(t, err)
+	assert.Equal(t, eventID, 1)
+
+	events = nil
+	assert.NoError(t,
+		db.Select(&events, "select * from events where name = 'event one'"))
+
+	assert.Equal(t, len(events), 1)
+
+	attendees = nil
+	assert.NoError(t,
+		db.Select(&attendees, "select activist_id from event_attendance where event_id = 1"))
+	assert.Equal(t, len(attendees), 2)
+}
+
+func TestInsertUpdateEvent_noDuplicateAttendees(t *testing.T) {
+	db := NewDB(":memory:")
+	defer db.Close()
+
+	u1, err := GetOrCreateUser(db, "Hello")
+	assert.NoError(t, err)
+
+	event := Event{
+		EventName: "event one",
+		EventDate: time.Now(),
+		EventType: "Working Group",
+		Attendees: []User{u1, u1},
+	}
+
+	eventID, err := InsertUpdateEvent(db, event)
+	assert.NoError(t, err)
+	assert.Equal(t, eventID, 1)
+
+	var attendees []int
+	assert.NoError(t,
+		db.Select(&attendees, "select activist_id from event_attendance where event_id = 1"))
+	assert.Equal(t, len(attendees), 1)
 }

@@ -72,7 +72,22 @@ function newEvent(event) {
       event_type: eventType,
       attendees: attendees,
     }),
-    // TODO: deal with success and error
+    success: function(data) {
+      var parsed = JSON.parse(data);
+      if (parsed.status == "error") {
+        alert("Error: " + parsed.message);
+        return;
+      }
+      // status == "success"
+      if (parsed.redirect) {
+        window.location = parsed.redirect;
+      } else {
+        alert("Saved!");
+      }
+    },
+    error: function() {
+      alert("Error, did not save data");
+    },
   });
 }
 
