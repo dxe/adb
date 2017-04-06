@@ -29,4 +29,10 @@ Going to deploy on jake's machine.
 
 
  - Make application use mysql drivers
- - 
+ -
+
+
+ - look into setting up daemon tools
+
+http://blog.rtwilson.com/how-to-set-up-a-simple-service-to-run-in-the-background-on-a-linux-machine-using-daemontools/
+http://blog.teksol.info/pages/daemontools/tutorial
