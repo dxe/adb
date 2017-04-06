@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	_ "github.com/mattn/go-sqlite3"
 )
 
 type EventJSON struct {
@@ -56,7 +55,7 @@ func getEvents(db *sqlx.DB, eventID int) ([]Event, error) {
 FROM events`)
 	} else {
 		err = db.Select(&events, `SELECT id, name, date, event_type
-FROM events WHERE id = $1`, eventID)
+FROM events WHERE id = ?`, eventID)
 	}
 	if err != nil {
 		return nil, err
@@ -71,7 +70,7 @@ FROM activists a
 JOIN event_attendance et
 ON a.id = et.activist_id
 WHERE
-  et.event_id = $1`, events[i].ID)
+  et.event_id = ?`, events[i].ID)
 		if err != nil {
 			return nil, err
 		}
@@ -131,13 +130,13 @@ func getEventType(rawEventType string) (EventType, error) {
 }
 
 type User struct {
-	ID        int           `db:"id"`
-	Name      string        `db:"name"`
-	Email     string        `db:"email"`
-	ChapterID sql.NullInt64 `db:"chapter_id"`
-	Phone     string        `db:"phone"`
-	Location  string        `db:"location"`
-	Facebook  string        `db:"facebook"`
+	ID        int            `db:"id"`
+	Name      string         `db:"name"`
+	Email     string         `db:"email"`
+	ChapterID sql.NullInt64  `db:"chapter_id"`
+	Phone     string         `db:"phone"`
+	Location  sql.NullString `db:"location"`
+	Facebook  string         `db:"facebook"`
 }
 
 func GetUser(db *sqlx.DB, name string) (User, error) {
@@ -146,7 +145,7 @@ func GetUser(db *sqlx.DB, name string) (User, error) {
   id, name, email, chapter_id, phone, location, facebook
 FROM activists
 WHERE
-  name = $1`, name)
+  name = ?`, name)
 	if user.ID == 0 || err != nil {
 		return User{}, err
 	}
@@ -162,9 +161,9 @@ func GetOrCreateUser(db *sqlx.DB, name string) (User, error) {
 	}
 
 	// There was an error, so try inserting the user first.
-	_, err = db.Exec("INSERT INTO activists (name) VALUES ($1)", name)
+	_, err = db.Exec("INSERT INTO activists (name) VALUES (?)", name)
 	if err != nil {
-		return User{}, nil
+		return User{}, err
 	}
 
 	return GetUser(db, name)
@@ -271,7 +270,7 @@ WHERE
 func insertEventAttendance(tx *sqlx.Tx, eventID int, attendees []User) error {
 	// First, delete all previous attendees for the event.
 	_, err := tx.Exec(`DELETE FROM event_attendance
-WHERE event_id = $1`, eventID)
+WHERE event_id = ?`, eventID)
 	if err != nil {
 		return err
 	}
@@ -284,7 +283,7 @@ WHERE event_id = $1`, eventID)
 		}
 		seen[u.ID] = true
 		_, err = tx.Exec(`INSERT INTO event_attendance (activist_id, event_id)
-VALUES ($1, $2)`, u.ID, eventID)
+VALUES (?, ?)`, u.ID, eventID)
 		if err != nil {
 			return err
 		}

@@ -16,3 +16,15 @@ git remote add dokku dokku@dxetech.org:adb
 ```
 
 Then, push your changes with `git push dokku master`.
+
+# Set up mysql locally for development
+
+First, install mysql server. Then, create a user and database like this:
+
+```
+CREATE USER adb_user@localhost IDENTIFIED BY 'adbpassword';
+GRANT ALL PRIVILEGES ON *.* to adb_user@localhost;
+FLUSH PRIVILEGES;
+
+CREATE DATABASE adb_db CHARACTER SET utf8 COLLATE utf8_general_ci;
+```

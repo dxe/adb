@@ -5,5 +5,5 @@ function flashMessage(content) {
 
   setTimeout(function() {
     flash.hide();
-  }, 60 * 5);
+  }, 5 * 60 * 1000);
 }

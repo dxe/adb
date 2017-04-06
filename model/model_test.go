@@ -1,14 +1,29 @@
 package model
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 )
 
+func newTestDB() *sqlx.DB {
+	// TODO: Don't use the normal dev database for tests lol
+	db := NewDB("adb_user:adbpassword@/adb_db?parseTime=true")
+	CreateDatabase(db)
+
+	// Insert sample data
+	db.MustExec(`TRUNCATE activists`)
+	db.MustExec(`TRUNCATE events`)
+	db.MustExec(`TRUNCATE event_attendance`)
+
+	return db
+}
+
 func TestAutocompleteActivistsHandler(t *testing.T) {
-	db := NewDB(":memory:")
+	db := newTestDB()
 	defer db.Close()
 
 	_, err := GetOrCreateUser(db, "User One")
@@ -23,9 +38,11 @@ func TestAutocompleteActivistsHandler(t *testing.T) {
 
 	gotNames := GetAutocompleteNames(db)
 	wantNames := []string{"User One", "User Two"}
+	fmt.Println(gotNames, wantNames)
 	if len(gotNames) != len(wantNames) {
 		t.Fatalf("gotNames and wantNames must have the same length.")
 	}
+
 	for i := range wantNames {
 		if gotNames[i] != wantNames[i] {
 			t.Fatalf("gotNames and wantNames must be equal")
@@ -34,7 +51,7 @@ func TestAutocompleteActivistsHandler(t *testing.T) {
 }
 
 func TestGetEvents(t *testing.T) {
-	db := NewDB(":memory:")
+	db := newTestDB()
 	defer db.Close()
 
 	u1, err := GetOrCreateUser(db, "Hello")
@@ -42,16 +59,20 @@ func TestGetEvents(t *testing.T) {
 	u2, err := GetOrCreateUser(db, "Hi")
 	assert.NoError(t, err)
 
+	d1, err := time.Parse("2006-01-02", "2017-01-15")
+	assert.NoError(t, err)
+	d2, err := time.Parse("2006-01-02", "2017-01-16")
+	assert.NoError(t, err)
 	var wantEvents = []Event{{
 		ID:        1,
 		EventName: "event one",
-		EventDate: time.Now(),
+		EventDate: d1,
 		EventType: "Working Group",
 		Attendees: []User{u1},
 	}, {
 		ID:        2,
 		EventName: "event two",
-		EventDate: time.Now(),
+		EventDate: d2,
 		EventType: "Protest",
 		Attendees: []User{u1, u2},
 	}}
@@ -75,6 +96,7 @@ func TestGetEvents(t *testing.T) {
 
 	assert.Len(t, wantEvents, 2)
 	assert.Len(t, gotEvents, 2)
+
 	for i := range wantEvents {
 		// We need to check time equality separately b/c
 		// assert.EqualValues doesn't call EventDate.Equal.
@@ -87,7 +109,7 @@ func TestGetEvents(t *testing.T) {
 }
 
 func TestInsertUpdateEvent(t *testing.T) {
-	db := NewDB(":memory:")
+	db := newTestDB()
 	defer db.Close()
 
 	u1, err := GetOrCreateUser(db, "Hello")
@@ -137,7 +159,7 @@ func TestInsertUpdateEvent(t *testing.T) {
 }
 
 func TestInsertUpdateEvent_noDuplicateAttendees(t *testing.T) {
-	db := NewDB(":memory:")
+	db := newTestDB()
 	defer db.Close()
 
 	u1, err := GetOrCreateUser(db, "Hello")

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"html/template"
 	"io"
@@ -20,6 +21,14 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 )
+
+var isProd bool
+
+func init() {
+	prod := flag.Bool("prod", false, "Run in production mode")
+	flag.Parse()
+	isProd = *prod
+}
 
 var sessionStore = sessions.NewCookieStore([]byte("replace-with-real-auth-secret"))
 
@@ -77,6 +86,11 @@ func apiAuthMiddleware(h http.Handler) http.Handler {
 var validEmails = map[string]bool{
 	"samer@directactioneverywhere.com": true,
 	"jake@directactioneverywhere.com":  true,
+	"jakehobbs@gmail.com":              true,
+	"kowshik.sundararajan@gmail.com":   true,
+	"rydermeehan@gmail.com":            true,
+	"jeffdavidson53@gmail.com":         true,
+	"scott.r.paterson@gmail.com":       true,
 	"wayne@directactioneverywhere.com": true,
 	"nosefrog@gmail.com":               true,
 	"samer@dropbox.com":                true,
@@ -88,8 +102,17 @@ func isValidEmail(email string) bool {
 	return ok
 }
 
+var devDataSource = "adb_user:adbpassword@/adb_db?parseTime=true"
+var prodDataSource = "dxe_adb_go:L!oQ{JXlq82Nw-GqX:f4@/adb2?parseTime=true"
+
 func router() *mux.Router {
-	main := MainController{db: model.NewDB("adb.db")}
+	var db *sqlx.DB
+	if isProd {
+		db = model.NewDB(prodDataSource)
+	} else {
+		db = model.NewDB(devDataSource)
+	}
+	main := MainController{db: db}
 
 	router := mux.NewRouter()
 	// Unauthed pages
@@ -272,6 +295,13 @@ func main() {
 	r := router()
 	n.UseHandler(r)
 
-	fmt.Println("Listening on localhost:8080")
-	http.ListenAndServe(":8080", n)
+	var port string
+	if isProd {
+		port = "6060"
+	} else {
+		port = "8080"
+	}
+
+	fmt.Println("Listening on localhost:" + port)
+	http.ListenAndServe(":"+port, n)
 }

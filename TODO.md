@@ -21,3 +21,12 @@
 
  - pick working group from dropdown?
  - bug: double saving?
+
+# deploy
+
+Going to deploy on jake's machine.
+
+
+
+ - Make application use mysql drivers
+ - 
