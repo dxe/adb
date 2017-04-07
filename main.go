@@ -18,8 +18,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/justinas/alice"
 	"github.com/urfave/negroni"
-
-	_ "github.com/mattn/go-sqlite3"
 )
 
 var isProd bool
