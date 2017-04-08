@@ -9,37 +9,37 @@
   <div id="title">
     <h1>Event</h1>
   </div>
+  <br />
   <div id="main">
     <form action="" id="eventForm">
       <input id="eventID" type="hidden" value="{{ .Event.ID }}">
 
-      <label for="eventName"><b>Event name:</b><br /></label>
-      <input id="eventName" value="{{ .Event.EventName }}"><br /><br />
+      <label for="eventName"><b>Event name</b><br /></label>
+      <input id="eventName" class="form-control" value="{{ .Event.EventName }}"><br />
 
-      <label for="eventType"><b>Event type:</b><br /></label>
-      <select id="eventType">
+      <label for="eventType"><b>Event type</b><br /></label>
+      <select id="eventType" class="form-control">
         <option value="Working Group" {{if (eq .Event.EventType "Working Group")}}selected{{end}}>Working Group</option>
         <option value="Community" {{if (eq .Event.EventType "Community")}}selected{{end}}>Community</option>
         <option value="Protest" {{if (eq .Event.EventType "Protest")}}selected{{end}}>Protest</option>
         <option value="Outreach" {{if (eq .Event.EventType "Outreach")}}selected{{end}}>Outreach</option>
         <option value="Key Event" {{if (eq .Event.EventType "Key Event")}}selected{{end}}>Key Event</option>
       </select>
-      <br /><br />
+      <br />
 
-      <label for="eventDate"><b>Event date:</b><br /></label>
-      <input id="eventDate" type="date" value="{{if .Event.EventDate | datenotzero }}{{.Event.EventDate | formatdate}}{{end}}"><br /><br />
+      <label for="eventDate"><b>Event date</b><br /></label>
+      <input id="eventDate" class="form-control" type="date" value="{{if .Event.EventDate | datenotzero }}{{.Event.EventDate | formatdate}}{{end}}"><br />
 
-      <label for="attendee1"><b>Attendees:</b><br /></label>
+      <label for="attendee1"><b>Attendees</b><br /></label>
       <div id="attendee-rows">
         {{range $a := .Event.Attendees}}
-            <input class="attendee-input" value="{{$a.Name}}" />
+            <input class="attendee-input form-control" value="{{$a.Name}}" />
         {{end}}
       </div>
     </form>
-
     <br />
-    <button class="button" id="add-rows" onclick="addRows(10)"><span>Add rows</span></button>
-    <button class="button" id="submit-button" onclick="newEvent(event)"><span>Save event</span></button>
+    <button class="btn btn-primary btn-lg" id="add-rows" onclick="addRows(10)"><span>Add rows</span></button>
+    <button class="btn btn-primary btn-lg" id="submit-button" onclick="newEvent(event)"><span>Save event</span></button>
     <br />
   </div>
 </div>
