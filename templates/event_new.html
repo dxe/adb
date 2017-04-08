@@ -33,7 +33,7 @@
       <label for="attendee1"><b>Attendees</b><br /></label>
       <div id="attendee-rows">
         {{range $a := .Event.Attendees}}
-            <input class="attendee-input form-control" value="{{$a.Name}}" />
+            <input class="attendee-input form-control" value="{{$a.Name}}" /><br />
         {{end}}
       </div>
     </form>
