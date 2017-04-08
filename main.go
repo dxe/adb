@@ -28,6 +28,22 @@ func init() {
 	isProd = *prod
 }
 
+func flashMessageSuccess(w http.ResponseWriter, message string) {
+	http.SetCookie(w, &http.Cookie{
+		Name:  "flash_message_success",
+		Value: message,
+		Path:  "/",
+	})
+}
+
+func flashMesssageError(w http.ResponseWriter, message string) {
+	http.SetCookie(w, &http.Cookie{
+		Name:  "flash_message_error",
+		Value: message,
+		Path:  "/",
+	})
+}
+
 var sessionStore = sessions.NewCookieStore([]byte("replace-with-real-auth-secret"))
 
 func isAuthed(req *http.Request) bool {

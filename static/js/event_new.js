@@ -12,7 +12,7 @@ function updateAutocompleteNames() {
       }
     },
     error: function() {
-      flashMessage("Error: could not load activist names");
+      flashMessage("Error: could not load activist names", true);
     },
   });
 }
@@ -34,13 +34,13 @@ function initializeApp() {
 function newEvent(event) {
   var eventName = document.getElementById('eventName').value;
   if (eventName === "") {
-    flashMessage("Error: Please enter event name!");
+    flashMessage("Error: Please enter event name!", true);
     return;
   }
 
   var eventDate = document.getElementById('eventDate').value;
   if (eventDate == "") {
-    flashMessage("Error: Please enter date!");
+    flashMessage("Error: Please enter date!", true);
     return;
   }
 
@@ -56,7 +56,7 @@ function newEvent(event) {
   }
 
   if (attendees.length === 0) {
-    flashMessage("Error: must enter attendees");
+    flashMessage("Error: must enter attendees", true);
     return;
   }
 
@@ -76,18 +76,19 @@ function newEvent(event) {
     success: function(data) {
       var parsed = JSON.parse(data);
       if (parsed.status === "error") {
-        flashMessage("Error: " + parsed.message);
+        flashMessage("Error: " + parsed.message, true);
         return;
       }
       // status === "success"
       if (parsed.redirect) {
+        setFlashMessageSuccessCookie("Saved!");
         window.location = parsed.redirect;
       } else {
-        flashMessage("Saved!");
+        flashMessage("Saved!", false);
       }
     },
     error: function() {
-      flashMessage("Error, did not save data");
+      flashMessage("Error, did not save data", true);
     },
   });
 }
