@@ -19,6 +19,7 @@
 
       <label for="eventType"><b>Event type</b><br /></label>
       <select id="eventType" class="form-control">
+        <option disabled selected value> -- select an option -- </option>
         <option value="Working Group" {{if (eq .Event.EventType "Working Group")}}selected{{end}}>Working Group</option>
         <option value="Community" {{if (eq .Event.EventType "Community")}}selected{{end}}>Community</option>
         <option value="Protest" {{if (eq .Event.EventType "Protest")}}selected{{end}}>Protest</option>
