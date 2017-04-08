@@ -1,59 +1,11 @@
 body {
+  padding-top: 70px;
+}
+
+body {
         font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif; 
         font-weight: 300;       
         background-color: #575756;
-}
-
-input {
-        width: 300px;
-}
-
-select {
-        width: 300px;
-}
-
-th {
-    font-weight: bold;
-    text-align: left;
-    padding-right: 135px;
-}
-
-td {
-    font-weight: normal;
-}
-
-#bodyWrapper {
-        width: 300px;
-        background-color: white;
-        padding: 25px 40px 25px 40px; 
-        margin: 0 auto;
-        box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24),0 17px 50px 0 rgba(0,0,0,0.19);
-}
-
-#bodyWrapperWide {
-        width: 800px;
-        background-color: white;
-        padding: 25px 40px 25px 40px; 
-        margin: 0 auto;
-        box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24),0 17px 50px 0 rgba(0,0,0,0.19);
-}
-
-
-#menu {
-        position:fixed;
-        left:0px;
-        top:0px;
-        color: white;
-        height: 100%;
-        background-color: #1E90FF;
-        width: 225px;
-        padding-top: 20px;
-        box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24),0 17px 50px 0 rgba(0,0,0,0.19);
-}
-
-.menuText {
-        padding-left: 10px;
-        padding-right: 15px;
 }
 
 a {
@@ -66,31 +18,44 @@ a:hover {
         color: white;
 }
 
-.button {
-    background-color: #1E90FF;
-    border: none;
-    color: white;
-    padding: 15px 33px;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    font-size: 16px;
-    margin: 4px 2px;
-    cursor: pointer;
-    -webkit-transition-duration: 0.4s; /* Safari */
-    transition-duration: 0.4s;
+
+#bodyWrapper {
+        max-width: 430px;
+        background-color: white;
+        padding: 25px 40px 25px 40px; 
+        margin: 0 auto;
+        box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24),0 17px 50px 0 rgba(0,0,0,0.19);
 }
 
-.button:hover {
-    box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24),0 17px 50px 0 rgba(0,0,0,0.19);
+#bodyWrapperWide {
+        max-width: 900px;
+        background-color: white;
+        padding: 25px 40px 25px 40px; 
+        margin: 0 auto;
+        box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24),0 17px 50px 0 rgba(0,0,0,0.19);
 }
 
-
-@media screen and (min-width: 720px) {
-    #mobile-menu { color: white; display: none; }
+#attendee-rows {
+        width: 100%;
 }
 
-@media screen and (min-width: 0px) and (max-width: 720px) {
-  #menu { display: none; }
-  #mobile-menu { color: white; }
+table {
+    width: 100%;
+}
+
+th {
+    font-weight: bold;
+    text-align: left;
+}
+
+td {
+    font-weight: normal;
+}
+
+input {
+        width: 350px;
+}
+
+select {
+        width: 350px;
 }

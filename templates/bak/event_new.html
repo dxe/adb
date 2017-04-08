@@ -32,15 +32,14 @@
       <label for="attendee1"><b>Attendees:</b><br /></label>
       <div id="attendee-rows">
         {{range $a := .Event.Attendees}}
-            <input class="attendee-input" value="{{$a.Name}}" />
+          <input class="attendee-input" value="{{$a.Name}}" />
         {{end}}
       </div>
     </form>
 
-    <br />
     <button class="button" id="add-rows" onclick="addRows(10)"><span>Add rows</span></button>
     <button class="button" id="submit-button" onclick="newEvent(event)"><span>Save event</span></button>
-    <br />
+    <br /><br />
   </div>
 </div>
 <script>initializeApp()</script>
