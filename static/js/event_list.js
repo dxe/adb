@@ -20,9 +20,10 @@ function listEvents(events) {
     $(eventLink).attr('href', '/update_event/' + event.event_id);
 
     // output to new row in table to display
-    var newRow = '<tr><td nowrap>' + event.event_date + '</td><td nowrap><b>' + event.event_name + '</b></td><td nowrap>' + event.event_type + '</td><td>' + attendeeString + '<a class="edit-link" href="' + eventLink + '">&nbsp;<span class="glyphicon glyphicon-pencil"></span></a></td></tr>';
-    var d = document.getElementById('event-list');
+    var newRow = '<tr><td><a class="edit-link" href="' + eventLink + '"><span class="glyphicon glyphicon-pencil"></span></a></td><td nowrap>' + event.event_date + '</td><td nowrap><b>' + event.event_name + '</b></td><td nowrap>' + event.event_type + '</td><td>' + attendeeString + '</td></tr>';
+    var d = document.getElementById('event-list-body');
     d.insertAdjacentHTML('beforeend', newRow);
+    console.log()
 
   }
 
