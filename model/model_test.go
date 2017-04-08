@@ -10,8 +10,7 @@ import (
 )
 
 func newTestDB() *sqlx.DB {
-	// TODO: Don't use the normal dev database for tests lol
-	db := NewDB("adb_user:adbpassword@/adb_db?parseTime=true")
+	db := NewDB("adb_user:adbpassword@/adb_test_db?parseTime=true")
 	CreateDatabase(db)
 
 	// Insert sample data
@@ -89,7 +88,7 @@ func TestGetEvents(t *testing.T) {
 		}
 	}
 
-	gotEvents, err := GetEvents(db)
+	gotEvents, err := GetEvents(db, GetEventOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -106,6 +105,53 @@ func TestGetEvents(t *testing.T) {
 		gotEvents[i].EventDate = time.Time{}
 		assert.EqualValues(t, wantEvents[i], gotEvents[i])
 	}
+}
+
+func TestGetEvents_orderBy(t *testing.T) {
+	db := newTestDB()
+	defer db.Close()
+
+	u1, err := GetOrCreateUser(db, "Hello")
+	assert.NoError(t, err)
+
+	d1, err := time.Parse("2006-01-02", "2017-01-15")
+	assert.NoError(t, err)
+	d2, err := time.Parse("2006-01-02", "2017-01-16")
+	assert.NoError(t, err)
+	var wantEvents = []Event{{
+		ID:        1,
+		EventName: "earlier event",
+		EventDate: d1,
+		EventType: "Working Group",
+		Attendees: []User{u1},
+	}, {
+		ID:        2,
+		EventName: "later event",
+		EventDate: d2,
+		EventType: "Protest",
+		Attendees: []User{u1},
+	}}
+
+	for _, e := range wantEvents {
+		_, err := InsertUpdateEvent(db, Event{
+			EventName: e.EventName,
+			EventDate: e.EventDate,
+			EventType: e.EventType,
+			Attendees: e.Attendees,
+		})
+		assert.NoError(t, err)
+	}
+
+	gotEvents, err := GetEvents(db, GetEventOptions{
+		OrderBy: "date DESC",
+	})
+	assert.NoError(t, err)
+
+	assert.Len(t, gotEvents, 2)
+
+	// "later event" must be listed first
+	assert.Equal(t, gotEvents[0].EventName, "later event")
+	assert.Equal(t, gotEvents[1].EventName, "earlier event")
 }
 
 func TestInsertUpdateEvent(t *testing.T) {

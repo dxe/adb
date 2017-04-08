@@ -185,13 +185,7 @@ func (c MainController) LoginHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func (c MainController) ListEventsHandler(w http.ResponseWriter, req *http.Request) {
-	events, err := model.GetEvents(c.db)
-	if err != nil {
-		panic(err)
-	}
-	renderTemplate(w, "event_list", map[string]interface{}{
-		"Events": events,
-	})
+	renderTemplate(w, "event_list", nil)
 }
 
 var templates = template.Must(template.New("").Funcs(
@@ -226,7 +220,7 @@ func (c MainController) UpdateEventHandler(w http.ResponseWriter, req *http.Requ
 		if err != nil {
 			panic(err)
 		}
-		event, err = model.GetEvent(c.db, eventID)
+		event, err = model.GetEvent(c.db, model.GetEventOptions{EventID: eventID})
 		if err != nil {
 			panic(err)
 		}
@@ -238,7 +232,7 @@ func (c MainController) UpdateEventHandler(w http.ResponseWriter, req *http.Requ
 }
 
 func (c MainController) TransposedEventsDataHandler(w http.ResponseWriter, req *http.Request) {
-	events, err := model.GetEvents(c.db)
+	events, err := model.GetEvents(c.db, model.GetEventOptions{})
 	if err != nil {
 		panic(err)
 	}

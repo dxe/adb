@@ -29,7 +29,9 @@ type Event struct {
 }
 
 func GetEventsJSON(db *sqlx.DB) ([]EventJSON, error) {
-	dbEvents, err := GetEvents(db)
+	dbEvents, err := GetEvents(db, GetEventOptions{
+		OrderBy: "date DESC",
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -51,15 +53,22 @@ func GetEventsJSON(db *sqlx.DB) ([]EventJSON, error) {
 	return events, nil
 }
 
-func GetEvents(db *sqlx.DB) ([]Event, error) {
-	return getEvents(db, 0)
+type GetEventOptions struct {
+	EventID int
+	// NOTE: don't pass user input to OrderBy, cause that could
+	// cause a SQL injection.
+	OrderBy string
 }
 
-func GetEvent(db *sqlx.DB, eventID int) (Event, error) {
-	if eventID == 0 {
+func GetEvents(db *sqlx.DB, options GetEventOptions) ([]Event, error) {
+	return getEvents(db, options)
+}
+
+func GetEvent(db *sqlx.DB, options GetEventOptions) (Event, error) {
+	if options.EventID == 0 {
 		return Event{}, errors.New("EventID for GetEvent cannot be zero")
 	}
-	events, err := getEvents(db, eventID)
+	events, err := getEvents(db, options)
 	if err != nil {
 		return Event{}, nil
 	} else if len(events) == 0 {
@@ -70,16 +79,21 @@ func GetEvent(db *sqlx.DB, eventID int) (Event, error) {
 	return events[0], nil
 }
 
-func getEvents(db *sqlx.DB, eventID int) ([]Event, error) {
-	var events []Event
-	var err error
-	if eventID == 0 {
-		err = db.Select(&events, `SELECT id, name, date, event_type
-FROM events`)
-	} else {
-		err = db.Select(&events, `SELECT id, name, date, event_type
-FROM events WHERE id = ?`, eventID)
+func getEvents(db *sqlx.DB, options GetEventOptions) ([]Event, error) {
+	var queryArgs []interface{}
+	query := `SELECT id, name, date, event_type FROM events`
+
+	if options.EventID != 0 {
+		query += ` WHERE id = ?`
+		queryArgs = append(queryArgs, options.EventID)
 	}
+	if options.OrderBy != "" {
+		// Potentially sketchy sql injection...
+		query += ` ORDER BY ` + options.OrderBy
+	}
+
+	var events []Event
+	err := db.Select(&events, query, queryArgs...)
 	if err != nil {
 		return nil, err
 	}

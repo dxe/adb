@@ -2,8 +2,9 @@ package main
 
 import "github.com/directactioneverywhere/adb/model"
 
-func main() {
-	db := model.NewDB("adb_user:adbpassword@/adb_db")
+func createDevDB(name string) {
+	db := model.NewDB("adb_user:adbpassword@/" + name)
+	defer db.Close()
 	db.MustExec(`DROP TABLE IF EXISTS activists`)
 	db.MustExec(`DROP TABLE IF EXISTS events`)
 	db.MustExec(`DROP TABLE IF EXISTS event_attendance`)
@@ -36,4 +37,9 @@ INSERT INTO event_attendance (activist_id, event_id) VALUES
   (4, 2),
   (5, 2)
 `)
+}
+
+func main() {
+	createDevDB("adb_db")
+	createDevDB("adb_test_db")
 }
