@@ -1,6 +1,6 @@
 function listEvents(events) {
   if (events.length === 0) {
-    flashMessage("No events from server");
+    flashMessage("No events from server", true);
     return;
   }
 
@@ -36,7 +36,7 @@ function initializeApp() {
     success: function(data) {
       var parsed = JSON.parse(data);
       if (parsed.status === "error") {
-        flashMessage("Error: " + parsed.message);
+        flashMessage("Error: " + parsed.message, true);
         return;
       }
       // status === "success"
@@ -45,7 +45,7 @@ function initializeApp() {
       listEvents(parsed);
     },
     error: function() {
-      flashMessage("Error connecting to server.");
+      flashMessage("Error connecting to server.", true);
     },
   });
 }
