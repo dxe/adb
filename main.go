@@ -104,6 +104,13 @@ func isValidEmail(email string) bool {
 var devDataSource = "adb_user:adbpassword@/adb_db?parseTime=true"
 var prodDataSource = "dxe_adb_go:L!oQ{JXlq82Nw-GqX:f4@/adb2?parseTime=true"
 
+func noCacheHandler(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Cache-Control", "no-cache, no-store, must-revalidate")
+		h.ServeHTTP(w, r)
+	})
+}
+
 func router() *mux.Router {
 	var db *sqlx.DB
 	if isProd {
@@ -131,7 +138,11 @@ func router() *mux.Router {
 	router.Handle("/event/save", alice.New(apiAuthMiddleware).ThenFunc(main.EventSaveHandler))
 	router.Handle("/event/list", alice.New(apiAuthMiddleware).ThenFunc(main.EventListHandler))
 
-	router.PathPrefix("/static").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	if isProd {
+		router.PathPrefix("/static").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	} else {
+		router.PathPrefix("/static").Handler(noCacheHandler(http.StripPrefix("/static/", http.FileServer(http.Dir("static")))))
+	}
 	return router
 }
 
