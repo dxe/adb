@@ -53,9 +53,18 @@ td {
 }
 
 input {
-        width: 350px;
+        width: 100%;
+        margin-bottom: 2px;
 }
 
 select {
-        width: 350px;
+        width: 100%;
+}
+
+h1 {
+    font-weight: bold;
+}
+
+#title {
+    margin-left: -3px;
 }

@@ -96,7 +96,7 @@ function addRows(numToAdd) {
   var $rowsContainer = $('#attendee-rows');
 
   for (var i = 0; i < numToAdd; i++) {
-    $rowsContainer.append("<input class='attendee-input' />");
+    $rowsContainer.append("<input class='attendee-input' /><br />");
   }
 
   updateAwesomeplete();
