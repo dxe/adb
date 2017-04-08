@@ -12,6 +12,16 @@ select {
         width: 300px;
 }
 
+th {
+    font-weight: bold;
+    text-align: left;
+    padding-right: 135px;
+}
+
+td {
+    font-weight: normal;
+}
+
 #bodyWrapper {
         width: 300px;
         background-color: white;
@@ -19,6 +29,15 @@ select {
         margin: 0 auto;
         box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24),0 17px 50px 0 rgba(0,0,0,0.19);
 }
+
+#bodyWrapperWide {
+        width: 800px;
+        background-color: white;
+        padding: 25px 40px 25px 40px; 
+        margin: 0 auto;
+        box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24),0 17px 50px 0 rgba(0,0,0,0.19);
+}
+
 
 #menu {
         position:fixed;

@@ -1,5 +1,5 @@
 {{template "header.html" .}}
-<div id="bodyWrapper">
+<div id="bodyWrapperWide">
   <div id="title">
     <h1>Transposed Events Data</h1>
   </div>
@@ -14,10 +14,10 @@
       {{ range $e := .Events }}
       {{ range $a := $e.Attendees}}
       <tr>
-        <th>{{$a.Name}}</th>
-        <th>{{$e.EventDate | formatdate}}</th>
-        <th>{{$e.EventName}}</th>
-        <th>{{$e.EventType}}</th>
+        <td>{{$a.Name}}</td>
+        <td>{{$e.EventDate | formatdate}}</td>
+        <td>{{$e.EventName}}</td>
+        <td>{{$e.EventType}}</td>
       </tr>
       {{ end}}
       {{ end }}
