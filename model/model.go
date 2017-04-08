@@ -28,6 +28,29 @@ type Event struct {
 	Attendees []User
 }
 
+func GetEventsJSON(db *sqlx.DB) ([]EventJSON, error) {
+	dbEvents, err := GetEvents(db)
+	if err != nil {
+		return nil, err
+	}
+
+	events := make([]EventJSON, 0, len(dbEvents))
+	for _, event := range dbEvents {
+		attendees := make([]string, 0, len(event.Attendees))
+		for _, user := range event.Attendees {
+			attendees = append(attendees, user.Name)
+		}
+		events = append(events, EventJSON{
+			EventID:   event.ID,
+			EventName: event.EventName,
+			EventDate: event.EventDate.Format(EventDateLayout),
+			EventType: string(event.EventType),
+			Attendees: attendees,
+		})
+	}
+	return events, nil
+}
+
 func GetEvents(db *sqlx.DB) ([]Event, error) {
 	return getEvents(db, 0)
 }

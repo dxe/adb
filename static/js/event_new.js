@@ -11,7 +11,9 @@ function updateAutocompleteNames() {
         ACTIVIST_NAMES.push(activistNames[i]);
       }
     },
-    // TODO: handle errors
+    error: function() {
+      flashMessage("Error: could not load activist names");
+    },
   });
 }
 
@@ -30,7 +32,6 @@ function initializeApp() {
 
 // creates new event in ADB
 function newEvent(event) {
-  // TODO: use modals
   var eventName = document.getElementById('eventName').value;
   if (eventName === "") {
     flashMessage("Error: Please enter event name!");
@@ -74,11 +75,11 @@ function newEvent(event) {
     }),
     success: function(data) {
       var parsed = JSON.parse(data);
-      if (parsed.status == "error") {
+      if (parsed.status === "error") {
         flashMessage("Error: " + parsed.message);
         return;
       }
-      // status == "success"
+      // status === "success"
       if (parsed.redirect) {
         window.location = parsed.redirect;
       } else {

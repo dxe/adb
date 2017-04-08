@@ -129,6 +129,7 @@ func router() *mux.Router {
 	// Authed API
 	router.Handle("/activist_names/get", alice.New(apiAuthMiddleware).ThenFunc(main.AutocompleteActivistsHandler))
 	router.Handle("/event/save", alice.New(apiAuthMiddleware).ThenFunc(main.EventSaveHandler))
+	router.Handle("/event/list", alice.New(apiAuthMiddleware).ThenFunc(main.EventListHandler))
 
 	router.PathPrefix("/static").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	return router
@@ -283,6 +284,19 @@ func (c MainController) EventSaveHandler(w http.ResponseWriter, req *http.Reques
 		out["redirect"] = fmt.Sprintf("/update_event/%d", eventID)
 	}
 	writeJSON(w, out)
+}
+
+func (c MainController) EventListHandler(w http.ResponseWriter, req *http.Request) {
+	events, err := model.GetEventsJSON(c.db)
+	if err != nil {
+		writeJSON(w, map[string]string{
+			"status":  "error",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	writeJSON(w, events)
 }
 
 func main() {

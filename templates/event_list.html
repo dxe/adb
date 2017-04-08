@@ -1,12 +1,14 @@
 {{template "header.html" .}}
+<script src="/static/js/event_list.js"></script>
+
 <div id="bodyWrapperWide">
   <div id="title">
     <h1>List events</h1>
   </div>
   <div id="main">
-    {{ range $e := .Events }}
-      {{ $e }} <a href="/update_event/{{ $e.ID }}">edit</a> <br/><br/>
-    {{ end }}
+    <div id="event-list"></div>
   </div>
 </div>
+
+<script>initializeApp();</script>
 {{template "footer.html" .}}
