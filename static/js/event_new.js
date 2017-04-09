@@ -39,12 +39,16 @@ function newEvent(event) {
   }
 
   var eventDate = document.getElementById('eventDate').value;
-  if (eventDate == "") {
+  if (eventDate === "") {
     flashMessage("Error: Please enter date!", true);
     return;
   }
 
   var eventType = document.getElementById('eventType').value;
+  if (eventType === "") {
+    flashMessage("Error: Must choose event type.", true);
+    return;
+  }
 
   var attendees = [];
   var $attendeeRows = $('.attendee-input');
@@ -101,4 +105,19 @@ function addRows(numToAdd) {
   }
 
   updateAwesomeplete();
+}
+
+function setDateToToday(event) {
+  var d = new Date();
+  var year = '' + d.getFullYear();
+
+  var rawMonth = d.getMonth() + 1;
+  var month = (rawMonth > 10) ? '' + rawMonth : '0' + rawMonth;
+
+  var rawDate = d.getDate();
+  var date = (rawDate > 10) ? '' + rawDate : '0' + rawDate;
+
+  var validDateString = year + '-' + month + '-' + date;
+
+  $("#eventDate").val(validDateString);
 }
