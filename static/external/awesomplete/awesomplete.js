@@ -284,6 +284,7 @@ _.prototype = {
 		if(currentValues.has(value)) {
 			// Mark the "me" element
 			//alert("Hey it's a duplicate field")
+			me["input"].style.border = '2px solid red';
 		}
 	}
 };
