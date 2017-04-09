@@ -232,8 +232,10 @@ _.prototype = {
 	},
 
 	evaluate: function() {
+		var theEntireRows = $('#attendee-rows');
 		var me = this;
 		var value = this.input.value;
+
 
 		if (value.length >= this.minChars && this._list.length > 0) {
 			this.index = -1;
@@ -266,6 +268,22 @@ _.prototype = {
 		}
 		else {
 			this.close({ reason: "nomatches" });
+		}
+
+		// Check before populating the values
+		// create Set object on the filled fields and
+		// see if the new value is already in the set
+		var currentValues = new Set();
+		for ( var i =0; i< theEntireRows.children.length; i++) {
+			// insert the values into the Set only if it not null
+			if (me["input"] !== theEntireRows.children[i].children[0] && theEntireRows.children[i].children[0].value !== "") {
+			currentValues.add(theEntireRows.children[i].children[0].value)
+			}
+		}
+
+		if(currentValues.has(value)) {
+			// Mark the "me" element
+			//alert("Hey it's a duplicate field")
 		}
 	}
 };
