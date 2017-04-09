@@ -18,8 +18,13 @@ a:hover {
         color: white;
 }
 
-a.edit-link:hover {
+a.edit-link {
         color: black;
+        text-decoration: none;
+}
+
+a.edit-link:hover {
+        color: lightgrey;
         text-decoration: none;
 }
 
@@ -57,6 +62,10 @@ td {
     font-weight: normal;
 }
 
+tr {
+    background-color: white;
+}
+
 input {
         width: 100%;
         margin-bottom: 2px;
@@ -75,7 +84,7 @@ h1 {
 }
 
 #event-list th {
-    padding-bottom: 15px;
+    padding-bottom: 10px;
 }
 
 #event-list td {

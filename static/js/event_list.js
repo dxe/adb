@@ -1,6 +1,6 @@
 function listEvents(events) {
   if (events.length === 0) {
-    flashMessage("No events from server");
+    flashMessage("No events from server", true);
     return;
   }
 
@@ -20,9 +20,10 @@ function listEvents(events) {
     $(eventLink).attr('href', '/update_event/' + event.event_id);
 
     // output to new row in table to display
-    var newRow = '<tr><td>' + event.event_date + '</td><td><b>' + event.event_name + '</b></td><td>' + event.event_type + '</td><td>' + attendeeString + '<a class="edit-link" href="' + eventLink + '"> edit</a></td></tr>';
-    var d = document.getElementById('event-list');
+    var newRow = '<tr><td><a class="edit-link" href="' + eventLink + '"><span class="glyphicon glyphicon-pencil"></span></a></td><td nowrap>' + event.event_date + '</td><td nowrap><b>' + event.event_name + '</b></td><td nowrap>' + event.event_type + '</td><td>' + attendeeString + '</td></tr>';
+    var d = document.getElementById('event-list-body');
     d.insertAdjacentHTML('beforeend', newRow);
+    console.log()
 
   }
 
@@ -35,7 +36,7 @@ function initializeApp() {
     success: function(data) {
       var parsed = JSON.parse(data);
       if (parsed.status === "error") {
-        flashMessage("Error: " + parsed.message);
+        flashMessage("Error: " + parsed.message, true);
         return;
       }
       // status === "success"
@@ -44,7 +45,7 @@ function initializeApp() {
       listEvents(parsed);
     },
     error: function() {
-      flashMessage("Error connecting to server.");
+      flashMessage("Error connecting to server.", true);
     },
   });
 }
