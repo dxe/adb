@@ -112,10 +112,10 @@ function setDateToToday(event) {
   var year = '' + d.getFullYear();
 
   var rawMonth = d.getMonth() + 1;
-  var month = (rawMonth > 10) ? '' + rawMonth : '0' + rawMonth;
+  var month = (rawMonth > 9) ? '' + rawMonth : '0' + rawMonth;
 
   var rawDate = d.getDate();
-  var date = (rawDate > 10) ? '' + rawDate : '0' + rawDate;
+  var date = (rawDate > 9) ? '' + rawDate : '0' + rawDate;
 
   var validDateString = year + '-' + month + '-' + date;
 
