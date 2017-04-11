@@ -1,4 +1,4 @@
 #!/bin/sh
 
 cd /opt/adb
-exec setuidgid adb ./adb
+exec setuidgid adb ./adb -prod > /tmp/adb.log

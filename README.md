@@ -7,14 +7,9 @@ First, download all the needed dependencies. Then start the server by running `g
 
 # Deploy
 
-NOTE: This project is under active development and shouldn't be deployed in its current state.
+To deploy, you need a user account that has the "adb" group and also has passwordless sudo enabled.
 
-```
-sudo useradd -r adb
-sudo usermod -a -G adb samer
-sudo usermod -a -G adb ubuntu
-
-```
+The server uses daemontools on the server to run. See the Makefile for more info on how to deploy.
 
 # Set up mysql locally for development
 

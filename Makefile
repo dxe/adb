@@ -1,4 +1,4 @@
-.PHONY: run deps test dev_db samer_deploy
+.PHONY: run deps test dev_db samer_deploy jake_deploy
 
 
 run:
@@ -16,19 +16,19 @@ test:
 samer_deploy:
 	rm -f adb
 	go build
-	scp adb samer@adb.dxetech.org:~/adb
-	scp -r templates samer@adb.dxetech.org:~/
-	scp -r static samer@adb.dxetech.org:~/
-	@echo "\nTo deploy, log onto the server and run:"
-	@echo "pkill adb # to kill the running server"
-	@echo "nohup ./adb -prod & # run adb in the background"
+	ssh samer@adb.dxetech.org "sudo svc -d /etc/service/adb"
+	scp adb samer@adb.dxetech.org:/opt/adb/
+	scp run samer@adb.dxetech.org:/opt/adb/
+	scp -r templates samer@adb.dxetech.org:/opt/adb/
+	scp -r static samer@adb.dxetech.org:/opt/adb/
+	ssh samer@adb.dxetech.org "sudo svc -u /etc/service/adb"
 
 jake_deploy:
 	rm -f adb
 	env GOOS=linux GOARCH=amd64 go build
-	scp adb ubuntu@adb.dxetech.org:~/adb
-	scp -r templates ubuntu@adb.dxetech.org:~/
-	scp -r static ubuntu@adb.dxetech.org:~/
-	@echo "\nTo deploy, log onto the server and run:"
-	@echo "pkill adb # to kill the running server"
-	@echo "nohup ./adb -prod & # run adb in the background"
+	ssh ubuntu@adb.dxetech.org "sudo svc -d /etc/service/adb"
+	scp adb ubuntu@adb.dxetech.org:/opt/adb/
+	scp run ubuntu@adb.dxetech.org:/opt/adb/
+	scp -r templates ubuntu@adb.dxetech.org:/opt/adb/
+	scp -r static ubuntu@adb.dxetech.org:/opt/adb/
+	ssh ubuntu@adb.dxetech.org "sudo svc -u /etc/service/adb"
