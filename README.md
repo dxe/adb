@@ -9,6 +9,13 @@ First, download all the needed dependencies. Then start the server by running `g
 
 NOTE: This project is under active development and shouldn't be deployed in its current state.
 
+```
+sudo useradd -r adb
+sudo usermod -a -G adb samer
+sudo usermod -a -G adb ubuntu
+
+```
+
 # Set up mysql locally for development
 
 First, install mysql server. Then, create a user and database like this:
