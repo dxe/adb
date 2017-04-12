@@ -286,6 +286,9 @@ _.prototype = {
 			//alert("Hey it's a duplicate field")
 			me["input"].style.border = '2px solid red';
 		}
+		else {
+			me["input"].style.border = '';
+		}
 	}
 };
 
