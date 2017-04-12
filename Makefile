@@ -1,4 +1,4 @@
-.PHONY: run deps test dev_db samer_deploy jake_deploy
+.PHONY: run deps test dev_db samer_deploy jake_deploy jake_deploy2
 
 
 run:
@@ -26,3 +26,10 @@ jake_deploy:
 	ssh ubuntu@adb.dxetech.org "sudo svc -d /etc/service/adb"
 	rsync --chmod=ug+w --groupmap="*:adb" -azP --delete adb run templates static ubuntu@adb.dxetech.org:/opt/adb/
 	ssh ubuntu@adb.dxetech.org "sudo svc -u /etc/service/adb"
+
+jake_deploy2:
+	rm -f adb
+	env GOOS=linux GOARCH=amd64 go build
+	ssh ubuntu@adb.dxetech.org "sudo svc -d /etc/service/adb"
+	rsync --chmod=ug+w -azP --delete adb run templates static ubuntu@adb.dxetech.org:/opt/adb/
+	ssh ubuntu@adb.dxetech.org "sudo chgrp adb -R /opt/adb"
