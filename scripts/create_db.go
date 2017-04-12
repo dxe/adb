@@ -1,6 +1,18 @@
 package main
 
-import "github.com/directactioneverywhere/adb/model"
+import (
+	"flag"
+
+	"github.com/directactioneverywhere/adb/model"
+)
+
+var noFakeData bool
+
+func init() {
+	noFake := flag.Bool("no-fake-data", false, "Don't pre-populate wihth data")
+	flag.Parse()
+	noFakeData = *noFake
+}
 
 func createDevDB(name string) {
 	db := model.NewDB("adb_user:adbpassword@/" + name + "?multiStatements=true")
@@ -10,8 +22,9 @@ func createDevDB(name string) {
 	db.MustExec(`DROP TABLE IF EXISTS event_attendance`)
 	model.CreateDatabase(db)
 
-	// Insert sample data
-	db.MustExec(`
+	if !noFakeData {
+		// Insert sample data
+		db.MustExec(`
 INSERT INTO activists VALUES
   (1, 'Adam Kol', 'adam@directactioneverywhere.com', 2, '9542635719', 'Berkeley, United States', '', 0, 0, 1, 1),
   (2, 'Robin Houseman', 'testtest@gmail.com', 2, '4398943', 'United States', '', 0, 0, 0, 0),
@@ -1619,6 +1632,7 @@ INSERT INTO event_attendance (activist_id, event_id) VALUES
   (48, 30),
   (49, 30);
 `)
+	}
 }
 
 func main() {

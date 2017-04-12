@@ -8,7 +8,7 @@ dev_db:
 	go run ./scripts/create_db.go
 
 deps:
-	go get -t github.com/directactioneverywhere/adb
+	go get -t github.com/directactioneverywhere/adb/...
 
 test:
 	go test ./...
