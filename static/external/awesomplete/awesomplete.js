@@ -68,6 +68,11 @@ var _ = function (input, o) {
 					evt.preventDefault();
 					me.select();
 				}
+				else if (c === 9 && me.selected) { // tab
+					evt.preventDefault();
+					me.select();
+				}
+
 				else if (c === 27) { // Esc
 					me.close({ reason: "esc" });
 				}
@@ -227,7 +232,29 @@ _.prototype = {
 				$.fire(this.input, "awesomplete-selectcomplete", {
 					text: suggestion
 				});
+				// check if duplicate value was selected, highlight red if so
+				var theEntireRows = $('#attendee-rows');
+				var me = this;
+				var value = this.input.value;
+				var currentValues = new Set();
+				for ( var i =0; i< theEntireRows.children.length; i++) {
+					// insert the values into the Set only if it not null
+					if (me["input"] !== theEntireRows.children[i].children[0] && theEntireRows.children[i].children[0].value !== "") {
+					currentValues.add(theEntireRows.children[i].children[0].value)
+					}
+				}
+
+				if(currentValues.has(value)) {
+					// Mark the "me" element
+					//alert("Hey it's a duplicate field")
+					me["input"].style.border = '2px solid red';
+				}
+				else {
+					me["input"].style.border = '';
+				}
+
 			}
+
 		}
 	},
 

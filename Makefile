@@ -24,7 +24,7 @@ jake_deploy:
 	rm -f adb
 	env GOOS=linux GOARCH=amd64 go build
 	ssh ubuntu@adb.dxetech.org "sudo svc -d /etc/service/adb"
-	rsync --chmod=ug+w --groupmap="*:adb" -azP --delete adb run templates static ubuntu@adb.dxetech.org:/opt/adb/
+	rsync --chmod=ug+w --groupmap="*:adb" -azPO --delete adb run templates static ubuntu@adb.dxetech.org:/opt/adb/
 	ssh ubuntu@adb.dxetech.org "sudo svc -u /etc/service/adb"
 
 jake_deploy2:
