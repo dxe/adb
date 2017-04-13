@@ -4,6 +4,9 @@ function listEvents(events) {
     return;
   }
 
+  // First, clear body.
+  $('#event-list-body').html('');
+
   for (var i = 0; i < events.length; i++) {
     var event = events[i];
     var attendeeString = '';
@@ -33,10 +36,17 @@ function listEvents(events) {
   }
 }
 
-function initializeApp() {
+function eventListRequest() {
+  var eventDateStart = $('#event-date-start').val();
+  var eventDateEnd = $('#event-date-end').val();
+
   $.ajax({
     url: "/event/list",
     method: "POST",
+    data: JSON.stringify({
+      event_date_start: eventDateStart,
+      event_date_end: eventDateEnd,
+    }),
     success: function(data) {
       var parsed = JSON.parse(data);
       if (parsed.status === "error") {
@@ -52,4 +62,34 @@ function initializeApp() {
       flashMessage("Error connecting to server.", true);
     },
   });
+}
+
+function initDateRange() {
+  // First, set event-date-start
+  var d = new Date();
+  var rawYear = d.getFullYear();
+  var rawMonth = d.getMonth() + 1;
+
+  // Set the "from" date to the 1st of last month.
+  if (rawMonth == 1) {
+    rawMonth = 12;
+    rawYear -= 1;
+  } else {
+    rawMonth -= 1;
+  }
+
+  var year = '' + rawYear;
+  var month = (rawMonth > 9) ? '' + rawMonth : '0' + rawMonth;
+
+  var fromDate = year + '-' + month + '-01';
+  $('#event-date-start').val(fromDate);
+
+  // Now, set event listeners
+  $('#event-date-start').on('change', eventListRequest);
+  $('#event-date-end').on('change', eventListRequest);
+}
+
+function initializeApp() {
+  initDateRange();
+  eventListRequest();
 }
