@@ -112,6 +112,7 @@ var validEmails = map[string]bool{
 	"sriram.ssnit@gmail.com":           true,
 	"zach@directactioneverywhere.com":  true,
 	"priya@directactioneverywhere.com": true,
+	"cwbailey20042@gmail.com": true,
 }
 
 // TODO: Make this read from the database instead.
@@ -311,7 +312,16 @@ func (c MainController) EventSaveHandler(w http.ResponseWriter, req *http.Reques
 }
 
 func (c MainController) EventListHandler(w http.ResponseWriter, req *http.Request) {
-	events, err := model.GetEventsJSON(c.db)
+	err := req.ParseForm()
+	if err != nil {
+		panic(err)
+    }
+	// TODO Deal with multiple requests when submiting date range
+	dateStart := req.PostFormValue("event_date_start");
+	dateEnd := req.PostFormValue("event_date_end");
+	fmt.Println("dateStart:", dateStart, "dateEnd:", dateEnd);
+
+	events, err := model.GetEventsJSON(c.db, "", "")
 	if err != nil {
 		writeJSON(w, map[string]string{
 			"status":  "error",

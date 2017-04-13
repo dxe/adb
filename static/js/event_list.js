@@ -43,10 +43,10 @@ function eventListRequest() {
   $.ajax({
     url: "/event/list",
     method: "POST",
-    data: JSON.stringify({
+    data: {
       event_date_start: eventDateStart,
       event_date_end: eventDateEnd,
-    }),
+    },
     success: function(data) {
       var parsed = JSON.parse(data);
       if (parsed.status === "error") {

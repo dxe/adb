@@ -28,7 +28,7 @@ type Event struct {
 	Attendees []User
 }
 
-func GetEventsJSON(db *sqlx.DB) ([]EventJSON, error) {
+func GetEventsJSON(db *sqlx.DB, dateFrom string, dateTo string) ([]EventJSON, error) {
 	dbEvents, err := GetEvents(db, GetEventOptions{
 		OrderBy: "date DESC",
 	})
@@ -58,6 +58,8 @@ type GetEventOptions struct {
 	// NOTE: don't pass user input to OrderBy, cause that could
 	// cause a SQL injection.
 	OrderBy string
+	DateFrom string
+	DateTo string
 }
 
 func GetEvents(db *sqlx.DB, options GetEventOptions) ([]Event, error) {
