@@ -1,3 +1,4 @@
+/* global styles */
 body {
   padding-top: 70px;
 }
@@ -8,28 +9,26 @@ body {
         background-color: #575756;
 }
 
+
 a {
         color: lightgrey;
         text-decoration: none;
         font-weight: bold;
 }
-
 a:hover {
         color: white;
 }
-
 a.edit-link {
         color: black;
         text-decoration: none;
 }
-
 a.edit-link:hover {
         color: lightgrey;
         text-decoration: none;
 }
 
-
-#bodyWrapper {
+/* body wrappers */
+.body-wrapper {
         max-width: 430px;
         background-color: white;
         padding: 25px 40px 25px 40px; 
@@ -37,7 +36,7 @@ a.edit-link:hover {
         box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24),0 17px 50px 0 rgba(0,0,0,0.19);
 }
 
-#bodyWrapperWide {
+.body-wrapper-wide {
         max-width: 900px;
         background-color: white;
         padding: 25px 40px 25px 40px; 
@@ -45,52 +44,51 @@ a.edit-link:hover {
         box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24),0 17px 50px 0 rgba(0,0,0,0.19);
 }
 
-.bodyWrapperListEvents {
-        min-width: 525px;
+
+/* title */
+.title {
+    margin-left: -3px;
+}
+.title h1 {
+    font-weight: bold;
 }
 
+/* event_new */
 #attendee-rows {
         width: 100%;
 }
 
-table {
-    width: 100%;
-}
-
-th {
-    font-weight: bold;
-    text-align: left;
-}
-
-td {
-    font-weight: normal;
-}
-
-tr {
-    background-color: white;
-}
-
-input {
+.event-new-content input {
         width: 100%;
         margin-bottom: 2px;
 }
-
-select {
+.event-new-content select {
         width: 100%;
 }
 
-h1 {
+/* event_list */
+.event-list-content {
+        min-width: 525px;
+}
+
+/* adb table */
+
+.adb-table {
+    width: 100%;
+}
+.adb-table th {
     font-weight: bold;
+    text-align: left;
 }
-
-#title {
-    margin-left: -3px;
+.adb-table td {
+    font-weight: normal;
 }
-
-#event-list th {
+.adb-table tr {
+    background-color: white;
+}
+.adb-table th {
     padding-bottom: 10px;
 }
-
-#event-list td {
+.adb-table td {
     padding-bottom: 10px;
 }
