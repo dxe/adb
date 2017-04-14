@@ -12,8 +12,6 @@ function listEvents(events) {
     var attendeeString = '';
     for (var j = 0; j < event.attendees.length; j++) {
       attendeeString += '<li>' + event.attendees[j]; '</li>';
-      if (j !== event.attendees.length - 1) {
-      }
     }
 
     // Now, create the link.
@@ -82,10 +80,6 @@ function initDateRange() {
 
   var fromDate = year + '-' + month + '-01';
   $('#event-date-start').val(fromDate);
-
-  // Now, set event listeners
-  $('#event-date-start').on('change', eventListRequest);
-  $('#event-date-end').on('change', eventListRequest);
 }
 
 function initializeApp() {
