@@ -8,7 +8,6 @@ import (
     "io"
     "strings"
     "time"
-    "fmt"
     "github.com/jmoiron/sqlx"
 )
 
@@ -96,7 +95,8 @@ func getEvents(db *sqlx.DB, options GetEventOptions) ([]Event, error) {
         /* Only get events in date range if event id not provided */
         switch rangeType := checkValidDateRange(options.DateFrom, options.DateTo); rangeType {
         case -1:
-            //TODO throw error
+            //TODO Maybe handle this differently? Returning no events now
+            return make([]Event, 0), nil
         case 1:
             query += ` WHERE date >= ?`
             queryArgs = append(queryArgs, options.DateFrom)
@@ -155,14 +155,11 @@ func checkValidDateRange(dateFromStr string, dateToStr string) int {
     dateLayout := "2006-01-02"
     dateFrom, errFrom := time.Parse(dateLayout, dateFromStr)
     dateTo, errTo := time.Parse(dateLayout, dateToStr)
-    fmt.Println(dateFrom)
-    fmt.Println(dateTo)
     if (errFrom != nil) || (errTo != nil) {
         /* Invalid date string */
         return -1
     }
     if (dateFrom.After(dateTo)) {
-        fmt.Println("Invalid Date Range")
         return -1
     }
     return 3
