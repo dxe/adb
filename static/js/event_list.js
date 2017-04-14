@@ -11,9 +11,9 @@ function listEvents(events) {
     var event = events[i];
     var attendeeString = '';
     for (var j = 0; j < event.attendees.length; j++) {
-      attendeeString += event.attendees[j];
+      attendeeString += '<li>' + event.attendees[j]; '</li>';
       if (j !== event.attendees.length - 1) {
-        attendeeString +='<br/>';
+        attendeeString += '';
       }
     }
 
@@ -29,7 +29,7 @@ function listEvents(events) {
         '<td><b>' + event.event_name + '</b></td>' +
         '<td nowrap>' + event.event_type + '</td>' +
         '<td nowrap>' + event.attendees.length + '</td>' +
-        '<td>' + attendeeString + '</td>' +
+        '<td><ul class="attendee-list">' + attendeeString + '</ul></td>' +
         '</tr>';
     var d = document.getElementById('event-list-body');
     d.insertAdjacentHTML('beforeend', newRow);

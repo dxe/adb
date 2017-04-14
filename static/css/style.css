@@ -70,6 +70,13 @@ a.edit-link:hover {
 .event-list-content {
         min-width: 525px;
 }
+.event-filter {
+        margin-bottom: 5px;
+}
+.attendee-list {
+    padding-left: 15px;
+    list-style-position: outside;
+}
 
 /* adb table */
 

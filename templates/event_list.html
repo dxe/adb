@@ -6,7 +6,20 @@
     <h1>List events</h1>
     <br />
   </div>
-  <div>Events from <input id="event-date-start" type="date"> to <input id="event-date-end" type="date"></div>
+  <div>
+    <form class="form-inline">
+        <div class="input-group event-filter">
+          <div class="input-group-addon">Start date</div>
+          <input id="event-date-start" class="form-control" type="date">
+        </div>
+        <div class="input-group event-filter">
+          <div class="input-group-addon">End date</div>
+          <input id="event-date-end" class="form-control" type="date">
+        </div>
+        <button type="submit" class="btn btn-primary event-filter">Filter</button>
+    </form>
+    <br />
+  </div>
   <div class="main">
     <table id="event-list" class="adb-table table table-hover table-striped">
       <thead>
