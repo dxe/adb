@@ -112,7 +112,7 @@ var validEmails = map[string]bool{
 	"sriram.ssnit@gmail.com":           true,
 	"zach@directactioneverywhere.com":  true,
 	"priya@directactioneverywhere.com": true,
-	"cwbailey20042@gmail.com": true,
+	"cwbailey20042@gmail.com":			true,
 }
 
 // TODO: Make this read from the database instead.
@@ -321,7 +321,7 @@ func (c MainController) EventListHandler(w http.ResponseWriter, req *http.Reques
 	dateEnd := req.PostFormValue("event_date_end");
 	fmt.Println("dateStart:", dateStart, "dateEnd:", dateEnd);
 
-	events, err := model.GetEventsJSON(c.db, "", "")
+	events, err := model.GetEventsJSON(c.db, dateStart, dateEnd)
 	if err != nil {
 		writeJSON(w, map[string]string{
 			"status":  "error",

@@ -84,8 +84,9 @@ function initDateRange() {
   $('#event-date-start').val(fromDate);
 
   // Now, set event listeners
-  $('#event-date-start').on('change', eventListRequest);
-  $('#event-date-end').on('change', eventListRequest);
+  // $('#event-date-start').on('change', eventListRequest);
+  // $('#event-date-end').on('change', eventListRequest);
+  $('#event-date-filter').on('click', eventListRequest);
 }
 
 function initializeApp() {
