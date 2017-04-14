@@ -80,6 +80,11 @@ function initDateRange() {
 
   var fromDate = year + '-' + month + '-01';
   $('#event-date-start').val(fromDate);
+  
+  // set "to" date to today
+  var toDate = d.toISOString().slice(0, 10);
+  $('#event-date-end').val(toDate);
+
 }
 
 function initializeApp() {
