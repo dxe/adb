@@ -68,7 +68,7 @@ a.edit-link:hover {
 
 /* event_list */
 .event-list-content {
-        min-width: 525px;
+        min-width: 640px;
 }
 .event-filter {
         margin-bottom: 5px;
