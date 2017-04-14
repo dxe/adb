@@ -13,7 +13,6 @@ function listEvents(events) {
     for (var j = 0; j < event.attendees.length; j++) {
       attendeeString += '<li>' + event.attendees[j]; '</li>';
       if (j !== event.attendees.length - 1) {
-        attendeeString += '';
       }
     }
 
