@@ -124,12 +124,12 @@ func getEvents(db *sqlx.DB, options GetEventOptions) ([]Event, error) {
 	for i := range events {
 		var attendees []User
 		err = db.Select(&attendees, `SELECT
-        a.id, a.name, a.email, a.chapter_id, a.phone, a.location, a.facebook
-        FROM activists a
-        JOIN event_attendance et
-        ON a.id = et.activist_id
-        WHERE
-        et.event_id = ?`, events[i].ID)
+a.id, a.name, a.email, a.chapter_id, a.phone, a.location, a.facebook
+FROM activists a
+JOIN event_attendance et
+  ON a.id = et.activist_id
+WHERE
+  et.event_id = ?`, events[i].ID)
 		if err != nil {
 			return nil, err
 		}
@@ -229,10 +229,10 @@ type User struct {
 func GetUser(db *sqlx.DB, name string) (User, error) {
 	var user User
 	err := db.Get(&user, `SELECT
-    id, name, email, chapter_id, phone, location, facebook
-    FROM activists
-    WHERE
-    name = ?`, name)
+id, name, email, chapter_id, phone, location, facebook
+FROM activists
+WHERE
+  name = ?`, name)
 	if user.ID == 0 || err != nil {
 		return User{}, err
 	}
@@ -332,12 +332,12 @@ func updateEvent(db *sqlx.DB, event Event) (eventID int, err error) {
 		return 0, err
 	}
 	_, err = tx.NamedExec(`UPDATE events
-    SET
-    name = :name,
-    date = :date,
-    event_type = :event_type
-    WHERE
-    id = :id`, event)
+SET
+  name = :name,
+  date = :date,
+  event_type = :event_type
+WHERE
+  id = :id`, event)
 	if err != nil {
 		tx.Rollback()
 		return 0, err
@@ -357,7 +357,7 @@ func updateEvent(db *sqlx.DB, event Event) (eventID int, err error) {
 func insertEventAttendance(tx *sqlx.Tx, eventID int, attendees []User) error {
 	// First, delete all previous attendees for the event.
 	_, err := tx.Exec(`DELETE FROM event_attendance
-    WHERE event_id = ?`, eventID)
+WHERE event_id = ?`, eventID)
 	if err != nil {
 		return err
 	}
@@ -370,7 +370,7 @@ func insertEventAttendance(tx *sqlx.Tx, eventID int, attendees []User) error {
 		}
 		seen[u.ID] = true
 		_, err = tx.Exec(`INSERT INTO event_attendance (activist_id, event_id)
-        VALUES (?, ?)`, u.ID, eventID)
+VALUES (?, ?)`, u.ID, eventID)
 		if err != nil {
 			return err
 		}
