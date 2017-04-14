@@ -98,21 +98,24 @@ func apiAuthMiddleware(h http.Handler) http.Handler {
 }
 
 var validEmails = map[string]bool{
-	"samer@directactioneverywhere.com": true,
+	"crueltyfreetummy@gmail.com":       true,
+	"cwbailey20042@gmail.com":          true,
 	"jake@directactioneverywhere.com":  true,
 	"jakehobbs@gmail.com":              true,
-	"kowshik.sundararajan@gmail.com":   true,
-	"rydermeehan@gmail.com":            true,
 	"jeffdavidson53@gmail.com":         true,
-	"scott.r.paterson@gmail.com":       true,
-	"wayne@directactioneverywhere.com": true,
-	"nosefrog@gmail.com":               true,
-	"samer@dropbox.com":                true,
+	"kitty@directactioneverywhere.com": true,
+	"kowshik.sundararajan@gmail.com":   true,
+	"matt@directactioneverywhere.com":  true,
 	"matthew@dempsky.org":              true,
-	"sriram.ssnit@gmail.com":           true,
-	"zach@directactioneverywhere.com":  true,
+	"nosefrog@gmail.com":               true,
 	"priya@directactioneverywhere.com": true,
-	"cwbailey20042@gmail.com": true,
+	"rydermeehan@gmail.com":            true,
+	"samer@directactioneverywhere.com": true,
+	"samer@dropbox.com":                true,
+	"scott.r.paterson@gmail.com":       true,
+	"sriram.ssnit@gmail.com":           true,
+	"wayne@directactioneverywhere.com": true,
+	"zach@directactioneverywhere.com":  true,
 }
 
 // TODO: Make this read from the database instead.
@@ -315,11 +318,11 @@ func (c MainController) EventListHandler(w http.ResponseWriter, req *http.Reques
 	err := req.ParseForm()
 	if err != nil {
 		panic(err)
-    }
+	}
 	// TODO Deal with multiple requests when submiting date range
-	dateStart := req.PostFormValue("event_date_start");
-	dateEnd := req.PostFormValue("event_date_end");
-	fmt.Println("dateStart:", dateStart, "dateEnd:", dateEnd);
+	dateStart := req.PostFormValue("event_date_start")
+	dateEnd := req.PostFormValue("event_date_end")
+	fmt.Println("dateStart:", dateStart, "dateEnd:", dateEnd)
 
 	events, err := model.GetEventsJSON(c.db, "", "")
 	if err != nil {
