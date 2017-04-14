@@ -1,14 +1,16 @@
 /* global styles */
 body {
-  padding-top: 70px;
-}
-
-body {
+        padding-top: 70px;
         font-family: "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
         font-weight: medium;
         background-color: #575756;
 }
 
+@media (max-width: 580px) {
+    body {
+         padding-top: 30px;
+    }
+}
 
 a {
         color: lightgrey;
