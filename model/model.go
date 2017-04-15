@@ -28,11 +28,12 @@ type Event struct {
 	Attendees []User
 }
 
-func GetEventsJSON(db *sqlx.DB, dateFrom string, dateTo string) ([]EventJSON, error) {
+func GetEventsJSON(db *sqlx.DB, dateFrom string, dateTo string, eventType string) ([]EventJSON, error) {
 	dbEvents, err := GetEvents(db, GetEventOptions{
-		OrderBy:  "date DESC",
-		DateFrom: dateFrom,
-		DateTo:   dateTo,
+		OrderBy:   "date DESC",
+		DateFrom:  dateFrom,
+		DateTo:    dateTo,
+		EventType: eventType,
 	})
 	if err != nil {
 		return nil, err
@@ -59,9 +60,10 @@ type GetEventOptions struct {
 	EventID int
 	// NOTE: don't pass user input to OrderBy, cause that could
 	// cause a SQL injection.
-	OrderBy  string
-	DateFrom string
-	DateTo   string
+	OrderBy   string
+	DateFrom  string
+	DateTo    string
+	EventType string
 }
 
 func GetEvents(db *sqlx.DB, options GetEventOptions) ([]Event, error) {
@@ -109,6 +111,10 @@ func getEvents(db *sqlx.DB, options GetEventOptions) ([]Event, error) {
 			queryArgs = append(queryArgs, options.DateFrom, options.DateTo)
 		}
 	}
+
+	query += ` AND event_type LIKE ?`
+	queryArgs = append(queryArgs, options.EventType)
+
 	if options.OrderBy != "" {
 		// Potentially sketchy sql injection...
 		query += ` ORDER BY ` + options.OrderBy

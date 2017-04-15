@@ -8,15 +8,20 @@
   </div>
   <div>
     <form class="form-inline" onsubmit="eventListRequest(); return false">
-        <div class="input-group event-filter">
-          <div class="input-group-addon">Start date</div>
-          <input id="event-date-start" class="form-control" type="date">
-        </div>
-        <div class="input-group event-filter">
-          <div class="input-group-addon">End date</div>
-          <input id="event-date-end" class="form-control" type="date">
-        </div>
-        <button type="submit" id="event-date-filter" class="btn btn-primary event-filter">Filter</button>
+      <label for="event-date-start">From:</label>
+      <input id="event-date-start" class="form-control" type="date">
+      <label for="event-date-end">To:</label>
+      <input id="event-date-end" class="form-control" type="date">
+      <label for="event-type">Type:</label>
+      <select id="event-type" class="form-control">
+        <option value="%">All</option>
+        <option value="Working Group">Working Group</option>
+        <option value="Community">Community</option>
+        <option value="Protest">Protest</option>
+        <option value="Outreach">Outreach</option>
+        <option value="Key Event">Key Event</option>
+      </select>
+      <button type="submit" id="event-date-filter" class="btn btn-primary">Filter</button>
     </form>
     <br />
   </div>

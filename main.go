@@ -322,8 +322,9 @@ func (c MainController) EventListHandler(w http.ResponseWriter, req *http.Reques
 	// TODO Deal with multiple requests when submiting date range
 	dateStart := req.PostFormValue("event_date_start")
 	dateEnd := req.PostFormValue("event_date_end")
+	eventType := req.PostFormValue("event_type")
 
-	events, err := model.GetEventsJSON(c.db, dateStart, dateEnd)
+	events, err := model.GetEventsJSON(c.db, dateStart, dateEnd, eventType)
 	if err != nil {
 		writeJSON(w, map[string]string{
 			"status":  "error",

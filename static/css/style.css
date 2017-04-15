@@ -72,16 +72,12 @@ a.edit-link:hover {
 .event-list-content {
         min-width: 640px;
 }
-.event-filter {
-        margin-bottom: 5px;
-}
 .attendee-list {
     padding-left: 15px;
     list-style-position: outside;
 }
 
 /* adb table */
-
 .adb-table {
     width: 100%;
 }

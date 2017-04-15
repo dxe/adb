@@ -36,6 +36,7 @@ function listEvents(events) {
 function eventListRequest() {
   var eventDateStart = $('#event-date-start').val();
   var eventDateEnd = $('#event-date-end').val();
+  var eventType = $('#event-type').val();
 
   $.ajax({
     url: "/event/list",
@@ -43,6 +44,7 @@ function eventListRequest() {
     data: {
       event_date_start: eventDateStart,
       event_date_end: eventDateEnd,
+      event_type: eventType,
     },
     success: function(data) {
       var parsed = JSON.parse(data);
