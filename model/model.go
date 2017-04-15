@@ -112,8 +112,10 @@ func getEvents(db *sqlx.DB, options GetEventOptions) ([]Event, error) {
 		}
 	}
 
-	query += ` AND event_type LIKE ?`
-	queryArgs = append(queryArgs, options.EventType)
+	if (options.EventType != "") {
+		query += ` AND event_type LIKE ?`
+		queryArgs = append(queryArgs, options.EventType)
+	}
 
 	if options.OrderBy != "" {
 		// Potentially sketchy sql injection...
