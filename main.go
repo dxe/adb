@@ -152,6 +152,7 @@ func router() *mux.Router {
 	router.Handle("/update_event/{event_id:[0-9]+}", alice.New(authMiddleware).ThenFunc(main.UpdateEventHandler))
 	router.Handle("/list_events", alice.New(authMiddleware).ThenFunc(main.ListEventsHandler))
 	router.Handle("/transposed_events_data", alice.New(authMiddleware).ThenFunc(main.TransposedEventsDataHandler))
+	router.Handle("/list_activists", alice.New(authMiddleware).ThenFunc(main.ListActivistsHandler))
 
 	// Unauthed API
 	router.HandleFunc("/tokensignin", main.TokenSignInHandler)
@@ -220,6 +221,10 @@ func (c MainController) LoginHandler(w http.ResponseWriter, req *http.Request) {
 
 func (c MainController) ListEventsHandler(w http.ResponseWriter, req *http.Request) {
 	renderTemplate(w, "event_list", nil)
+}
+
+func (c MainController) ListActivistsHandler(w http.ResponseWriter, req *http.Request) {
+	renderTemplate(w, "activist_list", nil)
 }
 
 var templates = template.Must(template.New("").Funcs(
