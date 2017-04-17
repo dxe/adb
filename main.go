@@ -46,8 +46,8 @@ func flashMesssageError(w http.ResponseWriter, message string) {
 
 var sessionStore = sessions.NewCookieStore([]byte("replace-with-real-auth-secret"))
 
-func isAuthed(req *http.Request) bool {
-	authSession, err := sessionStore.Get(req, "auth-session")
+func isAuthed(r *http.Request) bool {
+	authSession, err := sessionStore.Get(r, "auth-session")
 	if err != nil {
 		panic(err)
 	}
@@ -56,8 +56,8 @@ func isAuthed(req *http.Request) bool {
 	return ok && authed
 }
 
-func setAuthSession(w http.ResponseWriter, req *http.Request, email string) error {
-	authSession, err := sessionStore.Get(req, "auth-session")
+func setAuthSession(w http.ResponseWriter, r *http.Request, email string) error {
+	authSession, err := sessionStore.Get(r, "auth-session")
 	if err != nil {
 		return err
 	}
@@ -72,28 +72,28 @@ func setAuthSession(w http.ResponseWriter, req *http.Request, email string) erro
 	}
 	authSession.Values["authed"] = true
 	authSession.Values["email"] = email
-	return sessionStore.Save(req, w, authSession)
+	return sessionStore.Save(r, w, authSession)
 }
 
 func authMiddleware(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		if !isAuthed(req) {
-			http.Redirect(w, req, "/login", http.StatusFound)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !isAuthed(r) {
+			http.Redirect(w, r, "/login", http.StatusFound)
 			return
 		}
 		// Request is authed at this point.
-		h.ServeHTTP(w, req)
+		h.ServeHTTP(w, r)
 	})
 }
 
 func apiAuthMiddleware(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		if !isAuthed(req) {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !isAuthed(r) {
 			http.Error(w, http.StatusText(400), 400)
 			return
 		}
 		// Request is authed at this point.
-		h.ServeHTTP(w, req)
+		h.ServeHTTP(w, r)
 	})
 }
 
@@ -161,6 +161,7 @@ func router() *mux.Router {
 	router.Handle("/activist_names/get", alice.New(apiAuthMiddleware).ThenFunc(main.AutocompleteActivistsHandler))
 	router.Handle("/event/save", alice.New(apiAuthMiddleware).ThenFunc(main.EventSaveHandler))
 	router.Handle("/event/list", alice.New(apiAuthMiddleware).ThenFunc(main.EventListHandler))
+	router.Handle("/event/delete", alice.New(apiAuthMiddleware).ThenFunc(main.EventDeleteHandler))
 
 	if isProd {
 		router.PathPrefix("/static").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
@@ -174,12 +175,12 @@ type MainController struct {
 	db *sqlx.DB
 }
 
-func (c MainController) TokenSignInHandler(w http.ResponseWriter, req *http.Request) {
-	if err := req.ParseForm(); err != nil {
+func (c MainController) TokenSignInHandler(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
 		panic(err)
 	}
 
-	unverifiedIdToken := req.PostFormValue("idtoken")
+	unverifiedIdToken := r.PostFormValue("idtoken")
 
 	tokenCtx := context.Background()
 
@@ -209,21 +210,21 @@ func (c MainController) TokenSignInHandler(w http.ResponseWriter, req *http.Requ
 		return
 	}
 	// Email is valid
-	setAuthSession(w, req, claims.Email)
+	setAuthSession(w, r, claims.Email)
 	writeJSON(w, map[string]interface{}{
 		"redirect": true,
 	})
 }
 
-func (c MainController) LoginHandler(w http.ResponseWriter, req *http.Request) {
+func (c MainController) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "login", nil)
 }
 
-func (c MainController) ListEventsHandler(w http.ResponseWriter, req *http.Request) {
+func (c MainController) ListEventsHandler(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "event_list", nil)
 }
 
-func (c MainController) ListActivistsHandler(w http.ResponseWriter, req *http.Request) {
+func (c MainController) ListActivistsHandler(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "activist_list", nil)
 }
 
@@ -251,8 +252,8 @@ func writeJSON(w io.Writer, v interface{}) {
 	}
 }
 
-func (c MainController) UpdateEventHandler(w http.ResponseWriter, req *http.Request) {
-	vars := mux.Vars(req)
+func (c MainController) UpdateEventHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
 	var event model.Event
 	if eventIDStr, ok := vars["event_id"]; ok {
 		eventID, err := strconv.Atoi(eventIDStr)
@@ -270,7 +271,7 @@ func (c MainController) UpdateEventHandler(w http.ResponseWriter, req *http.Requ
 	})
 }
 
-func (c MainController) TransposedEventsDataHandler(w http.ResponseWriter, req *http.Request) {
+func (c MainController) TransposedEventsDataHandler(w http.ResponseWriter, r *http.Request) {
 	events, err := model.GetEvents(c.db, model.GetEventOptions{})
 	if err != nil {
 		panic(err)
@@ -280,15 +281,15 @@ func (c MainController) TransposedEventsDataHandler(w http.ResponseWriter, req *
 	})
 }
 
-func (c MainController) AutocompleteActivistsHandler(w http.ResponseWriter, req *http.Request) {
+func (c MainController) AutocompleteActivistsHandler(w http.ResponseWriter, r *http.Request) {
 	names := model.GetAutocompleteNames(c.db)
 	writeJSON(w, map[string][]string{
 		"activist_names": names,
 	})
 }
 
-func (c MainController) EventSaveHandler(w http.ResponseWriter, req *http.Request) {
-	event, err := model.CleanEventData(c.db, req.Body)
+func (c MainController) EventSaveHandler(w http.ResponseWriter, r *http.Request) {
+	event, err := model.CleanEventData(c.db, r.Body)
 	if err != nil {
 		writeJSON(w, map[string]string{
 			"status":  "error",
@@ -319,15 +320,14 @@ func (c MainController) EventSaveHandler(w http.ResponseWriter, req *http.Reques
 	writeJSON(w, out)
 }
 
-func (c MainController) EventListHandler(w http.ResponseWriter, req *http.Request) {
-	err := req.ParseForm()
+func (c MainController) EventListHandler(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
 	if err != nil {
 		panic(err)
 	}
-	// TODO Deal with multiple requests when submiting date range
-	dateStart := req.PostFormValue("event_date_start")
-	dateEnd := req.PostFormValue("event_date_end")
-	eventType := req.PostFormValue("event_type")
+	dateStart := r.PostFormValue("event_date_start")
+	dateEnd := r.PostFormValue("event_date_end")
+	eventType := r.PostFormValue("event_type")
 
 	events, err := model.GetEventsJSON(c.db, dateStart, dateEnd, eventType)
 	if err != nil {
@@ -339,6 +339,29 @@ func (c MainController) EventListHandler(w http.ResponseWriter, req *http.Reques
 	}
 
 	writeJSON(w, events)
+}
+
+func (c MainController) EventDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		panic(err)
+	}
+	eventIDStr := r.PostFormValue("event_id")
+	eventID, err := strconv.Atoi(eventIDStr)
+	if err != nil {
+		panic(err)
+	}
+
+	if err := model.DeleteEvent(c.db, eventID); err != nil {
+		writeJSON(w, map[string]string{
+			"status":  "error",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	writeJSON(w, map[string]string{
+		"status": "success",
+	})
 }
 
 func main() {

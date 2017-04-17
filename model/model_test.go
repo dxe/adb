@@ -227,3 +227,70 @@ func TestInsertUpdateEvent_noDuplicateAttendees(t *testing.T) {
 		db.Select(&attendees, "select activist_id from event_attendance where event_id = 1"))
 	assert.Equal(t, len(attendees), 1)
 }
+
+func TestDeleteEvents(t *testing.T) {
+	db := newTestDB()
+	defer db.Close()
+
+	// Set up two events
+	u1, err := GetOrCreateUser(db, "Hello")
+	assert.NoError(t, err)
+	u2, err := GetOrCreateUser(db, "Hi")
+	assert.NoError(t, err)
+
+	d1, err := time.Parse("2006-01-02", "2017-01-15")
+	assert.NoError(t, err)
+	d2, err := time.Parse("2006-01-02", "2017-01-16")
+	assert.NoError(t, err)
+	var wantEvents = []Event{{
+		ID:        1,
+		EventName: "event one",
+		EventDate: d1,
+		EventType: "Working Group",
+		Attendees: []User{u1},
+	}, {
+		ID:        2,
+		EventName: "event two",
+		EventDate: d2,
+		EventType: "Protest",
+		Attendees: []User{u1, u2},
+	}}
+
+	for _, e := range wantEvents {
+		_, err := InsertUpdateEvent(db, Event{
+			EventName: e.EventName,
+			EventDate: e.EventDate,
+			EventType: e.EventType,
+			Attendees: e.Attendees,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// Delete the first event
+	err = DeleteEvent(db, 1)
+	assert.NoError(t, err)
+
+	gotEvents, err := GetEvents(db, GetEventOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Len(t, gotEvents, 1)
+
+	// Make sure we got the 2nd event back
+	gotEvent := gotEvents[0]
+	wantEvent := wantEvents[1]
+
+	assert.True(t, wantEvent.EventDate.Equal(gotEvent.EventDate))
+	gotEvent.EventDate = time.Time{}
+	wantEvent.EventDate = time.Time{}
+
+	// Make sure that no attendance exists for the first event.
+	var attendees []int
+	assert.NoError(t,
+		db.Select(&attendees, "select activist_id from event_attendance where event_id = 1"))
+
+	assert.Len(t, attendees, 0)
+}

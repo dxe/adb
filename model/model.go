@@ -112,7 +112,7 @@ func getEvents(db *sqlx.DB, options GetEventOptions) ([]Event, error) {
 		}
 	}
 
-	if (options.EventType != "") {
+	if options.EventType != "" {
 		query += ` AND event_type LIKE ?`
 		queryArgs = append(queryArgs, options.EventType)
 	}
@@ -144,6 +144,33 @@ WHERE
 		events[i].Attendees = attendees
 	}
 	return events, nil
+}
+
+func DeleteEvent(db *sqlx.DB, eventID int) error {
+	tx, err := db.Beginx()
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec(`DELETE FROM event_attendance
+WHERE event_id = ?`, eventID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	_, err = tx.Exec(`DELETE FROM events
+WHERE id = ?`, eventID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return nil
 }
 
 /**
