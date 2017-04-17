@@ -87,34 +87,30 @@ func GetEvent(db *sqlx.DB, options GetEventOptions) (Event, error) {
 
 func getEvents(db *sqlx.DB, options GetEventOptions) ([]Event, error) {
 	var queryArgs []interface{}
-	query := `SELECT id, name, date, event_type FROM events`
+	query := `SELECT id, name, date, event_type FROM events `
 
+	// Items in whereClause are added to the query in order, separated by ' AND '.
+	var whereClause []string
 	if options.EventID != 0 {
-		query += ` WHERE id = ?`
+		whereClause = append(whereClause, "id = ?")
 		queryArgs = append(queryArgs, options.EventID)
 	}
-
-	if (options.EventID == 0) && ((options.DateFrom != "") || (options.DateTo != "")) {
-		/* Only get events in date range if event id not provided */
-		switch rangeType := checkValidDateRange(options.DateFrom, options.DateTo); rangeType {
-		case -1:
-			//TODO Maybe handle this differently? Returning no events now
-			return make([]Event, 0), nil
-		case 1:
-			query += ` WHERE date >= ?`
-			queryArgs = append(queryArgs, options.DateFrom)
-		case 2:
-			query += ` WHERE date <= ?`
-			queryArgs = append(queryArgs, options.DateTo)
-		case 3:
-			query += ` WHERE date >= ? AND date <= ?`
-			queryArgs = append(queryArgs, options.DateFrom, options.DateTo)
-		}
+	if options.DateFrom != "" {
+		whereClause = append(whereClause, "date >= ?")
+		queryArgs = append(queryArgs, options.DateFrom)
+	}
+	if options.DateTo != "" {
+		whereClause = append(whereClause, "date <= ?")
+		queryArgs = append(queryArgs, options.DateTo)
+	}
+	if options.EventType != "" {
+		whereClause = append(whereClause, "event_type = ?")
+		queryArgs = append(queryArgs, options.EventType)
 	}
 
-	if options.EventType != "" {
-		query += ` AND event_type LIKE ?`
-		queryArgs = append(queryArgs, options.EventType)
+	// Add the where clauses to the query.
+	if len(whereClause) != 0 {
+		query += ` WHERE ` + strings.Join(whereClause, " AND ")
 	}
 
 	if options.OrderBy != "" {
