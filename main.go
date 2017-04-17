@@ -162,6 +162,7 @@ func router() *mux.Router {
 	router.Handle("/event/save", alice.New(apiAuthMiddleware).ThenFunc(main.EventSaveHandler))
 	router.Handle("/event/list", alice.New(apiAuthMiddleware).ThenFunc(main.EventListHandler))
 	router.Handle("/event/delete", alice.New(apiAuthMiddleware).ThenFunc(main.EventDeleteHandler))
+	router.Handle("/activist/list", alice.New(apiAuthMiddleware).ThenFunc(main.ActivistListHandler))
 
 	if isProd {
 		router.PathPrefix("/static").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
@@ -362,6 +363,15 @@ func (c MainController) EventDeleteHandler(w http.ResponseWriter, r *http.Reques
 	writeJSON(w, map[string]string{
 		"status": "success",
 	})
+}
+
+func (c MainController) ActivistListHandler(w http.ResponseWriter, r *http.Request) {
+	activists, err := model.GetUsersJSON(c.db)
+	if err != nil {
+		panic(err)
+	}
+
+	writeJSON(w, activists)
 }
 
 func main() {

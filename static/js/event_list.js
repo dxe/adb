@@ -39,6 +39,8 @@ function listEvents(events) {
   // First, clear body.
   $('#event-list-body').html('');
 
+  var d = document.getElementById('event-list-body');
+
   for (var i = 0; i < events.length; i++) {
     var event = events[i];
     var attendeeString = '';
@@ -63,7 +65,6 @@ function listEvents(events) {
         '<td nowrap>' + event.attendees.length + '</td>' +
         '<td><ul class="attendee-list">' + attendeeString + '</ul></td>' +
         '</tr>';
-    var d = document.getElementById('event-list-body');
     d.insertAdjacentHTML('beforeend', newRow);
   }
 }
@@ -117,7 +118,7 @@ function initDateRange() {
 
   var fromDate = year + '-' + month + '-01';
   $('#event-date-start').val(fromDate);
-  
+
   // set "to" date to today
   var toDate = d.toISOString().slice(0, 10);
   $('#event-date-end').val(toDate);

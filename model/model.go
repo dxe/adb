@@ -257,18 +257,70 @@ type User struct {
 	Facebook  string         `db:"facebook"`
 }
 
+type UserJSON struct {
+	ID    int    `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	// NOTE: ChapterID is currently a pain in the butt...
+	ChapterID int    `json:"chapter_id"`
+	Phone     string `json:"phone"`
+	Location  string `json:"location"`
+	Facebook  string `json:"facebook"`
+}
+
+func GetUsersJSON(db *sqlx.DB) ([]UserJSON, error) {
+	var usersJSON []UserJSON
+	users, err := GetUsers(db)
+	if err != nil {
+		return nil, err
+	}
+	for _, u := range users {
+		usersJSON = append(usersJSON, UserJSON{
+			ID:        u.ID,
+			Name:      u.Name,
+			Email:     u.Email,
+			ChapterID: int(u.ChapterID.Int64),
+			Phone:     u.Phone,
+			Location:  u.Location.String,
+			Facebook:  u.Facebook,
+		})
+	}
+	return usersJSON, nil
+}
+
+func GetUsers(db *sqlx.DB) ([]User, error) {
+	return getUsers(db, "")
+}
+
 func GetUser(db *sqlx.DB, name string) (User, error) {
-	var user User
-	err := db.Get(&user, `SELECT
-id, name, email, chapter_id, phone, location, facebook
-FROM activists
-WHERE
-  name = ?`, name)
-	if user.ID == 0 || err != nil {
+	users, err := getUsers(db, name)
+	if err != nil {
 		return User{}, err
+	} else if len(users) == 0 {
+		return User{}, errors.New("Could not find any users")
+	} else if len(users) > 1 {
+		return User{}, errors.New("Found too many users")
+	}
+	return users[0], nil
+}
+
+func getUsers(db *sqlx.DB, name string) ([]User, error) {
+	var queryArgs []interface{}
+	query := `SELECT
+id, name, email, chapter_id, phone, location, facebook
+FROM activists `
+
+	if name != "" {
+		query += "WHERE name = ?"
+		queryArgs = append(queryArgs, name)
 	}
 
-	return user, nil
+	var users []User
+	if err := db.Select(&users, query, queryArgs...); err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }
 
 func GetOrCreateUser(db *sqlx.DB, name string) (User, error) {
