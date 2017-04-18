@@ -1,3 +1,16 @@
+// DIRTY represents whether the form has been modified before the user
+// has saved. It is set to false when the user saves.
+var DIRTY = false;
+
+window.addEventListener('beforeunload', function(e) {
+  if (!DIRTY) {
+    return;
+  }
+  var message = "You have unsaved data.";
+  e.returnValue = message;
+  return message;
+});
+
 var ACTIVIST_NAMES = [];
 
 function updateAutocompleteNames() {
@@ -28,6 +41,10 @@ function updateAwesomeplete() {
 function initializeApp() {
   addRows(10);
   updateAutocompleteNames();
+  // If any form input/selection changes, mark the page as dirty.
+  $('#eventForm').change(function(e) {
+    DIRTY = true;
+  });
 }
 
 // creates new event in ADB
@@ -84,6 +101,9 @@ function newEvent(event) {
         return;
       }
       // status === "success"
+      // Saved successfully, mark the page as clean.
+      DIRTY = false;
+
       if (parsed.redirect) {
         setFlashMessageSuccessCookie("Saved!");
         window.location = parsed.redirect;
