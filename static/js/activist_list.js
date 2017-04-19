@@ -10,9 +10,17 @@ function listActivists(activists) {
 
     var modal = '<div class="modal fade" id= ' + modalID + ' tabindex="-1" role="dialog">' +
                 '<div class="modal-dialog" role="document"><div class="modal-content"><div class="modal-header">' +
-                '<h2 class="modal-title">' + activist.name + '</h5>' +
-                '<button type="button" class="close" data-dismiss="modal" aria-label="Close"></button></div>' +
-                '<div class="modal-body"><b>Email: </b>' + activist.email + '<br /><b>Chapter: </b>' + activist.chapter_id + '<br /><b>Phone: </b>' + activist.phone + '<br /><b>Location: </b>' + activist.location + '<br /><b>Facebook: </b>' + activist.facebook + ' </div>' +
+                '<h2 class="modal-title">' + activist.name + '</h5></div>' +
+                '<div class="modal-body">' +
+                  '<label for="email">Email: </label><input class="form-control" type="text" value="'+ activist.email + '" id="email"><br />' +
+                  '<label for="chapter">Chapter: </label><input class="form-control" type="text" value="'+ activist.chapter_id + '" id="chapter"><br />' + 
+                  '<label for="phone">Phone: </label><input class="form-control" type="text" value="'+ activist.phone + '" id="phone"><br />' +
+                  '<label for="location">Location: </label><input class="form-control" type="text" value="'+ activist.location + '" id="location"><br />' +
+                  '<label for="facebook">Facebook: </label><input class="form-control" type="text" value="'+ activist.facebook + '" id="facebook"><br />' +
+                  '<label for="core">Core/Staff:&nbsp;</label><input class="form-check-input" type="checkbox" id="core"><br />' +
+                  '<label for="exclude">Exclude from Leaderboard:&nbsp;</label><input class="form-check-input" type="checkbox" id="exclude"><br />' +
+                  '<label for="pledge">Liberation Pledge:&nbsp;</label><input class="form-check-input" type="checkbox" id="pledge"><br />' +
+                  '<label for="globalteam">Global Team Member:&nbsp;</label><input class="form-check-input" type="checkbox" id="globalteam">' +
                 '<div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button><button type="button" class="btn btn-primary">Save changes</button>' +
                 '</div></div></div></div>'
 
@@ -21,6 +29,9 @@ function listActivists(activists) {
         '<td>' + activist.name + '</td>' +
         '<td>' + activist.email + '</td>' +
         '<td>' + activist.phone + '</td>' +
+        '<td>' + 'First Event' + '</td>' +
+        '<td>' + 'Last Event' + '</td>' +
+        '<td>' + 'Status' + '</td>' +
         '</tr>';
     d.insertAdjacentHTML('beforeend', newRow);
     m.insertAdjacentHTML('beforeend', modal);
