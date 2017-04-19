@@ -284,7 +284,12 @@ func (c MainController) TransposedEventsDataHandler(w http.ResponseWriter, r *ht
 }
 
 func (c MainController) TransposedEventsDataJsonHandler(w http.ResponseWriter, r *http.Request) {
-    events, err := model.GetEventsJSON(c.db, "", "", "")
+    events, err := model.GetEventsJSON(c.db, model.GetEventOptions{
+        OrderBy:    "date ASC",
+        DateFrom:   "",
+        DateTo:     "",
+        EventType:  "",
+    })
     if err != nil {
         panic(err)
     }
@@ -336,11 +341,18 @@ func (c MainController) EventListHandler(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		panic(err)
 	}
+
 	dateStart := r.PostFormValue("event_date_start")
 	dateEnd := r.PostFormValue("event_date_end")
 	eventType := r.PostFormValue("event_type")
 
-	events, err := model.GetEventsJSON(c.db, dateStart, dateEnd, eventType)
+	events, err := model.GetEventsJSON(c.db, model.GetEventOptions{
+        OrderBy:    "date DESC",
+        DateFrom:   dateStart,
+        DateTo:     dateEnd,
+        EventType:  eventType,
+    })
+
 	if err != nil {
 		writeJSON(w, map[string]string{
 			"status":  "error",

@@ -28,13 +28,9 @@ type Event struct {
 	Attendees []User
 }
 
-func GetEventsJSON(db *sqlx.DB, dateFrom string, dateTo string, eventType string) ([]EventJSON, error) {
-	dbEvents, err := GetEvents(db, GetEventOptions{
-		OrderBy:   "date DESC",
-		DateFrom:  dateFrom,
-		DateTo:    dateTo,
-		EventType: eventType,
-	})
+func GetEventsJSON(db *sqlx.DB, options GetEventOptions) ([]EventJSON, error) {
+	dbEvents, err := GetEvents(db, options)
+
 	if err != nil {
 		return nil, err
 	}
