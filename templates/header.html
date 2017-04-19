@@ -32,10 +32,10 @@
         </div>
         <div id="navbar" class="collapse navbar-collapse">
           <ul class="nav navbar-nav">
-            <li><a href="/">New Event</a></li>
-            <li><a href="/list_events">Events</a></li>
-            <li><a href="/list_activists">Activists</a></li>
-            <li><a href="/leaderboard">Leaderboard</a></li>
+            <li class="{{if (eq .PageName "NewEvent")}}active{{end}}"><a href="/">New Event</a></li>
+            <li class="{{if (eq .PageName "EventList")}}active{{end}}"><a href="/list_events">Events</a></li>
+            <li class="{{if (eq .PageName "ActivistList")}}active{{end}}"><a href="/list_activists">Activists</a></li>
+            <li class="{{if (eq .PageName "Leaderboard")}}active{{end}}"><a href="/leaderboard">Leaderboard</a></li>
           </ul>
         </div><!--/.nav-collapse -->
       </div>

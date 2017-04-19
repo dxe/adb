@@ -220,19 +220,19 @@ func (c MainController) TokenSignInHandler(w http.ResponseWriter, r *http.Reques
 }
 
 func (c MainController) LoginHandler(w http.ResponseWriter, r *http.Request) {
-	renderTemplate(w, "login", nil)
+	renderPage(w, "login", PageData{PageName: "Login"})
 }
 
 func (c MainController) ListEventsHandler(w http.ResponseWriter, r *http.Request) {
-	renderTemplate(w, "event_list", nil)
+	renderPage(w, "event_list", PageData{PageName: "EventList"})
 }
 
 func (c MainController) ListActivistsHandler(w http.ResponseWriter, r *http.Request) {
-	renderTemplate(w, "activist_list", nil)
+	renderPage(w, "activist_list", PageData{PageName: "ActivistList"})
 }
 
 func (c MainController) LeaderboardHandler(w http.ResponseWriter, r *http.Request) {
-	renderTemplate(w, "leaderboard", nil)
+	renderPage(w, "leaderboard", PageData{PageName: "Leaderboard"})
 }
 
 var templates = template.Must(template.New("").Funcs(
@@ -245,6 +245,19 @@ var templates = template.Must(template.New("").Funcs(
 		},
 	}).ParseGlob("templates/*.html"))
 
+type PageData struct {
+	PageName string
+	Data     interface{}
+}
+
+// Render a page. All templates that load a header expect a PageData
+// object.
+func renderPage(w io.Writer, name string, pageData PageData) {
+	renderTemplate(w, name, pageData)
+}
+
+// Generic function to render a template. Most of the time, you want
+// to use `renderPage` instead.
 func renderTemplate(w io.Writer, name string, data interface{}) {
 	if err := templates.ExecuteTemplate(w, name+".html", data); err != nil {
 		panic(err)
@@ -273,8 +286,11 @@ func (c MainController) UpdateEventHandler(w http.ResponseWriter, r *http.Reques
 		}
 	}
 
-	renderTemplate(w, "event_new", map[string]interface{}{
-		"Event": event,
+	renderPage(w, "event_new", PageData{
+		PageName: "NewEvent",
+		Data: map[string]interface{}{
+			"Event": event,
+		},
 	})
 }
 
