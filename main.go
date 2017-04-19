@@ -151,7 +151,6 @@ func router() *mux.Router {
 	router.Handle("/", alice.New(authMiddleware).ThenFunc(main.UpdateEventHandler))
 	router.Handle("/update_event/{event_id:[0-9]+}", alice.New(authMiddleware).ThenFunc(main.UpdateEventHandler))
 	router.Handle("/list_events", alice.New(authMiddleware).ThenFunc(main.ListEventsHandler))
-	router.Handle("/transposed_events_data", alice.New(authMiddleware).ThenFunc(main.TransposedEventsDataHandler))
 	router.Handle("/list_activists", alice.New(authMiddleware).ThenFunc(main.ListActivistsHandler))
 	router.Handle("/leaderboard", alice.New(authMiddleware).ThenFunc(main.LeaderboardHandler))
 
@@ -276,16 +275,6 @@ func (c MainController) UpdateEventHandler(w http.ResponseWriter, r *http.Reques
 
 	renderTemplate(w, "event_new", map[string]interface{}{
 		"Event": event,
-	})
-}
-
-func (c MainController) TransposedEventsDataHandler(w http.ResponseWriter, r *http.Request) {
-	events, err := model.GetEvents(c.db, model.GetEventOptions{})
-	if err != nil {
-		panic(err)
-	}
-	renderTemplate(w, "transposed_events_data", map[string]interface{}{
-		"Events": events,
 	})
 }
 
