@@ -156,6 +156,7 @@ func router() *mux.Router {
 
 	// Unauthed API
 	router.HandleFunc("/tokensignin", main.TokenSignInHandler)
+    router.Handle("/transposed_events_data_json", http.HandlerFunc(main.TransposedEventsDataJsonHandler))
 
 	// Authed API
 	router.Handle("/activist_names/get", alice.New(apiAuthMiddleware).ThenFunc(main.AutocompleteActivistsHandler))
@@ -280,6 +281,15 @@ func (c MainController) TransposedEventsDataHandler(w http.ResponseWriter, r *ht
 	renderTemplate(w, "transposed_events_data", map[string]interface{}{
 		"Events": events,
 	})
+}
+
+func (c MainController) TransposedEventsDataJsonHandler(w http.ResponseWriter, r *http.Request) {
+    events, err := model.GetEventsJSON(c.db, "", "", "")
+    if err != nil {
+        panic(err)
+    }
+
+    writeJSON(w, events)
 }
 
 func (c MainController) AutocompleteActivistsHandler(w http.ResponseWriter, r *http.Request) {
