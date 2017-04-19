@@ -56,7 +56,7 @@ function listEvents(events) {
     // output to new row in table to display
     var newRow = '<tr id="' + rowID + '">' +
         '<td>' +
-          '<a class="edit-link" href="' + updateLink + '"><button class="btn btn-default glyphicon glyphicon-pencil"></button></a><br/><br/>' +
+        '<a class="edit-link" href="' + updateLink + '"><button class="btn btn-default glyphicon glyphicon-pencil"></button></a><br/><br/>' +
         '<div class="dropdown"><button class="btn btn-default dropdown-toggle glyphicon glyphicon-option-horizontal" data-toggle="dropdown"></button><ul class="dropdown-menu"><li><a href="javascript:confirmDeleteEvent(' + event.event_id + ')">Delete event</a></li></ul></div>' +
         '</td>' +
         '<td nowrap>' + event.event_date + '</td>' +

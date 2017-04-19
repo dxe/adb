@@ -247,7 +247,7 @@ type User struct {
 	ID        int            `db:"id"`
 	Name      string         `db:"name"`
 	Email     string         `db:"email"`
-	ChapterID sql.NullInt64  `db:"chapter_id"`
+	ChapterID sql.NullString `db:"chapter_id"`
 	Phone     string         `db:"phone"`
 	Location  sql.NullString `db:"location"`
 	Facebook  string         `db:"facebook"`
@@ -258,7 +258,7 @@ type UserJSON struct {
 	Name  string `json:"name"`
 	Email string `json:"email"`
 	// NOTE: ChapterID is currently a pain in the butt...
-	ChapterID int    `json:"chapter_id"`
+	ChapterID string `json:"chapter_id"`
 	Phone     string `json:"phone"`
 	Location  string `json:"location"`
 	Facebook  string `json:"facebook"`
@@ -275,7 +275,7 @@ func GetUsersJSON(db *sqlx.DB) ([]UserJSON, error) {
 			ID:        u.ID,
 			Name:      u.Name,
 			Email:     u.Email,
-			ChapterID: int(u.ChapterID.Int64),
+			ChapterID: u.ChapterID.String,
 			Phone:     u.Phone,
 			Location:  u.Location.String,
 			Facebook:  u.Facebook,
@@ -303,8 +303,8 @@ func GetUser(db *sqlx.DB, name string) (User, error) {
 func getUsers(db *sqlx.DB, name string) ([]User, error) {
 	var queryArgs []interface{}
 	query := `SELECT
-id, name, email, chapter_id, phone, location, facebook
-FROM activists `
+a.id as id, a.name as name, email, c.name as chapter_id, phone, location, facebook
+FROM activists a left join chapters c on c.id = a.chapter_id `
 
 	if name != "" {
 		query += "WHERE name = ?"

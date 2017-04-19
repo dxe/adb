@@ -43,4 +43,12 @@ CREATE TABLE IF NOT EXISTS events (
   date DATE NOT NULL,
   event_type VARCHAR(60) NOT NULL
 )`)
+
+  db.MustExec(`
+CREATE TABLE IF NOT EXISTS chapters (
+  id INTEGER PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(60) NOT NULL
+)`)
+
+
 }
