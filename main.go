@@ -153,6 +153,7 @@ func router() *mux.Router {
 	router.Handle("/list_events", alice.New(authMiddleware).ThenFunc(main.ListEventsHandler))
 	router.Handle("/transposed_events_data", alice.New(authMiddleware).ThenFunc(main.TransposedEventsDataHandler))
 	router.Handle("/list_activists", alice.New(authMiddleware).ThenFunc(main.ListActivistsHandler))
+	router.Handle("/leaderboard", alice.New(authMiddleware).ThenFunc(main.LeaderboardHandler))
 
 	// Unauthed API
 	router.HandleFunc("/tokensignin", main.TokenSignInHandler)
@@ -164,6 +165,7 @@ func router() *mux.Router {
 	router.Handle("/event/list", alice.New(apiAuthMiddleware).ThenFunc(main.EventListHandler))
 	router.Handle("/event/delete", alice.New(apiAuthMiddleware).ThenFunc(main.EventDeleteHandler))
 	router.Handle("/activist/list", alice.New(apiAuthMiddleware).ThenFunc(main.ActivistListHandler))
+	router.Handle("/leaderboard/list", alice.New(apiAuthMiddleware).ThenFunc(main.LeaderboardListHandler))
 
 	if isProd {
 		router.PathPrefix("/static").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
@@ -228,6 +230,10 @@ func (c MainController) ListEventsHandler(w http.ResponseWriter, r *http.Request
 
 func (c MainController) ListActivistsHandler(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "activist_list", nil)
+}
+
+func (c MainController) LeaderboardHandler(w http.ResponseWriter, r *http.Request) {
+	renderTemplate(w, "leaderboard", nil)
 }
 
 var templates = template.Must(template.New("").Funcs(
@@ -395,6 +401,16 @@ func (c MainController) ActivistListHandler(w http.ResponseWriter, r *http.Reque
 
 	writeJSON(w, activists)
 }
+
+func (c MainController) LeaderboardListHandler(w http.ResponseWriter, r *http.Request) {
+	activists, err := model.GetLeaderboardUsersJSON(c.db)
+	if err != nil {
+		panic(err)
+	}
+
+	writeJSON(w, activists)
+}
+
 
 func main() {
 	n := negroni.New()

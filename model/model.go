@@ -244,13 +244,16 @@ func getEventType(rawEventType string) (EventType, error) {
 }
 
 type User struct {
-	ID        int            `db:"id"`
-	Name      string         `db:"name"`
-	Email     string         `db:"email"`
-	ChapterID sql.NullString `db:"chapter_id"`
-	Phone     string         `db:"phone"`
-	Location  sql.NullString `db:"location"`
-	Facebook  string         `db:"facebook"`
+	ID         int            `db:"id"`
+	Name       string         `db:"name"`
+	Email      string         `db:"email"`
+	ChapterID  sql.NullString `db:"chapter_id"`
+	Phone      string         `db:"phone"`
+	Location   sql.NullString `db:"location"`
+	Facebook   string         `db:"facebook"`
+	FirstEvent string         `db:"firstevent"`
+	LastEvent  string         `db:"lastevent"`
+
 }
 
 type UserJSON struct {
@@ -258,10 +261,13 @@ type UserJSON struct {
 	Name  string `json:"name"`
 	Email string `json:"email"`
 	// NOTE: ChapterID is currently a pain in the butt...
-	ChapterID string `json:"chapter_id"`
-	Phone     string `json:"phone"`
-	Location  string `json:"location"`
-	Facebook  string `json:"facebook"`
+	ChapterID  string `json:"chapter_id"`
+	Phone      string `json:"phone"`
+	Location   string `json:"location"`
+	Facebook   string `json:"facebook"`
+	FirstEvent string `json:"firstevent"`
+	LastEvent  string `json:"lastevent"`
+
 }
 
 func GetUsersJSON(db *sqlx.DB) ([]UserJSON, error) {
@@ -279,6 +285,8 @@ func GetUsersJSON(db *sqlx.DB) ([]UserJSON, error) {
 			Phone:     u.Phone,
 			Location:  u.Location.String,
 			Facebook:  u.Facebook,
+			FirstEvent: u.FirstEvent,
+			LastEvent:  u.LastEvent,
 		})
 	}
 	return usersJSON, nil
@@ -303,11 +311,13 @@ func GetUser(db *sqlx.DB, name string) (User, error) {
 func getUsers(db *sqlx.DB, name string) ([]User, error) {
 	var queryArgs []interface{}
 	query := `SELECT
-a.id as id, a.name as name, email, c.name as chapter_id, phone, location, facebook
-FROM activists a left join chapters c on c.id = a.chapter_id `
+a.id as id, a.name as name, email, c.name as chapter_id, phone, location, facebook, ifnull(firstevent.first_event,"none") as firstevent, ifnull(lastevent.last_event,"none") as lastevent
+FROM activists a left join chapters c on c.id = a.chapter_id
+left join (select ea.activist_id, min(e.date) as "first_event" FROM event_attendance ea join events e on e.id = ea.event_id group by ea.activist_id) as firstevent on a.id = firstevent.activist_id
+left join (select ea.activist_id, max(e.date) as "last_event" FROM event_attendance ea join events e on e.id = ea.event_id group by ea.activist_id) as lastevent on firstevent.activist_id = lastevent.activist_id `
 
 	if name != "" {
-		query += "WHERE name = ?"
+		query += "WHERE a.name = ?"
 		queryArgs = append(queryArgs, name)
 	}
 
@@ -455,4 +465,80 @@ VALUES (?, ?)`, u.ID, eventID)
 		}
 	}
 	return nil
+}
+
+type LeaderboardUser struct {
+	Name        	  string      `db:"name"`
+	FirstEvent  	  string      `db:"first_event"`
+	LastEvent   	  string      `db:"last_event"`
+	TotalEvents 	  int         `db:"total_events"`
+	TotalEvents30Days int         `db:"total_events_30_days"`
+	Points            int         `db:"points"`
+}
+
+type LeaderboardUserJSON struct {
+	Name        	  string      `json:"name"`
+	FirstEvent  	  string      `json:"first_event"`
+	LastEvent   	  string      `json:"last_event"`
+	TotalEvents 	  int         `json:"total_events"`
+	TotalEvents30Days int         `json:"total_events_30_days"`
+	Points            int         `json:"points"`
+}
+
+func GetLeaderboardUsersJSON(db *sqlx.DB) ([]LeaderboardUserJSON, error) {
+	var leaderboardUsersJSON []LeaderboardUserJSON
+	leaderboardUsers, err := GetLeaderboardUsers(db)
+	if err != nil {
+		return nil, err
+	}
+	for _, l := range leaderboardUsers {
+		leaderboardUsersJSON = append(leaderboardUsersJSON, LeaderboardUserJSON{
+			Name:       l.Name,
+			FirstEvent: l.FirstEvent,
+			LastEvent:  l.LastEvent,
+			TotalEvents:  l.TotalEvents,
+			TotalEvents30Days:  l.TotalEvents30Days,
+			Points:  l.Points,
+		})
+	}
+	return leaderboardUsersJSON, nil
+}
+
+func GetLeaderboardUsers(db *sqlx.DB) ([]LeaderboardUser, error) {
+	return getLeaderboardUsers(db, "")
+}
+
+func GetLeaderboardUser(db *sqlx.DB, name string) (LeaderboardUser, error) {
+	leaderboardUsers, err := getLeaderboardUsers(db, name)
+	if err != nil {
+		return LeaderboardUser{}, err
+	} else if len(leaderboardUsers) == 0 {
+		return LeaderboardUser{}, errors.New("Could not find any users")
+	} else if len(leaderboardUsers) > 1 {
+		return LeaderboardUser{}, errors.New("Found too many users")
+	}
+	return leaderboardUsers[0], nil
+}
+
+func getLeaderboardUsers(db *sqlx.DB, name string) ([]LeaderboardUser, error) {
+	var queryArgs []interface{}
+	query := `select ifnull(a.name,"") as name, ifnull(first_event,"none") as first_event, ifnull(last_event,"none") as last_event, ifnull(total_events,0) as total_events, ifnull(total_events_30_days,0) as total_events_30_days, ifnull((ifnull(protest_points,0) + ifnull(wg_points,0) + ifnull(community_points,0) + ifnull(outreach_points,0) + ifnull(sanctuary_points,0) + ifnull(key_event_points,0)),0) as points from activists a
+left join (select ea.activist_id, min(e.date) as "first_event" FROM event_attendance ea join events e on e.id = ea.event_id group by ea.activist_id) as firstevent on a.id = firstevent.activist_id
+left join (select ea.activist_id, max(e.date) as "last_event" FROM event_attendance ea join events e on e.id = ea.event_id group by ea.activist_id) as lastevent on firstevent.activist_id = lastevent.activist_id
+left join (select activist_id, count(event_id) as "total_events" FROM event_attendance group by activist_id) as total on firstevent.activist_id = total.activist_id
+left join (select ea.activist_id, count(ea.event_id) as "total_events_30_days" FROM event_attendance ea join events e on ea.event_id = e.id where e.date between DATE_SUB(NOW(), INTERVAL 30 DAY)AND NOW() group by activist_id) as total30 on firstevent.activist_id = total30.activist_id
+left join (select ea.activist_id, count(ea.event_id)*2 as "protest_points" FROM event_attendance ea join events e on ea.event_id = e.id where e.date between DATE_SUB(NOW(), INTERVAL 30 DAY)AND NOW() and e.event_type = "protest" group by activist_id) as protest on firstevent.activist_id = protest.activist_id
+left join (select ea.activist_id, count(ea.event_id) as "wg_points" FROM event_attendance ea join events e on ea.event_id = e.id where e.date between DATE_SUB(NOW(), INTERVAL 30 DAY)AND NOW() and e.event_type = "working group" group by activist_id) as wg on firstevent.activist_id = wg.activist_id
+left join (select ea.activist_id, count(ea.event_id) as "community_points" FROM event_attendance ea join events e on ea.event_id = e.id where e.date between DATE_SUB(NOW(), INTERVAL 30 DAY)AND NOW() and e.event_type = "community" group by activist_id) as community on firstevent.activist_id = community.activist_id
+left join (select ea.activist_id, count(ea.event_id)*2 as "outreach_points" FROM event_attendance ea join events e on ea.event_id = e.id where e.date between DATE_SUB(NOW(), INTERVAL 30 DAY)AND NOW() and e.event_type = "outreach" group by activist_id) as outreach on firstevent.activist_id = outreach.activist_id
+left join (select ea.activist_id, count(ea.event_id)*2 as "sanctuary_points" FROM event_attendance ea join events e on ea.event_id = e.id where e.date between DATE_SUB(NOW(), INTERVAL 30 DAY)AND NOW() and e.event_type = "sanctuary" group by activist_id) as sanctuary on firstevent.activist_id = sanctuary.activist_id
+left join (select ea.activist_id, count(ea.event_id)*3 as "key_event_points" FROM event_attendance ea join events e on ea.event_id = e.id where e.date between DATE_SUB(NOW(), INTERVAL 30 DAY)AND NOW() and e.event_type = "key event" group by activist_id) as key_event on firstevent.activist_id = key_event.activist_id
+ORDER BY points desc`
+
+	var leaderboardUsers []LeaderboardUser
+	if err := db.Select(&leaderboardUsers, query, queryArgs...); err != nil {
+		return nil, err
+	}
+
+	return leaderboardUsers, nil
 }

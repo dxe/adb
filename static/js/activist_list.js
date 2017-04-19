@@ -29,8 +29,8 @@ function listActivists(activists) {
         '<td>' + activist.name + '</td>' +
         '<td>' + activist.email + '</td>' +
         '<td>' + activist.phone + '</td>' +
-        '<td>' + 'First Event' + '</td>' +
-        '<td>' + 'Last Event' + '</td>' +
+        '<td>' + activist.firstevent + '</td>' +
+        '<td>' + activist.lastevent + '</td>' +
         '<td>' + 'Status' + '</td>' +
         '</tr>';
     d.insertAdjacentHTML('beforeend', newRow);

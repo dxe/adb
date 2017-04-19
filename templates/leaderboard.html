@@ -1,0 +1,29 @@
+{{template "header.html" .}}
+<script src="/static/js/leaderboard.js"></script>
+
+<div class="body-wrapper-wide event-list-content">
+  <div class="title">
+    <h1>Community Leaderboard</h1>
+    <h3 style="color:red;">This page is under construction and may not behave as expected.</h2>
+    <br />
+  </div>
+  <div class="main">
+    <table id="activist-list" class="adb-table table table-hover table-striped">
+        <thead>
+        <tr>
+          <th>Name</th>
+          <th>Points</th>
+          <th>Total Events Last 30 Days</th>
+          <th>Total Events</th>
+        </tr>
+      </thead>
+      <tbody id="activist-list-body">
+        <tr><td></td><td><i>Loading...</i></td><td></td><td></td><td></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+<script>initializeApp();</script>
+{{template "footer.html" .}}
