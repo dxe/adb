@@ -253,7 +253,6 @@ type User struct {
 	Facebook   string         `db:"facebook"`
 	FirstEvent string         `db:"firstevent"`
 	LastEvent  string         `db:"lastevent"`
-
 }
 
 type UserJSON struct {
@@ -267,7 +266,6 @@ type UserJSON struct {
 	Facebook   string `json:"facebook"`
 	FirstEvent string `json:"firstevent"`
 	LastEvent  string `json:"lastevent"`
-
 }
 
 func GetUsersJSON(db *sqlx.DB) ([]UserJSON, error) {
@@ -278,13 +276,13 @@ func GetUsersJSON(db *sqlx.DB) ([]UserJSON, error) {
 	}
 	for _, u := range users {
 		usersJSON = append(usersJSON, UserJSON{
-			ID:        u.ID,
-			Name:      u.Name,
-			Email:     u.Email,
-			ChapterID: u.ChapterID.String,
-			Phone:     u.Phone,
-			Location:  u.Location.String,
-			Facebook:  u.Facebook,
+			ID:         u.ID,
+			Name:       u.Name,
+			Email:      u.Email,
+			ChapterID:  u.ChapterID.String,
+			Phone:      u.Phone,
+			Location:   u.Location.String,
+			Facebook:   u.Facebook,
 			FirstEvent: u.FirstEvent,
 			LastEvent:  u.LastEvent,
 		})
@@ -310,11 +308,39 @@ func GetUser(db *sqlx.DB, name string) (User, error) {
 
 func getUsers(db *sqlx.DB, name string) ([]User, error) {
 	var queryArgs []interface{}
-	query := `SELECT
-a.id as id, a.name as name, email, c.name as chapter_id, phone, location, facebook, ifnull(firstevent.first_event,"none") as firstevent, ifnull(lastevent.last_event,"none") as lastevent
-FROM activists a left join chapters c on c.id = a.chapter_id
-left join (select ea.activist_id, min(e.date) as "first_event" FROM event_attendance ea join events e on e.id = ea.event_id group by ea.activist_id) as firstevent on a.id = firstevent.activist_id
-left join (select ea.activist_id, max(e.date) as "last_event" FROM event_attendance ea join events e on e.id = ea.event_id group by ea.activist_id) as lastevent on firstevent.activist_id = lastevent.activist_id `
+	query := `
+SELECT
+  a.id AS id,
+  a.name AS name,
+  email,
+  c.name AS chapter_id,
+  phone,
+  location,
+  facebook,
+  IFNULL(firstevent.first_event,"none") AS firstevent,
+  IFNULL(lastevent.last_event,"none") AS lastevent
+FROM activists a
+
+LEFT JOIN chapters c
+  ON c.id = a.chapter_id
+
+LEFT JOIN (
+  SELECT ea.activist_id, MIN(e.date) AS "first_event"
+  FROM event_attendance ea
+  JOIN events e
+    ON e.id = ea.event_id
+  GROUP BY ea.activist_id
+) AS firstevent
+  ON a.id = firstevent.activist_id
+
+LEFT JOIN (
+  SELECT ea.activist_id, MAX(e.date) AS "last_event"
+  FROM event_attendance ea
+  JOIN events e
+    ON e.id = ea.event_id
+  GROUP BY ea.activist_id
+) AS lastevent
+  ON firstevent.activist_id = lastevent.activist_id `
 
 	if name != "" {
 		query += "WHERE a.name = ?"
@@ -393,7 +419,7 @@ func insertEvent(db *sqlx.DB, event Event) (eventID int, err error) {
 		return 0, err
 	}
 	res, err := tx.NamedExec(`INSERT INTO events (name, date, event_type)
-    VALUES (:name, :date, :event_type)`, event)
+VALUES (:name, :date, :event_type)`, event)
 	if err != nil {
 		tx.Rollback()
 		return 0, err
@@ -468,21 +494,21 @@ VALUES (?, ?)`, u.ID, eventID)
 }
 
 type LeaderboardUser struct {
-	Name        	  string      `db:"name"`
-	FirstEvent  	  string      `db:"first_event"`
-	LastEvent   	  string      `db:"last_event"`
-	TotalEvents 	  int         `db:"total_events"`
-	TotalEvents30Days int         `db:"total_events_30_days"`
-	Points            int         `db:"points"`
+	Name              string `db:"name"`
+	FirstEvent        string `db:"first_event"`
+	LastEvent         string `db:"last_event"`
+	TotalEvents       int    `db:"total_events"`
+	TotalEvents30Days int    `db:"total_events_30_days"`
+	Points            int    `db:"points"`
 }
 
 type LeaderboardUserJSON struct {
-	Name        	  string      `json:"name"`
-	FirstEvent  	  string      `json:"first_event"`
-	LastEvent   	  string      `json:"last_event"`
-	TotalEvents 	  int         `json:"total_events"`
-	TotalEvents30Days int         `json:"total_events_30_days"`
-	Points            int         `json:"points"`
+	Name              string `json:"name"`
+	FirstEvent        string `json:"first_event"`
+	LastEvent         string `json:"last_event"`
+	TotalEvents       int    `json:"total_events"`
+	TotalEvents30Days int    `json:"total_events_30_days"`
+	Points            int    `json:"points"`
 }
 
 func GetLeaderboardUsersJSON(db *sqlx.DB) ([]LeaderboardUserJSON, error) {
@@ -493,12 +519,12 @@ func GetLeaderboardUsersJSON(db *sqlx.DB) ([]LeaderboardUserJSON, error) {
 	}
 	for _, l := range leaderboardUsers {
 		leaderboardUsersJSON = append(leaderboardUsersJSON, LeaderboardUserJSON{
-			Name:       l.Name,
-			FirstEvent: l.FirstEvent,
-			LastEvent:  l.LastEvent,
-			TotalEvents:  l.TotalEvents,
-			TotalEvents30Days:  l.TotalEvents30Days,
-			Points:  l.Points,
+			Name:              l.Name,
+			FirstEvent:        l.FirstEvent,
+			LastEvent:         l.LastEvent,
+			TotalEvents:       l.TotalEvents,
+			TotalEvents30Days: l.TotalEvents30Days,
+			Points:            l.Points,
 		})
 	}
 	return leaderboardUsersJSON, nil
@@ -522,18 +548,123 @@ func GetLeaderboardUser(db *sqlx.DB, name string) (LeaderboardUser, error) {
 
 func getLeaderboardUsers(db *sqlx.DB, name string) ([]LeaderboardUser, error) {
 	var queryArgs []interface{}
-	query := `select ifnull(a.name,"") as name, ifnull(first_event,"none") as first_event, ifnull(last_event,"none") as last_event, ifnull(total_events,0) as total_events, ifnull(total_events_30_days,0) as total_events_30_days, ifnull((ifnull(protest_points,0) + ifnull(wg_points,0) + ifnull(community_points,0) + ifnull(outreach_points,0) + ifnull(sanctuary_points,0) + ifnull(key_event_points,0)),0) as points from activists a
-left join (select ea.activist_id, min(e.date) as "first_event" FROM event_attendance ea join events e on e.id = ea.event_id group by ea.activist_id) as firstevent on a.id = firstevent.activist_id
-left join (select ea.activist_id, max(e.date) as "last_event" FROM event_attendance ea join events e on e.id = ea.event_id group by ea.activist_id) as lastevent on firstevent.activist_id = lastevent.activist_id
-left join (select activist_id, count(event_id) as "total_events" FROM event_attendance group by activist_id) as total on firstevent.activist_id = total.activist_id
-left join (select ea.activist_id, count(ea.event_id) as "total_events_30_days" FROM event_attendance ea join events e on ea.event_id = e.id where e.date between DATE_SUB(NOW(), INTERVAL 30 DAY)AND NOW() group by activist_id) as total30 on firstevent.activist_id = total30.activist_id
-left join (select ea.activist_id, count(ea.event_id)*2 as "protest_points" FROM event_attendance ea join events e on ea.event_id = e.id where e.date between DATE_SUB(NOW(), INTERVAL 30 DAY)AND NOW() and e.event_type = "protest" group by activist_id) as protest on firstevent.activist_id = protest.activist_id
-left join (select ea.activist_id, count(ea.event_id) as "wg_points" FROM event_attendance ea join events e on ea.event_id = e.id where e.date between DATE_SUB(NOW(), INTERVAL 30 DAY)AND NOW() and e.event_type = "working group" group by activist_id) as wg on firstevent.activist_id = wg.activist_id
-left join (select ea.activist_id, count(ea.event_id) as "community_points" FROM event_attendance ea join events e on ea.event_id = e.id where e.date between DATE_SUB(NOW(), INTERVAL 30 DAY)AND NOW() and e.event_type = "community" group by activist_id) as community on firstevent.activist_id = community.activist_id
-left join (select ea.activist_id, count(ea.event_id)*2 as "outreach_points" FROM event_attendance ea join events e on ea.event_id = e.id where e.date between DATE_SUB(NOW(), INTERVAL 30 DAY)AND NOW() and e.event_type = "outreach" group by activist_id) as outreach on firstevent.activist_id = outreach.activist_id
-left join (select ea.activist_id, count(ea.event_id)*2 as "sanctuary_points" FROM event_attendance ea join events e on ea.event_id = e.id where e.date between DATE_SUB(NOW(), INTERVAL 30 DAY)AND NOW() and e.event_type = "sanctuary" group by activist_id) as sanctuary on firstevent.activist_id = sanctuary.activist_id
-left join (select ea.activist_id, count(ea.event_id)*3 as "key_event_points" FROM event_attendance ea join events e on ea.event_id = e.id where e.date between DATE_SUB(NOW(), INTERVAL 30 DAY)AND NOW() and e.event_type = "key event" group by activist_id) as key_event on firstevent.activist_id = key_event.activist_id
-ORDER BY points desc`
+	query := `
+SELECT
+  IFNULL(a.name,"") AS name,
+  IFNULL(first_event,"none") AS first_event,
+  IFNULL(last_event,"none") AS last_event,
+  IFNULL(total_events,0) AS total_events,
+  IFNULL(total_events_30_days,0) AS total_events_30_days,
+  IFNULL((IFNULL(protest_points,0) + IFNULL(wg_points,0) + IFNULL(community_points,0) + IFNULL(outreach_points,0) + IFNULL(sanctuary_points,0) + IFNULL(key_event_points,0)),0) AS points
+FROM activists a
+
+LEFT JOIN (
+  SELECT ea.activist_id, MIN(e.date) AS "first_event"
+  FROM event_attendance ea
+  JOIN events e
+    ON e.id = ea.event_id
+  GROUP BY ea.activist_id
+) AS firstevent
+  ON a.id = firstevent.activist_id
+
+LEFT JOIN (
+  SELECT ea.activist_id, MAX(e.date) AS "last_event"
+  FROM event_attendance ea
+  JOIN events e
+    ON e.id = ea.event_id
+  GROUP BY ea.activist_id
+) AS lastevent
+  ON firstevent.activist_id = lastevent.activist_id
+
+LEFT JOIN (
+  SELECT activist_id, COUNT(event_id) AS "total_events"
+  FROM event_attendance
+  GROUP BY activist_id
+) AS total
+  ON firstevent.activist_id = total.activist_id
+
+LEFT JOIN (
+  SELECT ea.activist_id, COUNT(ea.event_id) AS "total_events_30_days"
+  FROM event_attendance ea JOIN events e
+    ON ea.event_id = e.id
+  WHERE
+    e.date BETWEEN DATE_SUB(NOW(), INTERVAL 30 DAY) AND NOW()
+  GROUP BY activist_id
+) AS total30
+  ON firstevent.activist_id = total30.activist_id
+
+LEFT JOIN (
+  SELECT ea.activist_id, COUNT(ea.event_id)*2 AS "protest_points"
+  FROM event_attendance ea
+  JOIN events e
+    ON ea.event_id = e.id
+  WHERE
+    e.date BETWEEN DATE_SUB(NOW(), INTERVAL 30 DAY) AND NOW()
+    and e.event_type = "protest"
+  GROUP BY activist_id
+) AS protest
+  ON firstevent.activist_id = protest.activist_id
+
+LEFT JOIN (
+  SELECT ea.activist_id, COUNT(ea.event_id) AS "wg_points"
+  FROM event_attendance ea
+  JOIN events e
+    ON ea.event_id = e.id
+  WHERE
+    e.date BETWEEN DATE_SUB(NOW(), INTERVAL 30 DAY) AND NOW()
+    AND e.event_type = "working group"
+  GROUP BY activist_id
+) AS wg
+  ON firstevent.activist_id = wg.activist_id
+
+LEFT JOIN (
+  SELECT ea.activist_id, COUNT(ea.event_id) AS "community_points"
+  FROM event_attendance ea
+  JOIN events e
+    ON ea.event_id = e.id
+  WHERE e.date BETWEEN DATE_SUB(NOW(), INTERVAL 30 DAY) AND NOW()
+  AND e.event_type = "community"
+  GROUP BY activist_id
+) AS community
+  ON firstevent.activist_id = community.activist_id
+
+LEFT JOIN (
+  SELECT ea.activist_id, COUNT(ea.event_id)*2 AS "outreach_points"
+  FROM event_attendance ea
+  JOIN events e
+    ON ea.event_id = e.id
+  WHERE
+    e.date BETWEEN DATE_SUB(NOW(), INTERVAL 30 DAY) AND NOW()
+    AND e.event_type = "outreach"
+  GROUP BY activist_id
+) AS outreach
+  ON firstevent.activist_id = outreach.activist_id
+
+LEFT JOIN (
+  SELECT ea.activist_id, COUNT(ea.event_id)*2 AS "sanctuary_points"
+  FROM event_attendance ea
+  JOIN events e
+    ON ea.event_id = e.id
+  WHERE
+    e.date BETWEEN DATE_SUB(NOW(), INTERVAL 30 DAY) AND NOW()
+    AND e.event_type = "sanctuary"
+  GROUP BY activist_id
+) AS sanctuary
+  ON firstevent.activist_id = sanctuary.activist_id
+
+LEFT JOIN (
+  SELECT ea.activist_id, COUNT(ea.event_id)*3 AS "key_event_points"
+  FROM event_attendance ea
+  JOIN events e
+    ON ea.event_id = e.id
+  WHERE
+    e.date BETWEEN DATE_SUB(NOW(), INTERVAL 30 DAY) AND NOW()
+    AND e.event_type = "key event"
+  GROUP BY activist_id
+) AS key_event
+  ON firstevent.activist_id = key_event.activist_id
+
+ORDER BY points DESC`
 
 	var leaderboardUsers []LeaderboardUser
 	if err := db.Select(&leaderboardUsers, query, queryArgs...); err != nil {
