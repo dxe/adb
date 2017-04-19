@@ -157,7 +157,7 @@ func router() *mux.Router {
 
 	// Unauthed API
 	router.HandleFunc("/tokensignin", main.TokenSignInHandler)
-    router.HandleFunc("/transposed_events_data_json", main.TransposedEventsDataJsonHandler)
+	router.HandleFunc("/transposed_events_data_json", main.TransposedEventsDataJsonHandler)
 
 	// Authed API
 	router.Handle("/activist_names/get", alice.New(apiAuthMiddleware).ThenFunc(main.AutocompleteActivistsHandler))
@@ -290,17 +290,17 @@ func (c MainController) TransposedEventsDataHandler(w http.ResponseWriter, r *ht
 }
 
 func (c MainController) TransposedEventsDataJsonHandler(w http.ResponseWriter, r *http.Request) {
-    events, err := model.GetEventsJSON(c.db, model.GetEventOptions{
-        OrderBy:    "date ASC",
-        DateFrom:   "",
-        DateTo:     "",
-        EventType:  "",
-    })
-    if err != nil {
-        panic(err)
-    }
+	events, err := model.GetEventsJSON(c.db, model.GetEventOptions{
+		OrderBy:   "date ASC",
+		DateFrom:  "",
+		DateTo:    "",
+		EventType: "",
+	})
+	if err != nil {
+		panic(err)
+	}
 
-    writeJSON(w, events)
+	writeJSON(w, events)
 }
 
 func (c MainController) AutocompleteActivistsHandler(w http.ResponseWriter, r *http.Request) {
@@ -353,11 +353,11 @@ func (c MainController) EventListHandler(w http.ResponseWriter, r *http.Request)
 	eventType := r.PostFormValue("event_type")
 
 	events, err := model.GetEventsJSON(c.db, model.GetEventOptions{
-        OrderBy:    "date DESC",
-        DateFrom:   dateStart,
-        DateTo:     dateEnd,
-        EventType:  eventType,
-    })
+		OrderBy:   "date DESC",
+		DateFrom:  dateStart,
+		DateTo:    dateEnd,
+		EventType: eventType,
+	})
 
 	if err != nil {
 		writeJSON(w, map[string]string{
@@ -410,7 +410,6 @@ func (c MainController) LeaderboardListHandler(w http.ResponseWriter, r *http.Re
 
 	writeJSON(w, activists)
 }
-
 
 func main() {
 	n := negroni.New()
