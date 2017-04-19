@@ -12,7 +12,7 @@ function listActivists(activists) {
                 '<div class="modal-dialog" role="document"><div class="modal-content"><div class="modal-header">' +
                 '<h2 class="modal-title">' + activist.name + '</h5>' +
                 '<button type="button" class="close" data-dismiss="modal" aria-label="Close"></button></div>' +
-                '<div class="modal-body"><b>Email: </b>' + activist.email + '<br /><b>Chapter: </b>' + activist.chaper_id + '<br /><b>Phone: </b>' + activist.phone + '<br /><b>Location: </b>' + activist.location + '<br /><b>Facebook: </b>' + activist.facebook + ' </div>' +
+                '<div class="modal-body"><b>Email: </b>' + activist.email + '<br /><b>Chapter: </b>' + activist.chapter_id + '<br /><b>Phone: </b>' + activist.phone + '<br /><b>Location: </b>' + activist.location + '<br /><b>Facebook: </b>' + activist.facebook + ' </div>' +
                 '<div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button><button type="button" class="btn btn-primary">Save changes</button>' +
                 '</div></div></div></div>'
 
