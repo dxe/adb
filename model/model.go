@@ -244,15 +244,16 @@ func getEventType(rawEventType string) (EventType, error) {
 }
 
 type User struct {
-	ID         int            `db:"id"`
-	Name       string         `db:"name"`
-	Email      string         `db:"email"`
-	ChapterID  sql.NullString `db:"chapter_id"`
-	Phone      string         `db:"phone"`
-	Location   sql.NullString `db:"location"`
-	Facebook   string         `db:"facebook"`
-	FirstEvent string         `db:"firstevent"`
-	LastEvent  string         `db:"lastevent"`
+	ID          int            `db:"id"`
+	Name        string         `db:"name"`
+	Email       string         `db:"email"`
+	ChapterID   sql.NullString `db:"chapter_id"`
+	Phone       string         `db:"phone"`
+	Location    sql.NullString `db:"location"`
+	Facebook    string         `db:"facebook"`
+	FirstEvent  string         `db:"firstevent"`
+	LastEvent   string         `db:"lastevent"`
+	TotalEvents int        	   `db:"total_events"`
 }
 
 type UserJSON struct {
@@ -260,12 +261,13 @@ type UserJSON struct {
 	Name  string `json:"name"`
 	Email string `json:"email"`
 	// NOTE: ChapterID is currently a pain in the butt...
-	ChapterID  string `json:"chapter_id"`
-	Phone      string `json:"phone"`
-	Location   string `json:"location"`
-	Facebook   string `json:"facebook"`
-	FirstEvent string `json:"firstevent"`
-	LastEvent  string `json:"lastevent"`
+	ChapterID   string `json:"chapter_id"`
+	Phone       string `json:"phone"`
+	Location    string `json:"location"`
+	Facebook    string `json:"facebook"`
+	FirstEvent  string `json:"firstevent"`
+	LastEvent   string `json:"lastevent"`
+	TotalEvents int    `json:"totalevents"`
 }
 
 func GetUsersJSON(db *sqlx.DB) ([]UserJSON, error) {
@@ -285,6 +287,7 @@ func GetUsersJSON(db *sqlx.DB) ([]UserJSON, error) {
 			Facebook:   u.Facebook,
 			FirstEvent: u.FirstEvent,
 			LastEvent:  u.LastEvent,
+			TotalEvents:  u.TotalEvents,
 		})
 	}
 	return usersJSON, nil
@@ -318,7 +321,8 @@ SELECT
   location,
   facebook,
   IFNULL(firstevent.first_event,"none") AS firstevent,
-  IFNULL(lastevent.last_event,"none") AS lastevent
+  IFNULL(lastevent.last_event,"none") AS lastevent,
+  IFNULL(total_events,0) AS total_events
 FROM activists a
 
 LEFT JOIN chapters c
@@ -340,12 +344,21 @@ LEFT JOIN (
     ON e.id = ea.event_id
   GROUP BY ea.activist_id
 ) AS lastevent
-  ON firstevent.activist_id = lastevent.activist_id `
+  ON firstevent.activist_id = lastevent.activist_id 
+
+LEFT JOIN (
+  SELECT activist_id, COUNT(event_id) AS "total_events"
+  FROM event_attendance
+  GROUP BY activist_id
+) AS total
+  ON firstevent.activist_id = total.activist_id `
 
 	if name != "" {
-		query += "WHERE a.name = ?"
+		query += "WHERE a.name = ? "
 		queryArgs = append(queryArgs, name)
 	}
+
+	query += "ORDER BY a.name"
 
 	var users []User
 	if err := db.Select(&users, query, queryArgs...); err != nil {

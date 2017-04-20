@@ -91,7 +91,6 @@ a.edit-link:hover {
 }
 .adb-table th {
     font-weight: bold;
-    text-align: left;
 }
 .adb-table td {
     font-weight: normal;
@@ -105,3 +104,15 @@ a.edit-link:hover {
 .adb-table td {
     padding-bottom: 10px;
 }
+
+/* leaderboard */
+.leaderboard-table td,
+.leaderboard-table th {
+    text-align:left;
+}
+#right,
+.leaderboard-table td + td + td,
+.leaderboard-table th + th + th {
+    text-align:right;
+}
+

@@ -2,12 +2,48 @@ function listActivists(activists) {
   $("#activist-list-body").html('');
   var d = document.getElementById('activist-list-body');
   var m = document.getElementById('modals');
+  var activistStatus = ""
+  var today = new Date();
+  var daysAgo60 = new Date();
+  daysAgo60.setDate(daysAgo60.getDate() - 30);
+  var daysAgo90 = new Date();
+  daysAgo90.setDate(daysAgo90.getDate() - 90);
 
   for (var i = 0; i < activists.length; i++) {
     var activist = activists[i];
 
-    var modalID = 'modal' + activist.id;
+    if (activist.firstevent != "none") {
+      var firsteventSplit = activist.firstevent.split('-');
+      var firsteventDate = new Date(firsteventSplit[0],firsteventSplit[1]-1,firsteventSplit[2]);
+    }
 
+    if (activist.lastevent != "none") {
+      var lasteventSplit = activist.lastevent.split('-');
+      var lasteventDate = new Date(lasteventSplit[0],lasteventSplit[1]-1,lasteventSplit[2]); 
+    }
+
+
+    if (activist.name == "") {
+      activistStatus = "";
+    }
+    else {
+      if (activist.firstevent == "none") {
+        activistStatus = "No attendance";
+      }
+      else {
+        if (lasteventDate < daysAgo60) {
+          activistStatus = "Former";
+        }
+        else if (firsteventDate > daysAgo90  && activist.totalevents < 5) {
+          activistStatus = "New";
+        }
+        else {
+          activistStatus = "Current";
+        }
+      }
+    }
+
+    var modalID = 'modal' + activist.id;
     var modal = '<div class="modal fade" id= ' + modalID + ' tabindex="-1" role="dialog">' +
                 '<div class="modal-dialog" role="document"><div class="modal-content"><div class="modal-header">' +
                 '<h2 class="modal-title">' + activist.name + '</h5></div>' +
@@ -31,7 +67,7 @@ function listActivists(activists) {
         '<td>' + activist.phone + '</td>' +
         '<td>' + activist.firstevent + '</td>' +
         '<td>' + activist.lastevent + '</td>' +
-        '<td>' + 'Status' + '</td>' +
+        '<td>' + activistStatus + '</td>' +
         '</tr>';
     d.insertAdjacentHTML('beforeend', newRow);
     m.insertAdjacentHTML('beforeend', modal);

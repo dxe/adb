@@ -3,8 +3,8 @@ function listActivists(activists) {
   var d = document.getElementById('activist-list-body');
   for (var i = 0; i < activists.length; i++) {
     var activist = activists[i];
-
     var newRow = '<tr>' +
+        '<td>' + (i + 1) + '.</td>' +
         '<td>' + activist.name + '</td>' +
         '<td>' + activist.points + '</td>' +
         '<td>' + activist.total_events_30_days + '</td>' +
