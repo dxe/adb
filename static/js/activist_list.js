@@ -28,17 +28,17 @@ function listActivists(activists) {
     }
     else {
       if (activist.firstevent == "None") {
-        activistStatus = "No attendance";
+        activistStatus = '<span class="hide">4</span>No attendance';
       }
       else {
         if (lasteventDate < daysAgo60) {
-          activistStatus = "Former";
+          activistStatus = '<span class="hide">3</span>Former';
         }
         else if (firsteventDate > daysAgo90  && activist.totalevents < 5) {
-          activistStatus = "New";
+          activistStatus = '<span class="hide">2</span>New';
         }
         else {
-          activistStatus = "Current";
+          activistStatus = '<span class="hide">1</span>Current';
         }
       }
     }

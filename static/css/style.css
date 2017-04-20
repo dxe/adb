@@ -28,6 +28,9 @@ a.edit-link:hover {
         color: lightgrey;
         text-decoration: none;
 }
+.hide {
+    display:none;
+}
 
 /* body wrappers */
 .body-wrapper {
@@ -84,6 +87,7 @@ a.edit-link:hover {
 .activist-list-content {
     min-width: 700px;
 }
+
 
 /* adb table */
 .adb-table {
