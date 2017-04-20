@@ -72,6 +72,7 @@ function listActivists(activists) {
     d.insertAdjacentHTML('beforeend', newRow);
     m.insertAdjacentHTML('beforeend', modal);
   }
+  $(function(){ $("#activist-list").tablesorter({ sortList: [[6,0], [1,0]] }); });
 }
 
 function initializeApp() {
@@ -91,5 +92,4 @@ function initializeApp() {
       flashMessage("Error connecting to server.", true);
     },
   });
-  $(function(){ $("#activist-list").tablesorter({ sortList: [[6,0], [1,0]] }); });
 }
