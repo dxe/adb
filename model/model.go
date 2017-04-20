@@ -531,23 +531,6 @@ func GetLeaderboardUsersJSON(db *sqlx.DB) ([]LeaderboardUserJSON, error) {
 }
 
 func GetLeaderboardUsers(db *sqlx.DB) ([]LeaderboardUser, error) {
-	return getLeaderboardUsers(db, "")
-}
-
-func GetLeaderboardUser(db *sqlx.DB, name string) (LeaderboardUser, error) {
-	leaderboardUsers, err := getLeaderboardUsers(db, name)
-	if err != nil {
-		return LeaderboardUser{}, err
-	} else if len(leaderboardUsers) == 0 {
-		return LeaderboardUser{}, errors.New("Could not find any users")
-	} else if len(leaderboardUsers) > 1 {
-		return LeaderboardUser{}, errors.New("Found too many users")
-	}
-	return leaderboardUsers[0], nil
-}
-
-func getLeaderboardUsers(db *sqlx.DB, name string) ([]LeaderboardUser, error) {
-	var queryArgs []interface{}
 	query := `
 SELECT
   IFNULL(a.name,"") AS name,
@@ -664,10 +647,14 @@ LEFT JOIN (
 ) AS key_event
   ON firstevent.activist_id = key_event.activist_id
 
+WHERE
+	total_events_30_days > 1
+	AND a.exclude_from_leaderboard <> 1
+
 ORDER BY points DESC`
 
 	var leaderboardUsers []LeaderboardUser
-	if err := db.Select(&leaderboardUsers, query, queryArgs...); err != nil {
+	if err := db.Select(&leaderboardUsers, query); err != nil {
 		return nil, err
 	}
 

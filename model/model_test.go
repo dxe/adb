@@ -294,3 +294,65 @@ func TestDeleteEvents(t *testing.T) {
 
 	assert.Len(t, attendees, 0)
 }
+
+func TestGetLeaderboardUsers(t *testing.T) {
+	db := newTestDB()
+	defer db.Close()
+
+	// Set up two events
+	u1, err := GetOrCreateUser(db, "Hello")
+	assert.NoError(t, err)
+
+	d2, err := time.Parse("2006-01-02", "2017-04-16")
+	assert.NoError(t, err)
+	var wantEvents = []Event{{
+		ID:        1,
+		EventName: "event one",
+		EventDate: d2,
+		EventType: "Working Group",
+		Attendees: []User{u1},
+	}, {
+		ID:        2,
+		EventName: "event two",
+		EventDate: d2,
+		EventType: "Protest",
+		Attendees: []User{u1},
+	}, {
+		ID:        3,
+		EventName: "event three",
+		EventDate: d2,
+		EventType: "Key Event",
+		Attendees: []User{u1},
+	}, {
+		ID:        4,
+		EventName: "event four",
+		EventDate: d2,
+		EventType: "Community",
+		Attendees: []User{u1},
+	}, {
+		ID:        5,
+		EventName: "event five",
+		EventDate: d2,
+		EventType: "Outreach",
+		Attendees: []User{u1},
+	}, {
+		ID:        6,
+		EventName: "event six",
+		EventDate: d2,
+		EventType: "Sanctuary",
+		Attendees: []User{u1},
+	}}
+
+	for _, e := range wantEvents {
+		_, err := InsertUpdateEvent(db, Event{
+			EventName: e.EventName,
+			EventDate: e.EventDate,
+			EventType: e.EventType,
+			Attendees: e.Attendees,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+}

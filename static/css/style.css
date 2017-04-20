@@ -80,6 +80,11 @@ a.edit-link:hover {
     margin-bottom: 5px;
 }
 
+/* activist_list */
+.activist-list-content {
+    min-width: 700px;
+}
+
 /* adb table */
 .adb-table {
     width: 100%;
