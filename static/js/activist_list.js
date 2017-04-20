@@ -91,4 +91,5 @@ function initializeApp() {
       flashMessage("Error connecting to server.", true);
     },
   });
+  $(function(){ $("#activist-list").tablesorter({ sortList: [[6,0], [1,0]] }); });
 }
