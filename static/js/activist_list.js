@@ -12,12 +12,12 @@ function listActivists(activists) {
   for (var i = 0; i < activists.length; i++) {
     var activist = activists[i];
 
-    if (activist.firstevent != "none") {
+    if (activist.firstevent != "None") {
       var firsteventSplit = activist.firstevent.split('-');
       var firsteventDate = new Date(firsteventSplit[0],firsteventSplit[1]-1,firsteventSplit[2]);
     }
 
-    if (activist.lastevent != "none") {
+    if (activist.lastevent != "None") {
       var lasteventSplit = activist.lastevent.split('-');
       var lasteventDate = new Date(lasteventSplit[0],lasteventSplit[1]-1,lasteventSplit[2]); 
     }
@@ -27,7 +27,7 @@ function listActivists(activists) {
       activistStatus = "";
     }
     else {
-      if (activist.firstevent == "none") {
+      if (activist.firstevent == "None") {
         activistStatus = "No attendance";
       }
       else {

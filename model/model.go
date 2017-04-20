@@ -320,8 +320,8 @@ SELECT
   phone,
   location,
   facebook,
-  IFNULL(firstevent.first_event,"none") AS firstevent,
-  IFNULL(lastevent.last_event,"none") AS lastevent,
+  IFNULL(firstevent.first_event,"None") AS firstevent,
+  IFNULL(lastevent.last_event,"None") AS lastevent,
   IFNULL(total_events,0) AS total_events
 FROM activists a
 
@@ -547,8 +547,8 @@ func GetLeaderboardUsers(db *sqlx.DB) ([]LeaderboardUser, error) {
 	query := `
 SELECT
   IFNULL(a.name,"") AS name,
-  IFNULL(first_event,"none") AS first_event,
-  IFNULL(last_event,"none") AS last_event,
+  IFNULL(first_event,"None") AS first_event,
+  IFNULL(last_event,"None") AS last_event,
   IFNULL(total_events,0) AS total_events,
   IFNULL(total_events_30_days,0) AS total_events_30_days,
   IFNULL((IFNULL(protest_points,0) + IFNULL(wg_points,0) + IFNULL(community_points,0) + IFNULL(outreach_points,0) + IFNULL(sanctuary_points,0) + IFNULL(key_event_points,0)),0) AS points
