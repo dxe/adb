@@ -269,9 +269,9 @@ type UserJSON struct {
 }
 
 type UserEventData struct {
-	FirstEvent  time.Time `db:"first_event"`
-	LastEvent   time.Time `db:"last_event"`
-	TotalEvents int       `db:"total_events"`
+	FirstEvent  *time.Time `db:"first_event"`
+	LastEvent   *time.Time `db:"last_event"`
+	TotalEvents int        `db:"total_events"`
 }
 
 func (u User) GetUserEventData(db *sqlx.DB) (UserEventData, error) {
@@ -304,6 +304,15 @@ func GetUsersJSON(db *sqlx.DB) ([]UserJSON, error) {
 		if err != nil {
 			return nil, err
 		}
+		firstEvent := ""
+		if eventData.FirstEvent != nil {
+			firstEvent = eventData.FirstEvent.Format(EventDateLayout)
+		}
+		lastEvent := ""
+		if eventData.LastEvent != nil {
+			lastEvent = eventData.LastEvent.Format(EventDateLayout)
+		}
+
 		usersJSON = append(usersJSON, UserJSON{
 			ID:          u.ID,
 			Name:        u.Name,
@@ -312,8 +321,8 @@ func GetUsersJSON(db *sqlx.DB) ([]UserJSON, error) {
 			Phone:       u.Phone,
 			Location:    u.Location.String,
 			Facebook:    u.Facebook,
-			FirstEvent:  eventData.FirstEvent.Format(EventDateLayout),
-			LastEvent:   eventData.LastEvent.Format(EventDateLayout),
+			FirstEvent:  firstEvent,
+			LastEvent:   lastEvent,
 			TotalEvents: eventData.TotalEvents,
 		})
 	}

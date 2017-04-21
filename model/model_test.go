@@ -345,6 +345,23 @@ func TestGetUserEventData(t *testing.T) {
 	assert.Equal(t, d.TotalEvents, 4)
 }
 
+func TestGetUserEventData_noEvents(t *testing.T) {
+	db := newTestDB()
+	defer db.Close()
+
+	u1, err := GetOrCreateUser(db, "Test User")
+	assert.NoError(t, err)
+
+	d, err := u1.GetUserEventData(db)
+	assert.NoError(t, err)
+
+	assert.Equal(t, d, UserEventData{
+		FirstEvent:  nil,
+		LastEvent:   nil,
+		TotalEvents: 0,
+	})
+}
+
 func mustInsertAllEvents(t *testing.T, db *sqlx.DB, events []Event) {
 	for _, e := range events {
 		_, err := InsertUpdateEvent(db, Event{
@@ -359,6 +376,7 @@ func mustInsertAllEvents(t *testing.T, db *sqlx.DB, events []Event) {
 	}
 }
 
+// TODO: Finish this test.
 func TestGetLeaderboardUsers(t *testing.T) {
 	db := newTestDB()
 	defer db.Close()
