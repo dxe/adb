@@ -295,6 +295,70 @@ func TestDeleteEvents(t *testing.T) {
 	assert.Len(t, attendees, 0)
 }
 
+func TestGetUserEventData(t *testing.T) {
+	db := newTestDB()
+	defer db.Close()
+
+	u1, err := GetOrCreateUser(db, "Test User")
+	assert.NoError(t, err)
+
+	d1, err := time.Parse("2006-01-02", "2017-04-15")
+	assert.NoError(t, err)
+	d2, err := time.Parse("2006-01-02", "2017-04-16")
+	assert.NoError(t, err)
+	d3, err := time.Parse("2006-01-02", "2017-04-17")
+	assert.NoError(t, err)
+
+	// These events are intentionally out of order
+	insertEvents := []Event{{
+		ID:        1,
+		EventName: "event one",
+		EventDate: d2,
+		EventType: "Working Group",
+		Attendees: []User{u1},
+	}, {
+		ID:        2,
+		EventName: "event two",
+		EventDate: d1,
+		EventType: "Working Group",
+		Attendees: []User{u1},
+	}, {
+		ID:        3,
+		EventName: "event three",
+		EventDate: d3,
+		EventType: "Working Group",
+		Attendees: []User{u1},
+	}, {
+		ID:        4,
+		EventName: "event four",
+		EventDate: d3,
+		EventType: "Working Group",
+		Attendees: []User{u1},
+	}}
+	mustInsertAllEvents(t, db, insertEvents)
+
+	d, err := u1.GetUserEventData(db)
+	assert.NoError(t, err)
+
+	d.FirstEvent.Equal(d1)
+	d.LastEvent.Equal(d3)
+	assert.Equal(t, d.TotalEvents, 4)
+}
+
+func mustInsertAllEvents(t *testing.T, db *sqlx.DB, events []Event) {
+	for _, e := range events {
+		_, err := InsertUpdateEvent(db, Event{
+			EventName: e.EventName,
+			EventDate: e.EventDate,
+			EventType: e.EventType,
+			Attendees: e.Attendees,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
 func TestGetLeaderboardUsers(t *testing.T) {
 	db := newTestDB()
 	defer db.Close()

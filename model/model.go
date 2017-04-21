@@ -244,23 +244,21 @@ func getEventType(rawEventType string) (EventType, error) {
 }
 
 type User struct {
-	ID          int            `db:"id"`
-	Name        string         `db:"name"`
-	Email       string         `db:"email"`
-	ChapterID   sql.NullString `db:"chapter_id"`
-	Phone       string         `db:"phone"`
-	Location    sql.NullString `db:"location"`
-	Facebook    string         `db:"facebook"`
-	FirstEvent  string         `db:"firstevent"`
-	LastEvent   string         `db:"lastevent"`
-	TotalEvents int        	   `db:"total_events"`
+	ID        int            `db:"id"`
+	Name      string         `db:"name"`
+	Email     string         `db:"email"`
+	ChapterID sql.NullString `db:"chapter_id"`
+	Phone     string         `db:"phone"`
+	Location  sql.NullString `db:"location"`
+	Facebook  string         `db:"facebook"`
 }
 
 type UserJSON struct {
 	ID    int    `json:"id"`
 	Name  string `json:"name"`
 	Email string `json:"email"`
-	// NOTE: ChapterID is currently a pain in the butt...
+	// TODO: Rename ChapterID to Chapter, make it a generic text
+	// field.
 	ChapterID   string `json:"chapter_id"`
 	Phone       string `json:"phone"`
 	Location    string `json:"location"`
@@ -270,6 +268,31 @@ type UserJSON struct {
 	TotalEvents int    `json:"totalevents"`
 }
 
+type UserEventData struct {
+	FirstEvent  time.Time `db:"first_event"`
+	LastEvent   time.Time `db:"last_event"`
+	TotalEvents int       `db:"total_events"`
+}
+
+func (u User) GetUserEventData(db *sqlx.DB) (UserEventData, error) {
+	query := `
+SELECT
+  MIN(e.date) AS first_event,
+  MAX(e.date) AS last_event,
+  COUNT(*) as total_events
+FROM events e
+JOIN event_attendance
+  ON event_attendance.event_id = e.id
+WHERE
+  event_attendance.activist_id = ?
+`
+	var data UserEventData
+	if err := db.Get(&data, query, u.ID); err != nil {
+		return UserEventData{}, err
+	}
+	return data, nil
+}
+
 func GetUsersJSON(db *sqlx.DB) ([]UserJSON, error) {
 	var usersJSON []UserJSON
 	users, err := GetUsers(db)
@@ -277,17 +300,21 @@ func GetUsersJSON(db *sqlx.DB) ([]UserJSON, error) {
 		return nil, err
 	}
 	for _, u := range users {
+		eventData, err := u.GetUserEventData(db)
+		if err != nil {
+			return nil, err
+		}
 		usersJSON = append(usersJSON, UserJSON{
-			ID:         u.ID,
-			Name:       u.Name,
-			Email:      u.Email,
-			ChapterID:  u.ChapterID.String,
-			Phone:      u.Phone,
-			Location:   u.Location.String,
-			Facebook:   u.Facebook,
-			FirstEvent: u.FirstEvent,
-			LastEvent:  u.LastEvent,
-			TotalEvents:  u.TotalEvents,
+			ID:          u.ID,
+			Name:        u.Name,
+			Email:       u.Email,
+			ChapterID:   u.ChapterID.String,
+			Phone:       u.Phone,
+			Location:    u.Location.String,
+			Facebook:    u.Facebook,
+			FirstEvent:  eventData.FirstEvent.Format(EventDateLayout),
+			LastEvent:   eventData.LastEvent.Format(EventDateLayout),
+			TotalEvents: eventData.TotalEvents,
 		})
 	}
 	return usersJSON, nil
@@ -319,39 +346,12 @@ SELECT
   c.name AS chapter_id,
   phone,
   location,
-  facebook,
-  IFNULL(firstevent.first_event,"None") AS firstevent,
-  IFNULL(lastevent.last_event,"None") AS lastevent,
-  IFNULL(total_events,0) AS total_events
+  facebook
 FROM activists a
 
 LEFT JOIN chapters c
   ON c.id = a.chapter_id
-
-LEFT JOIN (
-  SELECT ea.activist_id, MIN(e.date) AS "first_event"
-  FROM event_attendance ea
-  JOIN events e
-    ON e.id = ea.event_id
-  GROUP BY ea.activist_id
-) AS firstevent
-  ON a.id = firstevent.activist_id
-
-LEFT JOIN (
-  SELECT ea.activist_id, MAX(e.date) AS "last_event"
-  FROM event_attendance ea
-  JOIN events e
-    ON e.id = ea.event_id
-  GROUP BY ea.activist_id
-) AS lastevent
-  ON firstevent.activist_id = lastevent.activist_id 
-
-LEFT JOIN (
-  SELECT activist_id, COUNT(event_id) AS "total_events"
-  FROM event_attendance
-  GROUP BY activist_id
-) AS total
-  ON firstevent.activist_id = total.activist_id `
+`
 
 	if name != "" {
 		query += "WHERE a.name = ? "
