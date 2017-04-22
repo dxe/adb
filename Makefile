@@ -17,7 +17,7 @@ samer_deploy:
 	rm -f adb
 	go build
 	ssh samer@adb.dxetech.org "sudo svc -d /etc/service/adb"
-	rsync --chmod=ug+w --groupmap="*:adb" -azP --delete adb run templates static samer@adb.dxetech.org:/opt/adb/
+	rsync --chmod=ug+w --groupmap="*:adb" -azPO --delete adb run templates static samer@adb.dxetech.org:/opt/adb/
 	ssh samer@adb.dxetech.org "sudo svc -u /etc/service/adb"
 
 jake_deploy:
