@@ -106,6 +106,7 @@ var validEmails = map[string]bool{
 	"crueltyfreetummy@gmail.com":        true,
 	"cwbailey20042@gmail.com":           true,
 	"dianadeikman@aol.com":              true,
+	"jackie@directactioneverywhere.com": true,
 	"jake@directactioneverywhere.com":   true,
 	"jakehobbs@gmail.com":               true,
 	"jeffdavidson53@gmail.com":          true,
@@ -128,6 +129,7 @@ var validEmails = map[string]bool{
 	"taniacamposs97@gmail.com":          true,
 	"thernandez1485@gmail.com":          true,
 	"wayne@directactioneverywhere.com":  true,
+	"wilson@directactioneverywhere.com": true,
 	"zach@directactioneverywhere.com":   true,
 }
 
