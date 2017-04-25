@@ -672,7 +672,7 @@ LEFT JOIN (
   ON firstevent.activist_id = key_event.activist_id
 
 WHERE
-	total_events_30_days > 1
+	total_events_30_days > 0
 	AND a.exclude_from_leaderboard <> 1
 
 ORDER BY points DESC`
