@@ -687,55 +687,31 @@ ORDER BY points DESC`
 
 func GetPower(db *sqlx.DB) (int, error) {
 	query := `
-SELECT COUNT(name) as movement_power_index from (
-  SELECT
-    a.name AS name,
-    IFNULL(community_points,0) AS community,
-    IFNULL(protest_points,0) AS protest,
-    IFNULL(key_event_points,0) as key_event
-  FROM activists a
+SELECT COUNT(power_id) AS movement_power_index FROM (
 
-  LEFT JOIN (
-    SELECT ea.activist_id, COUNT(ea.event_id) AS "protest_points"
-    FROM event_attendance ea
-    JOIN events e
-      ON ea.event_id = e.id
+  SELECT protest_events.activist_id AS power_id FROM (
+
+    SELECT activist_id, event_type FROM event_attendance ea
+    JOIN events e ON ea.event_id = e.id
     WHERE
       e.date BETWEEN DATE_SUB(NOW(), INTERVAL 30 DAY) AND NOW()
-      and e.event_type = "protest"
-    GROUP BY activist_id
-  ) AS protest
-    ON a.id = protest.activist_id
+      AND (event_type = "protest" OR event_type = "key event")
+    GROUP BY activist_id, event_type
 
-  LEFT JOIN (
-    SELECT ea.activist_id, COUNT(ea.event_id) AS "community_points"
-    FROM event_attendance ea
-    JOIN events e
-      ON ea.event_id = e.id
-    WHERE e.date BETWEEN DATE_SUB(NOW(), INTERVAL 30 DAY) AND NOW()
-    AND e.event_type = "community"
-    GROUP BY activist_id
-  ) AS community
-    ON a.id = community.activist_id
+  ) AS protest_events
 
-  LEFT JOIN (
-    SELECT ea.activist_id, COUNT(ea.event_id) AS "key_event_points"
-    FROM event_attendance ea
-    JOIN events e
-      ON ea.event_id = e.id
+  JOIN (
+    SELECT activist_id, event_type from event_attendance ea
+    JOIN events e ON ea.event_id = e.id
     WHERE
       e.date BETWEEN DATE_SUB(NOW(), INTERVAL 30 DAY) AND NOW()
-      AND e.event_type = "key event"
-    GROUP BY activist_id
-  ) AS key_event
-    ON a.id = key_event.activist_id
+      AND event_type <> "protest" AND event_type <> "key event"
+    GROUP BY activist_id, event_type
+  ) AS other_events ON other_events.activist_id = protest_events.activist_id
 
-  HAVING
-      community > 0
-    AND (protest > 0 OR key_event > 0)
+  GROUP BY protest_events.activist_id
 
-  ORDER BY a.id ASC
-) as community_index
+) AS power_index
 `
 	var power int
 	if err := db.Get(&power, query); err != nil {
