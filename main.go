@@ -170,6 +170,7 @@ func router() *mux.Router {
 	router.Handle("/list_events", alice.New(authMiddleware).ThenFunc(main.ListEventsHandler))
 	router.Handle("/list_activists", alice.New(authMiddleware).ThenFunc(main.ListActivistsHandler))
 	router.Handle("/leaderboard", alice.New(authMiddleware).ThenFunc(main.LeaderboardHandler))
+	router.Handle("/power", alice.New(authMiddleware).ThenFunc(main.PowerHandler)) // TODO: rename
 
 	// Unauthed API
 	router.HandleFunc("/tokensignin", main.TokenSignInHandler)
@@ -314,7 +315,7 @@ func (c MainController) UpdateEventHandler(w http.ResponseWriter, r *http.Reques
 func (c MainController) TransposedEventsDataJsonHandler(w http.ResponseWriter, r *http.Request) {
 	events, err := model.GetEventsJSON(c.db, model.GetEventOptions{
 		OrderBy:   "date ASC",
-		DateFrom:  "",
+		DateFrom:  "2017-01-01",
 		DateTo:    "",
 		EventType: "",
 	})
@@ -431,6 +432,20 @@ func (c MainController) LeaderboardListHandler(w http.ResponseWriter, r *http.Re
 	}
 
 	writeJSON(w, activists)
+}
+
+func (c MainController) PowerHandler(w http.ResponseWriter, r *http.Request) {
+	power, err := model.GetPower(c.db)
+	if err != nil {
+		panic(err)
+	}
+
+	renderPage(w, "power", PageData{
+		PageName: "Power",
+		Data: map[string]interface{}{
+			"Power": power,
+		},
+	})
 }
 
 func main() {
