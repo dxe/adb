@@ -687,30 +687,17 @@ ORDER BY points DESC`
 
 func GetPower(db *sqlx.DB) (int, error) {
 	query := `
-SELECT COUNT(power_id) AS movement_power_index FROM (
-
-  SELECT protest_events.activist_id AS power_id FROM (
-
-    SELECT activist_id, event_type FROM event_attendance ea
-    JOIN events e ON ea.event_id = e.id
-    WHERE
-      e.date BETWEEN DATE_SUB(NOW(), INTERVAL 30 DAY) AND NOW()
-      AND (event_type = "protest" OR event_type = "key event")
-    GROUP BY activist_id, event_type
-
-  ) AS protest_events
-
-  JOIN (
-    SELECT activist_id, event_type from event_attendance ea
-    JOIN events e ON ea.event_id = e.id
-    WHERE
-      e.date BETWEEN DATE_SUB(NOW(), INTERVAL 30 DAY) AND NOW()
-      AND event_type <> "protest" AND event_type <> "key event"
-    GROUP BY activist_id, event_type
-  ) AS other_events ON other_events.activist_id = protest_events.activist_id
-
-  GROUP BY protest_events.activist_id
-
+SELECT COUNT(*) AS movement_power_index
+FROM (
+	SELECT
+		activist_id,
+		MAX(CASE WHEN event_type = "protest" or event_type = "key event" THEN "1" ELSE "0" END) AS is_protest,
+	    MAX(CASE WHEN event_type <> "protest" and event_type <> "key event" THEN "1" ELSE "0" END) AS is_other
+	FROM event_attendance ea
+	JOIN events e ON ea.event_id = e.id
+	WHERE e.date BETWEEN DATE_SUB(NOW(), INTERVAL 30 DAY) AND NOW()
+	GROUP BY activist_id
+	HAVING is_protest = "1" AND is_other = "1"
 ) AS power_index
 `
 	var power int
