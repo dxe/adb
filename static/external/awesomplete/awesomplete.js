@@ -314,8 +314,26 @@ _.prototype = {
 			me["input"].style.border = '2px solid red';
 		}
 		else {
-			me["input"].style.border = '';
-		}
+			// not a duplicate, so let's check if they're a new person
+			var allActivists = new Set();
+			for (var i =0; i< this._list.length; i++) {
+				allActivists.add(this._list[i]);
+			}
+			if (allActivists.has(value)) {
+				// person exists in ADB and is not a duplicate, no coloring needed
+				me["input"].style.border = '';
+			}
+			else {
+				// check if field is blank
+				if (value == "") {
+					me["input"].style.border = '';
+				}
+				else {
+				// person does not exist in ADB, so highlight them
+				me["input"].style.border = '2px solid yellow';
+				}	
+			}
+		}	
 	}
 };
 
