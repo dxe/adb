@@ -39,7 +39,7 @@ function updateAwesomeplete() {
 }
 
 function initializeApp() {
-  addRows(10);
+  addRows(5);
   updateAutocompleteNames();
   // If any form input/selection changes, mark the page as dirty.
   $('#eventForm').change(function(e) {
