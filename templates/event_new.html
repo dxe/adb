@@ -28,7 +28,7 @@
       </select>
       <br />
 
-      <label for="eventDate"><b>Event date</b><button class="btn btn-xs btn-secondary" style="margin: 0px 10px" onclick="setDateToToday(); return false;">today</button><br /></label>
+      <label for="eventDate"><b>Event date</b><button class="btn btn-xs btn-primary" style="margin: 0px 10px" onclick="setDateToToday(); return false;">today</button><br /></label>
       <input id="eventDate" class="form-control" type="date" value="{{if .Data.Event.EventDate | datenotzero }}{{.Data.Event.EventDate | formatdate}}{{end}}"><br />
 
       <label for="attendee1"><b>Attendees</b><br /></label>
