@@ -33,7 +33,6 @@ CREATE TABLE IF NOT EXISTS activists (
 	db.MustExec(`
 CREATE TABLE IF NOT EXISTS event_attendance (
   activist_id INTEGER NOT NULL,
-  activist_name STRING NOT NULL,
   event_id INTEGER NOT NULL
 )`)
 
@@ -45,10 +44,11 @@ CREATE TABLE IF NOT EXISTS events (
   event_type VARCHAR(60) NOT NULL
 )`)
 
-	db.MustExec(`
+  db.MustExec(`
 CREATE TABLE IF NOT EXISTS chapters (
   id INTEGER PRIMARY KEY AUTO_INCREMENT,
   name VARCHAR(60) NOT NULL
 )`)
+
 
 }
