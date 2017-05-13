@@ -51,19 +51,19 @@ function initializeApp() {
     DIRTY = true;
   });
   // Input is fired any time the user types in an input field.
-  $('#eventForm').on('input', function(e) {
+  $('#attendee-rows').on('input', function(e) {
     DIRTY = true;
     var input = e.target;
     updateInputColor(input);
-    maybeExpandRows();
+    maybeExpandRows(input);
   });
   // awesomplete-selectcomplete is fired when the user clicks on a
   // name in the awesomplete dropdown.
-  $('#eventForm').on("awesomplete-selectcomplete", function(e) {
+  $('#attendee-rows').on("awesomplete-selectcomplete", function(e) {
     DIRTY = true;
     var input = e.target;
     updateInputColor(input);
-    maybeExpandRows();
+    maybeExpandRows(input);
 
     // Select the next row.
     var $rows = $('.attendee-input');
@@ -113,12 +113,15 @@ function updateInputColor(input) {
 
 // Expand the number of rows automatically if one of the last two
 // rows has a value.
-function maybeExpandRows() {
+function maybeExpandRows(currentInput) {
   var $rows = $('.attendee-input');
   if ($rows[$rows.length - 1].value !== '' ||
       $rows[$rows.length - 2].value !== '') {
     addRows(10);
   }
+
+  // After expanding, focus on the current input again.
+  $(currentInput).focus();
 }
 
 // creates new event in ADB
