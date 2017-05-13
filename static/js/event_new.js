@@ -12,6 +12,7 @@ window.addEventListener('beforeunload', function(e) {
 });
 
 var ACTIVIST_NAMES = [];
+var ACTIVIST_NAMES_SET = new Set();
 
 function updateAutocompleteNames() {
   $.ajax({
@@ -22,6 +23,7 @@ function updateAutocompleteNames() {
       var activistNames = data.activist_names;
       for (var i = 0; i < activistNames.length; i++) {
         ACTIVIST_NAMES.push(activistNames[i]);
+        ACTIVIST_NAMES_SET.add(activistNames[i]);
       }
     },
     error: function() {
@@ -45,6 +47,47 @@ function initializeApp() {
   $('#eventForm').change(function(e) {
     DIRTY = true;
   });
+  $('#eventForm').on('input', function(e) {
+    var input = e.target;
+    updateInputColor(input);
+  });
+  $('#eventForm').on("awesomplete-selectcomplete", function(e) {
+    DIRTY = true;
+    var input = e.target;
+    updateInputColor(input);
+  });
+}
+
+// Update the color of the input element.
+// Highlight in red if the input is a duplicate.
+// Highlight in yellow if the user is not in the database.
+function updateInputColor(input) {
+  var value = input.value;
+  // If the input is blank, just remove the style.
+  if (value === '') {
+    input.style.border = '';
+    return;
+  }
+
+  var theEntireRows = document.querySelector('#attendee-rows');
+  var currentValues = new Set();
+  for (var i = 0; i< theEntireRows.children.length; i++) {
+    // insert the values into the Set only if it not null
+    if (input !== theEntireRows.children[i].children[0] && theEntireRows.children[i].children[0].value !== "") {
+      currentValues.add(theEntireRows.children[i].children[0].value)
+    }
+  }
+
+  if (currentValues.has(value)) {
+    // If the name is a duplicate of all the names entered, color it
+    // red.
+    input.style.border = '2px solid red';
+  } else if (!ACTIVIST_NAMES_SET.has(value)) {
+    // If the name is not in the set of all activist names, then color it yellow.
+    input.style.border = '2px solid yellow';
+  } else {
+    input.style.border = '';
+  }
 }
 
 // creates new event in ADB

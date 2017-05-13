@@ -232,34 +232,12 @@ _.prototype = {
 				$.fire(this.input, "awesomplete-selectcomplete", {
 					text: suggestion
 				});
-				// check if duplicate value was selected, highlight red if so
-				var theEntireRows = $('#attendee-rows');
-				var me = this;
-				var value = this.input.value;
-				var currentValues = new Set();
-				for ( var i =0; i< theEntireRows.children.length; i++) {
-					// insert the values into the Set only if it not null
-					if (me["input"] !== theEntireRows.children[i].children[0] && theEntireRows.children[i].children[0].value !== "") {
-					currentValues.add(theEntireRows.children[i].children[0].value)
-					}
-				}
-
-				if(currentValues.has(value)) {
-					// Mark the "me" element
-					//alert("Hey it's a duplicate field")
-					me["input"].style.border = '2px solid red';
-				}
-				else {
-					me["input"].style.border = '';
-				}
-
 			}
 
 		}
 	},
 
 	evaluate: function() {
-		var theEntireRows = $('#attendee-rows');
 		var me = this;
 		var value = this.input.value;
 
@@ -296,44 +274,6 @@ _.prototype = {
 		else {
 			this.close({ reason: "nomatches" });
 		}
-
-		// Check before populating the values
-		// create Set object on the filled fields and
-		// see if the new value is already in the set
-		var currentValues = new Set();
-		for ( var i =0; i< theEntireRows.children.length; i++) {
-			// insert the values into the Set only if it not null
-			if (me["input"] !== theEntireRows.children[i].children[0] && theEntireRows.children[i].children[0].value !== "") {
-			currentValues.add(theEntireRows.children[i].children[0].value)
-			}
-		}
-
-		if(currentValues.has(value)) {
-			// Mark the "me" element
-			//alert("Hey it's a duplicate field")
-			me["input"].style.border = '2px solid red';
-		}
-		else {
-			// not a duplicate, so let's check if they're a new person
-			var allActivists = new Set();
-			for (var i =0; i< this._list.length; i++) {
-				allActivists.add(this._list[i]);
-			}
-			if (allActivists.has(value)) {
-				// person exists in ADB and is not a duplicate, no coloring needed
-				me["input"].style.border = '';
-			}
-			else {
-				// check if field is blank
-				if (value == "") {
-					me["input"].style.border = '';
-				}
-				else {
-				// person does not exist in ADB, so highlight them
-				me["input"].style.border = '2px solid yellow';
-				}	
-			}
-		}	
 	}
 };
 
