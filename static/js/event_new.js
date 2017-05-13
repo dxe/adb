@@ -64,6 +64,18 @@ function initializeApp() {
     var input = e.target;
     updateInputColor(input);
     maybeExpandRows();
+
+    // Select the next row.
+    var $rows = $('.attendee-input');
+    for (var i = 0; i < $rows.length; i++) {
+      var row = $rows[i];
+      if (input === row) {
+        // Select the row after.
+        if (i+1 < $rows.length) {
+          $($rows[i+1]).focus();
+        }
+      }
+    }
   });
 }
 
