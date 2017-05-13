@@ -44,17 +44,26 @@ function initializeApp() {
   addRows(5);
   updateAutocompleteNames();
   // If any form input/selection changes, mark the page as dirty.
+  //
+  // Change fires if the form is changed and the user moves onto the
+  // next input (e.g. the user types in a name and presses tab).
   $('#eventForm').change(function(e) {
     DIRTY = true;
   });
+  // Input is fired any time the user types in an input field.
   $('#eventForm').on('input', function(e) {
+    DIRTY = true;
     var input = e.target;
     updateInputColor(input);
+    maybeExpandRows();
   });
+  // awesomplete-selectcomplete is fired when the user clicks on a
+  // name in the awesomplete dropdown.
   $('#eventForm').on("awesomplete-selectcomplete", function(e) {
     DIRTY = true;
     var input = e.target;
     updateInputColor(input);
+    maybeExpandRows();
   });
 }
 
@@ -87,6 +96,16 @@ function updateInputColor(input) {
     input.style.border = '2px solid yellow';
   } else {
     input.style.border = '';
+  }
+}
+
+// Expand the number of rows automatically if one of the last two
+// rows has a value.
+function maybeExpandRows() {
+  var $rows = $('.attendee-input');
+  if ($rows[$rows.length - 1].value !== '' ||
+      $rows[$rows.length - 2].value !== '') {
+    addRows(10);
   }
 }
 
