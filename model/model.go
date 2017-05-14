@@ -85,8 +85,6 @@ func getEvents(db *sqlx.DB, options GetEventOptions) ([]Event, error) {
 	var queryArgs []interface{}
 	query := `SELECT id, name, date, event_type FROM events `
 
-	options.OrderBy = "date desc, id desc "
-
 	// Items in whereClause are added to the query in order, separated by ' AND '.
 	var whereClause []string
 	if options.EventID != 0 {

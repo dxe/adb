@@ -379,7 +379,7 @@ func (c MainController) EventListHandler(w http.ResponseWriter, r *http.Request)
 	eventType := r.PostFormValue("event_type")
 
 	events, err := model.GetEventsJSON(c.db, model.GetEventOptions{
-		OrderBy:   "date DESC",
+		OrderBy:   "date DESC, id DESC",
 		DateFrom:  dateStart,
 		DateTo:    dateEnd,
 		EventType: eventType,
