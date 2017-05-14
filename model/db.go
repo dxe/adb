@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS activists (
   id INTEGER PRIMARY KEY AUTO_INCREMENT,
   name VARCHAR(80) NOT NULL,
   email VARCHAR(80) NOT NULL DEFAULT '',
-  chapter_id INTEGER DEFAULT NULL,
+  chapter VARCHAR(80) NOT NULL DEFAULT '',
   phone varchar(20) NOT NULL DEFAULT '',
   location TEXT,
   facebook VARCHAR(80) NOT NULL DEFAULT '',
@@ -43,12 +43,4 @@ CREATE TABLE IF NOT EXISTS events (
   date DATE NOT NULL,
   event_type VARCHAR(60) NOT NULL
 )`)
-
-  db.MustExec(`
-CREATE TABLE IF NOT EXISTS chapters (
-  id INTEGER PRIMARY KEY AUTO_INCREMENT,
-  name VARCHAR(60) NOT NULL
-)`)
-
-
 }

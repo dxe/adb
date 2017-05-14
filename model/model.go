@@ -124,7 +124,7 @@ func getEvents(db *sqlx.DB, options GetEventOptions) ([]Event, error) {
 	for i := range events {
 		var attendees []User
 		err = db.Select(&attendees, `SELECT
-a.id, a.name, a.email, a.chapter_id, a.phone, a.location, a.facebook
+a.id, a.name, a.email, a.chapter, a.phone, a.location, a.facebook
 FROM activists a
 JOIN event_attendance et
   ON a.id = et.activist_id
@@ -244,22 +244,20 @@ func getEventType(rawEventType string) (EventType, error) {
 }
 
 type User struct {
-	ID        int            `db:"id"`
-	Name      string         `db:"name"`
-	Email     string         `db:"email"`
-	ChapterID sql.NullString `db:"chapter_id"`
-	Phone     string         `db:"phone"`
-	Location  sql.NullString `db:"location"`
-	Facebook  string         `db:"facebook"`
+	ID       int            `db:"id"`
+	Name     string         `db:"name"`
+	Email    string         `db:"email"`
+	Chapter  string         `db:"chapter"`
+	Phone    string         `db:"phone"`
+	Location sql.NullString `db:"location"`
+	Facebook string         `db:"facebook"`
 }
 
 type UserJSON struct {
-	ID    int    `json:"id"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
-	// TODO: Rename ChapterID to Chapter, make it a generic text
-	// field.
-	ChapterID   string `json:"chapter_id"`
+	ID          int    `json:"id"`
+	Name        string `json:"name"`
+	Email       string `json:"email"`
+	Chapter     string `json:"chapter"`
 	Phone       string `json:"phone"`
 	Location    string `json:"location"`
 	Facebook    string `json:"facebook"`
@@ -317,7 +315,7 @@ func GetUsersJSON(db *sqlx.DB) ([]UserJSON, error) {
 			ID:          u.ID,
 			Name:        u.Name,
 			Email:       u.Email,
-			ChapterID:   u.ChapterID.String,
+			Chapter:     u.Chapter,
 			Phone:       u.Phone,
 			Location:    u.Location.String,
 			Facebook:    u.Facebook,
@@ -349,25 +347,22 @@ func getUsers(db *sqlx.DB, name string) ([]User, error) {
 	var queryArgs []interface{}
 	query := `
 SELECT
-  a.id AS id,
-  a.name AS name,
+  id,
+  name,
   email,
-  c.name AS chapter_id,
+  chapter,
   phone,
   location,
   facebook
-FROM activists a
-
-LEFT JOIN chapters c
-  ON c.id = a.chapter_id
+FROM activists
 `
 
 	if name != "" {
-		query += "WHERE a.name = ? "
+		query += " WHERE name = ? "
 		queryArgs = append(queryArgs, name)
 	}
 
-	query += "ORDER BY a.name"
+	query += " ORDER BY name "
 
 	var users []User
 	if err := db.Select(&users, query, queryArgs...); err != nil {

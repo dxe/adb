@@ -49,7 +49,7 @@ function listActivists(activists) {
                 '<h2 class="modal-title">' + activist.name + '</h5></div>' +
                 '<div class="modal-body">' +
                   '<label for="email">Email: </label><input class="form-control" type="text" value="'+ activist.email + '" id="email"><br />' +
-                  '<label for="chapter">Chapter: </label><input class="form-control" type="text" value="'+ activist.chapter_id + '" id="chapter"><br />' + 
+                  '<label for="chapter">Chapter: </label><input class="form-control" type="text" value="'+ activist.chapter + '" id="chapter"><br />' + 
                   '<label for="phone">Phone: </label><input class="form-control" type="text" value="'+ activist.phone + '" id="phone"><br />' +
                   '<label for="location">Location: </label><input class="form-control" type="text" value="'+ activist.location + '" id="location"><br />' +
                   '<label for="facebook">Facebook: </label><input class="form-control" type="text" value="'+ activist.facebook + '" id="facebook"><br />' +
