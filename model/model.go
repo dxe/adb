@@ -12,6 +12,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+var DangerousCharacters = "<>&"
+
 type EventJSON struct {
 	EventID   int      `json:"event_id"`
 	EventName string   `json:"event_name"`
@@ -431,6 +433,9 @@ func CleanEventData(db *sqlx.DB, body io.Reader) (Event, error) {
 	var e Event
 	e.ID = eventJSON.EventID
 
+	if strings.ContainsAny(eventJSON.EventName, DangerousCharacters) {
+		return Event{}, errors.New("Event name cannot include <, >, or &.")
+	}
 	e.EventName = strings.TrimSpace(eventJSON.EventName)
 	t, err := time.Parse(EventDateLayout, eventJSON.EventDate)
 	if err != nil {
@@ -445,6 +450,10 @@ func CleanEventData(db *sqlx.DB, body io.Reader) (Event, error) {
 
 	e.Attendees = []User{}
 	for _, attendee := range eventJSON.Attendees {
+		if strings.ContainsAny(attendee, DangerousCharacters) {
+			return Event{}, errors.New("Event name cannot include <, >, or &.")
+		}
+
 		user, err := GetOrCreateUser(db, strings.TrimSpace(attendee))
 		if err != nil {
 			return Event{}, err
