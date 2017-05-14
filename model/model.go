@@ -692,12 +692,12 @@ FROM (
 	SELECT
 		activist_id,
 		MAX(CASE WHEN event_type = "protest" or event_type = "key event" THEN "1" ELSE "0" END) AS is_protest,
-	    MAX(CASE WHEN event_type <> "protest" and event_type <> "key event" THEN "1" ELSE "0" END) AS is_other
+	    MAX(CASE WHEN event_type = "community" THEN "1" ELSE "0" END) AS is_community
 	FROM event_attendance ea
 	JOIN events e ON ea.event_id = e.id
 	WHERE e.date BETWEEN DATE_SUB(NOW(), INTERVAL 30 DAY) AND NOW()
 	GROUP BY activist_id
-	HAVING is_protest = "1" AND is_other = "1"
+	HAVING is_protest = "1" AND is_community = "1"
 ) AS power_index
 `
 	var power int

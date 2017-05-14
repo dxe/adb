@@ -102,6 +102,8 @@ var validEmails = map[string]bool{
 	"almira@directactioneverywhere.com":  true,
 	"almiratanner@gmail.com":             true,
 	"amanda_schwartz@berkeley.edu":       true,
+	"andrew@directactioneverywhere.com":  true,
+	"andrewgsharo@gmail.com":             true,
 	"cking@berkeley.edu":                 true,
 	"crueltyfreetummy@gmail.com":         true,
 	"cwbailey20042@gmail.com":            true,
