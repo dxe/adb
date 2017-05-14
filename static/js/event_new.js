@@ -117,7 +117,7 @@ function maybeExpandRows(currentInput) {
   var $rows = $('.attendee-input');
   if ($rows[$rows.length - 1].value !== '' ||
       $rows[$rows.length - 2].value !== '') {
-    addRows(10);
+    addRows(5);
   }
 
   // After expanding, focus on the current input again.
