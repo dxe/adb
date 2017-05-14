@@ -12,13 +12,13 @@ function listActivists(activists) {
   for (var i = 0; i < activists.length; i++) {
     var activist = activists[i];
 
-    if (activist.firstevent != "None") {
-      var firsteventSplit = activist.firstevent.split('-');
+    if (activist.first_event != "None") {
+      var firsteventSplit = activist.first_event.split('-');
       var firsteventDate = new Date(firsteventSplit[0],firsteventSplit[1]-1,firsteventSplit[2]);
     }
 
-    if (activist.lastevent != "None") {
-      var lasteventSplit = activist.lastevent.split('-');
+    if (activist.last_event != "None") {
+      var lasteventSplit = activist.last_event.split('-');
       var lasteventDate = new Date(lasteventSplit[0],lasteventSplit[1]-1,lasteventSplit[2]); 
     }
 
@@ -27,14 +27,14 @@ function listActivists(activists) {
       activistStatus = "";
     }
     else {
-      if (activist.firstevent == "None") {
+      if (activist.first_event == "None") {
         activistStatus = '<span class="hide">4</span>No attendance';
       }
       else {
         if (lasteventDate < daysAgo60) {
           activistStatus = '<span class="hide">3</span>Former';
         }
-        else if (firsteventDate > daysAgo90  && activist.totalevents < 5) {
+        else if (firsteventDate > daysAgo90  && activist.total_events < 5) {
           activistStatus = '<span class="hide">2</span>New';
         }
         else {
@@ -65,8 +65,8 @@ function listActivists(activists) {
         '<td>' + activist.name + '</td>' +
         '<td>' + activist.email + '</td>' +
         '<td>' + activist.phone + '</td>' +
-        '<td>' + activist.firstevent + '</td>' +
-        '<td>' + activist.lastevent + '</td>' +
+        '<td>' + activist.first_event + '</td>' +
+        '<td>' + activist.last_event + '</td>' +
         '<td>' + activistStatus + '</td>' +
         '</tr>';
     d.insertAdjacentHTML('beforeend', newRow);

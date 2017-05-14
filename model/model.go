@@ -253,6 +253,17 @@ type User struct {
 	Facebook string         `db:"facebook"`
 }
 
+type UserEventData struct {
+	FirstEvent  *time.Time `db:"first_event"`
+	LastEvent   *time.Time `db:"last_event"`
+	TotalEvents int        `db:"total_events"`
+}
+
+type UserExtra struct {
+	User
+	UserEventData
+}
+
 type UserJSON struct {
 	ID          int    `json:"id"`
 	Name        string `json:"name"`
@@ -261,15 +272,9 @@ type UserJSON struct {
 	Phone       string `json:"phone"`
 	Location    string `json:"location"`
 	Facebook    string `json:"facebook"`
-	FirstEvent  string `json:"firstevent"`
-	LastEvent   string `json:"lastevent"`
-	TotalEvents int    `json:"totalevents"`
-}
-
-type UserEventData struct {
-	FirstEvent  *time.Time `db:"first_event"`
-	LastEvent   *time.Time `db:"last_event"`
-	TotalEvents int        `db:"total_events"`
+	FirstEvent  string `json:"first_event"`
+	LastEvent   string `json:"last_event"`
+	TotalEvents int    `json:"total_events"`
 }
 
 func (u User) GetUserEventData(db *sqlx.DB) (UserEventData, error) {
@@ -293,35 +298,31 @@ WHERE
 
 func GetUsersJSON(db *sqlx.DB) ([]UserJSON, error) {
 	var usersJSON []UserJSON
-	users, err := GetUsers(db)
+	users, err := GetUsersExtra(db)
 	if err != nil {
 		return nil, err
 	}
 	for _, u := range users {
-		eventData, err := u.GetUserEventData(db)
-		if err != nil {
-			return nil, err
-		}
 		firstEvent := ""
-		if eventData.FirstEvent != nil {
-			firstEvent = eventData.FirstEvent.Format(EventDateLayout)
+		if u.UserEventData.FirstEvent != nil {
+			firstEvent = u.UserEventData.FirstEvent.Format(EventDateLayout)
 		}
 		lastEvent := ""
-		if eventData.LastEvent != nil {
-			lastEvent = eventData.LastEvent.Format(EventDateLayout)
+		if u.UserEventData.LastEvent != nil {
+			lastEvent = u.UserEventData.LastEvent.Format(EventDateLayout)
 		}
 
 		usersJSON = append(usersJSON, UserJSON{
-			ID:          u.ID,
-			Name:        u.Name,
-			Email:       u.Email,
-			Chapter:     u.Chapter,
-			Phone:       u.Phone,
-			Location:    u.Location.String,
-			Facebook:    u.Facebook,
+			ID:          u.User.ID,
+			Name:        u.User.Name,
+			Email:       u.User.Email,
+			Chapter:     u.User.Chapter,
+			Phone:       u.User.Phone,
+			Location:    u.User.Location.String,
+			Facebook:    u.User.Facebook,
 			FirstEvent:  firstEvent,
 			LastEvent:   lastEvent,
-			TotalEvents: eventData.TotalEvents,
+			TotalEvents: u.UserEventData.TotalEvents,
 		})
 	}
 	return usersJSON, nil
@@ -366,6 +367,37 @@ FROM activists
 
 	var users []User
 	if err := db.Select(&users, query, queryArgs...); err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+func GetUsersExtra(db *sqlx.DB) ([]UserExtra, error) {
+	query := `
+SELECT
+  a.id,
+  a.name,
+  email,
+  chapter,
+  phone,
+  location,
+  facebook,
+  MIN(e.date) AS first_event,
+  MAX(e.date) AS last_event,
+  COUNT(e.id) as total_events
+FROM activists a
+
+LEFT JOIN event_attendance ea
+  ON ea.activist_id = a.id
+
+LEFT JOIN events e
+  ON ea.event_id = e.id
+
+GROUP BY a.id
+`
+	var users []UserExtra
+	if err := db.Select(&users, query); err != nil {
 		return nil, err
 	}
 
