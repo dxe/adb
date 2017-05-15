@@ -38,7 +38,7 @@ outputs are in `dist/`.
 
  * package.json: file with all frontend dependencies
 
-npm install --save some-module-name
+Run `npm install --save some-module-name` to install a new dependency.
 
  * webpack.config.js: configuration file for webpack, which builds the js
 
