@@ -2,6 +2,9 @@ var path = require('path')
 var webpack = require('webpack')
 
 module.exports = {
+
+  // List of bundles to create. If you want to add a new page, you'll
+  // need to also add it here.
   entry: {
     activist_list: 'activist_list',
     event_list: 'event_list',
