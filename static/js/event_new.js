@@ -43,6 +43,7 @@ function updateAwesomeplete() {
 function initializeApp() {
   addRows(5);
   updateAutocompleteNames();
+  countAttendees();
   // If any form input/selection changes, mark the page as dirty.
   //
   // Change fires if the form is changed and the user moves onto the
@@ -56,6 +57,7 @@ function initializeApp() {
     var input = e.target;
     updateInputColor(input);
     maybeExpandRows(input);
+    countAttendees(input);
   });
   // awesomplete-selectcomplete is fired when the user clicks on a
   // name in the awesomplete dropdown.
@@ -64,6 +66,7 @@ function initializeApp() {
     var input = e.target;
     updateInputColor(input);
     maybeExpandRows(input);
+    countAttendees(input);
 
     // Select the next row.
     var $rows = $('.attendee-input');
@@ -122,6 +125,17 @@ function maybeExpandRows(currentInput) {
 
   // After expanding, focus on the current input again.
   $(currentInput).focus();
+}
+
+function countAttendees(currentInput) {
+  var $rows = $('.attendee-input');
+  var attendeeTotal = 0;
+  for (var i = 0; i < $rows.length; i++) {
+    if ($rows[i].value !== '') {
+      attendeeTotal += 1;
+      $('#attendeeTotal').html(attendeeTotal);
+    }
+  }
 }
 
 // creates new event in ADB

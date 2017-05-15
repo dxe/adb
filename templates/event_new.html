@@ -37,8 +37,13 @@
             <input class="attendee-input form-control" value="{{$a.Name}}" />
         {{end}}
       </div>
+
+      <br />
+      <label for="attendeeTotal"><b>Total attendance: </b></label>
+      <span id="attendeeTotal">0</span><br />
+
     </form>
-    <br /><br />
+    <br />
     <center>
       <button class="btn btn-success btn-lg" id="submit-button" onclick="newEvent(event)"><span>Save event</span></button>
     </center>
