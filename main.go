@@ -185,12 +185,15 @@ func router() *mux.Router {
 	router.Handle("/event/list", alice.New(apiAuthMiddleware).ThenFunc(main.EventListHandler))
 	router.Handle("/event/delete", alice.New(apiAuthMiddleware).ThenFunc(main.EventDeleteHandler))
 	router.Handle("/activist/list", alice.New(apiAuthMiddleware).ThenFunc(main.ActivistListHandler))
+	//router.Handle("/activist/save", alice.New(apiAuthMiddleware).ThenFunc(main.ActivistSaveHandler))
 	router.Handle("/leaderboard/list", alice.New(apiAuthMiddleware).ThenFunc(main.LeaderboardListHandler))
 
 	if isProd {
 		router.PathPrefix("/static").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+		router.PathPrefix("/dist").Handler(http.StripPrefix("/dist/", http.FileServer(http.Dir("dist"))))
 	} else {
 		router.PathPrefix("/static").Handler(noCacheHandler(http.StripPrefix("/static/", http.FileServer(http.Dir("static")))))
+		router.PathPrefix("/dist").Handler(noCacheHandler(http.StripPrefix("/dist/", http.FileServer(http.Dir("dist")))))
 	}
 	return router
 }

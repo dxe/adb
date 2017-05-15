@@ -1,3 +1,5 @@
+import {flashMessage} from 'flash_message';
+
 function listActivists(activists) {
   $("#activist-list-body").html('');
   var d = document.getElementById('activist-list-body');
@@ -14,7 +16,7 @@ function listActivists(activists) {
   }
 }
 
-function initializeApp() {
+export function initializeApp() {
   $.ajax({
     url: "/leaderboard/list",
     success: function(data) {

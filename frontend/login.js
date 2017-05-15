@@ -1,5 +1,5 @@
 // Called by the google sign in button.
-function onSignIn(googleUser) {
+export function onSignIn(googleUser) {
   var id_token = googleUser.getAuthResponse().id_token;
   var xhr = new XMLHttpRequest();
   xhr.open('POST', '/tokensignin');

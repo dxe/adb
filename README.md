@@ -3,15 +3,19 @@ Activist Database Project
 
 # Run
 
-First, download all the needed dependencies. Then start the server by running `go run main.go` and going to localhost:8080.
+First, download all the needed dependencies. Then start the server by running `make run_all` and going to localhost:8080.
 
-# Deploy
+# Dependencies
 
-To deploy, you need a user account that has the "adb" group and also has passwordless sudo enabled.
+You will need the following to run this project:
 
-The server uses daemontools on the server to run. See the Makefile for more info on how to deploy.
+ * go
+ * node
+ * mysql
 
-# Set up mysql locally for development
+After installing the above, download all the go and node dependencies by running `make deps`.
+
+## Set up mysql locally for development
 
 First, install mysql server. Then, create a user and database like this:
 
@@ -25,3 +29,15 @@ CREATE DATABASE adb_test_db CHARACTER SET utf8 COLLATE utf8_general_ci;
 ```
 
 Then run `make dev_db`.
+
+# JS
+
+This project uses webpack to compile our frontend files. Frontend
+files that need to be compiled are in `frontend/`, and the compiled
+outputs are in `dist/`.
+
+# Deploy
+
+To deploy, you need a user account that has the "adb" group and also has passwordless sudo enabled.
+
+The server uses daemontools on the server to run. See the Makefile for more info on how to deploy.

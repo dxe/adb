@@ -570,7 +570,7 @@ type LeaderboardUserJSON struct {
 }
 
 func GetLeaderboardUsersJSON(db *sqlx.DB) ([]LeaderboardUserJSON, error) {
-	var leaderboardUsersJSON []LeaderboardUserJSON
+	leaderboardUsersJSON := []LeaderboardUserJSON{}
 	leaderboardUsers, err := GetLeaderboardUsers(db)
 	if err != nil {
 		return nil, err

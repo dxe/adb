@@ -1,4 +1,6 @@
-function flashMessage(content, isError) {
+import {getCookie, deleteCookie} from 'cookie';
+
+export function flashMessage(content, isError) {
   var flash = $('#flash');
   if (isError) {
     flash[0].className = "alert alert-danger";
@@ -13,19 +15,8 @@ function flashMessage(content, isError) {
   }, 5 * 1000);
 }
 
-// from http://stackoverflow.com/questions/10730362/get-cookie-by-name
-function getCookie(name) {
-  var value = "; " + document.cookie;
-  var parts = value.split("; " + name + "=");
-  if (parts.length == 2) return parts.pop().split(";").shift();
-}
 
-// from http://stackoverflow.com/questions/2144386/javascript-delete-cookie
-function deleteCookie(name) {
-  document.cookie = name + '=;path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-}
-
-function initializeFlashMessage() {
+export function initializeFlashMessage() {
   // First, get any potential messages. Will be undefined if the
   // cookie isn't set.
   var error = getCookie("flash_message_error");
@@ -51,10 +42,10 @@ function initializeFlashMessage() {
   }
 }
 
-function setFlashMessageSuccessCookie(content) {
+export function setFlashMessageSuccessCookie(content) {
   document.cookie = "flash_message_success=" + encodeURIComponent(content) + ";path=/";
 }
 
-function setFlashMessageErrorCookie(content) {
+export function setFlashMessageErrorCookie(content) {
   document.cookie = "flash_message_error=" + encodeURIComponent(content) + ";path=/";
 }

@@ -1,3 +1,6 @@
 adb
 adb.db
 *.test
+npm-debug.log
+dist
+node_modules

@@ -1,5 +1,5 @@
 {{template "header.html" .}}
-<script src="/static/js/event_list.js"></script>
+<script src="/dist/event_list.js"></script>
 
 <div class="body-wrapper-wide event-list-content">
   <div class="title">
@@ -7,7 +7,7 @@
     <br />
   </div>
   <div>
-    <form class="form-inline" onsubmit="eventListRequest(); return false">
+    <form class="form-inline" onsubmit="event_list.eventListRequest(); return false">
       <label for="event-date-start">From:</label>
       <input id="event-date-start" class="form-control filter-margin" type="date">
       <label for="event-date-end">To:</label>
@@ -44,5 +44,5 @@
   </div>
 </div>
 
-<script>initializeApp();</script>
+<script>event_list.initializeApp();</script>
 {{template "footer.html" .}}

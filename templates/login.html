@@ -1,10 +1,10 @@
 {{template "header.html" .}}
 <meta name="google-signin-client_id" content="975059814880-lfffftbpt7fdl14cevtve8sjvh015udc.apps.googleusercontent.com">
 <script src="https://apis.google.com/js/platform.js" async defer></script>
-<script src="/static/js/login.js"></script>
+<script src="/dist/login.js"></script>
 <div class="body-wrapper login-content">
   <p>Please log in.</p>
   <div id="message"></div>
-  <div class="g-signin2" data-onsuccess="onSignIn"></div>
+  <div class="g-signin2" data-onsuccess="login.onSignIn"></div>
 </div>
 {{template "footer.html" .}}

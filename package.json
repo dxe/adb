@@ -1,0 +1,23 @@
+{
+  "name": "test",
+  "description": "test",
+  "version": "1.0.0",
+  "author": "test",
+  "private": true,
+  "scripts": {
+    "watch": "webpack --watch",
+    "dev-build": "webpack --progress --hide-modules",
+    "build": "NODE_ENV=production webpack --progress --hide-modules"
+  },
+  "dependencies": {
+    "vue": "^2.2.1"
+  },
+  "devDependencies": {
+    "babel-core": "^6.0.0",
+    "babel-loader": "^6.0.0",
+    "babel-preset-latest": "^6.0.0",
+    "vue-loader": "^11.1.4",
+    "vue-template-compiler": "^2.2.1",
+    "webpack": "^2.2.0"
+  }
+}
