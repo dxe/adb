@@ -741,7 +741,7 @@ FROM (
 	return power, nil
 }
 
-func GetPowerHist(db *sqlx.DB, month int, year int) (int, error) {
+func GetPowerHist(db *sqlx.DB, month string, year string) (int, error) {
 	query := `
 SELECT COUNT(*) AS movement_power_index
 FROM (
