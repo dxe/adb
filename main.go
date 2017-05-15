@@ -446,10 +446,16 @@ func (c MainController) PowerHandler(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
+	powerHist, err := model.GetPowerHistArray(c.db)
+	if err != nil {
+		panic(err)
+	}
+
 	renderPage(w, "power", PageData{
 		PageName: "Power",
 		Data: map[string]interface{}{
-			"Power": power,
+			"Power":     power,
+			"PowerHist": powerHist,
 		},
 	})
 }

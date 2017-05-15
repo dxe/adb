@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"strconv"
 	"strings"
 	"time"
 
@@ -741,7 +742,57 @@ FROM (
 	return power, nil
 }
 
-func GetPowerHist(db *sqlx.DB, month string, year string) (int, error) {
+type PowerHist struct {
+	Month int
+	Year  int
+	Power int
+}
+
+func GetPowerHistArray(db *sqlx.DB) ([]PowerHist, error) {
+	current_time := time.Now().Local()
+	current_time_string := current_time.Format("2006-01")
+	split_date := strings.Split(current_time_string, "-")
+
+	year := split_date[0]
+	month := split_date[1]
+
+	year_int, error := strconv.Atoi(year)
+	if error != nil {
+		return nil, error
+	}
+	month_int, error := strconv.Atoi(month)
+	if error != nil {
+		return nil, error
+	}
+
+	var history []PowerHist
+
+	for i := 0; i < 13; i++ {
+		power, error := GetPowerHist(db, month_int, year_int)
+		if error != nil {
+			return nil, error
+		}
+		history = append(history, PowerHist{
+			Month: month_int,
+			Year:  year_int,
+			Power: power,
+		})
+		if month_int == 1 {
+			month_int = 12
+			year_int -= 1
+		} else {
+			month_int -= 1
+		}
+	}
+	return history, nil
+}
+
+func GetPowerHist(db *sqlx.DB, month int, year int) (int, error) {
+	month_string := strconv.Itoa(month)
+	if month < 10 {
+		month_string = "0" + month_string
+	}
+	year_string := strconv.Itoa(year)
 	query := `
 SELECT COUNT(*) AS movement_power_index
 FROM (
@@ -754,7 +805,7 @@ FROM (
 	FROM event_attendance ea
 	JOIN events e ON ea.event_id = e.id
 	GROUP BY activist_id, year, month
-	HAVING is_protest = "1" AND is_community = "1" AND month = "` + month + `" AND year = "` + year + `"
+	HAVING is_protest = "1" AND is_community = "1" AND month = "` + month_string + `" AND year = "` + year_string + `"
 ) AS power_index
 `
 	var power int
