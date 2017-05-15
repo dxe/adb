@@ -726,7 +726,29 @@ FROM (
 	SELECT
 		activist_id,
 		MAX(CASE WHEN event_type = "protest" or event_type = "key event" THEN "1" ELSE "0" END) AS is_protest,
-	    MAX(CASE WHEN event_type = "community" THEN "1" ELSE "0" END) AS is_community
+	    MAX(CASE WHEN event_type = "outreach" or event_type = "sanctuary" or event_type = "community" THEN "1" ELSE "0" END) AS is_community
+	FROM event_attendance ea
+	JOIN events e ON ea.event_id = e.id
+	WHERE e.date BETWEEN DATE_SUB(NOW(), INTERVAL 30 DAY) AND NOW()
+	GROUP BY activist_id
+	HAVING is_protest = "1" AND is_community = "1"
+) AS power_index
+`
+	var power int
+	if err := db.Get(&power, query); err != nil {
+		return 0, err
+	}
+	return power, nil
+}
+
+func GetPowerHist(db *sqlx.DB, month int, year int) (int, error) {
+	query := `
+SELECT COUNT(*) AS movement_power_index
+FROM (
+	SELECT
+		activist_id,
+		MAX(CASE WHEN event_type = "protest" or event_type = "key event" THEN "1" ELSE "0" END) AS is_protest,
+	    MAX(CASE WHEN event_type = "outreach" or event_type = "sanctuary" or event_type = "community" THEN "1" ELSE "0" END) AS is_community
 	FROM event_attendance ea
 	JOIN events e ON ea.event_id = e.id
 	WHERE e.date BETWEEN DATE_SUB(NOW(), INTERVAL 30 DAY) AND NOW()
