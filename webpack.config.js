@@ -10,7 +10,6 @@ module.exports = {
     event_list: 'event_list',
     event_new: 'event_new',
     leaderboard: 'leaderboard',
-    login: 'login',
     flash_message: 'flash_message',
   },
 
