@@ -765,11 +765,13 @@ func GetPowerHistArray(db *sqlx.DB) ([]PowerHist, error) {
 		return nil, error
 	}
 
-	if month_int == 1 {
-		month_int = 12
-		year_int -= 1
-	} else {
-		month_int -= 1
+	for i := 0; i < 12; i++ {
+		if month_int == 1 {
+			month_int = 12
+			year_int -= 1
+		} else {
+			month_int -= 1
+		}
 	}
 
 	var history []PowerHist
@@ -784,11 +786,11 @@ func GetPowerHistArray(db *sqlx.DB) ([]PowerHist, error) {
 			Year:  year_int,
 			Power: power,
 		})
-		if month_int == 1 {
-			month_int = 12
-			year_int -= 1
+		if month_int == 12 {
+			month_int = 1
+			year_int += 1
 		} else {
-			month_int -= 1
+			month_int += 1
 		}
 	}
 	return history, nil
