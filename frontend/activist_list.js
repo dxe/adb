@@ -1,26 +1,14 @@
 import ActivistList from 'ActivistList.vue';
 import Vue from 'vue';
-//import App from 'App.vue';
 
-var vm = new Vue({
-  el: "#app",
-  data: {
-    activists: [
-      {
-        name: "Bob Jones",
-        email: "bob@bob.com",
-        phone: "703-225-8132",
-        first_event: "01-01-2017",
-        last_event: "02-01-2017",
-        status: "New",
-      },
-    ],
-  },
-  render: function(h) {
-    return h(ActivistList, {activists: this.activists});
-  }
-});
-
+export function initializeApp() {
+  var vm = new Vue({
+    el: "#app",
+    render: function(h) {
+      return h(ActivistList);
+    }
+  });
+}
 
 
 
