@@ -742,6 +742,36 @@ FROM (
 	return power, nil
 }
 
+func GetPowerMTD(db *sqlx.DB) (int, error) {
+	current_time := time.Now().Local()
+	current_time_string := current_time.Format("2006-01")
+	split_date := strings.Split(current_time_string, "-")
+
+	year := split_date[0]
+	month := split_date[1]
+
+	query := `
+SELECT COUNT(*) AS movement_power_index
+FROM (
+	SELECT
+		activist_id,
+		MAX(CASE WHEN event_type = "protest" or event_type = "key event" THEN "1" ELSE "0" END) AS is_protest,
+	    MAX(CASE WHEN event_type = "outreach" or event_type = "sanctuary" or event_type = "community" THEN "1" ELSE "0" END) AS is_community,
+        SUBSTR(e.date,1,4) AS year,
+        SUBSTR(e.date,6,2) AS month
+	FROM event_attendance ea
+	JOIN events e ON ea.event_id = e.id
+	GROUP BY activist_id, year, month
+	HAVING is_protest = "1" AND is_community = "1" AND month = "` + month + `" AND year = "` + year + `"
+) AS power_index
+`
+	var powerMTD int
+	if err := db.Get(&powerMTD, query); err != nil {
+		return 0, err
+	}
+	return powerMTD, nil
+}
+
 type PowerHist struct {
 	Month int
 	Year  int

@@ -44,7 +44,8 @@
   </div>
   <div class="main">
   	<i>The power index represents the number of activists who attended at least one protest and community event in the last 30 days.</i>
-    <h2 style="font-size:200px;"><center>{{ .Data.Power }}</center></h2>
+    <center><h2>Last 30 Days: <br /><span style="font-size: 200px;">{{ .Data.Power }}</span></h2></center>
+    <h2 style="font-size:25px;"><center>Month to Date: {{ .Data.PowerMTD }}</center></h2>
     <div id="chart_div"></div>
   </div>
 </div>
