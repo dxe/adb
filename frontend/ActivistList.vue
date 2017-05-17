@@ -25,15 +25,27 @@
         </tr>
       </tbody>
     </table>
-    <modal name="edit-activist-modal" classes="no-background-color">
+    <modal name="edit-activist-modal" :height="800" classes="no-background-color">
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
             <h2 class="modal-title">Edit activist</h2>
           </div>
           <div class="modal-body">
-            <label for="name">Name: </label><input class="form-control" type="text" :value="currentActivist.name" role="name" /> <br/>
-            <label for="email">Email: </label><input class="form-control" type="text" :value="currentActivist.email" role="email" /> <br/>
+            <p><label for="name">Name: </label><input class="form-control" type="text" :value="currentActivist.name" id="name" /></p>
+            <p><label for="email">Email: </label><input class="form-control" type="text" :value="currentActivist.email" id="email" /></p>
+            <p><label for="chapter">Chapter: </label><input class="form-control" type="text" :value="currentActivist.chapter" id="chapter"></p>
+            <p><label for="phone">Phone: </label><input class="form-control" type="text" :value="currentActivist.phone" id="phone"></p>
+            <p><label for="location">Location: </label><input class="form-control" type="text" :value="currentActivist.location" id="location"></p>
+            <p><label for="facebook">Facebook: </label><input class="form-control" type="text" :value="currentActivist.facebook" id="facebook"></p>
+            <p><label for="core">Core/Staff:&nbsp;</label><input class="form-check-input" type="checkbox" id="core"></p>
+            <p><label for="exclude">Exclude from Leaderboard:&nbsp;</label><input class="form-check-input" type="checkbox" id="exclude"></p>
+            <p><label for="pledge">Liberation Pledge:&nbsp;</label><input class="form-check-input" type="checkbox" id="pledge"></p>
+            <p><label for="globalteam">Global Team Member:&nbsp;</label><input class="form-check-input" type="checkbox" id="globalteam"></p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="hideModal">Close</button>
+            <button type="button" class="btn btn-success" @click="saveModal">Save changes</button>
           </div>
         </div>
       </div>
@@ -43,6 +55,7 @@
 </template>
 
 <script>
+// Library from here: https://github.com/euvl/vue-js-modal
 import vmodal from 'vue-js-modal';
 import Vue from 'vue';
 
@@ -54,6 +67,13 @@ export default {
     showModal: function(activist) {
       this.currentActivist = activist;
       this.$modal.show('edit-activist-modal');
+    },
+    hideModal: function() {
+      this.currentActivist = null;
+      this.$modal.hide('edit-activist-modal');
+    },
+    saveModal: function() {
+      console.log('not implemented');
     },
     setActivists: function(activistsData) {
       this.activists = activistsData;
