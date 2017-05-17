@@ -186,6 +186,7 @@ func router() *mux.Router {
 	router.Handle("/event/delete", alice.New(apiAuthMiddleware).ThenFunc(main.EventDeleteHandler))
 	router.Handle("/activist/list", alice.New(apiAuthMiddleware).ThenFunc(main.ActivistListHandler))
 	router.Handle("/leaderboard/list", alice.New(apiAuthMiddleware).ThenFunc(main.LeaderboardListHandler))
+    router.Handle("/event_attendance/{event_id:[0-9]+}", alice.New(apiAuthMiddleware).ThenFunc(main.AttendanceHandler));
 
 	if isProd {
 		router.PathPrefix("/static").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
@@ -197,6 +198,28 @@ func router() *mux.Router {
 
 type MainController struct {
 	db *sqlx.DB
+}
+
+func (c MainController) AttendanceHandler(w http.ResponseWriter, r *http.Request) {
+    var attendees []string
+
+    varMap := mux.Vars(r)
+    if eventIDStr, ok := varMap["event_id"]; ok {
+        eventID, err := strconv.Atoi(eventIDStr)
+        if err != nil {
+            panic(err)
+        }
+        attendees, err = model.GetEventAttendance(c.db, eventID);
+        if (err != nil) {
+            panic(err)
+        }
+    }
+
+    writeJSON(w, map[string]interface{} {
+        "attendees": attendees,
+    });
+
+    return
 }
 
 func (c MainController) TokenSignInHandler(w http.ResponseWriter, r *http.Request) {
@@ -361,6 +384,7 @@ func (c MainController) EventSaveHandler(w http.ResponseWriter, r *http.Request)
 	out := map[string]string{
 		"status":   "success",
 		"redirect": "",
+        "event_id": strconv.Itoa(eventID),
 	}
 	if isNewEvent {
 		out["redirect"] = fmt.Sprintf("/update_event/%d", eventID)

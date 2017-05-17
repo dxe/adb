@@ -11,8 +11,14 @@ window.addEventListener('beforeunload', function(e) {
   return message;
 });
 
+/* All activists from database */
 var ACTIVIST_NAMES = [];
 var ACTIVIST_NAMES_SET = new Set();
+console.log(EVENT_ATTENDEES);
+
+/* Activists associated just with this event */
+var EVENT_ATTENDEE_NAMES = [];
+var EVENT_ATTENDEE_NAMES_SET;
 
 function updateAutocompleteNames() {
   $.ajax({
@@ -32,6 +38,27 @@ function updateAutocompleteNames() {
   });
 }
 
+/* Retrieve attendance before any edits are made */
+/* Should I safeguard against any malformed data? */
+function getEventAttendance() {
+    if (EVENT_ATTENDEES === null) {
+        // No existing data. Must be a new event
+        console.log("New Event"); // for debugging only 
+        return;
+    }
+    EVENT_ATTENDEE_NAMES = EVENT_ATTENDEES.map(function(attendee) {
+        return attendee.Name; 
+    });
+    EVENT_ATTENDEE_NAMES_SET = new Set(EVENT_ATTENDEE_NAMES);
+    
+    console.log(EVENT_ATTENDEE_NAMES);
+    console.log(EVENT_ATTENDEE_NAMES_SET);
+
+    // Check to make sure EVENT_ATTENDEES and the set are not null/
+    // undefined or empty
+
+}
+
 function updateAwesomeplete() {
   var $attendeeRows = $('.attendee-input');
 
@@ -42,6 +69,7 @@ function updateAwesomeplete() {
 
 function initializeApp() {
   addRows(5);
+  getEventAttendance();
   updateAutocompleteNames();
   // If any form input/selection changes, mark the page as dirty.
   //
@@ -145,11 +173,13 @@ function newEvent(event) {
   }
 
   var attendees = [];
+  var attendeesSet = new Set();
   var $attendeeRows = $('.attendee-input');
   for (var i = 0; i < $attendeeRows.length; i++) {
-    var attendeeValue = $attendeeRows[i].value;
+    var attendeeValue = $attendeeRows[i].value.trim();
     if (attendeeValue !== "") {
       attendees.push(attendeeValue);
+      attendeesSet.add(attendeeValue);
     }
   }
 
@@ -159,6 +189,22 @@ function newEvent(event) {
   }
 
   var eventID = parseInt(document.getElementById('eventID').value);
+  var addedActivists = attendees.filter(function (activist) {
+      if (typeof EVENT_ATTENDEE_NAMES_SET !== "undefined") {
+          return !EVENT_ATTENDEE_NAMES_SET.has(activist);
+      } 
+      return activist; // new event, everyone is new
+  });
+  var deletedActivists = EVENT_ATTENDEE_NAMES.filter(function (activist) {
+      return !attendeesSet.has(activist);
+  });
+
+  console.log("Added Activists");
+  console.log(addedActivists);
+  console.log("Deleted Activists");
+  console.log(deletedActivists);
+  console.log(EVENT_ATTENDEES);
+  alert("wait");
 
   $.ajax({
     url: "/event/save",
@@ -169,7 +215,9 @@ function newEvent(event) {
       event_name: eventName,
       event_date: eventDate,
       event_type: eventType,
-      attendees: attendees,
+      attendees: attendees, // remove this eventually
+      // added_attendees: addedActivists,
+      // removed_attendees: deletedActivists,
     }),
     success: function(data) {
       var parsed = JSON.parse(data);
@@ -186,13 +234,34 @@ function newEvent(event) {
         window.location = parsed.redirect;
       } else {
         flashMessage("Saved!", false);
+        refreshEventAttendance(parsed.event_id);
       }
     },
     error: function() {
       flashMessage("Error, did not save data", true);
     },
   });
+
 }
+
+
+function refreshEventAttendance(eventId) {   
+    $.ajax({
+        url: "/event_attendance/" + eventId,
+        method: "GET",
+        success: function(data) {
+            console.log(data);
+            /* Update global arrays containing activist names */
+            /* What to do with null data. Should not happen though */
+            alert("Wait in Ajax");
+        },
+        error: function() {
+            flashMessage("Error retrieving data. Reloading Page", true);
+            window.location.reload(true);
+        }
+    });
+}
+
 
 function addRows(numToAdd) {
   var $rowsContainer = $('#attendee-rows');

@@ -8,7 +8,6 @@ import (
 	"io"
 	"strings"
 	"time"
-
 	"github.com/jmoiron/sqlx"
 )
 
@@ -138,6 +137,17 @@ WHERE
 		events[i].Attendees = attendees
 	}
 	return events, nil
+}
+
+/* Get attendance for a single event */
+func GetEventAttendance(db *sqlx.DB, eventID int) ([]string,error) {
+    var attendees []string
+    err := db.Select(&attendees, `SELECT a.name FROM activists a 
+    JOIN event_attendance et on a.id = et.activist_id WHERE et.event_id = ?`, eventID);
+    if err != nil {
+        return nil, err
+    }
+    return attendees, nil
 }
 
 func DeleteEvent(db *sqlx.DB, eventID int) error {
