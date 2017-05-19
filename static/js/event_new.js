@@ -14,11 +14,10 @@ window.addEventListener('beforeunload', function(e) {
 /* All activists from database */
 var ACTIVIST_NAMES = [];
 var ACTIVIST_NAMES_SET = new Set();
-console.log(EVENT_ATTENDEES);
 
 /* Activists associated just with this event */
 var EVENT_ATTENDEE_NAMES = [];
-var EVENT_ATTENDEE_NAMES_SET;
+var EVENT_ATTENDEE_NAMES_SET = new Set();
 
 function updateAutocompleteNames() {
   $.ajax({
@@ -43,20 +42,12 @@ function updateAutocompleteNames() {
 function getEventAttendance() {
     if (EVENT_ATTENDEES === null) {
         // No existing data. Must be a new event
-        console.log("New Event"); // for debugging only 
         return;
     }
     EVENT_ATTENDEE_NAMES = EVENT_ATTENDEES.map(function(attendee) {
+        EVENT_ATTENDEE_NAMES_SET.add(attendee.Name);
         return attendee.Name; 
     });
-    EVENT_ATTENDEE_NAMES_SET = new Set(EVENT_ATTENDEE_NAMES);
-    
-    console.log(EVENT_ATTENDEE_NAMES);
-    console.log(EVENT_ATTENDEE_NAMES_SET);
-
-    // Check to make sure EVENT_ATTENDEES and the set are not null/
-    // undefined or empty
-
 }
 
 function updateAwesomeplete() {
@@ -190,10 +181,7 @@ function newEvent(event) {
 
   var eventID = parseInt(document.getElementById('eventID').value);
   var addedActivists = attendees.filter(function (activist) {
-      if (typeof EVENT_ATTENDEE_NAMES_SET !== "undefined") {
-          return !EVENT_ATTENDEE_NAMES_SET.has(activist);
-      } 
-      return activist; // new event, everyone is new
+        return !EVENT_ATTENDEE_NAMES_SET.has(activist);
   });
   var deletedActivists = EVENT_ATTENDEE_NAMES.filter(function (activist) {
       return !attendeesSet.has(activist);
@@ -203,8 +191,6 @@ function newEvent(event) {
   console.log(addedActivists);
   console.log("Deleted Activists");
   console.log(deletedActivists);
-  console.log(EVENT_ATTENDEES);
-  alert("wait");
 
   $.ajax({
     url: "/event/save",
@@ -250,10 +236,11 @@ function refreshEventAttendance(eventId) {
         url: "/event_attendance/" + eventId,
         method: "GET",
         success: function(data) {
-            console.log(data);
             /* Update global arrays containing activist names */
             /* What to do with null data. Should not happen though */
-            alert("Wait in Ajax");
+            var parsed = JSON.parse(data);
+            EVENT_ATTENDEE_NAMES = parsed.attendees;
+            EVENT_ATTENDEE_NAMES_SET = new Set(EVENT_ATTENDEE_NAMES);
         },
         error: function() {
             flashMessage("Error retrieving data. Reloading Page", true);
