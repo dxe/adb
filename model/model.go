@@ -20,7 +20,7 @@ type EventJSON struct {
 	EventType string   `json:"event_type"`
 	Attendees []string `json:"attendees"`
     AddedAttendees []string `json:"added_attendees"`
-    DeletedAttendees []string `json:deleted_attendees"`
+    DeletedAttendees []string `json:"deleted_attendees"`
 }
 
 type Event struct {
@@ -574,10 +574,10 @@ WHERE
 
 /* Changes: Delete removed activists from attendance and add new ones */
 func insertEventAttendance(tx *sqlx.Tx, event Event) error {
-	// First, delete all previous attendees for the event.
+	// First, remove deleted attendees.
     for _, u := range event.DeletedAttendees {
         _, err := tx.Exec(`DELETE FROM event_attendance WHERE event_id = ?
-        AND activist_id = ?`, event.ID, u.ID) 
+        AND activist_id = ?`, event.ID, u.ID)
         if err != nil {
             return err
         }
@@ -590,15 +590,19 @@ WHERE event_id = ?`, eventID)
 	}
     */
 	seen := map[int]bool{}
-	// Then re-add all attendees.
-	for _, u := range attendees {
+    /* NOTE MAKE PRIMARY KEY ON (activist_id, event_id) or below query will be slow as hell */
+	for _, u := range event.AddedAttendees {
 		// Ignore duplicates
 		if _, exists := seen[u.ID]; exists {
 			continue
 		}
 		seen[u.ID] = true
-		_, err = tx.Exec(`INSERT INTO event_attendance (activist_id, event_id)
-VALUES (?, ?)`, u.ID, eventID)
+        _, err := tx.Exec(`INSERT INTO event_attendance (activist_id, event_id)
+            VALUES(?,?) ON DUPLICATE KEY UPDATE activist_id = ?`, u.ID, event.ID, u.ID)
+       /*
+        _, err := tx.Exec(`INSERT INTO event_attendance (activist_id, event_id)
+VALUES (?, ?)`, u.ID, event.ID) // NOTE THIS WILL ADD DUPLICATES SO FIX THIS
+*/
 		if err != nil {
 			return err
 		}

@@ -202,8 +202,8 @@ function newEvent(event) {
       event_date: eventDate,
       event_type: eventType,
       attendees: attendees, // remove this eventually
-      // added_attendees: addedActivists,
-      // deleted_attendees: deletedActivists,
+      added_attendees: addedActivists,
+      deleted_attendees: deletedActivists,
     }),
     success: function(data) {
       var parsed = JSON.parse(data);
