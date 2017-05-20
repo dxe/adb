@@ -19,6 +19,8 @@ type EventJSON struct {
 	EventDate string   `json:"event_date"`
 	EventType string   `json:"event_type"`
 	Attendees []string `json:"attendees"`
+    AddedAttendees []string `json:"added_attendees"`
+    DeletedAttendees []string `json:deleted_attendees"`
 }
 
 type Event struct {
@@ -27,6 +29,8 @@ type Event struct {
 	EventDate time.Time `db:"date"`
 	EventType EventType `db:"event_type"`
 	Attendees []User
+    AddedAttendees []User
+    DeletedAttendees []User
 }
 
 func GetEventsJSON(db *sqlx.DB, options GetEventOptions) ([]EventJSON, error) {
@@ -458,7 +462,24 @@ func CleanEventData(db *sqlx.DB, body io.Reader) (Event, error) {
 	}
 	e.EventType = eventType
 
-	e.Attendees = []User{}
+	//e.Attendees = []User{}
+    e.AddedAttendees = []User{};
+    e.DeletedAttendees = []User{};
+
+    for _, attendee := range eventJSON.AddedAttendees {
+        err := cleanEventDataHelper(db, attendee, &e.AddedAttendees);
+        if err != nil {
+            return Event{}, err
+        }
+    }
+
+    for _, attendee := range eventJSON.DeletedAttendees {
+        err := cleanEventDataHelper(db, attendee, &e.DeletedAttendees)
+        if err != nil {
+            return Event{}, err
+        }
+    }
+    /*
 	for _, attendee := range eventJSON.Attendees {
 		if strings.ContainsAny(attendee, DangerousCharacters) {
 			return Event{}, errors.New("Event name cannot include <, >, or &.")
@@ -470,8 +491,21 @@ func CleanEventData(db *sqlx.DB, body io.Reader) (Event, error) {
 		}
 		e.Attendees = append(e.Attendees, user)
 	}
+    */
 
 	return e, nil
+}
+
+func cleanEventDataHelper(db *sqlx.DB, attendee string, attendeeList *[]User)  (err error) {
+    if (strings.ContainsAny(attendee, DangerousCharacters)) {
+        return errors.New("Attendee name cannot include <, >, or &.")
+    }
+    user, err := GetOrCreateUser(db, strings.TrimSpace(attendee))
+    if err != nil {
+        return err
+    }
+    *attendeeList = append(*attendeeList, user)
+    return nil
 }
 
 func InsertUpdateEvent(db *sqlx.DB, event Event) (eventID int, err error) {
@@ -497,8 +531,9 @@ VALUES (:name, :date, :event_type)`, event)
 		tx.Rollback()
 		return 0, err
 	}
+    event.ID = int(id);
 
-	if err := insertEventAttendance(tx, int(id), event.Attendees); err != nil {
+	if err := insertEventAttendance(tx, event); err != nil {
 		tx.Rollback()
 		return 0, err
 	}
@@ -526,7 +561,7 @@ WHERE
 		return 0, err
 	}
 
-	if err := insertEventAttendance(tx, event.ID, event.Attendees); err != nil {
+	if err := insertEventAttendance(tx, event); err != nil {
 		tx.Rollback()
 		return 0, err
 	}
@@ -537,13 +572,23 @@ WHERE
 	return event.ID, nil
 }
 
-func insertEventAttendance(tx *sqlx.Tx, eventID int, attendees []User) error {
+/* Changes: Delete removed activists from attendance and add new ones */
+func insertEventAttendance(tx *sqlx.Tx, event Event) error {
 	// First, delete all previous attendees for the event.
+    for _, u := range event.DeletedAttendees {
+        _, err := tx.Exec(`DELETE FROM event_attendance WHERE event_id = ?
+        AND activist_id = ?`, event.ID, u.ID) 
+        if err != nil {
+            return err
+        }
+    }
+    /*
 	_, err := tx.Exec(`DELETE FROM event_attendance
 WHERE event_id = ?`, eventID)
 	if err != nil {
 		return err
 	}
+    */
 	seen := map[int]bool{}
 	// Then re-add all attendees.
 	for _, u := range attendees {
