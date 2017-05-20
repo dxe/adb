@@ -598,7 +598,7 @@ WHERE event_id = ?`, eventID)
 		}
 		seen[u.ID] = true
         _, err := tx.Exec(`INSERT INTO event_attendance (activist_id, event_id)
-            VALUES(?,?) ON DUPLICATE KEY UPDATE activist_id = ?`, u.ID, event.ID, u.ID)
+            VALUES(?,?) ON DUPLICATE KEY UPDATE activist_id = activist_id`, u.ID, event.ID)
        /*
         _, err := tx.Exec(`INSERT INTO event_attendance (activist_id, event_id)
 VALUES (?, ?)`, u.ID, event.ID) // NOTE THIS WILL ADD DUPLICATES SO FIX THIS
