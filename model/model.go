@@ -462,36 +462,22 @@ func CleanEventData(db *sqlx.DB, body io.Reader) (Event, error) {
 	}
 	e.EventType = eventType
 
-	//e.Attendees = []User{}
     e.AddedAttendees = []User{};
     e.DeletedAttendees = []User{};
 
     for _, attendee := range eventJSON.AddedAttendees {
-        err := cleanEventDataHelper(db, attendee, &e.AddedAttendees);
+        err := cleanEventDataHelper(db, strings.TrimSpace(attendee), &e.AddedAttendees);
         if err != nil {
             return Event{}, err
         }
     }
 
     for _, attendee := range eventJSON.DeletedAttendees {
-        err := cleanEventDataHelper(db, attendee, &e.DeletedAttendees)
+        err := cleanEventDataHelper(db, strings.TrimSpace(attendee), &e.DeletedAttendees)
         if err != nil {
             return Event{}, err
         }
     }
-    /*
-	for _, attendee := range eventJSON.Attendees {
-		if strings.ContainsAny(attendee, DangerousCharacters) {
-			return Event{}, errors.New("Event name cannot include <, >, or &.")
-		}
-
-		user, err := GetOrCreateUser(db, strings.TrimSpace(attendee))
-		if err != nil {
-			return Event{}, err
-		}
-		e.Attendees = append(e.Attendees, user)
-	}
-    */
 
 	return e, nil
 }
@@ -582,15 +568,7 @@ func insertEventAttendance(tx *sqlx.Tx, event Event) error {
             return err
         }
     }
-    /*
-	_, err := tx.Exec(`DELETE FROM event_attendance
-WHERE event_id = ?`, eventID)
-	if err != nil {
-		return err
-	}
-    */
 	seen := map[int]bool{}
-    /* NOTE MAKE PRIMARY KEY ON (activist_id, event_id) or below query will be slow as hell */
 	for _, u := range event.AddedAttendees {
 		// Ignore duplicates
 		if _, exists := seen[u.ID]; exists {
@@ -599,10 +577,6 @@ WHERE event_id = ?`, eventID)
 		seen[u.ID] = true
         _, err := tx.Exec(`INSERT INTO event_attendance (activist_id, event_id)
             VALUES(?,?) ON DUPLICATE KEY UPDATE activist_id = activist_id`, u.ID, event.ID)
-       /*
-        _, err := tx.Exec(`INSERT INTO event_attendance (activist_id, event_id)
-VALUES (?, ?)`, u.ID, event.ID) // NOTE THIS WILL ADD DUPLICATES SO FIX THIS
-*/
 		if err != nil {
 			return err
 		}

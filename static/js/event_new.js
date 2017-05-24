@@ -201,7 +201,6 @@ function newEvent(event) {
       event_name: eventName,
       event_date: eventDate,
       event_type: eventType,
-      // attendees: attendees, // remove this eventually
       added_attendees: addedActivists,
       deleted_attendees: deletedActivists,
     }),
