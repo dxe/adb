@@ -69,6 +69,10 @@ function initializeApp() {
   $('#eventForm').change(function(e) {
     DIRTY = true;
   });
+  initAttendeeInputEventHandlers();
+}
+
+function initAttendeeInputEventHandlers() {
   // Input is fired any time the user types in an input field.
   $('#attendee-rows').on('input', function(e) {
     DIRTY = true;
@@ -140,7 +144,9 @@ function maybeExpandRows(currentInput) {
   }
 
   // After expanding, focus on the current input again.
-  $(currentInput).focus();
+  if (typeof currentInput !== 'undefined') {
+    $(currentInput).focus();
+  }
 }
 
 // creates new event in ADB
@@ -240,6 +246,14 @@ function refreshEventAttendance(eventId) {
             var parsed = JSON.parse(data);
             EVENT_ATTENDEE_NAMES = parsed.attendees;
             EVENT_ATTENDEE_NAMES_SET = new Set(EVENT_ATTENDEE_NAMES);
+            $('#attendee-rows').html(""); // clear existing html
+            addRows(parsed.attendees.length);
+            var attendeeList = $('#attendee-rows').find('.attendee-input');
+            for (var i = 0; i < attendeeList.length; i++) {
+               attendeeList[i].value = EVENT_ATTENDEE_NAMES[i];
+            }
+            maybeExpandRows();
+            initAttendeeInputEventHandlers();
         },
         error: function() {
             flashMessage("Error retrieving data. Reloading Page", true);
