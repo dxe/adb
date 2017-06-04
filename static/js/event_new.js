@@ -51,8 +51,9 @@ function getEventAttendance() {
 }
 
 function updateAwesomeplete() {
-  var $attendeeRows = $('.attendee-input');
-
+  /* Only grab inputs that are not children of div.awesomplete */
+  var $attendeeRows = $('#attendee-rows > input.attendee-input');
+    
   for (var i = 0; i < $attendeeRows.length; i++) {
     new Awesomplete($attendeeRows[i], { list: ACTIVIST_NAMES });
   }
@@ -118,7 +119,7 @@ function updateInputColor(input) {
   for (var i = 0; i< theEntireRows.children.length; i++) {
     // insert the values into the Set only if it not null
     if (input !== theEntireRows.children[i].children[0] && theEntireRows.children[i].children[0].value !== "") {
-      currentValues.add(theEntireRows.children[i].children[0].value)
+      currentValues.add(theEntireRows.children[i].children[0].value);
     }
   }
 
@@ -193,11 +194,6 @@ function newEvent(event) {
       return !attendeesSet.has(activist);
   });
 
-  console.log("Added Activists");
-  console.log(addedActivists);
-  console.log("Deleted Activists");
-  console.log(deletedActivists);
-
   $.ajax({
     url: "/event/save",
     method: "POST",
@@ -241,18 +237,20 @@ function refreshEventAttendance(eventId) {
         url: "/event_attendance/" + eventId,
         method: "GET",
         success: function(data) {
-            /* Update global arrays containing activist names */
-            /* What to do with null data. Should not happen though */
             var parsed = JSON.parse(data);
+            /* Update global arrays containing activist names */
             EVENT_ATTENDEE_NAMES = parsed.attendees;
             EVENT_ATTENDEE_NAMES_SET = new Set(EVENT_ATTENDEE_NAMES);
-            $('#attendee-rows').html(""); // clear existing html
+
+            $('#attendee-rows').empty(); // clear existing html
+
             addRows(parsed.attendees.length);
             var attendeeList = $('#attendee-rows').find('.attendee-input');
             for (var i = 0; i < attendeeList.length; i++) {
                attendeeList[i].value = EVENT_ATTENDEE_NAMES[i];
             }
-            maybeExpandRows();
+            addRows(5);
+            updateAutocompleteNames();
             initAttendeeInputEventHandlers();
         },
         error: function() {
@@ -261,7 +259,6 @@ function refreshEventAttendance(eventId) {
         }
     });
 }
-
 
 function addRows(numToAdd) {
   var $rowsContainer = $('#attendee-rows');
