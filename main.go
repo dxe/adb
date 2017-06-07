@@ -178,6 +178,7 @@ func router() *mux.Router {
 	// Unauthed API
 	router.HandleFunc("/tokensignin", main.TokenSignInHandler)
 	router.HandleFunc("/transposed_events_data_json", main.TransposedEventsDataJsonHandler)
+	router.HandleFunc("/Jcud0L2a9Adsi9wkPn5njI20lnZkfb", main.ActivistListHandler) // used for connections google sheet
 
 	// Authed API
 	router.Handle("/activist_names/get", alice.New(apiAuthMiddleware).ThenFunc(main.AutocompleteActivistsHandler))
@@ -185,13 +186,16 @@ func router() *mux.Router {
 	router.Handle("/event/list", alice.New(apiAuthMiddleware).ThenFunc(main.EventListHandler))
 	router.Handle("/event/delete", alice.New(apiAuthMiddleware).ThenFunc(main.EventDeleteHandler))
 	router.Handle("/activist/list", alice.New(apiAuthMiddleware).ThenFunc(main.ActivistListHandler))
+	//router.Handle("/activist/save", alice.New(apiAuthMiddleware).ThenFunc(main.ActivistSaveHandler))
 	router.Handle("/leaderboard/list", alice.New(apiAuthMiddleware).ThenFunc(main.LeaderboardListHandler))
     router.Handle("/event_attendance/{event_id:[0-9]+}", alice.New(apiAuthMiddleware).ThenFunc(main.AttendanceHandler));
 
 	if isProd {
 		router.PathPrefix("/static").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+		router.PathPrefix("/dist").Handler(http.StripPrefix("/dist/", http.FileServer(http.Dir("dist"))))
 	} else {
 		router.PathPrefix("/static").Handler(noCacheHandler(http.StripPrefix("/static/", http.FileServer(http.Dir("static")))))
+		router.PathPrefix("/dist").Handler(noCacheHandler(http.StripPrefix("/dist/", http.FileServer(http.Dir("dist")))))
 	}
 	return router
 }
@@ -467,10 +471,22 @@ func (c MainController) PowerHandler(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
+	powerHist, err := model.GetPowerHistArray(c.db)
+	if err != nil {
+		panic(err)
+	}
+
+	powerMTD, err := model.GetPowerMTD(c.db)
+	if err != nil {
+		panic(err)
+	}
+
 	renderPage(w, "power", PageData{
 		PageName: "Power",
 		Data: map[string]interface{}{
-			"Power": power,
+			"Power":     power,
+			"PowerHist": powerHist,
+			"PowerMTD":  powerMTD,
 		},
 	})
 }

@@ -1,15 +1,20 @@
+import * as Awesomplete from 'external/awesomplete';
+import {flashMessage, setFlashMessageSuccessCookie} from 'flash_message';
+
 // DIRTY represents whether the form has been modified before the user
 // has saved. It is set to false when the user saves.
 var DIRTY = false;
 
-window.addEventListener('beforeunload', function(e) {
-  if (!DIRTY) {
-    return;
-  }
-  var message = "You have unsaved data.";
-  e.returnValue = message;
-  return message;
-});
+function initializeDirty() {
+  window.addEventListener('beforeunload', function(e) {
+    if (!DIRTY) {
+      return;
+    }
+    var message = "You have unsaved data.";
+    e.returnValue = message;
+    return message;
+  });
+}
 
 /* All activists from database */
 var ACTIVIST_NAMES = [];
@@ -59,10 +64,12 @@ function updateAwesomeplete() {
   }
 }
 
-function initializeApp() {
+export function initializeApp() {
+  initializeDirty();
   addRows(5);
   getEventAttendance();
   updateAutocompleteNames();
+  countAttendees();
   // If any form input/selection changes, mark the page as dirty.
   //
   // Change fires if the form is changed and the user moves onto the
@@ -80,6 +87,7 @@ function initAttendeeInputEventHandlers() {
     var input = e.target;
     updateInputColor(input);
     maybeExpandRows(input);
+    countAttendees(input);
   });
   // awesomplete-selectcomplete is fired when the user clicks on a
   // name in the awesomplete dropdown.
@@ -88,6 +96,7 @@ function initAttendeeInputEventHandlers() {
     var input = e.target;
     updateInputColor(input);
     maybeExpandRows(input);
+    countAttendees(input);
 
     // Select the next row.
     var $rows = $('.attendee-input');
@@ -150,8 +159,19 @@ function maybeExpandRows(currentInput) {
   }
 }
 
+function countAttendees(currentInput) {
+  var $rows = $('.attendee-input');
+  var attendeeTotal = 0;
+  for (var i = 0; i < $rows.length; i++) {
+    if ($rows[i].value !== '') {
+      attendeeTotal += 1;
+      $('#attendeeTotal').html(attendeeTotal);
+    }
+  }
+}
+
 // creates new event in ADB
-function newEvent(event) {
+export function newEvent(event) {
   var eventName = document.getElementById('eventName').value;
   if (eventName === "") {
     flashMessage("Error: Please enter event name!", true);
@@ -270,7 +290,7 @@ function addRows(numToAdd) {
   updateAwesomeplete();
 }
 
-function setDateToToday(event) {
+export function setDateToToday(event) {
   var d = new Date();
   var year = '' + d.getFullYear();
 

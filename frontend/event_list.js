@@ -1,4 +1,6 @@
-function confirmDeleteEvent(eventID) {
+import {flashMessage} from 'flash_message';
+
+export function confirmDeleteEvent(eventID) {
   var eventRow = $("#event-id-" + eventID);
   var eventName = eventRow.find(".event-name").text();
   var confirmed = confirm('Are you sure you want to delete the event "' + eventName + '"?\n\nPress OK to delete this event.');
@@ -57,7 +59,7 @@ function listEvents(events) {
     var newRow = '<tr id="' + rowID + '">' +
         '<td>' +
         '<a class="edit-link" href="' + updateLink + '"><button class="btn btn-default glyphicon glyphicon-pencil"></button></a><br/><br/>' +
-        '<div class="dropdown"><button class="btn btn-default dropdown-toggle glyphicon glyphicon-option-horizontal" data-toggle="dropdown"></button><ul class="dropdown-menu"><li><a href="javascript:confirmDeleteEvent(' + event.event_id + ')">Delete event</a></li></ul></div>' +
+        '<div class="dropdown"><button class="btn btn-default dropdown-toggle glyphicon glyphicon-option-horizontal" data-toggle="dropdown"></button><ul class="dropdown-menu"><li><a href="javascript:event_list.confirmDeleteEvent(' + event.event_id + ')">Delete event</a></li></ul></div>' +
         '</td>' +
         '<td nowrap>' + event.event_date + '</td>' +
         '<td class="event-name"><b>' + event.event_name + '</b></td>' +
@@ -69,7 +71,7 @@ function listEvents(events) {
   }
 }
 
-function eventListRequest() {
+export function eventListRequest() {
   var eventDateStart = $('#event-date-start').val();
   var eventDateEnd = $('#event-date-end').val();
   var eventType = $('#event-type').val();
@@ -125,7 +127,7 @@ function initDateRange() {
 
 }
 
-function initializeApp() {
+export function initializeApp() {
   initDateRange();
   eventListRequest();
 }

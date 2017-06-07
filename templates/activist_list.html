@@ -1,5 +1,5 @@
 {{template "header.html" .}}
-<script src="/static/js/activist_list.js"></script>
+<script src="/dist/activist_list.js"></script>
 
 <div class="body-wrapper-wide activist-list-content">
   <div class="title">
@@ -21,7 +21,7 @@
         </tr>
       </thead>
       <tbody id="activist-list-body">
-        <tr><td></td><td><i>Loading...</i></td><td></td><td></td><td></td><td></td></tr>
+        <tr><td></td><td><i>Loading...</i></td><td></td><td></td><td></td><td></td><td></td></tr>
       </tbody>
     </table>
     <div id="modals"></div>
@@ -29,5 +29,5 @@
 </div>
 
 
-<script>initializeApp();</script>
+<script>activist_list.initializeApp();</script>
 {{template "footer.html" .}}

@@ -1,10 +1,46 @@
 {{template "header.html" .}}
 <meta name="google-signin-client_id" content="975059814880-lfffftbpt7fdl14cevtve8sjvh015udc.apps.googleusercontent.com">
 <script src="https://apis.google.com/js/platform.js" async defer></script>
-<script src="/static/js/login.js"></script>
+
 <div class="body-wrapper login-content">
   <p>Please log in.</p>
   <div id="message"></div>
   <div class="g-signin2" data-onsuccess="onSignIn"></div>
+  <script>
+    function onSignIn(googleUser) {
+      var id_token = googleUser.getAuthResponse().id_token;
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', '/tokensignin');
+      xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+      xhr.onload = function() {
+        if (xhr.status !== 200) {
+          $("#message").text("Error status code from server: " + xhr.status)
+          return;
+        }
+
+        try {
+          var data = JSON.parse(xhr.responseText);
+        } catch(err) {
+          $('#message').text("Could not parse message from server: " + xhr.responseText);
+          return;
+        }
+
+        if (data['redirect']) {
+          // Redirect to index
+          window.location = "/";
+          return;
+        } else {
+          // Print the message if it exists
+          if (data['message']) {
+            $('#message').text(data['message']);
+          } else {
+            $('#message').text("Server could not authenticate you for some reason");
+          }
+        }
+      };
+      xhr.send('idtoken=' + id_token);
+    }
+  </script>
 </div>
+
 {{template "footer.html" .}}

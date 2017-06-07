@@ -3,8 +3,7 @@
 <!-- Load the CSS and JS that we need. -->
 <link rel="stylesheet" href="/static/external/awesomplete/awesomplete.css" />
 <script> var EVENT_ATTENDEES = {{.Data.Event.Attendees}}; </script>
-<script src="/static/external/awesomplete/awesomplete.js"></script>
-<script src="/static/js/event_new.js"></script>
+<script src="/dist/event_new.js"></script>
 
 <div class="body-wrapper event-new-content">
   <div class="title">
@@ -29,7 +28,7 @@
       </select>
       <br />
 
-      <label for="eventDate"><b>Event date</b><button class="btn btn-xs btn-primary" style="margin: 0px 10px" onclick="setDateToToday(); return false;">today</button><br /></label>
+      <label for="eventDate"><b>Event date</b><button class="btn btn-xs btn-primary" style="margin: 0px 10px" onclick="event_new.setDateToToday(); return false;">today</button><br /></label>
       <input id="eventDate" class="form-control" type="date" value="{{if .Data.Event.EventDate | datenotzero }}{{.Data.Event.EventDate | formatdate}}{{end}}"><br />
 
       <label for="attendee1"><b>Attendees</b><br /></label>
@@ -38,13 +37,18 @@
             <input class="attendee-input form-control" value="{{$a.Name}}" />
         {{end}}
       </div>
+
+      <br />
+      <label for="attendeeTotal"><b>Total attendance: </b></label>
+      <span id="attendeeTotal">0</span><br />
+
     </form>
-    <br /><br />
+    <br />
     <center>
-      <button class="btn btn-success btn-lg" id="submit-button" onclick="newEvent(event)"><span>Save event</span></button>
+      <button class="btn btn-success btn-lg" id="submit-button" onclick="event_new.newEvent(event)"><span>Save event</span></button>
     </center>
     <br />
   </div>
 </div>
-<script>initializeApp()</script>
+<script>event_new.initializeApp()</script>
 {{template "footer.html" .}}
