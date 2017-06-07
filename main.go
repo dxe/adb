@@ -178,6 +178,7 @@ func router() *mux.Router {
 	// Unauthed API
 	router.HandleFunc("/tokensignin", main.TokenSignInHandler)
 	router.HandleFunc("/transposed_events_data_json", main.TransposedEventsDataJsonHandler)
+	router.HandleFunc("/Jcud0L2a9Adsi9wkPn5njI20lnZkfb", main.ActivistListHandler) // used for connections google sheet
 
 	// Authed API
 	router.Handle("/activist_names/get", alice.New(apiAuthMiddleware).ThenFunc(main.AutocompleteActivistsHandler))
