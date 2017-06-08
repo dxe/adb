@@ -14,24 +14,26 @@ import (
 
 var DangerousCharacters = "<>&"
 
+/* TODO Restructure this struct */
 type EventJSON struct {
 	EventID   int      `json:"event_id"`
 	EventName string   `json:"event_name"`
 	EventDate string   `json:"event_date"`
 	EventType string   `json:"event_type"`
-	Attendees []string `json:"attendees"`
-    AddedAttendees []string `json:"added_attendees"`
-    DeletedAttendees []string `json:"deleted_attendees"`
+	Attendees []string `json:"attendees"` // For displaying all event attendees
+    AddedAttendees []string `json:"added_attendees"` // Used for Updating Events
+    DeletedAttendees []string `json:"deleted_attendees"` // Used for Updating Events
 }
 
+/* TODO Restructure this Struct */
 type Event struct {
 	ID        int       `db:"id"`
 	EventName string    `db:"name"`
 	EventDate time.Time `db:"date"`
 	EventType EventType `db:"event_type"`
-	Attendees []User
-    AddedAttendees []User
-    DeletedAttendees []User
+	Attendees []User // For retrieving all event attendees
+    AddedAttendees []User // Used for Updating Events
+    DeletedAttendees []User // Used for Updating Events
 }
 
 func GetEventsJSON(db *sqlx.DB, options GetEventOptions) ([]EventJSON, error) {
@@ -448,9 +450,10 @@ func CleanEventData(db *sqlx.DB, body io.Reader) (Event, error) {
 	var e Event
 	e.ID = eventJSON.EventID
 
-	if strings.ContainsAny(eventJSON.EventName, DangerousCharacters) {
-		return Event{}, errors.New("Event name cannot include <, >, or &.")
-	}
+    if err := checkForDangerousChars(eventJSON.EventName); err != nil {
+        return Event{}, err
+    }
+
 	e.EventName = strings.TrimSpace(eventJSON.EventName)
 	t, err := time.Parse(EventDateLayout, eventJSON.EventDate)
 	if err != nil {
@@ -463,35 +466,49 @@ func CleanEventData(db *sqlx.DB, body io.Reader) (Event, error) {
 	}
 	e.EventType = eventType
 
-    e.AddedAttendees = []User{};
-    e.DeletedAttendees = []User{};
-
-    for _, attendee := range eventJSON.AddedAttendees {
-        err := cleanEventDataHelper(db, strings.TrimSpace(attendee), &e.AddedAttendees);
-        if err != nil {
-            return Event{}, err
-        }
+    addedUsers, err := cleanEventAttendanceData(db, eventJSON.AddedAttendees)
+    if err != nil {
+        return Event{}, err
     }
 
-    for _, attendee := range eventJSON.DeletedAttendees {
-        err := cleanEventDataHelper(db, strings.TrimSpace(attendee), &e.DeletedAttendees)
-        if err != nil {
-            return Event{}, err
-        }
+    deletedUsers, err := cleanEventAttendanceData(db, eventJSON.DeletedAttendees)
+    if err != nil {
+        return Event{}, err
     }
 
-	return e, nil
+    e.AddedAttendees = addedUsers
+    e.DeletedAttendees = deletedUsers
+
+    return e, nil
 }
 
-func cleanEventDataHelper(db *sqlx.DB, attendee string, attendeeList *[]User)  (err error) {
-    if (strings.ContainsAny(attendee, DangerousCharacters)) {
-        return errors.New("Attendee name cannot include <, >, or &.")
+func cleanEventAttendanceData(db *sqlx.DB, attendees []string) ([]User, error) {
+
+    if (attendees == nil) {
+        return []User{}, nil
     }
-    user, err := GetOrCreateUser(db, strings.TrimSpace(attendee))
-    if err != nil {
-        return err
+
+    users := make([]User, len(attendees))
+
+    for idx, attendee := range attendees {
+        if err := checkForDangerousChars(attendee); err != nil {
+            return []User{}, err
+        }
+        user, err := GetOrCreateUser(db, strings.TrimSpace(attendee))
+        if err != nil {
+            return []User{}, err
+        }
+        users[idx] = user
     }
-    *attendeeList = append(*attendeeList, user)
+
+    return users, nil
+
+}
+
+func checkForDangerousChars(data string) error {
+    if strings.ContainsAny(data, DangerousCharacters) {
+        return errors.New("Event name cannot include <, >, or &.")
+    }
     return nil
 }
 
@@ -561,6 +578,10 @@ WHERE
 
 /* Changes: Delete removed activists from attendance and add new ones */
 func insertEventAttendance(tx *sqlx.Tx, event Event) error {
+    if event.ID == 0 {
+        // Not a valid event id, so return an error
+        return errors.New("Invalid event ID. Event ID's must be greater than 0.")
+    }
 	// First, remove deleted attendees.
     for _, u := range event.DeletedAttendees {
         _, err := tx.Exec(`DELETE FROM event_attendance WHERE event_id = ?
@@ -569,6 +590,7 @@ func insertEventAttendance(tx *sqlx.Tx, event Event) error {
             return err
         }
     }
+    // Add new attendees to the event_attendance
 	seen := map[int]bool{}
 	for _, u := range event.AddedAttendees {
 		// Ignore duplicates
@@ -576,6 +598,8 @@ func insertEventAttendance(tx *sqlx.Tx, event Event) error {
 			continue
 		}
 		seen[u.ID] = true
+        // Insert new (activist_id, event_id) pairs to event_attendance table
+        // For duplicates,  set activist_id equal to itself. In other words, do nothing
         _, err := tx.Exec(`INSERT INTO event_attendance (activist_id, event_id)
             VALUES(?,?) ON DUPLICATE KEY UPDATE activist_id = activist_id`, u.ID, event.ID)
 		if err != nil {

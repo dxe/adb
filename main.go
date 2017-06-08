@@ -204,6 +204,7 @@ type MainController struct {
 	db *sqlx.DB
 }
 
+/* TODO REMOVE THIS */
 func (c MainController) AttendanceHandler(w http.ResponseWriter, r *http.Request) {
     var attendees []string
 
