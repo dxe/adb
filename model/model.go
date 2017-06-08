@@ -483,11 +483,6 @@ func CleanEventData(db *sqlx.DB, body io.Reader) (Event, error) {
 }
 
 func cleanEventAttendanceData(db *sqlx.DB, attendees []string) ([]User, error) {
-
-    if (attendees == nil) {
-        return []User{}, nil
-    }
-
     users := make([]User, len(attendees))
 
     for idx, attendee := range attendees {
