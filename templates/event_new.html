@@ -2,7 +2,6 @@
 
 <!-- Load the CSS and JS that we need. -->
 <link rel="stylesheet" href="/static/external/awesomplete/awesomplete.css" />
-<script> var EVENT_ATTENDEES = {{.Data.Event.Attendees}}; </script>
 <script src="/dist/event_new.js"></script>
 
 <div class="body-wrapper event-new-content">
@@ -50,5 +49,5 @@
     <br />
   </div>
 </div>
-<script>event_new.initializeApp()</script>
+<script>event_new.initializeApp({{.Data.Event.Attendees}})</script>
 {{template "footer.html" .}}

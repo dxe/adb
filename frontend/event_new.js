@@ -44,12 +44,12 @@ function updateAutocompleteNames() {
 
 /* Retrieve attendance before any edits are made */
 /* Should I safeguard against any malformed data? */
-function getEventAttendance() {
-    if (EVENT_ATTENDEES === null) {
+function getEventAttendeeNames(eventAttendees) {
+    if (eventAttendees === null) {
         // No existing data. Must be a new event
         return;
     }
-    EVENT_ATTENDEE_NAMES = EVENT_ATTENDEES.map(function(attendee) {
+    EVENT_ATTENDEE_NAMES = eventAttendees.map(function(attendee) {
         EVENT_ATTENDEE_NAMES_SET.add(attendee.Name);
         return attendee.Name; 
     });
@@ -64,10 +64,10 @@ function updateAwesomeplete() {
   }
 }
 
-export function initializeApp() {
+export function initializeApp(eventAttendees) {
   initializeDirty();
   addRows(5);
-  getEventAttendance();
+  getEventAttendeeNames(eventAttendees);
   updateAutocompleteNames();
   countAttendees();
   // If any form input/selection changes, mark the page as dirty.
