@@ -178,6 +178,7 @@ func router() *mux.Router {
 	// Unauthed API
 	router.HandleFunc("/tokensignin", main.TokenSignInHandler)
 	router.HandleFunc("/transposed_events_data_json", main.TransposedEventsDataJsonHandler)
+	router.HandleFunc("/wallboard", main.PowerWallboard)                           // used for showing power on wallboard at ARC
 	router.HandleFunc("/Jcud0L2a9Adsi9wkPn5njI20lnZkfb", main.ActivistListHandler) // used for connections google sheet
 
 	// Authed API
@@ -459,6 +460,32 @@ func (c MainController) PowerHandler(w http.ResponseWriter, r *http.Request) {
 
 	renderPage(w, "power", PageData{
 		PageName: "Power",
+		Data: map[string]interface{}{
+			"Power":     power,
+			"PowerHist": powerHist,
+			"PowerMTD":  powerMTD,
+		},
+	})
+}
+
+func (c MainController) PowerWallboard(w http.ResponseWriter, r *http.Request) {
+	power, err := model.GetPower(c.db)
+	if err != nil {
+		panic(err)
+	}
+
+	powerHist, err := model.GetPowerHistArray(c.db)
+	if err != nil {
+		panic(err)
+	}
+
+	powerMTD, err := model.GetPowerMTD(c.db)
+	if err != nil {
+		panic(err)
+	}
+
+	renderPage(w, "power_wallboard", PageData{
+		PageName: "PowerWallboard",
 		Data: map[string]interface{}{
 			"Power":     power,
 			"PowerHist": powerHist,

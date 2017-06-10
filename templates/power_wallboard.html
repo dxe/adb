@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>Activist Database</title>
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="/static/img/favicon.ico">
+    <link href="/static/external/bootstrap/bootstrap.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="/static/css/style.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/flash_message.css">
+    <!---<link rel="stylesheet" type="text/css" href="/static/external/tablesorter/theme.default.css">-->
+    <script src="/static/external/jquery-3.2.1.js"></script>
+    <script src="/static/external/tablesorter/jquery.tablesorter.js"></script>
+    <script src="/static/external/bootstrap/bootstrap.min.js"></script>
+
+    <script src="/dist/flash_message.js"></script>
+  </head>
+  <body>
+    <div id="flash" role="alert"></div>
+    <script>flash_message.initializeFlashMessage();</script>
+
+
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
+<script type="text/javascript">
+	google.charts.load('current', {packages: ['corechart', 'line']});
+	google.charts.setOnLoadCallback(drawCurveTypes);
+
+	function drawCurveTypes() {
+	      var data = new google.visualization.DataTable();
+	      data.addColumn('string', 'Month');
+	      data.addColumn('number', 'Power Index');
+
+	      data.addRows([
+	        {{range $a := .Data.PowerHist}}
+				["{{$a.Month}}/{{$a.Year}}",
+				{{$a.Power}}],
+    		{{end}}
+	      ]);
+
+	      var options = {
+	        hAxis: {
+	          title: 'Month',
+	          textPosition : 'in'
+	        },
+	        vAxis: {
+	          title: 'Power Index'
+	        },
+	        series: {
+	          1: {curveType: 'function'}
+	        },
+	        legend: {position: 'none'}
+	      };
+
+	      var chart = new google.visualization.LineChart(document.getElementById('chart_div'));
+	      chart.draw(data, options);
+	    }
+</script>
+
+
+<div class="body-wrapper-wide" style="margin-top: -50px;">
+  <div class="title">
+    <h1>Movement Power Index</h1>
+  </div>
+  <div class="main">
+  	<i>The movement power index represents the number of activists who attended at least one protest and community event in the last 30 days.</i>
+    <center>
+    	<h2>Last 30 Days:<br /><span style="font-size: 200px;">{{ .Data.Power }}</span></h2>
+    	<h2 style="font-size:25px;"><center>Month to Date: {{ .Data.PowerMTD }}</h2>
+    </center>
+    <!---<div id="chart_div"></div>---->
+  </div>
+</div>
+
+<center><br /><img id="footer-img" src="/static/img/logo1.png" alt="DxE" width="50" height="50"><br /><br /></center>
+
+  </body>
+</html>
