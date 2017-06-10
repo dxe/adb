@@ -5,12 +5,12 @@
       <thead>
         <tr>
           <th></th>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Phone</th>
-          <th>First Event</th>
-          <th>Last Event</th>
-          <th>Status</th>
+          <th @click="sortBy('name')">Name</th>
+          <th @click="sortBy('email')">Email</th>
+          <th @click="sortBy('phone')">Phone</th>
+          <th @click="sortBy('first_event')">First Event</th>
+          <th @click="sortBy('last_event')">Last Event</th>
+          <th @click="sortBy('status')">Status</th>
         </tr>
       </thead>
       <tbody id="activist-list-body">
@@ -61,6 +61,12 @@ import Vue from 'vue';
 
 Vue.use(vmodal);
 
+// Store the data of the previous sort.
+var previousSortData = {
+  field: null,
+  ascending: null,
+};
+
 export default {
   name: 'activist-list',
   methods: {
@@ -77,6 +83,24 @@ export default {
     },
     setActivists: function(activistsData) {
       this.activists = activistsData;
+    },
+    sortBy: function(field) {
+      var ascending;
+      if (field == previousSortData.field) {
+        ascending = !previousSortData.ascending;
+      } else {
+        ascending = true;
+      }
+
+      this.activists.sort(function(a,b) {
+        if (ascending) {
+          return (a[field].toLowerCase() < b[field].toLowerCase()) ? -1 : 1;
+        } else {
+          return (a[field].toLowerCase() > b[field].toLowerCase()) ? -1 : 1;
+        }
+      });
+      previousSortData.field = field;
+      previousSortData.ascending = ascending;
     },
   },
   data() {
