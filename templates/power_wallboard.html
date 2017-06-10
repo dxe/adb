@@ -16,6 +16,15 @@
     <script src="/static/external/tablesorter/jquery.tablesorter.js"></script>---->
     <script src="/static/external/bootstrap/bootstrap.min.js"></script>
 
+    <style>
+      body {
+          font-family: "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+          font-weight: medium;
+          background-color: black;
+          color: white;
+      }
+    </style>
+
     <script src="/dist/flash_message.js"></script>
   </head>
   <body>
@@ -41,11 +50,11 @@
 	      ]);
 
 	      var options = {
-          'width':1200,
-          'height':500,
+          'width':1500,
+          'height':700,
 	        hAxis: {
 	          title: 'Month',
-	          textPosition : 'in'
+	          textPosition : 'out'
 	        },
 	        vAxis: {
 	          title: 'Power Index'
@@ -68,11 +77,16 @@
   <div class="carousel-inner">
     <div class="item active">
       <center>
-        <h1>Movement Power Index</h1>
-        <h2>Last 30 Days:<br /><span style="font-size: 200px;">{{ .Data.Power }}</span></h2>
-        <h2 style="font-size:25px;"><center>Month to Date: {{ .Data.PowerMTD }}</h2>
         <br/>
-        <h4>Goal: 150</h3>
+        <h1>Movement Power Index</h1>
+        <br/>
+        <h2><span style="font-size: 200px;">{{ .Data.Power }}</span></h2>
+        <br/>
+        <h2>2017 Goal: 150</h2>
+        <br/>
+        <br/>
+        <h3>Month to Date: {{ .Data.PowerMTD }}</h3>
+        <br/>
       </center>
     </div>
     <div class="item">
@@ -81,6 +95,7 @@
     <div class="item">
       <center>
         <h1>Movement Power Index</h1>
+        <br/>
         <div id="chart_div"></div>
       </center>
     </div>
