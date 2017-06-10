@@ -188,7 +188,6 @@ func router() *mux.Router {
 	router.Handle("/activist/list", alice.New(apiAuthMiddleware).ThenFunc(main.ActivistListHandler))
 	//router.Handle("/activist/save", alice.New(apiAuthMiddleware).ThenFunc(main.ActivistSaveHandler))
 	router.Handle("/leaderboard/list", alice.New(apiAuthMiddleware).ThenFunc(main.LeaderboardListHandler))
-    router.Handle("/event_attendance/{event_id:[0-9]+}", alice.New(apiAuthMiddleware).ThenFunc(main.AttendanceHandler));
 
 	if isProd {
 		router.PathPrefix("/static").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
@@ -202,29 +201,6 @@ func router() *mux.Router {
 
 type MainController struct {
 	db *sqlx.DB
-}
-
-/* TODO REMOVE THIS */
-func (c MainController) AttendanceHandler(w http.ResponseWriter, r *http.Request) {
-    var attendees []string
-
-    varMap := mux.Vars(r)
-    if eventIDStr, ok := varMap["event_id"]; ok {
-        eventID, err := strconv.Atoi(eventIDStr)
-        if err != nil {
-            panic(err)
-        }
-        attendees, err = model.GetEventAttendance(c.db, eventID);
-        if (err != nil) {
-            panic(err)
-        }
-    }
-
-    writeJSON(w, map[string]interface{} {
-        "attendees": attendees,
-    });
-
-    return
 }
 
 func (c MainController) TokenSignInHandler(w http.ResponseWriter, r *http.Request) {
@@ -321,6 +297,17 @@ func writeJSON(w io.Writer, v interface{}) {
 	}
 }
 
+/* Accepts a non-nil error and sends an error response */
+func sendErrorMessage(w io.Writer, err error) {
+	if err == nil {
+		return
+	}
+	writeJSON(w, map[string]string{
+		"status":  "error",
+		"message": err.Error(),
+	})
+}
+
 func (c MainController) UpdateEventHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	var event model.Event
@@ -379,17 +366,20 @@ func (c MainController) EventSaveHandler(w http.ResponseWriter, r *http.Request)
 
 	eventID, err := model.InsertUpdateEvent(c.db, event)
 	if err != nil {
-		writeJSON(w, map[string]string{
-			"status":  "error",
-			"message": err.Error(),
-		})
+		sendErrorMessage(w, err)
 		return
 	}
 
-	out := map[string]string{
-		"status":   "success",
-		"redirect": "",
-        "event_id": strconv.Itoa(eventID),
+	attendees, err := model.GetEventAttendance(c.db, eventID)
+	if err != nil {
+		sendErrorMessage(w, err)
+	}
+
+	out := map[string]interface{}{
+		"status":    "success",
+		"redirect":  "",
+		"event_id":  strconv.Itoa(eventID),
+		"attendees": attendees,
 	}
 	if isNewEvent {
 		out["redirect"] = fmt.Sprintf("/update_event/%d", eventID)

@@ -31,6 +31,9 @@ function updateAutocompleteNames() {
     dataType: "json",
     success: function(data) {
       var activistNames = data.activist_names;
+      // Clear current activist name array and set before re-adding
+      ACTIVIST_NAMES.length = 0;
+      ACTIVIST_NAMES_SET.clear();
       for (var i = 0; i < activistNames.length; i++) {
         ACTIVIST_NAMES.push(activistNames[i]);
         ACTIVIST_NAMES_SET.add(activistNames[i]);
@@ -56,7 +59,8 @@ function getEventAttendeeNames(eventAttendees) {
 }
 
 function updateAwesomeplete() {
-  /* Only grab inputs that are not children of div.awesomplete */
+  // Only grab inputs that are not children of div.awesomplete
+  // Note length of $attendeeRows = 0 if there are no input.attendee-input elements
   var $attendeeRows = $('#attendee-rows > input.attendee-input');
     
   for (var i = 0; i < $attendeeRows.length; i++) {
@@ -241,7 +245,7 @@ export function newEvent(event) {
         window.location = parsed.redirect;
       } else {
         flashMessage("Saved!", false);
-        refreshEventAttendance(parsed.event_id);
+        refreshEventAttendance(parsed.attendees)
       }
     },
     error: function() {
@@ -251,33 +255,28 @@ export function newEvent(event) {
 
 }
 
+function refreshEventAttendance(attendees) {
+    var numberOfAttendees = 0;
+    if (attendees === null) {
+        // All attendees were deleted from this event
+        EVENT_ATTENDEE_NAMES = [];
+        EVENT_ATTENDEE_NAMES_SET = new Set();
+    }
+    else {
+        EVENT_ATTENDEE_NAMES = attendees;
+        EVENT_ATTENDEE_NAMES_SET = new Set(EVENT_ATTENDEE_NAMES);
+        numberOfAttendees = attendees.length;
+    }
 
-function refreshEventAttendance(eventId) {   
-    $.ajax({
-        url: "/event_attendance/" + eventId,
-        method: "GET",
-        success: function(data) {
-            var parsed = JSON.parse(data);
-            /* Update global arrays containing activist names */
-            EVENT_ATTENDEE_NAMES = parsed.attendees;
-            EVENT_ATTENDEE_NAMES_SET = new Set(EVENT_ATTENDEE_NAMES);
-
-            $('#attendee-rows').empty(); // clear existing html
-
-            addRows(parsed.attendees.length);
-            var attendeeList = $('#attendee-rows').find('.attendee-input');
-            for (var i = 0; i < attendeeList.length; i++) {
-               attendeeList[i].value = EVENT_ATTENDEE_NAMES[i];
-            }
-            addRows(5);
-            updateAutocompleteNames();
-            initAttendeeInputEventHandlers();
-        },
-        error: function() {
-            flashMessage("Error retrieving data. Reloading Page", true);
-            window.location.reload(true);
-        }
-    });
+    $('#attendee-rows').empty(); // clear existing html
+    addRows(numberOfAttendees);
+    var attendeeList = $('#attendee-rows').find('.attendee-input');
+    for (var i = 0; i < numberOfAttendees; i++) {
+        attendeeList[i].value = EVENT_ATTENDEE_NAMES[i];
+    }
+    addRows(5);
+    updateAutocompleteNames();
+    initAttendeeInputEventHandlers();
 }
 
 function addRows(numToAdd) {
