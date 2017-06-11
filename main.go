@@ -379,7 +379,6 @@ func (c MainController) EventSaveHandler(w http.ResponseWriter, r *http.Request)
 	out := map[string]interface{}{
 		"status":    "success",
 		"redirect":  "",
-		"event_id":  strconv.Itoa(eventID),
 		"attendees": attendees,
 	}
 	if isNewEvent {
