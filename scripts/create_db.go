@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 
-	"github.com/directactioneverywhere/adb/model"
+	"github.com/dxe/adb/model"
 )
 
 var noFakeData bool

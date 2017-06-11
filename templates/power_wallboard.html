@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta http-equiv="refresh" content="300">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>Activist Database</title>
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="/static/img/favicon.ico">
+    <link href="/static/external/bootstrap/bootstrap.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="/static/css/flash_message.css">
+    <script src="/static/external/jquery-3.2.1.js"></script>
+    <!---<link rel="stylesheet" type="text/css" href="/static/css/style.css">
+    <script src="/static/external/tablesorter/jquery.tablesorter.js"></script>---->
+    <script src="/static/external/bootstrap/bootstrap.min.js"></script>
+
+    <style>
+      body {
+          font-family: "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+          font-weight: medium;
+          background-color: black;
+          color: white;
+      }
+    </style>
+
+    <script src="/dist/flash_message.js"></script>
+  </head>
+  <body>
+    <div id="flash" role="alert"></div>
+    <script>flash_message.initializeFlashMessage();</script>
+
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
+<script type="text/javascript">
+	google.charts.load('current', {packages: ['corechart']});
+	google.charts.setOnLoadCallback(drawChart);
+
+	function drawChart() {
+	      var data = new google.visualization.DataTable();
+	      data.addColumn('string', 'Month');
+	      data.addColumn('number', 'Power Index');
+
+	      data.addRows([
+	        {{range $a := .Data.PowerHist}}
+				["{{$a.Month}}/{{$a.Year}}",
+				{{$a.Power}}],
+    		{{end}}
+	      ]);
+
+	      var options = {
+          'width':1400,
+          'height':600,
+	        hAxis: {
+	          title: 'Month',
+	          textPosition : 'out'
+	        },
+	        vAxis: {
+	          title: 'Power Index'
+	        },
+	        series: {
+	          1: {curveType: 'function'}
+	        },
+	        legend: {position: 'none'}
+	      };
+
+	      var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
+	      chart.draw(data, options);
+	    }
+</script>
+
+
+<div class="body-full" style="height:100%; width: 100%; cursor: none;">
+
+<div id="powerCarousel" class="carousel" data-ride="carousel" data-pause="false" data-interval="7000" style="height:100%; width: 100%;">
+  <div class="carousel-inner">
+    <div class="item active">
+      <center>
+        <br/>
+        <h1><span style="font-size:75px;">Movement Power Index</span></h1>
+        <br/>
+        <h2><span style="font-size: 300px;">{{ .Data.Power }}</span></h2>
+        <br/>
+        <h2>2017 Goal: 150</h2>
+        <br/>
+        <br/>
+        <h4>Month to Date: {{ .Data.PowerMTD }}</h3>
+        <br/>
+      </center>
+    </div>
+    <div class="item">
+      <img src="/static/img/photo1.jpg" style="width:100%;">
+    </div>
+    <div class="item">
+      <center>
+        <h1>Movement Power Index</h1>
+        <br/>
+        <div id="chart_div"></div>
+      </center>
+    </div>
+    <div class="item">
+      <img src="/static/img/photo2.jpg" style="width:100%;">
+    </div>
+  </div>
+</div>
+
+
+</div>
+
+  </body>
+</html>

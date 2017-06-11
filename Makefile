@@ -27,7 +27,7 @@ dev_db:
 # Install all deps for this project.
 deps:
 	npm install
-	go get -t github.com/directactioneverywhere/adb/...
+	go get -t github.com/dxe/adb/...
 
 # Run all tests
 test:
