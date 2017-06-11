@@ -4,3 +4,4 @@ adb.db
 npm-debug.log
 dist
 node_modules
+package-lock.json

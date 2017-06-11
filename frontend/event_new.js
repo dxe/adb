@@ -16,8 +16,13 @@ function initializeDirty() {
   });
 }
 
+/* All activists from database */
 var ACTIVIST_NAMES = [];
 var ACTIVIST_NAMES_SET = new Set();
+
+/* Activists associated just with this event */
+var EVENT_ATTENDEE_NAMES = [];
+var EVENT_ATTENDEE_NAMES_SET = new Set();
 
 function updateAutocompleteNames() {
   $.ajax({
@@ -26,6 +31,9 @@ function updateAutocompleteNames() {
     dataType: "json",
     success: function(data) {
       var activistNames = data.activist_names;
+      // Clear current activist name array and set before re-adding
+      ACTIVIST_NAMES.length = 0;
+      ACTIVIST_NAMES_SET.clear();
       for (var i = 0; i < activistNames.length; i++) {
         ACTIVIST_NAMES.push(activistNames[i]);
         ACTIVIST_NAMES_SET.add(activistNames[i]);
@@ -37,17 +45,33 @@ function updateAutocompleteNames() {
   });
 }
 
-function updateAwesomeplete() {
-  var $attendeeRows = $('.attendee-input');
+/* Retrieve attendance before any edits are made */
+/* Should I safeguard against any malformed data? */
+function getEventAttendeeNames(eventAttendees) {
+    if (eventAttendees === null) {
+        // No existing data. Must be a new event
+        return;
+    }
+    EVENT_ATTENDEE_NAMES = eventAttendees.map(function(attendee) {
+        EVENT_ATTENDEE_NAMES_SET.add(attendee.Name);
+        return attendee.Name; 
+    });
+}
 
+function updateAwesomeplete() {
+  // Only grab inputs that are not children of div.awesomplete
+  // Note length of $attendeeRows = 0 if there are no input.attendee-input elements
+  var $attendeeRows = $('#attendee-rows > input.attendee-input');
+    
   for (var i = 0; i < $attendeeRows.length; i++) {
     new Awesomplete($attendeeRows[i], { list: ACTIVIST_NAMES });
   }
 }
 
-export function initializeApp() {
+export function initializeApp(eventAttendees) {
   initializeDirty();
   addRows(5);
+  getEventAttendeeNames(eventAttendees);
   updateAutocompleteNames();
   countAttendees();
   // If any form input/selection changes, mark the page as dirty.
@@ -57,6 +81,10 @@ export function initializeApp() {
   $('#eventForm').change(function(e) {
     DIRTY = true;
   });
+  initAttendeeInputEventHandlers();
+}
+
+function initAttendeeInputEventHandlers() {
   // Input is fired any time the user types in an input field.
   $('#attendee-rows').on('input', function(e) {
     DIRTY = true;
@@ -104,7 +132,7 @@ function updateInputColor(input) {
   for (var i = 0; i< theEntireRows.children.length; i++) {
     // insert the values into the Set only if it not null
     if (input !== theEntireRows.children[i].children[0] && theEntireRows.children[i].children[0].value !== "") {
-      currentValues.add(theEntireRows.children[i].children[0].value)
+      currentValues.add(theEntireRows.children[i].children[0].value);
     }
   }
 
@@ -130,7 +158,9 @@ function maybeExpandRows(currentInput) {
   }
 
   // After expanding, focus on the current input again.
-  $(currentInput).focus();
+  if (typeof currentInput !== 'undefined') {
+    $(currentInput).focus();
+  }
 }
 
 function countAttendees(currentInput) {
@@ -165,11 +195,13 @@ export function newEvent(event) {
   }
 
   var attendees = [];
+  var attendeesSet = new Set();
   var $attendeeRows = $('.attendee-input');
   for (var i = 0; i < $attendeeRows.length; i++) {
-    var attendeeValue = $attendeeRows[i].value;
+    var attendeeValue = $attendeeRows[i].value.trim();
     if (attendeeValue !== "") {
       attendees.push(attendeeValue);
+      attendeesSet.add(attendeeValue);
     }
   }
 
@@ -179,6 +211,12 @@ export function newEvent(event) {
   }
 
   var eventID = parseInt(document.getElementById('eventID').value);
+  var addedActivists = attendees.filter(function (activist) {
+        return !EVENT_ATTENDEE_NAMES_SET.has(activist);
+  });
+  var deletedActivists = EVENT_ATTENDEE_NAMES.filter(function (activist) {
+      return !attendeesSet.has(activist);
+  });
 
   $.ajax({
     url: "/event/save",
@@ -189,7 +227,8 @@ export function newEvent(event) {
       event_name: eventName,
       event_date: eventDate,
       event_type: eventType,
-      attendees: attendees,
+      added_attendees: addedActivists,
+      deleted_attendees: deletedActivists,
     }),
     success: function(data) {
       var parsed = JSON.parse(data);
@@ -206,12 +245,38 @@ export function newEvent(event) {
         window.location = parsed.redirect;
       } else {
         flashMessage("Saved!", false);
+        refreshEventAttendance(parsed.attendees)
       }
     },
     error: function() {
       flashMessage("Error, did not save data", true);
     },
   });
+
+}
+
+function refreshEventAttendance(attendees) {
+    var numberOfAttendees = 0;
+    if (attendees === null) {
+        // All attendees were deleted from this event
+        EVENT_ATTENDEE_NAMES = [];
+        EVENT_ATTENDEE_NAMES_SET = new Set();
+    }
+    else {
+        EVENT_ATTENDEE_NAMES = attendees;
+        EVENT_ATTENDEE_NAMES_SET = new Set(EVENT_ATTENDEE_NAMES);
+        numberOfAttendees = attendees.length;
+    }
+
+    $('#attendee-rows').empty(); // clear existing html
+    addRows(numberOfAttendees);
+    var attendeeList = $('#attendee-rows').find('.attendee-input');
+    for (var i = 0; i < numberOfAttendees; i++) {
+        attendeeList[i].value = EVENT_ATTENDEE_NAMES[i];
+    }
+    addRows(5);
+    updateAutocompleteNames();
+    initAttendeeInputEventHandlers();
 }
 
 function addRows(numToAdd) {
