@@ -44,3 +44,8 @@ CREATE TABLE IF NOT EXISTS events (
   event_type VARCHAR(60) NOT NULL
 )`)
 }
+
+// Add unique index to event_attendance table. This is necessary to avoid duplicate entries
+func AddIdxToEventAttendance(db *sqlx.DB) {
+	db.MustExec(`ALTER TABLE event_attendance ADD UNIQUE unique_idx (activist_id, event_id)`)
+}
