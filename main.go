@@ -374,6 +374,7 @@ func (c MainController) EventSaveHandler(w http.ResponseWriter, r *http.Request)
 	attendees, err := model.GetEventAttendance(c.db, eventID)
 	if err != nil {
 		sendErrorMessage(w, err)
+		return
 	}
 
 	out := map[string]interface{}{
