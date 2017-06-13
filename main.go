@@ -298,6 +298,17 @@ func writeJSON(w io.Writer, v interface{}) {
 	}
 }
 
+/* Accepts a non-nil error and sends an error response */
+func sendErrorMessage(w io.Writer, err error) {
+	if err == nil {
+		return
+	}
+	writeJSON(w, map[string]string{
+		"status":  "error",
+		"message": err.Error(),
+	})
+}
+
 func (c MainController) UpdateEventHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	var event model.Event
@@ -356,16 +367,20 @@ func (c MainController) EventSaveHandler(w http.ResponseWriter, r *http.Request)
 
 	eventID, err := model.InsertUpdateEvent(c.db, event)
 	if err != nil {
-		writeJSON(w, map[string]string{
-			"status":  "error",
-			"message": err.Error(),
-		})
+		sendErrorMessage(w, err)
 		return
 	}
 
-	out := map[string]string{
-		"status":   "success",
-		"redirect": "",
+	attendees, err := model.GetEventAttendance(c.db, eventID)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	out := map[string]interface{}{
+		"status":    "success",
+		"redirect":  "",
+		"attendees": attendees,
 	}
 	if isNewEvent {
 		out["redirect"] = fmt.Sprintf("/update_event/%d", eventID)

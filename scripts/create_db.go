@@ -1633,6 +1633,7 @@ INSERT INTO event_attendance (activist_id, event_id) VALUES
   (49, 30);
 `)
 	}
+	model.AddIdxToEventAttendance(db)
 }
 
 func main() {
