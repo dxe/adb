@@ -264,6 +264,23 @@ func getEventType(rawEventType string) (EventType, error) {
 	return "", errors.New("Not a valid event type: " + rawEventType)
 }
 
+var Duration60Days = 60 * 24 * time.Hour
+var Duration90Days = 90 * 24 * time.Hour
+
+func getStatus(firstEvent *time.Time, lastEvent *time.Time, totalEvents int) string {
+	if firstEvent == nil || lastEvent == nil {
+		return "No attendance"
+	}
+
+	if time.Since(*lastEvent) > Duration60Days {
+		return "Former"
+	}
+	if time.Since(*firstEvent) > Duration90Days && totalEvents > 5 {
+		return "New"
+	}
+	return "Current"
+}
+
 type User struct {
 	ID       int            `db:"id"`
 	Name     string         `db:"name"`
@@ -278,6 +295,7 @@ type UserEventData struct {
 	FirstEvent  *time.Time `db:"first_event"`
 	LastEvent   *time.Time `db:"last_event"`
 	TotalEvents int        `db:"total_events"`
+	Status      string
 }
 
 type UserExtra struct {
@@ -296,6 +314,7 @@ type UserJSON struct {
 	FirstEvent  string `json:"first_event"`
 	LastEvent   string `json:"last_event"`
 	TotalEvents int    `json:"total_events"`
+	Status      string `json:"status"`
 }
 
 func (u User) GetUserEventData(db *sqlx.DB) (UserEventData, error) {
@@ -344,6 +363,7 @@ func GetUsersJSON(db *sqlx.DB) ([]UserJSON, error) {
 			FirstEvent:  firstEvent,
 			LastEvent:   lastEvent,
 			TotalEvents: u.UserEventData.TotalEvents,
+			Status:      u.Status,
 		})
 	}
 	return usersJSON, nil
@@ -420,6 +440,11 @@ GROUP BY a.id
 	var users []UserExtra
 	if err := db.Select(&users, query); err != nil {
 		return nil, err
+	}
+
+	for i := 0; i < len(users); i++ {
+		u := users[i]
+		users[i].Status = getStatus(u.FirstEvent, u.LastEvent, u.TotalEvents)
 	}
 
 	return users, nil
