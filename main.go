@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"html/template"
@@ -301,7 +302,7 @@ func writeJSON(w io.Writer, v interface{}) {
 /* Accepts a non-nil error and sends an error response */
 func sendErrorMessage(w io.Writer, err error) {
 	if err == nil {
-		return
+		panic(errors.New("Cannot send error message if error is nil"))
 	}
 	writeJSON(w, map[string]string{
 		"status":  "error",
@@ -355,10 +356,7 @@ func (c MainController) AutocompleteActivistsHandler(w http.ResponseWriter, r *h
 func (c MainController) EventSaveHandler(w http.ResponseWriter, r *http.Request) {
 	event, err := model.CleanEventData(c.db, r.Body)
 	if err != nil {
-		writeJSON(w, map[string]string{
-			"status":  "error",
-			"message": err.Error(),
-		})
+		sendErrorMessage(w, err)
 		return
 	}
 
