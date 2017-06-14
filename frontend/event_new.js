@@ -169,9 +169,9 @@ function countAttendees(currentInput) {
   for (var i = 0; i < $rows.length; i++) {
     if ($rows[i].value !== '') {
       attendeeTotal += 1;
-      $('#attendeeTotal').html(attendeeTotal);
     }
   }
+  $('#attendeeTotal').html(attendeeTotal);
 }
 
 // creates new event in ADB
@@ -274,6 +274,7 @@ function refreshEventAttendance(attendees) {
     for (var i = 0; i < numberOfAttendees; i++) {
         attendeeList[i].value = EVENT_ATTENDEE_NAMES[i];
     }
+    $('#attendeeTotal').html(numberOfAttendees); // update total attendee counter
     addRows(5);
     updateAutocompleteNames();
     initAttendeeInputEventHandlers();
