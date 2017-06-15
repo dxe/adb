@@ -52,3 +52,8 @@ jake_deploy: clean prod_build
 	ssh ubuntu@adb.dxetech.org "sudo svc -d /etc/service/adb"
 	rsync --chmod=ug+w --groupmap="*:adb" -azPO --delete adb run templates static dist ubuntu@adb.dxetech.org:/opt/adb/
 	ssh ubuntu@adb.dxetech.org "sudo svc -u /etc/service/adb"
+
+cameron_deploy: clean prod_build
+	ssh cameron@adb.dxetech.org "sudo svc -d /etc/service/adb"
+	rsync --chmod=ug+w --groupmap="*:adb" -azPO --delete adb run templates static dist cameron@adb.dxetech.org:/opt/adb/
+	ssh cameron@adb.dxetech.org "sudo svc -u /etc/service/adb"

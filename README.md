@@ -57,3 +57,26 @@ be built as you edit them.
 To deploy, you need a user account that has the "adb" group and also has passwordless sudo enabled.
 
 The server uses daemontools on the server to run. See the Makefile for more info on how to deploy.
+
+## How To Give Someone New Deploy Access
+
+First, make sure they're trusted because they will have sudo access to the machine.
+
+```
+NEW_USER=their-username
+sudo adduser --disabled-password $NEW_USER
+sudo usermod -a -G sudo $NEW_USER
+
+# Add public key
+sudo mkdir /home/$NEW_USER/.ssh
+sudo vim /home/$NEW_USER/.ssh/authorized_keys
+sudo chown -R $NEW_USER:$NEW_USER /home/$NEW_USER/.ssh
+```
+
+Edit /etc/sudoers so the username has passwordless sudo. Use the command `sudo visudo` to edit it.
+
+```
+their-username ALL=(ALL) NOPASSWD:ALL
+```
+
+Finally, add a deploy target to the Makefile.
