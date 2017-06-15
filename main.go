@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -11,6 +10,8 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+
+	"golang.org/x/net/context"
 
 	oidc "github.com/coreos/go-oidc"
 	"github.com/dxe/adb/model"
