@@ -29,7 +29,10 @@ module.exports = {
       {
         test: /\.js$/,
         loader: 'babel-loader',
-        exclude: /node_modules/
+        include: [
+          path.resolve('frontend'),
+          path.resolve('node_modules/vue-js-modal'),
+        ],
       },
       {
         test: /\.(png|jpg|gif|svg)$/,
