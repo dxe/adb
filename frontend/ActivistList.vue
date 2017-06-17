@@ -75,9 +75,16 @@ var previousSortData = {
 
 // Uses previousSortData to determine whether the next sort should be
 // ascending.
-function shouldSortByAscending(field) {
+//
+// If sortByDate is true, then the default is to sort by descending.
+// Otherwise, the default is to sort by ascending.
+function shouldSortByAscending(field, sortByDate) {
   if (field == previousSortData.field) {
     return !previousSortData.ascending;
+  }
+
+  if (sortByDate) {
+    return false;
   }
   return true;
 }
@@ -138,7 +145,7 @@ export default {
       setPreviousSortData(field, ascending);
     },
     sortByDate: function(field) {
-      var ascending = shouldSortByAscending(field);
+      var ascending = shouldSortByAscending(field, true);
 
       this.activists.sort(function(a, b) {
         // Always sort empty values to the bottom, no matter the
