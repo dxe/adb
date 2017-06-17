@@ -8,8 +8,8 @@
           <th @click="sortBy('name')">Name</th>
           <th @click="sortBy('email')">Email</th>
           <th @click="sortBy('phone')">Phone</th>
-          <th @click="sortBy('first_event')">First Event</th>
-          <th @click="sortBy('last_event')">Last Event</th>
+          <th @click="sortByDate('first_event')">First Event</th>
+          <th @click="sortByDate('last_event')">Last Event</th>
           <th @click="sortBy('status')">Status</th>
         </tr>
       </thead>
@@ -73,6 +73,22 @@ var previousSortData = {
   ascending: null,
 };
 
+// Uses previousSortData to determine whether the next sort should be
+// ascending.
+function shouldSortByAscending(field) {
+  if (field == previousSortData.field) {
+    return !previousSortData.ascending;
+  }
+  return true;
+}
+
+// Call this after every sort.
+function setPreviousSortData(field, ascending) {
+  previousSortData.field = field;
+  previousSortData.ascending = ascending;
+}
+
+
 export default {
   name: 'activist-list',
   methods: {
@@ -100,22 +116,45 @@ export default {
       this.activists = activistsData;
     },
     sortBy: function(field) {
-      var ascending;
-      if (field == previousSortData.field) {
-        ascending = !previousSortData.ascending;
-      } else {
-        ascending = true;
-      }
+      var ascending = shouldSortByAscending(field);
 
       this.activists.sort(function(a,b) {
+        var order = (a[field].toLowerCase() < b[field].toLowerCase()) ? -1 : 1;
         if (ascending) {
-          return (a[field].toLowerCase() < b[field].toLowerCase()) ? -1 : 1;
-        } else {
-          return (a[field].toLowerCase() > b[field].toLowerCase()) ? -1 : 1;
+          return order;
         }
+        return -1 * order;
       });
-      previousSortData.field = field;
-      previousSortData.ascending = ascending;
+
+      setPreviousSortData(field, ascending);
+    },
+    sortByDate: function(field) {
+      var ascending = shouldSortByAscending(field);
+
+      this.activists.sort(function(a, b) {
+        // Always sort empty values to the bottom, no matter the
+        // order.
+        if (!a[field]) {
+          return 1;
+        }
+        if (!b[field]) {
+          return -1;
+        }
+
+        var valueA = new Date(a[field]).getTime();
+        var valueB = new Date(b[field]).getTime();
+
+        var order = (valueA < valueB) ? -1 : 1;
+
+        console.log(a, valueA, b, valueB, order);
+
+        if (ascending) {
+          return order;
+        }
+        return -1 * order;
+      });
+
+      setPreviousSortData(field, ascending);
     },
   },
   data() {
