@@ -10,7 +10,7 @@
           <th @click="sortBy('phone')">Phone</th>
           <th @click="sortByDate('first_event')">First Event</th>
           <th @click="sortByDate('last_event')">Last Event</th>
-          <th @click="sortBy('status')">Status</th>
+          <th @click="sortByStatus('status')">Status</th>
         </tr>
       </thead>
       <tbody id="activist-list-body">
@@ -89,6 +89,15 @@ function setPreviousSortData(field, ascending) {
 }
 
 
+// Must be kept in sync with the list in model/model.go
+var statusOrder = {
+  "Current": 1,
+  "New": 2,
+  "Former": 3,
+  "No attendance": 4,
+};
+
+
 export default {
   name: 'activist-list',
   methods: {
@@ -146,7 +155,22 @@ export default {
 
         var order = (valueA < valueB) ? -1 : 1;
 
-        console.log(a, valueA, b, valueB, order);
+        if (ascending) {
+          return order;
+        }
+        return -1 * order;
+      });
+
+      setPreviousSortData(field, ascending);
+    },
+    sortByStatus: function(field) {
+      var ascending = shouldSortByAscending(field);
+
+      this.activists.sort(function(a, b) {
+        var valueA = statusOrder[a[field]];
+        var valueB = statusOrder[b[field]];
+
+        var order = (valueA < valueB) ? -1 : 1;
 
         if (ascending) {
           return order;

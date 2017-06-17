@@ -42,15 +42,16 @@ INSERT INTO activists VALUES
   (108, 'mmm', 'alexis.l.levitt@gmail.com', 'SF Bay', '', 'United States', '', 0, 0, 0, 0);
 
 INSERT INTO events VALUES
-  (1, 'Event One', '2017-02-15', 'Working Group'),
+  (1, 'Event One', '2016-02-15', 'Working Group'),
   (2, 'Event Two', '2017-02-16', 'Protest'),
   (3, 'Event Three', '2017-02-17', 'Community'),
   (4, 'Event Four', '2017-02-18', 'Outreach'),
-  (5, 'Event Five', '2017-02-19', 'Key Event');
+  (5, 'Event Five', '2017-02-19', 'Key Event'),
+  (6, 'Event Six', '2017-06-13', 'Key Event');
 
 
 INSERT INTO event_attendance (activist_id, event_id) VALUES
-  (1, 1), (1, 2), (2, 2), (3,3), (4,4), (5,5);
+  (1, 1), (1, 2), (2, 2), (3,3), (4,6), (5,5), (5,1), (5,6);
 `)
 	}
 	model.AddIdxToEventAttendance(db)

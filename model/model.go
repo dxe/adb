@@ -5,11 +5,12 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
-	"github.com/jmoiron/sqlx"
 	"io"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jmoiron/sqlx"
 )
 
 var DangerousCharacters = "<>&"
@@ -267,6 +268,12 @@ func getEventType(rawEventType string) (EventType, error) {
 var Duration60Days = 60 * 24 * time.Hour
 var Duration90Days = 90 * 24 * time.Hour
 
+// Returns one of the following statuses:
+//  - Current
+//  - New
+//  - Former
+//  - No attendance
+// Must be kept in sync with the list in frontend/ActivistList.vue
 func getStatus(firstEvent *time.Time, lastEvent *time.Time, totalEvents int) string {
 	if firstEvent == nil || lastEvent == nil {
 		return "No attendance"
@@ -275,7 +282,7 @@ func getStatus(firstEvent *time.Time, lastEvent *time.Time, totalEvents int) str
 	if time.Since(*lastEvent) > Duration60Days {
 		return "Former"
 	}
-	if time.Since(*firstEvent) > Duration90Days && totalEvents > 5 {
+	if time.Since(*firstEvent) < Duration90Days && totalEvents < 5 {
 		return "New"
 	}
 	return "Current"
