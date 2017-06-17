@@ -14,8 +14,8 @@
         </tr>
       </thead>
       <tbody id="activist-list-body">
-        <tr v-for="activist in activists" @click="showModal(activist)">
-          <td><button class="btn btn-default glyphicon glyphicon-pencil"></button></td>
+        <tr v-for="activist in activists">
+          <td><button class="btn btn-default glyphicon glyphicon-pencil" @click="showModal(activist)"></button></td>
           <td>{{activist.name}}</td>
           <td>{{activist.email}}</td>
           <td>{{activist.phone}}</td>
@@ -25,7 +25,13 @@
         </tr>
       </tbody>
     </table>
-    <modal name="edit-activist-modal" :height="800" classes="no-background-color">
+    <modal
+       name="edit-activist-modal"
+       :height="800"
+       classes="no-background-color"
+       @opened="modalOpened"
+       @closed="modalClosed"
+       >
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
@@ -81,6 +87,15 @@ export default {
     saveModal: function() {
       console.log('not implemented');
     },
+    modalOpened: function() {
+      // Add noscroll to body tag so it doesn't scroll while the modal
+      // is shown.
+      $(document.body).addClass('noscroll');
+    },
+    modalClosed: function() {
+      // Allow body to scroll after modal is closed.
+      $(document.body).removeClass('noscroll');
+    },
     setActivists: function(activistsData) {
       this.activists = activistsData;
     },
@@ -134,6 +149,15 @@ export default {
 
   .no-background-color {
     background-color: transparent !important;
+  }
+
+  .noscroll {
+    overflow: hidden;
+  }
+
+  .v--modal-overlay {
+    overflow-y: scroll;
+    z-index: 1040 !important;
   }
 
 </style>
