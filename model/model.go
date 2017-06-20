@@ -239,6 +239,7 @@ var EventTypes map[string]bool = map[string]bool{
 	"Protest":       true,
 	"Outreach":      true,
 	"Key Event":     true,
+	"Sanctuary":     true,
 }
 
 var EventDateLayout string = "2006-01-02"
