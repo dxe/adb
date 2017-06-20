@@ -66,6 +66,7 @@ First, make sure they're trusted because they will have sudo access to the machi
 NEW_USER=their-username
 sudo adduser --disabled-password $NEW_USER
 sudo usermod -a -G sudo $NEW_USER
+sudo usermod -a -G adb $NEW_USER
 
 # Add public key
 sudo mkdir /home/$NEW_USER/.ssh
