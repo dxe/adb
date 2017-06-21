@@ -78,10 +78,10 @@ func TestGetEvents(t *testing.T) {
 
 	for _, e := range wantEvents {
 		_, err := InsertUpdateEvent(db, Event{
-			EventName: e.EventName,
-			EventDate: e.EventDate,
-			EventType: e.EventType,
-			Attendees: e.Attendees,
+			EventName:      e.EventName,
+			EventDate:      e.EventDate,
+			EventType:      e.EventType,
+			AddedAttendees: e.Attendees,
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -119,25 +119,25 @@ func TestGetEvents_orderBy(t *testing.T) {
 	d2, err := time.Parse("2006-01-02", "2017-01-16")
 	assert.NoError(t, err)
 	var wantEvents = []Event{{
-		ID:        1,
-		EventName: "earlier event",
-		EventDate: d1,
-		EventType: "Working Group",
-		Attendees: []User{u1},
+		ID:             1,
+		EventName:      "earlier event",
+		EventDate:      d1,
+		EventType:      "Working Group",
+		AddedAttendees: []User{u1},
 	}, {
-		ID:        2,
-		EventName: "later event",
-		EventDate: d2,
-		EventType: "Protest",
-		Attendees: []User{u1},
+		ID:             2,
+		EventName:      "later event",
+		EventDate:      d2,
+		EventType:      "Protest",
+		AddedAttendees: []User{u1},
 	}}
 
 	for _, e := range wantEvents {
 		_, err := InsertUpdateEvent(db, Event{
-			EventName: e.EventName,
-			EventDate: e.EventDate,
-			EventType: e.EventType,
-			Attendees: e.Attendees,
+			EventName:      e.EventName,
+			EventDate:      e.EventDate,
+			EventType:      e.EventType,
+			AddedAttendees: e.AddedAttendees,
 		})
 		assert.NoError(t, err)
 	}
@@ -164,10 +164,10 @@ func TestInsertUpdateEvent(t *testing.T) {
 	assert.NoError(t, err)
 
 	event := Event{
-		EventName: "event one",
-		EventDate: time.Now(),
-		EventType: "Working Group",
-		Attendees: []User{u1},
+		EventName:      "event one",
+		EventDate:      time.Now(),
+		EventType:      "Working Group",
+		AddedAttendees: []User{u1},
 	}
 
 	eventID, err := InsertUpdateEvent(db, event)
@@ -186,7 +186,7 @@ func TestInsertUpdateEvent(t *testing.T) {
 	assert.Equal(t, len(attendees), 1)
 
 	event.ID = 1
-	event.Attendees = []User{u1, u2}
+	event.AddedAttendees = []User{u1, u2}
 
 	eventID, err = InsertUpdateEvent(db, event)
 	assert.NoError(t, err)
@@ -212,10 +212,10 @@ func TestInsertUpdateEvent_noDuplicateAttendees(t *testing.T) {
 	assert.NoError(t, err)
 
 	event := Event{
-		EventName: "event one",
-		EventDate: time.Now(),
-		EventType: "Working Group",
-		Attendees: []User{u1, u1},
+		EventName:      "event one",
+		EventDate:      time.Now(),
+		EventType:      "Working Group",
+		AddedAttendees: []User{u1, u1},
 	}
 
 	eventID, err := InsertUpdateEvent(db, event)
@@ -243,25 +243,25 @@ func TestDeleteEvents(t *testing.T) {
 	d2, err := time.Parse("2006-01-02", "2017-01-16")
 	assert.NoError(t, err)
 	var wantEvents = []Event{{
-		ID:        1,
-		EventName: "event one",
-		EventDate: d1,
-		EventType: "Working Group",
-		Attendees: []User{u1},
+		ID:             1,
+		EventName:      "event one",
+		EventDate:      d1,
+		EventType:      "Working Group",
+		AddedAttendees: []User{u1},
 	}, {
-		ID:        2,
-		EventName: "event two",
-		EventDate: d2,
-		EventType: "Protest",
-		Attendees: []User{u1, u2},
+		ID:             2,
+		EventName:      "event two",
+		EventDate:      d2,
+		EventType:      "Protest",
+		AddedAttendees: []User{u1, u2},
 	}}
 
 	for _, e := range wantEvents {
 		_, err := InsertUpdateEvent(db, Event{
-			EventName: e.EventName,
-			EventDate: e.EventDate,
-			EventType: e.EventType,
-			Attendees: e.Attendees,
+			EventName:      e.EventName,
+			EventDate:      e.EventDate,
+			EventType:      e.EventType,
+			AddedAttendees: e.AddedAttendees,
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -311,29 +311,29 @@ func TestGetUserEventData(t *testing.T) {
 
 	// These events are intentionally out of order
 	insertEvents := []Event{{
-		ID:        1,
-		EventName: "event one",
-		EventDate: d2,
-		EventType: "Working Group",
-		Attendees: []User{u1},
+		ID:             1,
+		EventName:      "event one",
+		EventDate:      d2,
+		EventType:      "Working Group",
+		AddedAttendees: []User{u1},
 	}, {
-		ID:        2,
-		EventName: "event two",
-		EventDate: d1,
-		EventType: "Working Group",
-		Attendees: []User{u1},
+		ID:             2,
+		EventName:      "event two",
+		EventDate:      d1,
+		EventType:      "Working Group",
+		AddedAttendees: []User{u1},
 	}, {
-		ID:        3,
-		EventName: "event three",
-		EventDate: d3,
-		EventType: "Working Group",
-		Attendees: []User{u1},
+		ID:             3,
+		EventName:      "event three",
+		EventDate:      d3,
+		EventType:      "Working Group",
+		AddedAttendees: []User{u1},
 	}, {
-		ID:        4,
-		EventName: "event four",
-		EventDate: d3,
-		EventType: "Working Group",
-		Attendees: []User{u1},
+		ID:             4,
+		EventName:      "event four",
+		EventDate:      d3,
+		EventType:      "Working Group",
+		AddedAttendees: []User{u1},
 	}}
 	mustInsertAllEvents(t, db, insertEvents)
 
@@ -365,10 +365,10 @@ func TestGetUserEventData_noEvents(t *testing.T) {
 func mustInsertAllEvents(t *testing.T, db *sqlx.DB, events []Event) {
 	for _, e := range events {
 		_, err := InsertUpdateEvent(db, Event{
-			EventName: e.EventName,
-			EventDate: e.EventDate,
-			EventType: e.EventType,
-			Attendees: e.Attendees,
+			EventName:      e.EventName,
+			EventDate:      e.EventDate,
+			EventType:      e.EventType,
+			AddedAttendees: e.AddedAttendees,
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -388,49 +388,49 @@ func TestGetLeaderboardUsers(t *testing.T) {
 	d2, err := time.Parse("2006-01-02", "2017-04-16")
 	assert.NoError(t, err)
 	var wantEvents = []Event{{
-		ID:        1,
-		EventName: "event one",
-		EventDate: d2,
-		EventType: "Working Group",
-		Attendees: []User{u1},
+		ID:             1,
+		EventName:      "event one",
+		EventDate:      d2,
+		EventType:      "Working Group",
+		AddedAttendees: []User{u1},
 	}, {
-		ID:        2,
-		EventName: "event two",
-		EventDate: d2,
-		EventType: "Protest",
-		Attendees: []User{u1},
+		ID:             2,
+		EventName:      "event two",
+		EventDate:      d2,
+		EventType:      "Protest",
+		AddedAttendees: []User{u1},
 	}, {
-		ID:        3,
-		EventName: "event three",
-		EventDate: d2,
-		EventType: "Key Event",
-		Attendees: []User{u1},
+		ID:             3,
+		EventName:      "event three",
+		EventDate:      d2,
+		EventType:      "Key Event",
+		AddedAttendees: []User{u1},
 	}, {
-		ID:        4,
-		EventName: "event four",
-		EventDate: d2,
-		EventType: "Community",
-		Attendees: []User{u1},
+		ID:             4,
+		EventName:      "event four",
+		EventDate:      d2,
+		EventType:      "Community",
+		AddedAttendees: []User{u1},
 	}, {
-		ID:        5,
-		EventName: "event five",
-		EventDate: d2,
-		EventType: "Outreach",
-		Attendees: []User{u1},
+		ID:             5,
+		EventName:      "event five",
+		EventDate:      d2,
+		EventType:      "Outreach",
+		AddedAttendees: []User{u1},
 	}, {
-		ID:        6,
-		EventName: "event six",
-		EventDate: d2,
-		EventType: "Sanctuary",
-		Attendees: []User{u1},
+		ID:             6,
+		EventName:      "event six",
+		EventDate:      d2,
+		EventType:      "Sanctuary",
+		AddedAttendees: []User{u1},
 	}}
 
 	for _, e := range wantEvents {
 		_, err := InsertUpdateEvent(db, Event{
-			EventName: e.EventName,
-			EventDate: e.EventDate,
-			EventType: e.EventType,
-			Attendees: e.Attendees,
+			EventName:      e.EventName,
+			EventDate:      e.EventDate,
+			EventType:      e.EventType,
+			AddedAttendees: e.AddedAttendees,
 		})
 		if err != nil {
 			t.Fatal(err)
