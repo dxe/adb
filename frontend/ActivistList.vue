@@ -38,16 +38,18 @@
             <h2 class="modal-title">Edit activist</h2>
           </div>
           <div class="modal-body">
-            <p><label for="name">Name: </label><input class="form-control" type="text" :value="currentActivist.name" id="name" /></p>
-            <p><label for="email">Email: </label><input class="form-control" type="text" :value="currentActivist.email" id="email" /></p>
-            <p><label for="chapter">Chapter: </label><input class="form-control" type="text" :value="currentActivist.chapter" id="chapter"></p>
-            <p><label for="phone">Phone: </label><input class="form-control" type="text" :value="currentActivist.phone" id="phone"></p>
-            <p><label for="location">Location: </label><input class="form-control" type="text" :value="currentActivist.location" id="location"></p>
-            <p><label for="facebook">Facebook: </label><input class="form-control" type="text" :value="currentActivist.facebook" id="facebook"></p>
-            <p><label for="core">Core/Staff:&nbsp;</label><input class="form-check-input" type="checkbox" id="core"></p>
-            <p><label for="exclude">Exclude from Leaderboard:&nbsp;</label><input class="form-check-input" type="checkbox" id="exclude"></p>
-            <p><label for="pledge">Liberation Pledge:&nbsp;</label><input class="form-check-input" type="checkbox" id="pledge"></p>
-            <p><label for="globalteam">Global Team Member:&nbsp;</label><input class="form-check-input" type="checkbox" id="globalteam"></p>
+            <form action="" id="editActivistForm">
+              <p><label for="name">Name: </label><input class="form-control" type="text" :value="currentActivist.name" id="name" /></p>
+              <p><label for="email">Email: </label><input class="form-control" type="text" :value="currentActivist.email" id="email" /></p>
+              <p><label for="chapter">Chapter: </label><input class="form-control" type="text" :value="currentActivist.chapter" id="chapter"></p>
+              <p><label for="phone">Phone: </label><input class="form-control" type="text" :value="currentActivist.phone" id="phone"></p>
+              <p><label for="location">Location: </label><input class="form-control" type="text" :value="currentActivist.location" id="location"></p>
+              <p><label for="facebook">Facebook: </label><input class="form-control" type="text" :value="currentActivist.facebook" id="facebook"></p>
+              <p><label for="core">Core/Staff:&nbsp;</label><input class="form-check-input" type="checkbox" id="core"></p>
+              <p><label for="exclude">Exclude from Leaderboard:&nbsp;</label><input class="form-check-input" type="checkbox" id="exclude"></p>
+              <p><label for="pledge">Liberation Pledge:&nbsp;</label><input class="form-check-input" type="checkbox" id="pledge"></p>
+              <p><label for="globalteam">Global Team Member:&nbsp;</label><input class="form-check-input" type="checkbox" id="globalteam"></p>
+            </form>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" @click="hideModal">Close</button>
@@ -104,6 +106,24 @@ var statusOrder = {
   "No attendance": 4,
 };
 
+function saveActivistEdits(activistInfo) {
+  console.log(activistInfo);
+  $.ajax({
+    url: "/activist/save",
+    method: "POST",
+    contentType: "application/json",
+    data: JSON.stringify(activistInfo),
+    success: function(data) {
+      // TODO finish filling this in
+    },
+    error: function() {
+      // TODO Handle this appropriately
+      console.log("Internal Error");
+    }
+  });
+
+}
+
 
 export default {
   name: 'activist-list',
@@ -117,7 +137,17 @@ export default {
       this.$modal.hide('edit-activist-modal');
     },
     saveModal: function() {
-      console.log('not implemented');
+      // TODO Grab checkbox information
+      var activistInfo = {
+        "id" : this.currentActivist.id,
+        "name" : $("#name")[0].value,
+        "email" : $("#email")[0].value,
+        "chapter" : $("#chapter")[0].value,
+        "phone" : $("#phone")[0].value,
+        "location" : $("#location")[0].value,
+        "facebook" : $("#facebook")[0].value,
+      };
+      saveActivistEdits(activistInfo);
     },
     modalOpened: function() {
       // Add noscroll to body tag so it doesn't scroll while the modal

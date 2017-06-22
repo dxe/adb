@@ -189,7 +189,7 @@ func router() *mux.Router {
 	router.Handle("/event/list", alice.New(apiAuthMiddleware).ThenFunc(main.EventListHandler))
 	router.Handle("/event/delete", alice.New(apiAuthMiddleware).ThenFunc(main.EventDeleteHandler))
 	router.Handle("/activist/list", alice.New(apiAuthMiddleware).ThenFunc(main.ActivistListHandler))
-	//router.Handle("/activist/save", alice.New(apiAuthMiddleware).ThenFunc(main.ActivistSaveHandler))
+	router.Handle("/activist/save", alice.New(apiAuthMiddleware).ThenFunc(main.ActivistSaveHandler))
 	router.Handle("/leaderboard/list", alice.New(apiAuthMiddleware).ThenFunc(main.LeaderboardListHandler))
 
 	if isProd {
@@ -352,6 +352,11 @@ func (c MainController) AutocompleteActivistsHandler(w http.ResponseWriter, r *h
 	writeJSON(w, map[string][]string{
 		"activist_names": names,
 	})
+}
+
+func (c MainController) ActivistSaveHandler(w http.ResponseWriter, r *http.Request) {
+	// TODO Sanitize input
+	// TODO Update activist info in database
 }
 
 func (c MainController) EventSaveHandler(w http.ResponseWriter, r *http.Request) {

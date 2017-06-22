@@ -474,6 +474,18 @@ func GetOrCreateUser(db *sqlx.DB, name string) (User, error) {
 	return GetUser(db, name)
 }
 
+func CleanActivistData(db *sqlx.DB, body io.Reader) (User, error) {
+	var userJSON UserJSON
+	err := json.NewDecoder(body).Decode(&userJSON)
+	if err != nil {
+		return User{}, err
+	}
+
+	var user User
+	// Sanitize input and return User struct
+
+}
+
 func CleanEventData(db *sqlx.DB, body io.Reader) (Event, error) {
 	var eventJSON EventJSON
 	err := json.NewDecoder(body).Decode(&eventJSON)
