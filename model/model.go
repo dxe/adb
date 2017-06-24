@@ -5,7 +5,9 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -290,13 +292,14 @@ func getStatus(firstEvent *time.Time, lastEvent *time.Time, totalEvents int) str
 }
 
 type User struct {
-	ID       int            `db:"id"`
-	Name     string         `db:"name"`
-	Email    string         `db:"email"`
-	Chapter  string         `db:"chapter"`
-	Phone    string         `db:"phone"`
-	Location sql.NullString `db:"location"`
-	Facebook string         `db:"facebook"`
+	ID               int            `db:"id"`
+	Name             string         `db:"name"`
+	Email            string         `db:"email"`
+	Chapter          string         `db:"chapter"`
+	Phone            string         `db:"phone"`
+	Location         sql.NullString `db:"location"`
+	Facebook         string         `db:"facebook"`
+	LiberationPledge int            `db:"liberation_pledge"`
 }
 
 type UserEventData struct {
@@ -306,23 +309,34 @@ type UserEventData struct {
 	Status      string
 }
 
+type UserMembershipData struct {
+	CoreStaff              int `db:"core_staff"`
+	ExcludeFromLeaderboard int `db:"exclude_from_leaderboard"`
+	GlobalTeamMember       int `db:"global_team_member"`
+}
+
 type UserExtra struct {
 	User
 	UserEventData
+	UserMembershipData
 }
 
 type UserJSON struct {
-	ID          int    `json:"id"`
-	Name        string `json:"name"`
-	Email       string `json:"email"`
-	Chapter     string `json:"chapter"`
-	Phone       string `json:"phone"`
-	Location    string `json:"location"`
-	Facebook    string `json:"facebook"`
-	FirstEvent  string `json:"first_event"`
-	LastEvent   string `json:"last_event"`
-	TotalEvents int    `json:"total_events"`
-	Status      string `json:"status"`
+	ID                     int    `json:"id"`
+	Name                   string `json:"name"`
+	Email                  string `json:"email"`
+	Chapter                string `json:"chapter"`
+	Phone                  string `json:"phone"`
+	Location               string `json:"location"`
+	Facebook               string `json:"facebook"`
+	FirstEvent             string `json:"first_event"`
+	LastEvent              string `json:"last_event"`
+	TotalEvents            int    `json:"total_events"`
+	Status                 string `json:"status"`
+	Core                   int    `json:"core_staff"`
+	ExcludeFromLeaderboard int    `json:"exclude_from_leaderboard"`
+	LiberationPledge       int    `json:"liberation_pledge"`
+	GlobalTeamMember       int    `json:"global_team_member"`
 }
 
 func (u User) GetUserEventData(db *sqlx.DB) (UserEventData, error) {
@@ -359,6 +373,10 @@ func GetUsersJSON(db *sqlx.DB) ([]UserJSON, error) {
 		if u.UserEventData.LastEvent != nil {
 			lastEvent = u.UserEventData.LastEvent.Format(EventDateLayout)
 		}
+		location := ""
+		if u.User.Location.Valid {
+			location = u.User.Location.String
+		}
 
 		usersJSON = append(usersJSON, UserJSON{
 			ID:          u.User.ID,
@@ -366,12 +384,16 @@ func GetUsersJSON(db *sqlx.DB) ([]UserJSON, error) {
 			Email:       u.User.Email,
 			Chapter:     u.User.Chapter,
 			Phone:       u.User.Phone,
-			Location:    u.User.Location.String,
+			Location:    location,
 			Facebook:    u.User.Facebook,
 			FirstEvent:  firstEvent,
 			LastEvent:   lastEvent,
 			TotalEvents: u.UserEventData.TotalEvents,
 			Status:      u.Status,
+			Core:        u.CoreStaff,
+			ExcludeFromLeaderboard: u.ExcludeFromLeaderboard,
+			LiberationPledge:       u.LiberationPledge,
+			GlobalTeamMember:       u.GlobalTeamMember,
 		})
 	}
 	return usersJSON, nil
@@ -432,6 +454,10 @@ SELECT
   phone,
   location,
   facebook,
+  exclude_from_leaderboard,
+  core_staff,
+  global_team_member,
+  liberation_pledge,
   MIN(e.date) AS first_event,
   MAX(e.date) AS last_event,
   COUNT(e.id) as total_events
@@ -474,16 +500,77 @@ func GetOrCreateUser(db *sqlx.DB, name string) (User, error) {
 	return GetUser(db, name)
 }
 
-func CleanActivistData(db *sqlx.DB, body io.Reader) (User, error) {
+func CleanActivistData(db *sqlx.DB, body io.Reader) (UserExtra, error) {
 	var userJSON UserJSON
 	err := json.NewDecoder(body).Decode(&userJSON)
 	if err != nil {
-		return User{}, err
+		return UserExtra{}, err
 	}
 
-	var user User
-	// Sanitize input and return User struct
+	// Check for dangerous user input
+	userValue := reflect.ValueOf(userJSON)
+	for i := 0; i < userValue.NumField(); i++ {
+		field := userValue.Field(i)
+		// only check for dangerous characters for input values of type string
+		if field.Type() != reflect.TypeOf("") {
+			continue
+		}
 
+		str := field.Interface().(string)
+		if err := checkForDangerousChars(str); err != nil {
+			fmt.Println("Bad input")
+			return UserExtra{}, err
+		}
+	}
+
+	valid := true
+	if userJSON.Location == "" {
+		// No location specified so insert null value into database
+		valid = false
+	}
+
+	userExtra := UserExtra{
+		User: User{
+			ID:               userJSON.ID,
+			Name:             userJSON.Name,
+			Email:            userJSON.Email,
+			Chapter:          userJSON.Chapter,
+			Phone:            userJSON.Phone,
+			Location:         sql.NullString{String: userJSON.Location, Valid: valid},
+			Facebook:         userJSON.Facebook,
+			LiberationPledge: userJSON.LiberationPledge,
+		},
+		UserMembershipData: UserMembershipData{
+			CoreStaff:              userJSON.Core,
+			ExcludeFromLeaderboard: userJSON.ExcludeFromLeaderboard,
+			GlobalTeamMember:       userJSON.GlobalTeamMember,
+		},
+	}
+
+	return userExtra, nil
+
+}
+
+func UpdateActivistData(db *sqlx.DB, user UserExtra) error {
+	_, err := db.NamedExec(`UPDATE activists
+SET
+  name = :name,
+  email = :email,
+  chapter = :chapter,
+  phone = :phone,
+  location = :location,
+  facebook = :facebook,
+  exclude_from_leaderboard = :exclude_from_leaderboard,
+  core_staff = :core_staff,
+  global_team_member = :global_team_member,
+  liberation_pledge = :liberation_pledge
+WHERE
+id = :id`, user)
+
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func CleanEventData(db *sqlx.DB, body io.Reader) (Event, error) {
@@ -549,7 +636,7 @@ func cleanEventAttendanceData(db *sqlx.DB, attendees []string) ([]User, error) {
 
 func checkForDangerousChars(data string) error {
 	if strings.ContainsAny(data, DangerousCharacters) {
-		return errors.New("Event name cannot include <, >, or &.")
+		return errors.New("User input cannot include <, >, or &.")
 	}
 	return nil
 }

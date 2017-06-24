@@ -45,10 +45,10 @@
               <p><label for="phone">Phone: </label><input class="form-control" type="text" :value="currentActivist.phone" id="phone"></p>
               <p><label for="location">Location: </label><input class="form-control" type="text" :value="currentActivist.location" id="location"></p>
               <p><label for="facebook">Facebook: </label><input class="form-control" type="text" :value="currentActivist.facebook" id="facebook"></p>
-              <p><label for="core">Core/Staff:&nbsp;</label><input class="form-check-input" type="checkbox" id="core"></p>
-              <p><label for="exclude">Exclude from Leaderboard:&nbsp;</label><input class="form-check-input" type="checkbox" id="exclude"></p>
-              <p><label for="pledge">Liberation Pledge:&nbsp;</label><input class="form-check-input" type="checkbox" id="pledge"></p>
-              <p><label for="globalteam">Global Team Member:&nbsp;</label><input class="form-check-input" type="checkbox" id="globalteam"></p>
+              <p><label for="core">Core/Staff:&nbsp;</label><input class="form-check-input" type="checkbox" :checked="currentActivist.core_staff" id="core"></p>
+              <p><label for="exclude">Exclude from Leaderboard:&nbsp;</label><input class="form-check-input" type="checkbox" :checked="currentActivist.exclude_from_leaderboard" id="exclude"></p>
+              <p><label for="pledge">Liberation Pledge:&nbsp;</label><input class="form-check-input" type="checkbox" :checked="currentActivist.liberation_pledge" id="pledge"></p>
+              <p><label for="globalteam">Global Team Member:&nbsp;</label><input class="form-check-input" type="checkbox" :checked="currentActivist.global_team_member" id="globalteam"></p>
             </form>
           </div>
           <div class="modal-footer">
@@ -115,6 +115,15 @@ function saveActivistEdits(activistInfo) {
     data: JSON.stringify(activistInfo),
     success: function(data) {
       // TODO finish filling this in
+        var parsed = JSON.parse(data);
+        if (parsed.status === "error") {
+          flashMessage("Error: " + parsed.message, true);
+          return;
+        }
+        flashMessage("Saved!", false); // not working yet
+        // refresh html
+        // status === "success"
+      
     },
     error: function() {
       // TODO Handle this appropriately
@@ -146,6 +155,10 @@ export default {
         "phone" : $("#phone")[0].value,
         "location" : $("#location")[0].value,
         "facebook" : $("#facebook")[0].value,
+        "core_staff" : $("#core")[0].checked ? 1 : 0,
+        "exclude_from_leaderboard" : $("#exclude")[0].checked ? 1 : 0,
+        "liberation_pledge" : $("#pledge")[0].checked ? 1 : 0,
+        "global_team_member" : $("#globalteam")[0].checked ? 1 : 0,
       };
       saveActivistEdits(activistInfo);
     },

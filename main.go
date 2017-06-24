@@ -357,6 +357,23 @@ func (c MainController) AutocompleteActivistsHandler(w http.ResponseWriter, r *h
 func (c MainController) ActivistSaveHandler(w http.ResponseWriter, r *http.Request) {
 	// TODO Sanitize input
 	// TODO Update activist info in database
+	userExtra, err := model.CleanActivistData(c.db, r.Body)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	err = model.UpdateActivistData(c.db, userExtra)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	out := map[string]string{
+		"status": "success",
+	}
+	writeJSON(w, out)
+
 }
 
 func (c MainController) EventSaveHandler(w http.ResponseWriter, r *http.Request) {
@@ -410,10 +427,7 @@ func (c MainController) EventListHandler(w http.ResponseWriter, r *http.Request)
 	})
 
 	if err != nil {
-		writeJSON(w, map[string]string{
-			"status":  "error",
-			"message": err.Error(),
-		})
+		sendErrorMessage(w, err)
 		return
 	}
 
@@ -431,10 +445,7 @@ func (c MainController) EventDeleteHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	if err := model.DeleteEvent(c.db, eventID); err != nil {
-		writeJSON(w, map[string]string{
-			"status":  "error",
-			"message": err.Error(),
-		})
+		sendErrorMessage(w, err)
 		return
 	}
 
