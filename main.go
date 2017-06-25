@@ -363,14 +363,23 @@ func (c MainController) ActivistSaveHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	err = model.UpdateActivistData(c.db, userExtra)
+	activistID, err := model.UpdateActivistData(c.db, userExtra)
+	fmt.Println("activsist ID is From main.go")
+	fmt.Println(activistID) // just so this compiles
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
 	}
 
-	out := map[string]string{
-		"status": "success",
+	// Retrieve updated information from database and send in response body
+	activist, err := model.GetUserJSON(c.db, activistID)
+	if err != nil {
+		panic(err)
+	}
+
+	out := map[string]interface{}{
+		"status":   "success",
+		"activist": activist,
 	}
 	writeJSON(w, out)
 

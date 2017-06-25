@@ -120,7 +120,8 @@ function saveActivistEdits(activistInfo) {
           flashMessage("Error: " + parsed.message, true);
           return;
         }
-        flashMessage("Saved!", false); // not working yet
+        console.log(parsed);
+        //`flashMessage("Saved!", false); // not working yet
         // refresh html
         // status === "success"
       
@@ -146,15 +147,15 @@ export default {
       this.$modal.hide('edit-activist-modal');
     },
     saveModal: function() {
-      // TODO Grab checkbox information
+      // Grab user input and strip out leading and trailing whitespace
       var activistInfo = {
         "id" : this.currentActivist.id,
-        "name" : $("#name")[0].value,
-        "email" : $("#email")[0].value,
-        "chapter" : $("#chapter")[0].value,
-        "phone" : $("#phone")[0].value,
-        "location" : $("#location")[0].value,
-        "facebook" : $("#facebook")[0].value,
+        "name" : $("#name")[0].value.trim(),
+        "email" : $("#email")[0].value.trim(),
+        "chapter" : $("#chapter")[0].value.trim(),
+        "phone" : $("#phone")[0].value.trim(),
+        "location" : $("#location")[0].value.trim(),
+        "facebook" : $("#facebook")[0].value.trim(),
         "core_staff" : $("#core")[0].checked ? 1 : 0,
         "exclude_from_leaderboard" : $("#exclude")[0].checked ? 1 : 0,
         "liberation_pledge" : $("#pledge")[0].checked ? 1 : 0,

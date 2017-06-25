@@ -359,8 +359,20 @@ WHERE
 }
 
 func GetUsersJSON(db *sqlx.DB) ([]UserJSON, error) {
+	return getUsersJSON(db, 0)
+}
+
+func GetUserJSON(db *sqlx.DB, userID int) (UserJSON, error) {
+	users, err := getUsersJSON(db, userID)
+	if err != nil {
+		return UserJSON{}, err
+	}
+	return users[0], nil
+}
+
+func getUsersJSON(db *sqlx.DB, userID int) ([]UserJSON, error) {
 	var usersJSON []UserJSON
-	users, err := GetUsersExtra(db)
+	users, err := GetUsersExtra(db, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -444,7 +456,7 @@ FROM activists
 	return users, nil
 }
 
-func GetUsersExtra(db *sqlx.DB) ([]UserExtra, error) {
+func GetUsersExtra(db *sqlx.DB, userID int) ([]UserExtra, error) {
 	query := `
 SELECT
   a.id,
@@ -468,11 +480,18 @@ LEFT JOIN event_attendance ea
 
 LEFT JOIN events e
   ON ea.event_id = e.id
-
-GROUP BY a.id
 `
+	var queryArgs []interface{}
+
+	if userID != 0 {
+		// retrieve specific user rather than all users
+		query += " WHERE a.id = ? "
+		queryArgs = append(queryArgs, userID)
+	}
+	query += " GROUP BY a.id "
+
 	var users []UserExtra
-	if err := db.Select(&users, query); err != nil {
+	if err := db.Select(&users, query, queryArgs...); err != nil {
 		return nil, err
 	}
 
@@ -551,7 +570,7 @@ func CleanActivistData(db *sqlx.DB, body io.Reader) (UserExtra, error) {
 
 }
 
-func UpdateActivistData(db *sqlx.DB, user UserExtra) error {
+func UpdateActivistData(db *sqlx.DB, user UserExtra) (int, error) {
 	_, err := db.NamedExec(`UPDATE activists
 SET
   name = :name,
@@ -568,9 +587,9 @@ WHERE
 id = :id`, user)
 
 	if err != nil {
-		return err
+		return 0, err
 	}
-	return nil
+	return user.ID, nil
 }
 
 func CleanEventData(db *sqlx.DB, body io.Reader) (Event, error) {
