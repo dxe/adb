@@ -364,8 +364,6 @@ func (c MainController) ActivistSaveHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	activistID, err := model.UpdateActivistData(c.db, userExtra)
-	fmt.Println("activsist ID is From main.go")
-	fmt.Println(activistID) // just so this compiles
 	if err != nil {
 		sendErrorMessage(w, err)
 		return

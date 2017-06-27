@@ -14,8 +14,8 @@
         </tr>
       </thead>
       <tbody id="activist-list-body">
-        <tr v-for="activist in activists">
-          <td><button class="btn btn-default glyphicon glyphicon-pencil" @click="showModal(activist)"></button></td>
+        <tr v-for="(activist, index) in activists">
+          <td><button class="btn btn-default glyphicon glyphicon-pencil" @click="showModal(activist, index)"></button></td>
           <td>{{activist.name}}</td>
           <td>{{activist.email}}</td>
           <td>{{activist.phone}}</td>
@@ -66,6 +66,7 @@
 // Library from here: https://github.com/euvl/vue-js-modal
 import vmodal from 'vue-js-modal';
 import Vue from 'vue';
+import {flashMessage} from 'flash_message';
 
 Vue.use(vmodal);
 
@@ -106,29 +107,38 @@ var statusOrder = {
   "No attendance": 4,
 };
 
-function saveActivistEdits(activistInfo) {
-  console.log(activistInfo);
+function saveActivistEdits(activistInfo, vueObject) {
   $.ajax({
     url: "/activist/save",
     method: "POST",
     contentType: "application/json",
     data: JSON.stringify(activistInfo),
     success: function(data) {
-      // TODO finish filling this in
-        var parsed = JSON.parse(data);
-        if (parsed.status === "error") {
-          flashMessage("Error: " + parsed.message, true);
-          return;
-        }
-        console.log(parsed);
-        //`flashMessage("Saved!", false); // not working yet
-        // refresh html
-        // status === "success"
-      
+      var parsed = JSON.parse(data);
+      if (parsed.status === "error") {
+        flashMessage("Error: " + parsed.message, true);
+        return;
+      }
+      // status === "success"
+      var currentActivist = vueObject.currentActivist;
+      var idx = currentActivist.index;
+      var activist = parsed.activist;
+      // Update View
+      Vue.set(vueObject.activists, idx, activist); // update list of activists
+      currentActivist.name = activist.name; // update currentActivist so modal reflects changes
+      currentActivist.email = activist.email;
+      currentActivist.chapter = activist.chapter;
+      currentActivist.phone = activist.phone;
+      currentActivist.location = activist.location;
+      currentActivist.facebook = activist.facebook;
+      currentActivist.core_staff = activist.core_staff;
+      currentActivist.exclude_from_leaderboard = activist.exclude_from_leaderboard;
+      currentActivist.liberation_pledge = activist.liberation_pledge;
+      currentActivist.global_team_member = activist.global_team_member;
+      flashMessage("Saved!", false); // not working yet
     },
     error: function() {
-      // TODO Handle this appropriately
-      console.log("Internal Error");
+      flashMessage("Error Connecting to Server", true);
     }
   });
 
@@ -138,12 +148,13 @@ function saveActivistEdits(activistInfo) {
 export default {
   name: 'activist-list',
   methods: {
-    showModal: function(activist) {
+    showModal: function(activist, index) {
       this.currentActivist = activist;
+      this.currentActivist.index = index // save activists position in activists array
       this.$modal.show('edit-activist-modal');
     },
     hideModal: function() {
-      this.currentActivist = null;
+      //this.currentActivist = null;
       this.$modal.hide('edit-activist-modal');
     },
     saveModal: function() {
@@ -161,7 +172,7 @@ export default {
         "liberation_pledge" : $("#pledge")[0].checked ? 1 : 0,
         "global_team_member" : $("#globalteam")[0].checked ? 1 : 0,
       };
-      saveActivistEdits(activistInfo);
+      saveActivistEdits(activistInfo, this);
     },
     modalOpened: function() {
       // Add noscroll to body tag so it doesn't scroll while the modal

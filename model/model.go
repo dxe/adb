@@ -5,7 +5,6 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"reflect"
 	"strconv"
@@ -537,7 +536,6 @@ func CleanActivistData(db *sqlx.DB, body io.Reader) (UserExtra, error) {
 
 		str := field.Interface().(string)
 		if err := checkForDangerousChars(str); err != nil {
-			fmt.Println("Bad input")
 			return UserExtra{}, err
 		}
 	}
