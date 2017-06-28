@@ -39,16 +39,16 @@
           </div>
           <div class="modal-body">
             <form action="" id="editActivistForm">
-              <p><label for="name">Name: </label><input class="form-control" type="text" :value="currentActivist.name" id="name" /></p>
-              <p><label for="email">Email: </label><input class="form-control" type="text" :value="currentActivist.email" id="email" /></p>
-              <p><label for="chapter">Chapter: </label><input class="form-control" type="text" :value="currentActivist.chapter" id="chapter"></p>
-              <p><label for="phone">Phone: </label><input class="form-control" type="text" :value="currentActivist.phone" id="phone"></p>
-              <p><label for="location">Location: </label><input class="form-control" type="text" :value="currentActivist.location" id="location"></p>
-              <p><label for="facebook">Facebook: </label><input class="form-control" type="text" :value="currentActivist.facebook" id="facebook"></p>
-              <p><label for="core">Core/Staff:&nbsp;</label><input class="form-check-input" type="checkbox" :checked="currentActivist.core_staff" id="core"></p>
-              <p><label for="exclude">Exclude from Leaderboard:&nbsp;</label><input class="form-check-input" type="checkbox" :checked="currentActivist.exclude_from_leaderboard" id="exclude"></p>
-              <p><label for="pledge">Liberation Pledge:&nbsp;</label><input class="form-check-input" type="checkbox" :checked="currentActivist.liberation_pledge" id="pledge"></p>
-              <p><label for="globalteam">Global Team Member:&nbsp;</label><input class="form-check-input" type="checkbox" :checked="currentActivist.global_team_member" id="globalteam"></p>
+              <p><label for="name">Name: </label><input class="form-control" type="text" v-model.trim="currentActivist.name" id="name" /></p>
+              <p><label for="email">Email: </label><input class="form-control" type="text" v-model.trim="currentActivist.email" id="email" /></p>
+              <p><label for="chapter">Chapter: </label><input class="form-control" type="text" v-model.trim="currentActivist.chapter" id="chapter"></p>
+              <p><label for="phone">Phone: </label><input class="form-control" type="text" v-model.trim="currentActivist.phone" id="phone"></p>
+              <p><label for="location">Location: </label><input class="form-control" type="text" v-model.trim="currentActivist.location" id="location"></p>
+              <p><label for="facebook">Facebook: </label><input class="form-control" type="text" v-model.trim="currentActivist.facebook" id="facebook"></p>
+              <p><label for="core">Core/Staff:&nbsp;</label><input class="form-check-input" type="checkbox" v-model="currentActivist.core_staff" :true-value="1" :false-value="0" id="core"></p>
+              <p><label for="exclude">Exclude from Leaderboard:&nbsp;</label><input class="form-check-input" type="checkbox" v-model="currentActivist.exclude_from_leaderboard" :true-value="1" :false-value="0" id="exclude"></p>
+              <p><label for="pledge">Liberation Pledge:&nbsp;</label><input class="form-check-input" type="checkbox" v-model="currentActivist.liberation_pledge" :true-value="1" :false-value="0" id="pledge"></p>
+              <p><label for="globalteam">Global Team Member:&nbsp;</label><input class="form-check-input" type="checkbox" v-model="currentActivist.global_team_member" :true-value="1" :false-value="0" id="globalteam"></p>
             </form>
           </div>
           <div class="modal-footer">
@@ -107,41 +107,27 @@ var statusOrder = {
   "No attendance": 4,
 };
 
-function saveActivistEdits(activistInfo, vueObject) {
+function saveActivistEdits(vueInstance) {
   $.ajax({
     url: "/activist/save",
     method: "POST",
     contentType: "application/json",
-    data: JSON.stringify(activistInfo),
+    data: JSON.stringify(vueInstance.currentActivist),
     success: function(data) {
+      console.log(vueInstance.activistIndex);
       var parsed = JSON.parse(data);
       if (parsed.status === "error") {
         flashMessage("Error: " + parsed.message, true);
         return;
       }
       // status === "success"
-      var currentActivist = vueObject.currentActivist;
-      var idx = currentActivist.index;
-      var activist = parsed.activist;
-      // Update View
-      Vue.set(vueObject.activists, idx, activist); // update list of activists
-      currentActivist.name = activist.name; // update currentActivist so modal reflects changes
-      currentActivist.email = activist.email;
-      currentActivist.chapter = activist.chapter;
-      currentActivist.phone = activist.phone;
-      currentActivist.location = activist.location;
-      currentActivist.facebook = activist.facebook;
-      currentActivist.core_staff = activist.core_staff;
-      currentActivist.exclude_from_leaderboard = activist.exclude_from_leaderboard;
-      currentActivist.liberation_pledge = activist.liberation_pledge;
-      currentActivist.global_team_member = activist.global_team_member;
-      flashMessage("Saved!", false); // not working yet
+      Vue.set(vueInstance.activists, vueInstance.activistIndex, parsed.activist); // Update View
+      flashMessage("Saved!", false);
     },
     error: function() {
       flashMessage("Error Connecting to Server", true);
     }
   });
-
 }
 
 
@@ -149,8 +135,8 @@ export default {
   name: 'activist-list',
   methods: {
     showModal: function(activist, index) {
-      this.currentActivist = activist;
-      this.currentActivist.index = index // save activists position in activists array
+      this.currentActivist = $.extend({}, activist);
+      this.activistIndex = index; // needed for updating activist
       this.$modal.show('edit-activist-modal');
     },
     hideModal: function() {
@@ -158,21 +144,7 @@ export default {
       this.$modal.hide('edit-activist-modal');
     },
     saveModal: function() {
-      // Grab user input and strip out leading and trailing whitespace
-      var activistInfo = {
-        "id" : this.currentActivist.id,
-        "name" : $("#name")[0].value.trim(),
-        "email" : $("#email")[0].value.trim(),
-        "chapter" : $("#chapter")[0].value.trim(),
-        "phone" : $("#phone")[0].value.trim(),
-        "location" : $("#location")[0].value.trim(),
-        "facebook" : $("#facebook")[0].value.trim(),
-        "core_staff" : $("#core")[0].checked ? 1 : 0,
-        "exclude_from_leaderboard" : $("#exclude")[0].checked ? 1 : 0,
-        "liberation_pledge" : $("#pledge")[0].checked ? 1 : 0,
-        "global_team_member" : $("#globalteam")[0].checked ? 1 : 0,
-      };
-      saveActivistEdits(activistInfo, this);
+      saveActivistEdits(this);
     },
     modalOpened: function() {
       // Add noscroll to body tag so it doesn't scroll while the modal
@@ -247,6 +219,7 @@ export default {
     return {
       currentActivist: {},
       activists: [],
+      activistIndex: -1,
     };
   },
   created() {
