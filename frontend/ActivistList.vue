@@ -114,7 +114,6 @@ function saveActivistEdits(vueInstance) {
     contentType: "application/json",
     data: JSON.stringify(vueInstance.currentActivist),
     success: function(data) {
-      console.log(vueInstance.activistIndex);
       var parsed = JSON.parse(data);
       if (parsed.status === "error") {
         flashMessage("Error: " + parsed.message, true);
