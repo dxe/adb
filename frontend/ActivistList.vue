@@ -107,29 +107,6 @@ var statusOrder = {
   "No attendance": 4,
 };
 
-function saveActivistEdits(vueInstance) {
-  $.ajax({
-    url: "/activist/save",
-    method: "POST",
-    contentType: "application/json",
-    data: JSON.stringify(vueInstance.currentActivist),
-    success: function(data) {
-      var parsed = JSON.parse(data);
-      if (parsed.status === "error") {
-        flashMessage("Error: " + parsed.message, true);
-        return;
-      }
-      // status === "success"
-      Vue.set(vueInstance.activists, vueInstance.activistIndex, parsed.activist); // Update View
-      flashMessage("Saved!", false);
-    },
-    error: function() {
-      flashMessage("Error Connecting to Server", true);
-    }
-  });
-}
-
-
 export default {
   name: 'activist-list',
   methods: {
@@ -143,7 +120,25 @@ export default {
       this.$modal.hide('edit-activist-modal');
     },
     saveModal: function() {
-      saveActivistEdits(this);
+      $.ajax({
+        url: "/activist/save",
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify(this.currentActivist),
+        success: function(data) {
+          var parsed = JSON.parse(data);
+          if (parsed.status === "error") {
+            flashMessage("Error: " + parsed.message, true);
+            return;
+          }
+          // status === "success""
+          Vue.set(this.activists, this.activistIndex, parsed.activist);
+          flashMessage("Saved!", false);
+        }.bind(this),
+        error : function() {
+          flashMessage("Error Connecting to Server", true);
+        }
+      });
     },
     modalOpened: function() {
       // Add noscroll to body tag so it doesn't scroll while the modal

@@ -17,10 +17,6 @@ func init() {
 func createDevDB(name string) {
 	db := model.NewDB("adb_user:adbpassword@/" + name + "?multiStatements=true")
 	defer db.Close()
-	db.MustExec(`DROP TABLE IF EXISTS activists`)
-	db.MustExec(`DROP TABLE IF EXISTS events`)
-	db.MustExec(`DROP TABLE IF EXISTS event_attendance`)
-	model.CreateDatabase(db)
 
 	if !noFakeData {
 		// Insert sample data

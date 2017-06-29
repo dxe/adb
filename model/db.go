@@ -15,6 +15,9 @@ func NewDB(dataSourceName string) *sqlx.DB {
 }
 
 func CreateDatabase(db *sqlx.DB) {
+	db.MustExec(`DROP TABLE IF EXISTS activists`)
+	db.MustExec(`DROP TABLE IF EXISTS events`)
+	db.MustExec(`DROP TABLE IF EXISTS event_attendance`)
 	db.MustExec(`
 CREATE TABLE IF NOT EXISTS activists (
   id INTEGER PRIMARY KEY AUTO_INCREMENT,
@@ -43,7 +46,7 @@ CREATE TABLE IF NOT EXISTS events (
   date DATE NOT NULL,
   event_type VARCHAR(60) NOT NULL
 )`)
-    addIdxToEventAttendance(db);
+	addIdxToEventAttendance(db)
 }
 
 // Add unique index to event_attendance table. This is necessary to avoid duplicate entries
