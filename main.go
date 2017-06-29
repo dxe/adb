@@ -355,8 +355,6 @@ func (c MainController) AutocompleteActivistsHandler(w http.ResponseWriter, r *h
 }
 
 func (c MainController) ActivistSaveHandler(w http.ResponseWriter, r *http.Request) {
-	// TODO Sanitize input
-	// TODO Update activist info in database
 	userExtra, err := model.CleanActivistData(c.db, r.Body)
 	if err != nil {
 		sendErrorMessage(w, err)
