@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -525,19 +524,9 @@ func CleanActivistData(db *sqlx.DB, body io.Reader) (UserExtra, error) {
 		return UserExtra{}, err
 	}
 
-	// Check for dangerous user input
-	userValue := reflect.ValueOf(userJSON)
-	for i := 0; i < userValue.NumField(); i++ {
-		field := userValue.Field(i)
-		// only check for dangerous characters for input values of type string
-		if field.Type() != reflect.TypeOf("") {
-			continue
-		}
-
-		str := field.Interface().(string)
-		if err := checkForDangerousChars(str); err != nil {
-			return UserExtra{}, err
-		}
+	// Check if name field contains dangerous input
+	if err := checkForDangerousChars(userJSON.Name); err != nil {
+		return UserExtra{}, err
 	}
 
 	valid := true

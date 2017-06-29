@@ -111,13 +111,15 @@ export default {
   name: 'activist-list',
   methods: {
     showModal: function(activist, index) {
+      // Make shallow copy of selected activist to prevent persisting unsaved
+      // edits at the view layer when closing modal
       this.currentActivist = $.extend({}, activist);
       this.activistIndex = index; // needed for updating activist
       this.$modal.show('edit-activist-modal');
     },
     hideModal: function() {
-      //this.currentActivist = null;
       this.$modal.hide('edit-activist-modal');
+      this.currentActivist = {};
     },
     saveModal: function() {
       $.ajax({
