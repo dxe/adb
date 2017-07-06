@@ -189,7 +189,7 @@ func router() *mux.Router {
 	router.Handle("/event/list", alice.New(apiAuthMiddleware).ThenFunc(main.EventListHandler))
 	router.Handle("/event/delete", alice.New(apiAuthMiddleware).ThenFunc(main.EventDeleteHandler))
 	router.Handle("/activist/list", alice.New(apiAuthMiddleware).ThenFunc(main.ActivistListHandler))
-	//router.Handle("/activist/save", alice.New(apiAuthMiddleware).ThenFunc(main.ActivistSaveHandler))
+	router.Handle("/activist/save", alice.New(apiAuthMiddleware).ThenFunc(main.ActivistSaveHandler))
 	router.Handle("/leaderboard/list", alice.New(apiAuthMiddleware).ThenFunc(main.LeaderboardListHandler))
 
 	if isProd {
@@ -354,6 +354,33 @@ func (c MainController) AutocompleteActivistsHandler(w http.ResponseWriter, r *h
 	})
 }
 
+func (c MainController) ActivistSaveHandler(w http.ResponseWriter, r *http.Request) {
+	userExtra, err := model.CleanActivistData(c.db, r.Body)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	activistID, err := model.UpdateActivistData(c.db, userExtra)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	// Retrieve updated information from database and send in response body
+	activist, err := model.GetUserJSON(c.db, activistID)
+	if err != nil {
+		panic(err)
+	}
+
+	out := map[string]interface{}{
+		"status":   "success",
+		"activist": activist,
+	}
+	writeJSON(w, out)
+
+}
+
 func (c MainController) EventSaveHandler(w http.ResponseWriter, r *http.Request) {
 	event, err := model.CleanEventData(c.db, r.Body)
 	if err != nil {
@@ -405,10 +432,7 @@ func (c MainController) EventListHandler(w http.ResponseWriter, r *http.Request)
 	})
 
 	if err != nil {
-		writeJSON(w, map[string]string{
-			"status":  "error",
-			"message": err.Error(),
-		})
+		sendErrorMessage(w, err)
 		return
 	}
 
@@ -426,10 +450,7 @@ func (c MainController) EventDeleteHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	if err := model.DeleteEvent(c.db, eventID); err != nil {
-		writeJSON(w, map[string]string{
-			"status":  "error",
-			"message": err.Error(),
-		})
+		sendErrorMessage(w, err)
 		return
 	}
 

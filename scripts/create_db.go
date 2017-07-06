@@ -17,10 +17,9 @@ func init() {
 func createDevDB(name string) {
 	db := model.NewDB("adb_user:adbpassword@/" + name + "?multiStatements=true")
 	defer db.Close()
-	db.MustExec(`DROP TABLE IF EXISTS activists`)
-	db.MustExec(`DROP TABLE IF EXISTS events`)
-	db.MustExec(`DROP TABLE IF EXISTS event_attendance`)
-	model.CreateDatabase(db)
+	db.MustExec(`TRUNCATE TABLE activists`)
+	db.MustExec(`TRUNCATE TABLE events`)
+	db.MustExec(`TRUNCATE TABLE event_attendance`)
 
 	if !noFakeData {
 		// Insert sample data
@@ -54,7 +53,6 @@ INSERT INTO event_attendance (activist_id, event_id) VALUES
   (1, 1), (1, 2), (2, 2), (3,3), (4,6), (5,5), (5,1), (5,6);
 `)
 	}
-	model.AddIdxToEventAttendance(db)
 }
 
 func main() {

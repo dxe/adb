@@ -27,13 +27,14 @@ CREATE TABLE IF NOT EXISTS activists (
   exclude_from_leaderboard TINYINT(1) NOT NULL DEFAULT '0',
   core_staff TINYINT(1) NOT NULL DEFAULT '0',
   global_team_member TINYINT(1) NOT NULL DEFAULT '0',
-  liberation_pledge TINYINT(1) DEFAULT NULL
+  liberation_pledge TINYINT(1) NOT NULL DEFAULT '0'
 )`)
 
 	db.MustExec(`
 CREATE TABLE IF NOT EXISTS event_attendance (
   activist_id INTEGER NOT NULL,
-  event_id INTEGER NOT NULL
+  event_id INTEGER NOT NULL,
+  CONSTRAINT activist_event_ukey UNIQUE (activist_id, event_id)
 )`)
 
 	db.MustExec(`
@@ -43,9 +44,4 @@ CREATE TABLE IF NOT EXISTS events (
   date DATE NOT NULL,
   event_type VARCHAR(60) NOT NULL
 )`)
-}
-
-// Add unique index to event_attendance table. This is necessary to avoid duplicate entries
-func AddIdxToEventAttendance(db *sqlx.DB) {
-	db.MustExec(`ALTER TABLE event_attendance ADD UNIQUE unique_idx (activist_id, event_id)`)
 }
