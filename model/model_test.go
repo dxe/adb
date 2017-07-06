@@ -12,7 +12,6 @@ import (
 func newTestDB() *sqlx.DB {
 	db := NewDB("adb_user:adbpassword@/adb_test_db?parseTime=true")
 
-	// Insert sample data
 	db.MustExec(`TRUNCATE activists`)
 	db.MustExec(`TRUNCATE events`)
 	db.MustExec(`TRUNCATE event_attendance`)
