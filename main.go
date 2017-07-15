@@ -143,6 +143,7 @@ var validEmails = map[string]bool{
 	"Rklpo789@yahoo.com":                 true,
 	"alexis.l.levitt@gmail.com":          true,
 	"ateret@directactioneverywhere.com":  true,
+	"cjr12f@gmail.com":                   true,
 }
 
 // TODO: Make this read from the database instead.
