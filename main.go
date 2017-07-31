@@ -48,17 +48,40 @@ func flashMesssageError(w http.ResponseWriter, message string) {
 
 var sessionStore = sessions.NewCookieStore([]byte("replace-with-real-auth-secret"))
 
-func isAuthed(r *http.Request) bool {
+func getAuthedADBUser(db *sqlx.DB, r *http.Request) (adbUser model.ADBUser, authed bool) {
+	// First, check the cookie.
 	authSession, err := sessionStore.Get(r, "auth-session")
 	if err != nil {
 		panic(err)
 	}
 	authed, ok := authSession.Values["authed"].(bool)
-	// We should always set "authed" to true, see setAuthSession.
-	return ok && authed
+	// We should always set "authed" to true, see setAuthSession,
+	// but check it just in case.
+	if !ok || !authed {
+		return model.ADBUser{}, false
+	}
+	adbUserID, ok := authSession.Values["adbuserid"].(int)
+	if !ok {
+		return model.ADBUser{}, false
+	}
+
+	// Then, check that the user is still authed.
+	adbUser, err = model.GetADBUser(db, adbUserID, "")
+	if err != nil {
+		return model.ADBUser{}, false
+	}
+	if adbUser.Disabled {
+		return model.ADBUser{}, false
+	}
+
+	return adbUser, true
 }
 
-func setAuthSession(w http.ResponseWriter, r *http.Request, email string) error {
+func setAuthSession(w http.ResponseWriter, r *http.Request, adbUser model.ADBUser) error {
+	if adbUser.Disabled {
+		return nil
+	}
+
 	authSession, err := sessionStore.Get(r, "auth-session")
 	if err != nil {
 		return err
@@ -73,84 +96,8 @@ func setAuthSession(w http.ResponseWriter, r *http.Request, email string) error 
 		HttpOnly: true,
 	}
 	authSession.Values["authed"] = true
-	authSession.Values["email"] = email
+	authSession.Values["adbuserid"] = adbUser.ID
 	return sessionStore.Save(r, w, authSession)
-}
-
-func authMiddleware(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !isAuthed(r) {
-			http.Redirect(w, r, "/login", http.StatusFound)
-			return
-		}
-		// Request is authed at this point.
-		h.ServeHTTP(w, r)
-	})
-}
-
-func apiAuthMiddleware(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !isAuthed(r) {
-			http.Error(w, http.StatusText(400), 400)
-			return
-		}
-		// Request is authed at this point.
-		h.ServeHTTP(w, r)
-	})
-}
-
-var validEmails = map[string]bool{
-	"adam@directactioneverywhere.com":    true,
-	"almira@directactioneverywhere.com":  true,
-	"almiratanner@gmail.com":             true,
-	"amanda_schwartz@berkeley.edu":       true,
-	"andrew@directactioneverywhere.com":  true,
-	"andrewgsharo@gmail.com":             true,
-	"cking@berkeley.edu":                 true,
-	"crueltyfreetummy@gmail.com":         true,
-	"cwbailey20042@gmail.com":            true,
-	"dianadeikman@aol.com":               true,
-	"jackie@directactioneverywhere.com":  true,
-	"jake@directactioneverywhere.com":    true,
-	"jakehobbs@gmail.com":                true,
-	"jeffdavidson53@gmail.com":           true,
-	"jessehoffman@berkeley.edu":          true,
-	"john@directactioneverywhere.com":    true,
-	"kelseybradley7@gmail.com":           true,
-	"kitty@directactioneverywhere.com":   true,
-	"kmakenzie@berkeley.edu":             true,
-	"kowshik.sundararajan@gmail.com":     true,
-	"matt@directactioneverywhere.com":    true,
-	"matthew@dempsky.org":                true,
-	"naomi@directactioneverywhere.com":   true,
-	"nosefrog@gmail.com":                 true,
-	"paul@directactioneverywhere.com":    true,
-	"priya@directactioneverywhere.com":   true,
-	"rydermeehan@gmail.com":              true,
-	"samer@directactioneverywhere.com":   true,
-	"samer@dropbox.com":                  true,
-	"scott.r.paterson@gmail.com":         true,
-	"sriram.ssnit@gmail.com":             true,
-	"taniacamposs97@gmail.com":           true,
-	"thernandez1485@gmail.com":           true,
-	"wayne@directactioneverywhere.com":   true,
-	"wilson@directactioneverywhere.com":  true,
-	"zach@directactioneverywhere.com":    true,
-	"tiffany@directactioneverywhere.com": true,
-	"sharo@berkeley.edu":                 true,
-	"aidan@directactioneverywhere.com":   true,
-	"michael@directactioneverywhere.com": true,
-	"Rklpo789@yahoo.com":                 true,
-	"alexis.l.levitt@gmail.com":          true,
-	"ateret@directactioneverywhere.com":  true,
-	"cjr12f@gmail.com":                   true,
-	"victoriatingtinggu@gmail.com":       true,
-}
-
-// TODO: Make this read from the database instead.
-func isValidEmail(email string) bool {
-	_, ok := validEmails[email]
-	return ok
 }
 
 var devDataSource = "adb_user:adbpassword@/adb_db?parseTime=true"
@@ -177,12 +124,12 @@ func router() *mux.Router {
 	router.HandleFunc("/login", main.LoginHandler)
 
 	// Authed paged
-	router.Handle("/", alice.New(authMiddleware).ThenFunc(main.UpdateEventHandler))
-	router.Handle("/update_event/{event_id:[0-9]+}", alice.New(authMiddleware).ThenFunc(main.UpdateEventHandler))
-	router.Handle("/list_events", alice.New(authMiddleware).ThenFunc(main.ListEventsHandler))
-	router.Handle("/list_activists", alice.New(authMiddleware).ThenFunc(main.ListActivistsHandler))
-	router.Handle("/leaderboard", alice.New(authMiddleware).ThenFunc(main.LeaderboardHandler))
-	router.Handle("/power", alice.New(authMiddleware).ThenFunc(main.PowerHandler)) // TODO: rename
+	router.Handle("/", alice.New(main.authMiddleware).ThenFunc(main.UpdateEventHandler))
+	router.Handle("/update_event/{event_id:[0-9]+}", alice.New(main.authMiddleware).ThenFunc(main.UpdateEventHandler))
+	router.Handle("/list_events", alice.New(main.authMiddleware).ThenFunc(main.ListEventsHandler))
+	router.Handle("/list_activists", alice.New(main.authMiddleware).ThenFunc(main.ListActivistsHandler))
+	router.Handle("/leaderboard", alice.New(main.authMiddleware).ThenFunc(main.LeaderboardHandler))
+	router.Handle("/power", alice.New(main.authMiddleware).ThenFunc(main.PowerHandler)) // TODO: rename
 
 	// Unauthed API
 	router.HandleFunc("/tokensignin", main.TokenSignInHandler)
@@ -191,13 +138,13 @@ func router() *mux.Router {
 	router.HandleFunc("/Jcud0L2a9Adsi9wkPn5njI20lnZkfb", main.ActivistListHandler) // used for connections google sheet
 
 	// Authed API
-	router.Handle("/activist_names/get", alice.New(apiAuthMiddleware).ThenFunc(main.AutocompleteActivistsHandler))
-	router.Handle("/event/save", alice.New(apiAuthMiddleware).ThenFunc(main.EventSaveHandler))
-	router.Handle("/event/list", alice.New(apiAuthMiddleware).ThenFunc(main.EventListHandler))
-	router.Handle("/event/delete", alice.New(apiAuthMiddleware).ThenFunc(main.EventDeleteHandler))
-	router.Handle("/activist/list", alice.New(apiAuthMiddleware).ThenFunc(main.ActivistListHandler))
-	router.Handle("/activist/save", alice.New(apiAuthMiddleware).ThenFunc(main.ActivistSaveHandler))
-	router.Handle("/leaderboard/list", alice.New(apiAuthMiddleware).ThenFunc(main.LeaderboardListHandler))
+	router.Handle("/activist_names/get", alice.New(main.apiAuthMiddleware).ThenFunc(main.AutocompleteActivistsHandler))
+	router.Handle("/event/save", alice.New(main.apiAuthMiddleware).ThenFunc(main.EventSaveHandler))
+	router.Handle("/event/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.EventListHandler))
+	router.Handle("/event/delete", alice.New(main.apiAuthMiddleware).ThenFunc(main.EventDeleteHandler))
+	router.Handle("/activist/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistListHandler))
+	router.Handle("/activist/save", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistSaveHandler))
+	router.Handle("/leaderboard/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.LeaderboardListHandler))
 
 	if isProd {
 		router.PathPrefix("/static").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
@@ -211,6 +158,30 @@ func router() *mux.Router {
 
 type MainController struct {
 	db *sqlx.DB
+}
+
+func (c MainController) authMiddleware(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, authed := getAuthedADBUser(c.db, r)
+		if !authed {
+			http.Redirect(w, r, "/login", http.StatusFound)
+			return
+		}
+		// Request is authed at this point.
+		h.ServeHTTP(w, r)
+	})
+}
+
+func (c MainController) apiAuthMiddleware(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, authed := getAuthedADBUser(c.db, r)
+		if !authed {
+			http.Error(w, http.StatusText(400), 400)
+			return
+		}
+		// Request is authed at this point.
+		h.ServeHTTP(w, r)
+	})
 }
 
 func (c MainController) TokenSignInHandler(w http.ResponseWriter, r *http.Request) {
@@ -240,7 +211,9 @@ func (c MainController) TokenSignInHandler(w http.ResponseWriter, r *http.Reques
 	if err := idToken.Claims(&claims); err != nil {
 		panic(err)
 	}
-	if !isValidEmail(claims.Email) {
+
+	adbUser, err := model.GetADBUser(c.db, 0, claims.Email)
+	if err != nil || adbUser.Disabled {
 		writeJSON(w, map[string]interface{}{
 			"redirect": false,
 			"message":  "Email is not valid",
@@ -248,7 +221,7 @@ func (c MainController) TokenSignInHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	// Email is valid
-	setAuthSession(w, r, claims.Email)
+	setAuthSession(w, r, adbUser)
 	writeJSON(w, map[string]interface{}{
 		"redirect": true,
 	})

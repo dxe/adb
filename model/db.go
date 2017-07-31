@@ -44,4 +44,13 @@ CREATE TABLE IF NOT EXISTS events (
   date DATE NOT NULL,
   event_type VARCHAR(60) NOT NULL
 )`)
+
+	db.MustExec(`
+CREATE TABLE IF NOT EXISTS adb_users (
+  id INTEGER PRIMARY KEY AUTO_INCREMENT,
+  email VARCHAR(60) NOT NULL,
+  admin TINYINT(1) NOT NULL DEFAULT '0',
+  disabled TINYINT(1) NOT NULL DEFAULT '0'
+)
+`)
 }
