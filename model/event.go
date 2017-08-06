@@ -52,10 +52,11 @@ type GetEventOptions struct {
 	EventID int
 	// NOTE: don't pass user input to OrderBy, cause that could
 	// cause a SQL injection.
-	OrderBy   string
-	DateFrom  string
-	DateTo    string
-	EventType string
+	OrderBy        string
+	DateFrom       string
+	DateTo         string
+	EventType      string
+	EventNameQuery string
 }
 
 /** Functions and Methods */
@@ -124,6 +125,10 @@ func getEvents(db *sqlx.DB, options GetEventOptions) ([]Event, error) {
 	if options.EventType != "" {
 		whereClause = append(whereClause, "event_type = ?")
 		queryArgs = append(queryArgs, options.EventType)
+	}
+	if options.EventNameQuery != "" {
+		whereClause = append(whereClause, "MATCH (name) AGAINST (?)")
+		queryArgs = append(queryArgs, options.EventNameQuery)
 	}
 
 	// Add the where clauses to the query.

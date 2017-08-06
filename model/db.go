@@ -10,11 +10,15 @@ func NewDB(dataSourceName string) *sqlx.DB {
 	if err != nil {
 		panic(err)
 	}
-	CreateDatabase(db)
 	return db
 }
 
-func CreateDatabase(db *sqlx.DB) {
+func WipeDatabase(db *sqlx.DB) {
+	db.MustExec(`DROP TABLE IF EXISTS activists`)
+	db.MustExec(`DROP TABLE IF EXISTS events`)
+	db.MustExec(`DROP TABLE IF EXISTS event_attendance`)
+	db.MustExec(`DROP TABLE IF EXISTS adb_users`)
+
 	db.MustExec(`
 CREATE TABLE IF NOT EXISTS activists (
   id INTEGER PRIMARY KEY AUTO_INCREMENT,
@@ -42,7 +46,8 @@ CREATE TABLE IF NOT EXISTS events (
   id INTEGER PRIMARY KEY AUTO_INCREMENT,
   name VARCHAR(60) NOT NULL,
   date DATE NOT NULL,
-  event_type VARCHAR(60) NOT NULL
+  event_type VARCHAR(60) NOT NULL,
+  FULLTEXT INDEX name_idx (name)
 )`)
 
 	db.MustExec(`

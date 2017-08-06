@@ -123,7 +123,7 @@ func router() *mux.Router {
 	// Unauthed pages
 	router.HandleFunc("/login", main.LoginHandler)
 
-	// Authed paged
+	// Authed pages
 	router.Handle("/", alice.New(main.authMiddleware).ThenFunc(main.UpdateEventHandler))
 	router.Handle("/update_event/{event_id:[0-9]+}", alice.New(main.authMiddleware).ThenFunc(main.UpdateEventHandler))
 	router.Handle("/list_events", alice.New(main.authMiddleware).ThenFunc(main.ListEventsHandler))
@@ -400,15 +400,17 @@ func (c MainController) EventListHandler(w http.ResponseWriter, r *http.Request)
 		panic(err)
 	}
 
+	eventName := r.PostFormValue("event_name")
 	dateStart := r.PostFormValue("event_date_start")
 	dateEnd := r.PostFormValue("event_date_end")
 	eventType := r.PostFormValue("event_type")
 
 	events, err := model.GetEventsJSON(c.db, model.GetEventOptions{
-		OrderBy:   "date DESC, id DESC",
-		DateFrom:  dateStart,
-		DateTo:    dateEnd,
-		EventType: eventType,
+		OrderBy:        "date DESC, id DESC",
+		DateFrom:       dateStart,
+		DateTo:         dateEnd,
+		EventType:      eventType,
+		EventNameQuery: eventName,
 	})
 
 	if err != nil {

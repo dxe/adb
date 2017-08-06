@@ -72,6 +72,7 @@ function listEvents(events) {
 }
 
 export function eventListRequest() {
+  var eventName = $('#event-name').val();
   var eventDateStart = $('#event-date-start').val();
   var eventDateEnd = $('#event-date-end').val();
   var eventType = $('#event-type').val();
@@ -80,6 +81,7 @@ export function eventListRequest() {
     url: "/event/list",
     method: "POST",
     data: {
+      event_name: eventName,
       event_date_start: eventDateStart,
       event_date_end: eventDateEnd,
       event_type: eventType,
