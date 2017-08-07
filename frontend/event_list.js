@@ -115,6 +115,9 @@ export function hideAllAttendees() {
 }
 
 export function eventListRequest() {
+  // Always show the loading screen when the button is clicked.
+  $('#event-list-body').html('<tr><td></td><td><i>Loading...</i></td><td></td><td></td><td></td><td></td></tr>');
+
   var eventName = $('#event-name').val();
   var eventActivist = $('#event-activist').val();
   var eventDateStart = $('#event-date-start').val();
@@ -183,7 +186,6 @@ function initEventActivistSelect() {
   if (!chosenBrowserIsSupported()) {
     $selector.addClass('form-control');
   }
-
 
   $.ajax({
     url: "/activist_names/get",
