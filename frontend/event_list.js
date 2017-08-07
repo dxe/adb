@@ -67,9 +67,24 @@ function listEvents(events) {
         '<td class="event-name"><b>' + event.event_name + '</b></td>' +
         '<td nowrap>' + event.event_type + '</td>' +
         '<td nowrap>' + event.attendees.length + '</td>' +
-        '<td><ul class="attendee-list">' + attendeeString + '</ul></td>' +
+        '<td>' +
+          '<button class="show-attendees btn btn-link" onclick="event_list.toggleAttendees(\'' + rowID + '\')" >+ Attendees</button>' +
+          '<ul class="attendee-list" style="display: none">' + attendeeString + '</ul></td>' +
         '</tr>';
     d.insertAdjacentHTML('beforeend', newRow);
+  }
+}
+
+export function toggleAttendees(rowID) {
+  var $row = $('#' + rowID);
+  var $showAttendeesBtn = $row.find('.show-attendees');
+  var $attendees = $row.find('.attendee-list');
+  if ($showAttendeesBtn.text() === "+ Attendees") {
+    $attendees.show();
+    $showAttendeesBtn.text('- Attendees');
+  } else {
+    $attendees.hide();
+    $showAttendeesBtn.text('+ Attendees');
   }
 }
 
