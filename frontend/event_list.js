@@ -1,4 +1,6 @@
 import {flashMessage} from 'flash_message';
+import 'bootstrap-chosen/bootstrap-chosen.css';
+import 'chosen-js'; // Attaches to jQuery when it's imported.
 
 export function confirmDeleteEvent(eventID) {
   var eventRow = $("#event-id-" + eventID);
@@ -73,6 +75,7 @@ function listEvents(events) {
 
 export function eventListRequest() {
   var eventName = $('#event-name').val();
+  var eventActivist = $('#event-activist').val();
   var eventDateStart = $('#event-date-start').val();
   var eventDateEnd = $('#event-date-end').val();
   var eventType = $('#event-type').val();
@@ -82,6 +85,7 @@ export function eventListRequest() {
     method: "POST",
     data: {
       event_name: eventName,
+      event_activist: eventActivist,
       event_date_start: eventDateStart,
       event_date_end: eventDateEnd,
       event_type: eventType,
@@ -129,7 +133,34 @@ function initDateRange() {
 
 }
 
+function initEventActivistSelect() {
+  var $selector = $("#event-activist");
+  $.ajax({
+    url: "/activist_names/get",
+    method: "GET",
+    dataType: "json",
+    success: function(data) {
+      var activistNames = data.activist_names;
+
+      activistNames.unshift("");
+
+      for (var i = 0; i < activistNames.length; i++) {
+        $selector[0].options.add(new Option(activistNames[i]));
+      }
+
+      $selector.chosen({
+        allow_single_deselect: true,
+        inherit_select_classes: true,
+      });
+    },
+    error: function() {
+      flashMessage("Error: could not load activist names", true);
+    },
+  });
+}
+
 export function initializeApp() {
   initDateRange();
+  initEventActivistSelect();
   eventListRequest();
 }

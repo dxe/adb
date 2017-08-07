@@ -10,6 +10,8 @@
     "build": "NODE_ENV=production webpack --progress --hide-modules"
   },
   "dependencies": {
+    "bootstrap-chosen": "^1.4.2",
+    "chosen-js": "^1.7.0",
     "vue": "^2.2.1",
     "vue-js-modal": "^1.1.1"
   },
@@ -20,6 +22,7 @@
     "babel-preset-stage-2": "^6.24.1",
     "css-loader": "^0.25.0",
     "file-loader": "^0.9.0",
+    "style-loader": "^0.18.2",
     "vue-loader": "^11.1.4",
     "vue-template-compiler": "^2.2.1",
     "webpack": "^2.2.0"

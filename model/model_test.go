@@ -138,7 +138,7 @@ func TestGetEvents_orderBy(t *testing.T) {
 	}
 
 	gotEvents, err := GetEvents(db, GetEventOptions{
-		OrderBy: "date DESC",
+		OrderBy: "e.date DESC",
 	})
 	assert.NoError(t, err)
 

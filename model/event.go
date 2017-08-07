@@ -57,6 +57,7 @@ type GetEventOptions struct {
 	DateTo         string
 	EventType      string
 	EventNameQuery string
+	EventActivist  string
 }
 
 /** Functions and Methods */
@@ -106,28 +107,41 @@ func GetEvent(db *sqlx.DB, options GetEventOptions) (Event, error) {
 
 func getEvents(db *sqlx.DB, options GetEventOptions) ([]Event, error) {
 	var queryArgs []interface{}
-	query := `SELECT id, name, date, event_type FROM events `
+	query := `SELECT e.id, e.name, e.date, e.event_type FROM events e `
 
 	// Items in whereClause are added to the query in order, separated by ' AND '.
 	var whereClause []string
+
+	if options.EventActivist != "" {
+		// If we're filtering with an activist name, we need
+		// to join a couple tables which makes this slightly
+		// more complicated.
+		query += `
+JOIN (event_attendance ea, activists a)
+ON (e.id = ea.event_id AND ea.activist_id = a.id)
+`
+		whereClause = append(whereClause, "a.name = ?")
+		queryArgs = append(queryArgs, options.EventActivist)
+	}
+
 	if options.EventID != 0 {
-		whereClause = append(whereClause, "id = ?")
+		whereClause = append(whereClause, "e.id = ?")
 		queryArgs = append(queryArgs, options.EventID)
 	}
 	if options.DateFrom != "" {
-		whereClause = append(whereClause, "date >= ?")
+		whereClause = append(whereClause, "e.date >= ?")
 		queryArgs = append(queryArgs, options.DateFrom)
 	}
 	if options.DateTo != "" {
-		whereClause = append(whereClause, "date <= ?")
+		whereClause = append(whereClause, "e.date <= ?")
 		queryArgs = append(queryArgs, options.DateTo)
 	}
 	if options.EventType != "" {
-		whereClause = append(whereClause, "event_type = ?")
+		whereClause = append(whereClause, "e.event_type = ?")
 		queryArgs = append(queryArgs, options.EventType)
 	}
 	if options.EventNameQuery != "" {
-		whereClause = append(whereClause, "MATCH (name) AGAINST (?)")
+		whereClause = append(whereClause, "MATCH (e.name) AGAINST (?)")
 		queryArgs = append(queryArgs, options.EventNameQuery)
 	}
 
