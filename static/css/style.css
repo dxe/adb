@@ -75,6 +75,9 @@ a.edit-link:hover {
 .event-new-content select {
         width: 100%;
 }
+.awesomplete > ul {
+    font-size: 18px;
+}
 
 /* event_list */
 .event-list-content {
