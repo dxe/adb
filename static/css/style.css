@@ -49,6 +49,12 @@ a.edit-link:hover {
         box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24),0 17px 50px 0 rgba(0,0,0,0.19);
 }
 
+@media (max-width: 580px) {
+    .body-wrapper-wide {
+        padding: 25px 10px 25px 10px;
+    }
+}
+
 
 /* title */
 .title {
@@ -72,7 +78,7 @@ a.edit-link:hover {
 
 /* event_list */
 .event-list-content {
-        min-width: 640px;
+        min-width: 515px;
 }
 .attendee-list {
     padding-left: 15px;
