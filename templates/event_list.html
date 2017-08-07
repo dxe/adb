@@ -33,12 +33,19 @@
     <table id="event-list" class="adb-table table table-hover table-striped">
       <thead>
       	<tr>
-          <th></th>
-      	  <th>Date</th>
-      	  <th>Name</th>
-      	  <th>Type</th>
-          <th>Total Attendance</th>
-      	  <th>Attendees</th>
+          <th class="col-xs-1"></th>
+          <th class="col-xs-2">Date</th>
+          <th class="col-xs-2">Name</th>
+          <th class="col-xs-2">Type</th>
+          <th class="col-xs-1">Total Attendance</th>
+          <th class="col-xs-4">
+            Attendees
+            (
+            <button title="Show all attendees" class="btn btn-link" onclick="event_list.showAllAttendees()"> + </button>
+            /
+            <button title="Hide all attendees" class="btn btn-link" onclick="event_list.hideAllAttendees()"> - </button>
+            )
+          </th>
       	</tr>
       </thead>
       <tbody id="event-list-body">

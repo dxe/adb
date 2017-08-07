@@ -88,6 +88,16 @@ export function toggleAttendees(rowID) {
   }
 }
 
+export function showAllAttendees() {
+  $('.show-attendees').text('- Attendees');
+  $('.attendee-list').show();
+}
+
+export function hideAllAttendees() {
+  $('.show-attendees').text('+ Attendees');
+  $('.attendee-list').hide();
+}
+
 export function eventListRequest() {
   var eventName = $('#event-name').val();
   var eventActivist = $('#event-activist').val();
