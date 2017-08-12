@@ -11,7 +11,7 @@
           <th @click="sortByDate('first_event')">First Event</th>
           <th @click="sortByDate('last_event')">Last Event</th>
           <th @click="sortByStatus('status')">Status</th>
-          <th>Level</th>
+          <th @click="sortByLevel('activist_level')">Level</th>
         </tr>
       </thead>
       <tbody id="activist-list-body">
@@ -91,12 +91,12 @@ var previousSortData = {
 //
 // If sortByDate is true, then the default is to sort by descending.
 // Otherwise, the default is to sort by ascending.
-function shouldSortByAscending(field, sortByDate) {
+function shouldSortByAscending(field, sortByDateOrLevel) {
   if (field == previousSortData.field) {
     return !previousSortData.ascending;
   }
 
-  if (sortByDate) {
+  if (sortByDateOrLevel) {
     return false;
   }
   return true;
@@ -115,6 +115,13 @@ var statusOrder = {
   "New": 2,
   "Former": 3,
   "No attendance": 4,
+};
+
+var activistLevelOrder = {
+  "activist" : 3,
+  "core_activist" : 2,
+  "organizer" : 1,
+  "senior_organizer" : 0
 };
 
 export default {
@@ -204,11 +211,17 @@ export default {
       setPreviousSortData(field, ascending);
     },
     sortByStatus: function(field) {
+      this.sortByStatusOrLevel(field, statusOrder);
+    },
+    sortByLevel: function(field) {
+      this.sortByStatusOrLevel(field, activistLevelOrder);
+    },
+    sortByStatusOrLevel: function(field, sortOrder) {
       var ascending = shouldSortByAscending(field);
 
       this.activists.sort(function(a, b) {
-        var valueA = statusOrder[a[field]];
-        var valueB = statusOrder[b[field]];
+        var valueA = sortOrder[a[field]];
+        var valueB = sortOrder[b[field]];
 
         var order = (valueA < valueB) ? -1 : 1;
 
@@ -217,7 +230,6 @@ export default {
         }
         return -1 * order;
       });
-
       setPreviousSortData(field, ascending);
     },
     displayActivistLevel: function(activistLevel) {

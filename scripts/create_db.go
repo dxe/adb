@@ -22,21 +22,23 @@ func createDevDB(name string) {
 	if !noFakeData {
 		// Insert sample data
 		db.MustExec(`
-INSERT INTO activists VALUES
-  (1, 'Adam Kol', 'adam@directactioneverywhere.com', 'SF Bay', '9542635719', 'Berkeley, United States', '', 0, 0, 1, 1),
-  (2, 'Robin Houseman', 'testtest@gmail.com', 'SF Bay', '4398943', 'United States', '', 0, 0, 0, 0),
-  (3, 'aaa', 'test@comcast.net', 'SF Bay', '7077206366', 'Fairfield, United States', '', 0, 0, 0, 0),
-  (4, 'bbb', 'test@comcast.net', 'SF Bay', '7077206366', 'Fairfield, United States', '', 0, 0, 0, 0),
-  (5, 'ccc', 'test@comcast.net', 'SF Bay', '7077206366', 'Fairfield, United States', '', 0, 0, 0, 0),
-  (100, 'ddd', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 0, 0, 0, 0),
-(101, 'eee', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 0, 0, 0, 0),
-(102, 'fff', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 0, 0, 0, 0),
-(103, 'ggg', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 0, 0, 0, 0),
-(104, 'hhh', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 0, 0, 0, 0),
-(105, 'iii', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 0, 0, 0, 0),
-(106, 'jjj', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 0, 0, 0, 0),
-(107, 'lll', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 0, 0, 0, 0),
-  (108, 'mmm', 'alexis.l.levitt@gmail.com', 'SF Bay', '', 'United States', '', 0, 0, 0, 0);
+INSERT INTO activists
+  (id, name, email, chapter, phone, location, facebook, activist_level, exclude_from_leaderboard, core_staff, global_team_member, liberation_pledge)
+  VALUES
+  (1, 'Adam Kol', 'adam@directactioneverywhere.com', 'SF Bay', '9542635719', 'Berkeley, United States', '', 'activist', 0, 0, 1, 1),
+  (2, 'Robin Houseman', 'testtest@gmail.com', 'SF Bay', '4398943', 'United States','', 'activist', 0, 0, 0, 0),
+  (3, 'aaa', 'test@comcast.net', 'SF Bay', '7077206366', 'Fairfield, United States', '', 'activist', 0, 0, 0, 0),
+  (4, 'bbb', 'test@comcast.net', 'SF Bay', '7077206366', 'Fairfield, United States', '', 'activist', 0, 0, 0, 0),
+  (5, 'ccc', 'test@comcast.net', 'SF Bay', '7077206366', 'Fairfield, United States', '', 'activist', 0, 0, 0, 0),
+  (100, 'ddd', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 'activist', 0, 0, 0, 0),
+(101, 'eee', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 'activist', 0, 0, 0, 0),
+(102, 'fff', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 'activist', 0, 0, 0, 0),
+(103, 'ggg', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 'activist', 0, 0, 0, 0),
+(104, 'hhh', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 'activist', 0, 0, 0, 0),
+(105, 'iii', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 'activist', 0, 0, 0, 0),
+(106, 'jjj', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 'activist', 0, 0, 0, 0),
+(107, 'lll', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 'activist', 0, 0, 0, 0),
+  (108, 'mmm', 'alexis.l.levitt@gmail.com', 'SF Bay', '', 'United States', '', 'activist', 0, 0, 0, 0);
 
 INSERT INTO events VALUES
   (1, 'Event One', '2016-07-15', 'Working Group'),

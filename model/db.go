@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS activists (
   phone varchar(20) NOT NULL DEFAULT '',
   location TEXT,
   facebook VARCHAR(80) NOT NULL DEFAULT '',
+  activist_level VARCHAR(40) NOT NULL DEFAULT 'activist',
   exclude_from_leaderboard TINYINT(1) NOT NULL DEFAULT '0',
   core_staff TINYINT(1) NOT NULL DEFAULT '0',
   global_team_member TINYINT(1) NOT NULL DEFAULT '0',
