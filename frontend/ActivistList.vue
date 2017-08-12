@@ -11,6 +11,7 @@
           <th @click="sortByDate('first_event')">First Event</th>
           <th @click="sortByDate('last_event')">Last Event</th>
           <th @click="sortByStatus('status')">Status</th>
+          <th>Level</th>
         </tr>
       </thead>
       <tbody id="activist-list-body">
@@ -22,12 +23,13 @@
           <td>{{activist.first_event}}</td>
           <td>{{activist.last_event}}</td>
           <td>{{activist.status}}</td>
+          <td>{{displayActivistLevel(activist.activist_level)}}</td>
         </tr>
       </tbody>
     </table>
     <modal
        name="edit-activist-modal"
-       :height="800"
+       :height="830"
        classes="no-background-color"
        @opened="modalOpened"
        @closed="modalClosed"
@@ -45,6 +47,14 @@
               <p><label for="phone">Phone: </label><input class="form-control" type="text" v-model.trim="currentActivist.phone" id="phone"></p>
               <p><label for="location">Location: </label><input class="form-control" type="text" v-model.trim="currentActivist.location" id="location"></p>
               <p><label for="facebook">Facebook: </label><input class="form-control" type="text" v-model.trim="currentActivist.facebook" id="facebook"></p>
+              <p><label for="challenge_level">Activist Level: </label>
+                <select id="activist_level" class="form-control" v-model="currentActivist.activist_level">
+                  <option value="activist">Activist</option>
+                  <option value="core_activist">Core Activist</option>
+                  <option value="organizer">Organizer</option>
+                  <option value="senior_organizer">Senior Organizer</option>
+                </select>
+              </p>
               <p><label for="core">Core/Staff:&nbsp;</label><input class="form-check-input" type="checkbox" v-model="currentActivist.core_staff" :true-value="1" :false-value="0" id="core"></p>
               <p><label for="exclude">Exclude from Leaderboard:&nbsp;</label><input class="form-check-input" type="checkbox" v-model="currentActivist.exclude_from_leaderboard" :true-value="1" :false-value="0" id="exclude"></p>
               <p><label for="pledge">Liberation Pledge:&nbsp;</label><input class="form-check-input" type="checkbox" v-model="currentActivist.liberation_pledge" :true-value="1" :false-value="0" id="pledge"></p>
@@ -210,6 +220,26 @@ export default {
 
       setPreviousSortData(field, ascending);
     },
+    displayActivistLevel: function(activistLevel) {
+      var displayValue = "";
+
+      switch(activistLevel) {
+        case "activist":
+          displayValue = "Activist";
+          break;
+        case "core_activist":
+          displayValue = "Core Activist";
+          break;
+        case "organizer":
+          displayValue = "Organizer";
+          break;
+        case "senior_organizer":
+          displayValue = "Senior Organizer"
+          break;
+      }
+
+      return displayValue;
+    }
   },
   data() {
     return {

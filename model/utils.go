@@ -118,6 +118,7 @@ func CleanActivistData(db *sqlx.DB, body io.Reader) (UserExtra, error) {
 			CoreStaff:              userJSON.Core,
 			ExcludeFromLeaderboard: userJSON.ExcludeFromLeaderboard,
 			GlobalTeamMember:       userJSON.GlobalTeamMember,
+			ActivistLevel:          userJSON.ActivistLevel,
 		},
 	}
 

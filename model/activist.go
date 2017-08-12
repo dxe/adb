@@ -29,9 +29,10 @@ type UserEventData struct {
 }
 
 type UserMembershipData struct {
-	CoreStaff              int `db:"core_staff"`
-	ExcludeFromLeaderboard int `db:"exclude_from_leaderboard"`
-	GlobalTeamMember       int `db:"global_team_member"`
+	CoreStaff              int    `db:"core_staff"`
+	ExcludeFromLeaderboard int    `db:"exclude_from_leaderboard"`
+	GlobalTeamMember       int    `db:"global_team_member"`
+	ActivistLevel          string `db:"activist_level"`
 }
 
 type UserExtra struct {
@@ -56,6 +57,7 @@ type UserJSON struct {
 	ExcludeFromLeaderboard int    `json:"exclude_from_leaderboard"`
 	LiberationPledge       int    `json:"liberation_pledge"`
 	GlobalTeamMember       int    `json:"global_team_member"`
+	ActivistLevel          string `json:"activist_level"`
 }
 
 /** Functions and Methods */
@@ -93,18 +95,19 @@ func getUsersJSON(db *sqlx.DB, userID int) ([]UserJSON, error) {
 		}
 
 		usersJSON = append(usersJSON, UserJSON{
-			ID:          u.User.ID,
-			Name:        u.User.Name,
-			Email:       u.User.Email,
-			Chapter:     u.User.Chapter,
-			Phone:       u.User.Phone,
-			Location:    location,
-			Facebook:    u.User.Facebook,
-			FirstEvent:  firstEvent,
-			LastEvent:   lastEvent,
-			TotalEvents: u.UserEventData.TotalEvents,
-			Status:      u.Status,
-			Core:        u.CoreStaff,
+			ID:            u.User.ID,
+			Name:          u.User.Name,
+			Email:         u.User.Email,
+			Chapter:       u.User.Chapter,
+			Phone:         u.User.Phone,
+			Location:      location,
+			Facebook:      u.User.Facebook,
+			ActivistLevel: u.ActivistLevel,
+			FirstEvent:    firstEvent,
+			LastEvent:     lastEvent,
+			TotalEvents:   u.UserEventData.TotalEvents,
+			Status:        u.Status,
+			Core:          u.CoreStaff,
 			ExcludeFromLeaderboard: u.ExcludeFromLeaderboard,
 			LiberationPledge:       u.LiberationPledge,
 			GlobalTeamMember:       u.GlobalTeamMember,
@@ -168,6 +171,7 @@ SELECT
   phone,
   location,
   facebook,
+  activist_level,
   exclude_from_leaderboard,
   core_staff,
   global_team_member,
@@ -249,6 +253,7 @@ SET
   phone = :phone,
   location = :location,
   facebook = :facebook,
+  activist_level = :activist_level,
   exclude_from_leaderboard = :exclude_from_leaderboard,
   core_staff = :core_staff,
   global_team_member = :global_team_member,
