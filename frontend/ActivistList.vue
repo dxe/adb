@@ -91,12 +91,12 @@ var previousSortData = {
 //
 // If sortByDate is true, then the default is to sort by descending.
 // Otherwise, the default is to sort by ascending.
-function shouldSortByAscending(field, sortByDateOrLevel) {
+function shouldSortByAscending(field, sortByDate) {
   if (field == previousSortData.field) {
     return !previousSortData.ascending;
   }
 
-  if (sortByDateOrLevel) {
+  if (sortByDate) {
     return false;
   }
   return true;
