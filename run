@@ -1,0 +1,5 @@
+#!/bin/sh
+
+cd /opt/adb
+. ./adb-config/env
+exec setuidgid adb ./adb -prod > /tmp/adb.log
