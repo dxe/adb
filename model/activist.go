@@ -9,6 +9,20 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+/** Constant and Variable Definitions */
+
+const selectUserBaseQuery string = `
+SELECT
+  id,
+  name,
+  email,
+  chapter,
+  phone,
+  location,
+  facebook
+FROM activists
+`
+
 /** Type Definitions */
 
 type User struct {
@@ -135,17 +149,7 @@ func GetUsers(db *sqlx.DB) ([]User, error) {
 
 func getUsers(db *sqlx.DB, name string) ([]User, error) {
 	var queryArgs []interface{}
-	query := `
-SELECT
-  id,
-  name,
-  email,
-  chapter,
-  phone,
-  location,
-  facebook
-FROM activists
-`
+	query := selectUserBaseQuery
 
 	if name != "" {
 		query += " WHERE name = ? "
@@ -237,12 +241,37 @@ func GetOrCreateUser(db *sqlx.DB, name string) (User, error) {
 	}
 
 	// There was an error, so try inserting the user first.
-	_, err = db.Exec("INSERT INTO activists (name) VALUES (?)", name)
+	// Wrap in transaction to avoid issue where a new user
+	// is inserted successfully, but we are unable to retrieve
+	// the new user, which will leave database in inconsistent state
+
+	tx, err := db.Beginx()
 	if err != nil {
+		return User{}, errors.Wrap(err, "Failed to create transaction")
+	}
+
+	_, err = tx.Exec("INSERT INTO activists (name) VALUES (?)", name)
+	if err != nil {
+		tx.Rollback()
 		return User{}, errors.Wrapf(err, "failed to insert user %s", name)
 	}
 
-	return GetUser(db, name)
+	query := selectUserBaseQuery + " WHERE name = ? "
+
+	var newUser User
+	err = tx.Get(&newUser, query, name)
+
+	if err != nil {
+		tx.Rollback()
+		return User{}, errors.Wrapf(err, "failed to get new user %s", name)
+	}
+
+	if err := tx.Commit(); err != nil {
+		tx.Rollback()
+		return User{}, errors.Wrapf(err, "failed to commit user %s", name)
+	}
+
+	return newUser, nil
 }
 
 func UpdateActivistData(db *sqlx.DB, user UserExtra) (int, error) {

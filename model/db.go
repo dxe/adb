@@ -32,7 +32,8 @@ CREATE TABLE IF NOT EXISTS activists (
   exclude_from_leaderboard TINYINT(1) NOT NULL DEFAULT '0',
   core_staff TINYINT(1) NOT NULL DEFAULT '0',
   global_team_member TINYINT(1) NOT NULL DEFAULT '0',
-  liberation_pledge TINYINT(1) NOT NULL DEFAULT '0'
+  liberation_pledge TINYINT(1) NOT NULL DEFAULT '0',
+  CONSTRAINT name_ukey UNIQUE (name)
 )`)
 
 	db.MustExec(`
