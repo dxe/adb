@@ -9,6 +9,20 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+/** Constant and Variable Definitions */
+
+const selectUserBaseQuery string = `
+SELECT
+  id,
+  name,
+  email,
+  chapter,
+  phone,
+  location,
+  facebook
+FROM activists
+`
+
 /** Type Definitions */
 
 type User struct {
@@ -135,17 +149,7 @@ func GetUsers(db *sqlx.DB) ([]User, error) {
 
 func getUsers(db *sqlx.DB, name string) ([]User, error) {
 	var queryArgs []interface{}
-	query := `
-SELECT
-  id,
-  name,
-  email,
-  chapter,
-  phone,
-  location,
-  facebook
-FROM activists
-`
+	query := selectUserBaseQuery
 
 	if name != "" {
 		query += " WHERE name = ? "
@@ -252,18 +256,8 @@ func GetOrCreateUser(db *sqlx.DB, name string) (User, error) {
 		return User{}, errors.Wrapf(err, "failed to insert user %s", name)
 	}
 
-	query := `
-SELECT
-  id,
-  name,
-  email,
-  chapter,
-  phone,
-  location,
-  facebook
-FROM activists
-WHERE name = ?
-`
+	query := selectUserBaseQuery + " WHERE name = ? "
+
 	var newUser User
 	err = tx.Get(&newUser, query, name)
 
