@@ -63,7 +63,7 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" @click="hideModal">Close</button>
-            <button type="button" class="btn btn-success" @click="saveModal">Save changes</button>
+            <button type="button" v-bind:disabled="disableSaveButton" class="btn btn-success" @click="saveModal">Save changes</button>
           </div>
         </div>
       </div>
@@ -139,22 +139,31 @@ export default {
       this.currentActivist = {};
     },
     saveModal: function() {
+      // Disable the save button when the user clicks it so they don't
+      // try to save twice. Re-enable it when we get any response back
+      // from the server (even an error).
+      this.disableSaveButton = true;
+
       $.ajax({
         url: "/activist/save",
         method: "POST",
         contentType: "application/json",
         data: JSON.stringify(this.currentActivist),
         success: function(data) {
+          this.disableSaveButton = false;
+
           var parsed = JSON.parse(data);
           if (parsed.status === "error") {
             flashMessage("Error: " + parsed.message, true);
             return;
           }
-          // status === "success""
+
+          // status === "success"
           Vue.set(this.activists, this.activistIndex, parsed.activist);
-          flashMessage("Saved!", false);
+          this.hideModal();
         }.bind(this),
         error : function() {
+          this.disableSaveButton = false;
           flashMessage("Error Connecting to Server", true);
         }
       });
@@ -163,6 +172,7 @@ export default {
       // Add noscroll to body tag so it doesn't scroll while the modal
       // is shown.
       $(document.body).addClass('noscroll');
+      this.disableSaveButton = false;
     },
     modalClosed: function() {
       // Allow body to scroll after modal is closed.
@@ -258,6 +268,7 @@ export default {
       currentActivist: {},
       activists: [],
       activistIndex: -1,
+      disableSaveButton: false,
     };
   },
   created() {
