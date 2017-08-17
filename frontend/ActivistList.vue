@@ -27,7 +27,6 @@
         </tr>
       </tbody>
     </table>
-    <infinite-loading :on-infinite="onInfinite" ref="infiniteLoading"></infinite-loading>
     <modal
        name="edit-activist-modal"
        :height="830"
@@ -78,8 +77,6 @@
 import vmodal from 'vue-js-modal';
 import Vue from 'vue';
 import {flashMessage} from 'flash_message';
-import InfiniteLoading from 'vue-infinite-loading';
-
 
 Vue.use(vmodal);
 
@@ -127,26 +124,6 @@ var activistLevelOrder = {
   "senior_organizer" : 0
 };
 
-function getActivistData(callback) {
-  $.ajax({
-    url: "/activist/list",
-    success: function(data) {
-      var parsed = JSON.parse(data);
-      if (parsed.status === "error") {
-        flashMessage("Error: " + parsed.message, true);
-        return;
-      }
-      // status === "success"
-
-      callback(parsed);
-    },
-    error: function() {
-      flashMessage("Error connecting to server.", true);
-    },
-  });
-}
-
-
 export default {
   name: 'activist-list',
   methods: {
@@ -190,6 +167,9 @@ export default {
     modalClosed: function() {
       // Allow body to scroll after modal is closed.
       $(document.body).removeClass('noscroll');
+    },
+    setActivists: function(activistsData) {
+      this.activists = activistsData;
     },
     sortBy: function(field) {
       var ascending = shouldSortByAscending(field);
@@ -271,13 +251,7 @@ export default {
       }
 
       return displayValue;
-    },
-    onInfinite: function() {
-      getActivistData((data) => {
-        this.activists = this.activists.concat(data);
-        this.$refs.infiniteLoading.$emit('$InfiniteLoading:loaded');
-      });
-    },
+    }
   },
   data() {
     return {
@@ -286,9 +260,24 @@ export default {
       activistIndex: -1,
     };
   },
-  components: {
-    InfiniteLoading,
-  },
+  created() {
+    $.ajax({
+      url: "/activist/list",
+      success: function(data) {
+        var parsed = JSON.parse(data);
+        if (parsed.status === "error") {
+          flashMessage("Error: " + parsed.message, true);
+          return;
+        }
+        // status === "success"
+
+        this.setActivists(parsed);
+      }.bind(this),
+      error: function() {
+        flashMessage("Error connecting to server.", true);
+      },
+    });
+  }
 }
 </script>
 
