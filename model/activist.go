@@ -237,12 +237,47 @@ func GetOrCreateUser(db *sqlx.DB, name string) (User, error) {
 	}
 
 	// There was an error, so try inserting the user first.
-	_, err = db.Exec("INSERT INTO activists (name) VALUES (?)", name)
+	// Wrap in transaction to avoid issue where a new user
+	// is inserted successfully, but we are unable to retrieve
+	// the new user, which will leave database in inconsistent state
+
+	tx, err := db.Beginx()
 	if err != nil {
+		return User{}, errors.Wrap(err, "Failed to create transaction")
+	}
+
+	_, err = tx.Exec("INSERT INTO activists (name) VALUES (?)", name)
+	if err != nil {
+		tx.Rollback()
 		return User{}, errors.Wrapf(err, "failed to insert user %s", name)
 	}
 
-	return GetUser(db, name)
+	query := `
+SELECT
+  id,
+  name,
+  email,
+  chapter,
+  phone,
+  location,
+  facebook
+FROM activists
+WHERE name = ?
+`
+	var newUser User
+	err = tx.Get(&newUser, query, name)
+
+	if err != nil {
+		tx.Rollback()
+		return User{}, errors.Wrapf(err, "failed to get new user %s", name)
+	}
+
+	if err := tx.Commit(); err != nil {
+		tx.Rollback()
+		return User{}, errors.Wrapf(err, "failed to commit user %s", name)
+	}
+
+	return newUser, nil
 }
 
 func UpdateActivistData(db *sqlx.DB, user UserExtra) (int, error) {
