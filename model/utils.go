@@ -193,3 +193,12 @@ func checkForDangerousChars(data string) error {
 	}
 	return nil
 }
+
+func GetUserRangeOptions(body io.Reader) (UserOptionsJSON, error) {
+	var userOptions UserOptionsJSON
+	err := json.NewDecoder(body).Decode(&userOptions)
+	if err != nil {
+		return UserOptionsJSON{}, err
+	}
+	return userOptions, nil
+}

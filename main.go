@@ -128,6 +128,7 @@ func router() *mux.Router {
 	router.Handle("/event/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.EventListHandler))
 	router.Handle("/event/delete", alice.New(main.apiAuthMiddleware).ThenFunc(main.EventDeleteHandler))
 	router.Handle("/activist/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistListHandler))
+	router.HandleFunc("/activist/list_range", main.ActivistInfiniteScrollHandler) // temp unauthed for test
 	router.Handle("/activist/save", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistSaveHandler))
 	router.Handle("/leaderboard/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.LeaderboardListHandler))
 
@@ -326,6 +327,26 @@ func (c MainController) AutocompleteActivistsHandler(w http.ResponseWriter, r *h
 	names := model.GetAutocompleteNames(c.db)
 	writeJSON(w, map[string][]string{
 		"activist_names": names,
+	})
+}
+
+func (c MainController) ActivistInfiniteScrollHandler(w http.ResponseWriter, r *http.Request) {
+	userOptions, err := model.GetUserRangeOptions(r.Body)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+  fmt.Println("Got User Range Options")
+	users, err := model.GetUserRangeJSON(c.db, userOptions)
+	if err != nil {
+    fmt.Println("Shit went wrong")
+		sendErrorMessage(w, err)
+		return
+	}
+
+	writeJSON(w, map[string]interface{}{
+		"status":              "success",
+		"activist_range_list": users,
 	})
 }
 

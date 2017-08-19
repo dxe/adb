@@ -23,6 +23,35 @@ SELECT
 FROM activists
 `
 
+const selectUserExtraBaseQuery string = `
+SELECT
+  a.id,
+  a.name,
+  email,
+  chapter,
+  phone,
+  location,
+  facebook,
+  activist_level,
+  exclude_from_leaderboard,
+  core_staff,
+  global_team_member,
+  liberation_pledge,
+  MIN(e.date) AS first_event,
+  MAX(e.date) AS last_event,
+  COUNT(e.id) as total_events
+FROM activists a
+
+LEFT JOIN event_attendance ea
+  ON ea.activist_id = a.id
+ 
+LEFT JOIN events e
+  ON ea.event_id = e.id
+`
+
+const descOrder int = 2
+const ascOrder int = 1
+
 /** Type Definitions */
 
 type User struct {
@@ -75,6 +104,12 @@ type UserJSON struct {
 	ActivistLevel          string `json:"activist_level"`
 }
 
+type UserOptionsJSON struct {
+	Name  string `json:"name"`
+	Limit int    `json:"limit"`
+	Order int    `json:"order"`
+}
+
 /** Functions and Methods */
 
 func GetUsersJSON(db *sqlx.DB) ([]UserJSON, error) {
@@ -89,12 +124,29 @@ func GetUserJSON(db *sqlx.DB, userID int) (UserJSON, error) {
 	return users[0], nil
 }
 
+func GetUserRangeJSON(db *sqlx.DB, userOptions UserOptionsJSON) ([]UserJSON, error) {
+	// Check that order matches one of the defined order constants
+	if userOptions.Order != descOrder && userOptions.Order != ascOrder {
+		return nil, errors.New("User Range order must be ascending or descending")
+	}
+	users, err := getUserRange(db, userOptions)
+	if err != nil {
+		return nil, err
+	}
+	return buildUserJSONArray(users), nil
+}
+
 func getUsersJSON(db *sqlx.DB, userID int) ([]UserJSON, error) {
-	var usersJSON []UserJSON
 	users, err := GetUsersExtra(db, userID)
 	if err != nil {
 		return nil, err
 	}
+	usersJSON := buildUserJSONArray(users)
+	return usersJSON, nil
+}
+
+func buildUserJSONArray(users []UserExtra) []UserJSON {
+	var usersJSON []UserJSON
 	for _, u := range users {
 		firstEvent := ""
 		if u.UserEventData.FirstEvent != nil {
@@ -128,7 +180,8 @@ func getUsersJSON(db *sqlx.DB, userID int) ([]UserJSON, error) {
 			GlobalTeamMember:       u.GlobalTeamMember,
 		})
 	}
-	return usersJSON, nil
+
+	return usersJSON
 }
 
 func GetUser(db *sqlx.DB, name string) (User, error) {
@@ -167,31 +220,8 @@ func getUsers(db *sqlx.DB, name string) ([]User, error) {
 }
 
 func GetUsersExtra(db *sqlx.DB, userID int) ([]UserExtra, error) {
-	query := `
-SELECT
-  a.id,
-  a.name,
-  email,
-  chapter,
-  phone,
-  location,
-  facebook,
-  activist_level,
-  exclude_from_leaderboard,
-  core_staff,
-  global_team_member,
-  liberation_pledge,
-  MIN(e.date) AS first_event,
-  MAX(e.date) AS last_event,
-  COUNT(e.id) as total_events
-FROM activists a
+	query := selectUserExtraBaseQuery
 
-LEFT JOIN event_attendance ea
-  ON ea.activist_id = a.id
-
-LEFT JOIN events e
-  ON ea.event_id = e.id
-`
 	var queryArgs []interface{}
 
 	if userID != 0 {
@@ -209,6 +239,42 @@ LEFT JOIN events e
 	for i := 0; i < len(users); i++ {
 		u := users[i]
 		users[i].Status = getStatus(u.FirstEvent, u.LastEvent, u.TotalEvents)
+	}
+
+	return users, nil
+}
+
+func getUserRange(db *sqlx.DB, userOptions UserOptionsJSON) ([]UserExtra, error) {
+  /** Note this query is not correct and does not work. */
+  /**REDO*/
+	query := selectUserExtraBaseQuery
+	var queryArgs []interface{}
+	name := userOptions.Name
+	order := userOptions.Order
+	limit := userOptions.Limit
+
+	if name != "" {
+		if order == descOrder {
+			query += " WHERE a.name < ? "
+		} else {
+			query += " WHERE a.name > ? "
+		}
+		queryArgs = append(queryArgs, name)
+	}
+
+	query += " ORDER BY a.name "
+	if order == descOrder {
+		query += "desc "
+	}
+
+	if limit > 0 {
+		query += " LIMIT ? "
+		queryArgs = append(queryArgs, limit)
+	}
+
+	var users []UserExtra
+	if err := db.Select(&users, query, queryArgs...); err != nil {
+		return nil, errors.Wrapf(err, "failed to retrieve %d users before/after %s", limit, name)
 	}
 
 	return users, nil
