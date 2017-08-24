@@ -336,10 +336,8 @@ func (c MainController) ActivistInfiniteScrollHandler(w http.ResponseWriter, r *
 		sendErrorMessage(w, err)
 		return
 	}
-  fmt.Println("Got User Range Options")
 	users, err := model.GetUserRangeJSON(c.db, userOptions)
 	if err != nil {
-    fmt.Println("Shit went wrong")
 		sendErrorMessage(w, err)
 		return
 	}

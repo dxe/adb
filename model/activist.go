@@ -245,13 +245,11 @@ func GetUsersExtra(db *sqlx.DB, userID int) ([]UserExtra, error) {
 }
 
 func getUserRange(db *sqlx.DB, userOptions UserOptionsJSON) ([]UserExtra, error) {
-  /** Note this query is not correct and does not work. */
-  /**REDO*/
 	query := selectUserExtraBaseQuery
-	var queryArgs []interface{}
 	name := userOptions.Name
 	order := userOptions.Order
 	limit := userOptions.Limit
+	var queryArgs []interface{}
 
 	if name != "" {
 		if order == descOrder {
@@ -262,7 +260,7 @@ func getUserRange(db *sqlx.DB, userOptions UserOptionsJSON) ([]UserExtra, error)
 		queryArgs = append(queryArgs, name)
 	}
 
-	query += " ORDER BY a.name "
+	query += " GROUP BY a.name ORDER BY a.name "
 	if order == descOrder {
 		query += "desc "
 	}
