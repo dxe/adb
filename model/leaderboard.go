@@ -165,6 +165,7 @@ LEFT JOIN (
 WHERE
 	total_events_30_days > 0
 	AND a.exclude_from_leaderboard <> 1
+	AND a.suspended <> 1
 
 ORDER BY points DESC`
 

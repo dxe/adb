@@ -118,7 +118,7 @@ func mustInsertAllEvents(t *testing.T, db *sqlx.DB, events []Event) {
 	}
 }
 
-func TestDeleteUser(t *testing.T) {
+func TestSuspendUser(t *testing.T) {
 	db := newTestDB()
 	defer db.Close()
 
@@ -129,34 +129,50 @@ func TestDeleteUser(t *testing.T) {
 	u2, err := GetOrCreateUser(db, "Another Test User")
 	assert.NoError(t, err)
 
-	assert.NoError(t, DeleteUser(db, u1.ID))
-
-	users, err := GetUsers(db)
-	assert.NoError(t, err)
-	assert.Equal(t, len(users), 1)
-	assert.Equal(t, users[0].ID, u2.ID)
-
-	// Test that deleted users also have all of their event
-	// attendance deleted.
-
-	u3, err := GetOrCreateUser(db, "Yay Test User")
-	assert.NoError(t, err)
-
 	d1, err := time.Parse("2006-01-02", "2017-01-15")
 	assert.NoError(t, err)
 
 	eventID, err := InsertUpdateEvent(db, Event{
-		EventName:      "event one",
+		EventName:      "my event",
 		EventDate:      d1,
 		EventType:      "Working Group",
-		AddedAttendees: []User{u2, u3},
+		AddedAttendees: []User{u1, u2},
 	})
 
-	assert.NoError(t, DeleteUser(db, u2.ID))
+	assert.NoError(t, SuspendUser(db, u1.ID))
 
-	e, err := GetEvent(db, GetEventOptions{EventID: eventID})
+	// Suspended users should not show up in the autocompleted names
+	names := GetAutocompleteNames(db)
+	assert.Equal(t, len(names), 1)
+	assert.Equal(t, names[0], u2.Name)
+
+	// Suspended users should not show up in GetUsersJSON unless
+	// Suspended = true.
+	unsuspendedUsers, err := GetUsersJSON(db, GetUserOptions{})
 	assert.NoError(t, err)
+	assert.Equal(t, len(unsuspendedUsers), 1)
+	assert.Equal(t, unsuspendedUsers[0].ID, u2.ID)
 
-	assert.Equal(t, len(e.Attendees), 1)
-	assert.Equal(t, u3.ID, e.Attendees[0].ID)
+	suspendedUsers, err := GetUsersJSON(db, GetUserOptions{Suspended: true})
+	assert.NoError(t, err)
+	assert.Equal(t, len(suspendedUsers), 1)
+	assert.Equal(t, suspendedUsers[0].ID, u1.ID)
+
+	// Suspended users should show up in GetUserJSON
+	u1JSON, err := GetUserJSON(db, GetUserOptions{ID: u1.ID})
+	assert.NoError(t, err)
+	assert.Equal(t, u1JSON.ID, u1.ID)
+
+	// Suspended users *should* show up in the event attendance
+	event, err := GetEvent(db, GetEventOptions{EventID: eventID})
+	assert.NoError(t, err)
+	assert.Equal(t, len(event.Attendees), 2)
+	assert.Equal(t, event.Attendees[0].ID, u1.ID)
+	assert.Equal(t, event.Attendees[1].ID, u2.ID)
+
+	attendanceNames, err := GetEventAttendance(db, eventID)
+	assert.NoError(t, err)
+	assert.Equal(t, len(attendanceNames), 2)
+	assert.Equal(t, attendanceNames[0], u1.Name)
+	assert.Equal(t, attendanceNames[1], u2.Name)
 }

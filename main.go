@@ -129,7 +129,7 @@ func router() *mux.Router {
 	router.Handle("/event/delete", alice.New(main.apiAuthMiddleware).ThenFunc(main.EventDeleteHandler))
 	router.Handle("/activist/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistListHandler))
 	router.Handle("/activist/save", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistSaveHandler))
-	router.Handle("/activist/delete", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistDeleteHandler))
+	router.Handle("/activist/suspend", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistSuspendHandler))
 	router.Handle("/leaderboard/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.LeaderboardListHandler))
 
 	if config.IsProd {
@@ -344,7 +344,7 @@ func (c MainController) ActivistSaveHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	// Retrieve updated information from database and send in response body
-	activist, err := model.GetUserJSON(c.db, activistID)
+	activist, err := model.GetUserJSON(c.db, model.GetUserOptions{ID: activistID})
 	if err != nil {
 		panic(err)
 	}
@@ -356,7 +356,7 @@ func (c MainController) ActivistSaveHandler(w http.ResponseWriter, r *http.Reque
 	writeJSON(w, out)
 }
 
-func (c MainController) ActivistDeleteHandler(w http.ResponseWriter, r *http.Request) {
+func (c MainController) ActivistSuspendHandler(w http.ResponseWriter, r *http.Request) {
 	var userID struct {
 		ID int `json:"id"`
 	}
@@ -366,7 +366,7 @@ func (c MainController) ActivistDeleteHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	err = model.DeleteUser(c.db, userID.ID)
+	err = model.SuspendUser(c.db, userID.ID)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
@@ -462,7 +462,7 @@ func (c MainController) EventDeleteHandler(w http.ResponseWriter, r *http.Reques
 }
 
 func (c MainController) ActivistListHandler(w http.ResponseWriter, r *http.Request) {
-	activists, err := model.GetUsersJSON(c.db)
+	activists, err := model.GetUsersJSON(c.db, model.GetUserOptions{})
 	if err != nil {
 		panic(err)
 	}

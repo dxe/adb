@@ -39,6 +39,7 @@ type User struct {
 	Location         sql.NullString `db:"location"`
 	Facebook         string         `db:"facebook"`
 	LiberationPledge int            `db:"liberation_pledge"`
+	Suspended        bool           `db:"suspended"`
 }
 
 type UserEventData struct {
@@ -80,23 +81,39 @@ type UserJSON struct {
 	ActivistLevel          string `json:"activist_level"`
 }
 
-/** Functions and Methods */
-
-func GetUsersJSON(db *sqlx.DB) ([]UserJSON, error) {
-	return getUsersJSON(db, 0)
+type GetUserOptions struct {
+	ID        int
+	Suspended bool
 }
 
-func GetUserJSON(db *sqlx.DB, userID int) (UserJSON, error) {
-	users, err := getUsersJSON(db, userID)
+/** Functions and Methods */
+
+func GetUsersJSON(db *sqlx.DB, options GetUserOptions) ([]UserJSON, error) {
+	if options.ID != 0 {
+		return nil, errors.New("GetUsersJSON: Cannot include ID in options")
+	}
+	return getUsersJSON(db, options)
+}
+
+func GetUserJSON(db *sqlx.DB, options GetUserOptions) (UserJSON, error) {
+	if options.ID == 0 {
+		return UserJSON{}, errors.New("GetUserJSON: Must include ID in options")
+	}
+
+	users, err := getUsersJSON(db, options)
 	if err != nil {
 		return UserJSON{}, err
+	} else if len(users) == 0 {
+		return UserJSON{}, errors.New("Could not find any users")
+	} else if len(users) > 1 {
+		return UserJSON{}, errors.New("Found too many users")
 	}
 	return users[0], nil
 }
 
-func getUsersJSON(db *sqlx.DB, userID int) ([]UserJSON, error) {
+func getUsersJSON(db *sqlx.DB, options GetUserOptions) ([]UserJSON, error) {
 	var usersJSON []UserJSON
-	users, err := GetUsersExtra(db, userID)
+	users, err := GetUsersExtra(db, options)
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +188,7 @@ func getUsers(db *sqlx.DB, name string) ([]User, error) {
 	return users, nil
 }
 
-func GetUsersExtra(db *sqlx.DB, userID int) ([]UserExtra, error) {
+func GetUsersExtra(db *sqlx.DB, options GetUserOptions) ([]UserExtra, error) {
 	query := `
 SELECT
   a.id,
@@ -199,16 +216,25 @@ LEFT JOIN events e
 `
 	var queryArgs []interface{}
 
-	if userID != 0 {
+	if options.ID != 0 {
 		// retrieve specific user rather than all users
 		query += " WHERE a.id = ? "
-		queryArgs = append(queryArgs, userID)
+		queryArgs = append(queryArgs, options.ID)
+	} else {
+		// Only check filter by suspended if the userID isn't
+		// supplied.
+		if options.Suspended == true {
+			query += " WHERE a.suspended = true "
+		} else {
+			query += " WHERE a.suspended = false "
+		}
 	}
+
 	query += " GROUP BY a.id "
 
 	var users []UserExtra
 	if err := db.Select(&users, query, queryArgs...); err != nil {
-		return nil, errors.Wrapf(err, "failed to get users extra for uid %d", userID)
+		return nil, errors.Wrapf(err, "failed to get users extra for uid %d", options.ID)
 	}
 
 	for i := 0; i < len(users); i++ {
@@ -302,36 +328,23 @@ id = :id`, user)
 	return user.ID, nil
 }
 
-func DeleteUser(db *sqlx.DB, userID int) error {
+func SuspendUser(db *sqlx.DB, userID int) error {
 	if userID == 0 {
-		return errors.New("DeleteUser: userID cannot be 0")
+		return errors.New("SuspendUser: userID cannot be 0")
 	}
-	// Delete all of this user's events and then the user in a
-	// transaction.
-	tx, err := db.Beginx()
+	var userCount int
+	err := db.Get(&userCount, `SELECT count(*) FROM activists WHERE id = ?`, userID)
 	if err != nil {
-		return errors.Wrap(err, "Failed to create transaction")
+		return errors.Wrap(err, "failed to get user count")
+	}
+	if userCount == 0 {
+		return errors.Errorf("User with id %d does not exist", userID)
 	}
 
-	// Delete all events for the activist.
-	_, err = tx.Exec(`DELETE FROM event_attendance WHERE activist_id = ?`, userID)
+	_, err = db.Exec(`UPDATE activists SET suspended = true WHERE id = ?`, userID)
 	if err != nil {
-		tx.Rollback()
-		return errors.Wrapf(err, "Failed to delete event attendance for activist_id %d", userID)
+		return errors.Wrapf(err, "failed to update activist %d", userID)
 	}
-
-	// Delete user from activist database
-	_, err = tx.Exec(`DELETE FROM activists WHERE id = ?`, userID)
-	if err != nil {
-		tx.Rollback()
-		return errors.Wrapf(err, "Failed to delete user with id %d", userID)
-	}
-
-	if err := tx.Commit(); err != nil {
-		tx.Rollback()
-		return errors.Wrapf(err, "transaction commit failed for deleting user with id %s", userID)
-	}
-
 	return nil
 }
 
@@ -340,7 +353,7 @@ func GetAutocompleteNames(db *sqlx.DB) []string {
 		Name string `db:"name"`
 	}
 	names := []Name{}
-	err := db.Select(&names, "SELECT name FROM activists ORDER BY name ASC")
+	err := db.Select(&names, "SELECT name FROM activists WHERE suspended = 0 ORDER BY name ASC")
 	if err != nil {
 		// TODO: return error
 		panic(err)

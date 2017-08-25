@@ -187,7 +187,7 @@ WHERE
  */
 func GetEventAttendance(db *sqlx.DB, eventID int) ([]string, error) {
 	var attendees []string
-	err := db.Select(&attendees, `SELECT a.name FROM activists a 
+	err := db.Select(&attendees, `SELECT a.name FROM activists a
     JOIN event_attendance et on a.id = et.activist_id WHERE et.event_id = ?`, eventID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get attendees for event %d", eventID)
@@ -288,7 +288,7 @@ func updateEvent(db *sqlx.DB, event Event) (eventID int, err error) {
 	err = tx.Get(&eventCount, `SELECT count(*) FROM events WHERE id = ?`, event.ID)
 	if err != nil {
 		tx.Rollback()
-		return 0, errors.Wrap(err, "failed to get existing event")
+		return 0, errors.Wrap(err, "failed to get event count")
 	}
 	if eventCount == 0 {
 		tx.Rollback()
