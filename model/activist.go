@@ -2,6 +2,8 @@ package model
 
 import (
 	"database/sql"
+	"encoding/json"
+	"io"
 	"time"
 
 	"github.com/pkg/errors"
@@ -10,6 +12,9 @@ import (
 )
 
 /** Constant and Variable Definitions */
+
+const Duration60Days = 60 * 24 * time.Hour
+const Duration90Days = 90 * 24 * time.Hour
 
 const selectUserBaseQuery string = `
 SELECT
@@ -295,4 +300,116 @@ id = :id`, user)
 		return 0, errors.Wrap(err, "failed to update activist data")
 	}
 	return user.ID, nil
+}
+
+func DeleteUser(db *sqlx.DB, userID int) error {
+	if userID == 0 {
+		return errors.New("DeleteUser: userID cannot be 0")
+	}
+	// Delete all of this user's events and then the user in a
+	// transaction.
+	tx, err := db.Beginx()
+	if err != nil {
+		return errors.Wrap(err, "Failed to create transaction")
+	}
+
+	// Delete all events for the activist.
+	_, err = tx.Exec(`DELETE FROM event_attendance WHERE activist_id = ?`, userID)
+	if err != nil {
+		tx.Rollback()
+		return errors.Wrapf(err, "Failed to delete event attendance for activist_id %d", userID)
+	}
+
+	// Delete user from activist database
+	_, err = tx.Exec(`DELETE FROM activists WHERE id = ?`, userID)
+	if err != nil {
+		tx.Rollback()
+		return errors.Wrapf(err, "Failed to delete user with id %d", userID)
+	}
+
+	if err := tx.Commit(); err != nil {
+		tx.Rollback()
+		return errors.Wrapf(err, "transaction commit failed for deleting user with id %s", userID)
+	}
+
+	return nil
+}
+
+func GetAutocompleteNames(db *sqlx.DB) []string {
+	type Name struct {
+		Name string `db:"name"`
+	}
+	names := []Name{}
+	err := db.Select(&names, "SELECT name FROM activists ORDER BY name ASC")
+	if err != nil {
+		// TODO: return error
+		panic(err)
+	}
+
+	ret := []string{}
+	for _, n := range names {
+		ret = append(ret, n.Name)
+	}
+	return ret
+}
+
+func CleanActivistData(body io.Reader) (UserExtra, error) {
+	var userJSON UserJSON
+	err := json.NewDecoder(body).Decode(&userJSON)
+	if err != nil {
+		return UserExtra{}, err
+	}
+
+	// Check if name field contains dangerous input
+	if err := checkForDangerousChars(userJSON.Name); err != nil {
+		return UserExtra{}, err
+	}
+
+	valid := true
+	if userJSON.Location == "" {
+		// No location specified so insert null value into database
+		valid = false
+	}
+
+	userExtra := UserExtra{
+		User: User{
+			ID:               userJSON.ID,
+			Name:             userJSON.Name,
+			Email:            userJSON.Email,
+			Chapter:          userJSON.Chapter,
+			Phone:            userJSON.Phone,
+			Location:         sql.NullString{String: userJSON.Location, Valid: valid},
+			Facebook:         userJSON.Facebook,
+			LiberationPledge: userJSON.LiberationPledge,
+		},
+		UserMembershipData: UserMembershipData{
+			CoreStaff:              userJSON.Core,
+			ExcludeFromLeaderboard: userJSON.ExcludeFromLeaderboard,
+			GlobalTeamMember:       userJSON.GlobalTeamMember,
+			ActivistLevel:          userJSON.ActivistLevel,
+		},
+	}
+
+	return userExtra, nil
+
+}
+
+// Returns one of the following statuses:
+//  - Current
+//  - New
+//  - Former
+//  - No attendance
+// Must be kept in sync with the list in frontend/ActivistList.vue
+func getStatus(firstEvent *time.Time, lastEvent *time.Time, totalEvents int) string {
+	if firstEvent == nil || lastEvent == nil {
+		return "No attendance"
+	}
+
+	if time.Since(*lastEvent) > Duration60Days {
+		return "Former"
+	}
+	if time.Since(*firstEvent) < Duration90Days && totalEvents < 5 {
+		return "New"
+	}
+	return "Current"
 }

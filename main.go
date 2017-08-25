@@ -129,6 +129,7 @@ func router() *mux.Router {
 	router.Handle("/event/delete", alice.New(main.apiAuthMiddleware).ThenFunc(main.EventDeleteHandler))
 	router.Handle("/activist/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistListHandler))
 	router.Handle("/activist/save", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistSaveHandler))
+	router.Handle("/activist/delete", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistDeleteHandler))
 	router.Handle("/leaderboard/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.LeaderboardListHandler))
 
 	if config.IsProd {
@@ -330,7 +331,7 @@ func (c MainController) AutocompleteActivistsHandler(w http.ResponseWriter, r *h
 }
 
 func (c MainController) ActivistSaveHandler(w http.ResponseWriter, r *http.Request) {
-	userExtra, err := model.CleanActivistData(c.db, r.Body)
+	userExtra, err := model.CleanActivistData(r.Body)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
@@ -353,7 +354,29 @@ func (c MainController) ActivistSaveHandler(w http.ResponseWriter, r *http.Reque
 		"activist": activist,
 	}
 	writeJSON(w, out)
+}
 
+func (c MainController) ActivistDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	var userID struct {
+		ID int `json:"id"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&userID)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	err = model.DeleteUser(c.db, userID.ID)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	out := map[string]interface{}{
+		"status":    "success",
+		"activists": nil,
+	}
+	writeJSON(w, out)
 }
 
 func (c MainController) EventSaveHandler(w http.ResponseWriter, r *http.Request) {

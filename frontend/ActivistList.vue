@@ -5,6 +5,7 @@
       <thead>
         <tr>
           <th></th>
+          <th></th>
           <th @click="sortBy('name')">Name</th>
           <th @click="sortBy('email')">Email</th>
           <th @click="sortBy('phone')">Phone</th>
@@ -16,7 +17,16 @@
       </thead>
       <tbody id="activist-list-body">
         <tr v-for="(activist, index) in activists">
-          <td><button class="btn btn-default glyphicon glyphicon-pencil" @click="showModal(activist, index)"></button></td>
+          <td><button class="btn btn-default glyphicon glyphicon-pencil" @click="showModal('edit-activist-modal', activist, index)"></button></td>
+          <td>
+            <dropdown>
+              <button data-role="trigger" class="btn btn-default dropdown-toggle glyphicon glyphicon-option-horizontal" type="button">
+              </button>
+              <template slot="dropdown">
+                <li><a @click="showModal('delete-activist-modal', activist, index)">Delete Activist</a></li>
+              </template>
+            </dropdown>
+          </td>
           <td>{{activist.name}}</td>
           <td>{{activist.email}}</td>
           <td>{{activist.phone}}</td>
@@ -27,6 +37,32 @@
         </tr>
       </tbody>
     </table>
+    <modal
+       name="delete-activist-modal"
+       :height="400"
+       classes="no-background-color"
+       @opened="modalOpened"
+       @closed="modalClosed"
+       >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 class="modal-title">Delete activist</h2>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to delete activist {{currentActivist.name}}?</p>
+            <p>
+              This is <bold>NOT</bold> reversable. If you delete someone accidentally,
+              ask the tech team to see if we can get their data from a backup.
+            </p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="hideModal">Close</button>
+            <button type="button" v-bind:disabled="disableConfirmButton" class="btn btn-danger" @click="confirmDeleteActivistModal">Delete activist</button>
+          </div>
+        </div>
+      </div>
+    </modal>
     <modal
        name="edit-activist-modal"
        :height="830"
@@ -63,7 +99,7 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" @click="hideModal">Close</button>
-            <button type="button" v-bind:disabled="disableSaveButton" class="btn btn-success" @click="saveModal">Save changes</button>
+            <button type="button" v-bind:disabled="disableConfirmButton" class="btn btn-success" @click="confirmEditActivistModal">Save changes</button>
           </div>
         </div>
       </div>
@@ -77,6 +113,7 @@
 import vmodal from 'vue-js-modal';
 import Vue from 'vue';
 import {flashMessage} from 'flash_message';
+import {Dropdown} from 'uiv';
 
 Vue.use(vmodal);
 
@@ -127,30 +164,67 @@ var activistLevelOrder = {
 export default {
   name: 'activist-list',
   methods: {
-    showModal: function(activist, index) {
+    showModal: function(modalName, activist, index) {
+      // Check to see if there's a modal open, and close it if so.
+      if (this.currentModalName) {
+        this.hideModal();
+      }
+
       // Make shallow copy of selected activist to prevent persisting unsaved
       // edits at the view layer when closing modal
       this.currentActivist = $.extend({}, activist);
       this.activistIndex = index; // needed for updating activist
-      this.$modal.show('edit-activist-modal');
+      this.currentModalName = modalName;
+      this.$modal.show(modalName);
     },
     hideModal: function() {
-      this.$modal.hide('edit-activist-modal');
+      if (this.currentModalName) {
+        this.$modal.hide(this.currentModalName);
+      }
+      this.currentModalName = '';
       this.currentActivist = {};
     },
-    saveModal: function() {
+    confirmDeleteActivistModal: function() {
+      this.disableConfirmButton = true;
+
+      $.ajax({
+        url: "/activist/delete",
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({id: this.currentActivist.id}),
+        success: (data) => {
+          this.disableConfirmButton = false;
+
+          var parsed = JSON.parse(data);
+          if (parsed.status === "error") {
+            flashMessage("Error: " + parsed.message, true);
+            return;
+          }
+
+          // Remove activist from list.
+          this.activists = this.activists.slice(0, this.activistIndex).concat(
+            this.activists.slice(this.activistIndex+1));
+          this.hideModal();
+        },
+        error: () => {
+          this.disableConfirmButton = false;
+          flashMessage("Error Connecting to Server", true);
+        },
+      });
+    },
+    confirmEditActivistModal: function() {
       // Disable the save button when the user clicks it so they don't
       // try to save twice. Re-enable it when we get any response back
       // from the server (even an error).
-      this.disableSaveButton = true;
+      this.disableConfirmButton = true;
 
       $.ajax({
         url: "/activist/save",
         method: "POST",
         contentType: "application/json",
         data: JSON.stringify(this.currentActivist),
-        success: function(data) {
-          this.disableSaveButton = false;
+        success: (data) => {
+          this.disableConfirmButton = false;
 
           var parsed = JSON.parse(data);
           if (parsed.status === "error") {
@@ -161,18 +235,18 @@ export default {
           // status === "success"
           Vue.set(this.activists, this.activistIndex, parsed.activist);
           this.hideModal();
-        }.bind(this),
-        error : function() {
-          this.disableSaveButton = false;
+        },
+        error : () => {
+          this.disableConfirmButton = false;
           flashMessage("Error Connecting to Server", true);
-        }
+        },
       });
     },
     modalOpened: function() {
       // Add noscroll to body tag so it doesn't scroll while the modal
       // is shown.
       $(document.body).addClass('noscroll');
-      this.disableSaveButton = false;
+      this.disableConfirmButton = false;
     },
     modalClosed: function() {
       // Allow body to scroll after modal is closed.
@@ -268,7 +342,8 @@ export default {
       currentActivist: {},
       activists: [],
       activistIndex: -1,
-      disableSaveButton: false,
+      disableConfirmButton: false,
+      currentModalName: '',
     };
   },
   created() {
@@ -288,7 +363,10 @@ export default {
         flashMessage("Error connecting to server.", true);
       },
     });
-  }
+  },
+  components: {
+    Dropdown,
+  },
 }
 </script>
 
@@ -305,6 +383,10 @@ export default {
   .v--modal-overlay {
     overflow-y: scroll;
     z-index: 1040 !important;
+  }
+
+  .dropdown-menu>li:hover {
+    cursor: pointer;
   }
 
 </style>

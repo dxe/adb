@@ -1,6 +1,7 @@
 package model
 
 import (
+	"github.com/dxe/adb/config"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 )
@@ -60,4 +61,11 @@ CREATE TABLE IF NOT EXISTS adb_users (
   disabled TINYINT(1) NOT NULL DEFAULT '0'
 )
 `)
+}
+
+func newTestDB() *sqlx.DB {
+	db := NewDB(config.DBTestDataSource())
+	WipeDatabase(db)
+
+	return db
 }
