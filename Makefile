@@ -3,10 +3,11 @@
 # Runs the application.
 run_all:
 	npm run dev-build
-	go run main.go
+	$(MAKE) run
 
 # Just start the go program without recompiling the JS.
 run:
+	go install # Install first so that we keep cached build objects around.
 	go run main.go
 
 # Builds the frontend JS.
