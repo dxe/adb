@@ -1,11 +1,11 @@
 # adb
 Activist Database Project
 
-# Run
+## Run
 
 First, download all the needed dependencies. Then start the server by running `make run_all` and going to localhost:8080.
 
-# Dependencies
+## Dependencies
 
 You will need the following to run this project:
 
@@ -15,7 +15,7 @@ You will need the following to run this project:
 
 After installing the above, download all the go and node dependencies by running `make deps`.
 
-## Set up mysql locally for development
+### Set up mysql locally for development
 
 First, install mysql server. Then, create a user and database like this:
 
@@ -30,7 +30,7 @@ CREATE DATABASE adb_test_db CHARACTER SET utf8 COLLATE utf8_general_ci;
 
 Then run `make dev_db`.
 
-# JS
+## JS
 
 This project uses webpack to compile our frontend files. Frontend
 files that need to be compiled are in `frontend/`, and the compiled
