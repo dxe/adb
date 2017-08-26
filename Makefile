@@ -41,7 +41,7 @@ clean:
 
 # Set git hooks
 set_git_hooks:
-	if [ ! -h .git/hooks/pre-push ] ; then ln -s hooks/pre-push .git/hooks/pre-push ; fi
+	if [ ! -h .git/hooks/pre-push ] ; then ln -s ../../hooks/pre-push .git/hooks/pre-push ; fi
 
 # Build the project for production.
 prod_build: clean set_git_hooks

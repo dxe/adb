@@ -1,7 +1,5 @@
 #!/bin/bash -e
 
-set -x
-
 # Adapted from http://blog.ittybittyapps.com/blog/2013/09/03/git-pre-push/
 
 # Find the directory of the real file, adb/hooks, not the symlinked one.
