@@ -28,7 +28,9 @@ FROM (
 	    MAX(CASE WHEN event_type = "outreach" or event_type = "sanctuary" or event_type = "community" THEN "1" ELSE "0" END) AS is_community
 	FROM event_attendance ea
 	JOIN events e ON ea.event_id = e.id
+	JOIN activists a ON ea.activist_id = a.id
 	WHERE e.date BETWEEN DATE_SUB(NOW(), INTERVAL 30 DAY) AND NOW()
+		AND a.hidden <> 1
 	GROUP BY activist_id
 	HAVING is_protest = "1" AND is_community = "1"
 ) AS power_index
@@ -59,6 +61,8 @@ FROM (
         SUBSTR(e.date,6,2) AS month
 	FROM event_attendance ea
 	JOIN events e ON ea.event_id = e.id
+	JOIN activists a ON ea.activist_id = a.id
+	WHERE a.hidden <> 1
 	GROUP BY activist_id, year, month
 	HAVING is_protest = "1" AND is_community = "1" AND month = "` + month + `" AND year = "` + year + `"
 ) AS power_index
@@ -135,6 +139,8 @@ FROM (
         SUBSTR(e.date,6,2) AS month
 	FROM event_attendance ea
 	JOIN events e ON ea.event_id = e.id
+	JOIN activists a ON ea.activist_id = a.id
+	WHERE a.hidden <> 1
 	GROUP BY activist_id, year, month
 	HAVING is_protest = "1" AND is_community = "1" AND month = "` + month_string + `" AND year = "` + year_string + `"
 ) AS power_index

@@ -2,6 +2,8 @@ package model
 
 import (
 	"database/sql"
+	"encoding/json"
+	"io"
 	"time"
 
 	"github.com/pkg/errors"
@@ -10,6 +12,9 @@ import (
 )
 
 /** Constant and Variable Definitions */
+
+const Duration60Days = 60 * 24 * time.Hour
+const Duration90Days = 90 * 24 * time.Hour
 
 const selectUserBaseQuery string = `
 SELECT
@@ -34,6 +39,7 @@ type User struct {
 	Location         sql.NullString `db:"location"`
 	Facebook         string         `db:"facebook"`
 	LiberationPledge int            `db:"liberation_pledge"`
+	Hidden           bool           `db:"hidden"`
 }
 
 type UserEventData struct {
@@ -75,23 +81,39 @@ type UserJSON struct {
 	ActivistLevel          string `json:"activist_level"`
 }
 
-/** Functions and Methods */
-
-func GetUsersJSON(db *sqlx.DB) ([]UserJSON, error) {
-	return getUsersJSON(db, 0)
+type GetUserOptions struct {
+	ID     int
+	Hidden bool
 }
 
-func GetUserJSON(db *sqlx.DB, userID int) (UserJSON, error) {
-	users, err := getUsersJSON(db, userID)
+/** Functions and Methods */
+
+func GetUsersJSON(db *sqlx.DB, options GetUserOptions) ([]UserJSON, error) {
+	if options.ID != 0 {
+		return nil, errors.New("GetUsersJSON: Cannot include ID in options")
+	}
+	return getUsersJSON(db, options)
+}
+
+func GetUserJSON(db *sqlx.DB, options GetUserOptions) (UserJSON, error) {
+	if options.ID == 0 {
+		return UserJSON{}, errors.New("GetUserJSON: Must include ID in options")
+	}
+
+	users, err := getUsersJSON(db, options)
 	if err != nil {
 		return UserJSON{}, err
+	} else if len(users) == 0 {
+		return UserJSON{}, errors.New("Could not find any users")
+	} else if len(users) > 1 {
+		return UserJSON{}, errors.New("Found too many users")
 	}
 	return users[0], nil
 }
 
-func getUsersJSON(db *sqlx.DB, userID int) ([]UserJSON, error) {
+func getUsersJSON(db *sqlx.DB, options GetUserOptions) ([]UserJSON, error) {
 	var usersJSON []UserJSON
-	users, err := GetUsersExtra(db, userID)
+	users, err := GetUsersExtra(db, options)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +188,7 @@ func getUsers(db *sqlx.DB, name string) ([]User, error) {
 	return users, nil
 }
 
-func GetUsersExtra(db *sqlx.DB, userID int) ([]UserExtra, error) {
+func GetUsersExtra(db *sqlx.DB, options GetUserOptions) ([]UserExtra, error) {
 	query := `
 SELECT
   a.id,
@@ -194,16 +216,25 @@ LEFT JOIN events e
 `
 	var queryArgs []interface{}
 
-	if userID != 0 {
+	if options.ID != 0 {
 		// retrieve specific user rather than all users
 		query += " WHERE a.id = ? "
-		queryArgs = append(queryArgs, userID)
+		queryArgs = append(queryArgs, options.ID)
+	} else {
+		// Only check filter by hidden if the userID isn't
+		// supplied.
+		if options.Hidden == true {
+			query += " WHERE a.hidden = true "
+		} else {
+			query += " WHERE a.hidden = false "
+		}
 	}
+
 	query += " GROUP BY a.id "
 
 	var users []UserExtra
 	if err := db.Select(&users, query, queryArgs...); err != nil {
-		return nil, errors.Wrapf(err, "failed to get users extra for uid %d", userID)
+		return nil, errors.Wrapf(err, "failed to get users extra for uid %d", options.ID)
 	}
 
 	for i := 0; i < len(users); i++ {
@@ -295,4 +326,103 @@ id = :id`, user)
 		return 0, errors.Wrap(err, "failed to update activist data")
 	}
 	return user.ID, nil
+}
+
+func HideUser(db *sqlx.DB, userID int) error {
+	if userID == 0 {
+		return errors.New("HideUser: userID cannot be 0")
+	}
+	var userCount int
+	err := db.Get(&userCount, `SELECT count(*) FROM activists WHERE id = ?`, userID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get user count")
+	}
+	if userCount == 0 {
+		return errors.Errorf("User with id %d does not exist", userID)
+	}
+
+	_, err = db.Exec(`UPDATE activists SET hidden = true WHERE id = ?`, userID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to update activist %d", userID)
+	}
+	return nil
+}
+
+func GetAutocompleteNames(db *sqlx.DB) []string {
+	type Name struct {
+		Name string `db:"name"`
+	}
+	names := []Name{}
+	err := db.Select(&names, "SELECT name FROM activists WHERE hidden = 0 ORDER BY name ASC")
+	if err != nil {
+		// TODO: return error
+		panic(err)
+	}
+
+	ret := []string{}
+	for _, n := range names {
+		ret = append(ret, n.Name)
+	}
+	return ret
+}
+
+func CleanActivistData(body io.Reader) (UserExtra, error) {
+	var userJSON UserJSON
+	err := json.NewDecoder(body).Decode(&userJSON)
+	if err != nil {
+		return UserExtra{}, err
+	}
+
+	// Check if name field contains dangerous input
+	if err := checkForDangerousChars(userJSON.Name); err != nil {
+		return UserExtra{}, err
+	}
+
+	valid := true
+	if userJSON.Location == "" {
+		// No location specified so insert null value into database
+		valid = false
+	}
+
+	userExtra := UserExtra{
+		User: User{
+			ID:               userJSON.ID,
+			Name:             userJSON.Name,
+			Email:            userJSON.Email,
+			Chapter:          userJSON.Chapter,
+			Phone:            userJSON.Phone,
+			Location:         sql.NullString{String: userJSON.Location, Valid: valid},
+			Facebook:         userJSON.Facebook,
+			LiberationPledge: userJSON.LiberationPledge,
+		},
+		UserMembershipData: UserMembershipData{
+			CoreStaff:              userJSON.Core,
+			ExcludeFromLeaderboard: userJSON.ExcludeFromLeaderboard,
+			GlobalTeamMember:       userJSON.GlobalTeamMember,
+			ActivistLevel:          userJSON.ActivistLevel,
+		},
+	}
+
+	return userExtra, nil
+
+}
+
+// Returns one of the following statuses:
+//  - Current
+//  - New
+//  - Former
+//  - No attendance
+// Must be kept in sync with the list in frontend/ActivistList.vue
+func getStatus(firstEvent *time.Time, lastEvent *time.Time, totalEvents int) string {
+	if firstEvent == nil || lastEvent == nil {
+		return "No attendance"
+	}
+
+	if time.Since(*lastEvent) > Duration60Days {
+		return "Former"
+	}
+	if time.Since(*firstEvent) < Duration90Days && totalEvents < 5 {
+		return "New"
+	}
+	return "Current"
 }

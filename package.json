@@ -13,8 +13,10 @@
     "babel-preset-env": "^1.6.0",
     "bootstrap-chosen": "^1.4.2",
     "chosen-js": "^1.7.0",
+    "uiv": "^0.11.8",
     "vue": "^2.2.1",
-    "vue-js-modal": "^1.1.1"
+    "vue-js-modal": "^1.1.1",
+    "vue-strap": "^1.1.37"
   },
   "devDependencies": {
     "babel-core": "^6.0.0",

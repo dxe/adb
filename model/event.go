@@ -2,6 +2,8 @@ package model
 
 import (
 	"database/sql/driver"
+	"encoding/json"
+	"io"
 	"strings"
 	"time"
 
@@ -185,7 +187,7 @@ WHERE
  */
 func GetEventAttendance(db *sqlx.DB, eventID int) ([]string, error) {
 	var attendees []string
-	err := db.Select(&attendees, `SELECT a.name FROM activists a 
+	err := db.Select(&attendees, `SELECT a.name FROM activists a
     JOIN event_attendance et on a.id = et.activist_id WHERE et.event_id = ?`, eventID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get attendees for event %d", eventID)
@@ -281,6 +283,19 @@ func updateEvent(db *sqlx.DB, event Event) (eventID int, err error) {
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to update event")
 	}
+	// Error out if the event doesn't exist.
+	var eventCount int
+	err = tx.Get(&eventCount, `SELECT count(*) FROM events WHERE id = ?`, event.ID)
+	if err != nil {
+		tx.Rollback()
+		return 0, errors.Wrap(err, "failed to get event count")
+	}
+	if eventCount == 0 {
+		tx.Rollback()
+		return 0, errors.Errorf("Event with id %d does not exist", event.ID)
+	}
+
+	// Update the event
 	_, err = tx.NamedExec(`UPDATE events
 SET
   name = :name,
@@ -335,4 +350,65 @@ func insertEventAttendance(tx *sqlx.Tx, event Event) error {
 		}
 	}
 	return nil
+}
+
+func CleanEventData(db *sqlx.DB, body io.Reader) (Event, error) {
+	var eventJSON EventJSON
+	err := json.NewDecoder(body).Decode(&eventJSON)
+	if err != nil {
+		return Event{}, err
+	}
+
+	// Strip spaces from front and back of all fields.
+	var e Event
+	e.ID = eventJSON.EventID
+
+	if err := checkForDangerousChars(eventJSON.EventName); err != nil {
+		return Event{}, err
+	}
+
+	e.EventName = strings.TrimSpace(eventJSON.EventName)
+	t, err := time.Parse(EventDateLayout, eventJSON.EventDate)
+	if err != nil {
+		return Event{}, err
+	}
+	e.EventDate = t
+	eventType, err := getEventType(eventJSON.EventType)
+	if err != nil {
+		return Event{}, err
+	}
+	e.EventType = eventType
+
+	addedAttendees, err := cleanEventAttendanceData(db, eventJSON.AddedAttendees)
+	if err != nil {
+		return Event{}, err
+	}
+
+	deletedAttendees, err := cleanEventAttendanceData(db, eventJSON.DeletedAttendees)
+	if err != nil {
+		return Event{}, err
+	}
+
+	e.AddedAttendees = addedAttendees
+	e.DeletedAttendees = deletedAttendees
+
+	return e, nil
+}
+
+func cleanEventAttendanceData(db *sqlx.DB, attendees []string) ([]User, error) {
+	users := make([]User, len(attendees))
+
+	for idx, attendee := range attendees {
+		if err := checkForDangerousChars(attendee); err != nil {
+			return []User{}, err
+		}
+		user, err := GetOrCreateUser(db, strings.TrimSpace(attendee))
+		if err != nil {
+			return []User{}, err
+		}
+		users[idx] = user
+	}
+
+	return users, nil
+
 }
