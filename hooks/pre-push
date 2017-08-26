@@ -1,0 +1,33 @@
+#!/bin/bash -e
+
+set -x
+
+# Adapted from http://blog.ittybittyapps.com/blog/2013/09/03/git-pre-push/
+
+# Find the directory of the real file, adb/hooks, not the symlinked one.
+DIR="$( cd "$( dirname "$( readlink -f "${BASH_SOURCE[0]}" )" )" && pwd )"
+cd "$DIR/.."
+
+CMD="make test"
+protected_branch='master'
+
+# Check if we actually have commits to push
+commits=`git log @{u}..`
+if [ -z "$commits" ]; then
+    exit 0
+fi
+
+current_branch=$(git symbolic-ref HEAD | sed -e 's,.*/\(.*\),\1,')
+
+if [[ $current_branch = $protected_branch ]]; then
+    echo "Running tests before push. Skip with: git push --no-verify"
+    $CMD
+    # We don't really need to check the error b/c we set -e above, but
+    # include this as a bit of defensive programming.
+    RESULT=$?
+    if [ $RESULT -ne 0 ]; then
+        echo "failed $CMD"
+        exit 1
+    fi
+fi
+exit 0
