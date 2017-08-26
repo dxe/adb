@@ -1,11 +1,9 @@
 package config
 
 import (
-	"flag"
+	"io/ioutil"
 	"os"
 )
-
-var IsProd bool
 
 var (
 	DBUser, DBPassword, DBName string
@@ -25,11 +23,21 @@ func mustGetenv(envvar string) string {
 	return val
 }
 
-func init() {
-	prod := flag.Bool("prod", false, "Run in production mode")
-	flag.Parse()
-	IsProd = *prod
+func isEC2() bool {
+	// see http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/identify_ec2_instances.html
+	data, err := ioutil.ReadFile("/sys/hypervisor/uuid")
+	if err != nil {
+		// The file must exist on EC2
+		return false
+	}
+	return string(data[:3]) == "ec2"
+}
 
+// Always run as IsProd in EC2. This means you can't develop on EC2,
+// but we'll cross that bridge when we get there.
+var IsProd bool = isEC2()
+
+func init() {
 	if IsProd {
 		DBUser = mustGetenv("DB_USER")
 		DBPassword = mustGetenv("DB_PASSWORD")

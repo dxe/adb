@@ -15,6 +15,9 @@ func NewDB(dataSourceName string) *sqlx.DB {
 }
 
 func WipeDatabase(db *sqlx.DB) {
+	if config.IsProd {
+		panic("Cannot drop tables in prod")
+	}
 	db.MustExec(`DROP TABLE IF EXISTS activists`)
 	db.MustExec(`DROP TABLE IF EXISTS events`)
 	db.MustExec(`DROP TABLE IF EXISTS event_attendance`)
