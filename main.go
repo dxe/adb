@@ -129,7 +129,7 @@ func router() *mux.Router {
 	router.Handle("/event/delete", alice.New(main.apiAuthMiddleware).ThenFunc(main.EventDeleteHandler))
 	router.Handle("/activist/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistListHandler))
 	router.Handle("/activist/save", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistSaveHandler))
-	router.Handle("/activist/suspend", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistSuspendHandler))
+	router.Handle("/activist/hide", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistHideHandler))
 	router.Handle("/leaderboard/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.LeaderboardListHandler))
 
 	if config.IsProd {
@@ -356,7 +356,7 @@ func (c MainController) ActivistSaveHandler(w http.ResponseWriter, r *http.Reque
 	writeJSON(w, out)
 }
 
-func (c MainController) ActivistSuspendHandler(w http.ResponseWriter, r *http.Request) {
+func (c MainController) ActivistHideHandler(w http.ResponseWriter, r *http.Request) {
 	var userID struct {
 		ID int `json:"id"`
 	}
@@ -366,7 +366,7 @@ func (c MainController) ActivistSuspendHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	err = model.SuspendUser(c.db, userID.ID)
+	err = model.HideUser(c.db, userID.ID)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return

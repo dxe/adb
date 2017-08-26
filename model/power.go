@@ -30,7 +30,7 @@ FROM (
 	JOIN events e ON ea.event_id = e.id
 	JOIN activists a ON ea.activist_id = a.id
 	WHERE e.date BETWEEN DATE_SUB(NOW(), INTERVAL 30 DAY) AND NOW()
-		AND a.suspended <> 1
+		AND a.hidden <> 1
 	GROUP BY activist_id
 	HAVING is_protest = "1" AND is_community = "1"
 ) AS power_index
@@ -62,7 +62,7 @@ FROM (
 	FROM event_attendance ea
 	JOIN events e ON ea.event_id = e.id
 	JOIN activists a ON ea.activist_id = a.id
-	WHERE a.suspended <> 1
+	WHERE a.hidden <> 1
 	GROUP BY activist_id, year, month
 	HAVING is_protest = "1" AND is_community = "1" AND month = "` + month + `" AND year = "` + year + `"
 ) AS power_index
@@ -140,7 +140,7 @@ FROM (
 	FROM event_attendance ea
 	JOIN events e ON ea.event_id = e.id
 	JOIN activists a ON ea.activist_id = a.id
-	WHERE a.suspended <> 1
+	WHERE a.hidden <> 1
 	GROUP BY activist_id, year, month
 	HAVING is_protest = "1" AND is_community = "1" AND month = "` + month_string + `" AND year = "` + year_string + `"
 ) AS power_index

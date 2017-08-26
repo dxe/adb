@@ -23,7 +23,7 @@
               <button data-role="trigger" class="btn btn-default dropdown-toggle glyphicon glyphicon-option-horizontal" type="button">
               </button>
               <template slot="dropdown">
-                <li><a @click="showModal('suspend-activist-modal', activist, index)">Suspend Activist</a></li>
+                <li><a @click="showModal('hide-activist-modal', activist, index)">Hide Activist</a></li>
               </template>
             </dropdown>
           </td>
@@ -38,7 +38,7 @@
       </tbody>
     </table>
     <modal
-       name="suspend-activist-modal"
+       name="hide-activist-modal"
        :height="400"
        classes="no-background-color"
        @opened="modalOpened"
@@ -47,15 +47,15 @@
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
-            <h2 class="modal-title">Suspend activist</h2>
+            <h2 class="modal-title">Hide activist</h2>
           </div>
           <div class="modal-body">
-            <p>Are you sure you want to suspend {{currentActivist.name}}?</p>
-            <p>Suspending an activist hides them from the activist list page but does not delete any event data associated with them. If this activist is a duplicate of another activist, you should merge them instead.</p>
+            <p>Are you sure you want to Hide {{currentActivist.name}}?</p>
+            <p>Hiding an activist hides them from the activist list page but does not delete any event data associated with them. If this activist is a duplicate of another activist, you should merge them instead.</p>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" @click="hideModal">Close</button>
-            <button type="button" v-bind:disabled="disableConfirmButton" class="btn btn-danger" @click="confirmSuspendActivistModal">Suspend activist</button>
+            <button type="button" v-bind:disabled="disableConfirmButton" class="btn btn-danger" @click="confirmHideActivistModal">Hide activist</button>
           </div>
         </div>
       </div>
@@ -181,11 +181,11 @@ export default {
       this.currentModalName = '';
       this.currentActivist = {};
     },
-    confirmSuspendActivistModal: function() {
+    confirmHideActivistModal: function() {
       this.disableConfirmButton = true;
 
       $.ajax({
-        url: "/activist/suspend",
+        url: "/activist/hide",
         method: "POST",
         contentType: "application/json",
         data: JSON.stringify({id: this.currentActivist.id}),

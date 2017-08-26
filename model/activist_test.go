@@ -118,7 +118,7 @@ func mustInsertAllEvents(t *testing.T, db *sqlx.DB, events []Event) {
 	}
 }
 
-func TestSuspendUser(t *testing.T) {
+func TestHideUser(t *testing.T) {
 	db := newTestDB()
 	defer db.Close()
 
@@ -139,31 +139,31 @@ func TestSuspendUser(t *testing.T) {
 		AddedAttendees: []User{u1, u2},
 	})
 
-	assert.NoError(t, SuspendUser(db, u1.ID))
+	assert.NoError(t, HideUser(db, u1.ID))
 
-	// Suspended users should not show up in the autocompleted names
+	// Hidden users should not show up in the autocompleted names
 	names := GetAutocompleteNames(db)
 	assert.Equal(t, len(names), 1)
 	assert.Equal(t, names[0], u2.Name)
 
-	// Suspended users should not show up in GetUsersJSON unless
-	// Suspended = true.
-	unsuspendedUsers, err := GetUsersJSON(db, GetUserOptions{})
+	// Hidden users should not show up in GetUsersJSON unless
+	// Hidden = true.
+	unhiddenUsers, err := GetUsersJSON(db, GetUserOptions{})
 	assert.NoError(t, err)
-	assert.Equal(t, len(unsuspendedUsers), 1)
-	assert.Equal(t, unsuspendedUsers[0].ID, u2.ID)
+	assert.Equal(t, len(unhiddenUsers), 1)
+	assert.Equal(t, unhiddenUsers[0].ID, u2.ID)
 
-	suspendedUsers, err := GetUsersJSON(db, GetUserOptions{Suspended: true})
+	hiddenUsers, err := GetUsersJSON(db, GetUserOptions{Hidden: true})
 	assert.NoError(t, err)
-	assert.Equal(t, len(suspendedUsers), 1)
-	assert.Equal(t, suspendedUsers[0].ID, u1.ID)
+	assert.Equal(t, len(hiddenUsers), 1)
+	assert.Equal(t, hiddenUsers[0].ID, u1.ID)
 
-	// Suspended users should show up in GetUserJSON
+	// Hidden users should show up in GetUserJSON
 	u1JSON, err := GetUserJSON(db, GetUserOptions{ID: u1.ID})
 	assert.NoError(t, err)
 	assert.Equal(t, u1JSON.ID, u1.ID)
 
-	// Suspended users *should* show up in the event attendance
+	// Hidden users *should* show up in the event attendance
 	event, err := GetEvent(db, GetEventOptions{EventID: eventID})
 	assert.NoError(t, err)
 	assert.Equal(t, len(event.Attendees), 2)

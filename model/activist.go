@@ -39,7 +39,7 @@ type User struct {
 	Location         sql.NullString `db:"location"`
 	Facebook         string         `db:"facebook"`
 	LiberationPledge int            `db:"liberation_pledge"`
-	Suspended        bool           `db:"suspended"`
+	Hidden           bool           `db:"hidden"`
 }
 
 type UserEventData struct {
@@ -82,8 +82,8 @@ type UserJSON struct {
 }
 
 type GetUserOptions struct {
-	ID        int
-	Suspended bool
+	ID     int
+	Hidden bool
 }
 
 /** Functions and Methods */
@@ -221,12 +221,12 @@ LEFT JOIN events e
 		query += " WHERE a.id = ? "
 		queryArgs = append(queryArgs, options.ID)
 	} else {
-		// Only check filter by suspended if the userID isn't
+		// Only check filter by hidden if the userID isn't
 		// supplied.
-		if options.Suspended == true {
-			query += " WHERE a.suspended = true "
+		if options.Hidden == true {
+			query += " WHERE a.hidden = true "
 		} else {
-			query += " WHERE a.suspended = false "
+			query += " WHERE a.hidden = false "
 		}
 	}
 
@@ -328,9 +328,9 @@ id = :id`, user)
 	return user.ID, nil
 }
 
-func SuspendUser(db *sqlx.DB, userID int) error {
+func HideUser(db *sqlx.DB, userID int) error {
 	if userID == 0 {
-		return errors.New("SuspendUser: userID cannot be 0")
+		return errors.New("HideUser: userID cannot be 0")
 	}
 	var userCount int
 	err := db.Get(&userCount, `SELECT count(*) FROM activists WHERE id = ?`, userID)
@@ -341,7 +341,7 @@ func SuspendUser(db *sqlx.DB, userID int) error {
 		return errors.Errorf("User with id %d does not exist", userID)
 	}
 
-	_, err = db.Exec(`UPDATE activists SET suspended = true WHERE id = ?`, userID)
+	_, err = db.Exec(`UPDATE activists SET hidden = true WHERE id = ?`, userID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update activist %d", userID)
 	}
@@ -353,7 +353,7 @@ func GetAutocompleteNames(db *sqlx.DB) []string {
 		Name string `db:"name"`
 	}
 	names := []Name{}
-	err := db.Select(&names, "SELECT name FROM activists WHERE suspended = 0 ORDER BY name ASC")
+	err := db.Select(&names, "SELECT name FROM activists WHERE hidden = 0 ORDER BY name ASC")
 	if err != nil {
 		// TODO: return error
 		panic(err)
