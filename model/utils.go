@@ -1,8 +1,9 @@
 package model
 
 import (
-	"errors"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 /** Constant and Global Variable Definitions */

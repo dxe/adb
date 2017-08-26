@@ -2,13 +2,14 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"html/template"
 	"io"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"golang.org/x/net/context"
 
@@ -278,7 +279,7 @@ func writeJSON(w io.Writer, v interface{}) {
 /* Accepts a non-nil error and sends an error response */
 func sendErrorMessage(w io.Writer, err error) {
 	if err == nil {
-		panic(errors.New("Cannot send error message if error is nil"))
+		panic(errors.Wrap(err, "Cannot send error message if error is nil"))
 	}
 	fmt.Printf("ERROR: %+v\n", err)
 	writeJSON(w, map[string]string{

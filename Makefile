@@ -1,4 +1,4 @@
-.PHONY: run_all run watch test clean prod_build deps dev_db samer_deploy jake_deploy
+.PHONY: run_all run watch test clean prod_build deps dev_db
 
 # Runs the application.
 run_all:

@@ -1,7 +1,7 @@
 package model
 
 import (
-	"errors"
+	"github.com/pkg/errors"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -39,7 +39,7 @@ FROM adb_users
 
 	adbUser := &ADBUser{}
 	if err := db.Get(adbUser, query, queryArgs...); err != nil {
-		return ADBUser{}, err
+		return ADBUser{}, errors.Wrapf(err, "cannot get adb user %d")
 	}
 
 	return *adbUser, nil
