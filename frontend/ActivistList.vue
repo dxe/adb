@@ -179,6 +179,7 @@ export default {
         this.$modal.hide(this.currentModalName);
       }
       this.currentModalName = '';
+      this.activistIndex = -1;
       this.currentActivist = {};
     },
     confirmHideActivistModal: function() {
