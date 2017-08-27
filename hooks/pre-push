@@ -13,16 +13,15 @@ cd "$DIR/.."
 
 CMD="make test"
 protected_branch='master'
-
-# Check if we actually have commits to push
-commits=`git log @{u}..`
-if [ -z "$commits" ]; then
-    exit 0
-fi
-
 current_branch=$(git symbolic-ref HEAD | sed -e 's,.*/\(.*\),\1,')
 
 if [[ $current_branch = $protected_branch ]]; then
+    # Check if we actually have commits to push
+    commits=`git log @{u}..`
+    if [ -z "$commits" ]; then
+        exit 0
+    fi
+
     echo "Running tests before push. Skip with: git push --no-verify"
     $CMD
     # We don't really need to check the error b/c we set -e above, but
