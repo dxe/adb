@@ -2,6 +2,11 @@
 
 # Adapted from http://blog.ittybittyapps.com/blog/2013/09/03/git-pre-push/
 
+# readlink doesn't work on macos
+if [[ $(uname) == "Darwin" ]] ; then
+    exit 0
+fi
+
 # Find the directory of the real file, adb/hooks, not the symlinked one.
 DIR="$( cd "$( dirname "$( readlink -f "${BASH_SOURCE[0]}" )" )" && pwd )"
 cd "$DIR/.."
