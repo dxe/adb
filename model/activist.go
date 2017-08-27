@@ -348,6 +348,106 @@ func HideUser(db *sqlx.DB, userID int) error {
 	return nil
 }
 
+// Merge originalUserID into mergedUserID.
+//  - The original user is hidden
+//  - All of the original user's event attendance is updated to be the merged user.
+func MergeUser(db *sqlx.DB, originalUserID, mergedUserID int) error {
+	if originalUserID == 0 {
+		return errors.New("originalUserID cannot be 0")
+	}
+	if mergedUserID == 0 {
+		return errors.New("mergedUserID cannot be 0")
+	}
+	if originalUserID == mergedUserID {
+		return errors.New("originalUser and mergedUser cannot be the same")
+	}
+
+	tx, err := db.Beginx()
+	if err != nil {
+		return errors.Wrap(err, "could not create transaction")
+	}
+
+	_, err = tx.Exec(`UPDATE activists SET hidden = true WHERE id = ?`, originalUserID)
+	if err != nil {
+		tx.Rollback()
+		return errors.Wrapf(err, "failed to hide original activist %d", originalUserID)
+	}
+
+	// Let's do this the boring way.
+	var originalUserEventIDs []int
+	err = tx.Select(&originalUserEventIDs, `
+SELECT event_id
+FROM event_attendance
+WHERE
+  activist_id = ?
+`, originalUserID)
+	if err != nil {
+		tx.Rollback()
+		return errors.Wrapf(err, "failed to get original activist's events: %d",
+			originalUserID)
+	}
+	for _, eventID := range originalUserEventIDs {
+		// If the merged user also went to the event, just
+		// delete the original user's attendance record.
+		// Otherwise, update the original user's attendance
+		// record so that the activist id is the merged user.
+		var mergedUserAttended int
+		err = tx.Get(&mergedUserAttended, `
+SELECT count(*) FROM event_attendance WHERE activist_id = ? AND event_id = ?
+`, mergedUserID, eventID)
+		if err != nil {
+			tx.Rollback()
+			return errors.Wrapf(err,
+				"Could not get whether the merged user attended. EventID: %d, mergedUserID: %d",
+				eventID, mergedUserID)
+		}
+		// mergedUserAttended should only be 1 or 0.
+		if mergedUserAttended == 0 {
+			// Replace original user id with the merged user id
+			_, err = tx.Exec(`UPDATE event_attendance SET activist_id = ? WHERE activist_id = ? AND event_id = ?`,
+				mergedUserID, originalUserID, eventID)
+			if err != nil {
+				tx.Rollback()
+				return errors.Wrapf(err,
+					"Could not replace original user id %d with merged user id %d for event %d",
+					originalUserID, mergedUserID, eventID)
+			}
+		} else {
+			_, err = tx.Exec(`DELETE FROM event_attendance WHERE activist_id = ? AND event_id = ?`,
+				originalUserID, eventID)
+			if err != nil {
+				tx.Rollback()
+				return errors.Wrapf(err,
+					"Could not delete original user from event_attendance. original user id: %d, event id: %d",
+					originalUserID, eventID)
+			}
+		}
+
+		// Keep track of all the activists that have been
+		// merged so we can undo them.
+		replacedWithMergedActivist := mergedUserAttended == 0
+		_, err = tx.Exec(`
+INSERT INTO merged_activist_attendance (original_activist_id, merged_activist_id, event_id, replaced_with_merged_activist)
+VALUES (?, ?, ?, ?)`,
+			originalUserID, mergedUserID, eventID, replacedWithMergedActivist)
+		if err != nil {
+			tx.Rollback()
+			return errors.Wrapf(err,
+				"Could not update merged_activist_attendance. original user id: %d, merged user id: %d, event id: %d",
+				originalUserID, mergedUserID, eventID)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		tx.Rollback()
+		return errors.Wrapf(err,
+			"failed to commit merge user transaction. original user id: %d, merged user id: %d",
+			originalUserID, mergedUserID)
+	}
+
+	return nil
+}
+
 func GetAutocompleteNames(db *sqlx.DB) []string {
 	type Name struct {
 		Name string `db:"name"`
