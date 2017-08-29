@@ -356,17 +356,20 @@ export default {
       $(document.body).addClass('noscroll');
       this.disableConfirmButton = false;
 
-      // For some reason, even though this function is supposed to
-      // fire after the modal is visible on the dom, the modal isn't
-      // there. Vue.nextTick doesn't work for some reason, so we're
-      // just going to wait for a certain amount of time before
-      // firing.
-
-
       if (this.currentModalName == "merge-activist-modal") {
-        setTimeout(() => {
-          initActivistSelect('#merge-target-activist', this.currentActivist.name);
-        }, 100);
+        // For some reason, even though this function is supposed to
+        // fire after the modal is visible on the dom, the modal isn't
+        // there. Vue.nextTick doesn't work for some reason, so we're
+        // just going to keep calling setTimeout until the modal shows
+        // up.
+        var interval;
+        var fn = () => {
+          if ($('#merge-target-activist')[0]) {
+ssss            clearInterval(interval);
+            initActivistSelect('#merge-target-activist', this.currentActivist.name);
+          }
+        };
+        interval = setInterval(fn, 50);
       }
 
     },
