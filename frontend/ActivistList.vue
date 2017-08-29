@@ -325,7 +325,7 @@ export default {
           // status === "success"
           flashMessage(this.currentActivist.name + " saved");
 
-          if (this.activistIndex === -1) {
+          if (data.new_activist) {
             // We're getting a new activist, insert them at the top.
             this.activists = [parsed.activist].concat(this.activists);
           } else {
