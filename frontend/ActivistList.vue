@@ -215,7 +215,7 @@ export default {
         this.currentActivist = {};
       }
 
-      if (index) {
+      if (index != undefined) {
         this.activistIndex = index; // needed for updating activist
       } else {
         this.activistIndex = -1;
@@ -325,7 +325,7 @@ export default {
           // status === "success"
           flashMessage(this.currentActivist.name + " saved");
 
-          if (data.new_activist) {
+          if (this.activistIndex === -1) {
             // We're getting a new activist, insert them at the top.
             this.activists = [parsed.activist].concat(this.activists);
           } else {

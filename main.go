@@ -341,9 +341,8 @@ func (c MainController) ActivistSaveHandler(w http.ResponseWriter, r *http.Reque
 
 	// If the activist id is 0, that means they're creating a new
 	// activist.
-	createNewActivist := activistExtra.ID == 0
 	var activistID int
-	if createNewActivist {
+	if activistExtra.ID == 0 {
 		activistID, err = model.CreateActivist(c.db, activistExtra)
 	} else {
 		activistID, err = model.UpdateActivistData(c.db, activistExtra)
@@ -361,9 +360,8 @@ func (c MainController) ActivistSaveHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	out := map[string]interface{}{
-		"status":       "success",
-		"new_activist": createNewActivist,
-		"activist":     activist,
+		"status":   "success",
+		"activist": activist,
 	}
 	writeJSON(w, out)
 }
