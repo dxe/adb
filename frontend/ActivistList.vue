@@ -1,6 +1,7 @@
 <template>
 
   <div id="app" class="main">
+    <button class="btn btn-default" @click="showModal('edit-activist-modal')">Add New Activist</button>
     <table id="activist-list" class="adb-table table table-hover table-striped tablesorter">
       <thead>
         <tr>
@@ -107,7 +108,8 @@
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
-            <h2 class="modal-title">Edit activist</h2>
+            <h2 class="modal-title" v-if="currentActivist.id">Edit activist</h2>
+            <h2 class="modal-title" v-if="!currentActivist.id">New activist</h2>
           </div>
           <div class="modal-body">
             <form action="" id="editActivistForm">
@@ -207,8 +209,18 @@ export default {
 
       // Make shallow copy of selected activist to prevent persisting unsaved
       // edits at the view layer when closing modal
-      this.currentActivist = $.extend({}, activist);
-      this.activistIndex = index; // needed for updating activist
+      if (activist) {
+        this.currentActivist = $.extend({}, activist);
+      } else {
+        this.currentActivist = {};
+      }
+
+      if (index) {
+        this.activistIndex = index; // needed for updating activist
+      } else {
+        this.activistIndex = -1;
+      }
+
       this.currentModalName = modalName;
       this.$modal.show(modalName);
     },
@@ -254,7 +266,9 @@ export default {
         },
         error: () => {
           this.disableConfirmButton = false;
-          flashMessage("Error Connecting to Server", true);
+
+          console.warn(err.responseText);
+          flashMessage("Server error: " + err.responseText, true);
         },
       });
     },
@@ -283,7 +297,9 @@ export default {
         },
         error: () => {
           this.disableConfirmButton = false;
-          flashMessage("Error Connecting to Server", true);
+
+          console.warn(err.responseText);
+          flashMessage("Server error: " + err.responseText, true);
         },
       });
     },
@@ -306,15 +322,25 @@ export default {
             flashMessage("Error: " + parsed.message, true);
             return;
           }
+          // status === "success"
           flashMessage(this.currentActivist.name + " saved");
 
-          // status === "success"
-          Vue.set(this.activists, this.activistIndex, parsed.activist);
+          if (this.activistIndex === -1) {
+            // We're getting a new activist, insert them at the top.
+            this.activists = [parsed.activist].concat(this.activists);
+          } else {
+            // We edited an existing activist, replace their row in
+            // `activists`.
+            Vue.set(this.activists, this.activistIndex, parsed.activist);
+          }
+
           this.hideModal();
         },
-        error : () => {
+        error: (err) => {
           this.disableConfirmButton = false;
-          flashMessage("Error Connecting to Server", true);
+
+          console.warn(err.responseText);
+          flashMessage("Server error: " + err.responseText, true);
         },
       });
     },

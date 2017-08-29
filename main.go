@@ -339,7 +339,14 @@ func (c MainController) ActivistSaveHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	activistID, err := model.UpdateActivistData(c.db, activistExtra)
+	// If the activist id is 0, that means they're creating a new
+	// activist.
+	var activistID int
+	if activistExtra.ID == 0 {
+		activistID, err = model.CreateActivist(c.db, activistExtra)
+	} else {
+		activistID, err = model.UpdateActivistData(c.db, activistExtra)
+	}
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
@@ -348,7 +355,8 @@ func (c MainController) ActivistSaveHandler(w http.ResponseWriter, r *http.Reque
 	// Retrieve updated information from database and send in response body
 	activist, err := model.GetActivistJSON(c.db, model.GetActivistOptions{ID: activistID})
 	if err != nil {
-		panic(err)
+		sendErrorMessage(w, err)
+		return
 	}
 
 	out := map[string]interface{}{
@@ -447,7 +455,8 @@ func (c MainController) EventSaveHandler(w http.ResponseWriter, r *http.Request)
 func (c MainController) EventListHandler(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
-		panic(err)
+		sendErrorMessage(w, err)
+		return
 	}
 
 	eventName := r.PostFormValue("event_name")

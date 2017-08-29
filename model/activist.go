@@ -307,7 +307,58 @@ func GetOrCreateActivist(db *sqlx.DB, name string) (Activist, error) {
 	return newActivist, nil
 }
 
+func CreateActivist(db *sqlx.DB, activist ActivistExtra) (int, error) {
+	if activist.ID != 0 {
+		return 0, errors.New("Activist ID must be 0")
+	}
+	if activist.Name == "" {
+		return 0, errors.New("Name cannot be empty")
+	}
+
+	result, err := db.NamedExec(`
+INSERT INTO activists (
+  name,
+  email,
+  chapter,
+  phone,
+  location,
+  facebook,
+  activist_level,
+  exclude_from_leaderboard,
+  core_staff,
+  global_team_member,
+  liberation_pledge
+) VALUES (
+  :name,
+  :email,
+  :chapter,
+  :phone,
+  :location,
+  :facebook,
+  :activist_level,
+  :exclude_from_leaderboard,
+  :core_staff,
+  :global_team_member,
+  :liberation_pledge
+)`, activist)
+	if err != nil {
+		return 0, errors.Wrapf(err, "Could not create activist: %s", activist.Name)
+	}
+	id, err := result.LastInsertId()
+	if err != nil {
+		return 0, errors.Wrapf(err, "Could not get LastInsertId for %s", activist.Name)
+	}
+	return int(id), nil
+}
+
 func UpdateActivistData(db *sqlx.DB, activist ActivistExtra) (int, error) {
+	if activist.ID == 0 {
+		return 0, errors.New("activist ID cannot be 0")
+	}
+	if activist.Name == "" {
+		return 0, errors.New("Name cannot be empty")
+	}
+
 	_, err := db.NamedExec(`UPDATE activists
 SET
   name = :name,
@@ -524,19 +575,19 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 	activistExtra := ActivistExtra{
 		Activist: Activist{
 			ID:               activistJSON.ID,
-			Name:             activistJSON.Name,
-			Email:            activistJSON.Email,
-			Chapter:          activistJSON.Chapter,
-			Phone:            activistJSON.Phone,
-			Location:         sql.NullString{String: activistJSON.Location, Valid: valid},
-			Facebook:         activistJSON.Facebook,
+			Name:             strings.TrimSpace(activistJSON.Name),
+			Email:            strings.TrimSpace(activistJSON.Email),
+			Chapter:          strings.TrimSpace(activistJSON.Chapter),
+			Phone:            strings.TrimSpace(activistJSON.Phone),
+			Location:         sql.NullString{String: strings.TrimSpace(activistJSON.Location), Valid: valid},
+			Facebook:         strings.TrimSpace(activistJSON.Facebook),
 			LiberationPledge: activistJSON.LiberationPledge,
 		},
 		ActivistMembershipData: ActivistMembershipData{
 			CoreStaff:              activistJSON.Core,
 			ExcludeFromLeaderboard: activistJSON.ExcludeFromLeaderboard,
 			GlobalTeamMember:       activistJSON.GlobalTeamMember,
-			ActivistLevel:          activistJSON.ActivistLevel,
+			ActivistLevel:          strings.TrimSpace(activistJSON.ActivistLevel),
 		},
 	}
 
