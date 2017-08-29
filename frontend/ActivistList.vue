@@ -365,7 +365,7 @@ export default {
         var interval;
         var fn = () => {
           if ($('#merge-target-activist')[0]) {
-ssss            clearInterval(interval);
+            clearInterval(interval);
             initActivistSelect('#merge-target-activist', this.currentActivist.name);
           }
         };
