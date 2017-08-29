@@ -1,7 +1,6 @@
 package model
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -25,7 +24,7 @@ func TestAutocompleteActivistsHandler(t *testing.T) {
 
 	gotNames := GetAutocompleteNames(db)
 	wantNames := []string{"User One", "User Two"}
-	fmt.Println(gotNames, wantNames)
+
 	if len(gotNames) != len(wantNames) {
 		t.Fatalf("gotNames and wantNames must have the same length.")
 	}
@@ -175,4 +174,67 @@ func TestHideUser(t *testing.T) {
 	assert.Equal(t, len(attendanceNames), 2)
 	assert.Equal(t, attendanceNames[0], u1.Name)
 	assert.Equal(t, attendanceNames[1], u2.Name)
+}
+
+func TestMergeUser(t *testing.T) {
+	db := newTestDB()
+	defer db.Close()
+
+	// Test that deleting users works
+	u1, err := GetOrCreateUser(db, "Test User")
+	assert.NoError(t, err)
+
+	u2, err := GetOrCreateUser(db, "Another Test User")
+	assert.NoError(t, err)
+
+	u3, err := GetOrCreateUser(db, "A Third Test User")
+	assert.NoError(t, err)
+
+	d1, err := time.Parse("2006-01-02", "2017-04-15")
+	assert.NoError(t, err)
+	d2, err := time.Parse("2006-01-02", "2017-04-16")
+	assert.NoError(t, err)
+	d3, err := time.Parse("2006-01-02", "2017-04-17")
+	assert.NoError(t, err)
+
+	insertEvents := []Event{{
+		ID:             1,
+		EventName:      "event one",
+		EventDate:      d1,
+		EventType:      "Working Group",
+		AddedAttendees: []User{u1, u3},
+	}, {
+		ID:             2,
+		EventName:      "event two",
+		EventDate:      d2,
+		EventType:      "Working Group",
+		AddedAttendees: []User{u1, u2, u3},
+	}, {
+		ID:             3,
+		EventName:      "event three",
+		EventDate:      d3,
+		EventType:      "Working Group",
+		AddedAttendees: []User{u2, u3},
+	}}
+	mustInsertAllEvents(t, db, insertEvents)
+
+	assert.NoError(t, MergeUser(db, u1.ID, u2.ID))
+
+	e1, err := GetEvent(db, GetEventOptions{EventID: 1})
+	assert.NoError(t, err)
+	assert.Equal(t, len(e1.Attendees), 2)
+	assert.Equal(t, e1.Attendees[0].ID, u2.ID)
+	assert.Equal(t, e1.Attendees[1].ID, u3.ID)
+
+	e2, err := GetEvent(db, GetEventOptions{EventID: 2})
+	assert.NoError(t, err)
+	assert.Equal(t, len(e2.Attendees), 2)
+	assert.Equal(t, e2.Attendees[0].ID, u2.ID)
+	assert.Equal(t, e2.Attendees[1].ID, u3.ID)
+
+	e3, err := GetEvent(db, GetEventOptions{EventID: 3})
+	assert.NoError(t, err)
+	assert.Equal(t, len(e3.Attendees), 2)
+	assert.Equal(t, e3.Attendees[0].ID, u2.ID)
+	assert.Equal(t, e3.Attendees[1].ID, u3.ID)
 }

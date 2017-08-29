@@ -23,6 +23,7 @@
               <button data-role="trigger" class="btn btn-default dropdown-toggle glyphicon glyphicon-option-horizontal" type="button">
               </button>
               <template slot="dropdown">
+                <li><a @click="showModal('merge-activist-modal', activist, index)">Merge Activist</a></li>
                 <li><a @click="showModal('hide-activist-modal', activist, index)">Hide Activist</a></li>
               </template>
             </dropdown>
@@ -38,6 +39,42 @@
       </tbody>
     </table>
     <modal
+       name="merge-activist-modal"
+       :height="650"
+       classes="no-background-color"
+       @opened="modalOpened"
+       @closed="modalClosed"
+       >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 class="modal-title">Merge activist</h2>
+          </div>
+          <div class="modal-body">
+            <p>Merging activists is used to combine redundant activist entries</p>
+            <p>
+              Merging this activist does two things:
+            </p>
+            <ul>
+              <li>all of this activist&#39;s attendance data will be merged into the target activist</li>
+              <li>this activist will be hidden</li>
+            </ul>
+            <p>
+              Non-attendance data (e.g. email, location, etc) is <strong>NOT</strong> merged.
+            </p>
+            <p>Merge {{currentActivist.name}} into another activist:</p>
+            <p>
+              Target activist: <select id="merge-target-activist" class="filter-margin" style="min-width: 200px"></select>
+            </p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="hideModal">Close</button>
+            <button type="button" v-bind:disabled="disableConfirmButton" class="btn btn-danger" @click="confirmMergeActivistModal">Merge activist</button>
+          </div>
+        </div>
+      </div>
+    </modal>
+    <modal
        name="hide-activist-modal"
        :height="400"
        classes="no-background-color"
@@ -50,7 +87,7 @@
             <h2 class="modal-title">Hide activist</h2>
           </div>
           <div class="modal-body">
-            <p>Are you sure you want to Hide {{currentActivist.name}}?</p>
+            <p>Are you sure you want to hide {{currentActivist.name}}?</p>
             <p>Hiding an activist hides them from the activist list page but does not delete any event data associated with them. If this activist is a duplicate of another activist, you should merge them instead.</p>
           </div>
           <div class="modal-footer">
@@ -111,6 +148,7 @@ import vmodal from 'vue-js-modal';
 import Vue from 'vue';
 import {flashMessage} from 'flash_message';
 import {Dropdown} from 'uiv';
+import {initActivistSelect} from 'chosen_utils';
 
 Vue.use(vmodal);
 
@@ -182,6 +220,44 @@ export default {
       this.activistIndex = -1;
       this.currentActivist = {};
     },
+    confirmMergeActivistModal: function() {
+      var targetActivistName = $("#merge-target-activist").val();
+      if (!targetActivistName) {
+        flashMessage("Must choose an activist to merge into", true);
+        return;
+      }
+
+      this.disableConfirmButton = true;
+
+      $.ajax({
+        url: "/activist/merge",
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({
+          current_activist_id: this.currentActivist.id,
+          target_activist_name: targetActivistName,
+        }),
+        success: (data) => {
+          this.disableConfirmButton = false;
+
+          var parsed = JSON.parse(data);
+          if (parsed.status === "error") {
+            flashMessage("Error: " + parsed.message, true);
+            return;
+          }
+          flashMessage(this.currentActivist.name + " was merged into " + targetActivistName);
+
+          // Remove activist from list.
+          this.activists = this.activists.slice(0, this.activistIndex).concat(
+            this.activists.slice(this.activistIndex+1));
+          this.hideModal();
+        },
+        error: () => {
+          this.disableConfirmButton = false;
+          flashMessage("Error Connecting to Server", true);
+        },
+      });
+    },
     confirmHideActivistModal: function() {
       this.disableConfirmButton = true;
 
@@ -198,6 +274,7 @@ export default {
             flashMessage("Error: " + parsed.message, true);
             return;
           }
+          flashMessage(this.currentActivist.name + " was hidden");
 
           // Remove activist from list.
           this.activists = this.activists.slice(0, this.activistIndex).concat(
@@ -229,6 +306,7 @@ export default {
             flashMessage("Error: " + parsed.message, true);
             return;
           }
+          flashMessage(this.currentActivist.name + " saved");
 
           // status === "success"
           Vue.set(this.activists, this.activistIndex, parsed.activist);
@@ -245,6 +323,18 @@ export default {
       // is shown.
       $(document.body).addClass('noscroll');
       this.disableConfirmButton = false;
+
+      if (this.currentModalName == "merge-activist-modal") {
+        // For some reason, even though this function is supposed to
+        // fire after the modal is visible on the dom, the modal isn't
+        // there. Vue.nextTick doesn't work for some reason, so we're
+        // just going to wait for a certain amount of time before
+        // firing.
+        setTimeout(() => {
+          initActivistSelect('#merge-target-activist', this.currentActivist.name);
+        }, 100);
+      }
+
     },
     modalClosed: function() {
       // Allow body to scroll after modal is closed.

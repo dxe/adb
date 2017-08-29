@@ -131,6 +131,7 @@ func router() *mux.Router {
 	router.Handle("/activist/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistListHandler))
 	router.Handle("/activist/save", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistSaveHandler))
 	router.Handle("/activist/hide", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistHideHandler))
+	router.Handle("/activist/merge", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistMergeHandler))
 	router.Handle("/leaderboard/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.LeaderboardListHandler))
 
 	if config.IsProd {
@@ -374,8 +375,38 @@ func (c MainController) ActivistHideHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	out := map[string]interface{}{
-		"status":    "success",
-		"activists": nil,
+		"status": "success",
+	}
+	writeJSON(w, out)
+}
+
+func (c MainController) ActivistMergeHandler(w http.ResponseWriter, r *http.Request) {
+	var activistMergeData struct {
+		CurrentActivistID  int    `json:"current_activist_id"`
+		TargetActivistName string `json:"target_activist_name"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&activistMergeData)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	// First, we need to get the activist ID for the target
+	// activist.
+	mergedUser, err := model.GetUser(c.db, activistMergeData.TargetActivistName)
+	if err != nil {
+		sendErrorMessage(w, errors.Wrapf(err, "Could not fetch data for: %s", activistMergeData.TargetActivistName))
+		return
+	}
+
+	err = model.MergeUser(c.db, activistMergeData.CurrentActivistID, mergedUser.ID)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	out := map[string]interface{}{
+		"status": "success",
 	}
 	writeJSON(w, out)
 }
