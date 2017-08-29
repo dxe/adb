@@ -11,9 +11,9 @@ func TestGetEvents(t *testing.T) {
 	db := newTestDB()
 	defer db.Close()
 
-	u1, err := GetOrCreateUser(db, "Hello")
+	a1, err := GetOrCreateActivist(db, "Hello")
 	assert.NoError(t, err)
-	u2, err := GetOrCreateUser(db, "Hi")
+	a2, err := GetOrCreateActivist(db, "Hi")
 	assert.NoError(t, err)
 
 	d1, err := time.Parse("2006-01-02", "2017-01-15")
@@ -25,13 +25,13 @@ func TestGetEvents(t *testing.T) {
 		EventName: "event one",
 		EventDate: d1,
 		EventType: "Working Group",
-		Attendees: []User{u1},
+		Attendees: []Activist{a1},
 	}, {
 		ID:        2,
 		EventName: "event two",
 		EventDate: d2,
 		EventType: "Protest",
-		Attendees: []User{u1, u2},
+		Attendees: []Activist{a1, a2},
 	}}
 
 	for _, e := range wantEvents {
@@ -69,7 +69,7 @@ func TestGetEvents_orderBy(t *testing.T) {
 	db := newTestDB()
 	defer db.Close()
 
-	u1, err := GetOrCreateUser(db, "Hello")
+	a1, err := GetOrCreateActivist(db, "Hello")
 	assert.NoError(t, err)
 
 	d1, err := time.Parse("2006-01-02", "2017-01-15")
@@ -81,13 +81,13 @@ func TestGetEvents_orderBy(t *testing.T) {
 		EventName:      "earlier event",
 		EventDate:      d1,
 		EventType:      "Working Group",
-		AddedAttendees: []User{u1},
+		AddedAttendees: []Activist{a1},
 	}, {
 		ID:             2,
 		EventName:      "later event",
 		EventDate:      d2,
 		EventType:      "Protest",
-		AddedAttendees: []User{u1},
+		AddedAttendees: []Activist{a1},
 	}}
 
 	for _, e := range wantEvents {
@@ -116,16 +116,16 @@ func TestInsertUpdateEvent(t *testing.T) {
 	db := newTestDB()
 	defer db.Close()
 
-	u1, err := GetOrCreateUser(db, "Hello")
+	a1, err := GetOrCreateActivist(db, "Hello")
 	assert.NoError(t, err)
-	u2, err := GetOrCreateUser(db, "Hi")
+	a2, err := GetOrCreateActivist(db, "Hi")
 	assert.NoError(t, err)
 
 	event := Event{
 		EventName:      "event one",
 		EventDate:      time.Now(),
 		EventType:      "Working Group",
-		AddedAttendees: []User{u1},
+		AddedAttendees: []Activist{a1},
 	}
 
 	eventID, err := InsertUpdateEvent(db, event)
@@ -144,7 +144,7 @@ func TestInsertUpdateEvent(t *testing.T) {
 	assert.Equal(t, len(attendees), 1)
 
 	event.ID = 1
-	event.AddedAttendees = []User{u1, u2}
+	event.AddedAttendees = []Activist{a1, a2}
 
 	eventID, err = InsertUpdateEvent(db, event)
 	assert.NoError(t, err)
@@ -166,14 +166,14 @@ func TestInsertUpdateEvent_noDuplicateAttendees(t *testing.T) {
 	db := newTestDB()
 	defer db.Close()
 
-	u1, err := GetOrCreateUser(db, "Hello")
+	a1, err := GetOrCreateActivist(db, "Hello")
 	assert.NoError(t, err)
 
 	event := Event{
 		EventName:      "event one",
 		EventDate:      time.Now(),
 		EventType:      "Working Group",
-		AddedAttendees: []User{u1, u1},
+		AddedAttendees: []Activist{a1, a1},
 	}
 
 	eventID, err := InsertUpdateEvent(db, event)
@@ -191,9 +191,9 @@ func TestDeleteEvents(t *testing.T) {
 	defer db.Close()
 
 	// Set up two events
-	u1, err := GetOrCreateUser(db, "Hello")
+	a1, err := GetOrCreateActivist(db, "Hello")
 	assert.NoError(t, err)
-	u2, err := GetOrCreateUser(db, "Hi")
+	a2, err := GetOrCreateActivist(db, "Hi")
 	assert.NoError(t, err)
 
 	d1, err := time.Parse("2006-01-02", "2017-01-15")
@@ -205,13 +205,13 @@ func TestDeleteEvents(t *testing.T) {
 		EventName:      "event one",
 		EventDate:      d1,
 		EventType:      "Working Group",
-		AddedAttendees: []User{u1},
+		AddedAttendees: []Activist{a1},
 	}, {
 		ID:             2,
 		EventName:      "event two",
 		EventDate:      d2,
 		EventType:      "Protest",
-		AddedAttendees: []User{u1, u2},
+		AddedAttendees: []Activist{a1, a2},
 	}}
 
 	for _, e := range wantEvents {

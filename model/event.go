@@ -42,13 +42,13 @@ type EventJSON struct {
 
 /* TODO Restructure this Struct */
 type Event struct {
-	ID               int       `db:"id"`
-	EventName        string    `db:"name"`
-	EventDate        time.Time `db:"date"`
-	EventType        EventType `db:"event_type"`
-	Attendees        []User    // For retrieving all event attendees
-	AddedAttendees   []User    // Used for Updating Events
-	DeletedAttendees []User    // Used for Updating Events
+	ID               int        `db:"id"`
+	EventName        string     `db:"name"`
+	EventDate        time.Time  `db:"date"`
+	EventType        EventType  `db:"event_type"`
+	Attendees        []Activist // For retrieving all event attendees
+	AddedAttendees   []Activist // Used for Updating Events
+	DeletedAttendees []Activist // Used for Updating Events
 }
 
 type GetEventOptions struct {
@@ -75,8 +75,8 @@ func GetEventsJSON(db *sqlx.DB, options GetEventOptions) ([]EventJSON, error) {
 	events := make([]EventJSON, 0, len(dbEvents))
 	for _, event := range dbEvents {
 		attendees := make([]string, 0, len(event.Attendees))
-		for _, user := range event.Attendees {
-			attendees = append(attendees, user.Name)
+		for _, activist := range event.Attendees {
+			attendees = append(attendees, activist.Name)
 		}
 		events = append(events, EventJSON{
 			EventID:   event.ID,
@@ -166,7 +166,7 @@ ON (e.id = ea.event_id AND ea.activist_id = a.id)
 
 	// Get attendees
 	for i := range events {
-		var attendees []User
+		var attendees []Activist
 		err = db.Select(&attendees, `SELECT
 a.id, a.name, a.email, a.chapter, a.phone, a.location, a.facebook
 FROM activists a
@@ -395,20 +395,20 @@ func CleanEventData(db *sqlx.DB, body io.Reader) (Event, error) {
 	return e, nil
 }
 
-func cleanEventAttendanceData(db *sqlx.DB, attendees []string) ([]User, error) {
-	users := make([]User, len(attendees))
+func cleanEventAttendanceData(db *sqlx.DB, attendees []string) ([]Activist, error) {
+	activists := make([]Activist, len(attendees))
 
 	for idx, attendee := range attendees {
 		if err := checkForDangerousChars(attendee); err != nil {
-			return []User{}, err
+			return []Activist{}, err
 		}
-		user, err := GetOrCreateUser(db, strings.TrimSpace(attendee))
+		activist, err := GetOrCreateActivist(db, strings.TrimSpace(attendee))
 		if err != nil {
-			return []User{}, err
+			return []Activist{}, err
 		}
-		users[idx] = user
+		activists[idx] = activist
 	}
 
-	return users, nil
+	return activists, nil
 
 }

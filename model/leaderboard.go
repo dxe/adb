@@ -6,7 +6,7 @@ import (
 
 /** Type Definitions */
 
-type LeaderboardUser struct {
+type LeaderboardActivist struct {
 	Name              string `db:"name"`
 	FirstEvent        string `db:"first_event"`
 	LastEvent         string `db:"last_event"`
@@ -15,7 +15,7 @@ type LeaderboardUser struct {
 	Points            int    `db:"points"`
 }
 
-type LeaderboardUserJSON struct {
+type LeaderboardActivistJSON struct {
 	Name              string `json:"name"`
 	FirstEvent        string `json:"first_event"`
 	LastEvent         string `json:"last_event"`
@@ -26,14 +26,14 @@ type LeaderboardUserJSON struct {
 
 /** Functions and Methods */
 
-func GetLeaderboardUsersJSON(db *sqlx.DB) ([]LeaderboardUserJSON, error) {
-	leaderboardUsersJSON := []LeaderboardUserJSON{}
-	leaderboardUsers, err := GetLeaderboardUsers(db)
+func GetLeaderboardActivistsJSON(db *sqlx.DB) ([]LeaderboardActivistJSON, error) {
+	leaderboardActivistsJSON := []LeaderboardActivistJSON{}
+	leaderboardActivists, err := GetLeaderboardActivists(db)
 	if err != nil {
 		return nil, err
 	}
-	for _, l := range leaderboardUsers {
-		leaderboardUsersJSON = append(leaderboardUsersJSON, LeaderboardUserJSON{
+	for _, l := range leaderboardActivists {
+		leaderboardActivistsJSON = append(leaderboardActivistsJSON, LeaderboardActivistJSON{
 			Name:              l.Name,
 			FirstEvent:        l.FirstEvent,
 			LastEvent:         l.LastEvent,
@@ -42,10 +42,10 @@ func GetLeaderboardUsersJSON(db *sqlx.DB) ([]LeaderboardUserJSON, error) {
 			Points:            l.Points,
 		})
 	}
-	return leaderboardUsersJSON, nil
+	return leaderboardActivistsJSON, nil
 }
 
-func GetLeaderboardUsers(db *sqlx.DB) ([]LeaderboardUser, error) {
+func GetLeaderboardActivists(db *sqlx.DB) ([]LeaderboardActivist, error) {
 	query := `
 SELECT
   IFNULL(a.name,"") AS name,
@@ -169,10 +169,10 @@ WHERE
 
 ORDER BY points DESC`
 
-	var leaderboardUsers []LeaderboardUser
-	if err := db.Select(&leaderboardUsers, query); err != nil {
+	var leaderboardActivists []LeaderboardActivist
+	if err := db.Select(&leaderboardActivists, query); err != nil {
 		return nil, err
 	}
 
-	return leaderboardUsers, nil
+	return leaderboardActivists, nil
 }

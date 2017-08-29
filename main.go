@@ -333,20 +333,20 @@ func (c MainController) AutocompleteActivistsHandler(w http.ResponseWriter, r *h
 }
 
 func (c MainController) ActivistSaveHandler(w http.ResponseWriter, r *http.Request) {
-	userExtra, err := model.CleanActivistData(r.Body)
+	activistExtra, err := model.CleanActivistData(r.Body)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
 	}
 
-	activistID, err := model.UpdateActivistData(c.db, userExtra)
+	activistID, err := model.UpdateActivistData(c.db, activistExtra)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
 	}
 
 	// Retrieve updated information from database and send in response body
-	activist, err := model.GetUserJSON(c.db, model.GetUserOptions{ID: activistID})
+	activist, err := model.GetActivistJSON(c.db, model.GetActivistOptions{ID: activistID})
 	if err != nil {
 		panic(err)
 	}
@@ -359,16 +359,16 @@ func (c MainController) ActivistSaveHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (c MainController) ActivistHideHandler(w http.ResponseWriter, r *http.Request) {
-	var userID struct {
+	var activistID struct {
 		ID int `json:"id"`
 	}
-	err := json.NewDecoder(r.Body).Decode(&userID)
+	err := json.NewDecoder(r.Body).Decode(&activistID)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
 	}
 
-	err = model.HideUser(c.db, userID.ID)
+	err = model.HideActivist(c.db, activistID.ID)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
@@ -393,13 +393,13 @@ func (c MainController) ActivistMergeHandler(w http.ResponseWriter, r *http.Requ
 
 	// First, we need to get the activist ID for the target
 	// activist.
-	mergedUser, err := model.GetUser(c.db, activistMergeData.TargetActivistName)
+	mergedActivist, err := model.GetActivist(c.db, activistMergeData.TargetActivistName)
 	if err != nil {
 		sendErrorMessage(w, errors.Wrapf(err, "Could not fetch data for: %s", activistMergeData.TargetActivistName))
 		return
 	}
 
-	err = model.MergeUser(c.db, activistMergeData.CurrentActivistID, mergedUser.ID)
+	err = model.MergeActivist(c.db, activistMergeData.CurrentActivistID, mergedActivist.ID)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
@@ -494,7 +494,7 @@ func (c MainController) EventDeleteHandler(w http.ResponseWriter, r *http.Reques
 }
 
 func (c MainController) ActivistListHandler(w http.ResponseWriter, r *http.Request) {
-	activists, err := model.GetUsersJSON(c.db, model.GetUserOptions{})
+	activists, err := model.GetActivistsJSON(c.db, model.GetActivistOptions{})
 	if err != nil {
 		panic(err)
 	}
@@ -503,7 +503,7 @@ func (c MainController) ActivistListHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (c MainController) LeaderboardListHandler(w http.ResponseWriter, r *http.Request) {
-	activists, err := model.GetLeaderboardUsersJSON(c.db)
+	activists, err := model.GetLeaderboardActivistsJSON(c.db)
 	if err != nil {
 		panic(err)
 	}

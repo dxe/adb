@@ -18,7 +18,7 @@ import (
 const Duration60Days = 60 * 24 * time.Hour
 const Duration90Days = 90 * 24 * time.Hour
 
-const selectUserBaseQuery string = `
+const selectActivistBaseQuery string = `
 SELECT
   id,
   name,
@@ -32,7 +32,7 @@ FROM activists
 
 /** Type Definitions */
 
-type User struct {
+type Activist struct {
 	ID               int            `db:"id"`
 	Name             string         `db:"name"`
 	Email            string         `db:"email"`
@@ -44,27 +44,27 @@ type User struct {
 	Hidden           bool           `db:"hidden"`
 }
 
-type UserEventData struct {
+type ActivistEventData struct {
 	FirstEvent  *time.Time `db:"first_event"`
 	LastEvent   *time.Time `db:"last_event"`
 	TotalEvents int        `db:"total_events"`
 	Status      string
 }
 
-type UserMembershipData struct {
+type ActivistMembershipData struct {
 	CoreStaff              int    `db:"core_staff"`
 	ExcludeFromLeaderboard int    `db:"exclude_from_leaderboard"`
 	GlobalTeamMember       int    `db:"global_team_member"`
 	ActivistLevel          string `db:"activist_level"`
 }
 
-type UserExtra struct {
-	User
-	UserEventData
-	UserMembershipData
+type ActivistExtra struct {
+	Activist
+	ActivistEventData
+	ActivistMembershipData
 }
 
-type UserJSON struct {
+type ActivistJSON struct {
 	ID                     int    `json:"id"`
 	Name                   string `json:"name"`
 	Email                  string `json:"email"`
@@ -83,68 +83,68 @@ type UserJSON struct {
 	ActivistLevel          string `json:"activist_level"`
 }
 
-type GetUserOptions struct {
+type GetActivistOptions struct {
 	ID     int
 	Hidden bool
 }
 
 /** Functions and Methods */
 
-func GetUsersJSON(db *sqlx.DB, options GetUserOptions) ([]UserJSON, error) {
+func GetActivistsJSON(db *sqlx.DB, options GetActivistOptions) ([]ActivistJSON, error) {
 	if options.ID != 0 {
-		return nil, errors.New("GetUsersJSON: Cannot include ID in options")
+		return nil, errors.New("GetActivistsJSON: Cannot include ID in options")
 	}
-	return getUsersJSON(db, options)
+	return getActivistsJSON(db, options)
 }
 
-func GetUserJSON(db *sqlx.DB, options GetUserOptions) (UserJSON, error) {
+func GetActivistJSON(db *sqlx.DB, options GetActivistOptions) (ActivistJSON, error) {
 	if options.ID == 0 {
-		return UserJSON{}, errors.New("GetUserJSON: Must include ID in options")
+		return ActivistJSON{}, errors.New("GetActivistJSON: Must include ID in options")
 	}
 
-	users, err := getUsersJSON(db, options)
+	activists, err := getActivistsJSON(db, options)
 	if err != nil {
-		return UserJSON{}, err
-	} else if len(users) == 0 {
-		return UserJSON{}, errors.New("Could not find any users")
-	} else if len(users) > 1 {
-		return UserJSON{}, errors.New("Found too many users")
+		return ActivistJSON{}, err
+	} else if len(activists) == 0 {
+		return ActivistJSON{}, errors.New("Could not find any activists")
+	} else if len(activists) > 1 {
+		return ActivistJSON{}, errors.New("Found too many activists")
 	}
-	return users[0], nil
+	return activists[0], nil
 }
 
-func getUsersJSON(db *sqlx.DB, options GetUserOptions) ([]UserJSON, error) {
-	var usersJSON []UserJSON
-	users, err := GetUsersExtra(db, options)
+func getActivistsJSON(db *sqlx.DB, options GetActivistOptions) ([]ActivistJSON, error) {
+	var activistsJSON []ActivistJSON
+	activists, err := GetActivistsExtra(db, options)
 	if err != nil {
 		return nil, err
 	}
-	for _, u := range users {
+	for _, u := range activists {
 		firstEvent := ""
-		if u.UserEventData.FirstEvent != nil {
-			firstEvent = u.UserEventData.FirstEvent.Format(EventDateLayout)
+		if u.ActivistEventData.FirstEvent != nil {
+			firstEvent = u.ActivistEventData.FirstEvent.Format(EventDateLayout)
 		}
 		lastEvent := ""
-		if u.UserEventData.LastEvent != nil {
-			lastEvent = u.UserEventData.LastEvent.Format(EventDateLayout)
+		if u.ActivistEventData.LastEvent != nil {
+			lastEvent = u.ActivistEventData.LastEvent.Format(EventDateLayout)
 		}
 		location := ""
-		if u.User.Location.Valid {
-			location = u.User.Location.String
+		if u.Activist.Location.Valid {
+			location = u.Activist.Location.String
 		}
 
-		usersJSON = append(usersJSON, UserJSON{
-			ID:            u.User.ID,
-			Name:          u.User.Name,
-			Email:         u.User.Email,
-			Chapter:       u.User.Chapter,
-			Phone:         u.User.Phone,
+		activistsJSON = append(activistsJSON, ActivistJSON{
+			ID:            u.Activist.ID,
+			Name:          u.Activist.Name,
+			Email:         u.Activist.Email,
+			Chapter:       u.Activist.Chapter,
+			Phone:         u.Activist.Phone,
 			Location:      location,
-			Facebook:      u.User.Facebook,
+			Facebook:      u.Activist.Facebook,
 			ActivistLevel: u.ActivistLevel,
 			FirstEvent:    firstEvent,
 			LastEvent:     lastEvent,
-			TotalEvents:   u.UserEventData.TotalEvents,
+			TotalEvents:   u.ActivistEventData.TotalEvents,
 			Status:        u.Status,
 			Core:          u.CoreStaff,
 			ExcludeFromLeaderboard: u.ExcludeFromLeaderboard,
@@ -152,28 +152,28 @@ func getUsersJSON(db *sqlx.DB, options GetUserOptions) ([]UserJSON, error) {
 			GlobalTeamMember:       u.GlobalTeamMember,
 		})
 	}
-	return usersJSON, nil
+	return activistsJSON, nil
 }
 
-func GetUser(db *sqlx.DB, name string) (User, error) {
-	users, err := getUsers(db, name)
+func GetActivist(db *sqlx.DB, name string) (Activist, error) {
+	activists, err := getActivists(db, name)
 	if err != nil {
-		return User{}, err
-	} else if len(users) == 0 {
-		return User{}, errors.New("Could not find any users")
-	} else if len(users) > 1 {
-		return User{}, errors.New("Found too many users")
+		return Activist{}, err
+	} else if len(activists) == 0 {
+		return Activist{}, errors.New("Could not find any activists")
+	} else if len(activists) > 1 {
+		return Activist{}, errors.New("Found too many activists")
 	}
-	return users[0], nil
+	return activists[0], nil
 }
 
-func GetUsers(db *sqlx.DB) ([]User, error) {
-	return getUsers(db, "")
+func GetActivists(db *sqlx.DB) ([]Activist, error) {
+	return getActivists(db, "")
 }
 
-func getUsers(db *sqlx.DB, name string) ([]User, error) {
+func getActivists(db *sqlx.DB, name string) ([]Activist, error) {
 	var queryArgs []interface{}
-	query := selectUserBaseQuery
+	query := selectActivistBaseQuery
 
 	if name != "" {
 		query += " WHERE name = ? "
@@ -182,15 +182,15 @@ func getUsers(db *sqlx.DB, name string) ([]User, error) {
 
 	query += " ORDER BY name "
 
-	var users []User
-	if err := db.Select(&users, query, queryArgs...); err != nil {
-		return nil, errors.Wrapf(err, "failed to get users for %s", name)
+	var activists []Activist
+	if err := db.Select(&activists, query, queryArgs...); err != nil {
+		return nil, errors.Wrapf(err, "failed to get activists for %s", name)
 	}
 
-	return users, nil
+	return activists, nil
 }
 
-func GetUsersExtra(db *sqlx.DB, options GetUserOptions) ([]UserExtra, error) {
+func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra, error) {
 	query := `
 SELECT
   a.id,
@@ -219,11 +219,11 @@ LEFT JOIN events e
 	var queryArgs []interface{}
 
 	if options.ID != 0 {
-		// retrieve specific user rather than all users
+		// retrieve specific activist rather than all activists
 		query += " WHERE a.id = ? "
 		queryArgs = append(queryArgs, options.ID)
 	} else {
-		// Only check filter by hidden if the userID isn't
+		// Only check filter by hidden if the activistID isn't
 		// supplied.
 		if options.Hidden == true {
 			query += " WHERE a.hidden = true "
@@ -234,20 +234,20 @@ LEFT JOIN events e
 
 	query += " GROUP BY a.id "
 
-	var users []UserExtra
-	if err := db.Select(&users, query, queryArgs...); err != nil {
-		return nil, errors.Wrapf(err, "failed to get users extra for uid %d", options.ID)
+	var activists []ActivistExtra
+	if err := db.Select(&activists, query, queryArgs...); err != nil {
+		return nil, errors.Wrapf(err, "failed to get activists extra for uid %d", options.ID)
 	}
 
-	for i := 0; i < len(users); i++ {
-		u := users[i]
-		users[i].Status = getStatus(u.FirstEvent, u.LastEvent, u.TotalEvents)
+	for i := 0; i < len(activists); i++ {
+		u := activists[i]
+		activists[i].Status = getStatus(u.FirstEvent, u.LastEvent, u.TotalEvents)
 	}
 
-	return users, nil
+	return activists, nil
 }
 
-func (u User) GetUserEventData(db *sqlx.DB) (UserEventData, error) {
+func (u Activist) GetActivistEventData(db *sqlx.DB) (ActivistEventData, error) {
 	query := `
 SELECT
   MIN(e.date) AS first_event,
@@ -259,55 +259,55 @@ JOIN event_attendance
 WHERE
   event_attendance.activist_id = ?
 `
-	var data UserEventData
+	var data ActivistEventData
 	if err := db.Get(&data, query, u.ID); err != nil {
-		return UserEventData{}, errors.Wrap(err, "failed to get user event data")
+		return ActivistEventData{}, errors.Wrap(err, "failed to get activist event data")
 	}
 	return data, nil
 }
 
-func GetOrCreateUser(db *sqlx.DB, name string) (User, error) {
-	user, err := GetUser(db, name)
+func GetOrCreateActivist(db *sqlx.DB, name string) (Activist, error) {
+	activist, err := GetActivist(db, name)
 	if err == nil {
-		// We got a valid user, return them.
-		return user, nil
+		// We got a valid activist, return them.
+		return activist, nil
 	}
 
-	// There was an error, so try inserting the user first.
-	// Wrap in transaction to avoid issue where a new user
+	// There was an error, so try inserting the activist first.
+	// Wrap in transaction to avoid issue where a new activist
 	// is inserted successfully, but we are unable to retrieve
-	// the new user, which will leave database in inconsistent state
+	// the new activist, which will leave database in inconsistent state
 
 	tx, err := db.Beginx()
 	if err != nil {
-		return User{}, errors.Wrap(err, "Failed to create transaction")
+		return Activist{}, errors.Wrap(err, "Failed to create transaction")
 	}
 
 	_, err = tx.Exec("INSERT INTO activists (name) VALUES (?)", name)
 	if err != nil {
 		tx.Rollback()
-		return User{}, errors.Wrapf(err, "failed to insert user %s", name)
+		return Activist{}, errors.Wrapf(err, "failed to insert activist %s", name)
 	}
 
-	query := selectUserBaseQuery + " WHERE name = ? "
+	query := selectActivistBaseQuery + " WHERE name = ? "
 
-	var newUser User
-	err = tx.Get(&newUser, query, name)
+	var newActivist Activist
+	err = tx.Get(&newActivist, query, name)
 
 	if err != nil {
 		tx.Rollback()
-		return User{}, errors.Wrapf(err, "failed to get new user %s", name)
+		return Activist{}, errors.Wrapf(err, "failed to get new activist %s", name)
 	}
 
 	if err := tx.Commit(); err != nil {
 		tx.Rollback()
-		return User{}, errors.Wrapf(err, "failed to commit user %s", name)
+		return Activist{}, errors.Wrapf(err, "failed to commit activist %s", name)
 	}
 
-	return newUser, nil
+	return newActivist, nil
 }
 
-func UpdateActivistData(db *sqlx.DB, user UserExtra) (int, error) {
+func UpdateActivistData(db *sqlx.DB, activist ActivistExtra) (int, error) {
 	_, err := db.NamedExec(`UPDATE activists
 SET
   name = :name,
@@ -322,46 +322,46 @@ SET
   global_team_member = :global_team_member,
   liberation_pledge = :liberation_pledge
 WHERE
-id = :id`, user)
+id = :id`, activist)
 
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to update activist data")
 	}
-	return user.ID, nil
+	return activist.ID, nil
 }
 
-func HideUser(db *sqlx.DB, userID int) error {
-	if userID == 0 {
-		return errors.New("HideUser: userID cannot be 0")
+func HideActivist(db *sqlx.DB, activistID int) error {
+	if activistID == 0 {
+		return errors.New("HideActivist: activistID cannot be 0")
 	}
-	var userCount int
-	err := db.Get(&userCount, `SELECT count(*) FROM activists WHERE id = ?`, userID)
+	var activistCount int
+	err := db.Get(&activistCount, `SELECT count(*) FROM activists WHERE id = ?`, activistID)
 	if err != nil {
-		return errors.Wrap(err, "failed to get user count")
+		return errors.Wrap(err, "failed to get activist count")
 	}
-	if userCount == 0 {
-		return errors.Errorf("User with id %d does not exist", userID)
+	if activistCount == 0 {
+		return errors.Errorf("Activist with id %d does not exist", activistID)
 	}
 
-	_, err = db.Exec(`UPDATE activists SET hidden = true WHERE id = ?`, userID)
+	_, err = db.Exec(`UPDATE activists SET hidden = true WHERE id = ?`, activistID)
 	if err != nil {
-		return errors.Wrapf(err, "failed to update activist %d", userID)
+		return errors.Wrapf(err, "failed to update activist %d", activistID)
 	}
 	return nil
 }
 
-// Merge userID into targetUserID.
-//  - The original user is hidden
-//  - All of the original user's event attendance is updated to be the target user.
-func MergeUser(db *sqlx.DB, originalUserID, targetUserID int) error {
-	if originalUserID == 0 {
-		return errors.New("originalUserID cannot be 0")
+// Merge activistID into targetActivistID.
+//  - The original activist is hidden
+//  - All of the original activist's event attendance is updated to be the target activist.
+func MergeActivist(db *sqlx.DB, originalActivistID, targetActivistID int) error {
+	if originalActivistID == 0 {
+		return errors.New("originalActivistID cannot be 0")
 	}
-	if targetUserID == 0 {
-		return errors.New("targetUserID cannot be 0")
+	if targetActivistID == 0 {
+		return errors.New("targetActivistID cannot be 0")
 	}
-	if originalUserID == targetUserID {
-		return errors.New("originalUser and targetUser cannot be the same")
+	if originalActivistID == targetActivistID {
+		return errors.New("originalActivist and targetActivist cannot be the same")
 	}
 
 	tx, err := db.Beginx()
@@ -369,18 +369,18 @@ func MergeUser(db *sqlx.DB, originalUserID, targetUserID int) error {
 		return errors.Wrap(err, "could not create transaction")
 	}
 
-	_, err = tx.Exec(`UPDATE activists SET hidden = true WHERE id = ?`, originalUserID)
+	_, err = tx.Exec(`UPDATE activists SET hidden = true WHERE id = ?`, originalActivistID)
 	if err != nil {
 		tx.Rollback()
-		return errors.Wrapf(err, "failed to hide original activist %d", originalUserID)
+		return errors.Wrapf(err, "failed to hide original activist %d", originalActivistID)
 	}
 
-	err = updateMergedUserData(tx, originalUserID, targetUserID, true)
+	err = updateMergedActivistData(tx, originalActivistID, targetActivistID, true)
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
-	err = updateMergedUserData(tx, originalUserID, targetUserID, false)
+	err = updateMergedActivistData(tx, originalActivistID, targetActivistID, false)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -389,14 +389,14 @@ func MergeUser(db *sqlx.DB, originalUserID, targetUserID int) error {
 	if err := tx.Commit(); err != nil {
 		tx.Rollback()
 		return errors.Wrapf(err,
-			"failed to commit merge user transaction. original user id: %d, target user id: %d",
-			originalUserID, targetUserID)
+			"failed to commit merge activist transaction. original activist id: %d, target activist id: %d",
+			originalActivistID, targetActivistID)
 	}
 
 	return nil
 }
 
-func updateMergedUserData(tx *sqlx.Tx, originalUserID int, targetUserID int, originalUserOnly bool) error {
+func updateMergedActivistData(tx *sqlx.Tx, originalActivistID int, targetActivistID int, originalActivistOnly bool) error {
 	baseQuery := `
 SELECT event_id
 FROM event_attendance ea
@@ -412,18 +412,18 @@ EXISTS(
     AND ea2.event_id = ea.event_id)`
 
 	var eventQuery string
-	if originalUserOnly {
+	if originalActivistOnly {
 		eventQuery = baseQuery + " NOT " + subquery
 	} else {
 		eventQuery = baseQuery + subquery
 	}
 
 	var eventIDs []int
-	err := tx.Select(&eventIDs, eventQuery, originalUserID, targetUserID)
+	err := tx.Select(&eventIDs, eventQuery, originalActivistID, targetActivistID)
 	if err != nil {
 		return errors.Wrapf(err,
-			"failed to get original activist's events: %d, originalUserOnly: %v",
-			originalUserID, originalUserOnly)
+			"failed to get original activist's events: %d, originalActivistOnly: %v",
+			originalActivistID, originalActivistOnly)
 	}
 
 	// There's nothing to do if there are no events.
@@ -433,39 +433,39 @@ EXISTS(
 
 	var eaQuery string
 	var eaArgs []interface{}
-	if originalUserOnly {
+	if originalActivistOnly {
 		eaQuery, eaArgs, err = sqlx.In(`
 UPDATE event_attendance
 SET activist_id = ?
 WHERE
   activist_id = ?
   AND event_id IN (?)`,
-			targetUserID, originalUserID, eventIDs)
+			targetActivistID, originalActivistID, eventIDs)
 	} else {
 		eaQuery, eaArgs, err = sqlx.In(`
 DELETE FROM event_attendance
 WHERE
   activist_id = ?
-  AND event_id IN (?)`, originalUserID, eventIDs)
+  AND event_id IN (?)`, originalActivistID, eventIDs)
 	}
 	if err != nil {
-		return errors.Wrapf(err, "could not create sqlx.IN query. originalUserOnly: %v",
-			originalUserOnly)
+		return errors.Wrapf(err, "could not create sqlx.IN query. originalActivistOnly: %v",
+			originalActivistOnly)
 	}
 	eaQuery = tx.Rebind(eaQuery)
 	_, err = tx.Exec(eaQuery, eaArgs...)
 	if err != nil {
 		return errors.Wrapf(err, "could not update event attendance for activist: %d",
-			originalUserID)
+			originalActivistID)
 	}
-	err = insertMergedActivistAttendance(tx, originalUserID, targetUserID, eventIDs, originalUserOnly)
+	err = insertMergedActivistAttendance(tx, originalActivistID, targetActivistID, eventIDs, originalActivistOnly)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func insertMergedActivistAttendance(tx *sqlx.Tx, originalUserID int, targetUserID int, eventIDs []int, replacedWithTargetActivist bool) error {
+func insertMergedActivistAttendance(tx *sqlx.Tx, originalActivistID int, targetActivistID int, eventIDs []int, replacedWithTargetActivist bool) error {
 	if len(eventIDs) == 0 {
 		return nil
 	}
@@ -476,13 +476,13 @@ func insertMergedActivistAttendance(tx *sqlx.Tx, originalUserID int, targetUserI
 	var queryArgs []interface{}
 	for _, eventID := range eventIDs {
 		queryValues = append(queryValues, " (?, ?, ?, ?) ")
-		queryArgs = append(queryArgs, originalUserID, targetUserID, eventID, replacedWithTargetActivist)
+		queryArgs = append(queryArgs, originalActivistID, targetActivistID, eventID, replacedWithTargetActivist)
 	}
 	query += strings.Join(queryValues, ",")
 	_, err := tx.Exec(query, queryArgs...)
 
-	return errors.Wrapf(err, "could not insert merged_activist_attendance for originalUserID: %d, targetUserID: %d",
-		originalUserID, targetUserID)
+	return errors.Wrapf(err, "could not insert merged_activist_attendance for originalActivistID: %d, targetActivistID: %d",
+		originalActivistID, targetActivistID)
 }
 
 func GetAutocompleteNames(db *sqlx.DB) []string {
@@ -503,44 +503,44 @@ func GetAutocompleteNames(db *sqlx.DB) []string {
 	return ret
 }
 
-func CleanActivistData(body io.Reader) (UserExtra, error) {
-	var userJSON UserJSON
-	err := json.NewDecoder(body).Decode(&userJSON)
+func CleanActivistData(body io.Reader) (ActivistExtra, error) {
+	var activistJSON ActivistJSON
+	err := json.NewDecoder(body).Decode(&activistJSON)
 	if err != nil {
-		return UserExtra{}, err
+		return ActivistExtra{}, err
 	}
 
 	// Check if name field contains dangerous input
-	if err := checkForDangerousChars(userJSON.Name); err != nil {
-		return UserExtra{}, err
+	if err := checkForDangerousChars(activistJSON.Name); err != nil {
+		return ActivistExtra{}, err
 	}
 
 	valid := true
-	if userJSON.Location == "" {
+	if activistJSON.Location == "" {
 		// No location specified so insert null value into database
 		valid = false
 	}
 
-	userExtra := UserExtra{
-		User: User{
-			ID:               userJSON.ID,
-			Name:             userJSON.Name,
-			Email:            userJSON.Email,
-			Chapter:          userJSON.Chapter,
-			Phone:            userJSON.Phone,
-			Location:         sql.NullString{String: userJSON.Location, Valid: valid},
-			Facebook:         userJSON.Facebook,
-			LiberationPledge: userJSON.LiberationPledge,
+	activistExtra := ActivistExtra{
+		Activist: Activist{
+			ID:               activistJSON.ID,
+			Name:             activistJSON.Name,
+			Email:            activistJSON.Email,
+			Chapter:          activistJSON.Chapter,
+			Phone:            activistJSON.Phone,
+			Location:         sql.NullString{String: activistJSON.Location, Valid: valid},
+			Facebook:         activistJSON.Facebook,
+			LiberationPledge: activistJSON.LiberationPledge,
 		},
-		UserMembershipData: UserMembershipData{
-			CoreStaff:              userJSON.Core,
-			ExcludeFromLeaderboard: userJSON.ExcludeFromLeaderboard,
-			GlobalTeamMember:       userJSON.GlobalTeamMember,
-			ActivistLevel:          userJSON.ActivistLevel,
+		ActivistMembershipData: ActivistMembershipData{
+			CoreStaff:              activistJSON.Core,
+			ExcludeFromLeaderboard: activistJSON.ExcludeFromLeaderboard,
+			GlobalTeamMember:       activistJSON.GlobalTeamMember,
+			ActivistLevel:          activistJSON.ActivistLevel,
 		},
 	}
 
-	return userExtra, nil
+	return activistExtra, nil
 
 }
 
