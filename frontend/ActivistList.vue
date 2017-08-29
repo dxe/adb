@@ -70,7 +70,7 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" @click="hideModal">Close</button>
-            <button type="button" v-bind:disabled="disableConfirmButton" class="btn btn-danger" @click="confirmMergeActivistModal">Merge activist</button>
+            <button type="button" v-bind:disabled="disableConfirmButton" class="btn btn-danger" @click="confirmMergeActivistModal" v-focus>Merge activist</button>
           </div>
         </div>
       </div>
@@ -93,7 +93,7 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" @click="hideModal">Close</button>
-            <button type="button" v-bind:disabled="disableConfirmButton" class="btn btn-danger" @click="confirmHideActivistModal">Hide activist</button>
+            <button type="button" v-bind:disabled="disableConfirmButton" class="btn btn-danger" @click="confirmHideActivistModal" v-focus>Hide activist</button>
           </div>
         </div>
       </div>
@@ -113,7 +113,7 @@
           </div>
           <div class="modal-body">
             <form action="" id="editActivistForm">
-              <p><label for="name">Name: </label><input class="form-control" type="text" v-model.trim="currentActivist.name" id="name" /></p>
+              <p><label for="name">Name: </label><input class="form-control" type="text" v-model.trim="currentActivist.name" id="name" v-focus /></p>
               <p><label for="email">Email: </label><input class="form-control" type="text" v-model.trim="currentActivist.email" id="email" /></p>
               <p><label for="chapter">Chapter: </label><input class="form-control" type="text" v-model.trim="currentActivist.chapter" id="chapter"></p>
               <p><label for="phone">Phone: </label><input class="form-control" type="text" v-model.trim="currentActivist.phone" id="phone"></p>
@@ -197,6 +197,12 @@ var activistLevelOrder = {
   "organizer" : 1,
   "senior_organizer" : 0
 };
+
+const focus = {
+  inserted(el) {
+    el.focus()
+  },
+}
 
 export default {
   name: 'activist-list',
@@ -350,12 +356,14 @@ export default {
       $(document.body).addClass('noscroll');
       this.disableConfirmButton = false;
 
+      // For some reason, even though this function is supposed to
+      // fire after the modal is visible on the dom, the modal isn't
+      // there. Vue.nextTick doesn't work for some reason, so we're
+      // just going to wait for a certain amount of time before
+      // firing.
+
+
       if (this.currentModalName == "merge-activist-modal") {
-        // For some reason, even though this function is supposed to
-        // fire after the modal is visible on the dom, the modal isn't
-        // there. Vue.nextTick doesn't work for some reason, so we're
-        // just going to wait for a certain amount of time before
-        // firing.
         setTimeout(() => {
           initActivistSelect('#merge-target-activist', this.currentActivist.name);
         }, 100);
@@ -480,6 +488,9 @@ export default {
   },
   components: {
     Dropdown,
+  },
+  directives: {
+    focus,
   },
 }
 </script>
