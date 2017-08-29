@@ -6,6 +6,8 @@ import (
 	"io"
 	"time"
 
+	"strings"
+
 	"github.com/pkg/errors"
 
 	"github.com/jmoiron/sqlx"
@@ -348,18 +350,18 @@ func HideUser(db *sqlx.DB, userID int) error {
 	return nil
 }
 
-// Merge originalUserID into mergedUserID.
+// Merge userID into targetUserID.
 //  - The original user is hidden
-//  - All of the original user's event attendance is updated to be the merged user.
-func MergeUser(db *sqlx.DB, originalUserID, mergedUserID int) error {
+//  - All of the original user's event attendance is updated to be the target user.
+func MergeUser(db *sqlx.DB, originalUserID, targetUserID int) error {
 	if originalUserID == 0 {
 		return errors.New("originalUserID cannot be 0")
 	}
-	if mergedUserID == 0 {
-		return errors.New("mergedUserID cannot be 0")
+	if targetUserID == 0 {
+		return errors.New("targetUserID cannot be 0")
 	}
-	if originalUserID == mergedUserID {
-		return errors.New("originalUser and mergedUser cannot be the same")
+	if originalUserID == targetUserID {
+		return errors.New("originalUser and targetUser cannot be the same")
 	}
 
 	tx, err := db.Beginx()
@@ -373,79 +375,114 @@ func MergeUser(db *sqlx.DB, originalUserID, mergedUserID int) error {
 		return errors.Wrapf(err, "failed to hide original activist %d", originalUserID)
 	}
 
-	// Let's do this the boring way.
-	var originalUserEventIDs []int
-	err = tx.Select(&originalUserEventIDs, `
-SELECT event_id
-FROM event_attendance
-WHERE
-  activist_id = ?
-`, originalUserID)
+	err = updateMergedUserData(tx, originalUserID, targetUserID, true)
 	if err != nil {
 		tx.Rollback()
-		return errors.Wrapf(err, "failed to get original activist's events: %d",
-			originalUserID)
+		return err
 	}
-	for _, eventID := range originalUserEventIDs {
-		// If the merged user also went to the event, just
-		// delete the original user's attendance record.
-		// Otherwise, update the original user's attendance
-		// record so that the activist id is the merged user.
-		var mergedUserAttended int
-		err = tx.Get(&mergedUserAttended, `
-SELECT count(*) FROM event_attendance WHERE activist_id = ? AND event_id = ?
-`, mergedUserID, eventID)
-		if err != nil {
-			tx.Rollback()
-			return errors.Wrapf(err,
-				"Could not get whether the merged user attended. EventID: %d, mergedUserID: %d",
-				eventID, mergedUserID)
-		}
-		// mergedUserAttended should only be 1 or 0.
-		if mergedUserAttended == 0 {
-			// Replace original user id with the merged user id
-			_, err = tx.Exec(`UPDATE event_attendance SET activist_id = ? WHERE activist_id = ? AND event_id = ?`,
-				mergedUserID, originalUserID, eventID)
-			if err != nil {
-				tx.Rollback()
-				return errors.Wrapf(err,
-					"Could not replace original user id %d with merged user id %d for event %d",
-					originalUserID, mergedUserID, eventID)
-			}
-		} else {
-			_, err = tx.Exec(`DELETE FROM event_attendance WHERE activist_id = ? AND event_id = ?`,
-				originalUserID, eventID)
-			if err != nil {
-				tx.Rollback()
-				return errors.Wrapf(err,
-					"Could not delete original user from event_attendance. original user id: %d, event id: %d",
-					originalUserID, eventID)
-			}
-		}
-
-		// Keep track of all the activists that have been
-		// merged so we can undo them.
-		replacedWithMergedActivist := mergedUserAttended == 0
-		_, err = tx.Exec(`
-INSERT INTO merged_activist_attendance (original_activist_id, merged_activist_id, event_id, replaced_with_merged_activist)
-VALUES (?, ?, ?, ?)`,
-			originalUserID, mergedUserID, eventID, replacedWithMergedActivist)
-		if err != nil {
-			tx.Rollback()
-			return errors.Wrapf(err,
-				"Could not update merged_activist_attendance. original user id: %d, merged user id: %d, event id: %d",
-				originalUserID, mergedUserID, eventID)
-		}
+	err = updateMergedUserData(tx, originalUserID, targetUserID, false)
+	if err != nil {
+		tx.Rollback()
+		return err
 	}
 
 	if err := tx.Commit(); err != nil {
 		tx.Rollback()
 		return errors.Wrapf(err,
-			"failed to commit merge user transaction. original user id: %d, merged user id: %d",
-			originalUserID, mergedUserID)
+			"failed to commit merge user transaction. original user id: %d, target user id: %d",
+			originalUserID, targetUserID)
 	}
 
 	return nil
+}
+
+func updateMergedUserData(tx *sqlx.Tx, originalUserID int, targetUserID int, originalUserOnly bool) error {
+	baseQuery := `
+SELECT event_id
+FROM event_attendance ea
+WHERE
+  activist_id = ?
+  AND `
+
+	subquery := `
+EXISTS(
+  SELECT ea2.event_id
+  FROM event_attendance ea2
+  WHERE ea2.activist_id = ?
+    AND ea2.event_id = ea.event_id)`
+
+	var eventQuery string
+	if originalUserOnly {
+		eventQuery = baseQuery + " NOT " + subquery
+	} else {
+		eventQuery = baseQuery + subquery
+	}
+
+	var eventIDs []int
+	err := tx.Select(&eventIDs, eventQuery, originalUserID, targetUserID)
+	if err != nil {
+		return errors.Wrapf(err,
+			"failed to get original activist's events: %d, originalUserOnly: %v",
+			originalUserID, originalUserOnly)
+	}
+
+	// There's nothing to do if there are no events.
+	if len(eventIDs) == 0 {
+		return nil
+	}
+
+	var eaQuery string
+	var eaArgs []interface{}
+	if originalUserOnly {
+		eaQuery, eaArgs, err = sqlx.In(`
+UPDATE event_attendance
+SET activist_id = ?
+WHERE
+  activist_id = ?
+  AND event_id IN (?)`,
+			targetUserID, originalUserID, eventIDs)
+	} else {
+		eaQuery, eaArgs, err = sqlx.In(`
+DELETE FROM event_attendance
+WHERE
+  activist_id = ?
+  AND event_id IN (?)`, originalUserID, eventIDs)
+	}
+	if err != nil {
+		return errors.Wrapf(err, "could not create sqlx.IN query. originalUserOnly: %v",
+			originalUserOnly)
+	}
+	eaQuery = tx.Rebind(eaQuery)
+	_, err = tx.Exec(eaQuery, eaArgs...)
+	if err != nil {
+		return errors.Wrapf(err, "could not update event attendance for activist: %d",
+			originalUserID)
+	}
+	err = insertMergedActivistAttendance(tx, originalUserID, targetUserID, eventIDs, originalUserOnly)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func insertMergedActivistAttendance(tx *sqlx.Tx, originalUserID int, targetUserID int, eventIDs []int, replacedWithTargetActivist bool) error {
+	if len(eventIDs) == 0 {
+		return nil
+	}
+
+	query := `INSERT INTO merged_activist_attendance (original_activist_id, target_activist_id, event_id, replaced_with_target_activist) VALUES`
+
+	var queryValues []string
+	var queryArgs []interface{}
+	for _, eventID := range eventIDs {
+		queryValues = append(queryValues, " (?, ?, ?, ?) ")
+		queryArgs = append(queryArgs, originalUserID, targetUserID, eventID, replacedWithTargetActivist)
+	}
+	query += strings.Join(queryValues, ",")
+	_, err := tx.Exec(query, queryArgs...)
+
+	return errors.Wrapf(err, "could not insert merged_activist_attendance for originalUserID: %d, targetUserID: %d",
+		originalUserID, targetUserID)
 }
 
 func GetAutocompleteNames(db *sqlx.DB) []string {

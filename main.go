@@ -383,7 +383,7 @@ func (c MainController) ActivistHideHandler(w http.ResponseWriter, r *http.Reque
 func (c MainController) ActivistMergeHandler(w http.ResponseWriter, r *http.Request) {
 	var activistMergeData struct {
 		CurrentActivistID  int    `json:"current_activist_id"`
-		MergedActivistName string `json:"merged_activist_name"`
+		TargetActivistName string `json:"target_activist_name"`
 	}
 	err := json.NewDecoder(r.Body).Decode(&activistMergeData)
 	if err != nil {
@@ -391,11 +391,11 @@ func (c MainController) ActivistMergeHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	// First, we need to get the activist ID for the merged
+	// First, we need to get the activist ID for the target
 	// activist.
-	mergedUser, err := model.GetUser(c.db, activistMergeData.MergedActivistName)
+	mergedUser, err := model.GetUser(c.db, activistMergeData.TargetActivistName)
 	if err != nil {
-		sendErrorMessage(w, errors.Wrapf(err, "Could not fetch data for: %s", activistMergeData.MergedActivistName))
+		sendErrorMessage(w, errors.Wrapf(err, "Could not fetch data for: %s", activistMergeData.TargetActivistName))
 		return
 	}
 

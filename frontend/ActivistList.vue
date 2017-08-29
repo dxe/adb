@@ -40,7 +40,7 @@
     </table>
     <modal
        name="merge-activist-modal"
-       :height="600"
+       :height="650"
        classes="no-background-color"
        @opened="modalOpened"
        @closed="modalClosed"
@@ -53,12 +53,19 @@
           <div class="modal-body">
             <p>Merging activists is used to combine redundant activist entries</p>
             <p>
-              When you merge this activist into another activist, all of this activist's
-              attendance data will be merged into the other activist. Other data (e.g.
-              email, location, etc) is <strong>NOT</strong> merged.
+              Merging this activist does two things:
+            </p>
+            <ul>
+              <li>all of this activist&#39;s attendance data will be merged into the target activist</li>
+              <li>this activist will be hidden</li>
+            </ul>
+            <p>
+              Non-attendance data (e.g. email, location, etc) is <strong>NOT</strong> merged.
             </p>
             <p>Merge {{currentActivist.name}} into another activist:</p>
-            <select id="merged-activist" class="filter-margin" style="min-width: 200px"></select>
+            <p>
+              Target activist: <select id="merge-target-activist" class="filter-margin" style="min-width: 200px"></select>
+            </p>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" @click="hideModal">Close</button>
@@ -214,8 +221,8 @@ export default {
       this.currentActivist = {};
     },
     confirmMergeActivistModal: function() {
-      var mergedActivistName = $("#merged-activist").val();
-      if (!mergedActivistName) {
+      var targetActivistName = $("#merge-target-activist").val();
+      if (!targetActivistName) {
         flashMessage("Must choose an activist to merge into", true);
         return;
       }
@@ -228,7 +235,7 @@ export default {
         contentType: "application/json",
         data: JSON.stringify({
           current_activist_id: this.currentActivist.id,
-          merged_activist_name: mergedActivistName,
+          target_activist_name: targetActivistName,
         }),
         success: (data) => {
           this.disableConfirmButton = false;
@@ -238,6 +245,7 @@ export default {
             flashMessage("Error: " + parsed.message, true);
             return;
           }
+          flashMessage(this.currentActivist.name + " was merged into " + targetActivistName);
 
           // Remove activist from list.
           this.activists = this.activists.slice(0, this.activistIndex).concat(
@@ -266,6 +274,7 @@ export default {
             flashMessage("Error: " + parsed.message, true);
             return;
           }
+          flashMessage(this.currentActivist.name + " was hidden");
 
           // Remove activist from list.
           this.activists = this.activists.slice(0, this.activistIndex).concat(
@@ -297,6 +306,7 @@ export default {
             flashMessage("Error: " + parsed.message, true);
             return;
           }
+          flashMessage(this.currentActivist.name + " saved");
 
           // status === "success"
           Vue.set(this.activists, this.activistIndex, parsed.activist);
@@ -321,7 +331,7 @@ export default {
         // just going to wait for a certain amount of time before
         // firing.
         setTimeout(() => {
-          initActivistSelect('#merged-activist', this.currentActivist.name);
+          initActivistSelect('#merge-target-activist', this.currentActivist.name);
         }, 100);
       }
 

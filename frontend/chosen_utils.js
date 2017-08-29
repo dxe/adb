@@ -34,6 +34,9 @@ export function initActivistSelect(selector, ignoreActivistName) {
     success: function(data) {
       var activistNames = data.activist_names;
 
+      // The first item needs to be empty so that the selector
+      // defaults to not being filled in. Otherwise, it defaults to
+      // the first item in the list.
       activistNames.unshift("");
 
       for (var i = 0; i < activistNames.length; i++) {

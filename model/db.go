@@ -70,10 +70,10 @@ CREATE TABLE IF NOT EXISTS adb_users (
 	db.MustExec(`
 CREATE TABLE IF NOT EXISTS merged_activist_attendance (
   original_activist_id INTEGER NOT NULL,
-  merged_activist_id INTEGER NOT NULL,
+  target_activist_id INTEGER NOT NULL,
   event_id INTEGER NOT NULL,
-  replaced_with_merged_activist TINYINT(1) NOT NULL,
-  CONSTRAINT merged_activist_attendance_ukey UNIQUE (original_activist_id, merged_activist_id, event_id)
+  replaced_with_target_activist TINYINT(1) NOT NULL,
+  CONSTRAINT merged_activist_attendance_ukey UNIQUE (original_activist_id, target_activist_id, event_id)
 )
 `)
 }
