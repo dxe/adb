@@ -70,42 +70,52 @@
 	      chart.draw(data, options);
 	    }
 </script>
+<style>
+  .centered {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+</style>
 
 
 <div class="body-full" style="height:100%; width: 100%; cursor: none;">
 
 <div id="powerCarousel" class="carousel" data-ride="carousel" data-pause="false" data-interval="7000" style="height:100%; width: 100%;">
-  <div class="carousel-inner">
+  <div class="carousel-inner centered">
     <div class="item active">
       <center>
         <br/>
-        <h1><span style="font-size:75px;">Movement Power Index</span></h1>
+        <h1><span style="font-size:175px;">Movement Power Index</span></h1>
         <br/>
-        <h2><span style="font-size: 300px;">{{ .Data.Power }}</span></h2>
+        <h2><span style="font-size: 400px;">{{ .Data.Power }}</span></h2>
         <br/>
-        <h2>2017 Goal: 150</h2>
+        <h2 style="font-size: 150px;">2017 Goal: 150</h2>
         <br/>
         <br/>
-        <h4>Month to Date: {{ .Data.PowerMTD }}</h3>
+        <h4 style="font-size: 100px;">Month to Date: {{ .Data.PowerMTD }}</h3>
         <br/>
       </center>
     </div>
 
+    <!--- Uncomment when we get a better photo
     <div class="item"><img src="/static/img/photo1.jpeg" style="width:100%;"></div>
+    --->
     <div class="item"><center><img src="/static/img/photo2.jpeg" style="width:50%;"></center></div>
     <div class="item"><img src="/static/img/photo3.jpeg" style="width:100%;"></div>
 
     <div class="item">
       <center>
         <br/>
-        <h1><span style="font-size:75px;">Movement Power Index</span></h1>
+        <h1><span style="font-size:175px;">Movement Power Index</span></h1>
         <br/>
-        <h2><span style="font-size: 300px;">{{ .Data.Power }}</span></h2>
+        <h2><span style="font-size: 400px;">{{ .Data.Power }}</span></h2>
         <br/>
-        <h2>2017 Goal: 150</h2>
+        <h2 style="font-size: 150px;">2017 Goal: 150</h2>
         <br/>
         <br/>
-        <h4>Month to Date: {{ .Data.PowerMTD }}</h3>
+        <h4 style="font-size: 100px;">Month to Date: {{ .Data.PowerMTD }}</h3>
         <br/>
       </center>
     </div>
@@ -117,14 +127,14 @@
     <div class="item">
       <center>
         <br/>
-        <h1><span style="font-size:75px;">Movement Power Index</span></h1>
+        <h1><span style="font-size:175px;">Movement Power Index</span></h1>
         <br/>
-        <h2><span style="font-size: 300px;">{{ .Data.Power }}</span></h2>
+        <h2><span style="font-size: 400px;">{{ .Data.Power }}</span></h2>
         <br/>
-        <h2>2017 Goal: 150</h2>
+        <h2 style="font-size: 150px;">2017 Goal: 150</h2>
         <br/>
         <br/>
-        <h4>Month to Date: {{ .Data.PowerMTD }}</h3>
+        <h4 style="font-size: 100px;">Month to Date: {{ .Data.PowerMTD }}</h3>
         <br/>
       </center>
     </div>
