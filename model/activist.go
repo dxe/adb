@@ -154,8 +154,8 @@ func getActivistsJSON(db *sqlx.DB, options GetActivistOptions) ([]ActivistJSON, 
 	if err != nil {
 		return nil, err
 	}
-  activistsJSON := buildActivistJSONArray(activists)
-  return activistsJSON, nil
+	activistsJSON := buildActivistJSONArray(activists)
+	return activistsJSON, nil
 }
 
 /* RENAME THIS */
@@ -170,7 +170,6 @@ func GetActivistRangeJSON(db *sqlx.DB, activistOptions ActivistRangeOptionsJSON)
 	}
 	return buildActivistJSONArray(activists), nil
 }
-
 
 func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 	var activistsJSON []ActivistJSON
@@ -666,12 +665,12 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 }
 
 func GetActivistRangeOptions(body io.Reader) (ActivistRangeOptionsJSON, error) {
-  var activistOptions ActivistRangeOptionsJSON
-  err := json.NewDecoder(body).Decode(&activistOptions)
-  if err != nil {
-    return ActivistRangeOptionsJSON{}, err
-  }
-  return activistOptions, nil
+	var activistOptions ActivistRangeOptionsJSON
+	err := json.NewDecoder(body).Decode(&activistOptions)
+	if err != nil {
+		return ActivistRangeOptionsJSON{}, err
+	}
+	return activistOptions, nil
 }
 
 // Returns one of the following statuses:
