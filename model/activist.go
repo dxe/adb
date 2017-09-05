@@ -30,6 +30,35 @@ SELECT
 FROM activists
 `
 
+const selectActivistExtraBaseQuery string = `
+SELECT
+  a.id,
+  a.name,
+  email,
+  chapter,
+  phone,
+  location,
+  facebook,
+  activist_level,
+  exclude_from_leaderboard,
+  core_staff,
+  global_team_member,
+  liberation_pledge,
+  MIN(e.date) AS first_event,
+  MAX(e.date) AS last_event,
+  COUNT(e.id) as total_events
+FROM activists a
+
+LEFT JOIN event_attendance ea
+  ON ea.activist_id = a.id
+ 
+LEFT JOIN events e
+  ON ea.event_id = e.id
+`
+
+const descOrder int = 2
+const ascOrder int = 1
+
 /** Type Definitions */
 
 type Activist struct {
@@ -88,6 +117,13 @@ type GetActivistOptions struct {
 	Hidden bool
 }
 
+//TODO Rename this
+type ActivistRangeOptionsJSON struct {
+	Name  string `json:"name"`
+	Limit int    `json:"limit"`
+	Order int    `json:"order"`
+}
+
 /** Functions and Methods */
 
 func GetActivistsJSON(db *sqlx.DB, options GetActivistOptions) ([]ActivistJSON, error) {
@@ -114,45 +150,66 @@ func GetActivistJSON(db *sqlx.DB, options GetActivistOptions) (ActivistJSON, err
 }
 
 func getActivistsJSON(db *sqlx.DB, options GetActivistOptions) ([]ActivistJSON, error) {
-	var activistsJSON []ActivistJSON
 	activists, err := GetActivistsExtra(db, options)
 	if err != nil {
 		return nil, err
 	}
-	for _, u := range activists {
+  activistsJSON := buildActivistJSONArray(activists)
+  return activistsJSON, nil
+}
+
+/* RENAME THIS */
+func GetActivistRangeJSON(db *sqlx.DB, activistOptions ActivistRangeOptionsJSON) ([]ActivistJSON, error) {
+	// Check that order matches one of the defined order constants
+	if activistOptions.Order != descOrder && activistOptions.Order != ascOrder {
+		return nil, errors.New("User Range order must be ascending or descending")
+	}
+	activists, err := getActivistRange(db, activistOptions)
+	if err != nil {
+		return nil, err
+	}
+	return buildActivistJSONArray(activists), nil
+}
+
+
+func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
+	var activistsJSON []ActivistJSON
+
+	for _, a := range activists {
 		firstEvent := ""
-		if u.ActivistEventData.FirstEvent != nil {
-			firstEvent = u.ActivistEventData.FirstEvent.Format(EventDateLayout)
+		if a.ActivistEventData.FirstEvent != nil {
+			firstEvent = a.ActivistEventData.FirstEvent.Format(EventDateLayout)
 		}
 		lastEvent := ""
-		if u.ActivistEventData.LastEvent != nil {
-			lastEvent = u.ActivistEventData.LastEvent.Format(EventDateLayout)
+		if a.ActivistEventData.LastEvent != nil {
+			lastEvent = a.ActivistEventData.LastEvent.Format(EventDateLayout)
 		}
 		location := ""
-		if u.Activist.Location.Valid {
-			location = u.Activist.Location.String
+		if a.Activist.Location.Valid {
+			location = a.Activist.Location.String
 		}
 
 		activistsJSON = append(activistsJSON, ActivistJSON{
-			ID:            u.Activist.ID,
-			Name:          u.Activist.Name,
-			Email:         u.Activist.Email,
-			Chapter:       u.Activist.Chapter,
-			Phone:         u.Activist.Phone,
+			ID:            a.Activist.ID,
+			Name:          a.Activist.Name,
+			Email:         a.Activist.Email,
+			Chapter:       a.Activist.Chapter,
+			Phone:         a.Activist.Phone,
 			Location:      location,
-			Facebook:      u.Activist.Facebook,
-			ActivistLevel: u.ActivistLevel,
+			Facebook:      a.Activist.Facebook,
+			ActivistLevel: a.ActivistLevel,
 			FirstEvent:    firstEvent,
 			LastEvent:     lastEvent,
-			TotalEvents:   u.ActivistEventData.TotalEvents,
-			Status:        u.Status,
-			Core:          u.CoreStaff,
-			ExcludeFromLeaderboard: u.ExcludeFromLeaderboard,
-			LiberationPledge:       u.LiberationPledge,
-			GlobalTeamMember:       u.GlobalTeamMember,
+			TotalEvents:   a.ActivistEventData.TotalEvents,
+			Status:        a.Status,
+			Core:          a.CoreStaff,
+			ExcludeFromLeaderboard: a.ExcludeFromLeaderboard,
+			LiberationPledge:       a.LiberationPledge,
+			GlobalTeamMember:       a.GlobalTeamMember,
 		})
 	}
-	return activistsJSON, nil
+
+	return activistsJSON
 }
 
 func GetActivist(db *sqlx.DB, name string) (Activist, error) {
@@ -191,31 +248,8 @@ func getActivists(db *sqlx.DB, name string) ([]Activist, error) {
 }
 
 func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra, error) {
-	query := `
-SELECT
-  a.id,
-  a.name,
-  email,
-  chapter,
-  phone,
-  location,
-  facebook,
-  activist_level,
-  exclude_from_leaderboard,
-  core_staff,
-  global_team_member,
-  liberation_pledge,
-  MIN(e.date) AS first_event,
-  MAX(e.date) AS last_event,
-  COUNT(e.id) as total_events
-FROM activists a
+	query := selectActivistExtraBaseQuery
 
-LEFT JOIN event_attendance ea
-  ON ea.activist_id = a.id
-
-LEFT JOIN events e
-  ON ea.event_id = e.id
-`
 	var queryArgs []interface{}
 
 	if options.ID != 0 {
@@ -240,14 +274,50 @@ LEFT JOIN events e
 	}
 
 	for i := 0; i < len(activists); i++ {
-		u := activists[i]
-		activists[i].Status = getStatus(u.FirstEvent, u.LastEvent, u.TotalEvents)
+		a := activists[i]
+		activists[i].Status = getStatus(a.FirstEvent, a.LastEvent, a.TotalEvents)
 	}
 
 	return activists, nil
 }
 
-func (u Activist) GetActivistEventData(db *sqlx.DB) (ActivistEventData, error) {
+// TODO Make sure you only fetch non-hidden members
+// THAT is not currently the case
+func getActivistRange(db *sqlx.DB, activistOptions ActivistRangeOptionsJSON) ([]ActivistExtra, error) {
+	query := selectActivistExtraBaseQuery
+	name := activistOptions.Name
+	order := activistOptions.Order
+	limit := activistOptions.Limit
+	var queryArgs []interface{}
+
+	if name != "" {
+		if order == descOrder {
+			query += " WHERE a.name < ? "
+		} else {
+			query += " WHERE a.name > ? "
+		}
+		queryArgs = append(queryArgs, name)
+	}
+
+	query += " GROUP BY a.name ORDER BY a.name "
+	if order == descOrder {
+		query += "desc "
+	}
+
+	if limit > 0 {
+		query += " LIMIT ? "
+		queryArgs = append(queryArgs, limit)
+	}
+
+	var activists []ActivistExtra
+	if err := db.Select(&activists, query, queryArgs...); err != nil {
+		return nil, errors.Wrapf(err, "failed to retrieve %d users before/after %s", limit, name)
+	}
+
+	return activists, nil
+}
+
+func (a Activist) GetActivistEventData(db *sqlx.DB) (ActivistEventData, error) {
 	query := `
 SELECT
   MIN(e.date) AS first_event,
@@ -260,7 +330,7 @@ WHERE
   event_attendance.activist_id = ?
 `
 	var data ActivistEventData
-	if err := db.Get(&data, query, u.ID); err != nil {
+	if err := db.Get(&data, query, a.ID); err != nil {
 		return ActivistEventData{}, errors.Wrap(err, "failed to get activist event data")
 	}
 	return data, nil
@@ -593,6 +663,15 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 
 	return activistExtra, nil
 
+}
+
+func GetActivistRangeOptions(body io.Reader) (ActivistRangeOptionsJSON, error) {
+  var activistOptions ActivistRangeOptionsJSON
+  err := json.NewDecoder(body).Decode(&activistOptions)
+  if err != nil {
+    return ActivistRangeOptionsJSON{}, err
+  }
+  return activistOptions, nil
 }
 
 // Returns one of the following statuses:

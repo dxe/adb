@@ -39,6 +39,7 @@
         </tr>
       </tbody>
     </table>
+    <infinite-loading :on-infinite="onInfinite" ref="infiniteLoading"></infinite-loading>
     <modal
        name="merge-activist-modal"
        :height="650"
@@ -151,6 +152,7 @@ import Vue from 'vue';
 import {flashMessage} from 'flash_message';
 import {Dropdown} from 'uiv';
 import {initActivistSelect} from 'chosen_utils';
+import InfiniteLoading from 'vue-infinite-loading';
 
 Vue.use(vmodal);
 
@@ -377,9 +379,6 @@ export default {
       // Allow body to scroll after modal is closed.
       $(document.body).removeClass('noscroll');
     },
-    setActivists: function(activistsData) {
-      this.activists = activistsData;
-    },
     sortBy: function(field) {
       var ascending = shouldSortByAscending(field);
 
@@ -460,7 +459,13 @@ export default {
       }
 
       return displayValue;
-    }
+    },
+    onInfinite: function() {
+      getActivistData((data) => {
+        this.activists = this.activists.concat(data);
+        this.$refs.infiniteLoading.$emit('$InfiniteLoading:loaded');
+      });
+    },
   },
   data() {
     return {
@@ -491,6 +496,7 @@ export default {
   },
   components: {
     Dropdown,
+    InfiniteLoading,
   },
   directives: {
     focus,
