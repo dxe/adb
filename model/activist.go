@@ -56,8 +56,8 @@ LEFT JOIN events e
   ON ea.event_id = e.id
 `
 
-const descOrder int = 2
-const ascOrder int = 1
+const DescOrder int = 2
+const AscOrder int = 1
 
 /** Type Definitions */
 
@@ -158,10 +158,9 @@ func getActivistsJSON(db *sqlx.DB, options GetActivistOptions) ([]ActivistJSON, 
 	return activistsJSON, nil
 }
 
-/* RENAME THIS */
 func GetActivistRangeJSON(db *sqlx.DB, activistOptions ActivistRangeOptionsJSON) ([]ActivistJSON, error) {
 	// Check that order matches one of the defined order constants
-	if activistOptions.Order != descOrder && activistOptions.Order != ascOrder {
+	if activistOptions.Order != DescOrder && activistOptions.Order != AscOrder {
 		return nil, errors.New("User Range order must be ascending or descending")
 	}
 	activists, err := getActivistRange(db, activistOptions)
@@ -290,7 +289,7 @@ func getActivistRange(db *sqlx.DB, activistOptions ActivistRangeOptionsJSON) ([]
 	var queryArgs []interface{}
 
 	if name != "" {
-		if order == descOrder {
+		if order == DescOrder {
 			query += " WHERE a.name < ? "
 		} else {
 			query += " WHERE a.name > ? "
@@ -299,7 +298,7 @@ func getActivistRange(db *sqlx.DB, activistOptions ActivistRangeOptionsJSON) ([]
 	}
 
 	query += " GROUP BY a.name ORDER BY a.name "
-	if order == descOrder {
+	if order == DescOrder {
 		query += "desc "
 	}
 
