@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -12,6 +13,8 @@ import (
 	"github.com/pkg/errors"
 
 	"golang.org/x/net/context"
+
+	"net/http/pprof"
 
 	oidc "github.com/coreos/go-oidc"
 	"github.com/dxe/adb/config"
@@ -133,6 +136,13 @@ func router() *mux.Router {
 	router.Handle("/activist/hide", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistHideHandler))
 	router.Handle("/activist/merge", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistMergeHandler))
 	router.Handle("/leaderboard/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.LeaderboardListHandler))
+
+	// Pprof debug routes
+	router.HandleFunc("/debug/pprof/", pprof.Index)
+	router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	router.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	router.HandleFunc("/debug/pprof/trace", pprof.Trace)
 
 	if config.IsProd {
 		router.PathPrefix("/static").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
@@ -582,5 +592,5 @@ func main() {
 	n.UseHandler(r)
 
 	fmt.Println("Listening on localhost:" + config.Port)
-	http.ListenAndServe(":"+config.Port, n)
+	log.Fatal(http.ListenAndServe(":"+config.Port, n))
 }
