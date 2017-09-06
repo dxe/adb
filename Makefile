@@ -23,7 +23,7 @@ watch:
 # Wipe and re-create the dev databases. See the readme for more
 # details.
 dev_db:
-	go run ./scripts/create_db.go
+	./scripts/create_db_wrapper.sh
 
 # Install all deps for this project.
 deps:
