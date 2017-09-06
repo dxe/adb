@@ -7,13 +7,13 @@
         <tr>
           <th></th>
           <th></th>
-          <th @click="sortBy('name')">Name</th>
-          <th @click="sortBy('email')">Email</th>
-          <th @click="sortBy('phone')">Phone</th>
-          <th @click="sortByDate('first_event')">First Event</th>
-          <th @click="sortByDate('last_event')">Last Event</th>
-          <th @click="sortByStatus('status')">Status</th>
-          <th @click="sortByLevel('activist_level')">Level</th>
+          <th @click="sortByName">Name</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>First Event</th>
+          <th>Last Event</th>
+          <th>Status</th>
+          <th>Level</th>
         </tr>
       </thead>
       <tbody id="activist-list-body">
@@ -39,7 +39,7 @@
         </tr>
       </tbody>
     </table>
-    <infinite-loading :on-infinite="onInfinite" ref="infiniteLoading"></infinite-loading>
+    <infinite-loading :on-infinite="onInfinite" :distance="distance" ref="infiniteLoading"></infinite-loading>
     <modal
        name="merge-activist-modal"
        :height="650"
@@ -156,6 +156,11 @@ import InfiniteLoading from 'vue-infinite-loading';
 
 Vue.use(vmodal);
 
+// Constants related to list ordering
+// Corresponds to the constants DescOrder and AscOrder in model/activist.go
+const DescOrder = 2;
+const AscOrder = 1;
+
 // Store the data of the previous sort.
 var previousSortData = {
   field: null,
@@ -183,7 +188,6 @@ function setPreviousSortData(field, ascending) {
   previousSortData.field = field;
   previousSortData.ascending = ascending;
 }
-
 
 // Must be kept in sync with the list in model/model.go
 var statusOrder = {
@@ -379,6 +383,19 @@ export default {
       // Allow body to scroll after modal is closed.
       $(document.body).removeClass('noscroll');
     },
+    sortByName: function() {
+      var order = this.pagingParameters.order;
+      if (order === AscOrder) {
+        order = DescOrder;
+      }
+      else {
+        order = AscOrder;
+      }
+      this.reset();
+      this.pagingParameters.order = order;
+      // reset infinite loading component
+      this.$refs.infiniteLoading.$emit('$InfiniteLoading:reset');
+    },
     sortBy: function(field) {
       var ascending = shouldSortByAscending(field);
 
@@ -461,11 +478,48 @@ export default {
       return displayValue;
     },
     onInfinite: function() {
-      getActivistData((data) => {
-        this.activists = this.activists.concat(data);
-        this.$refs.infiniteLoading.$emit('$InfiniteLoading:loaded');
+      $.ajax({
+        url: "/activist/list_range",
+        method: "POST",
+        data: JSON.stringify(this.pagingParameters),
+        success: (data) => {
+          var parsed = JSON.parse(data);
+          if (parsed.status === "error") {
+            flashMessage("Error: " + parsed.message, true);
+            return;
+          }
+          // status === "success"
+          var rangedList = parsed.activist_range_list;
+          if (rangedList !== null) {
+            this.activists = this.activists.concat(rangedList);
+            this.pagingParameters.name = rangedList[rangedList.length - 1].name;
+          }
+          this.$refs.infiniteLoading.$emit('$InfiniteLoading:loaded');
+          if (rangedList === null || rangedList.length < this.pagingParameters.limit) {
+            // No more data to load
+            this.$refs.infiniteLoading.$emit('$InfiniteLoading:complete');
+          }
+        },
+        error: () => {
+          console.warn(err.responseText);
+          flasMessage("Server error: " + err.responseText, true);
+        },
       });
     },
+    reset: function() {
+      // reset data properties back to original values
+      this.currentActivist = {},
+      this.activists = [],
+      this.activistIndex = -1;
+      this.disableConfirmButton = false;
+      this.currentModalName = '';
+      this.pagingParameters = {
+        name: "",
+        order: AscOrder,
+        limit: 4
+      },
+      this.distance = 100;
+    }
   },
   data() {
     return {
@@ -474,25 +528,13 @@ export default {
       activistIndex: -1,
       disableConfirmButton: false,
       currentModalName: '',
-    };
-  },
-  created() {
-    $.ajax({
-      url: "/activist/list",
-      success: function(data) {
-        var parsed = JSON.parse(data);
-        if (parsed.status === "error") {
-          flashMessage("Error: " + parsed.message, true);
-          return;
-        }
-        // status === "success"
-
-        this.setActivists(parsed);
-      }.bind(this),
-      error: function() {
-        flashMessage("Error connecting to server.", true);
+      pagingParameters: {
+        name: "",
+        order: AscOrder,
+        limit: 4
       },
-    });
+      distance: 100,
+    };
   },
   components: {
     Dropdown,
