@@ -46,7 +46,7 @@ type Event struct {
 	EventName        string     `db:"name"`
 	EventDate        time.Time  `db:"date"`
 	EventType        EventType  `db:"event_type"`
-	Attendees        []Activist // For retrieving all event attendees
+	Attendees        []string   // For retrieving all event attendees
 	AddedAttendees   []Activist // Used for Updating Events
 	DeletedAttendees []Activist // Used for Updating Events
 }
@@ -74,16 +74,12 @@ func GetEventsJSON(db *sqlx.DB, options GetEventOptions) ([]EventJSON, error) {
 
 	events := make([]EventJSON, 0, len(dbEvents))
 	for _, event := range dbEvents {
-		attendees := make([]string, 0, len(event.Attendees))
-		for _, activist := range event.Attendees {
-			attendees = append(attendees, activist.Name)
-		}
 		events = append(events, EventJSON{
 			EventID:   event.ID,
 			EventName: event.EventName,
 			EventDate: event.EventDate.Format(EventDateLayout),
 			EventType: string(event.EventType),
-			Attendees: attendees,
+			Attendees: event.Attendees,
 		})
 	}
 	return events, nil
@@ -164,21 +160,46 @@ ON (e.id = ea.event_id AND ea.activist_id = a.id)
 		return nil, errors.Wrap(err, "failed to select events")
 	}
 
-	// Get attendees
-	for i := range events {
-		var attendees []Activist
-		err = db.Select(&attendees, `SELECT
-a.id, a.name, a.email, a.chapter, a.phone, a.location, a.facebook
-FROM activists a
-JOIN event_attendance et
-  ON a.id = et.activist_id
-WHERE
-  et.event_id = ?`, events[i].ID)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to select event attendees for event %d", events[i].ID)
-		}
-		events[i].Attendees = attendees
+	// Create a map of eventIDs to their index in `events` so we can easily add all
+	// attendance to them.
+	eventIDToIndex := map[int]int{}
+	// Create a list of eventIDs so we can pass them into the all
+	// attendance query.
+	var eventIDs []int
+	for i, e := range events {
+		eventIDs = append(eventIDs, e.ID)
+		eventIDToIndex[e.ID] = i
 	}
+
+	attendanceQuery, attendanceArgs, err := sqlx.In(`
+SELECT
+  ea.event_id,
+  a.name as activist_name
+FROM activists a
+JOIN event_attendance ea
+  ON a.id = ea.activist_id
+WHERE
+  ea.event_id IN (?)`, eventIDs)
+	if err != nil {
+		return nil, errors.Wrapf(err, "could not create sqlx.In query")
+	}
+
+	attendanceQuery = db.Rebind(attendanceQuery)
+	type Attendance struct {
+		EventID      int    `db:"event_id"`
+		ActivistName string `db:"activist_name"`
+	}
+	var allAttendance []Attendance
+	err = db.Select(&allAttendance, attendanceQuery, attendanceArgs...)
+	if err != nil {
+		return nil, errors.Wrapf(err, "could not make all attendance query")
+	}
+
+	for _, a := range allAttendance {
+		i := eventIDToIndex[a.EventID]
+		events[i].Attendees = append(events[i].Attendees, a.ActivistName)
+	}
+
 	return events, nil
 }
 
@@ -188,7 +209,7 @@ WHERE
 func GetEventAttendance(db *sqlx.DB, eventID int) ([]string, error) {
 	var attendees []string
 	err := db.Select(&attendees, `SELECT a.name FROM activists a
-    JOIN event_attendance et on a.id = et.activist_id WHERE et.event_id = ?`, eventID)
+    JOIN event_attendance ea on a.id = ea.activist_id WHERE ea.event_id = ?`, eventID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get attendees for event %d", eventID)
 	}

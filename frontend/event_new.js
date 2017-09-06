@@ -53,8 +53,8 @@ function getEventAttendeeNames(eventAttendees) {
         return;
     }
     EVENT_ATTENDEE_NAMES = eventAttendees.map(function(attendee) {
-        EVENT_ATTENDEE_NAMES_SET.add(attendee.Name);
-        return attendee.Name; 
+        EVENT_ATTENDEE_NAMES_SET.add(attendee);
+        return attendee;
     });
 }
 
