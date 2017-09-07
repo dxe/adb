@@ -161,42 +161,6 @@ Vue.use(vmodal);
 const DescOrder = 2;
 const AscOrder = 1;
 
-// Store the data of the previous sort.
-var previousSortData = {
-  field: null,
-  ascending: null,
-};
-
-// Uses previousSortData to determine whether the next sort should be
-// ascending.
-//
-// If sortByDate is true, then the default is to sort by descending.
-// Otherwise, the default is to sort by ascending.
-function shouldSortByAscending(field, sortByDate) {
-  if (field == previousSortData.field) {
-    return !previousSortData.ascending;
-  }
-
-  if (sortByDate) {
-    return false;
-  }
-  return true;
-}
-
-// Call this after every sort.
-function setPreviousSortData(field, ascending) {
-  previousSortData.field = field;
-  previousSortData.ascending = ascending;
-}
-
-// Must be kept in sync with the list in model/model.go
-var statusOrder = {
-  "Current": 1,
-  "New": 2,
-  "Former": 3,
-  "No attendance": 4,
-};
-
 var activistLevelOrder = {
   "activist" : 3,
   "core_activist" : 2,
@@ -396,67 +360,6 @@ export default {
       // reset infinite loading component
       this.$refs.infiniteLoading.$emit('$InfiniteLoading:reset');
     },
-    sortBy: function(field) {
-      var ascending = shouldSortByAscending(field);
-
-      this.activists.sort(function(a,b) {
-        var order = (a[field].toLowerCase() < b[field].toLowerCase()) ? -1 : 1;
-        if (ascending) {
-          return order;
-        }
-        return -1 * order;
-      });
-
-      setPreviousSortData(field, ascending);
-    },
-    sortByDate: function(field) {
-      var ascending = shouldSortByAscending(field, true);
-
-      this.activists.sort(function(a, b) {
-        // Always sort empty values to the bottom, no matter the
-        // order.
-        if (!a[field]) {
-          return 1;
-        }
-        if (!b[field]) {
-          return -1;
-        }
-
-        var valueA = new Date(a[field]).getTime();
-        var valueB = new Date(b[field]).getTime();
-
-        var order = (valueA < valueB) ? -1 : 1;
-
-        if (ascending) {
-          return order;
-        }
-        return -1 * order;
-      });
-
-      setPreviousSortData(field, ascending);
-    },
-    sortByStatus: function(field) {
-      this.sortByStatusOrLevel(field, statusOrder);
-    },
-    sortByLevel: function(field) {
-      this.sortByStatusOrLevel(field, activistLevelOrder);
-    },
-    sortByStatusOrLevel: function(field, sortOrder) {
-      var ascending = shouldSortByAscending(field);
-
-      this.activists.sort(function(a, b) {
-        var valueA = sortOrder[a[field]];
-        var valueB = sortOrder[b[field]];
-
-        var order = (valueA < valueB) ? -1 : 1;
-
-        if (ascending) {
-          return order;
-        }
-        return -1 * order;
-      });
-      setPreviousSortData(field, ascending);
-    },
     displayActivistLevel: function(activistLevel) {
       var displayValue = "";
 
@@ -516,7 +419,7 @@ export default {
       this.pagingParameters = {
         name: "",
         order: AscOrder,
-        limit: 4
+        limit: 40
       },
       this.distance = 100;
     }

@@ -117,7 +117,6 @@ type GetActivistOptions struct {
 	Hidden bool
 }
 
-//TODO Rename this
 type ActivistRangeOptionsJSON struct {
 	Name  string `json:"name"`
 	Limit int    `json:"limit"`
@@ -154,8 +153,7 @@ func getActivistsJSON(db *sqlx.DB, options GetActivistOptions) ([]ActivistJSON, 
 	if err != nil {
 		return nil, err
 	}
-	activistsJSON := buildActivistJSONArray(activists)
-	return activistsJSON, nil
+	return buildActivistJSONArray(activists), nil
 }
 
 func GetActivistRangeJSON(db *sqlx.DB, activistOptions ActivistRangeOptionsJSON) ([]ActivistJSON, error) {
@@ -288,11 +286,13 @@ func getActivistRange(db *sqlx.DB, activistOptions ActivistRangeOptionsJSON) ([]
 	limit := activistOptions.Limit
 	var queryArgs []interface{}
 
+	query += " WHERE a.hidden = false "
+
 	if name != "" {
 		if order == DescOrder {
-			query += " WHERE a.name < ? "
+			query += " AND a.name < ? "
 		} else {
-			query += " WHERE a.name > ? "
+			query += " AND a.name > ? "
 		}
 		queryArgs = append(queryArgs, name)
 	}

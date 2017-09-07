@@ -129,7 +129,7 @@ func router() *mux.Router {
 	router.Handle("/event/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.EventListHandler))
 	router.Handle("/event/delete", alice.New(main.apiAuthMiddleware).ThenFunc(main.EventDeleteHandler))
 	router.Handle("/activist/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistListHandler))
-	router.HandleFunc("/activist/list_range", main.ActivistInfiniteScrollHandler) // temp unauthed for test
+	router.Handle("/activist/list_range", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistInfiniteScrollHandler))
 	router.Handle("/activist/save", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistSaveHandler))
 	router.Handle("/activist/hide", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistHideHandler))
 	router.Handle("/activist/merge", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistMergeHandler))
