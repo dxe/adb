@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -12,6 +13,8 @@ import (
 	"github.com/pkg/errors"
 
 	"golang.org/x/net/context"
+
+	"net/http/pprof"
 
 	oidc "github.com/coreos/go-oidc"
 	"github.com/dxe/adb/config"
@@ -129,10 +132,18 @@ func router() *mux.Router {
 	router.Handle("/event/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.EventListHandler))
 	router.Handle("/event/delete", alice.New(main.apiAuthMiddleware).ThenFunc(main.EventDeleteHandler))
 	router.Handle("/activist/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistListHandler))
+	router.Handle("/activist/list_range", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistInfiniteScrollHandler))
 	router.Handle("/activist/save", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistSaveHandler))
 	router.Handle("/activist/hide", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistHideHandler))
 	router.Handle("/activist/merge", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistMergeHandler))
 	router.Handle("/leaderboard/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.LeaderboardListHandler))
+
+	// Pprof debug routes
+	router.HandleFunc("/debug/pprof/", pprof.Index)
+	router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	router.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	router.HandleFunc("/debug/pprof/trace", pprof.Trace)
 
 	if config.IsProd {
 		router.PathPrefix("/static").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
@@ -329,6 +340,25 @@ func (c MainController) AutocompleteActivistsHandler(w http.ResponseWriter, r *h
 	names := model.GetAutocompleteNames(c.db)
 	writeJSON(w, map[string][]string{
 		"activist_names": names,
+	})
+}
+
+// TODO Protect against non POST requests. Perhaps we can do this with the router...
+func (c MainController) ActivistInfiniteScrollHandler(w http.ResponseWriter, r *http.Request) {
+	activistOptions, err := model.GetActivistRangeOptions(r.Body)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+	activists, err := model.GetActivistRangeJSON(c.db, activistOptions)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	writeJSON(w, map[string]interface{}{
+		"status":              "success",
+		"activist_range_list": activists,
 	})
 }
 
@@ -582,5 +612,5 @@ func main() {
 	n.UseHandler(r)
 
 	fmt.Println("Listening on localhost:" + config.Port)
-	http.ListenAndServe(":"+config.Port, n)
+	log.Fatal(http.ListenAndServe(":"+config.Port, n))
 }

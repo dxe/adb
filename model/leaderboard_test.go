@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // TODO: Finish this test.
@@ -14,10 +14,10 @@ func TestGetLeaderboardActivists(t *testing.T) {
 
 	// Set up two events
 	a1, err := GetOrCreateActivist(db, "Hello")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	d2, err := time.Parse("2006-01-02", "2017-04-16")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	var wantEvents = []Event{{
 		ID:             1,
 		EventName:      "event one",

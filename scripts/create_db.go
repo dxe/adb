@@ -2,31 +2,33 @@ package main
 
 import (
 	"flag"
+	"fmt"
 
 	"github.com/dxe/adb/config"
 	"github.com/dxe/adb/model"
 )
 
 var noFakeData bool
+var devEmail string
 
 func init() {
-	noFake := flag.Bool("no-fake-data", false, "Don't pre-populate wihth data")
+	noFake := flag.Bool("no-fake-data", false, "Don't pre-populate with data")
+	devEmailPtr := flag.String("dev-email", "test-dev@directactioneverywhere.com", "The developer email used to login for local development")
 	flag.Parse()
+
 	noFakeData = *noFake
+	devEmail = *devEmailPtr
 }
 
 func createDevDB(name string) {
 	db := model.NewDB(config.DBUser + ":" + config.DBPassword + "@/" + name + "?multiStatements=true")
 	defer db.Close()
 	model.WipeDatabase(db)
-
-	if !noFakeData {
-		// Insert sample data
-		db.MustExec(`
+	insertStatement := fmt.Sprintf(`
 INSERT INTO activists
   (id, name, email, chapter, phone, location, facebook, activist_level, exclude_from_leaderboard, core_staff, global_team_member, liberation_pledge)
   VALUES
-  (1, 'Adam Kol', 'test@directactioneverywhere.com', 'SF Bay', '7035558484', 'Berkeley, United States', '', 'activist', 0, 0, 1, 1),
+  (1, 'Adam Kol', 'test@directactioneverywhere.com', 'Sf Bay', '7035558484', 'Berkeley, United States', '', 'activist', 0, 0, 1, 1),
   (2, 'Robin Houseman', 'testtest@gmail.com', 'SF Bay', '7035558484', 'United States','', 'activist', 0, 0, 0, 0),
   (3, 'aaa', 'test@comcast.net', 'SF Bay', '7035558484', 'Fairfield, United States', '', 'activist', 0, 0, 0, 0),
   (4, 'bbb', 'test@comcast.net', 'SF Bay', '7035558484', 'Fairfield, United States', '', 'activist', 0, 0, 0, 0),
@@ -58,8 +60,12 @@ INSERT INTO adb_users (id, email, admin, disabled) VALUES
   (2, 'cwbailey20042@gmail.com', 1, 0),
   (3, 'jakehobbs@gmail.com', 1, 0),
   (4, 'samer@directactioneverywhere.com', 1, 0),
-  (5, 'jake@directactioneverywhere.com', 1, 0);
-`)
+  (5, 'jake@directactioneverywhere.com', 1, 0),
+  (6, '%s', 1, 0);
+`, devEmail)
+	if !noFakeData {
+		// Insert sample data
+		db.MustExec(insertStatement)
 	}
 }
 

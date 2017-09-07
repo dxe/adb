@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAutocompleteActivistsHandler(t *testing.T) {
@@ -41,14 +41,14 @@ func TestGetActivistEventData(t *testing.T) {
 	defer db.Close()
 
 	a1, err := GetOrCreateActivist(db, "Test Activist")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	d1, err := time.Parse("2006-01-02", "2017-04-15")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	d2, err := time.Parse("2006-01-02", "2017-04-16")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	d3, err := time.Parse("2006-01-02", "2017-04-17")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// These events are intentionally out of order
 	insertEvents := []Event{{
@@ -79,11 +79,11 @@ func TestGetActivistEventData(t *testing.T) {
 	mustInsertAllEvents(t, db, insertEvents)
 
 	d, err := a1.GetActivistEventData(db)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	d.FirstEvent.Equal(d1)
 	d.LastEvent.Equal(d3)
-	assert.Equal(t, d.TotalEvents, 4)
+	require.Equal(t, d.TotalEvents, 4)
 }
 
 func TestGetActivistEventData_noEvents(t *testing.T) {
@@ -91,12 +91,12 @@ func TestGetActivistEventData_noEvents(t *testing.T) {
 	defer db.Close()
 
 	a1, err := GetOrCreateActivist(db, "Test Activist")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	d, err := a1.GetActivistEventData(db)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	assert.Equal(t, d, ActivistEventData{
+	require.Equal(t, d, ActivistEventData{
 		FirstEvent:  nil,
 		LastEvent:   nil,
 		TotalEvents: 0,
@@ -123,13 +123,13 @@ func TestHideActivist(t *testing.T) {
 
 	// Test that deleting activists works
 	a1, err := GetOrCreateActivist(db, "Test Activist")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	a2, err := GetOrCreateActivist(db, "Another Test Activist")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	d1, err := time.Parse("2006-01-02", "2017-01-15")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	eventID, err := InsertUpdateEvent(db, Event{
 		EventName:      "my event",
@@ -138,42 +138,42 @@ func TestHideActivist(t *testing.T) {
 		AddedAttendees: []Activist{a1, a2},
 	})
 
-	assert.NoError(t, HideActivist(db, a1.ID))
+	require.NoError(t, HideActivist(db, a1.ID))
 
 	// Hidden activists should not show up in the autocompleted names
 	names := GetAutocompleteNames(db)
-	assert.Equal(t, len(names), 1)
-	assert.Equal(t, names[0], a2.Name)
+	require.Equal(t, len(names), 1)
+	require.Equal(t, names[0], a2.Name)
 
 	// Hidden activists should not show up in GetActivistsJSON unless
 	// Hidden = true.
 	unhiddenActivists, err := GetActivistsJSON(db, GetActivistOptions{})
-	assert.NoError(t, err)
-	assert.Equal(t, len(unhiddenActivists), 1)
-	assert.Equal(t, unhiddenActivists[0].ID, a2.ID)
+	require.NoError(t, err)
+	require.Equal(t, len(unhiddenActivists), 1)
+	require.Equal(t, unhiddenActivists[0].ID, a2.ID)
 
 	hiddenActivists, err := GetActivistsJSON(db, GetActivistOptions{Hidden: true})
-	assert.NoError(t, err)
-	assert.Equal(t, len(hiddenActivists), 1)
-	assert.Equal(t, hiddenActivists[0].ID, a1.ID)
+	require.NoError(t, err)
+	require.Equal(t, len(hiddenActivists), 1)
+	require.Equal(t, hiddenActivists[0].ID, a1.ID)
 
 	// Hidden activists should show up in GetActivistJSON
 	a1JSON, err := GetActivistJSON(db, GetActivistOptions{ID: a1.ID})
-	assert.NoError(t, err)
-	assert.Equal(t, a1JSON.ID, a1.ID)
+	require.NoError(t, err)
+	require.Equal(t, a1JSON.ID, a1.ID)
 
 	// Hidden activists *should* show up in the event attendance
 	event, err := GetEvent(db, GetEventOptions{EventID: eventID})
-	assert.NoError(t, err)
-	assert.Equal(t, len(event.Attendees), 2)
-	assert.Equal(t, event.Attendees[0].ID, a1.ID)
-	assert.Equal(t, event.Attendees[1].ID, a2.ID)
+	require.NoError(t, err)
+	require.Equal(t, len(event.Attendees), 2)
+	require.Equal(t, event.Attendees[0], a1.Name)
+	require.Equal(t, event.Attendees[1], a2.Name)
 
 	attendanceNames, err := GetEventAttendance(db, eventID)
-	assert.NoError(t, err)
-	assert.Equal(t, len(attendanceNames), 2)
-	assert.Equal(t, attendanceNames[0], a1.Name)
-	assert.Equal(t, attendanceNames[1], a2.Name)
+	require.NoError(t, err)
+	require.Equal(t, len(attendanceNames), 2)
+	require.Equal(t, attendanceNames[0], a1.Name)
+	require.Equal(t, attendanceNames[1], a2.Name)
 }
 
 func TestMergeActivist(t *testing.T) {
@@ -182,20 +182,20 @@ func TestMergeActivist(t *testing.T) {
 
 	// Test that deleting activists works
 	a1, err := GetOrCreateActivist(db, "Test Activist")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	a2, err := GetOrCreateActivist(db, "Another Test Activist")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	a3, err := GetOrCreateActivist(db, "A Third Test Activist")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	d1, err := time.Parse("2006-01-02", "2017-04-15")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	d2, err := time.Parse("2006-01-02", "2017-04-16")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	d3, err := time.Parse("2006-01-02", "2017-04-17")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	insertEvents := []Event{{
 		ID:             1,
@@ -218,23 +218,248 @@ func TestMergeActivist(t *testing.T) {
 	}}
 	mustInsertAllEvents(t, db, insertEvents)
 
-	assert.NoError(t, MergeActivist(db, a1.ID, a2.ID))
+	require.NoError(t, MergeActivist(db, a1.ID, a2.ID))
 
 	e1, err := GetEvent(db, GetEventOptions{EventID: 1})
-	assert.NoError(t, err)
-	assert.Equal(t, len(e1.Attendees), 2)
-	assert.Equal(t, e1.Attendees[0].ID, a2.ID)
-	assert.Equal(t, e1.Attendees[1].ID, a3.ID)
+	require.NoError(t, err)
+	require.Equal(t, len(e1.Attendees), 2)
+	require.Equal(t, e1.Attendees[0], a2.Name)
+	require.Equal(t, e1.Attendees[1], a3.Name)
 
 	e2, err := GetEvent(db, GetEventOptions{EventID: 2})
-	assert.NoError(t, err)
-	assert.Equal(t, len(e2.Attendees), 2)
-	assert.Equal(t, e2.Attendees[0].ID, a2.ID)
-	assert.Equal(t, e2.Attendees[1].ID, a3.ID)
+	require.NoError(t, err)
+	require.Equal(t, len(e2.Attendees), 2)
+	require.Equal(t, e2.Attendees[0], a2.Name)
+	require.Equal(t, e2.Attendees[1], a3.Name)
 
 	e3, err := GetEvent(db, GetEventOptions{EventID: 3})
+	require.NoError(t, err)
+	require.Equal(t, len(e3.Attendees), 2)
+	require.Equal(t, e3.Attendees[0], a2.Name)
+	require.Equal(t, e3.Attendees[1], a3.Name)
+}
+
+// An error should be thrown if Order does not match
+// model.AscOrder or model.DescOrder
+func TestActivistRange_noOrderOption_throwsError(t *testing.T) {
+	db := newTestDB()
+	defer db.Close()
+
+	insertTestActivists(t, db, []string{"Apple"})
+
+	activistOptions := ActivistRangeOptionsJSON{
+		Name:  "Apple",
+		Limit: 10,
+	}
+
+	activists, err := GetActivistRangeJSON(db, activistOptions)
+	assert.Error(t, err)
+	assert.Nil(t, activists)
+
+}
+
+// Not Specfiying a starting name with ascending order
+// and no limit, returns all activists
+func TestActivistRange_noNameOrLimitAscOrder_returnsAllActivists(t *testing.T) {
+	db := newTestDB()
+	defer db.Close()
+
+	activistsToInsert := []string{"A", "B", "C", "D"}
+	insertTestActivists(t, db, activistsToInsert)
+	activistOptions := ActivistRangeOptionsJSON{
+		Order: AscOrder,
+	}
+	fetchedActivists, err := GetActivistRangeJSON(db, activistOptions)
+
 	assert.NoError(t, err)
-	assert.Equal(t, len(e3.Attendees), 2)
-	assert.Equal(t, e3.Attendees[0].ID, a2.ID)
-	assert.Equal(t, e3.Attendees[1].ID, a3.ID)
+	assert.Equal(t, len(activistsToInsert), len(fetchedActivists))
+
+	// For this test, fetched activists should be in the same order
+	// as the activistsToInsert slice
+	for idx, a := range fetchedActivists {
+		assert.Equal(t, activistsToInsert[idx], a.Name)
+	}
+
+}
+
+// Not specifying a starting name with descending order
+// and no limit, returns all activists in descending order
+func TestActivistRange_noNameOrLimitDescOrder_returnsAllActivists(t *testing.T) {
+	db := newTestDB()
+	defer db.Close()
+
+	activistsToInsert := []string{"A", "B", "C", "D"}
+	insertTestActivists(t, db, activistsToInsert)
+	activistOptions := ActivistRangeOptionsJSON{
+		Order: DescOrder,
+	}
+	fetchedActivists, err := GetActivistRangeJSON(db, activistOptions)
+
+	assert.NoError(t, err)
+	assert.Equal(t, len(activistsToInsert), len(fetchedActivists))
+
+	// For this test, fetched activists should be in reverse order as
+	// the activistsToInsert slice
+	reverseIdx := len(activistsToInsert) - 1
+	for idx, a := range fetchedActivists {
+		assert.Equal(t, activistsToInsert[reverseIdx-idx], a.Name)
+	}
+
+}
+
+// No limit, ascending order, specified name
+// returns all activists with names greater than specified name
+func TestActivistRange_NameNoLimitAscOrder_returnsSubsetOfActivists(t *testing.T) {
+	db := newTestDB()
+	defer db.Close()
+
+	activistsToInsert := []string{"A", "B", "C", "D", "E", "F"}
+	insertTestActivists(t, db, activistsToInsert)
+	activistOptions := ActivistRangeOptionsJSON{
+		Name:  "A",
+		Order: AscOrder,
+	}
+	fetchedActivists, err := GetActivistRangeJSON(db, activistOptions)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 5, len(fetchedActivists))
+
+	insertedActivistsSubset := activistsToInsert[1:]
+	for idx, a := range fetchedActivists {
+		assert.Equal(t, insertedActivistsSubset[idx], a.Name)
+	}
+
+	// If specified name is last, then result should be nil
+	activistOptions.Name = "F"
+	fetchedActivists, err = GetActivistRangeJSON(db, activistOptions)
+	assert.NoError(t, err)
+	assert.Nil(t, fetchedActivists)
+
+}
+
+// No limit, descending order, specified name
+// returns all acitivists with names less than specified name
+func TestActivistRange_NameNoLimitDescOrder_returnsSubsetOfActivists(t *testing.T) {
+	db := newTestDB()
+	defer db.Close()
+
+	activistsToInsert := []string{"A", "B", "C", "D", "E", "F"}
+	insertTestActivists(t, db, activistsToInsert)
+	activistOptions := ActivistRangeOptionsJSON{
+		Name:  "F",
+		Order: DescOrder,
+	}
+	fetchedActivists, err := GetActivistRangeJSON(db, activistOptions)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 5, len(fetchedActivists))
+
+	reverseStringSlice(activistsToInsert)
+	activistsToInsert = activistsToInsert[1:]
+	for idx, a := range fetchedActivists {
+		assert.Equal(t, activistsToInsert[idx], a.Name)
+	}
+
+	// If specified name is last, then result is nil
+	activistOptions.Name = "A"
+	fetchedActivists, err = GetActivistRangeJSON(db, activistOptions)
+	assert.NoError(t, err)
+	assert.Nil(t, fetchedActivists)
+
+}
+
+// Limit < 0 behaves as if no limit was specified
+func TestActivistRange_nonPositiveLimit_behavesAsNoLimit(t *testing.T) {
+	db := newTestDB()
+	defer db.Close()
+
+	activistsToInsert := []string{"A", "B", "C", "D"}
+	insertTestActivists(t, db, activistsToInsert)
+	activistOptions := ActivistRangeOptionsJSON{
+		Order: AscOrder,
+		Limit: -42,
+	}
+	fetchedActivists, err := GetActivistRangeJSON(db, activistOptions)
+
+	assert.NoError(t, err)
+	assert.Equal(t, len(activistsToInsert), len(fetchedActivists))
+}
+
+// Specifying limit restricts number of returned entries
+func TestActivistRange_NameAndLimitAscOrder_returnsSubsetOfActivists(t *testing.T) {
+	db := newTestDB()
+	defer db.Close()
+
+	activistsToInsert := []string{"A", "B", "C", "D", "E", "F"}
+	insertTestActivists(t, db, activistsToInsert)
+	activistOptions := ActivistRangeOptionsJSON{
+		Order: AscOrder,
+		Limit: 20,
+	}
+	// Should get all activists back since Limit > Number of activists
+	fetchedActivists, err := GetActivistRangeJSON(db, activistOptions)
+	assert.NoError(t, err)
+	assert.Equal(t, len(activistsToInsert), len(fetchedActivists))
+
+	activistOptions.Limit = 2
+	fetchedActivists, err = GetActivistRangeJSON(db, activistOptions)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(fetchedActivists))
+
+	for idx, a := range fetchedActivists {
+		assert.Equal(t, activistsToInsert[idx], a.Name)
+	}
+
+	activistOptions.Name = "F"
+	fetchedActivists, err = GetActivistRangeJSON(db, activistOptions)
+	assert.NoError(t, err)
+	assert.Nil(t, fetchedActivists)
+}
+
+// Specifying limit restricts number of returned entries
+func TestActivistRange_NameAndLimitDescOrder_returnsSubsetofActivists(t *testing.T) {
+	db := newTestDB()
+	defer db.Close()
+
+	activistsToInsert := []string{"A", "B", "C", "D", "E", "F"}
+	insertTestActivists(t, db, activistsToInsert)
+	activistOptions := ActivistRangeOptionsJSON{
+		Order: DescOrder,
+		Limit: 20,
+	}
+	// Should get all activists back since 20 > Number of activists
+	fetchedActivists, err := GetActivistRangeJSON(db, activistOptions)
+	assert.NoError(t, err)
+	assert.Equal(t, len(activistsToInsert), len(fetchedActivists))
+
+	activistOptions.Limit = 2
+	fetchedActivists, err = GetActivistRangeJSON(db, activistOptions)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(fetchedActivists))
+
+	reverseStringSlice(activistsToInsert)
+	for idx, a := range fetchedActivists {
+		assert.Equal(t, activistsToInsert[idx], a.Name)
+	}
+
+	activistOptions.Name = "A"
+	fetchedActivists, err = GetActivistRangeJSON(db, activistOptions)
+	assert.NoError(t, err)
+	assert.Nil(t, fetchedActivists)
+}
+
+func insertTestActivists(t *testing.T, db *sqlx.DB, names []string) []Activist {
+	var activists []Activist = make([]Activist, len(names))
+	for idx, name := range names {
+		activist, err := GetOrCreateActivist(db, name)
+		assert.NoError(t, err)
+		activists[idx] = activist
+	}
+	return activists
+}
+
+func reverseStringSlice(s []string) {
+	for left, right := 0, len(s)-1; left < right; left, right = left+1, right-1 {
+		s[left], s[right] = s[right], s[left]
+	}
 }
