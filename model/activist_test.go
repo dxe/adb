@@ -253,8 +253,8 @@ func TestActivistRange_noOrderOption_throwsError(t *testing.T) {
 	}
 
 	activists, err := GetActivistRangeJSON(db, activistOptions)
-	assert.Error(t, err)
-	assert.Nil(t, activists)
+	require.Error(t, err)
+	require.Nil(t, activists)
 
 }
 
@@ -271,13 +271,13 @@ func TestActivistRange_noNameOrLimitAscOrder_returnsAllActivists(t *testing.T) {
 	}
 	fetchedActivists, err := GetActivistRangeJSON(db, activistOptions)
 
-	assert.NoError(t, err)
-	assert.Equal(t, len(activistsToInsert), len(fetchedActivists))
+	require.NoError(t, err)
+	require.Equal(t, len(activistsToInsert), len(fetchedActivists))
 
 	// For this test, fetched activists should be in the same order
 	// as the activistsToInsert slice
 	for idx, a := range fetchedActivists {
-		assert.Equal(t, activistsToInsert[idx], a.Name)
+		require.Equal(t, activistsToInsert[idx], a.Name)
 	}
 
 }
@@ -295,14 +295,14 @@ func TestActivistRange_noNameOrLimitDescOrder_returnsAllActivists(t *testing.T) 
 	}
 	fetchedActivists, err := GetActivistRangeJSON(db, activistOptions)
 
-	assert.NoError(t, err)
-	assert.Equal(t, len(activistsToInsert), len(fetchedActivists))
+	require.NoError(t, err)
+	require.Equal(t, len(activistsToInsert), len(fetchedActivists))
 
 	// For this test, fetched activists should be in reverse order as
 	// the activistsToInsert slice
 	reverseIdx := len(activistsToInsert) - 1
 	for idx, a := range fetchedActivists {
-		assert.Equal(t, activistsToInsert[reverseIdx-idx], a.Name)
+		require.Equal(t, activistsToInsert[reverseIdx-idx], a.Name)
 	}
 
 }
@@ -321,19 +321,19 @@ func TestActivistRange_NameNoLimitAscOrder_returnsSubsetOfActivists(t *testing.T
 	}
 	fetchedActivists, err := GetActivistRangeJSON(db, activistOptions)
 
-	assert.NoError(t, err)
-	assert.Equal(t, 5, len(fetchedActivists))
+	require.NoError(t, err)
+	require.Equal(t, 5, len(fetchedActivists))
 
 	insertedActivistsSubset := activistsToInsert[1:]
 	for idx, a := range fetchedActivists {
-		assert.Equal(t, insertedActivistsSubset[idx], a.Name)
+		require.Equal(t, insertedActivistsSubset[idx], a.Name)
 	}
 
 	// If specified name is last, then result should be nil
 	activistOptions.Name = "F"
 	fetchedActivists, err = GetActivistRangeJSON(db, activistOptions)
-	assert.NoError(t, err)
-	assert.Nil(t, fetchedActivists)
+	require.NoError(t, err)
+	require.Nil(t, fetchedActivists)
 
 }
 
@@ -351,20 +351,20 @@ func TestActivistRange_NameNoLimitDescOrder_returnsSubsetOfActivists(t *testing.
 	}
 	fetchedActivists, err := GetActivistRangeJSON(db, activistOptions)
 
-	assert.NoError(t, err)
-	assert.Equal(t, 5, len(fetchedActivists))
+	require.NoError(t, err)
+	require.Equal(t, 5, len(fetchedActivists))
 
 	reverseStringSlice(activistsToInsert)
 	activistsToInsert = activistsToInsert[1:]
 	for idx, a := range fetchedActivists {
-		assert.Equal(t, activistsToInsert[idx], a.Name)
+		require.Equal(t, activistsToInsert[idx], a.Name)
 	}
 
 	// If specified name is last, then result is nil
 	activistOptions.Name = "A"
 	fetchedActivists, err = GetActivistRangeJSON(db, activistOptions)
-	assert.NoError(t, err)
-	assert.Nil(t, fetchedActivists)
+	require.NoError(t, err)
+	require.Nil(t, fetchedActivists)
 
 }
 
@@ -381,8 +381,8 @@ func TestActivistRange_nonPositiveLimit_behavesAsNoLimit(t *testing.T) {
 	}
 	fetchedActivists, err := GetActivistRangeJSON(db, activistOptions)
 
-	assert.NoError(t, err)
-	assert.Equal(t, len(activistsToInsert), len(fetchedActivists))
+	require.NoError(t, err)
+	require.Equal(t, len(activistsToInsert), len(fetchedActivists))
 }
 
 // Specifying limit restricts number of returned entries
@@ -398,22 +398,22 @@ func TestActivistRange_NameAndLimitAscOrder_returnsSubsetOfActivists(t *testing.
 	}
 	// Should get all activists back since Limit > Number of activists
 	fetchedActivists, err := GetActivistRangeJSON(db, activistOptions)
-	assert.NoError(t, err)
-	assert.Equal(t, len(activistsToInsert), len(fetchedActivists))
+	require.NoError(t, err)
+	require.Equal(t, len(activistsToInsert), len(fetchedActivists))
 
 	activistOptions.Limit = 2
 	fetchedActivists, err = GetActivistRangeJSON(db, activistOptions)
-	assert.NoError(t, err)
-	assert.Equal(t, 2, len(fetchedActivists))
+	require.NoError(t, err)
+	require.Equal(t, 2, len(fetchedActivists))
 
 	for idx, a := range fetchedActivists {
-		assert.Equal(t, activistsToInsert[idx], a.Name)
+		require.Equal(t, activistsToInsert[idx], a.Name)
 	}
 
 	activistOptions.Name = "F"
 	fetchedActivists, err = GetActivistRangeJSON(db, activistOptions)
-	assert.NoError(t, err)
-	assert.Nil(t, fetchedActivists)
+	require.NoError(t, err)
+	require.Nil(t, fetchedActivists)
 }
 
 // Specifying limit restricts number of returned entries
@@ -429,30 +429,30 @@ func TestActivistRange_NameAndLimitDescOrder_returnsSubsetofActivists(t *testing
 	}
 	// Should get all activists back since 20 > Number of activists
 	fetchedActivists, err := GetActivistRangeJSON(db, activistOptions)
-	assert.NoError(t, err)
-	assert.Equal(t, len(activistsToInsert), len(fetchedActivists))
+	require.NoError(t, err)
+	require.Equal(t, len(activistsToInsert), len(fetchedActivists))
 
 	activistOptions.Limit = 2
 	fetchedActivists, err = GetActivistRangeJSON(db, activistOptions)
-	assert.NoError(t, err)
-	assert.Equal(t, 2, len(fetchedActivists))
+	require.NoError(t, err)
+	require.Equal(t, 2, len(fetchedActivists))
 
 	reverseStringSlice(activistsToInsert)
 	for idx, a := range fetchedActivists {
-		assert.Equal(t, activistsToInsert[idx], a.Name)
+		require.Equal(t, activistsToInsert[idx], a.Name)
 	}
 
 	activistOptions.Name = "A"
 	fetchedActivists, err = GetActivistRangeJSON(db, activistOptions)
-	assert.NoError(t, err)
-	assert.Nil(t, fetchedActivists)
+	require.NoError(t, err)
+	require.Nil(t, fetchedActivists)
 }
 
 func insertTestActivists(t *testing.T, db *sqlx.DB, names []string) []Activist {
 	var activists []Activist = make([]Activist, len(names))
 	for idx, name := range names {
 		activist, err := GetOrCreateActivist(db, name)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		activists[idx] = activist
 	}
 	return activists
