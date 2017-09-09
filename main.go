@@ -119,6 +119,7 @@ func router() *mux.Router {
 	router.Handle("/list_activists", alice.New(main.authMiddleware).ThenFunc(main.ListActivistsHandler))
 	router.Handle("/leaderboard", alice.New(main.authMiddleware).ThenFunc(main.LeaderboardHandler))
 	router.Handle("/power", alice.New(main.authMiddleware).ThenFunc(main.PowerHandler)) // TODO: rename
+	router.Handle("/list_working_groups", alice.New(main.authMiddleware).ThenFunc(main.ListWorkingGroupsHandler))
 
 	// Unauthed API
 	router.HandleFunc("/tokensignin", main.TokenSignInHandler)
@@ -244,6 +245,10 @@ func (c MainController) ListEventsHandler(w http.ResponseWriter, r *http.Request
 
 func (c MainController) ListActivistsHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, "activist_list", PageData{PageName: "ActivistList"})
+}
+
+func (c MainController) ListWorkingGroupsHandler(w http.ResponseWriter, r *http.Request) {
+	renderPage(w, "working_group_list", PageData{PageName: "WorkingGroupList"})
 }
 
 func (c MainController) LeaderboardHandler(w http.ResponseWriter, r *http.Request) {
