@@ -7,13 +7,13 @@
         <tr>
           <th></th>
           <th></th>
-          <th @click="sortBy('name')">Name</th>
-          <th @click="sortBy('email')">Email</th>
-          <th @click="sortBy('phone')">Phone</th>
-          <th @click="sortByDate('first_event')">First Event</th>
-          <th @click="sortByDate('last_event')">Last Event</th>
-          <th @click="sortByStatus('status')">Status</th>
-          <th @click="sortByLevel('activist_level')">Level</th>
+          <th @click="sortByName">Name</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>First Event</th>
+          <th>Last Event</th>
+          <th>Status</th>
+          <th>Level</th>
         </tr>
       </thead>
       <tbody id="activist-list-body">
@@ -39,6 +39,7 @@
         </tr>
       </tbody>
     </table>
+    <infinite-loading :on-infinite="onInfinite" :distance="distance" ref="infiniteLoading"></infinite-loading>
     <modal
        name="merge-activist-modal"
        :height="650"
@@ -152,45 +153,14 @@ import {flashMessage} from 'flash_message';
 import {Dropdown} from 'uiv';
 import {initActivistSelect} from 'chosen_utils';
 import {focus} from 'directives/focus';
+import InfiniteLoading from 'vue-infinite-loading';
 
 Vue.use(vmodal);
 
-// Store the data of the previous sort.
-var previousSortData = {
-  field: null,
-  ascending: null,
-};
-
-// Uses previousSortData to determine whether the next sort should be
-// ascending.
-//
-// If sortByDate is true, then the default is to sort by descending.
-// Otherwise, the default is to sort by ascending.
-function shouldSortByAscending(field, sortByDate) {
-  if (field == previousSortData.field) {
-    return !previousSortData.ascending;
-  }
-
-  if (sortByDate) {
-    return false;
-  }
-  return true;
-}
-
-// Call this after every sort.
-function setPreviousSortData(field, ascending) {
-  previousSortData.field = field;
-  previousSortData.ascending = ascending;
-}
-
-
-// Must be kept in sync with the list in model/model.go
-var statusOrder = {
-  "Current": 1,
-  "New": 2,
-  "Former": 3,
-  "No attendance": 4,
-};
+// Constants related to list ordering
+// Corresponds to the constants DescOrder and AscOrder in model/activist.go
+const DescOrder = 2;
+const AscOrder = 1;
 
 var activistLevelOrder = {
   "activist" : 3,
@@ -368,69 +338,18 @@ export default {
       // Allow body to scroll after modal is closed.
       $(document.body).removeClass('noscroll');
     },
-    setActivists: function(activistsData) {
-      this.activists = activistsData;
-    },
-    sortBy: function(field) {
-      var ascending = shouldSortByAscending(field);
-
-      this.activists.sort(function(a,b) {
-        var order = (a[field].toLowerCase() < b[field].toLowerCase()) ? -1 : 1;
-        if (ascending) {
-          return order;
-        }
-        return -1 * order;
-      });
-
-      setPreviousSortData(field, ascending);
-    },
-    sortByDate: function(field) {
-      var ascending = shouldSortByAscending(field, true);
-
-      this.activists.sort(function(a, b) {
-        // Always sort empty values to the bottom, no matter the
-        // order.
-        if (!a[field]) {
-          return 1;
-        }
-        if (!b[field]) {
-          return -1;
-        }
-
-        var valueA = new Date(a[field]).getTime();
-        var valueB = new Date(b[field]).getTime();
-
-        var order = (valueA < valueB) ? -1 : 1;
-
-        if (ascending) {
-          return order;
-        }
-        return -1 * order;
-      });
-
-      setPreviousSortData(field, ascending);
-    },
-    sortByStatus: function(field) {
-      this.sortByStatusOrLevel(field, statusOrder);
-    },
-    sortByLevel: function(field) {
-      this.sortByStatusOrLevel(field, activistLevelOrder);
-    },
-    sortByStatusOrLevel: function(field, sortOrder) {
-      var ascending = shouldSortByAscending(field);
-
-      this.activists.sort(function(a, b) {
-        var valueA = sortOrder[a[field]];
-        var valueB = sortOrder[b[field]];
-
-        var order = (valueA < valueB) ? -1 : 1;
-
-        if (ascending) {
-          return order;
-        }
-        return -1 * order;
-      });
-      setPreviousSortData(field, ascending);
+    sortByName: function() {
+      var order = this.pagingParameters.order;
+      if (order === AscOrder) {
+        order = DescOrder;
+      }
+      else {
+        order = AscOrder;
+      }
+      this.reset();
+      this.pagingParameters.order = order;
+      // reset infinite loading component
+      this.$refs.infiniteLoading.$emit('$InfiniteLoading:reset');
     },
     displayActivistLevel: function(activistLevel) {
       var displayValue = "";
@@ -451,6 +370,49 @@ export default {
       }
 
       return displayValue;
+    },
+    onInfinite: function() {
+      $.ajax({
+        url: "/activist/list_range",
+        method: "POST",
+        data: JSON.stringify(this.pagingParameters),
+        success: (data) => {
+          var parsed = JSON.parse(data);
+          if (parsed.status === "error") {
+            flashMessage("Error: " + parsed.message, true);
+            return;
+          }
+          // status === "success"
+          var rangedList = parsed.activist_range_list;
+          if (rangedList !== null) {
+            this.activists = this.activists.concat(rangedList);
+            this.pagingParameters.name = rangedList[rangedList.length - 1].name;
+          }
+          this.$refs.infiniteLoading.$emit('$InfiniteLoading:loaded');
+          if (rangedList === null || rangedList.length < this.pagingParameters.limit) {
+            // No more data to load
+            this.$refs.infiniteLoading.$emit('$InfiniteLoading:complete');
+          }
+        },
+        error: () => {
+          console.warn(err.responseText);
+          flasMessage("Server error: " + err.responseText, true);
+        },
+      });
+    },
+    reset: function() {
+      // reset data properties back to original values
+      this.currentActivist = {},
+      this.activists = [],
+      this.activistIndex = -1;
+      this.disableConfirmButton = false;
+      this.currentModalName = '';
+      this.pagingParameters = {
+        name: "",
+        order: AscOrder,
+        limit: 40
+      },
+      this.distance = 100;
     }
   },
   data() {
@@ -460,28 +422,17 @@ export default {
       activistIndex: -1,
       disableConfirmButton: false,
       currentModalName: '',
-    };
-  },
-  created() {
-    $.ajax({
-      url: "/activist/list",
-      success: function(data) {
-        var parsed = JSON.parse(data);
-        if (parsed.status === "error") {
-          flashMessage("Error: " + parsed.message, true);
-          return;
-        }
-        // status === "success"
-
-        this.setActivists(parsed);
-      }.bind(this),
-      error: function() {
-        flashMessage("Error connecting to server.", true);
+      pagingParameters: {
+        name: "",
+        order: AscOrder,
+        limit: 40
       },
-    });
+      distance: 100,
+    };
   },
   components: {
     Dropdown,
+    InfiniteLoading,
   },
   directives: {
     focus,
