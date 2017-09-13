@@ -85,6 +85,7 @@ CREATE TABLE IF NOT EXISTS working_groups (
   name VARCHAR(60) NOT NULL,
   type TINYINT(1) NOT NULL,
   group_email VARCHAR(100),
+  point_person_id INTEGER NOT NULL DEFAULT '0',
   CONSTRAINT working_groups_name_ukey UNIQUE (name)
 )
 `)
@@ -93,7 +94,6 @@ db.MustExec(`
 CREATE TABLE IF NOT EXISTS working_group_members (
   working_group_id INTEGER NOT NULL,
   activist_id INTEGER NOT NULL,
-  point_person TINYINT(1) NOT NULL DEFAULT '0',
   CONSTRAINT working_group_member_ukey UNIQUE (working_group_id, activist_id)
 )
 `)
