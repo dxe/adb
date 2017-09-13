@@ -23,6 +23,8 @@ func WipeDatabase(db *sqlx.DB) {
 	db.MustExec(`DROP TABLE IF EXISTS event_attendance`)
 	db.MustExec(`DROP TABLE IF EXISTS adb_users`)
 	db.MustExec(`DROP TABLE IF EXISTS merged_activist_attendance`)
+  db.MustExec(`DROP TABLE IF EXISTS working_groups`)
+  db.MustExec(`DROP TABLE IF EXISTS working_group_members`)
 
 	db.MustExec(`
 CREATE TABLE IF NOT EXISTS activists (
@@ -76,6 +78,26 @@ CREATE TABLE IF NOT EXISTS merged_activist_attendance (
   CONSTRAINT merged_activist_attendance_ukey UNIQUE (original_activist_id, target_activist_id, event_id)
 )
 `)
+
+db.MustExec(`
+CREATE TABLE IF NOT EXISTS working_groups (
+  id INTEGER PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(60) NOT NULL,
+  type TINYINT(1) NOT NULL,
+  group_email VARCHAR(100),
+  CONSTRAINT working_groups_name_ukey UNIQUE (name)
+)
+`)
+
+db.MustExec(`
+CREATE TABLE IF NOT EXISTS working_group_members (
+  working_group_id INTEGER NOT NULL,
+  activist_id INTEGER NOT NULL,
+  point_person TINYINT(1) NOT NULL DEFAULT '0',
+  CONSTRAINT working_group_member_ukey UNIQUE (working_group_id, activist_id)
+)
+`)
+
 }
 
 func newTestDB() *sqlx.DB {
