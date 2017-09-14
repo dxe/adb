@@ -10,8 +10,8 @@ import (
 /** Constant and Variable Definitions */
 
 const (
-	working_group = 1
-	committee     = 2
+	working_group_db_value = 1
+	committee_db_value     = 2
 )
 
 /** User-defined Types */
@@ -26,8 +26,8 @@ type WorkingGroup struct {
 }
 
 type WorkingGroupQueryOptions struct {
-	WorkingGroupID   int
-	WorkingGroupName string
+	GroupID   int
+	GroupName string
 }
 
 type WorkingGroupMembers struct {
@@ -38,20 +38,18 @@ type WorkingGroupMembers struct {
 
 /** Functions and Methods */
 
-func CreateWorkingGroup(db *sqlx.DB, workingGroup WorkingGroup) error {
+func CreateWorkingGroup(db *sqlx.DB, workingGroup WorkingGroup) (int, error) {
 	if workingGroup.ID != 0 {
-		return errors.New("Cannot Create a working group that already exists")
+		return 0, errors.New("Cannot Create a working group that already exists")
 	}
-	_, err := createOrUpdateWorkingGroup(db, workingGroup)
-	return err
+	return createOrUpdateWorkingGroup(db, workingGroup)
 }
 
-func UpdateWorkingGroup(db *sqlx.DB, workingGroup WorkingGroup) error {
+func UpdateWorkingGroup(db *sqlx.DB, workingGroup WorkingGroup) (int, error) {
 	if workingGroup.ID == 0 {
-		return errors.New("Unable to update working group if no working group id is provided")
+		return 0, errors.New("Unable to update working group if no working group id is provided")
 	}
-	_, err := createOrUpdateWorkingGroup(db, workingGroup)
-	return err
+	return createOrUpdateWorkingGroup(db, workingGroup)
 }
 
 func createOrUpdateWorkingGroup(db *sqlx.DB, workingGroup WorkingGroup) (int, error) {
@@ -59,7 +57,7 @@ func createOrUpdateWorkingGroup(db *sqlx.DB, workingGroup WorkingGroup) (int, er
 	if workingGroup.Name == "" {
 		return 0, errors.New("WorkingGroup name for CreateWorkingGroup must not be zero-value")
 	}
-	if workingGroup.Type != working_group || workingGroup.Type != committee {
+	if workingGroup.Type != working_group_db_value && workingGroup.Type != committee_db_value {
 		return 0, errors.New("WorkingGroup type has to either be working group or committee")
 	}
 
@@ -128,15 +126,33 @@ func insertWorkingGroupMembers(tx *sqlx.Tx, workingGroup WorkingGroup) error {
 }
 
 func GetWorkingGroups(db *sqlx.DB, options WorkingGroupQueryOptions) ([]WorkingGroup, error) {
-	if options.WorkingGroupID != 0 {
-		return nil, errors.New("GetWorkingGroups: Cannot include an ID in options")
+	if options.GroupID != 0 {
+		return []WorkingGroup{}, errors.New("GetWorkingGroups: Cannot include an ID in options")
 	}
 
 	workingGroups, err := getWorkingGroups(db, options)
 	if err != nil {
-		return nil, errors.Wrapf(err, "GetWorkingGroups: Unable to retrieve working groups")
+		return []WorkingGroup{}, errors.Wrapf(err, "GetWorkingGroups: Unable to retrieve working groups")
 	}
 	return workingGroups, nil
+}
+
+func GetWorkingGroup(db *sqlx.DB, options WorkingGroupQueryOptions) (WorkingGroup, error) {
+	if options.GroupID == 0 {
+		return WorkingGroup{}, errors.New("GetWorkingGroup: ID required to fetch specific working group")
+	}
+
+	workingGroups, err := getWorkingGroups(db, options)
+	if err != nil {
+		return WorkingGroup{}, errors.Wrapf(err, "Error fetching working group with ID %d", options.GroupID)
+	}
+	if len(workingGroups) == 0 {
+		return WorkingGroup{}, errors.Wrapf(err, "No working group with ID %d found", options.GroupID)
+	}
+	if len(workingGroups) > 1 {
+		return WorkingGroup{}, errors.Wrapf(err, "Duplicate Working Groups with ID %d", options.GroupID)
+	}
+	return workingGroups[0], nil
 }
 
 func getWorkingGroups(db *sqlx.DB, options WorkingGroupQueryOptions) ([]WorkingGroup, error) {
@@ -147,14 +163,14 @@ SELECT w.id, w.name, w.type, w.group_email, w.point_person_id FROM working_group
 	var queryArgs []interface{}
 	var whereClause []string
 
-	if options.WorkingGroupID != 0 {
+	if options.GroupID != 0 {
 		whereClause = append(whereClause, "w.id = ?")
-		queryArgs = append(queryArgs, options.WorkingGroupID)
+		queryArgs = append(queryArgs, options.GroupID)
 	}
 
-	if options.WorkingGroupName != "" {
+	if options.GroupName != "" {
 		whereClause = append(whereClause, "w.name = ?")
-		queryArgs = append(queryArgs, options.WorkingGroupName)
+		queryArgs = append(queryArgs, options.GroupName)
 	}
 
 	if len(whereClause) > 0 {
@@ -163,11 +179,11 @@ SELECT w.id, w.name, w.type, w.group_email, w.point_person_id FROM working_group
 
 	var workingGroups []WorkingGroup
 	if err := db.Select(&workingGroups, query, queryArgs...); err != nil {
-		return nil, errors.Wrapf(err, "getWorkingGroups: Failed retrieving working groups from WorkingGroups table")
+		return []WorkingGroup{}, errors.Wrapf(err, "getWorkingGroups: Failed retrieving working groups from WorkingGroups table")
 	}
 
 	if err := fetchWorkingGroupMembers(db, workingGroups); err != nil {
-		return nil, errors.Wrapf(err, "Failed to fetch working group members for group %s", options.WorkingGroupName)
+		return []WorkingGroup{}, errors.Wrapf(err, "Failed to fetch working group members for group %s", options.GroupName)
 	}
 
 	return workingGroups, nil
@@ -185,13 +201,13 @@ func fetchWorkingGroupMembers(db *sqlx.DB, workingGroups []WorkingGroup) error {
 	membersQuery, membersArgs, err := sqlx.In(`
 SELECT 
   wm.working_group_id,
-  a.name as activist_name
+  a.name as activist_name,
   a.id as activist_id
 FROM activists a
 JOIN working_group_members wm
   on a.id = wm.activist_id
 WHERE
-  vm.working_group_id IN (?)`, workingGroupIDs)
+  wm.working_group_id IN (?)`, workingGroupIDs)
 	if err != nil {
 		return errors.Wrapf(err, "Could not create sqlx.In query for fetching working group members")
 	}
