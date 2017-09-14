@@ -22,7 +22,7 @@ type WorkingGroup struct {
 	Type          int            `db:"type"`
 	GroupEmail    sql.NullString `db:"group_email"`
 	PointPersonID int            `db:"point_person_id"`
-	Members       []WorkingGroupMembers
+	Members       []WorkingGroupMember
 }
 
 type WorkingGroupQueryOptions struct {
@@ -30,10 +30,10 @@ type WorkingGroupQueryOptions struct {
 	GroupName string
 }
 
-type WorkingGroupMembers struct {
-	WorkingGroupID int    `db:"working_group_id"`
-	ActivistName   string `db:"activist_name"`
-	ActivistID     string `db:"activist_id"`
+type WorkingGroupMember struct {
+	GroupID      int    `db:"working_group_id"`
+	ActivistName string `db:"activist_name"`
+	ActivistID   int    `db:"activist_id"`
 }
 
 /** Functions and Methods */
@@ -61,6 +61,9 @@ func createOrUpdateWorkingGroup(db *sqlx.DB, workingGroup WorkingGroup) (int, er
 		return 0, errors.New("WorkingGroup type has to either be working group or committee")
 	}
 
+	//TODO Make sure the point_person_id corresponds to a valid activist id
+	// Should we put a foreign key on the point_person_id field?
+
 	var query string
 	if workingGroup.ID == 0 {
 		// Create working Group
@@ -75,7 +78,7 @@ UPDATE working_groups
 SET
   name = :name,
   type = :type,
-  group_email = :group_email
+  group_email = :group_email,
   point_person_id = :point_person_id
 WHERE
 id = :id
@@ -116,8 +119,11 @@ func insertWorkingGroupMembers(tx *sqlx.Tx, workingGroup WorkingGroup) error {
 		return errors.New("Invalid WorkingGroup ID. ID's must be greater than 0")
 	}
 	for _, m := range workingGroup.Members {
-		_, err := tx.NamedExec(`INSERT INTO working_group_members (working_group_id, activist_id)
-    VALUES (:working_group_id, :activist_id)`, m)
+		if m.ActivistID < 1 {
+			return errors.New("Invalid Activist ID; cannot add as a working group member")
+		}
+		_, err := tx.Exec(`INSERT INTO working_group_members (working_group_id, activist_id)
+    VALUES (?, ?)`, workingGroup.ID, m.ActivistID)
 		if err != nil {
 			errors.Wrapf(err, "Failed to insert %s into Working Group %s", m.ActivistName, workingGroup.Name)
 		}
@@ -213,13 +219,13 @@ WHERE
 	}
 
 	membersQuery = db.Rebind(membersQuery)
-	var members []WorkingGroupMembers
+	var members []WorkingGroupMember
 	if err := db.Select(&members, membersQuery, membersArgs...); err != nil {
 		return errors.Wrapf(err, "Unable to fetch working group members")
 	}
 
 	for _, m := range members {
-		idx := workingGroupIDToIndex[m.WorkingGroupID]
+		idx := workingGroupIDToIndex[m.GroupID]
 		workingGroups[idx].Members = append(workingGroups[idx].Members, m)
 	}
 
