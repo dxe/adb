@@ -47,6 +47,11 @@ function listEvents(events) {
   for (var i = 0; i < events.length; i++) {
     var event = events[i];
     var attendeeString = '';
+
+    if (event.attendees == null) {
+      event.attendees = [];
+    }
+
     for (var j = 0; j < event.attendees.length; j++) {
       attendeeString += '<li>' + event.attendees[j]; '</li>';
     }
