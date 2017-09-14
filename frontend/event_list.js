@@ -36,6 +36,7 @@ export function confirmDeleteEvent(eventID) {
 function listEvents(events) {
   if (events.length === 0) {
     flashMessage("No events from server", true);
+    $('#event-list-body').html('<tr><td></td><td><i>No data</i></td><td></td><td></td><td></td><td></td></tr>');
     return;
   }
 
