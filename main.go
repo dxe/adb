@@ -138,6 +138,7 @@ func router() *mux.Router {
 	router.Handle("/activist/hide", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistHideHandler))
 	router.Handle("/activist/merge", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistMergeHandler))
 	router.Handle("/leaderboard/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.LeaderboardListHandler))
+  router.Handle("/working_group/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.WorkingGroupListHandler))
 
 	// Pprof debug routes
 	router.HandleFunc("/debug/pprof/", pprof.Index)
@@ -535,6 +536,13 @@ func (c MainController) EventDeleteHandler(w http.ResponseWriter, r *http.Reques
 	writeJSON(w, map[string]string{
 		"status": "success",
 	})
+}
+
+func (c MainController) WorkingGroupListHandler(w http.ResponseWriter, r *http.Request) {
+
+  writeJSON(w, map[string]string{
+    "status": "success",
+  })
 }
 
 func (c MainController) ActivistListHandler(w http.ResponseWriter, r *http.Request) {
