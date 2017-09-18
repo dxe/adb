@@ -122,10 +122,12 @@
               <p><label for="facebook">Facebook: </label><input class="form-control" type="text" v-model.trim="currentActivist.facebook" id="facebook"></p>
               <p><label for="challenge_level">Activist Level: </label>
                 <select id="activist_level" class="form-control" v-model="currentActivist.activist_level">
+                  <option value="prospect">Prospect</option>
                   <option value="activist">Activist</option>
-                  <option value="core_activist">Core Activist</option>
                   <option value="organizer">Organizer</option>
                   <option value="senior_organizer">Senior Organizer</option>
+                  <option value="hiatus">Hiatus</option>
+                  <option value="not_local">Not Local</option>
                 </select>
               </p>
               <p><label for="core">Core/Staff:&nbsp;</label><input class="form-check-input" type="checkbox" v-model="currentActivist.core_staff" :true-value="1" :false-value="0" id="core"></p>
@@ -162,10 +164,12 @@ const DescOrder = 2;
 const AscOrder = 1;
 
 var activistLevelOrder = {
-  "activist" : 3,
-  "core_activist" : 2,
-  "organizer" : 1,
-  "senior_organizer" : 0
+  "activist" : 1,
+  "not_local" : 5,
+  "organizer" : 2,
+  "hiatus" : 4,
+  "prospect" : 0,
+  "senior_organizer" : 3
 };
 
 const focus = {
@@ -367,14 +371,20 @@ export default {
         case "activist":
           displayValue = "Activist";
           break;
-        case "core_activist":
-          displayValue = "Core Activist";
-          break;
         case "organizer":
           displayValue = "Organizer";
           break;
         case "senior_organizer":
           displayValue = "Senior Organizer"
+          break;
+        case "hiatus":
+          displayValue = "Hiatus"
+          break;
+        case "prospect":
+          displayValue = "prospect"
+          break;
+        case "not_local":
+          displayValue = "Not Local"
           break;
       }
 
