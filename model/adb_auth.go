@@ -225,3 +225,38 @@ id = :id`, user)
 
 	return user.ID, nil
 }
+
+func RemoveUser(db *sqlx.DB, userID int)  (int, error) {
+  if userID == 0 {
+    return 0, errors.New("User ID not provided")
+  }
+
+  // Using a transaction here will allow us to easily
+  // extend this feature in the future. The adb_user model
+  // might become more complicated with relationships to other models
+
+  tx, err := db.Beginx()
+
+  if err != nil {
+    return 0, errors.Wrap(err, "failed to create transaction")
+  }
+
+  query := `
+    DELETE FROM adb_users
+    WHERE id = ?
+  `
+
+  _, err = tx.Exec(query, userID)
+
+  if err != nil {
+    tx.Rollback()
+    return 0, errors.Wrapf(err, "failed to delete user %d", userID)
+  }
+
+  if err := tx.Commit(); err != nil {
+    tx.Rollback()
+    return 0, errors.Wrapf(err, "failed to commit delete transaction for user %d", userID)
+  }
+
+  return userID, nil
+}

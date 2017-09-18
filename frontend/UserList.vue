@@ -39,6 +39,7 @@
           <div class="modal-header">
             <h2 class="modal-title" v-if="currentUser.id">Edit user</h2>
             <h2 class="modal-title" v-if="!currentUser.id">New user</h2>
+            <button type="button" v-if="currentUser.id" class="pull-right btn btn-danger" @click="removeUser">Delete</button>
           </div>
           <div class="modal-body">
             <form action="" id="editUserForm">
@@ -186,6 +187,53 @@ export default {
         order: AscOrder,
         limit: 40
       }
+    },
+    removeUser: function () {
+      // Disable the save button
+      this.disableConfirmButton = true;
+      
+      if (!window.confirm("Are you sure you want to delete this user?")) {
+        this.disableConfirmButton = false;
+        return;
+      }
+      
+      $.ajax({
+        url: "/user/delete",
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify(this.currentUser),
+        success: (response) => {
+          // Handle successful response
+          
+          var parsed = JSON.parse(response);
+          
+          if (parsed.status !== "success") {
+            flashMessage("Error: " + parsed.message, true);
+            return;
+          }
+          
+          flashMessage(this.currentUser.email + " removed");
+          
+          // Remove user from list
+          var users = this.users
+            .slice(0, this.userIndex)
+            .concat(
+              this.users
+                .slice(this.userIndex + 1)
+             );
+             
+          this.setUsers(users);
+             
+          this.disableConfirmButton = false;
+          this.hideModal();
+        },
+        error: (errorResponse) => {
+          this.disableConfirmButton = false;
+          
+          console.warn(errorResponse.responseText);
+          flashMessage("Server error: " + err.responseText, true);
+        }
+      });
     }
   },
   data() {

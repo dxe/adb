@@ -144,6 +144,7 @@ func router() *mux.Router {
   // Authed Admin API
   router.Handle("/user/list", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserListHandler))
   router.Handle("/user/save", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserSaveHandler))
+  router.Handle("/user/delete", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserDeleteHandler))
 
 	// Pprof debug routes
 	router.HandleFunc("/debug/pprof/", pprof.Index)
@@ -677,6 +678,29 @@ func (c MainController) UserSaveHandler(w http.ResponseWriter, r *http.Request) 
   out := map[string]interface{}{
     "status": "success",
     "user": userJSON,
+  }
+
+  writeJSON(w, out)
+}
+
+func (c MainController) UserDeleteHandler(w http.ResponseWriter, r *http.Request) {
+  user, err := model.CleanUserData(r.Body)
+
+  if err != nil {
+    sendErrorMessage(w, err)
+    return
+  }
+
+  userID, err := model.RemoveUser(c.db, user.ID)
+
+  if err != nil {
+    sendErrorMessage(w, err)
+    return
+  }
+
+  out := map[string]interface{}{
+    "status": "success",
+    "userID": userID,
   }
 
   writeJSON(w, out)
