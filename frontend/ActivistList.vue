@@ -128,6 +128,7 @@
                   <option value="senior_organizer">Senior Organizer</option>
                   <option value="hiatus">Hiatus</option>
                   <option value="not_local">Not Local</option>
+                  <option value="none">(Not Set)</option>
                 </select>
               </p>
               <p><label for="core">Core/Staff:&nbsp;</label><input class="form-check-input" type="checkbox" v-model="currentActivist.core_staff" :true-value="1" :false-value="0" id="core"></p>
@@ -169,7 +170,8 @@ var activistLevelOrder = {
   "organizer" : 2,
   "hiatus" : 4,
   "prospect" : 0,
-  "senior_organizer" : 3
+  "senior_organizer" : 3,
+  "none" : 6
 };
 
 const focus = {
@@ -385,6 +387,9 @@ export default {
           break;
         case "not_local":
           displayValue = "Not Local"
+          break;
+        case "none":
+          displayValue = "(Not set)"
           break;
       }
 
