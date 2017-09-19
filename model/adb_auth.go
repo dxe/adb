@@ -5,8 +5,8 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-  "encoding/json"
-  "io"
+	"encoding/json"
+	"io"
 )
 
 /** Constant and Variable Definitions */
@@ -30,17 +30,17 @@ type ADBUser struct {
 }
 
 type UserJSON struct {
-  ID        int     `json:"id"`
-  Email     string  `json:"email"`
-  Admin     bool    `json:"admin"`
-  Disabled  bool    `json:"disabled"`
+	ID       int    `json:"id"`
+	Email    string `json:"email"`
+	Admin    bool   `json:"admin"`
+	Disabled bool   `json:"disabled"`
 }
 
 type GetUserOptions struct {
-  ID        int
-  Email     string
-  Admin     bool
-  Disabled  bool
+	ID       int
+	Email    string
+	Admin    bool
+	Disabled bool
 }
 
 /** Functions and Methods */
@@ -74,57 +74,57 @@ FROM adb_users
 }
 
 func GetUsersJSON(db *sqlx.DB, options GetUserOptions) ([]UserJSON, error) {
-  if options.ID != 0 {
-    return nil, errors.New("GetUsersJSON: Cannot include ID in options")
-  }
+	if options.ID != 0 {
+		return nil, errors.New("GetUsersJSON: Cannot include ID in options")
+	}
 
-  return getUsersJSON(db, options)
+	return getUsersJSON(db, options)
 }
 
 func getUsersJSON(db *sqlx.DB, options GetUserOptions) ([]UserJSON, error) {
-  users, err := GetUsers(db, options)
+	users, err := GetUsers(db, options)
 
-  if err != nil {
-    return nil, err
-  }
+	if err != nil {
+		return nil, err
+	}
 
-  return buildUserJSONArray(users), nil
+	return buildUserJSONArray(users), nil
 }
 
 func GetUsers(db *sqlx.DB, options GetUserOptions) ([]ADBUser, error) {
-  return getUsers(db, options)
+	return getUsers(db, options)
 }
 
 func getUsers(db *sqlx.DB, options GetUserOptions) ([]ADBUser, error) {
-  query := selectUserBaseQuery
+	query := selectUserBaseQuery
 
-  var queryArgs []interface{}
+	var queryArgs []interface{}
 
-  if options.ID != 0 {
-    query += " WHERE id = ? "
-    queryArgs = append(queryArgs, options.ID)
-  }
+	if options.ID != 0 {
+		query += " WHERE id = ? "
+		queryArgs = append(queryArgs, options.ID)
+	}
 
-  query += " ORDER BY email "
+	query += " ORDER BY email "
 
-  var users []ADBUser
-  if err := db.Select(&users, query, queryArgs...); err != nil {
-    return nil, errors.Wrapf(err, "failed to get users")
-  }
+	var users []ADBUser
+	if err := db.Select(&users, query, queryArgs...); err != nil {
+		return nil, errors.Wrapf(err, "failed to get users")
+	}
 
-  return users, nil
+	return users, nil
 }
 
 func buildUserJSONArray(users []ADBUser) []UserJSON {
 	var usersJSON []UserJSON
 
 	for _, u := range users {
-		
+
 		usersJSON = append(usersJSON, UserJSON{
-			ID:            u.ID,
-			Email:         u.Email,
-			Admin:         u.Admin,
-			Disabled:      u.Disabled,
+			ID:       u.ID,
+			Email:    u.Email,
+			Admin:    u.Admin,
+			Disabled: u.Disabled,
 		})
 	}
 
@@ -132,25 +132,25 @@ func buildUserJSONArray(users []ADBUser) []UserJSON {
 }
 
 func CleanUserData(body io.Reader) (ADBUser, error) {
-  var userJSON UserJSON
-  err := json.NewDecoder(body).Decode(&userJSON)
+	var userJSON UserJSON
+	err := json.NewDecoder(body).Decode(&userJSON)
 
-  if err != nil {
-    return ADBUser{}, err
-  }
+	if err != nil {
+		return ADBUser{}, err
+	}
 
-  if err := checkForDangerousChars(userJSON.Email); err != nil {
-    return ADBUser{}, err
-  }
+	if err := checkForDangerousChars(userJSON.Email); err != nil {
+		return ADBUser{}, err
+	}
 
-  user := ADBUser{
-    ID:       userJSON.ID,
-    Email:    userJSON.Email,
-    Admin:    userJSON.Admin,
-    Disabled: userJSON.Disabled,
-  }
+	user := ADBUser{
+		ID:       userJSON.ID,
+		Email:    userJSON.Email,
+		Admin:    userJSON.Admin,
+		Disabled: userJSON.Disabled,
+	}
 
-  return user, nil
+	return user, nil
 }
 
 func GetUserJSON(db *sqlx.DB, options GetUserOptions) (UserJSON, error) {
@@ -226,37 +226,37 @@ id = :id`, user)
 	return user.ID, nil
 }
 
-func RemoveUser(db *sqlx.DB, userID int)  (int, error) {
-  if userID == 0 {
-    return 0, errors.New("User ID not provided")
-  }
+func RemoveUser(db *sqlx.DB, userID int) (int, error) {
+	if userID == 0 {
+		return 0, errors.New("User ID not provided")
+	}
 
-  // Using a transaction here will allow us to easily
-  // extend this feature in the future. The adb_user model
-  // might become more complicated with relationships to other models
+	// Using a transaction here will allow us to easily
+	// extend this feature in the future. The adb_user model
+	// might become more complicated with relationships to other models
 
-  tx, err := db.Beginx()
+	tx, err := db.Beginx()
 
-  if err != nil {
-    return 0, errors.Wrap(err, "failed to create transaction")
-  }
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to create transaction")
+	}
 
-  query := `
+	query := `
     DELETE FROM adb_users
     WHERE id = ?
   `
 
-  _, err = tx.Exec(query, userID)
+	_, err = tx.Exec(query, userID)
 
-  if err != nil {
-    tx.Rollback()
-    return 0, errors.Wrapf(err, "failed to delete user %d", userID)
-  }
+	if err != nil {
+		tx.Rollback()
+		return 0, errors.Wrapf(err, "failed to delete user %d", userID)
+	}
 
-  if err := tx.Commit(); err != nil {
-    tx.Rollback()
-    return 0, errors.Wrapf(err, "failed to commit delete transaction for user %d", userID)
-  }
+	if err := tx.Commit(); err != nil {
+		tx.Rollback()
+		return 0, errors.Wrapf(err, "failed to commit delete transaction for user %d", userID)
+	}
 
-  return userID, nil
+	return userID, nil
 }
