@@ -128,7 +128,7 @@
                   <option value="senior_organizer">Senior Organizer</option>
                   <option value="hiatus">Hiatus</option>
                   <option value="not_local">Not Local</option>
-                  <option value="none">(Not Set)</option>
+                  <option value="none">N/A</option>
                 </select>
               </p>
               <p><label for="core">Core/Staff:&nbsp;</label><input class="form-check-input" type="checkbox" v-model="currentActivist.core_staff" :true-value="1" :false-value="0" id="core"></p>
@@ -383,13 +383,13 @@ export default {
           displayValue = "Hiatus"
           break;
         case "prospect":
-          displayValue = "prospect"
+          displayValue = "Prospect"
           break;
         case "not_local":
           displayValue = "Not Local"
           break;
         case "none":
-          displayValue = "(Not set)"
+          displayValue = "N/A"
           break;
       }
 
