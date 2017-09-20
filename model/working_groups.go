@@ -135,6 +135,10 @@ func GetWorkingGroups(db *sqlx.DB, options WorkingGroupQueryOptions) ([]WorkingG
 	if options.GroupID != 0 {
 		return []WorkingGroup{}, errors.New("GetWorkingGroups: Cannot include an ID in options")
 	}
+	if options.GroupName != "" {
+		errorMsg := "GetWorkingGroups: Cannot include name in query options when fetching multiple working groups"
+		return []WorkingGroup{}, errors.New(errorMsg)
+	}
 
 	workingGroups, err := getWorkingGroups(db, options)
 	if err != nil {
@@ -144,8 +148,8 @@ func GetWorkingGroups(db *sqlx.DB, options WorkingGroupQueryOptions) ([]WorkingG
 }
 
 func GetWorkingGroup(db *sqlx.DB, options WorkingGroupQueryOptions) (WorkingGroup, error) {
-	if options.GroupID == 0 {
-		return WorkingGroup{}, errors.New("GetWorkingGroup: ID required to fetch specific working group")
+	if options.GroupID == 0 && options.GroupName == "" {
+		return WorkingGroup{}, errors.New("GetWorkingGroup: ID or Name required to fetch specific working group")
 	}
 
 	workingGroups, err := getWorkingGroups(db, options)

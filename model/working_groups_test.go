@@ -68,13 +68,9 @@ func TestCreateWorkingGroup_insertAndFetchWorkingGroupNoMembers_returnsNoError(t
 	fetchedGroups, err := GetWorkingGroups(db, WorkingGroupQueryOptions{})
 	require.NoError(t, err)
 	require.Equal(t, fetchedGroups[0], workingGroup)
-
-	fetchedGroups, err = GetWorkingGroups(db, WorkingGroupQueryOptions{GroupName: "Tech FTW"})
-	require.NoError(t, err)
-	require.Equal(t, fetchedGroups[0], workingGroup)
 }
 
-func TestCreateWorkingGroup_insertAndFetchWorkingGroupWithMembers(t *testing.T) {
+func TestCreateWorkingGroup_insertAndFetchWorkingGroupWithMembersByID(t *testing.T) {
 	db := newTestDB()
 	defer db.Close()
 
@@ -93,6 +89,30 @@ func TestCreateWorkingGroup_insertAndFetchWorkingGroupWithMembers(t *testing.T) 
 	require.NoError(t, err)
 	validateReturnedWorkingGroup(t, workingGroup, fetchedGroup)
 
+}
+
+func TestCreateWorkingGroup_insertAndFetchWorkingGroupWithMembersByNameAndID(t *testing.T) {
+	db := newTestDB()
+	defer db.Close()
+
+	workingGroup := WorkingGroup{
+		Name: "The Citadel",
+		Type: working_group_db_value,
+	}
+
+	activistsToInsert := []string{"Rick", "And", "Morty"}
+	workingGroup.Members = insertActivists(t, db, activistsToInsert)
+	id, err := CreateWorkingGroup(db, workingGroup)
+	require.NoError(t, err)
+	workingGroup.ID = id
+
+	fetchedGroup, err := GetWorkingGroup(db, WorkingGroupQueryOptions{GroupName: "The Citadel"})
+	require.NoError(t, err)
+	validateReturnedWorkingGroup(t, workingGroup, fetchedGroup)
+
+	fetchedGroup2, err := GetWorkingGroup(db, WorkingGroupQueryOptions{GroupName: "The Citadel", GroupID: id})
+	require.NoError(t, err)
+	validateReturnedWorkingGroup(t, workingGroup, fetchedGroup2)
 }
 
 func TestUpdateWorkingGroup_updatePointPersonAndGroupEmail(t *testing.T) {
@@ -125,6 +145,61 @@ func TestUpdateWorkingGroup_updatePointPersonAndGroupEmail(t *testing.T) {
 	require.NoError(t, err)
 	updatedGroupActual, err := GetWorkingGroup(db, WorkingGroupQueryOptions{GroupID: id})
 	validateReturnedWorkingGroup(t, updatedGroupExpected, updatedGroupActual)
+}
+
+func TestUpdateWorkingGroup_updateMultipleGroups(t *testing.T) {
+	db := newTestDB()
+	defer db.Close()
+
+	workingGroup1 := WorkingGroup{
+		Name: "WG 1",
+		Type: working_group_db_value,
+	}
+
+	workingGroup2 := WorkingGroup{
+		Name: "WG 2",
+		Type: working_group_db_value,
+	}
+
+	id1, err := CreateWorkingGroup(db, workingGroup1)
+	require.NoError(t, err)
+	id2, err := CreateWorkingGroup(db, workingGroup2)
+	require.NoError(t, err)
+
+	members1 := insertActivists(t, db, []string{"Anthony Abe", "Smithy Smith", "Rick Rickel"})
+	members2 := insertActivists(t, db, []string{"The", "Seven", "Deadly", "Sins"})
+
+	UpdatedExpected1 := WorkingGroup{
+		ID:         id1,
+		Name:       "WG 1",
+		Type:       working_group_db_value,
+		GroupEmail: sql.NullString{Valid: true, String: "hello@hello.org"},
+		Members:    members1,
+	}
+
+	UpdatedExpected2 := WorkingGroup{
+		ID:      id2,
+		Name:    "WG 2",
+		Type:    working_group_db_value,
+		Members: members2,
+	}
+
+	_, err = UpdateWorkingGroup(db, UpdatedExpected1)
+	require.NoError(t, err)
+	_, err = UpdateWorkingGroup(db, UpdatedExpected2)
+	require.NoError(t, err)
+
+	updatedGroups, err := GetWorkingGroups(db, WorkingGroupQueryOptions{})
+	require.NoError(t, err)
+
+	for _, group := range updatedGroups {
+		if group.ID == UpdatedExpected1.ID {
+			validateReturnedWorkingGroup(t, UpdatedExpected1, group)
+		} else {
+			validateReturnedWorkingGroup(t, UpdatedExpected2, group)
+		}
+	}
+
 }
 
 func validateReturnedWorkingGroup(t *testing.T, inserted WorkingGroup, returned WorkingGroup) {
