@@ -39,7 +39,7 @@
             <li class="{{if (eq .PageName "ActivistList")}}active{{end}}"><a href="/list_activists">Activists</a></li>
             <li class="{{if (eq .PageName "Leaderboard")}}active{{end}}"><a href="/leaderboard">Leaderboard</a></li>
             <li class="{{if (eq .PageName "Power")}}active{{end}}"><a href="/power">Power</a></li>
-	    <li class="{{if (eq .PageName "UserList")}}active{{end}}"><a href="/admin/users">Users</a></li>
+	    <li class="{{if (eq .IsAdmin false)}}hide{{end}} {{if (eq .PageName "UserList")}}active{{end}}"><a href="/admin/users">Users</a></li>
           </ul>
           
         </div><!--/.nav-collapse -->

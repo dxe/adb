@@ -170,7 +170,7 @@ type MainController struct {
 
 func (c MainController) authMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, authed := getAuthedADBUser(c.db, r)
+		user, authed := getAuthedADBUser(c.db, r)
 		if !authed {
 			// Delete the cookie if it doesn't auth.
 			c := &http.Cookie{
@@ -184,8 +184,11 @@ func (c MainController) authMiddleware(h http.Handler) http.Handler {
 			http.Redirect(w, r, "/login", http.StatusFound)
 			return
 		}
+
+    userContext := setUserContext(r, user)
+
 		// Request is authed at this point.
-		h.ServeHTTP(w, r)
+		h.ServeHTTP(w, r.WithContext(userContext))
 	})
 }
 
@@ -211,8 +214,10 @@ func (c MainController) authAdminMiddleware(h http.Handler) http.Handler {
 			return
 		}
 
+    userContext := setUserContext(r, user)
+
 		// Request is authed at this point.
-		h.ServeHTTP(w, r)
+		h.ServeHTTP(w, r.WithContext(userContext))
 	})
 }
 
@@ -244,6 +249,15 @@ func (c MainController) apiAdminAuthMiddleware(h http.Handler) http.Handler {
 		// Request is authed at this point.
 		h.ServeHTTP(w, r)
 	})
+}
+
+func setUserContext(r *http.Request, user model.ADBUser) context.Context {
+  ctx := r.Context()
+  return context.WithValue(ctx, "UserContext", user)
+}
+
+func getUserFromContext(ctx context.Context) model.ADBUser {
+  return ctx.Value("UserContext").(model.ADBUser)
 }
 
 func (c MainController) TokenSignInHandler(w http.ResponseWriter, r *http.Request) {
@@ -298,19 +312,19 @@ func (c MainController) ForbiddenHandler(w http.ResponseWriter, r *http.Request)
 }
 
 func (c MainController) ListEventsHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "event_list", PageData{PageName: "EventList"})
+  renderPage(w, "event_list", PageData{PageName: "EventList", IsAdmin: getUserFromContext(r.Context()).Admin})
 }
 
 func (c MainController) ListActivistsHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "activist_list", PageData{PageName: "ActivistList"})
+	renderPage(w, "activist_list", PageData{PageName: "ActivistList", IsAdmin: getUserFromContext(r.Context()).Admin})
 }
 
 func (c MainController) LeaderboardHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "leaderboard", PageData{PageName: "Leaderboard"})
+	renderPage(w, "leaderboard", PageData{PageName: "Leaderboard", IsAdmin: getUserFromContext(r.Context()).Admin})
 }
 
 func (c MainController) ListUsersHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "user_list", PageData{PageName: "UserList"})
+	renderPage(w, "user_list", PageData{PageName: "UserList", IsAdmin: getUserFromContext(r.Context()).Admin})
 }
 
 var templates = template.Must(template.New("").Funcs(
@@ -326,6 +340,7 @@ var templates = template.Must(template.New("").Funcs(
 type PageData struct {
 	PageName string
 	Data     interface{}
+  IsAdmin  bool
 }
 
 // Render a page. All templates that load a header expect a PageData
@@ -376,11 +391,14 @@ func (c MainController) UpdateEventHandler(w http.ResponseWriter, r *http.Reques
 		}
 	}
 
-	renderPage(w, "event_new", PageData{
+  user := getUserFromContext(r.Context())
+  
+  renderPage(w, "event_new", PageData{
 		PageName: "NewEvent",
 		Data: map[string]interface{}{
 			"Event": event,
 		},
+    IsAdmin: user.Admin,
 	})
 }
 
@@ -635,6 +653,7 @@ func (c MainController) PowerHandler(w http.ResponseWriter, r *http.Request) {
 			"PowerHist": powerHist,
 			"PowerMTD":  powerMTD,
 		},
+    IsAdmin: getUserFromContext(r.Context()).Admin,
 	})
 }
 
