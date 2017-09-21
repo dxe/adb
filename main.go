@@ -638,7 +638,8 @@ func (c MainController) UserListHandler(w http.ResponseWriter, r *http.Request) 
 	users, err := model.GetUsersJSON(c.db, model.GetUserOptions{})
 
 	if err != nil {
-		panic(err)
+		sendErrorMessage(w, err)
+    return
 	}
 
 	writeJSON(w, users)

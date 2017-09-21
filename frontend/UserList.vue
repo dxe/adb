@@ -6,7 +6,6 @@
       <thead>
         <tr>
           <th></th>
-          <th></th>
           <th>Email</th>
           <th>Admin</th>
           <th>Disabled</th>
@@ -15,12 +14,6 @@
       <tbody id="user-list-body">
         <tr v-for="(user, index) in users">
           <td><button class="btn btn-default glyphicon glyphicon-pencil" @click="showModal('edit-user-modal', user, index)"></button></td>
-          <td>
-            <dropdown>
-              <button data-role="trigger" class="btn btn-default dropdown-toggle glyphicon glyphicon-option-horizontal" type="button">
-              </button>
-            </dropdown>
-          </td>
           <td>{{user.email}}</td>
           <td>{{user.admin}}</td>
           <td>{{user.disabled}}</td>
@@ -39,7 +32,6 @@
           <div class="modal-header">
             <h2 class="modal-title" v-if="currentUser.id">Edit user</h2>
             <h2 class="modal-title" v-if="!currentUser.id">New user</h2>
-            <button type="button" v-if="currentUser.id" class="pull-right btn btn-danger" @click="removeUser">Delete</button>
           </div>
           <div class="modal-body">
             <form action="" id="editUserForm">
@@ -84,18 +76,11 @@ export default {
 
       // Make shallow copy of selected activist to prevent persisting unsaved
       // edits at the view layer when closing modal
-      if (user) {
-        this.currentUser = $.extend({}, user);
-      } else {
-        this.currentUser = {};
-      }
-
-      if (index != undefined) {
-        this.userIndex = index; // needed for updating user
-      } else {
-        this.userIndex = -1;
-      }
-
+      this.currentUser = $.extend({}, user);
+      
+      // Track current user index, or default to first in list
+      this.userIndex = index || -1;
+      
       this.currentModalName = modalName;
       this.$modal.show(modalName);
     },
@@ -126,10 +111,9 @@ export default {
             flashMessage("Error: " + parsed.message, true);
             return;
           }
-          // status === "success"
-          console.log('saved: ', parsed);
+          
           flashMessage(this.currentUser.email + " saved");
-          console.log(this.userIndex);
+          
           if (this.userIndex === -1) {
             // We're getting a new user, insert them at the top.
             this.users = [parsed.user].concat(this.users);
@@ -188,6 +172,7 @@ export default {
         limit: 40
       }
     },
+    /*
     removeUser: function () {
       // Disable the save button
       this.disableConfirmButton = true;
@@ -235,6 +220,7 @@ export default {
         }
       });
     }
+    */
   },
   data() {
     return {
