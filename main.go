@@ -207,7 +207,6 @@ func (c MainController) authAdminMiddleware(h http.Handler) http.Handler {
 		}
 
 		if !user.Admin {
-			// Add 403 status
 			http.Redirect(w, r, "/403", http.StatusFound)
 			return
 		}
