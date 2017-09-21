@@ -111,6 +111,7 @@ func router() *mux.Router {
 	router := mux.NewRouter()
 	// Unauthed pages
 	router.HandleFunc("/login", main.LoginHandler)
+  router.HandleFunc("/403", main.ForbiddenHandler)
 
 	// Authed pages
 	router.Handle("/", alice.New(main.authMiddleware).ThenFunc(main.UpdateEventHandler))
@@ -207,7 +208,7 @@ func (c MainController) authAdminMiddleware(h http.Handler) http.Handler {
 
 		if !user.Admin {
 			// Add 403 status
-			http.Redirect(w, r, "/", http.StatusFound)
+			http.Redirect(w, r, "/403", http.StatusFound)
 			return
 		}
 
@@ -291,6 +292,10 @@ func (c MainController) TokenSignInHandler(w http.ResponseWriter, r *http.Reques
 
 func (c MainController) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, "login", PageData{PageName: "Login"})
+}
+
+func (c MainController) ForbiddenHandler(w http.ResponseWriter, r *http.Request) {
+  renderPage(w, "403", PageData{PageName: "403 - Forbidden"})
 }
 
 func (c MainController) ListEventsHandler(w http.ResponseWriter, r *http.Request) {
