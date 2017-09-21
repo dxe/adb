@@ -139,10 +139,6 @@ func CleanUserData(body io.Reader) (ADBUser, error) {
 		return ADBUser{}, err
 	}
 
-	if err := checkForDangerousChars(userJSON.Email); err != nil {
-		return ADBUser{}, err
-	}
-
 	user := ADBUser{
 		ID:       userJSON.ID,
 		Email:    userJSON.Email,
