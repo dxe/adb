@@ -111,7 +111,9 @@ func router() *mux.Router {
 	router := mux.NewRouter()
 	// Unauthed pages
 	router.HandleFunc("/login", main.LoginHandler)
-  router.HandleFunc("/403", main.ForbiddenHandler)
+
+  // Error pages
+  router.Handle("/403", alice.New(main.authMiddleware).ThenFunc(main.ForbiddenHandler))
 
 	// Authed pages
 	router.Handle("/", alice.New(main.authMiddleware).ThenFunc(main.UpdateEventHandler))
@@ -185,10 +187,8 @@ func (c MainController) authMiddleware(h http.Handler) http.Handler {
 			return
 		}
 
-    userContext := setUserContext(r, user)
-
-		// Request is authed at this point.
-		h.ServeHTTP(w, r.WithContext(userContext))
+    // Request is authed at this point.
+		h.ServeHTTP(w, r.WithContext(setUserContext(r, user)))
 	})
 }
 
@@ -210,14 +210,12 @@ func (c MainController) authAdminMiddleware(h http.Handler) http.Handler {
 		}
 
 		if !user.Admin {
-			http.Redirect(w, r, "/403", http.StatusFound)
+			http.Redirect(w, r.WithContext(setUserContext(r, user)), "/403", http.StatusFound)
 			return
 		}
 
-    userContext := setUserContext(r, user)
-
-		// Request is authed at this point.
-		h.ServeHTTP(w, r.WithContext(userContext))
+    // Request is authed at this point.
+		h.ServeHTTP(w, r.WithContext(setUserContext(r, user)))
 	})
 }
 
@@ -252,8 +250,7 @@ func (c MainController) apiAdminAuthMiddleware(h http.Handler) http.Handler {
 }
 
 func setUserContext(r *http.Request, user model.ADBUser) context.Context {
-  ctx := r.Context()
-  return context.WithValue(ctx, "UserContext", user)
+  return context.WithValue(r.Context(), "UserContext", user)
 }
 
 func getUserFromContext(ctx context.Context) model.ADBUser {
@@ -308,7 +305,7 @@ func (c MainController) LoginHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c MainController) ForbiddenHandler(w http.ResponseWriter, r *http.Request) {
-  renderPage(w, "403", PageData{PageName: "403 - Forbidden"})
+  renderPage(w, "403", PageData{PageName: "403 - Forbidden", IsAdmin: getUserFromContext(r.Context()).Admin})
 }
 
 func (c MainController) ListEventsHandler(w http.ResponseWriter, r *http.Request) {
@@ -391,14 +388,12 @@ func (c MainController) UpdateEventHandler(w http.ResponseWriter, r *http.Reques
 		}
 	}
 
-  user := getUserFromContext(r.Context())
-  
   renderPage(w, "event_new", PageData{
 		PageName: "NewEvent",
 		Data: map[string]interface{}{
 			"Event": event,
 		},
-    IsAdmin: user.Admin,
+    IsAdmin: getUserFromContext(r.Context()).Admin,
 	})
 }
 
