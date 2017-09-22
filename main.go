@@ -112,8 +112,8 @@ func router() *mux.Router {
 	// Unauthed pages
 	router.HandleFunc("/login", main.LoginHandler)
 
-  // Error pages
-  router.Handle("/403", alice.New(main.authMiddleware).ThenFunc(main.ForbiddenHandler))
+	// Error pages
+	router.Handle("/403", alice.New(main.authMiddleware).ThenFunc(main.ForbiddenHandler))
 
 	// Authed pages
 	router.Handle("/", alice.New(main.authMiddleware).ThenFunc(main.UpdateEventHandler))
@@ -187,7 +187,7 @@ func (c MainController) authMiddleware(h http.Handler) http.Handler {
 			return
 		}
 
-    // Request is authed at this point.
+		// Request is authed at this point.
 		h.ServeHTTP(w, r.WithContext(setUserContext(r, user)))
 	})
 }
@@ -214,7 +214,7 @@ func (c MainController) authAdminMiddleware(h http.Handler) http.Handler {
 			return
 		}
 
-    // Request is authed at this point.
+		// Request is authed at this point.
 		h.ServeHTTP(w, r.WithContext(setUserContext(r, user)))
 	})
 }
@@ -250,11 +250,11 @@ func (c MainController) apiAdminAuthMiddleware(h http.Handler) http.Handler {
 }
 
 func setUserContext(r *http.Request, user model.ADBUser) context.Context {
-  return context.WithValue(r.Context(), "UserContext", user)
+	return context.WithValue(r.Context(), "UserContext", user)
 }
 
 func getUserFromContext(ctx context.Context) model.ADBUser {
-  return ctx.Value("UserContext").(model.ADBUser)
+	return ctx.Value("UserContext").(model.ADBUser)
 }
 
 func (c MainController) TokenSignInHandler(w http.ResponseWriter, r *http.Request) {
@@ -305,11 +305,11 @@ func (c MainController) LoginHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c MainController) ForbiddenHandler(w http.ResponseWriter, r *http.Request) {
-  renderPage(w, "403", PageData{PageName: "403 - Forbidden", IsAdmin: getUserFromContext(r.Context()).Admin})
+	renderPage(w, "403", PageData{PageName: "403 - Forbidden", IsAdmin: getUserFromContext(r.Context()).Admin})
 }
 
 func (c MainController) ListEventsHandler(w http.ResponseWriter, r *http.Request) {
-  renderPage(w, "event_list", PageData{PageName: "EventList", IsAdmin: getUserFromContext(r.Context()).Admin})
+	renderPage(w, "event_list", PageData{PageName: "EventList", IsAdmin: getUserFromContext(r.Context()).Admin})
 }
 
 func (c MainController) ListActivistsHandler(w http.ResponseWriter, r *http.Request) {
@@ -337,7 +337,7 @@ var templates = template.Must(template.New("").Funcs(
 type PageData struct {
 	PageName string
 	Data     interface{}
-  IsAdmin  bool
+	IsAdmin  bool
 }
 
 // Render a page. All templates that load a header expect a PageData
@@ -388,12 +388,12 @@ func (c MainController) UpdateEventHandler(w http.ResponseWriter, r *http.Reques
 		}
 	}
 
-  renderPage(w, "event_new", PageData{
+	renderPage(w, "event_new", PageData{
 		PageName: "NewEvent",
 		Data: map[string]interface{}{
 			"Event": event,
 		},
-    IsAdmin: getUserFromContext(r.Context()).Admin,
+		IsAdmin: getUserFromContext(r.Context()).Admin,
 	})
 }
 
@@ -648,7 +648,7 @@ func (c MainController) PowerHandler(w http.ResponseWriter, r *http.Request) {
 			"PowerHist": powerHist,
 			"PowerMTD":  powerMTD,
 		},
-    IsAdmin: getUserFromContext(r.Context()).Admin,
+		IsAdmin: getUserFromContext(r.Context()).Admin,
 	})
 }
 
@@ -657,7 +657,7 @@ func (c MainController) UserListHandler(w http.ResponseWriter, r *http.Request) 
 
 	if err != nil {
 		sendErrorMessage(w, err)
-    return
+		return
 	}
 
 	writeJSON(w, users)
