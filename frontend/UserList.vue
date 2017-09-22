@@ -79,7 +79,7 @@ export default {
       this.currentUser = $.extend({}, user);
       
       // Track current user index, or default to first in list
-      this.userIndex = index || -1;
+      this.userIndex = index === 0 ? 0 : index || -1;
       
       this.currentModalName = modalName;
       this.$modal.show(modalName);
