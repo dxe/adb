@@ -138,8 +138,8 @@
             </form>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" @click="hideModal">Close</button>
-            <button type="button" v-bind:disabled="disableConfirmButton" class="btn btn-success" @click="confirmEditActivistModal">Save changes</button>
+            <button type="button" class="btn btn-secondary" @click="hideModal">Cancel</button>
+            <button type="button" v-bind:disabled="disableConfirmButton" class="btn btn-success" @click="confirmEditActivistModal">Save</button>
           </div>
         </div>
       </div>
@@ -434,7 +434,7 @@ export default {
       this.pagingParameters = {
         name: "",
         order: AscOrder,
-        limit: 40
+        limit: 500
       },
       this.distance = 100;
     }
