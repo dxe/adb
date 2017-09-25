@@ -11,7 +11,7 @@
           <th>Email</th>
           <th>Phone</th>
           <th>First Event</th>
-          <th>Last Event</th>
+          <th @click="sortByLastEvent">Last Event</th>
           <th>Status</th>
           <th>Level</th>
         </tr>
@@ -354,6 +354,19 @@ export default {
       $(document.body).removeClass('noscroll');
     },
     sortByName: function() {
+      var order = this.pagingParameters.order;
+      if (order === AscOrder) {
+        order = DescOrder;
+      }
+      else {
+        order = AscOrder;
+      }
+      this.reset();
+      this.pagingParameters.order = order;
+      // reset infinite loading component
+      this.$refs.infiniteLoading.$emit('$InfiniteLoading:reset');
+    },
+    sortByLastEvent: function() {
       var order = this.pagingParameters.order;
       if (order === AscOrder) {
         order = DescOrder;
