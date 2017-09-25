@@ -449,7 +449,7 @@ export default {
       pagingParameters: {
         name: "",
         order: AscOrder,
-        limit: 40
+        limit: 500
       },
       distance: 100,
     };
