@@ -312,6 +312,11 @@ func getActivistRange(db *sqlx.DB, activistOptions ActivistRangeOptionsJSON) ([]
 		return nil, errors.Wrapf(err, "failed to retrieve %d users before/after %s", limit, name)
 	}
 
+	for i := 0; i < len(activists); i++ {
+		a := activists[i]
+		activists[i].Status = getStatus(a.FirstEvent, a.LastEvent, a.TotalEvents)
+	}
+
 	return activists, nil
 }
 
