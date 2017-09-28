@@ -1,10 +1,12 @@
 package model
 
 import (
-	"database/sql"
+	"encoding/json"
+	"io"
+	"strings"
+
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
-	"strings"
 )
 
 /** Constant and Variable Definitions */
@@ -14,15 +16,28 @@ const (
 	committee_db_value     = 2
 )
 
+var WorkingGroupTypes map[int]string = map[int]string{
+	working_group_db_value: "working_group",
+	committee_db_value:     "committee",
+}
+
+var WorkingGroupTypeStringToInt map[string]int
+
+func init() {
+	WorkingGroupTypeStringToInt = make(map[string]int)
+	for key := range WorkingGroupTypes {
+		WorkingGroupTypeStringToInt[WorkingGroupTypes[key]] = key
+	}
+}
+
 /** User-defined Types */
 
 type WorkingGroup struct {
-	ID            int            `db:"id"`
-	Name          string         `db:"name"`
-	Type          int            `db:"type"`
-	GroupEmail    sql.NullString `db:"group_email"`
-	PointPersonID int            `db:"point_person_id"`
-	Members       []WorkingGroupMember
+	ID         int    `db:"id"`
+	Name       string `db:"name"`
+	Type       int    `db:"type"`
+	GroupEmail string `db:"group_email"`
+	Members    []WorkingGroupMember
 }
 
 type WorkingGroupQueryOptions struct {
@@ -31,9 +46,24 @@ type WorkingGroupQueryOptions struct {
 }
 
 type WorkingGroupMember struct {
-	GroupID      int    `db:"working_group_id"`
-	ActivistName string `db:"activist_name"`
-	ActivistID   int    `db:"activist_id"`
+	ActivistName           string `db:"activist_name"`
+	ActivistID             int    `db:"activist_id"`
+	PointPerson            bool   `db:"point_person"`
+	NonMemberOnMailingList bool   `db:"non_member_on_mailing_list"`
+}
+
+type WorkingGroupJSON struct {
+	ID      int                      `json:"id"`
+	Name    string                   `json:"name"`
+	Type    string                   `json:"type"`
+	Email   string                   `json:"email"`
+	Members []WorkingGroupMemberJSON `json:"members"`
+}
+
+type WorkingGroupMemberJSON struct {
+	Name                   string `json:"name"`
+	PointPerson            bool   `json:"point_person"`
+	NonMemberOnMailingList bool   `json:"non_member_on_mailing_list"`
 }
 
 /** Functions and Methods */
@@ -61,25 +91,21 @@ func createOrUpdateWorkingGroup(db *sqlx.DB, workingGroup WorkingGroup) (int, er
 		return 0, errors.New("WorkingGroup type has to either be working group or committee")
 	}
 
-	//TODO Make sure the point_person_id corresponds to a valid activist id
-	// Should we put a foreign key on the point_person_id field?
-
 	var query string
 	if workingGroup.ID == 0 {
 		// Create working Group
 		query = `
-    INSERT INTO working_groups (name, type, group_email, point_person_id)
-    VALUES (:name, :type, :group_email, :point_person_id)
+    INSERT INTO working_groups (name, type, group_email)
+    VALUES (:name, :type, :group_email)
     `
 	} else {
 		// Update existing working group
 		query = `
-UPDATE working_groups 
+UPDATE working_groups
 SET
   name = :name,
   type = :type,
-  group_email = :group_email,
-  point_person_id = :point_person_id
+  group_email = :group_email
 WHERE
 id = :id
 `
@@ -118,31 +144,189 @@ func insertWorkingGroupMembers(tx *sqlx.Tx, workingGroup WorkingGroup) error {
 	if workingGroup.ID == 0 {
 		return errors.New("Invalid WorkingGroup ID. ID's must be greater than 0")
 	}
+	// First drop all working group members for the working group.
+	_, err := tx.Exec(`DELETE FROM working_group_members WHERE working_group_id = ?`, workingGroup.ID)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to drop working groups for Working Group: %s", workingGroup.Name)
+	}
+
 	for _, m := range workingGroup.Members {
 		if m.ActivistID < 1 {
 			return errors.New("Invalid Activist ID; cannot add as a working group member")
 		}
-		_, err := tx.Exec(`INSERT INTO working_group_members (working_group_id, activist_id)
-    VALUES (?, ?)`, workingGroup.ID, m.ActivistID)
+		_, err = tx.Exec(`INSERT INTO working_group_members (working_group_id, activist_id, point_person, non_member_on_mailing_list)
+    VALUES (?, ?, ?, ?)`, workingGroup.ID, m.ActivistID, m.PointPerson, m.NonMemberOnMailingList)
 		if err != nil {
-			errors.Wrapf(err, "Failed to insert %s into Working Group %s", m.ActivistName, workingGroup.Name)
+			return errors.Wrapf(err, "Failed to insert %s into Working Group %s", m.ActivistName, workingGroup.Name)
 		}
 	}
 	return nil
 }
 
+func CleanWorkingGroupData(db *sqlx.DB, body io.Reader) (WorkingGroup, error) {
+	var workingGroupJSON WorkingGroupJSON
+	err := json.NewDecoder(body).Decode(&workingGroupJSON)
+	if err != nil {
+		return WorkingGroup{}, err
+	}
+
+	if len(strings.TrimSpace(workingGroupJSON.Name)) == 0 {
+		return WorkingGroup{}, errors.Errorf("Working group name must not be blank")
+	}
+
+	if !strings.Contains(workingGroupJSON.Email, "@") {
+		return WorkingGroup{}, errors.Errorf("Working group email must contain @: %s", workingGroupJSON.Email)
+	}
+
+	if workingGroupJSON.Type == "" {
+		return WorkingGroup{}, errors.New("Working group type can't be empty")
+	}
+
+	wgType, ok := WorkingGroupTypeStringToInt[workingGroupJSON.Type]
+	if !ok {
+		return WorkingGroup{}, errors.Errorf("Working group type doesn't exist: %s", workingGroupJSON.Type)
+	}
+
+	members := make([]WorkingGroupMember, 0, len(workingGroupJSON.Members))
+	for _, m := range workingGroupJSON.Members {
+		trimName := strings.TrimSpace(m.Name)
+		if trimName == "" {
+			return WorkingGroup{}, errors.New("Member name cannot be empty")
+		}
+		activist, err := GetActivist(db, strings.TrimSpace(m.Name))
+		if err != nil {
+			return WorkingGroup{}, err
+		}
+		members = append(members, WorkingGroupMember{
+			ActivistName:           activist.Name,
+			ActivistID:             activist.ID,
+			PointPerson:            m.PointPerson,
+			NonMemberOnMailingList: m.NonMemberOnMailingList,
+		})
+	}
+
+	return WorkingGroup{
+		ID:         workingGroupJSON.ID,
+		Name:       strings.TrimSpace(workingGroupJSON.Name),
+		Type:       wgType,
+		GroupEmail: strings.TrimSpace(workingGroupJSON.Email),
+		Members:    members,
+	}, nil
+}
+
+func DeleteWorkingGroup(db *sqlx.DB, workingGroupID int) error {
+	if workingGroupID == 0 {
+		return errors.New("Working group ID can't be 0")
+	}
+
+	// Wrap everything in a transaction because we only want to
+	// delete the working group if there are no users associated
+	// with it.
+	tx, err := db.Beginx()
+	if err != nil {
+		return errors.Wrap(err, "Failed to create transaction")
+	}
+
+	txFn := func() error {
+		var activistIDs []int
+		err = tx.Select(&activistIDs, `
+SELECT activist_id
+FROM working_group_members
+WHERE working_group_id = ?`, workingGroupID)
+		if err != nil {
+			return errors.Wrapf(err, "Failed to get activists for working group: %d", workingGroupID)
+		}
+
+		if len(activistIDs) > 0 {
+			return errors.New("Cannot delete working group because it has members associated with it")
+		}
+		_, err = tx.Exec(`
+DELETE FROM working_groups
+WHERE id = ?`, workingGroupID)
+		if err != nil {
+			return errors.Wrap(err, "Could not delete working group")
+		}
+		return nil
+	}
+
+	if err = txFn(); err != nil {
+		tx.Rollback()
+		return err
+	}
+	if err = tx.Commit(); err != nil {
+		tx.Rollback()
+		return errors.Wrap(err, "Error during commit")
+	}
+	return nil
+}
+
+func GetWorkingGroupJSON(db *sqlx.DB, workingGroupID int) (WorkingGroupJSON, error) {
+	wgs, err := getWorkingGroupsJSON(db, WorkingGroupQueryOptions{
+		GroupID: workingGroupID,
+	})
+	if err != nil {
+		return WorkingGroupJSON{}, err
+	}
+	if len(wgs) == 0 {
+		return WorkingGroupJSON{}, errors.Errorf("Could not find working group with id: %d", workingGroupID)
+	} else if len(wgs) > 1 {
+		return WorkingGroupJSON{}, errors.Errorf("Found too many working groups with id: %d", workingGroupID)
+	}
+	return wgs[0], nil
+}
+
+func GetWorkingGroupsJSON(db *sqlx.DB, options WorkingGroupQueryOptions) ([]WorkingGroupJSON, error) {
+	if options.GroupID != 0 {
+		return nil, errors.New("Cannot include an ID in options")
+	}
+	if options.GroupName != "" {
+		errorMsg := "Cannot include name in query options when fetching multiple working groups"
+		return nil, errors.New(errorMsg)
+	}
+
+	return getWorkingGroupsJSON(db, options)
+}
+
+func getWorkingGroupsJSON(db *sqlx.DB, options WorkingGroupQueryOptions) ([]WorkingGroupJSON, error) {
+	wgs, err := getWorkingGroups(db, options)
+	if err != nil {
+		return nil, err
+	}
+
+	wgsJSON := make([]WorkingGroupJSON, 0, len(wgs))
+	for _, wg := range wgs {
+		wgMembers := make([]WorkingGroupMemberJSON, 0, len(wg.Members))
+		for _, member := range wg.Members {
+			wgMembers = append(wgMembers, WorkingGroupMemberJSON{
+				Name:                   member.ActivistName,
+				PointPerson:            member.PointPerson,
+				NonMemberOnMailingList: member.NonMemberOnMailingList,
+			})
+		}
+		wgsJSON = append(wgsJSON, WorkingGroupJSON{
+			ID:      wg.ID,
+			Name:    wg.Name,
+			Type:    WorkingGroupTypes[wg.Type],
+			Email:   wg.GroupEmail,
+			Members: wgMembers,
+		})
+	}
+
+	return wgsJSON, nil
+}
+
 func GetWorkingGroups(db *sqlx.DB, options WorkingGroupQueryOptions) ([]WorkingGroup, error) {
 	if options.GroupID != 0 {
-		return []WorkingGroup{}, errors.New("GetWorkingGroups: Cannot include an ID in options")
+		return nil, errors.New("GetWorkingGroups: Cannot include an ID in options")
 	}
 	if options.GroupName != "" {
 		errorMsg := "GetWorkingGroups: Cannot include name in query options when fetching multiple working groups"
-		return []WorkingGroup{}, errors.New(errorMsg)
+		return nil, errors.New(errorMsg)
 	}
 
 	workingGroups, err := getWorkingGroups(db, options)
 	if err != nil {
-		return []WorkingGroup{}, errors.Wrapf(err, "GetWorkingGroups: Unable to retrieve working groups")
+		return nil, errors.Wrapf(err, "GetWorkingGroups: Unable to retrieve working groups")
 	}
 	return workingGroups, nil
 }
@@ -167,7 +351,7 @@ func GetWorkingGroup(db *sqlx.DB, options WorkingGroupQueryOptions) (WorkingGrou
 
 func getWorkingGroups(db *sqlx.DB, options WorkingGroupQueryOptions) ([]WorkingGroup, error) {
 	query := `
-SELECT w.id, w.name, w.type, w.group_email, w.point_person_id FROM working_groups w
+SELECT w.id, w.name, w.type, w.group_email FROM working_groups w
 `
 
 	var queryArgs []interface{}
@@ -201,6 +385,10 @@ SELECT w.id, w.name, w.type, w.group_email, w.point_person_id FROM working_group
 }
 
 func fetchWorkingGroupMembers(db *sqlx.DB, workingGroups []WorkingGroup) error {
+	if len(workingGroups) == 0 {
+		return nil
+	}
+
 	workingGroupIDToIndex := map[int]int{}
 	var workingGroupIDs []int
 
@@ -209,10 +397,12 @@ func fetchWorkingGroupMembers(db *sqlx.DB, workingGroups []WorkingGroup) error {
 		workingGroupIDToIndex[w.ID] = i
 	}
 	membersQuery, membersArgs, err := sqlx.In(`
-SELECT 
+SELECT
   wm.working_group_id,
   a.name as activist_name,
-  a.id as activist_id
+  a.id as activist_id,
+  wm.point_person,
+  wm.non_member_on_mailing_list
 FROM activists a
 JOIN working_group_members wm
   on a.id = wm.activist_id
@@ -223,14 +413,17 @@ WHERE
 	}
 
 	membersQuery = db.Rebind(membersQuery)
-	var members []WorkingGroupMember
+	var members []struct {
+		GroupID int `db:"working_group_id"`
+		WorkingGroupMember
+	}
 	if err := db.Select(&members, membersQuery, membersArgs...); err != nil {
 		return errors.Wrapf(err, "Unable to fetch working group members")
 	}
 
 	for _, m := range members {
 		idx := workingGroupIDToIndex[m.GroupID]
-		workingGroups[idx].Members = append(workingGroups[idx].Members, m)
+		workingGroups[idx].Members = append(workingGroups[idx].Members, m.WorkingGroupMember)
 	}
 
 	return nil

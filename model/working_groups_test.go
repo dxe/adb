@@ -1,7 +1,6 @@
 package model
 
 import (
-	"database/sql"
 	"testing"
 
 	"github.com/jmoiron/sqlx"
@@ -132,13 +131,14 @@ func TestUpdateWorkingGroup_updatePointPersonAndGroupEmail(t *testing.T) {
 	require.NoError(t, err)
 	validateReturnedWorkingGroup(t, workingGroup, fetchedGroup)
 
-	member := insertActivists(t, db, []string{"Whimsical Winterbottom"})
+	members := insertActivists(t, db, []string{"Whimsical Winterbottom"})
+	members[0].PointPerson = true
 	updatedGroupExpected := WorkingGroup{
-		ID:            id,
-		Name:          "Sanguine Salesman",
-		Type:          working_group_db_value,
-		GroupEmail:    sql.NullString{Valid: true, String: "foo@bar.com"},
-		PointPersonID: member[0].ActivistID,
+		ID:         id,
+		Name:       "Sanguine Salesman",
+		Type:       working_group_db_value,
+		GroupEmail: "foo@bar.com",
+		Members:    members,
 	}
 
 	_, err = UpdateWorkingGroup(db, updatedGroupExpected)
@@ -173,7 +173,7 @@ func TestUpdateWorkingGroup_updateMultipleGroups(t *testing.T) {
 		ID:         id1,
 		Name:       "WG 1",
 		Type:       working_group_db_value,
-		GroupEmail: sql.NullString{Valid: true, String: "hello@hello.org"},
+		GroupEmail: "hello@hello.org",
 		Members:    members1,
 	}
 
@@ -207,18 +207,18 @@ func validateReturnedWorkingGroup(t *testing.T, inserted WorkingGroup, returned 
 	require.Equal(t, inserted.Name, returned.Name)
 	require.Equal(t, inserted.Type, returned.Type)
 	require.Equal(t, inserted.GroupEmail, returned.GroupEmail)
-	require.Equal(t, inserted.PointPersonID, returned.PointPersonID)
 	require.Equal(t, len(inserted.Members), len(returned.Members))
 
-	memberMap := make(map[int]string)
+	memberMap := make(map[int]WorkingGroupMember)
 	for _, member := range inserted.Members {
-		memberMap[member.ActivistID] = member.ActivistName
+		memberMap[member.ActivistID] = member
 	}
 
 	for _, member := range returned.Members {
-		name, ok := memberMap[member.ActivistID]
+		insertedMember, ok := memberMap[member.ActivistID]
 		require.True(t, ok)
-		require.Equal(t, name, member.ActivistName)
+		require.Equal(t, insertedMember.ActivistName, member.ActivistName)
+		require.Equal(t, insertedMember.PointPerson, member.PointPerson)
 	}
 }
 

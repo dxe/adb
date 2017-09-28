@@ -1,5 +1,6 @@
 <template>
   <div id="app" class="main">
+    <button class="btn btn-default" @click="showModal('edit-working-group-modal')">Add New Working Group</button>
     <table id="working-group-list" class="adb-table table table-hover table-striped">
       <thead>
         <tr>
@@ -38,9 +39,33 @@
       </tbody>
     </table>
     <modal
+       name="delete-working-group-modal"
+       height="auto"
+       classes="no-background-color no-top"
+       @opened="modalOpened"
+       @closed="modalClosed"
+       >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 class="modal-title">Delete working group</h2>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to delete the working group {{currentWorkingGroup.name}}?</p>
+            <p>Before you delete a working group, you need to remove all members of that working group.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="hideModal">Close</button>
+            <button type="button" v-bind:disabled="disableConfirmButton" class="btn btn-danger" @click="confirmDeleteWorkingGroupModal">Delete working group</button>
+          </div>
+        </div>
+      </div>
+    </modal>
+    </modal>
+    <modal
        name="edit-working-group-modal"
-       :height="800"
-       classes="no-background-color"
+       height="auto"
+       classes="no-background-color no-top"
        @opened="modalOpened"
        @closed="modalClosed"
        >
@@ -62,11 +87,52 @@
                 </select>
               </p>
               <p>
+                <label for="point-person">Point person: </label>
+                <div class="select-row" v-for="(member, index) in currentWorkingGroup.members">
+                  <template v-if="member.point_person">
+                    <basic-select
+                       :options="activistOptions"
+                       :selected-option="memberOption(member)"
+                       :extra-data="{index: index, pointPerson: true}"
+                       inheritStyle="min-width: 500px"
+                       @select="onMemberSelect">
+                    </basic-select>
+                    <button type="button" class="select-row-btn btn btn-sm btn-danger" @click="removeMember(index)"> - </button>
+                  </template>
+                </div>
+                <button v-if="showAddPointPerson" type="button" class="btn btn-sm" @click="addPointPerson">Add point person</button>
+              </p>
+              <p>
                 <label for="members">Members: </label>
-                <div v-for="(member, index) in currentWorkingGroup.members">
-                  <input v-model="member.name" /> <button type="button" class="btn btn-sm" @click="removeMember(index)"> - </button>
+                <div class="select-row" v-for="(member, index) in currentWorkingGroup.members">
+                  <template v-if="!member.point_person && !member.non_member_on_mailing_list">
+                    <basic-select
+                       :options="activistOptions"
+                       :selected-option="memberOption(member)"
+                       :extra-data="{index: index}"
+                       inheritStyle="min-width: 500px"
+                       @select="onMemberSelect">
+                    </basic-select>
+                    <button type="button" class="select-row-btn btn btn-sm btn-danger" @click="removeMember(index)"> - </button>
+                  </template>
                 </div>
                 <button type="button" class="btn btn-sm" @click="addMember">Add member</button>
+              </p>
+              <p>
+                <label for="non-members">Non-members on the mailing list: </label>
+                <div class="select-row" v-for="(member, index) in currentWorkingGroup.members">
+                  <template v-if="member.non_member_on_mailing_list">
+                    <basic-select
+                       :options="activistOptions"
+                       :selected-option="memberOption(member)"
+                       :extra-data="{index: index, nonMemberOnMailingList: true}"
+                       inheritStyle="min-width: 500px"
+                       @select="onMemberSelect">
+                    </basic-select>
+                    <button type="button" class="select-row-btn btn btn-sm btn-danger" @click="removeMember(index)"> - </button>
+                  </template>
+                </div>
+                <button type="button" class="btn btn-sm" @click="addNonMember">Add non-member to mailing list</button>
               </p>
             </form>
           </div>
@@ -87,6 +153,7 @@ import {flashMessage} from 'flash_message';
 import {Dropdown} from 'uiv';
 import {initActivistSelect} from 'chosen_utils';
 import {focus} from 'directives/focus';
+import BasicSelect from 'external/search-select/BasicSelect.vue';
 
 Vue.use(vmodal);
 
@@ -119,29 +186,89 @@ export default {
       this.currentWorkingGroup = {};
     },
     confirmEditWorkingGroupModal: function() {
+      // First, check for duplicate activists because that's the most
+      // likely error.
+      if (this.currentWorkingGroup.members) {
+        var members = this.currentWorkingGroup.members;
+        var memberNameMap = {};
+        for (var i = 0; i < members.length; i++) {
+          if (members[i].name in memberNameMap) {
+            flashMessage("Error: Cannot have duplicate members: " + members[i].name, true);
+            return;
+          }
+          memberNameMap[members[i].name] = true;
+        }
+      }
+
+      // Save working group
       this.disableConfirmButton = true;
 
-      // SAMER Make ajax call.
+      $.ajax({
+        url: "/working_group/save",
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify(this.currentWorkingGroup),
+        success: (data) => {
+          this.disableConfirmButton = false;
+
+          var parsed = JSON.parse(data);
+          if (parsed.status === "error") {
+            flashMessage("Error: " + parsed.message, true);
+            return;
+          }
+          // status === "success"
+          flashMessage(this.currentWorkingGroup.name + " saved");
+
+          if (this.workingGroupIndex === -1) {
+            // New working group, insert at the top
+            this.workingGroups = [parsed.working_group].concat(this.workingGroups);
+          } else {
+            // We edited an existing working group, replace their row.
+            Vue.set(this.workingGroups, this.workingGroupIndex, parsed.working_group);
+          }
+
+          this.hideModal();
+        },
+        error: (err) => {
+          this.disableConfirmButton = false;
+          console.warn(err.responseText);
+          flashMessage("Server error: " + err.responseText, true);
+        },
+      });
+    },
+    confirmDeleteWorkingGroupModal: function() {
+      this.disableConfirmButton = true;
+
+      $.ajax({
+        url: "/working_group/delete",
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({
+          working_group_id: this.currentWorkingGroup.id,
+        }),
+        success: (data) => {
+          this.disableConfirmButton = false;
+
+          var parsed = JSON.parse(data);
+          if (parsed.status === "error") {
+            flashMessage("Error: " + parsed.message, true);
+            return;
+          }
+          // status === "success"
+          flashMessage(this.currentWorkingGroup.name + " deleted");
+          this.workingGroups.splice(this.workingGroupIndex, this.workingGroupIndex + 1);
+          this.hideModal();
+        },
+        error: (err) => {
+          this.disableConfirmButton = false;
+          console.warn(err.responseText);
+          flashMessage("Server error: " + err.responseText, true);
+        },
+      });
     },
     modalOpened: function() {
       $(document.body).addClass('noscroll');
       this.disableConfirmButton = false;
-
-      if (this.currentModalName == "edit-working-group-modal") {
-        // For some reason, even though this function is supposed to
-        // fire after the modal is visible on the dom, the modal isn't
-        // there. Vue.nextTick doesn't work for some reason, so we're
-        // just going to keep calling setTimeout until the modal shows
-        // up.
-        var interval;
-        var fn = () => {
-          if ($('#add-member')[0]) {
-            clearInterval(interval);
-            initActivistSelect('#add-member');
-          }
-        };
-        interval = setInterval(fn, 50);
-      }
     },
     modalClosed: function() {
       $(document.body).removeClass('noscroll');
@@ -156,11 +283,37 @@ export default {
       return "";
     },
     addMember: function() {
+      if (this.currentWorkingGroup.members === undefined) {
+        Vue.set(this.currentWorkingGroup, 'members', []);
+      }
       this.currentWorkingGroup.members.push({name: ''});
+    },
+    addPointPerson: function() {
+      if (this.currentWorkingGroup.members === undefined) {
+        Vue.set(this.currentWorkingGroup, 'members', []);
+      }
+      this.currentWorkingGroup.members.push({name: '', point_person: true});
+    },
+    addNonMember: function() {
+      if (this.currentWorkingGroup.members === undefined) {
+        Vue.set(this.currentWorkingGroup, 'members', []);
+      }
+      this.currentWorkingGroup.members.push({name: '', non_member_on_mailing_list: true});
     },
     removeMember: function(index) {
       this.currentWorkingGroup.members.splice(index, 1);
-    }
+    },
+    memberOption: function(member) {
+      return {text: member.name};
+    },
+    onMemberSelect: function(selected, extraData) {
+      var index = extraData.index;
+      Vue.set(this.currentWorkingGroup.members, index, {
+        name: selected.text,
+        point_person: !!extraData.pointPerson,
+        non_member_on_mailing_list: !!extraData.nonMemberOnMailingList,
+      });
+    },
   },
   data() {
     return {
@@ -169,28 +322,72 @@ export default {
       workingGroupIndex: -1,
       disableConfirmButton: false,
       currentModalName: '',
+      activistOptions: [],
     }
   },
-  created() {
-    // SAMER ajax call
-    //this.workingGroups...
-    this.workingGroups = [
-      {
-        name: "Tech (Best)",
-        email: "tech@directactioneverywhere.com",
-        type: "working_group",
-        members: [{name: "Samer Masterson"}, {name:"Cameron Bailey"}, {name:"Jake Hobbs"}],
-      },
-      {
-        name: "Development",
-        email: "development@directactioneverywhere.com",
-        type: "committee",
-        members: [],
+  computed: {
+    showAddPointPerson: function() {
+      if (!this.currentWorkingGroup) {
+        return false; // doesn't matter
       }
-    ];
+      if (this.currentWorkingGroup && !this.currentWorkingGroup.members) {
+        return true;
+      }
+
+      var members = this.currentWorkingGroup.members;
+      var numPointPeople = 0;
+      for (var i = 0; i < members.length; i++) {
+        if (members[i].point_person) {
+          numPointPeople++;
+        }
+      }
+
+      return numPointPeople < 1;
+    },
+  },
+  created() {
+    // Get working groups
+    $.ajax({
+      url: "/working_group/list",
+      method: "POST",
+      success: (data) => {
+        var parsed = JSON.parse(data);
+        if (parsed.status === "error") {
+          flashMessage("Error: " + parsed.message, true);
+          return;
+        }
+        // status === "success"
+        this.workingGroups = parsed.working_groups;
+      },
+      error: (err) => {
+        console.warn(err.responseText);
+        flashMessage("Server error: " + err.responseText, true);
+      },
+    });
+
+    // Get activists for members dropdown.
+    $.ajax({
+      url: "/activist_names/get",
+      method: "GET",
+      success: (data) => {
+        var parsed = JSON.parse(data);
+
+        // Convert activist_names to a format usable by basic-select.
+        var options = [];
+        for (var i = 0; i < parsed.activist_names.length; i++) {
+          options.push({text: parsed.activist_names[i]});
+        }
+        this.activistOptions = options;
+      },
+      error: (err) => {
+        console.warn(err.responseText);
+        flashMessage("Server error: " + err.responseText, true);
+      },
+    });
   },
   components: {
     Dropdown,
+    BasicSelect,
   },
   directives: {
     focus,
@@ -198,3 +395,18 @@ export default {
 }
 
 </script>
+
+<style>
+  /* needed to override the custom `top` set by vue-modal-js */
+  .no-top {
+    top: 0 !important;
+  }
+
+  .select-row {
+    margin: 5px 0;
+  }
+
+  .select-row-btn {
+    margin: 0 5px;
+  }
+</style>
