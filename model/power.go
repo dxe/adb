@@ -24,8 +24,8 @@ SELECT COUNT(*) AS movement_power_index
 FROM (
 	SELECT
 		activist_id,
-		MAX(CASE WHEN event_type = "protest" or event_type = "key event" THEN "1" ELSE "0" END) AS is_protest,
-	    MAX(CASE WHEN event_type = "outreach" or event_type = "sanctuary" or event_type = "community" THEN "1" ELSE "0" END) AS is_community
+		MAX(CASE WHEN event_type = "protest" or event_type = "key event" or event_type = "outreach" or event_type = "sanctuary" THEN "1" ELSE "0" END) AS is_protest,
+	    MAX(CASE WHEN event_type = "community" THEN "1" ELSE "0" END) AS is_community
 	FROM event_attendance ea
 	JOIN events e ON ea.event_id = e.id
 	JOIN activists a ON ea.activist_id = a.id
@@ -55,8 +55,8 @@ SELECT COUNT(*) AS movement_power_index
 FROM (
 	SELECT
 		activist_id,
-		MAX(CASE WHEN event_type = "protest" or event_type = "key event" THEN "1" ELSE "0" END) AS is_protest,
-	    MAX(CASE WHEN event_type = "outreach" or event_type = "sanctuary" or event_type = "community" THEN "1" ELSE "0" END) AS is_community,
+		MAX(CASE WHEN event_type = "protest" or event_type = "key event" or event_type = "outreach" or event_type = "sanctuary" THEN "1" ELSE "0" END) AS is_protest,
+	    MAX(CASE WHEN event_type = "community" THEN "1" ELSE "0" END) AS is_community,
         SUBSTR(e.date,1,4) AS year,
         SUBSTR(e.date,6,2) AS month
 	FROM event_attendance ea
@@ -133,8 +133,8 @@ SELECT COUNT(*) AS movement_power_index
 FROM (
 	SELECT
 		activist_id,
-		MAX(CASE WHEN event_type = "protest" or event_type = "key event" THEN "1" ELSE "0" END) AS is_protest,
-	    MAX(CASE WHEN event_type = "outreach" or event_type = "sanctuary" or event_type = "community" THEN "1" ELSE "0" END) AS is_community,
+		MAX(CASE WHEN event_type = "protest" or event_type = "key event" or event_type = "sanctuary" or event_type = "outreach" THEN "1" ELSE "0" END) AS is_protest,
+	    MAX(CASE WHEN event_type = "community" THEN "1" ELSE "0" END) AS is_community,
         SUBSTR(e.date,1,4) AS year,
         SUBSTR(e.date,6,2) AS month
 	FROM event_attendance ea

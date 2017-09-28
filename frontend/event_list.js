@@ -36,6 +36,7 @@ export function confirmDeleteEvent(eventID) {
 function listEvents(events) {
   if (events.length === 0) {
     flashMessage("No events from server", true);
+    $('#event-list-body').html('<tr><td></td><td><i>No data</i></td><td></td><td></td><td></td><td></td></tr>');
     return;
   }
 
@@ -47,6 +48,11 @@ function listEvents(events) {
   for (var i = 0; i < events.length; i++) {
     var event = events[i];
     var attendeeString = '';
+
+    if (event.attendees == null) {
+      event.attendees = [];
+    }
+
     for (var j = 0; j < event.attendees.length; j++) {
       attendeeString += '<li>' + event.attendees[j]; '</li>';
     }

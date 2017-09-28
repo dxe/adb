@@ -3,6 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
+	"time"
+	"strings"
 
 	"github.com/dxe/adb/config"
 	"github.com/dxe/adb/model"
@@ -18,6 +20,37 @@ func init() {
 
 	noFakeData = *noFake
 	devEmail = *devEmailPtr
+}
+
+func createCurrentDateString(day int) string {
+	currentTime := time.Now().AddDate(0, -1, 0)
+	currentYear := currentTime.Year()
+	currentMonth := currentTime.Month()
+
+	return fmt.Sprintf("%d-%d-%d", currentYear, currentMonth, day)
+}
+
+func createEventsDevDB() string {
+	days := []int{15, 16, 17, 18, 19, 13}
+	eventFormatStrings := []string{
+		"(1, 'Event One', '%s', 'Working Group'),",
+		"(2, 'Event Two', '%s', 'Protest'),",
+		"(3, 'Event Three', '%s', 'Community'),",
+		"(4, 'Event Four', '%s', 'Outreach'),",
+		"(5, 'Event Five', '%s', 'Key Event'),",
+		"(6, 'Event Six', '%s', 'Key Event');"}
+
+	//assert
+	if len(days) != len(eventFormatStrings) {
+		panic("Fake data lengths do not match")
+	}
+
+	eventStrings := []string{}
+	for i, d := range days {
+		eventStrings = append(eventStrings, fmt.Sprintf(eventFormatStrings[i], createCurrentDateString(d)))
+	}
+
+	return strings.Join(eventStrings, "\n  ")
 }
 
 func createDevDB(name string) {
@@ -44,12 +77,7 @@ INSERT INTO activists
   (108, 'mmm', 'test@gmail.com', 'SF Bay', '', 'United States', '', 'activist', 0, 0, 0, 0);
 
 INSERT INTO events VALUES
-  (1, 'Event One', '2016-07-15', 'Working Group'),
-  (2, 'Event Two', '2017-07-16', 'Protest'),
-  (3, 'Event Three', '2017-07-17', 'Community'),
-  (4, 'Event Four', '2017-07-18', 'Outreach'),
-  (5, 'Event Five', '2017-07-19', 'Key Event'),
-  (6, 'Event Six', '2017-07-13', 'Key Event');
+  %s
 
 
 INSERT INTO event_attendance (activist_id, event_id) VALUES
@@ -62,7 +90,7 @@ INSERT INTO adb_users (id, email, admin, disabled) VALUES
   (4, 'samer@directactioneverywhere.com', 1, 0),
   (5, 'jake@directactioneverywhere.com', 1, 0),
   (6, '%s', 1, 0);
-`, devEmail)
+`, createEventsDevDB(), devEmail)
 	if !noFakeData {
 		// Insert sample data
 		db.MustExec(insertStatement)

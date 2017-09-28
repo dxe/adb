@@ -112,6 +112,9 @@ func router() *mux.Router {
 	// Unauthed pages
 	router.HandleFunc("/login", main.LoginHandler)
 
+	// Error pages
+	router.Handle("/403", alice.New(main.authMiddleware).ThenFunc(main.ForbiddenHandler))
+
 	// Authed pages
 	router.Handle("/", alice.New(main.authMiddleware).ThenFunc(main.UpdateEventHandler))
 	router.Handle("/update_event/{event_id:[0-9]+}", alice.New(main.authMiddleware).ThenFunc(main.UpdateEventHandler))
@@ -120,6 +123,9 @@ func router() *mux.Router {
 	router.Handle("/leaderboard", alice.New(main.authMiddleware).ThenFunc(main.LeaderboardHandler))
 	router.Handle("/power", alice.New(main.authMiddleware).ThenFunc(main.PowerHandler)) // TODO: rename
 	router.Handle("/list_working_groups", alice.New(main.authMiddleware).ThenFunc(main.ListWorkingGroupsHandler))
+
+	// Authed Admin pages
+	router.Handle("/admin/users", alice.New(main.authAdminMiddleware).ThenFunc(main.ListUsersHandler))
 
 	// Unauthed API
 	router.HandleFunc("/tokensignin", main.TokenSignInHandler)
@@ -141,6 +147,11 @@ func router() *mux.Router {
 	router.Handle("/working_group/save", alice.New(main.apiAuthMiddleware).ThenFunc(main.WorkingGroupSaveHandler))
 	router.Handle("/working_group/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.WorkingGroupListHandler))
 	router.Handle("/working_group/delete", alice.New(main.apiAuthMiddleware).ThenFunc(main.WorkingGroupDeleteHandler))
+
+	// Authed Admin API
+	router.Handle("/user/list", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserListHandler))
+	router.Handle("/user/save", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserSaveHandler))
+	router.Handle("/user/delete", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserDeleteHandler))
 
 	// Pprof debug routes
 	router.HandleFunc("/debug/pprof/", pprof.Index)
@@ -165,7 +176,7 @@ type MainController struct {
 
 func (c MainController) authMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, authed := getAuthedADBUser(c.db, r)
+		user, authed := getAuthedADBUser(c.db, r)
 		if !authed {
 			// Delete the cookie if it doesn't auth.
 			c := &http.Cookie{
@@ -179,8 +190,36 @@ func (c MainController) authMiddleware(h http.Handler) http.Handler {
 			http.Redirect(w, r, "/login", http.StatusFound)
 			return
 		}
+
 		// Request is authed at this point.
-		h.ServeHTTP(w, r)
+		h.ServeHTTP(w, r.WithContext(setUserContext(r, user)))
+	})
+}
+
+func (c MainController) authAdminMiddleware(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, authed := getAuthedADBUser(c.db, r)
+		if !authed {
+			// Delete the cookie if it doesn't auth.
+			c := &http.Cookie{
+				Name:     "auth-session",
+				Path:     "/",
+				MaxAge:   -1,
+				HttpOnly: true,
+			}
+			http.SetCookie(w, c)
+
+			http.Redirect(w, r, "/login", http.StatusFound)
+			return
+		}
+
+		if !user.Admin {
+			http.Redirect(w, r.WithContext(setUserContext(r, user)), "/403", http.StatusFound)
+			return
+		}
+
+		// Request is authed at this point.
+		h.ServeHTTP(w, r.WithContext(setUserContext(r, user)))
 	})
 }
 
@@ -194,6 +233,32 @@ func (c MainController) apiAuthMiddleware(h http.Handler) http.Handler {
 		// Request is authed at this point.
 		h.ServeHTTP(w, r)
 	})
+}
+
+func (c MainController) apiAdminAuthMiddleware(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, authed := getAuthedADBUser(c.db, r)
+		if !authed {
+			http.Error(w, http.StatusText(400), 400)
+			return
+		}
+
+		if !user.Admin {
+			http.Error(w, http.StatusText(403), 403)
+			return
+		}
+
+		// Request is authed at this point.
+		h.ServeHTTP(w, r)
+	})
+}
+
+func setUserContext(r *http.Request, user model.ADBUser) context.Context {
+	return context.WithValue(r.Context(), "UserContext", user)
+}
+
+func getUserFromContext(ctx context.Context) model.ADBUser {
+	return ctx.Value("UserContext").(model.ADBUser)
 }
 
 func (c MainController) TokenSignInHandler(w http.ResponseWriter, r *http.Request) {
@@ -243,12 +308,16 @@ func (c MainController) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, "login", PageData{PageName: "Login"})
 }
 
+func (c MainController) ForbiddenHandler(w http.ResponseWriter, r *http.Request) {
+	renderPage(w, "403", PageData{PageName: "403 - Forbidden", IsAdmin: getUserFromContext(r.Context()).Admin})
+}
+
 func (c MainController) ListEventsHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "event_list", PageData{PageName: "EventList"})
+	renderPage(w, "event_list", PageData{PageName: "EventList", IsAdmin: getUserFromContext(r.Context()).Admin})
 }
 
 func (c MainController) ListActivistsHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "activist_list", PageData{PageName: "ActivistList"})
+	renderPage(w, "activist_list", PageData{PageName: "ActivistList", IsAdmin: getUserFromContext(r.Context()).Admin})
 }
 
 func (c MainController) ListWorkingGroupsHandler(w http.ResponseWriter, r *http.Request) {
@@ -256,7 +325,11 @@ func (c MainController) ListWorkingGroupsHandler(w http.ResponseWriter, r *http.
 }
 
 func (c MainController) LeaderboardHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "leaderboard", PageData{PageName: "Leaderboard"})
+	renderPage(w, "leaderboard", PageData{PageName: "Leaderboard", IsAdmin: getUserFromContext(r.Context()).Admin})
+}
+
+func (c MainController) ListUsersHandler(w http.ResponseWriter, r *http.Request) {
+	renderPage(w, "user_list", PageData{PageName: "UserList", IsAdmin: getUserFromContext(r.Context()).Admin})
 }
 
 var templates = template.Must(template.New("").Funcs(
@@ -272,6 +345,7 @@ var templates = template.Must(template.New("").Funcs(
 type PageData struct {
 	PageName string
 	Data     interface{}
+	IsAdmin  bool
 }
 
 // Render a page. All templates that load a header expect a PageData
@@ -327,6 +401,7 @@ func (c MainController) UpdateEventHandler(w http.ResponseWriter, r *http.Reques
 		Data: map[string]interface{}{
 			"Event": event,
 		},
+		IsAdmin: getUserFromContext(r.Context()).Admin,
 	})
 }
 
@@ -645,7 +720,81 @@ func (c MainController) PowerHandler(w http.ResponseWriter, r *http.Request) {
 			"PowerHist": powerHist,
 			"PowerMTD":  powerMTD,
 		},
+		IsAdmin: getUserFromContext(r.Context()).Admin,
 	})
+}
+
+func (c MainController) UserListHandler(w http.ResponseWriter, r *http.Request) {
+	users, err := model.GetUsersJSON(c.db, model.GetUserOptions{})
+
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	writeJSON(w, users)
+}
+
+func (c MainController) UserSaveHandler(w http.ResponseWriter, r *http.Request) {
+	user, err := model.CleanUserData(r.Body)
+
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	// Check if we're updating an existing User or creating one
+
+	var userID int
+	if user.ID == 0 {
+		// new user
+		userID, err = model.CreateUser(c.db, user)
+	} else {
+		userID, err = model.UpdateUser(c.db, user)
+	}
+
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	// Retrieve updated User Data and send back in response
+
+	userJSON, err := model.GetUserJSON(c.db, model.GetUserOptions{ID: userID})
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	out := map[string]interface{}{
+		"status": "success",
+		"user":   userJSON,
+	}
+
+	writeJSON(w, out)
+}
+
+func (c MainController) UserDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	user, err := model.CleanUserData(r.Body)
+
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	userID, err := model.RemoveUser(c.db, user.ID)
+
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	out := map[string]interface{}{
+		"status": "success",
+		"userID": userID,
+	}
+
+	writeJSON(w, out)
 }
 
 func (c MainController) PowerWallboard(w http.ResponseWriter, r *http.Request) {

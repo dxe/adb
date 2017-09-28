@@ -159,6 +159,9 @@ ON (e.id = ea.event_id AND ea.activist_id = a.id)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to select events")
 	}
+	if len(events) == 0 {
+		return nil, nil
+	}
 
 	// Create a map of eventIDs to their index in `events` so we can easily add all
 	// attendance to them.
