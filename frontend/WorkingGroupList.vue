@@ -10,7 +10,9 @@
           <th>Email</th>
           <th>Type</th>
           <th>Total Members</th>
+          <th>Point Person</th>
           <th>Members</th>
+          <th>Non Members On Mailing List</th>
         </tr>
       </thead>
       <tbody id="working-group-list-body">
@@ -28,10 +30,26 @@
           <td>{{workingGroup.name}}</td>
           <td>{{workingGroup.email}}</td>
           <td>{{displayWorkingGroupType(workingGroup.type)}}</td>
-          <td>{{workingGroup.members ? workingGroup.members.length : 0}}</td>
+          <td>{{numberOfWorkingGroupMembers(workingGroup)}}</td>
           <td>
             <ul v-for="member in workingGroup.members">
-              <li>{{member.name}}</li>
+              <template v-if="member.point_person">
+                <li>{{member.name}}</li>
+              </template>
+            </ul>
+          </td>
+          <td>
+            <ul v-for="member in workingGroup.members">
+              <template v-if="!member.point_person && !member.non_member_on_mailing_list">
+                <li>{{member.name}}</li>
+              </template>
+            </ul>
+          </td>
+          <td>
+            <ul v-for="member in workingGroup.members">
+              <template v-if="member.non_member_on_mailing_list">
+                <li>{{member.name}}</li>
+              </template>
             </ul>
           </td>
           <td></td>
@@ -313,6 +331,20 @@ export default {
         point_person: !!extraData.pointPerson,
         non_member_on_mailing_list: !!extraData.nonMemberOnMailingList,
       });
+    },
+    numberOfWorkingGroupMembers: function(workingGroup) {
+      if (!workingGroup.members) {
+        return 0;
+      }
+
+      var count = 0;
+      for (var i = 0; i < workingGroup.members.length; i++) {
+        if (!workingGroup.members[i].non_member_on_mailing_list) {
+          count++;
+        }
+      }
+
+      return count;
     },
   },
   data() {
