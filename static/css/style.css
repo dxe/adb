@@ -97,6 +97,11 @@ a.edit-link:hover {
     min-width: 700px;
 }
 
+/* working_group_list */
+.working-group-list-content {
+    max-width: 1100px;
+}
+
 
 /* adb table */
 .adb-table {
