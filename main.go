@@ -122,6 +122,7 @@ func router() *mux.Router {
 	router.Handle("/list_activists", alice.New(main.authMiddleware).ThenFunc(main.ListActivistsHandler))
 	router.Handle("/leaderboard", alice.New(main.authMiddleware).ThenFunc(main.LeaderboardHandler))
 	router.Handle("/power", alice.New(main.authMiddleware).ThenFunc(main.PowerHandler)) // TODO: rename
+	router.Handle("/list_working_groups", alice.New(main.authMiddleware).ThenFunc(main.ListWorkingGroupsHandler))
 
 	// Authed Admin pages
 	router.Handle("/admin/users", alice.New(main.authAdminMiddleware).ThenFunc(main.ListUsersHandler))
@@ -143,6 +144,9 @@ func router() *mux.Router {
 	router.Handle("/activist/hide", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistHideHandler))
 	router.Handle("/activist/merge", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistMergeHandler))
 	router.Handle("/leaderboard/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.LeaderboardListHandler))
+	router.Handle("/working_group/save", alice.New(main.apiAuthMiddleware).ThenFunc(main.WorkingGroupSaveHandler))
+	router.Handle("/working_group/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.WorkingGroupListHandler))
+	router.Handle("/working_group/delete", alice.New(main.apiAuthMiddleware).ThenFunc(main.WorkingGroupDeleteHandler))
 
 	// Authed Admin API
 	router.Handle("/user/list", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserListHandler))
@@ -314,6 +318,10 @@ func (c MainController) ListEventsHandler(w http.ResponseWriter, r *http.Request
 
 func (c MainController) ListActivistsHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, "activist_list", PageData{PageName: "ActivistList", IsAdmin: getUserFromContext(r.Context()).Admin})
+}
+
+func (c MainController) ListWorkingGroupsHandler(w http.ResponseWriter, r *http.Request) {
+	renderPage(w, "working_group_list", PageData{PageName: "WorkingGroupList"})
 }
 
 func (c MainController) LeaderboardHandler(w http.ResponseWriter, r *http.Request) {
@@ -598,6 +606,70 @@ func (c MainController) EventDeleteHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	if err := model.DeleteEvent(c.db, eventID); err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	writeJSON(w, map[string]string{
+		"status": "success",
+	})
+}
+
+func (c MainController) WorkingGroupSaveHandler(w http.ResponseWriter, r *http.Request) {
+	wg, err := model.CleanWorkingGroupData(c.db, r.Body)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	var wgID int
+	if wg.ID == 0 {
+		wgID, err = model.CreateWorkingGroup(c.db, wg)
+	} else {
+		wgID, err = model.UpdateWorkingGroup(c.db, wg)
+	}
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	wgJSON, err := model.GetWorkingGroupJSON(c.db, wgID)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	writeJSON(w, map[string]interface{}{
+		"status":        "success",
+		"working_group": wgJSON,
+	})
+}
+
+func (c MainController) WorkingGroupListHandler(w http.ResponseWriter, r *http.Request) {
+	wgs, err := model.GetWorkingGroupsJSON(c.db, model.WorkingGroupQueryOptions{})
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	writeJSON(w, map[string]interface{}{
+		"status":         "success",
+		"working_groups": wgs,
+	})
+}
+
+func (c MainController) WorkingGroupDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	var requestData struct {
+		ID int `json:"working_group_id"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&requestData)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	err = model.DeleteWorkingGroup(c.db, requestData.ID)
+	if err != nil {
 		sendErrorMessage(w, err)
 		return
 	}

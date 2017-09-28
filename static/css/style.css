@@ -129,3 +129,26 @@ a.edit-link:hover {
     text-align:right;
 }
 
+/* global classes */
+.no-background-color {
+    background-color: transparent !important;
+}
+
+.noscroll {
+    overflow: hidden;
+}
+
+/* modal overrides */
+.v--modal-overlay {
+    overflow-y: scroll;
+    z-index: 1040 !important;
+}
+
+/* needed to override the custom `top` set by vue-modal-js */
+.no-top {
+    top: 0 !important;
+}
+
+.dropdown-menu>li:hover {
+    cursor: pointer;
+}

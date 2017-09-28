@@ -2,7 +2,7 @@
 
   <div id="app" class="main">
     <button class="btn btn-default" @click="showModal('edit-activist-modal')">Add New Activist</button>
-    <table id="activist-list" class="adb-table table table-hover table-striped tablesorter">
+    <table id="activist-list" class="adb-table table table-hover table-striped">
       <thead>
         <tr>
           <th></th>
@@ -155,6 +155,7 @@ import Vue from 'vue';
 import {flashMessage} from 'flash_message';
 import {Dropdown} from 'uiv';
 import {initActivistSelect} from 'chosen_utils';
+import {focus} from 'directives/focus';
 import InfiniteLoading from 'vue-infinite-loading';
 
 Vue.use(vmodal);
@@ -174,12 +175,6 @@ var activistLevelOrder = {
   "none" : 6
 };
 
-const focus = {
-  inserted(el) {
-    el.focus()
-  },
-}
-
 export default {
   name: 'activist-list',
   methods: {
@@ -191,11 +186,7 @@ export default {
 
       // Make shallow copy of selected activist to prevent persisting unsaved
       // edits at the view layer when closing modal
-      if (activist) {
-        this.currentActivist = $.extend({}, activist);
-      } else {
-        this.currentActivist = {};
-      }
+      this.currentActivist = $.extend({}, activist);
 
       if (index != undefined) {
         this.activistIndex = index; // needed for updating activist
@@ -476,24 +467,3 @@ export default {
   },
 }
 </script>
-
-<style>
-
-  .no-background-color {
-    background-color: transparent !important;
-  }
-
-  .noscroll {
-    overflow: hidden;
-  }
-
-  .v--modal-overlay {
-    overflow-y: scroll;
-    z-index: 1040 !important;
-  }
-
-  .dropdown-menu>li:hover {
-    cursor: pointer;
-  }
-
-</style>

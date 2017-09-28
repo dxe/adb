@@ -11,6 +11,7 @@ module.exports = {
     event_new: 'event_new',
     leaderboard: 'leaderboard',
     flash_message: 'flash_message',
+    working_group_list: 'working_group_list',
     user_list: 'user_list',
   },
 
