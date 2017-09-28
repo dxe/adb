@@ -32,11 +32,12 @@
           <td>{{displayWorkingGroupType(workingGroup.type)}}</td>
           <td>{{numberOfWorkingGroupMembers(workingGroup)}}</td>
           <td>
-            <ul v-for="member in workingGroup.members">
+            <!-- There should only ever be one point person -->
+            <template v-for="member in workingGroup.members">
               <template v-if="member.point_person">
-                <li>{{member.name}}</li>
+                <p>{{member.name}}</p>
               </template>
-            </ul>
+            </template>
           </td>
           <td>
             <ul v-for="member in workingGroup.members">
