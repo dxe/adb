@@ -397,11 +397,6 @@ export default {
 </script>
 
 <style>
-  /* needed to override the custom `top` set by vue-modal-js */
-  .no-top {
-    top: 0 !important;
-  }
-
   .select-row {
     margin: 5px 0;
   }

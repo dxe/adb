@@ -1,5 +1,4 @@
 <template>
-  <!-- SAMER: do we need isError? -->
   <div class="chosen-container chosen-container-single"
        :class="containerClass"
        :style="inheritStyle"

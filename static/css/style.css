@@ -144,6 +144,11 @@ a.edit-link:hover {
     z-index: 1040 !important;
 }
 
+/* needed to override the custom `top` set by vue-modal-js */
+.no-top {
+    top: 0 !important;
+}
+
 .dropdown-menu>li:hover {
     cursor: pointer;
 }

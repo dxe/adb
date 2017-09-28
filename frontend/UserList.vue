@@ -212,24 +212,3 @@ export default {
   },
 }
 </script>
-
-<style>
-
-  .no-background-color {
-    background-color: transparent !important;
-  }
-
-  .noscroll {
-    overflow: hidden;
-  }
-
-  .v--modal-overlay {
-    overflow-y: scroll;
-    z-index: 1040 !important;
-  }
-
-  .dropdown-menu>li:hover {
-    cursor: pointer;
-  }
-
-</style>
