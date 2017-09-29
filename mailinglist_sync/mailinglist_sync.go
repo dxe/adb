@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"strings"
 	"time"
 
 	"github.com/dxe/adb/config"
@@ -60,12 +61,17 @@ func removeMember(adminService *admin.Service, groupEmail, memberEmail string) e
 	return errors.Wrapf(err, "Could not delete member %s from group %s", memberEmail, groupEmail)
 }
 
+func normalizeEmail(s string) string {
+	return strings.ToLower(strings.TrimSpace(s))
+}
+
 func getInsertAndRemoveEmails(wgMembers []model.WorkingGroupMember, listEmails []string) (insertEmails, removeEmails []string) {
 	wgMembersEmailMap := map[string]bool{}
 	for _, a := range wgMembers {
 		// Don't track empty emails.
-		if a.ActivistEmail != "" {
-			wgMembersEmailMap[a.ActivistEmail] = true
+		e := normalizeEmail(a.ActivistEmail)
+		if e != "" {
+			wgMembersEmailMap[e] = true
 		}
 	}
 	listEmailMap := map[string]bool{}
@@ -75,14 +81,16 @@ func getInsertAndRemoveEmails(wgMembers []model.WorkingGroupMember, listEmails [
 
 	insertEmails = []string{}
 	for wgMemberEmail := range wgMembersEmailMap {
-		if _, ok := listEmailMap[wgMemberEmail]; !ok {
-			insertEmails = append(insertEmails, wgMemberEmail)
+		e := normalizeEmail(wgMemberEmail)
+		if _, ok := listEmailMap[e]; !ok {
+			insertEmails = append(insertEmails, e)
 		}
 	}
 	removeEmails = []string{}
 	for listEmail := range listEmailMap {
-		if _, ok := wgMembersEmailMap[listEmail]; !ok {
-			removeEmails = append(removeEmails, listEmail)
+		e := normalizeEmail(listEmail)
+		if _, ok := wgMembersEmailMap[e]; !ok {
+			removeEmails = append(removeEmails, e)
 		}
 	}
 
