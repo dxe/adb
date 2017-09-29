@@ -48,6 +48,7 @@ type WorkingGroupQueryOptions struct {
 type WorkingGroupMember struct {
 	ActivistName           string `db:"activist_name"`
 	ActivistID             int    `db:"activist_id"`
+	ActivistEmail          string `db:"activist_email"`
 	PointPerson            bool   `db:"point_person"`
 	NonMemberOnMailingList bool   `db:"non_member_on_mailing_list"`
 }
@@ -62,6 +63,7 @@ type WorkingGroupJSON struct {
 
 type WorkingGroupMemberJSON struct {
 	Name                   string `json:"name"`
+	Email                  string `json:"email"`
 	PointPerson            bool   `json:"point_person"`
 	NonMemberOnMailingList bool   `json:"non_member_on_mailing_list"`
 }
@@ -200,6 +202,7 @@ func CleanWorkingGroupData(db *sqlx.DB, body io.Reader) (WorkingGroup, error) {
 		members = append(members, WorkingGroupMember{
 			ActivistName:           activist.Name,
 			ActivistID:             activist.ID,
+			ActivistEmail:          activist.Email,
 			PointPerson:            m.PointPerson,
 			NonMemberOnMailingList: m.NonMemberOnMailingList,
 		})
@@ -299,6 +302,7 @@ func getWorkingGroupsJSON(db *sqlx.DB, options WorkingGroupQueryOptions) ([]Work
 		for _, member := range wg.Members {
 			wgMembers = append(wgMembers, WorkingGroupMemberJSON{
 				Name:                   member.ActivistName,
+				Email:                  member.ActivistEmail,
 				PointPerson:            member.PointPerson,
 				NonMemberOnMailingList: member.NonMemberOnMailingList,
 			})
@@ -400,6 +404,7 @@ func fetchWorkingGroupMembers(db *sqlx.DB, workingGroups []WorkingGroup) error {
 SELECT
   wm.working_group_id,
   a.name as activist_name,
+  a.email as activist_email,
   a.id as activist_id,
   wm.point_person,
   wm.non_member_on_mailing_list

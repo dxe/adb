@@ -13,6 +13,17 @@ var (
 	Route0, Route1, Route2 string
 
 	CookieSecret string
+
+	// Path to Google API oauth client_secrets.json file, with
+	// access to the following scope:
+	// https://www.googleapis.com/auth/admin.directory.group
+	// And the "Admin" API enabled. More info:
+	//   https://developers.google.com/api-client-library/python/auth/service-accounts
+	SyncMailingListsConfigFile string
+
+	// The email for the user that that the oauth account should
+	// take action as.
+	SyncMailingListsOauthSubject string
 )
 
 func mustGetenv(envvar string) string {
@@ -50,6 +61,9 @@ func init() {
 		Route2 = mustGetenv("ROUTE_2")
 
 		CookieSecret = mustGetenv("COOKIE_SECRET")
+
+		SyncMailingListsConfigFile = mustGetenv("SYNC_MAILING_LISTS_CONFIG_FILE")
+		SyncMailingListsOauthSubject = mustGetenv("SYNC_MAILING_LISTS_OAUTH_SUBJECT")
 	} else {
 		DBUser = "adb_user"
 		DBPassword = "adbpassword"
@@ -62,6 +76,10 @@ func init() {
 		Route2 = "/route2"
 
 		CookieSecret = "some-fake-secret"
+
+		// Empty during development.
+		SyncMailingListsConfigFile = ""
+		SyncMailingListsOauthSubject = ""
 	}
 }
 

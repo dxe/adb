@@ -18,6 +18,7 @@ import (
 
 	oidc "github.com/coreos/go-oidc"
 	"github.com/dxe/adb/config"
+	"github.com/dxe/adb/mailinglist_sync"
 	"github.com/dxe/adb/model"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -104,7 +105,7 @@ func noCacheHandler(h http.Handler) http.Handler {
 	})
 }
 
-func router() *mux.Router {
+func router() (*mux.Router, *sqlx.DB) {
 	db := model.NewDB(config.DBDataSource())
 	main := MainController{db: db}
 
@@ -167,7 +168,7 @@ func router() *mux.Router {
 		router.PathPrefix("/static").Handler(noCacheHandler(http.StripPrefix("/static/", http.FileServer(http.Dir("static")))))
 		router.PathPrefix("/dist").Handler(noCacheHandler(http.StripPrefix("/dist/", http.FileServer(http.Dir("dist")))))
 	}
-	return router
+	return router, db
 }
 
 type MainController struct {
@@ -829,7 +830,15 @@ func main() {
 	n.Use(negroni.NewRecovery())
 	n.Use(negroni.NewLogger())
 
-	r := router()
+	r, db := router()
+
+	// Start syncing mailing lists in the background if we have
+	// the environment set up.
+	if config.SyncMailingListsConfigFile != "" {
+		go mailinglist_sync.StartMailingListsSync(db)
+	}
+
+	// Set up server
 	n.UseHandler(r)
 
 	fmt.Println("Listening on localhost:" + config.Port)
