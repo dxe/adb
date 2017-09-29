@@ -71,13 +71,15 @@ func getInsertAndRemoveEmails(wgMembers []model.WorkingGroupMember, listEmails [
 		// Don't track empty emails.
 		e := normalizeEmail(a.ActivistEmail)
 		if e != "" {
-			fmt.Printf("Activist has no email, will not be synced to mailing list: %s\n", a.ActivistName)
 			wgMembersEmailMap[e] = true
+		} else {
+			fmt.Printf("Activist has no email, will not be synced to mailing list: %s\n", a.ActivistName)
 		}
 	}
 	listEmailMap := map[string]bool{}
 	for _, e := range listEmails {
-		listEmailMap[e] = true
+		normalized := normalizeEmail(e)
+		listEmailMap[normalized] = true
 	}
 
 	insertEmails = []string{}
