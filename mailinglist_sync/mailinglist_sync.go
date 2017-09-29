@@ -96,8 +96,6 @@ func getInsertAndRemoveEmails(wgMembers []model.WorkingGroupMember, listEmails [
 			removeEmails = append(removeEmails, e)
 		}
 	}
-	// TEMPORARY
-	fmt.Println(wgMembersEmailMap, listEmailMap, insertEmails)
 
 	return insertEmails, removeEmails
 }
