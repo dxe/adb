@@ -286,7 +286,7 @@ func getActivistRange(db *sqlx.DB, activistOptions ActivistRangeOptionsJSON) ([]
 	limit := activistOptions.Limit
 	var queryArgs []interface{}
 
-	query += " WHERE a.hidden = false "
+	query += " WHERE a.hidden = false and a.status = 'Current' "
 
 	if name != "" {
 		if order == DescOrder {
