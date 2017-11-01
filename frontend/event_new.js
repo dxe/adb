@@ -62,9 +62,9 @@ function updateAwesomeplete() {
   // Only grab inputs that are not children of div.awesomplete
   // Note length of $attendeeRows = 0 if there are no input.attendee-input elements
   var $attendeeRows = $('#attendee-rows > input.attendee-input');
-    
+
   for (var i = 0; i < $attendeeRows.length; i++) {
-    new Awesomplete($attendeeRows[i], { list: ACTIVIST_NAMES });
+    new Awesomplete($attendeeRows[i], { list: ACTIVIST_NAMES, sort: false });
   }
 }
 

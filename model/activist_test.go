@@ -8,6 +8,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func stringListToMap(l []string) map[string]struct{} {
+	m := map[string]struct{}{}
+	for _, i := range l {
+		m[i] = struct{}{}
+	}
+	return m
+}
+
 func TestAutocompleteActivistsHandler(t *testing.T) {
 	db := newTestDB()
 	defer db.Close()
@@ -29,11 +37,8 @@ func TestAutocompleteActivistsHandler(t *testing.T) {
 		t.Fatalf("gotNames and wantNames must have the same length.")
 	}
 
-	for i := range wantNames {
-		if gotNames[i] != wantNames[i] {
-			t.Fatalf("gotNames and wantNames must be equal")
-		}
-	}
+	require.Equal(t, stringListToMap(gotNames), stringListToMap(wantNames),
+		"gotNames and wantNames must be equal")
 }
 
 func TestGetActivistEventData(t *testing.T) {
