@@ -11,6 +11,7 @@ function listActivists(activists) {
         '<td>' + activist.points + '</td>' +
         '<td>' + activist.total_events_30_days + '</td>' +
         '<td>' + activist.total_events + '</td>' +
+        '<td>' + activist.level + '</td>' +
         '</tr>';
     d.insertAdjacentHTML('beforeend', newRow);
   }

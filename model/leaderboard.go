@@ -13,6 +13,7 @@ type LeaderboardActivist struct {
 	TotalEvents       int    `db:"total_events"`
 	TotalEvents30Days int    `db:"total_events_30_days"`
 	Points            int    `db:"points"`
+	Level             string `db:"level"`
 }
 
 type LeaderboardActivistJSON struct {
@@ -22,6 +23,7 @@ type LeaderboardActivistJSON struct {
 	TotalEvents       int    `json:"total_events"`
 	TotalEvents30Days int    `json:"total_events_30_days"`
 	Points            int    `json:"points"`
+	Level             string `json:"level"`
 }
 
 /** Functions and Methods */
@@ -40,6 +42,7 @@ func GetLeaderboardActivistsJSON(db *sqlx.DB) ([]LeaderboardActivistJSON, error)
 			TotalEvents:       l.TotalEvents,
 			TotalEvents30Days: l.TotalEvents30Days,
 			Points:            l.Points,
+			Level:             l.Level,
 		})
 	}
 	return leaderboardActivistsJSON, nil
@@ -53,7 +56,8 @@ SELECT
   IFNULL(last_event,"None") AS last_event,
   IFNULL(total_events,0) AS total_events,
   IFNULL(total_events_30_days,0) AS total_events_30_days,
-  IFNULL((IFNULL(protest_points,0) + IFNULL(wg_points,0) + IFNULL(community_points,0) + IFNULL(outreach_points,0) + IFNULL(sanctuary_points,0) + IFNULL(key_event_points,0)),0) AS points
+  IFNULL((IFNULL(protest_points,0) + IFNULL(wg_points,0) + IFNULL(community_points,0) + IFNULL(outreach_points,0) + IFNULL(sanctuary_points,0) + IFNULL(key_event_points,0)),0) AS points,
+  IFNULL(a.activist_level,"") AS level
 FROM activists a
 
 LEFT JOIN (
