@@ -493,7 +493,7 @@ func MergeActivist(db *sqlx.DB, originalActivistID, targetActivistID int) error 
 		return errors.Wrap(err, "could not create transaction")
 	}
 
-	_, err = tx.Exec(`UPDATE activists SET hidden = true, name = concat(name, id) WHERE id = ?`, originalActivistID)
+	_, err = tx.Exec(`UPDATE activists SET hidden = true, name = concat(name,' ', id) WHERE id = ?`, originalActivistID)
 	if err != nil {
 		tx.Rollback()
 		return errors.Wrapf(err, "failed to hide original activist %d", originalActivistID)
