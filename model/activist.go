@@ -671,8 +671,42 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 		},
 	}
 
+	if err := validateActivist(activistExtra); err != nil {
+		return ActivistExtra{}, err
+	}
+
 	return activistExtra, nil
 
+}
+
+var validActivistLevels = map[string]struct{}{
+	"activist":         struct{}{},
+	"not_local":        struct{}{},
+	"organizer":        struct{}{},
+	"hiatus":           struct{}{},
+	"prospect":         struct{}{},
+	"senior_organizer": struct{}{},
+	"none":             struct{}{},
+}
+
+func validateActivist(a ActivistExtra) error {
+	if a.LiberationPledge != 0 && a.LiberationPledge != 1 {
+		return errors.New("LiberationPledge must be 1 or 0")
+	}
+	if a.CoreStaff != 0 && a.CoreStaff != 1 {
+		return errors.New("CoreStaff must be 1 or 0")
+	}
+	if a.ExcludeFromLeaderboard != 0 && a.ExcludeFromLeaderboard != 1 {
+		return errors.New("ExcludeFromLeaderboard must be 1 or 0")
+	}
+	if a.GlobalTeamMember != 0 && a.GlobalTeamMember != 1 {
+		return errors.New("GlobalTeamMember must be 1 or 0")
+	}
+	if _, ok := validActivistLevels[a.ActivistLevel]; !ok {
+		return errors.New("ActivistLevel must be one of: activist, not_local, " +
+			"organizer, hiatus, prospect, senior_organizer, none")
+	}
+	return nil
 }
 
 func GetActivistRangeOptions(body io.Reader) (ActivistRangeOptionsJSON, error) {

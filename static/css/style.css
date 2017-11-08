@@ -12,6 +12,10 @@ body {
     }
 }
 
+body.activist-list-body {
+    padding-top: 50px;
+}
+
 a {
         color: lightgrey;
         text-decoration: none;
@@ -94,7 +98,9 @@ a.edit-link:hover {
 
 /* activist_list */
 .activist-list-content {
-    min-width: 700px;
+    max-width: none;
+    width: 100%;
+    padding: 0;
 }
 
 /* working_group_list */

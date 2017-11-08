@@ -18,7 +18,7 @@
 
     <script src="/dist/flash_message.js"></script>
   </head>
-  <body>
+  <body class="{{if (eq .PageName "ActivistList")}}activist-list-body{{end}}">
     <div id="flash" role="alert"></div>
     <script>flash_message.initializeFlashMessage();</script>
     <nav class="navbar navbar-inverse navbar-fixed-top">

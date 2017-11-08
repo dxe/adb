@@ -1,45 +1,33 @@
 <template>
-
   <div id="app" class="main">
-    <button class="btn btn-default" @click="showModal('edit-activist-modal')">Add New Activist</button>
-    <table id="activist-list" class="adb-table table table-hover table-striped">
-      <thead>
-        <tr>
-          <th></th>
-          <th></th>
-          <th @click="sortByName">Name</th>
-          <th>Email</th>
-          <th>Phone</th>
-          <th>First Event</th>
-          <th @click="sortByLastEvent">Last Event</th>
-          <th>Status</th>
-          <th>Level</th>
-        </tr>
-      </thead>
-      <tbody id="activist-list-body">
-        <tr v-for="(activist, index) in activists">
-          <td><button class="btn btn-default glyphicon glyphicon-pencil" @click="showModal('edit-activist-modal', activist, index)"></button></td>
-          <td>
-            <dropdown>
-              <button data-role="trigger" class="btn btn-default dropdown-toggle glyphicon glyphicon-option-horizontal" type="button">
-              </button>
-              <template slot="dropdown">
-                <li><a @click="showModal('merge-activist-modal', activist, index)">Merge Activist</a></li>
-                <li><a @click="showModal('hide-activist-modal', activist, index)">Hide Activist</a></li>
-              </template>
-            </dropdown>
-          </td>
-          <td>{{activist.name}}</td>
-          <td>{{activist.email}}</td>
-          <td>{{activist.phone}}</td>
-          <td>{{activist.first_event}}</td>
-          <td>{{activist.last_event}}</td>
-          <td>{{activist.status}}</td>
-          <td>{{displayActivistLevel(activist.activist_level)}}</td>
-        </tr>
-      </tbody>
-    </table>
-    <infinite-loading :on-infinite="onInfinite" :distance="distance" ref="infiniteLoading"></infinite-loading>
+    <div id="hot-table-container">
+      <HotTable :root="root" :settings="hotSettings" :data="activists" :height="height"></HotTable>
+    </div>
+    <modal
+       name="activist-options-modal"
+       height="auto"
+       classes="no-background-color no-top"
+       @opened="modalOpened"
+       @closed="modalClosed"
+       >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 class="modal-title">{{currentActivist.name}}</h2>
+          </div>
+          <div class="modal-body">
+            <ul class="activist-options-body">
+              <li>
+                <a @click="showModal('merge-activist-modal', currentActivist, activistIndex)">Merge Activist</a>
+              </li>
+              <li>
+                <a @click="showModal('hide-activist-modal', currentActivist, activistIndex)">Hide Activist</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </modal>
     <modal
        name="merge-activist-modal"
        :height="650"
@@ -99,64 +87,17 @@
         </div>
       </div>
     </modal>
-    <modal
-       name="edit-activist-modal"
-       :height="830"
-       classes="no-background-color"
-       @opened="modalOpened"
-       @closed="modalClosed"
-       >
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h2 class="modal-title" v-if="currentActivist.id">Edit activist</h2>
-            <h2 class="modal-title" v-if="!currentActivist.id">New activist</h2>
-          </div>
-          <div class="modal-body">
-            <form action="" id="editActivistForm">
-              <p><label for="name">Name: </label><input class="form-control" type="text" v-model.trim="currentActivist.name" id="name" v-focus /></p>
-              <p><label for="email">Email: </label><input class="form-control" type="text" v-model.trim="currentActivist.email" id="email" /></p>
-              <p><label for="chapter">Chapter: </label><input class="form-control" type="text" v-model.trim="currentActivist.chapter" id="chapter"></p>
-              <p><label for="phone">Phone: </label><input class="form-control" type="text" v-model.trim="currentActivist.phone" id="phone"></p>
-              <p><label for="location">Location: </label><input class="form-control" type="text" v-model.trim="currentActivist.location" id="location"></p>
-              <p><label for="facebook">Facebook: </label><input class="form-control" type="text" v-model.trim="currentActivist.facebook" id="facebook"></p>
-              <p><label for="challenge_level">Activist Level: </label>
-                <select id="activist_level" class="form-control" v-model="currentActivist.activist_level">
-                  <option value="prospect">Prospect</option>
-                  <option value="activist">Activist</option>
-                  <option value="organizer">Organizer</option>
-                  <option value="senior_organizer">Senior Organizer</option>
-                  <option value="hiatus">Hiatus</option>
-                  <option value="not_local">Not Local</option>
-                  <option value="none">N/A</option>
-                </select>
-              </p>
-              <p><label for="core">Core/Staff:&nbsp;</label><input class="form-check-input" type="checkbox" v-model="currentActivist.core_staff" :true-value="1" :false-value="0" id="core"></p>
-              <p><label for="exclude">Exclude from Leaderboard:&nbsp;</label><input class="form-check-input" type="checkbox" v-model="currentActivist.exclude_from_leaderboard" :true-value="1" :false-value="0" id="exclude"></p>
-              <p><label for="pledge">Liberation Pledge:&nbsp;</label><input class="form-check-input" type="checkbox" v-model="currentActivist.liberation_pledge" :true-value="1" :false-value="0" id="pledge"></p>
-              <p><label for="globalteam">Global Team Member:&nbsp;</label><input class="form-check-input" type="checkbox" v-model="currentActivist.global_team_member" :true-value="1" :false-value="0" id="globalteam"></p>
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" @click="hideModal">Cancel</button>
-            <button type="button" v-bind:disabled="disableConfirmButton" class="btn btn-success" @click="confirmEditActivistModal">Save</button>
-          </div>
-        </div>
-      </div>
-    </modal>
   </div>
-
 </template>
 
 <script>
-// Library from here: https://github.com/euvl/vue-js-modal
 import vmodal from 'vue-js-modal';
+import HotTable from 'external/vue-handsontable-official/HotTable.vue';
 import Vue from 'vue';
-import {flashMessage} from 'flash_message';
-import {Dropdown} from 'uiv';
-import {initActivistSelect} from 'chosen_utils';
 import {focus} from 'directives/focus';
-import InfiniteLoading from 'vue-infinite-loading';
+import {flashMessage} from 'flash_message';
+import {EventBus} from 'EventBus';
+import {initActivistSelect} from 'chosen_utils';
 
 Vue.use(vmodal);
 
@@ -165,37 +106,46 @@ Vue.use(vmodal);
 const DescOrder = 2;
 const AscOrder = 1;
 
-var activistLevelOrder = {
-  "activist" : 1,
-  "not_local" : 5,
-  "organizer" : 2,
-  "hiatus" : 4,
-  "prospect" : 0,
-  "senior_organizer" : 3,
-  "none" : 6
-};
+window.showOptionsModal = function (row) {
+  EventBus.$emit('activist-show-options-modal', row);
+}
+
+function optionsButtonRenderer(instance, td, row, col, prop, value, cellProperties) {
+  td.innerHTML = '<button ' +
+    'data-role="trigger" ' +
+    'class="activist-options-btn btn btn-default btn-xs dropdown-toggle glyphicon glyphicon-option-horizontal" ' +
+    'type="button" ' +
+    'onclick="window.showOptionsModal(' + row + ')"></button>';
+  return td;
+}
 
 export default {
   name: 'activist-list',
   methods: {
+    showOptionsModal: function(row) {
+      var activist = this.activists[row];
+      this.showModal('activist-options-modal', activist, row);
+    },
     showModal: function(modalName, activist, index) {
       // Check to see if there's a modal open, and close it if so.
       if (this.currentModalName) {
         this.hideModal();
       }
 
-      // Make shallow copy of selected activist to prevent persisting unsaved
-      // edits at the view layer when closing modal
-      this.currentActivist = $.extend({}, activist);
+      // Show the modal in the next tick so that this code runs after
+      // vue has hidden the previous modal.
+      Vue.nextTick(() => {
+        this.currentActivist = activist;
 
-      if (index != undefined) {
-        this.activistIndex = index; // needed for updating activist
-      } else {
-        this.activistIndex = -1;
-      }
+        if (index != undefined) {
+          this.activistIndex = index; // needed for updating activist
+        } else {
+          this.activistIndex = -1;
+        }
 
-      this.currentModalName = modalName;
-      this.$modal.show(modalName);
+        this.currentModalName = modalName;
+        this.$modal.show(modalName);
+      });
     },
     hideModal: function() {
       if (this.currentModalName) {
@@ -204,6 +154,33 @@ export default {
       this.currentModalName = '';
       this.activistIndex = -1;
       this.currentActivist = {};
+    },
+    modalOpened: function() {
+      // Add noscroll to body tag so it doesn't scroll while the modal
+      // is shown.
+      $(document.body).addClass('noscroll');
+      this.disableConfirmButton = false;
+
+      if (this.currentModalName == "merge-activist-modal") {
+        // For some reason, even though this function is supposed to
+        // fire after the modal is visible on the dom, the modal isn't
+        // there. Vue.nextTick doesn't work for some reason, so we're
+        // just going to keep calling setTimeout until the modal shows
+        // up.
+        var interval;
+        var fn = () => {
+          if ($('#merge-target-activist')[0]) {
+            clearInterval(interval);
+            initActivistSelect('#merge-target-activist', this.currentActivist.name);
+          }
+        };
+        interval = setInterval(fn, 50);
+      }
+
+    },
+    modalClosed: function() {
+      // Allow body to scroll after modal is closed.
+      $(document.body).removeClass('noscroll');
     },
     confirmMergeActivistModal: function() {
       var targetActivistName = $("#merge-target-activist").val();
@@ -266,6 +243,7 @@ export default {
           // Remove activist from list.
           this.activists = this.activists.slice(0, this.activistIndex).concat(
             this.activists.slice(this.activistIndex+1));
+
           this.hideModal();
         },
         error: () => {
@@ -276,194 +254,247 @@ export default {
         },
       });
     },
-    confirmEditActivistModal: function() {
-      // Disable the save button when the user clicks it so they don't
-      // try to save twice. Re-enable it when we get any response back
-      // from the server (even an error).
-      this.disableConfirmButton = true;
-
+    loadActivists: function() {
       $.ajax({
-        url: "/activist/save",
-        method: "POST",
-        contentType: "application/json",
-        data: JSON.stringify(this.currentActivist),
-        success: (data) => {
-          this.disableConfirmButton = false;
-
-          var parsed = JSON.parse(data);
-          if (parsed.status === "error") {
-            flashMessage("Error: " + parsed.message, true);
-            return;
-          }
-          // status === "success"
-          flashMessage(this.currentActivist.name + " saved");
-
-          if (this.activistIndex === -1) {
-            // We're getting a new activist, insert them at the top.
-            this.activists = [parsed.activist].concat(this.activists);
-          } else {
-            // We edited an existing activist, replace their row in
-            // `activists`.
-            Vue.set(this.activists, this.activistIndex, parsed.activist);
-          }
-
-          this.hideModal();
-        },
-        error: (err) => {
-          this.disableConfirmButton = false;
-
-          console.warn(err.responseText);
-          flashMessage("Server error: " + err.responseText, true);
-        },
-      });
+          url: "/activist/list_range",
+          method: "POST",
+          data: JSON.stringify(this.pagingParameters),
+          success: (data) => {
+            var parsed = JSON.parse(data);
+            if (parsed.status === "error") {
+              flashMessage("Error: " + parsed.message, true);
+              return;
+            }
+            // status === "success"
+            var rangedList = parsed.activist_range_list;
+            if (rangedList !== null) {
+              this.activists = this.activists.concat(rangedList);
+              this.pagingParameters.name = rangedList[rangedList.length - 1].name;
+            }
+          },
+          error: () => {
+            console.warn(err.responseText);
+            flasMessage("Server error: " + err.responseText, true);
+          },
+        });
     },
-    modalOpened: function() {
-      // Add noscroll to body tag so it doesn't scroll while the modal
-      // is shown.
-      $(document.body).addClass('noscroll');
-      this.disableConfirmButton = false;
-
-      if (this.currentModalName == "merge-activist-modal") {
-        // For some reason, even though this function is supposed to
-        // fire after the modal is visible on the dom, the modal isn't
-        // there. Vue.nextTick doesn't work for some reason, so we're
-        // just going to keep calling setTimeout until the modal shows
-        // up.
-        var interval;
-        var fn = () => {
-          if ($('#merge-target-activist')[0]) {
-            clearInterval(interval);
-            initActivistSelect('#merge-target-activist', this.currentActivist.name);
-          }
-        };
-        interval = setInterval(fn, 50);
+    afterChangeCallback: function(changes, source) {
+      if (source !== 'edit' &&
+          source !== 'UndoRedo.undo' &&
+          source !== 'UndoRedo.redo') {
+        return;
       }
+      for (var i = 0; i < changes.length; i++) {
+        var change = changes[i];
+        var columnIndex = change[0];
+        var columnName = change[1];
+        var previousData = change[2];
+        var newData = change[3];
 
-    },
-    modalClosed: function() {
-      // Allow body to scroll after modal is closed.
-      $(document.body).removeClass('noscroll');
-    },
-    sortByName: function() {
-      var order = this.pagingParameters.order;
-      if (order === AscOrder) {
-        order = DescOrder;
+        var activist = this.activists[columnIndex];
+        (function(change) {
+          // TODO: use change?
+          $.ajax({
+            url: "/activist/save",
+            method: "POST",
+            contentType: "application/json",
+            data: JSON.stringify(activist),
+            success: (data) => {
+              var parsed = JSON.parse(data);
+              if (parsed.status === "error") {
+                flashMessage("Error: " + parsed.message, true);
+                return;
+              }
+            },
+            error: (err) => {
+              console.warn(err.responseText);
+              flashMessage("Server error: " + err.responseText, true);
+            },
+          });
+        })(change);
       }
-      else {
-        order = AscOrder;
-      }
-      this.reset();
-      this.pagingParameters.order = order;
-      // reset infinite loading component
-      this.$refs.infiniteLoading.$emit('$InfiniteLoading:reset');
     },
-    sortByLastEvent: function() {
-      var order = this.pagingParameters.order;
-      if (order === AscOrder) {
-        order = DescOrder;
+    setHOTHeight: function() {
+      var hotContainer = document.getElementById('hot-table-container');
+      if (!hotContainer) {
+        this.height = 500;
+        return;
       }
-      else {
-        order = AscOrder;
-      }
-      this.reset();
-      this.pagingParameters.order = order;
-      // reset infinite loading component
-      this.$refs.infiniteLoading.$emit('$InfiniteLoading:reset');
+      var y = hotContainer.getBoundingClientRect().y;
+      this.height = window.innerHeight - y;
     },
-    displayActivistLevel: function(activistLevel) {
-      var displayValue = "";
-
-      switch(activistLevel) {
-        case "activist":
-          displayValue = "Activist";
-          break;
-        case "organizer":
-          displayValue = "Organizer";
-          break;
-        case "senior_organizer":
-          displayValue = "Senior Organizer"
-          break;
-        case "hiatus":
-          displayValue = "Hiatus"
-          break;
-        case "prospect":
-          displayValue = "Prospect"
-          break;
-        case "not_local":
-          displayValue = "Not Local"
-          break;
-        case "none":
-          displayValue = "N/A"
-          break;
-      }
-
-      return displayValue;
-    },
-    onInfinite: function() {
-      $.ajax({
-        url: "/activist/list_range",
-        method: "POST",
-        data: JSON.stringify(this.pagingParameters),
-        success: (data) => {
-          var parsed = JSON.parse(data);
-          if (parsed.status === "error") {
-            flashMessage("Error: " + parsed.message, true);
-            return;
-          }
-          // status === "success"
-          var rangedList = parsed.activist_range_list;
-          if (rangedList !== null) {
-            this.activists = this.activists.concat(rangedList);
-            this.pagingParameters.name = rangedList[rangedList.length - 1].name;
-          }
-          this.$refs.infiniteLoading.$emit('$InfiniteLoading:loaded');
-          if (rangedList === null || rangedList.length < this.pagingParameters.limit) {
-            // No more data to load
-            this.$refs.infiniteLoading.$emit('$InfiniteLoading:complete');
-          }
-        },
-        error: () => {
-          console.warn(err.responseText);
-          flasMessage("Server error: " + err.responseText, true);
-        },
-      });
-    },
-    reset: function() {
-      // reset data properties back to original values
-      this.currentActivist = {},
-      this.activists = [],
-      this.activistIndex = -1;
-      this.disableConfirmButton = false;
-      this.currentModalName = '';
-      this.pagingParameters = {
-        name: "",
-        order: AscOrder,
-        limit: 500
-      },
-      this.distance = 100;
-    }
   },
-  data() {
+  data: function() {
     return {
-      currentActivist: {},
-      activists: [],
-      activistIndex: -1,
-      disableConfirmButton: false,
+      root: 'activists-root',
       currentModalName: '',
+      activistIndex: -1,
+      currentActivist: {},
+      disableConfirmButton: false,
+      activists: [],
+      height: 500,
+      columns: [{
+        header: '',
+        data: {
+          renderer: optionsButtonRenderer,
+          readOnly: true,
+          disableVisualSelection: true,
+          colWidths: 35,
+        }
+      }, {
+        header: 'Name',
+        data: {
+          data: 'name',
+        },
+      }, {
+        header: 'Email',
+        data: {
+          data: 'email',
+          colWidths: 300,
+        },
+      }, {
+        header: 'Chapter',
+        data: {
+          data: 'chapter',
+        },
+      }, {
+        header: 'Phone',
+        data: {
+          data: 'phone',
+          colWidths: 120,
+        },
+      }, {
+        header: 'Location',
+        data: {
+          data: 'location',
+        },
+      }, {
+        header: 'Facebook',
+        data: {
+          data: 'facebook',
+        },
+      }, {
+        header: 'Core/Staff',
+        data: {
+          // TODO: use 'checkbox' instead
+          type: 'numeric',
+          data: 'core_staff',
+          colWidths: 75,
+        }
+      }, {
+        header: 'Liberation Pledge',
+        data: {
+          type: 'numeric',
+          data: 'liberation_pledge',
+          colWidths: 120,
+        },
+      }, {
+        header: 'Global Team Member',
+        data: {
+          type: 'numeric',
+          data: 'global_team_member',
+          colWidths: 150,
+        },
+      }, {
+        header: 'First Event',
+        data: {
+          type: 'date',
+          data: 'first_event',
+          readOnly: true,
+          colWidths: 100,
+        },
+      }, {
+        header: 'Last Event',
+        data: {
+          type: 'date',
+          data: 'last_event',
+          readOnly: true,
+          colWidths: 100,
+        },
+      }, {
+        header: 'Status',
+        data: {
+          data: 'status',
+          readOnly: true,
+          colWidths: 125,
+        }
+      }, {
+        header: 'Activist Level',
+        data: {
+          data: 'activist_level',
+          colWidths: 135,
+          type: 'dropdown',
+          source: [
+            "activist",
+	    "not_local",
+	    "organizer",
+	    "hiatus",
+	    "prospect",
+	    "senior_organizer",
+	    "none",
+          ],
+        }
+      }],
       pagingParameters: {
         name: "",
         order: AscOrder,
-        limit: 500
+
       },
-      distance: 100,
     };
   },
+  computed: {
+    hotSettings: function() {
+      const columns = [];
+      const columnHeaders = [];
+      for (var i = 0; i < this.columns.length; i++) {
+        columns.push(this.columns[i].data);
+        columnHeaders.push(this.columns[i].header);
+      }
+      return {
+        columns: columns,
+        colHeaders: columnHeaders,
+        disableVisualSelection: 'area',
+        multiSelect: false,
+        fillHandle: false,
+        afterChange: this.afterChangeCallback.bind(this),
+        undo: true,
+        autoColumnSize: false,
+        colWidths: 200,
+        viewportRowRenderingOffset: 50,
+        viewportColumnRenderingOffset: 20,
+      };
+    },
+  },
+  created() {
+    this.loadActivists();
+    EventBus.$on('activist-show-options-modal', (row) => {
+      this.showOptionsModal(row);
+    });
+    window.addEventListener('resize', () => {
+      this.setHOTHeight();
+    });
+  },
+  mounted() {
+    this.setHOTHeight();
+  },
   components: {
-    Dropdown,
-    InfiniteLoading,
+    HotTable,
   },
   directives: {
     focus,
   },
 }
 </script>
+
+<style>
+  .activist-options-body a {
+    color: #337ab7;
+    cursor: pointer;
+  }
+  #activists-root {
+    overflow: scroll;
+  }
+  .activist-options-btn {
+    border: 0;
+  }
+</style>
