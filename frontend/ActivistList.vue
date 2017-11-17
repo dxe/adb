@@ -460,8 +460,9 @@ export default {
         undo: true,
         autoColumnSize: false,
         colWidths: 200,
-        viewportRowRenderingOffset: 50,
+        viewportRowRenderingOffset: 100,
         viewportColumnRenderingOffset: 20,
+        fixedColumnsLeft: 2,
       };
     },
   },
