@@ -1,7 +1,7 @@
 {{template "header.html" .}}
 <!-- bootstrap js needed for toggle-dropdown -->
 <script src="/static/external/bootstrap/js/bootstrap-dropdown-only.min.js"></script>
-<script src="/dist/event_list.js"></script>
+<script src="/dist/event_list.js?{{ .StaticResourcesHash }}"></script>
 
 <div class="body-wrapper-wide event-list-content">
   <div class="title">

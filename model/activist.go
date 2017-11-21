@@ -51,7 +51,7 @@ FROM activists a
 
 LEFT JOIN event_attendance ea
   ON ea.activist_id = a.id
- 
+
 LEFT JOIN events e
   ON ea.event_id = e.id
 `
@@ -118,9 +118,11 @@ type GetActivistOptions struct {
 }
 
 type ActivistRangeOptionsJSON struct {
-	Name  string `json:"name"`
-	Limit int    `json:"limit"`
-	Order int    `json:"order"`
+	Name              string `json:"name"`
+	Limit             int    `json:"limit"`
+	Order             int    `json:"order"`
+	LastEventDateFrom string `json:"last_event_date_from"`
+	LastEventDateTo   string `json:"last_event_date_to"`
 }
 
 /** Functions and Methods */
@@ -297,7 +299,23 @@ func getActivistRange(db *sqlx.DB, activistOptions ActivistRangeOptionsJSON) ([]
 		queryArgs = append(queryArgs, name)
 	}
 
-	query += " GROUP BY a.name ORDER BY a.name "
+	query += " GROUP BY a.name "
+
+	havingClause := []string{}
+	if activistOptions.LastEventDateFrom != "" {
+		havingClause = append(havingClause, "last_event >= ?")
+		queryArgs = append(queryArgs, activistOptions.LastEventDateFrom)
+	}
+	if activistOptions.LastEventDateTo != "" {
+		havingClause = append(havingClause, "last_event <= ?")
+		queryArgs = append(queryArgs, activistOptions.LastEventDateTo)
+	}
+
+	if len(havingClause) != 0 {
+		query += " HAVING " + strings.Join(havingClause, " AND ")
+	}
+
+	query += " ORDER BY a.name "
 	if order == DescOrder {
 		query += "desc "
 	}

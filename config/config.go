@@ -2,7 +2,9 @@ package config
 
 import (
 	"io/ioutil"
+	"math/rand"
 	"os"
+	"strconv"
 )
 
 var (
@@ -89,4 +91,15 @@ func DBDataSource() string {
 
 func DBTestDataSource() string {
 	return DBUser + ":" + DBPassword + "@/adb_test_db?parseTime=true"
+}
+
+var staticResourcesHash string = strconv.Itoa(rand.Int())
+
+// Append static resources that we want to "bust" with every restart
+// with this hash. This is a hacky solution to because it's too eager
+// -- the best solution would to be to append a content hash to every
+// static file -- but that's too complicated and this does the trick
+// for now.
+func StaticResourcesHash() string {
+	return staticResourcesHash
 }

@@ -1,5 +1,20 @@
 <template>
   <div id="app" class="main">
+    <div class="activist-list-filters form-inline">
+      <button class="btn-link" @click="toggleShowFilterOptions">
+        <span v-if="!showFilterOptions">+</span><span v-if="showFilterOptions">-</span> Filters
+      </button>
+      <div v-if="showFilterOptions">
+        <div>
+          <label>Last Event From:</label>
+          <input v-model="lastEventDateFrom" class="form-control filter-margin" type="date"  />
+        </div>
+        <div>
+          <label>Last Event To:</label>
+          <input v-model="lastEventDateTo" class="form-control filter-margin" type="date" />
+        </div>
+      </div>
+    </div>
     <div id="hot-table-container">
       <HotTable :root="root" :settings="hotSettings" :data="activists" :height="height"></HotTable>
     </div>
@@ -118,6 +133,35 @@ function optionsButtonRenderer(instance, td, row, col, prop, value, cellProperti
     'onclick="window.showOptionsModal(' + row + ')"></button>';
   return td;
 }
+
+function initialDateFromValue() {
+  var d = new Date();
+  var rawYear = d.getFullYear();
+  var rawMonth = d.getMonth() + 1;
+
+  var monthOffset = 3;
+  rawMonth -= monthOffset;
+  if (rawMonth <= 0) {
+    // 12 + rawMonth will be the correct month from the previous year
+    // because rawMonth is either 0 or negative at this point.
+    rawMonth = 12 + rawMonth;
+    rawYear -= 1;
+  }
+
+  var year = '' + rawYear;
+  var month = (rawMonth > 9) ? '' + rawMonth : '0' + rawMonth;
+
+  var fromDate = year + '-' + month + '-01';
+  return fromDate;
+}
+
+function initialDateToValue() {
+  var d = new Date();
+  // An ISO date looks like "2017-11-01T23:21:50.377Z", so we cut off
+  // everything after the date.
+  return d.toISOString().slice(0, 10);
+}
+
 
 export default {
   name: 'activist-list',
@@ -256,27 +300,26 @@ export default {
     },
     loadActivists: function() {
       $.ajax({
-          url: "/activist/list_range",
-          method: "POST",
-          data: JSON.stringify(this.pagingParameters),
-          success: (data) => {
-            var parsed = JSON.parse(data);
-            if (parsed.status === "error") {
-              flashMessage("Error: " + parsed.message, true);
-              return;
-            }
-            // status === "success"
-            var rangedList = parsed.activist_range_list;
-            if (rangedList !== null) {
-              this.activists = this.activists.concat(rangedList);
-              this.pagingParameters.name = rangedList[rangedList.length - 1].name;
-            }
-          },
-          error: () => {
-            console.warn(err.responseText);
-            flasMessage("Server error: " + err.responseText, true);
-          },
-        });
+        url: "/activist/list_range",
+        method: "POST",
+        data: JSON.stringify(this.pagingParameters()),
+        success: (data) => {
+          var parsed = JSON.parse(data);
+          if (parsed.status === "error") {
+            flashMessage("Error: " + parsed.message, true);
+            return;
+          }
+          // status === "success"
+          var rangedList = parsed.activist_range_list;
+          if (rangedList !== null) {
+            this.activists = rangedList;
+          }
+        },
+        error: () => {
+          console.warn(err.responseText);
+          flasMessage("Server error: " + err.responseText, true);
+        },
+      });
     },
     afterChangeCallback: function(changes, source) {
       if (source !== 'edit' &&
@@ -322,6 +365,17 @@ export default {
       }
       var y = hotContainer.getBoundingClientRect().y;
       this.height = window.innerHeight - y;
+    },
+    pagingParameters: function() {
+      return {
+        name: "",
+        order: AscOrder,
+        last_event_date_to: this.lastEventDateTo,
+        last_event_date_from: this.lastEventDateFrom
+      };
+    },
+    toggleShowFilterOptions: function() {
+      this.showFilterOptions = !this.showFilterOptions;
     },
   },
   data: function() {
@@ -435,11 +489,9 @@ export default {
           ],
         }
       }],
-      pagingParameters: {
-        name: "",
-        order: AscOrder,
-
-      },
+      lastEventDateFrom: initialDateFromValue(),
+      lastEventDateTo: initialDateToValue(),
+      showFilterOptions: false,
     };
   },
   computed: {
@@ -464,6 +516,14 @@ export default {
         viewportColumnRenderingOffset: 20,
         fixedColumnsLeft: 2,
       };
+    },
+  },
+  watch: {
+    lastEventDateFrom: function() {
+      this.loadActivists();
+    },
+    lastEventDateTo: function() {
+      this.loadActivists();
     },
   },
   created() {
@@ -497,5 +557,8 @@ export default {
   }
   .activist-options-btn {
     border: 0;
+  }
+  .activist-list-filters {
+    margin: 10px 25px;
   }
 </style>

@@ -347,11 +347,14 @@ type PageData struct {
 	PageName string
 	Data     interface{}
 	IsAdmin  bool
+	// Filled in by renderPage.
+	StaticResourcesHash string
 }
 
 // Render a page. All templates that load a header expect a PageData
 // object.
 func renderPage(w io.Writer, name string, pageData PageData) {
+	pageData.StaticResourcesHash = config.StaticResourcesHash()
 	renderTemplate(w, name, pageData)
 }
 

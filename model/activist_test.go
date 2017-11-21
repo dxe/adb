@@ -453,6 +453,83 @@ func TestActivistRange_NameAndLimitDescOrder_returnsSubsetofActivists(t *testing
 	require.Nil(t, fetchedActivists)
 }
 
+func TestActivistRange_RestrictDates(t *testing.T) {
+	db := newTestDB()
+	defer db.Close()
+
+	a1, err := GetOrCreateActivist(db, "A")
+	require.NoError(t, err)
+
+	a2, err := GetOrCreateActivist(db, "B")
+	require.NoError(t, err)
+
+	a3, err := GetOrCreateActivist(db, "C")
+	require.NoError(t, err)
+
+	d1, err := time.Parse("2006-01-02", "2017-04-15")
+	require.NoError(t, err)
+	d2, err := time.Parse("2006-01-02", "2017-04-16")
+	require.NoError(t, err)
+	d3, err := time.Parse("2006-01-02", "2017-04-17")
+	require.NoError(t, err)
+
+	insertEvents := []Event{{
+		ID:             1,
+		EventName:      "event one",
+		EventDate:      d1,
+		EventType:      "Working Group",
+		AddedAttendees: []Activist{a1, a3},
+	}, {
+		ID:             2,
+		EventName:      "event two",
+		EventDate:      d2,
+		EventType:      "Working Group",
+		AddedAttendees: []Activist{a2, a3},
+	}, {
+		ID:             3,
+		EventName:      "event three",
+		EventDate:      d3,
+		EventType:      "Working Group",
+		AddedAttendees: []Activist{a2},
+	}}
+	mustInsertAllEvents(t, db, insertEvents)
+
+	activists, err := GetActivistRangeJSON(db, ActivistRangeOptionsJSON{
+		Order: DescOrder,
+	})
+	require.NoError(t, err)
+	assertActivistJSONSliceContainsNames(t, activists, []string{"A", "B", "C"})
+
+	activists, err = GetActivistRangeJSON(db, ActivistRangeOptionsJSON{
+		Order:             DescOrder,
+		LastEventDateFrom: "2017-04-17",
+	})
+	require.NoError(t, err)
+	assertActivistJSONSliceContainsNames(t, activists, []string{"B"})
+
+	activists, err = GetActivistRangeJSON(db, ActivistRangeOptionsJSON{
+		Order:             DescOrder,
+		LastEventDateFrom: "2017-04-16",
+		LastEventDateTo:   "2017-04-17",
+	})
+	require.NoError(t, err)
+	assertActivistJSONSliceContainsNames(t, activists, []string{"B", "C"})
+}
+
+func assertActivistJSONSliceContainsNames(t *testing.T, activists []ActivistJSON, names []string) {
+	activistNames := map[string]struct{}{}
+	for _, a := range activists {
+		activistNames[a.Name] = struct{}{}
+	}
+	namesMap := map[string]struct{}{}
+	for _, n := range names {
+		namesMap[n] = struct{}{}
+	}
+	require.Equalf(t, activistNames, namesMap,
+		"expected names to exist in activist map:\nactivists: %v\nnames: %v",
+		activists, names)
+}
+
 func insertTestActivists(t *testing.T, db *sqlx.DB, names []string) []Activist {
 	var activists []Activist = make([]Activist, len(names))
 	for idx, name := range names {
