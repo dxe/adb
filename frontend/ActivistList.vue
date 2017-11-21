@@ -16,7 +16,7 @@
       </div>
     </div>
     <div id="hot-table-container">
-      <HotTable :root="root" :settings="hotSettings" :data="activists" :height="height"></HotTable>
+      <HotTable ref="hot" :root="root" :settings="hotSettings" :data="activists" :height="height"></HotTable>
     </div>
     <modal
        name="activist-options-modal"
@@ -108,6 +108,7 @@
 <script>
 import vmodal from 'vue-js-modal';
 import HotTable from 'external/vue-handsontable-official/HotTable.vue';
+import {rewriteSettings} from 'external/vue-handsontable-official/helpers';
 import Vue from 'vue';
 import {focus} from 'directives/focus';
 import {flashMessage} from 'flash_message';
@@ -120,6 +121,50 @@ Vue.use(vmodal);
 // Corresponds to the constants DescOrder and AscOrder in model/activist.go
 const DescOrder = 2;
 const AscOrder = 1;
+
+var previousSortData = {
+  field: null,
+  ascending: null,
+};
+
+// Uses previousSortData to determine whether the next sort should be
+// ascending.
+//
+// If sortByDate is true, then the default is to sort by descending.
+// Otherwise, the default is to sort by ascending.
+function shouldSortByAscending(field, sortByDate) {
+  if (field == previousSortData.field) {
+    return !previousSortData.ascending;
+  }
+
+  if (sortByDate) {
+    return false;
+  }
+  return true;
+}
+
+// Call this after every sort.
+function setPreviousSortData(field, ascending) {
+  previousSortData.field = field;
+  previousSortData.ascending = ascending;
+}
+
+// Must be kept in sync with the list in model/model.go
+// var statusOrder = {
+//   "Current": 1,
+//   "New": 2,
+//   "Former": 3,
+//   "No attendance": 4,
+// };
+
+// var activistLevelOrder = {
+//   "activist" : 3,
+//   "core_activist" : 2,
+//   "organizer" : 1,
+//   "senior_organizer" : 0
+// };
+
+
 
 window.showOptionsModal = function (row) {
   EventBus.$emit('activist-show-options-modal', row);
@@ -162,6 +207,48 @@ function initialDateToValue() {
   return d.toISOString().slice(0, 10);
 }
 
+function generateStringSortFn(field, ascending) {
+  return function(a, b) {
+    var order = (a[field].toLowerCase() < b[field].toLowerCase()) ? -1 : 1;
+    if (ascending) {
+      return order;
+    }
+    return -1 * order;
+  };
+}
+
+function generateGenericSortFn(field, ascending) {
+  return function(a, b) {
+    var order = (a[field] < b[field] ? -1 : 1);
+    if (ascending) {
+      return order;
+    }
+    return -1 * order;
+  };
+}
+
+function generateDateSortFn(field, ascending) {
+  return function(a, b) {
+    // Always sort empty values to the bottom, no matter the
+    // order.
+    if (!a[field]) {
+      return 1;
+    }
+    if (!b[field]) {
+      return -1;
+    }
+
+    var valueA = new Date(a[field]).getTime();
+    var valueB = new Date(b[field]).getTime();
+
+    var order = (valueA < valueB) ? -1 : 1;
+
+    if (ascending) {
+      return order;
+    }
+    return -1 * order;
+  };
+}
 
 export default {
   name: 'activist-list',
@@ -376,6 +463,46 @@ export default {
     },
     toggleShowFilterOptions: function() {
       this.showFilterOptions = !this.showFilterOptions;
+      this.setHOTHeight(); // Resize the spreadsheet.
+    },
+    refreshHOTData: function() {
+      var table = this.$refs.hot.table;
+      var newSettings = {
+        data: rewriteSettings(this.activists),
+      };
+      table.updateSettings(newSettings);
+    },
+    sortColumn: function(col) {
+      var field = col.data.data;
+      if (!field) {
+        // Don't sort columsn with no data field (e.g. the first
+        // column).
+        return;
+      }
+
+      var type = col.data.type;
+      var sortFunction;
+      var ascending = shouldSortByAscending(field, type === 'date');
+      if (type === 'date') {
+        sortFunction = generateDateSortFn(field, ascending);
+      } else if (type === 'numeric') {
+        sortFunction = generateGenericSortFn(field, ascending);
+      } else {
+        sortFunction = generateStringSortFn(field, ascending);
+      }
+
+      this.activists.sort(sortFunction);
+
+      setPreviousSortData(field, ascending);
+
+      this.refreshHOTData();
+    },
+    afterOnCellMouseDownCallback: function(event, coords, td) {
+      // If the row is -1, then the user clicked on a column header.
+      if (coords.row === -1) {
+        var col = this.columns[coords.col];
+        this.sortColumn(col);
+      }
     },
   },
   data: function() {
@@ -509,6 +636,7 @@ export default {
         multiSelect: false,
         fillHandle: false,
         afterChange: this.afterChangeCallback.bind(this),
+        afterOnCellMouseDown: this.afterOnCellMouseDownCallback.bind(this),
         undo: true,
         autoColumnSize: false,
         colWidths: 200,
