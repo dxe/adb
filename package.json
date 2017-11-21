@@ -13,6 +13,7 @@
     "babel-preset-env": "^1.6.0",
     "bootstrap-chosen": "^1.4.2",
     "chosen-js": "^1.7.0",
+    "debounce": "^1.1.0",
     "handsontable": "^0.34.5",
     "uiv": "^0.11.8",
     "vue": "^2.2.1",

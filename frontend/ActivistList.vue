@@ -1,6 +1,9 @@
 <template>
   <div id="app" class="main">
     <div class="activist-list-filters form-inline">
+      <input v-on:input="debounceSearchInput" class="form-control filter-margin" type="text"
+        placeholder="Search" />
+
       <button class="btn-link" @click="toggleShowOptions('filters')">
         <span v-if="showOptions !== 'filters'">+</span><span v-if="showOptions === 'filters'">-</span> Filters
       </button>
@@ -128,6 +131,7 @@ import {focus} from 'directives/focus';
 import {flashMessage} from 'flash_message';
 import {EventBus} from 'EventBus';
 import {initActivistSelect} from 'chosen_utils';
+import debounce from 'debounce';
 
 Vue.use(vmodal);
 
@@ -327,6 +331,20 @@ export default {
       // Allow body to scroll after modal is closed.
       $(document.body).removeClass('noscroll');
     },
+    removeActivist: function(id) {
+      var activistIndex;
+      for (var i = 0; i < this.allActivists.length; i++) {
+        if (this.allActivists[i].id === id) {
+          activistIndex = i;
+        }
+      }
+      if (!activistIndex) {
+        throw new Error(
+          "Couldn't find activist index for activist with id: " + id);
+      }
+      this.allActivists = this.allActivists.slice(0, activistIndex).concat(
+        this.allActivists.slice(activistIndex+1));
+    },
     confirmMergeActivistModal: function() {
       var targetActivistName = $("#merge-target-activist").val();
       if (!targetActivistName) {
@@ -335,13 +353,14 @@ export default {
       }
 
       this.disableConfirmButton = true;
+      var currentActivistID = this.currentActivist.id;
 
       $.ajax({
         url: "/activist/merge",
         method: "POST",
         contentType: "application/json",
         data: JSON.stringify({
-          current_activist_id: this.currentActivist.id,
+          current_activist_id: currentActivistID,
           target_activist_name: targetActivistName,
         }),
         success: (data) => {
@@ -355,8 +374,8 @@ export default {
           flashMessage(this.currentActivist.name + " was merged into " + targetActivistName);
 
           // Remove activist from list.
-          this.activists = this.activists.slice(0, this.activistIndex).concat(
-            this.activists.slice(this.activistIndex+1));
+          this.removeActivist(currentActivistID);
+
           this.hideModal();
         },
         error: () => {
@@ -369,12 +388,13 @@ export default {
     },
     confirmHideActivistModal: function() {
       this.disableConfirmButton = true;
+      var currentActivistID = this.currentActivist.id;
 
       $.ajax({
         url: "/activist/hide",
         method: "POST",
         contentType: "application/json",
-        data: JSON.stringify({id: this.currentActivist.id}),
+        data: JSON.stringify({id: currentActivistID}),
         success: (data) => {
           this.disableConfirmButton = false;
 
@@ -386,8 +406,7 @@ export default {
           flashMessage(this.currentActivist.name + " was hidden");
 
           // Remove activist from list.
-          this.activists = this.activists.slice(0, this.activistIndex).concat(
-            this.activists.slice(this.activistIndex+1));
+          this.removeActivist(currentActivistID);
 
           this.hideModal();
         },
@@ -413,7 +432,7 @@ export default {
           // status === "success"
           var rangedList = parsed.activist_range_list;
           if (rangedList !== null) {
-            this.activists = rangedList;
+            this.allActivists = rangedList;
           }
         },
         error: () => {
@@ -511,7 +530,7 @@ export default {
         sortFunction = generateStringSortFn(field, ascending);
       }
 
-      this.activists.sort(sortFunction);
+      this.allActivists.sort(sortFunction);
 
       setPreviousSortData(field, ascending);
 
@@ -539,6 +558,9 @@ export default {
         this.sortColumn(foundCol);
       }
     },
+    debounceSearchInput: debounce(function(e) {
+      this.search = e.target.value;
+    }, 500),
   },
   data: function() {
     return {
@@ -547,7 +569,7 @@ export default {
       activistIndex: -1,
       currentActivist: {},
       disableConfirmButton: false,
-      activists: [],
+      allActivists: [],
       height: 500,
       columns: [{
         header: '',
@@ -668,6 +690,7 @@ export default {
       lastEventDateFrom: initialDateFromValue(),
       lastEventDateTo: initialDateToValue(),
       showOptions: '',
+      search: '',
     };
   },
   computed: {
@@ -698,6 +721,23 @@ export default {
         // Don't fix the first to columns to see if that improves performance.
         // fixedColumnsLeft: 2,
       };
+    },
+    activists: function() {
+      if (this.search.length < 3) {
+        return this.allActivists;
+      }
+
+      // This search implementation is slow when we have lots of data.
+      // Make it faster when that becomes an issue.
+      var searchNormalized = this.search.trim().toLowerCase();
+      var activists = [];
+      for (var i = 0; i < this.allActivists.length; i++) {
+        var activist = this.allActivists[i];
+        if (activist.name.toLowerCase().includes(searchNormalized)) {
+          activists.push(activist);
+        }
+      }
+      return activists;
     },
   },
   watch: {
