@@ -1,6 +1,6 @@
 <template>
   <div id="app" class="main">
-    <div class="activist-list-filters">
+    <div class="activist-list-filters form-inline">
       <button class="btn-link" @click="toggleShowOptions('filters')">
         <span v-if="showOptions !== 'filters'">+</span><span v-if="showOptions === 'filters'">-</span> Filters
       </button>
@@ -520,8 +520,23 @@ export default {
     afterOnCellMouseDownCallback: function(event, coords, td) {
       // If the row is -1, then the user clicked on a column header.
       if (coords.row === -1) {
-        var col = this.columns[coords.col];
-        this.sortColumn(col);
+        // To find the column this maps to, we iterate through all the enabled columns.
+        var visibleColIndex = coords.col;
+        var foundCol;
+        for (var i = 0; i < this.columns.length; i++) {
+          var col = this.columns[i];
+          if (col.enabled) {
+            if (visibleColIndex === 0) {
+              foundCol = col;
+              break;
+            }
+            visibleColIndex--;
+          }
+        }
+        if (!foundCol) {
+          throw new Error("Could not find column at index " + coords.col);
+        }
+        this.sortColumn(foundCol);
       }
     },
   },
@@ -541,7 +556,8 @@ export default {
           readOnly: true,
           disableVisualSelection: true,
           colWidths: 35,
-        }
+        },
+        enabled: true,
       }, {
         header: 'Name',
         data: {
