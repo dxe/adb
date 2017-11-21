@@ -463,7 +463,9 @@ export default {
     },
     toggleShowFilterOptions: function() {
       this.showFilterOptions = !this.showFilterOptions;
-      this.setHOTHeight(); // Resize the spreadsheet.
+      Vue.nextTick(() => {
+        this.setHOTHeight(); // Resize the spreadsheet.
+      });
     },
     refreshHOTData: function() {
       var table = this.$refs.hot.table;
