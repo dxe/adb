@@ -642,7 +642,8 @@ export default {
         colWidths: 200,
         viewportRowRenderingOffset: 100,
         viewportColumnRenderingOffset: 20,
-        fixedColumnsLeft: 2,
+        // Don't fix the first to columns to see if that improves performance.
+        // fixedColumnsLeft: 2,
       };
     },
   },
