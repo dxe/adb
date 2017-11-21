@@ -1,10 +1,14 @@
 <template>
   <div id="app" class="main">
-    <div class="activist-list-filters form-inline">
-      <button class="btn-link" @click="toggleShowFilterOptions">
-        <span v-if="!showFilterOptions">+</span><span v-if="showFilterOptions">-</span> Filters
+    <div class="activist-list-filters">
+      <button class="btn-link" @click="toggleShowOptions('filters')">
+        <span v-if="showOptions !== 'filters'">+</span><span v-if="showOptions === 'filters'">-</span> Filters
       </button>
-      <div v-if="showFilterOptions">
+      <button class="btn-link" @click="toggleShowOptions('columns')">
+        <span v-if="showOptions !== 'columns'">+</span><span v-if="showOptions === 'columns'">-</span> Columns
+      </button>
+
+      <div v-if="showOptions === 'filters'">
         <div>
           <label>Last Event From:</label>
           <input v-model="lastEventDateFrom" class="form-control filter-margin" type="date"  />
@@ -14,6 +18,16 @@
           <input v-model="lastEventDateTo" class="form-control filter-margin" type="date" />
         </div>
       </div>
+
+      <div v-if="showOptions === 'columns'">
+        <div v-for="column in columns">
+          <span v-if="column.header !== ''">
+            <input type="checkbox" :id="column.header" v-model="column.enabled">
+            <label :for="column.header">{{ column.header }}</label>
+          </span>
+        </div>
+      </div>
+
     </div>
     <div id="hot-table-container">
       <HotTable ref="hot" :root="root" :settings="hotSettings" :data="activists" :height="height"></HotTable>
@@ -461,8 +475,12 @@ export default {
         last_event_date_from: this.lastEventDateFrom
       };
     },
-    toggleShowFilterOptions: function() {
-      this.showFilterOptions = !this.showFilterOptions;
+    toggleShowOptions: function(optionsType) {
+      if (this.showOptions === optionsType) {
+        this.showOptions = '';
+      } else {
+        this.showOptions = optionsType;
+      }
       Vue.nextTick(() => {
         this.setHOTHeight(); // Resize the spreadsheet.
       });
@@ -529,33 +547,39 @@ export default {
         data: {
           data: 'name',
         },
+        enabled: true,
       }, {
         header: 'Email',
         data: {
           data: 'email',
           colWidths: 300,
         },
+        enabled: true,
       }, {
         header: 'Chapter',
         data: {
           data: 'chapter',
         },
+        enabled: false,
       }, {
         header: 'Phone',
         data: {
           data: 'phone',
           colWidths: 120,
         },
+        enabled: false,
       }, {
         header: 'Location',
         data: {
           data: 'location',
         },
+        enabled: false,
       }, {
         header: 'Facebook',
         data: {
           data: 'facebook',
         },
+        enabled: false,
       }, {
         header: 'Core/Staff',
         data: {
@@ -563,7 +587,8 @@ export default {
           type: 'numeric',
           data: 'core_staff',
           colWidths: 75,
-        }
+        },
+        enabled: false,
       }, {
         header: 'Liberation Pledge',
         data: {
@@ -571,6 +596,7 @@ export default {
           data: 'liberation_pledge',
           colWidths: 120,
         },
+        enabled: false,
       }, {
         header: 'Global Team Member',
         data: {
@@ -578,6 +604,7 @@ export default {
           data: 'global_team_member',
           colWidths: 150,
         },
+        enabled: false,
       }, {
         header: 'First Event',
         data: {
@@ -586,6 +613,7 @@ export default {
           readOnly: true,
           colWidths: 100,
         },
+        enabled: true,
       }, {
         header: 'Last Event',
         data: {
@@ -594,13 +622,15 @@ export default {
           readOnly: true,
           colWidths: 100,
         },
+        enabled: true,
       }, {
         header: 'Status',
         data: {
           data: 'status',
           readOnly: true,
           colWidths: 125,
-        }
+        },
+        enabled: false,
       }, {
         header: 'Activist Level',
         data: {
@@ -616,11 +646,12 @@ export default {
 	    "senior_organizer",
 	    "none",
           ],
-        }
+        },
+        enabled: true,
       }],
       lastEventDateFrom: initialDateFromValue(),
       lastEventDateTo: initialDateToValue(),
-      showFilterOptions: false,
+      showOptions: '',
     };
   },
   computed: {
@@ -628,6 +659,10 @@ export default {
       const columns = [];
       const columnHeaders = [];
       for (var i = 0; i < this.columns.length; i++) {
+        var col = this.columns[i];
+        if (!col.enabled) {
+          continue;
+        }
         columns.push(this.columns[i].data);
         columnHeaders.push(this.columns[i].header);
       }
