@@ -305,10 +305,10 @@ const allColumns = [
   },
   enabled: false,
 }, {
-  header: "Eligable Senior Connector",
+  header: "Eligible Senior Connector",
   data: {
     type: "checkbox",
-    data: "eligable_senior_connector",
+    data: "eligible_senior_connector",
     colWidths: 150,
   },
   enabled: false,
