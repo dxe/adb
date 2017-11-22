@@ -41,6 +41,15 @@ CREATE TABLE IF NOT EXISTS activists (
   global_team_member TINYINT(1) NOT NULL DEFAULT '0',
   liberation_pledge TINYINT(1) NOT NULL DEFAULT '0',
   hidden TINYINT(1) NOT NULL DEFAULT '0',
+  connector VARCHAR(100) NOT NULL DEFAULT '',
+  contacted_date VARCHAR(20) NOT NULL DEFAULT '',
+  interested VARCHAR(5) NOT NULL DEFAULT '',
+  meeting_date VARCHAR(20) NOT NULL DEFAULT '',
+  escalation VARCHAR(5) NOT NULL DEFAULT '',
+  core_training TINYINT(1) NOT NULL DEFAULT '0',
+  eligable_senior_organizer TINYINT(1) NOT NULL DEFAULT '0',
+  source VARCHAR(255) NOT NULL DEFAULT '0',
+
   CONSTRAINT name_ukey UNIQUE (name)
 )`)
 

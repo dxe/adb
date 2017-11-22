@@ -20,30 +20,42 @@ const Duration90Days = 90 * 24 * time.Hour
 
 const selectActivistBaseQuery string = `
 SELECT
-  id,
-  name,
-  email,
   chapter,
-  phone,
+  email,
+  facebook,
+  id,
   location,
-  facebook
+  name,
+  phone
 FROM activists
 `
 
 const selectActivistExtraBaseQuery string = `
 SELECT
-  a.id,
-  a.name,
-  email,
+
   chapter,
-  phone,
-  location,
+  email,
   facebook,
+  a.id,
+  location,
+  a.name,
+  phone,
+
   activist_level,
-  exclude_from_leaderboard,
   core_staff,
+  exclude_from_leaderboard,
   global_team_member,
   liberation_pledge,
+  source,
+
+  connector,
+  contacted_date,
+  core_training,
+  eligable_senior_organizer,
+  escalation,
+  interested,
+  meeting_date,
+
   MIN(e.date) AS first_event,
   MAX(e.date) AS last_event,
   COUNT(e.id) as total_events
@@ -62,15 +74,14 @@ const AscOrder int = 1
 /** Type Definitions */
 
 type Activist struct {
-	ID               int            `db:"id"`
-	Name             string         `db:"name"`
-	Email            string         `db:"email"`
-	Chapter          string         `db:"chapter"`
-	Phone            string         `db:"phone"`
-	Location         sql.NullString `db:"location"`
-	Facebook         string         `db:"facebook"`
-	LiberationPledge int            `db:"liberation_pledge"`
-	Hidden           bool           `db:"hidden"`
+	Chapter  string         `db:"chapter"`
+	Email    string         `db:"email"`
+	Facebook string         `db:"facebook"`
+	Hidden   bool           `db:"hidden"`
+	ID       int            `db:"id"`
+	Location sql.NullString `db:"location"`
+	Name     string         `db:"name"`
+	Phone    string         `db:"phone"`
 }
 
 type ActivistEventData struct {
@@ -81,35 +92,59 @@ type ActivistEventData struct {
 }
 
 type ActivistMembershipData struct {
-	CoreStaff              int    `db:"core_staff"`
-	ExcludeFromLeaderboard int    `db:"exclude_from_leaderboard"`
-	GlobalTeamMember       int    `db:"global_team_member"`
 	ActivistLevel          string `db:"activist_level"`
+	CoreStaff              bool   `db:"core_staff"`
+	ExcludeFromLeaderboard bool   `db:"exclude_from_leaderboard"`
+	GlobalTeamMember       bool   `db:"global_team_member"`
+	LiberationPledge       bool   `db:"liberation_pledge"`
+	Source                 string `db:"source"`
+}
+
+type ActivistConnectionData struct {
+	Connector               string `db:"connector"`
+	ContactedDate           string `db:"contacted_date"`
+	CoreTraining            bool   `db:"core_training"`
+	EligableSeniorConnector bool   `db:"eligable_senior_organizer"`
+	Escalation              string `db:"escalation"`
+	Interested              string `db:"interested"`
+	MeetingDate             string `db:"meeting_date"`
 }
 
 type ActivistExtra struct {
 	Activist
 	ActivistEventData
 	ActivistMembershipData
+	ActivistConnectionData
 }
 
 type ActivistJSON struct {
-	ID                     int    `json:"id"`
-	Name                   string `json:"name"`
-	Email                  string `json:"email"`
-	Chapter                string `json:"chapter"`
-	Phone                  string `json:"phone"`
-	Location               string `json:"location"`
-	Facebook               string `json:"facebook"`
-	FirstEvent             string `json:"first_event"`
-	LastEvent              string `json:"last_event"`
-	TotalEvents            int    `json:"total_events"`
-	Status                 string `json:"status"`
-	Core                   int    `json:"core_staff"`
-	ExcludeFromLeaderboard int    `json:"exclude_from_leaderboard"`
-	LiberationPledge       int    `json:"liberation_pledge"`
-	GlobalTeamMember       int    `json:"global_team_member"`
+	Chapter  string `json:"chapter"`
+	Email    string `json:"email"`
+	Facebook string `json:"facebook"`
+	ID       int    `json:"id"`
+	Location string `json:"location"`
+	Name     string `json:"name"`
+	Phone    string `json:"phone"`
+
+	FirstEvent  string `json:"first_event"`
+	LastEvent   string `json:"last_event"`
+	TotalEvents int    `json:"total_events"`
+	Status      string `json:"status"`
+
 	ActivistLevel          string `json:"activist_level"`
+	CoreStaff              bool   `json:"core_staff"`
+	ExcludeFromLeaderboard bool   `json:"exclude_from_leaderboard"`
+	GlobalTeamMember       bool   `json:"global_team_member"`
+	LiberationPledge       bool   `json:"liberation_pledge"`
+	Source                 string `json:"source"`
+
+	Connector               string `json:"connector"`
+	ContactedDate           string `json:"contacted_date"`
+	CoreTraining            bool   `json:"core_training"`
+	EligableSeniorConnector bool   `json:"eligable_senior_organizer"`
+	Escalation              string `json:"escalation"`
+	Interested              string `json:"interested"`
+	MeetingDate             string `json:"meeting_date"`
 }
 
 type GetActivistOptions struct {
@@ -188,22 +223,33 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 		}
 
 		activistsJSON = append(activistsJSON, ActivistJSON{
-			ID:            a.Activist.ID,
-			Name:          a.Activist.Name,
-			Email:         a.Activist.Email,
-			Chapter:       a.Activist.Chapter,
-			Phone:         a.Activist.Phone,
-			Location:      location,
-			Facebook:      a.Activist.Facebook,
-			ActivistLevel: a.ActivistLevel,
-			FirstEvent:    firstEvent,
-			LastEvent:     lastEvent,
-			TotalEvents:   a.ActivistEventData.TotalEvents,
-			Status:        a.Status,
-			Core:          a.CoreStaff,
+			Chapter:  a.Chapter,
+			Email:    a.Email,
+			Facebook: a.Facebook,
+			ID:       a.ID,
+			Location: location,
+			Name:     a.Name,
+			Phone:    a.Phone,
+
+			FirstEvent:  firstEvent,
+			LastEvent:   lastEvent,
+			Status:      a.Status,
+			TotalEvents: a.TotalEvents,
+
+			ActivistLevel:          a.ActivistLevel,
+			CoreStaff:              a.CoreStaff,
 			ExcludeFromLeaderboard: a.ExcludeFromLeaderboard,
-			LiberationPledge:       a.LiberationPledge,
 			GlobalTeamMember:       a.GlobalTeamMember,
+			LiberationPledge:       a.LiberationPledge,
+			Source:                 a.Source,
+
+			Connector:               a.Connector,
+			ContactedDate:           a.ContactedDate,
+			CoreTraining:            a.CoreTraining,
+			EligableSeniorConnector: a.EligableSeniorConnector,
+			Escalation:              a.Escalation,
+			Interested:              a.Interested,
+			MeetingDate:             a.MeetingDate,
 		})
 	}
 
@@ -408,29 +454,53 @@ func CreateActivist(db *sqlx.DB, activist ActivistExtra) (int, error) {
 
 	result, err := db.NamedExec(`
 INSERT INTO activists (
-  name,
-  email,
+
   chapter,
-  phone,
-  location,
+  email,
   facebook,
+  location,
+  name,
+  phone,
+
   activist_level,
-  exclude_from_leaderboard,
   core_staff,
+  exclude_from_leaderboard,
   global_team_member,
-  liberation_pledge
+  liberation_pledge,
+  source,
+
+  connector,
+  contacted_date,
+  core_training,
+  eligable_senior_organizer,
+  escalation,
+  interested,
+  meeting_date
+
 ) VALUES (
-  :name,
-  :email,
+
   :chapter,
-  :phone,
-  :location,
+  :email,
   :facebook,
+  :location,
+  :name,
+  :phone,
+
   :activist_level,
-  :exclude_from_leaderboard,
   :core_staff,
+  :exclude_from_leaderboard,
   :global_team_member,
-  :liberation_pledge
+  :liberation_pledge,
+  :source,
+
+  :connector,
+  :contacted_date,
+  :core_training,
+  :eligable_senior_organizer,
+  :escalation,
+  :interested,
+  :meeting_date
+
 )`, activist)
 	if err != nil {
 		return 0, errors.Wrapf(err, "Could not create activist: %s", activist.Name)
@@ -452,19 +522,31 @@ func UpdateActivistData(db *sqlx.DB, activist ActivistExtra) (int, error) {
 
 	_, err := db.NamedExec(`UPDATE activists
 SET
-  name = :name,
-  email = :email,
+
   chapter = :chapter,
-  phone = :phone,
-  location = :location,
+  email = :email,
   facebook = :facebook,
+  location = :location,
+  name = :name,
+  phone = :phone,
+
   activist_level = :activist_level,
-  exclude_from_leaderboard = :exclude_from_leaderboard,
   core_staff = :core_staff,
+  exclude_from_leaderboard = :exclude_from_leaderboard,
   global_team_member = :global_team_member,
-  liberation_pledge = :liberation_pledge
+  liberation_pledge = :liberation_pledge,
+  source = :source,
+
+  connector = :connector,
+  contacted_date = :contacted_date,
+  core_training = :core_training,
+  eligable_senior_organizer = :eligable_senior_organizer,
+  escalation = :escalation,
+  interested = :interested,
+  meeting_date = :meeting_date
+
 WHERE
-id = :id`, activist)
+  id = :id`, activist)
 
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to update activist data")
@@ -672,20 +754,30 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 
 	activistExtra := ActivistExtra{
 		Activist: Activist{
-			ID:               activistJSON.ID,
-			Name:             strings.TrimSpace(activistJSON.Name),
-			Email:            strings.TrimSpace(activistJSON.Email),
-			Chapter:          strings.TrimSpace(activistJSON.Chapter),
-			Phone:            strings.TrimSpace(activistJSON.Phone),
-			Location:         sql.NullString{String: strings.TrimSpace(activistJSON.Location), Valid: valid},
-			Facebook:         strings.TrimSpace(activistJSON.Facebook),
-			LiberationPledge: activistJSON.LiberationPledge,
+			Chapter:  strings.TrimSpace(activistJSON.Chapter),
+			Email:    strings.TrimSpace(activistJSON.Email),
+			Facebook: strings.TrimSpace(activistJSON.Facebook),
+			ID:       activistJSON.ID,
+			Location: sql.NullString{String: strings.TrimSpace(activistJSON.Location), Valid: valid},
+			Name:     strings.TrimSpace(activistJSON.Name),
+			Phone:    strings.TrimSpace(activistJSON.Phone),
 		},
 		ActivistMembershipData: ActivistMembershipData{
-			CoreStaff:              activistJSON.Core,
+			ActivistLevel:          strings.TrimSpace(activistJSON.ActivistLevel),
+			CoreStaff:              activistJSON.CoreStaff,
 			ExcludeFromLeaderboard: activistJSON.ExcludeFromLeaderboard,
 			GlobalTeamMember:       activistJSON.GlobalTeamMember,
-			ActivistLevel:          strings.TrimSpace(activistJSON.ActivistLevel),
+			LiberationPledge:       activistJSON.LiberationPledge,
+			Source:                 strings.TrimSpace(activistJSON.Source),
+		},
+		ActivistConnectionData: ActivistConnectionData{
+			Connector:               strings.TrimSpace(activistJSON.Connector),
+			ContactedDate:           strings.TrimSpace(activistJSON.ContactedDate),
+			CoreTraining:            activistJSON.CoreTraining,
+			EligableSeniorConnector: activistJSON.EligableSeniorConnector,
+			Escalation:              strings.TrimSpace(activistJSON.Escalation),
+			Interested:              strings.TrimSpace(activistJSON.Interested),
+			MeetingDate:             strings.TrimSpace(activistJSON.MeetingDate),
 		},
 	}
 
@@ -708,18 +800,6 @@ var validActivistLevels = map[string]struct{}{
 }
 
 func validateActivist(a ActivistExtra) error {
-	if a.LiberationPledge != 0 && a.LiberationPledge != 1 {
-		return errors.New("LiberationPledge must be 1 or 0")
-	}
-	if a.CoreStaff != 0 && a.CoreStaff != 1 {
-		return errors.New("CoreStaff must be 1 or 0")
-	}
-	if a.ExcludeFromLeaderboard != 0 && a.ExcludeFromLeaderboard != 1 {
-		return errors.New("ExcludeFromLeaderboard must be 1 or 0")
-	}
-	if a.GlobalTeamMember != 0 && a.GlobalTeamMember != 1 {
-		return errors.New("GlobalTeamMember must be 1 or 0")
-	}
 	if _, ok := validActivistLevels[a.ActivistLevel]; !ok {
 		return errors.New("ActivistLevel must be one of: activist, not_local, " +
 			"organizer, hiatus, prospect, senior_organizer, none")

@@ -135,6 +135,207 @@ import debounce from 'debounce';
 
 Vue.use(vmodal);
 
+const allColumns = [
+{
+  header: '',
+  data: {
+    renderer: optionsButtonRenderer,
+    readOnly: true,
+    disableVisualSelection: true,
+    colWidths: 35,
+  },
+  enabled: true,
+},
+// Standard activist fields
+{
+  header: 'Name',
+  data: {
+    data: 'name',
+  },
+  enabled: true,
+}, {
+  header: 'Email',
+  data: {
+    data: 'email',
+    colWidths: 300,
+  },
+  enabled: true,
+}, {
+  header: 'Chapter',
+  data: {
+    data: 'chapter',
+  },
+  enabled: false,
+}, {
+  header: 'Phone',
+  data: {
+    data: 'phone',
+    colWidths: 120,
+  },
+  enabled: false,
+}, {
+  header: 'Location',
+  data: {
+    data: 'location',
+  },
+  enabled: false,
+}, {
+  header: 'Facebook',
+  data: {
+    data: 'facebook',
+  },
+  enabled: false,
+},
+
+// ActivistMembershipData
+{
+  header: 'Activist Level',
+  data: {
+    data: 'activist_level',
+    colWidths: 135,
+    type: 'dropdown',
+    source: [
+      "activist",
+      "not_local",
+      "organizer",
+      "hiatus",
+      "prospect",
+      "senior_organizer",
+      "none",
+    ],
+  },
+  enabled: true,
+}, {
+  header: 'Core/Staff',
+  data: {
+    type: 'checkbox',
+    data: 'core_staff',
+    colWidths: 75,
+  },
+  enabled: false,
+}, {
+  header: "Exclude From Leaderboard",
+  data: {
+    type: "checkbox",
+    data: "exclude_from_leaderboard",
+    colWidths: 150,
+  },
+  enabled: false,
+}, {
+  header: 'Global Team Member',
+  data: {
+    type: 'checkbox',
+    data: 'global_team_member',
+    colWidths: 150,
+  },
+  enabled: false,
+}, {
+  header: 'Liberation Pledge',
+  data: {
+    type: 'checkbox',
+    data: 'liberation_pledge',
+    colWidths: 120,
+  },
+  enabled: false,
+}, {
+  header: "Source",
+  data: {
+    data: "source",
+    colWidths: 75,
+  },
+  enabled: false,
+},
+
+{
+  header: 'First Event',
+  data: {
+    type: 'date',
+    data: 'first_event',
+    readOnly: true,
+    colWidths: 100,
+  },
+  enabled: true,
+}, {
+  header: 'Last Event',
+  data: {
+    type: 'date',
+    data: 'last_event',
+    readOnly: true,
+    colWidths: 100,
+  },
+  enabled: true,
+}, {
+  header: "Total Events",
+  data: {
+    type: "numeric",
+    data: "total_events",
+    readOnly: true,
+    colWidths: 100,
+  },
+}, {
+  header: 'Status',
+  data: {
+    data: 'status',
+    readOnly: true,
+    colWidths: 125,
+  },
+  enabled: false,
+},
+
+{
+  header: "Connector",
+  data: {
+    data: "connector",
+    colWidths: 125,
+  },
+  enabled: false,
+}, {
+  header: "Contacted Date",
+  data: {
+    data: "contacted_date",
+    colWidths: 125,
+  },
+  enabled: false,
+}, {
+  header: "Core Training",
+  data: {
+    type: "checkbox",
+    data: "core_training",
+    colWidths: 125,
+  },
+  enabled: false,
+}, {
+  header: "Eligable Senior Connector",
+  data: {
+    type: "checkbox",
+    data: "eligable_senior_connector",
+    colWidths: 150,
+  },
+  enabled: false,
+}, {
+  header: "Escalation",
+  data: {
+    data: "escalation",
+    colWidths: 125,
+  },
+  enabled: false,
+}, {
+  header: "Interested",
+  data: {
+    data: "interested",
+    colWidths: 125,
+  },
+  enabled: false,
+}, {
+  header: "Meeting Date",
+  data: {
+    data: "meeting_date",
+    colWidths: 125,
+  },
+  enabled: false,
+}
+];
+
 // Constants related to list ordering
 // Corresponds to the constants DescOrder and AscOrder in model/activist.go
 const DescOrder = 2;
@@ -571,122 +772,7 @@ export default {
       disableConfirmButton: false,
       allActivists: [],
       height: 500,
-      columns: [{
-        header: '',
-        data: {
-          renderer: optionsButtonRenderer,
-          readOnly: true,
-          disableVisualSelection: true,
-          colWidths: 35,
-        },
-        enabled: true,
-      }, {
-        header: 'Name',
-        data: {
-          data: 'name',
-        },
-        enabled: true,
-      }, {
-        header: 'Email',
-        data: {
-          data: 'email',
-          colWidths: 300,
-        },
-        enabled: true,
-      }, {
-        header: 'Chapter',
-        data: {
-          data: 'chapter',
-        },
-        enabled: false,
-      }, {
-        header: 'Phone',
-        data: {
-          data: 'phone',
-          colWidths: 120,
-        },
-        enabled: false,
-      }, {
-        header: 'Location',
-        data: {
-          data: 'location',
-        },
-        enabled: false,
-      }, {
-        header: 'Facebook',
-        data: {
-          data: 'facebook',
-        },
-        enabled: false,
-      }, {
-        header: 'Core/Staff',
-        data: {
-          // TODO: use 'checkbox' instead
-          type: 'numeric',
-          data: 'core_staff',
-          colWidths: 75,
-        },
-        enabled: false,
-      }, {
-        header: 'Liberation Pledge',
-        data: {
-          type: 'numeric',
-          data: 'liberation_pledge',
-          colWidths: 120,
-        },
-        enabled: false,
-      }, {
-        header: 'Global Team Member',
-        data: {
-          type: 'numeric',
-          data: 'global_team_member',
-          colWidths: 150,
-        },
-        enabled: false,
-      }, {
-        header: 'First Event',
-        data: {
-          type: 'date',
-          data: 'first_event',
-          readOnly: true,
-          colWidths: 100,
-        },
-        enabled: true,
-      }, {
-        header: 'Last Event',
-        data: {
-          type: 'date',
-          data: 'last_event',
-          readOnly: true,
-          colWidths: 100,
-        },
-        enabled: true,
-      }, {
-        header: 'Status',
-        data: {
-          data: 'status',
-          readOnly: true,
-          colWidths: 125,
-        },
-        enabled: false,
-      }, {
-        header: 'Activist Level',
-        data: {
-          data: 'activist_level',
-          colWidths: 135,
-          type: 'dropdown',
-          source: [
-            "activist",
-	    "not_local",
-	    "organizer",
-	    "hiatus",
-	    "prospect",
-	    "senior_organizer",
-	    "none",
-          ],
-        },
-        enabled: true,
-      }],
+      columns: allColumns,
       lastEventDateFrom: initialDateFromValue(),
       lastEventDateTo: initialDateToValue(),
       showOptions: '',
