@@ -43,6 +43,13 @@ type GetUserOptions struct {
 	Disabled bool
 }
 
+var DevTestUser = ADBUser{
+	ID:       1,
+	Email:    "test@test.com",
+	Admin:    true,
+	Disabled: false,
+}
+
 /** Functions and Methods */
 
 func GetADBUser(db *sqlx.DB, id int, email string) (ADBUser, error) {

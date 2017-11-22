@@ -46,6 +46,11 @@ func flashMesssageError(w http.ResponseWriter, message string) {
 var sessionStore = sessions.NewCookieStore([]byte(config.CookieSecret))
 
 func getAuthedADBUser(db *sqlx.DB, r *http.Request) (adbUser model.ADBUser, authed bool) {
+	// In dev, just return the test user.
+	if !config.IsProd {
+		return model.DevTestUser, true
+	}
+
 	// First, check the cookie.
 	authSession, err := sessionStore.New(r, "auth-session")
 	if err != nil {
