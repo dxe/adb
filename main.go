@@ -689,12 +689,21 @@ func (c MainController) WorkingGroupDeleteHandler(w http.ResponseWriter, r *http
 }
 
 func (c MainController) ActivistListHandler(w http.ResponseWriter, r *http.Request) {
-	activists, err := model.GetActivistsJSON(c.db, model.GetActivistOptions{})
+	options, err := model.CleanGetActivistOptions(r.Body)
 	if err != nil {
-		panic(err)
+		sendErrorMessage(w, err)
+		return
+	}
+	activists, err := model.GetActivistsJSON(c.db, options)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
 	}
 
-	writeJSON(w, activists)
+	writeJSON(w, map[string]interface{}{
+		"status":        "success",
+		"activist_list": activists,
+	})
 }
 
 func (c MainController) LeaderboardListHandler(w http.ResponseWriter, r *http.Request) {

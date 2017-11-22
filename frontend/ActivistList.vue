@@ -621,19 +621,20 @@ export default {
     },
     loadActivists: function() {
       $.ajax({
-        url: "/activist/list_range",
+        url: "/activist/list",
         method: "POST",
-        data: JSON.stringify(this.pagingParameters()),
+        data: JSON.stringify(this.listActivistsParameters()),
         success: (data) => {
           var parsed = JSON.parse(data);
           if (parsed.status === "error") {
             flashMessage("Error: " + parsed.message, true);
             return;
           }
+
           // status === "success"
-          var rangedList = parsed.activist_range_list;
-          if (rangedList !== null) {
-            this.allActivists = rangedList;
+          var activistList = parsed.activist_list;
+          if (activistList !== null) {
+            this.allActivists = activistList;
           }
         },
         error: () => {
@@ -687,10 +688,10 @@ export default {
       var y = hotContainer.getBoundingClientRect().y;
       this.height = window.innerHeight - y;
     },
-    pagingParameters: function() {
+    listActivistsParameters: function() {
       return {
-        name: "",
-        order: AscOrder,
+        order: DescOrder,
+        order_field: "last_event",
         last_event_date_to: this.lastEventDateTo,
         last_event_date_from: this.lastEventDateFrom
       };

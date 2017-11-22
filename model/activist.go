@@ -148,16 +148,23 @@ type ActivistJSON struct {
 }
 
 type GetActivistOptions struct {
-	ID     int
-	Hidden bool
+	ID                int    `json:"id"`
+	Hidden            bool   `json:"hidden"`
+	Order             int    `json:"order"`
+	OrderField        string `json:"order_field"`
+	LastEventDateFrom string `json:"last_event_date_from"`
+	LastEventDateTo   string `json:"last_event_date_to"`
+}
+
+var validOrderFields = map[string]struct{}{
+	"a.name":     struct{}{},
+	"last_event": struct{}{},
 }
 
 type ActivistRangeOptionsJSON struct {
-	Name              string `json:"name"`
-	Limit             int    `json:"limit"`
-	Order             int    `json:"order"`
-	LastEventDateFrom string `json:"last_event_date_from"`
-	LastEventDateTo   string `json:"last_event_date_to"`
+	Name  string `json:"name"`
+	Limit int    `json:"limit"`
+	Order int    `json:"order"`
 }
 
 /** Functions and Methods */
@@ -193,12 +200,8 @@ func getActivistsJSON(db *sqlx.DB, options GetActivistOptions) ([]ActivistJSON, 
 	return buildActivistJSONArray(activists), nil
 }
 
-func GetActivistRangeJSON(db *sqlx.DB, activistOptions ActivistRangeOptionsJSON) ([]ActivistJSON, error) {
-	// Check that order matches one of the defined order constants
-	if activistOptions.Order != DescOrder && activistOptions.Order != AscOrder {
-		return nil, errors.New("User Range order must be ascending or descending")
-	}
-	activists, err := getActivistRange(db, activistOptions)
+func GetActivistRangeJSON(db *sqlx.DB, options ActivistRangeOptionsJSON) ([]ActivistJSON, error) {
+	activists, err := getActivistRange(db, options)
 	if err != nil {
 		return nil, err
 	}
@@ -292,6 +295,13 @@ func getActivists(db *sqlx.DB, name string) ([]Activist, error) {
 }
 
 func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra, error) {
+	// Redundant options validation
+	var err error
+	options, err = validateGetActivistOptions(options)
+	if err != nil {
+		return nil, err
+	}
+
 	query := selectActivistExtraBaseQuery
 
 	var queryArgs []interface{}
@@ -312,6 +322,38 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 
 	query += " GROUP BY a.id "
 
+	havingClause := []string{}
+	if options.LastEventDateFrom != "" {
+		havingClause = append(havingClause, "last_event >= ?")
+		queryArgs = append(queryArgs, options.LastEventDateFrom)
+	}
+	if options.LastEventDateTo != "" {
+		havingClause = append(havingClause, "last_event <= ?")
+		queryArgs = append(queryArgs, options.LastEventDateTo)
+	}
+
+	if len(havingClause) != 0 {
+		query += " HAVING " + strings.Join(havingClause, " AND ")
+	}
+
+	orderField := options.OrderField
+	// Default to a.name if orderField isn't specified
+	if orderField == "" {
+		orderField = "a.name"
+	}
+	// We already check that options.OrderField is valid in
+	// CleanGetActivistOptions, but we check it again here again
+	// to be paranoid b/c this is a sql injection if we don't
+	// check it.
+	if _, ok := validOrderFields[orderField]; !ok {
+		return nil, errors.New("Invalid OrderField")
+	}
+
+	query += " ORDER BY " + options.OrderField
+	if options.Order == DescOrder {
+		query += " desc "
+	}
+
 	var activists []ActivistExtra
 	if err := db.Select(&activists, query, queryArgs...); err != nil {
 		return nil, errors.Wrapf(err, "failed to get activists extra for uid %d", options.ID)
@@ -327,11 +369,18 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 
 // TODO Make sure you only fetch non-hidden members
 // THAT is not currently the case
-func getActivistRange(db *sqlx.DB, activistOptions ActivistRangeOptionsJSON) ([]ActivistExtra, error) {
+func getActivistRange(db *sqlx.DB, options ActivistRangeOptionsJSON) ([]ActivistExtra, error) {
+	// Redundant options validation
+	var err error
+	options, err = validateActivistRangeOptionsJSON(options)
+	if err != nil {
+		return nil, err
+	}
+
 	query := selectActivistExtraBaseQuery
-	name := activistOptions.Name
-	order := activistOptions.Order
-	limit := activistOptions.Limit
+	name := options.Name
+	order := options.Order
+	limit := options.Limit
 	var queryArgs []interface{}
 
 	query += " WHERE a.hidden = false "
@@ -346,20 +395,6 @@ func getActivistRange(db *sqlx.DB, activistOptions ActivistRangeOptionsJSON) ([]
 	}
 
 	query += " GROUP BY a.name "
-
-	havingClause := []string{}
-	if activistOptions.LastEventDateFrom != "" {
-		havingClause = append(havingClause, "last_event >= ?")
-		queryArgs = append(queryArgs, activistOptions.LastEventDateFrom)
-	}
-	if activistOptions.LastEventDateTo != "" {
-		havingClause = append(havingClause, "last_event <= ?")
-		queryArgs = append(queryArgs, activistOptions.LastEventDateTo)
-	}
-
-	if len(havingClause) != 0 {
-		query += " HAVING " + strings.Join(havingClause, " AND ")
-	}
 
 	query += " ORDER BY a.name "
 	if order == DescOrder {
@@ -807,13 +842,62 @@ func validateActivist(a ActivistExtra) error {
 	return nil
 }
 
+func validateActivistRangeOptionsJSON(a ActivistRangeOptionsJSON) (ActivistRangeOptionsJSON, error) {
+	// Set defaults
+	if a.Order == 0 {
+		a.Order = AscOrder
+	}
+
+	// Check that order matches one of the defined order constants
+	if a.Order != DescOrder && a.Order != AscOrder {
+		return ActivistRangeOptionsJSON{}, errors.New("User Range order must be ascending or descending")
+	}
+	return a, nil
+}
+
 func GetActivistRangeOptions(body io.Reader) (ActivistRangeOptionsJSON, error) {
-	var activistOptions ActivistRangeOptionsJSON
-	err := json.NewDecoder(body).Decode(&activistOptions)
+	var options ActivistRangeOptionsJSON
+	err := json.NewDecoder(body).Decode(&options)
 	if err != nil {
 		return ActivistRangeOptionsJSON{}, err
 	}
-	return activistOptions, nil
+	options, err = validateActivistRangeOptionsJSON(options)
+	if err != nil {
+		return ActivistRangeOptionsJSON{}, err
+	}
+	return options, nil
+}
+
+func validateGetActivistOptions(a GetActivistOptions) (GetActivistOptions, error) {
+	// Set defaults
+	if a.Order == 0 {
+		a.Order = DescOrder
+	}
+	if a.OrderField == "" {
+		a.OrderField = "a.name"
+	}
+
+	// Check that order matches one of the defined order constants
+	if a.Order != DescOrder && a.Order != AscOrder {
+		return GetActivistOptions{}, errors.New("User Range order must be ascending or descending")
+	}
+	if _, ok := validOrderFields[a.OrderField]; !ok {
+		return GetActivistOptions{}, errors.New("OrderField is not valid")
+	}
+	return a, nil
+}
+
+func CleanGetActivistOptions(body io.Reader) (GetActivistOptions, error) {
+	var getActivistOptions GetActivistOptions
+	err := json.NewDecoder(body).Decode(&getActivistOptions)
+	if err != nil {
+		return GetActivistOptions{}, err
+	}
+	getActivistOptions, err = validateGetActivistOptions(getActivistOptions)
+	if err != nil {
+		return GetActivistOptions{}, err
+	}
+	return getActivistOptions, nil
 }
 
 // Returns one of the following statuses:

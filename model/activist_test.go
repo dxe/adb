@@ -122,6 +122,125 @@ func mustInsertAllEvents(t *testing.T, db *sqlx.DB, events []Event) {
 	}
 }
 
+func TestGetActivistsJSON_RestrictDates(t *testing.T) {
+	db := newTestDB()
+	defer db.Close()
+
+	a1, err := GetOrCreateActivist(db, "A")
+	require.NoError(t, err)
+
+	a2, err := GetOrCreateActivist(db, "B")
+	require.NoError(t, err)
+
+	a3, err := GetOrCreateActivist(db, "C")
+	require.NoError(t, err)
+
+	d1, err := time.Parse("2006-01-02", "2017-04-15")
+	require.NoError(t, err)
+	d2, err := time.Parse("2006-01-02", "2017-04-16")
+	require.NoError(t, err)
+	d3, err := time.Parse("2006-01-02", "2017-04-17")
+	require.NoError(t, err)
+
+	insertEvents := []Event{{
+		ID:             1,
+		EventName:      "event one",
+		EventDate:      d1,
+		EventType:      "Working Group",
+		AddedAttendees: []Activist{a1, a3},
+	}, {
+		ID:             2,
+		EventName:      "event two",
+		EventDate:      d2,
+		EventType:      "Working Group",
+		AddedAttendees: []Activist{a2, a3},
+	}, {
+		ID:             3,
+		EventName:      "event three",
+		EventDate:      d3,
+		EventType:      "Working Group",
+		AddedAttendees: []Activist{a2},
+	}}
+	mustInsertAllEvents(t, db, insertEvents)
+
+	activists, err := GetActivistsJSON(db, GetActivistOptions{
+		Order: DescOrder,
+	})
+	require.NoError(t, err)
+	assertActivistJSONSliceContainsNames(t, activists, []string{"A", "B", "C"})
+
+	activists, err = GetActivistsJSON(db, GetActivistOptions{
+		Order:             DescOrder,
+		LastEventDateFrom: "2017-04-17",
+	})
+	require.NoError(t, err)
+	assertActivistJSONSliceContainsNames(t, activists, []string{"B"})
+
+	activists, err = GetActivistsJSON(db, GetActivistOptions{
+		Order:             DescOrder,
+		LastEventDateFrom: "2017-04-16",
+		LastEventDateTo:   "2017-04-17",
+	})
+	require.NoError(t, err)
+	assertActivistJSONSliceContainsNames(t, activists, []string{"B", "C"})
+}
+
+func TestGetActivistsJSON_OrderField(t *testing.T) {
+	db := newTestDB()
+	defer db.Close()
+
+	a1, err := GetOrCreateActivist(db, "A")
+	require.NoError(t, err)
+
+	a2, err := GetOrCreateActivist(db, "B")
+	require.NoError(t, err)
+
+	a3, err := GetOrCreateActivist(db, "C")
+	require.NoError(t, err)
+
+	d1, err := time.Parse("2006-01-02", "2017-04-15")
+	require.NoError(t, err)
+	d2, err := time.Parse("2006-01-02", "2017-04-16")
+	require.NoError(t, err)
+	d3, err := time.Parse("2006-01-02", "2017-04-17")
+	require.NoError(t, err)
+
+	insertEvents := []Event{{
+		ID:             1,
+		EventName:      "event one",
+		EventDate:      d1,
+		EventType:      "Working Group",
+		AddedAttendees: []Activist{a1, a3},
+	}, {
+		ID:             2,
+		EventName:      "event two",
+		EventDate:      d2,
+		EventType:      "Working Group",
+		AddedAttendees: []Activist{a2, a3},
+	}, {
+		ID:             3,
+		EventName:      "event three",
+		EventDate:      d3,
+		EventType:      "Working Group",
+		AddedAttendees: []Activist{a2},
+	}}
+	mustInsertAllEvents(t, db, insertEvents)
+
+	activists, err := GetActivistsJSON(db, GetActivistOptions{
+		Order:      AscOrder,
+		OrderField: "a.name",
+	})
+	require.NoError(t, err)
+	assertActivistJSONSliceContainsOrderedNames(t, activists, []string{"A", "B", "C"})
+
+	activists, err = GetActivistsJSON(db, GetActivistOptions{
+		Order:      DescOrder,
+		OrderField: "last_event",
+	})
+	require.NoError(t, err)
+	assertActivistJSONSliceContainsOrderedNames(t, activists, []string{"B", "C", "A"})
+}
+
 func TestHideActivist(t *testing.T) {
 	db := newTestDB()
 	defer db.Close()
@@ -242,25 +361,6 @@ func TestMergeActivist(t *testing.T) {
 	require.Equal(t, len(e3.Attendees), 2)
 	require.Equal(t, e3.Attendees[0], a2.Name)
 	require.Equal(t, e3.Attendees[1], a3.Name)
-}
-
-// An error should be thrown if Order does not match
-// model.AscOrder or model.DescOrder
-func TestActivistRange_noOrderOption_throwsError(t *testing.T) {
-	db := newTestDB()
-	defer db.Close()
-
-	insertTestActivists(t, db, []string{"Apple"})
-
-	activistOptions := ActivistRangeOptionsJSON{
-		Name:  "Apple",
-		Limit: 10,
-	}
-
-	activists, err := GetActivistRangeJSON(db, activistOptions)
-	require.Error(t, err)
-	require.Nil(t, activists)
-
 }
 
 // Not Specfiying a starting name with ascending order
@@ -453,69 +553,6 @@ func TestActivistRange_NameAndLimitDescOrder_returnsSubsetofActivists(t *testing
 	require.Nil(t, fetchedActivists)
 }
 
-func TestActivistRange_RestrictDates(t *testing.T) {
-	db := newTestDB()
-	defer db.Close()
-
-	a1, err := GetOrCreateActivist(db, "A")
-	require.NoError(t, err)
-
-	a2, err := GetOrCreateActivist(db, "B")
-	require.NoError(t, err)
-
-	a3, err := GetOrCreateActivist(db, "C")
-	require.NoError(t, err)
-
-	d1, err := time.Parse("2006-01-02", "2017-04-15")
-	require.NoError(t, err)
-	d2, err := time.Parse("2006-01-02", "2017-04-16")
-	require.NoError(t, err)
-	d3, err := time.Parse("2006-01-02", "2017-04-17")
-	require.NoError(t, err)
-
-	insertEvents := []Event{{
-		ID:             1,
-		EventName:      "event one",
-		EventDate:      d1,
-		EventType:      "Working Group",
-		AddedAttendees: []Activist{a1, a3},
-	}, {
-		ID:             2,
-		EventName:      "event two",
-		EventDate:      d2,
-		EventType:      "Working Group",
-		AddedAttendees: []Activist{a2, a3},
-	}, {
-		ID:             3,
-		EventName:      "event three",
-		EventDate:      d3,
-		EventType:      "Working Group",
-		AddedAttendees: []Activist{a2},
-	}}
-	mustInsertAllEvents(t, db, insertEvents)
-
-	activists, err := GetActivistRangeJSON(db, ActivistRangeOptionsJSON{
-		Order: DescOrder,
-	})
-	require.NoError(t, err)
-	assertActivistJSONSliceContainsNames(t, activists, []string{"A", "B", "C"})
-
-	activists, err = GetActivistRangeJSON(db, ActivistRangeOptionsJSON{
-		Order:             DescOrder,
-		LastEventDateFrom: "2017-04-17",
-	})
-	require.NoError(t, err)
-	assertActivistJSONSliceContainsNames(t, activists, []string{"B"})
-
-	activists, err = GetActivistRangeJSON(db, ActivistRangeOptionsJSON{
-		Order:             DescOrder,
-		LastEventDateFrom: "2017-04-16",
-		LastEventDateTo:   "2017-04-17",
-	})
-	require.NoError(t, err)
-	assertActivistJSONSliceContainsNames(t, activists, []string{"B", "C"})
-}
-
 func assertActivistJSONSliceContainsNames(t *testing.T, activists []ActivistJSON, names []string) {
 	activistNames := map[string]struct{}{}
 	for _, a := range activists {
@@ -527,6 +564,16 @@ func assertActivistJSONSliceContainsNames(t *testing.T, activists []ActivistJSON
 	}
 	require.Equalf(t, activistNames, namesMap,
 		"expected names to exist in activist map:\nactivists: %v\nnames: %v",
+		activists, names)
+}
+
+func assertActivistJSONSliceContainsOrderedNames(t *testing.T, activists []ActivistJSON, names []string) {
+	activistNames := []string{}
+	for _, a := range activists {
+		activistNames = append(activistNames, a.Name)
+	}
+	require.Equalf(t, activistNames, names,
+		"expected names to equal activists names\nactivists: %v\nnames: %v",
 		activists, names)
 }
 
