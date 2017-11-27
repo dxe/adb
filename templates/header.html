@@ -38,11 +38,11 @@
             <li class="{{if (eq .PageName "EventList")}}active{{end}}"><a href="/list_events">Events</a></li>
             <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#">Activists <span class="caret"></span></a>
               <ul class="dropdown-menu">
-                <li><a href="/list_activists">All Activists</a></li>
+                <li class="{{if (eq .PageName "ActivistList")}}active{{end}}"><a href="/list_activists">All Activists</a></li>
+                <li class="{{if (eq .PageName "Leaderboard")}}active{{end}}"><a href="/leaderboard">Leaderboard</a></li>
               </ul>
             </li>
             <li class="{{if (eq .PageName "WorkingGroupList")}}active{{end}}"><a href="/list_working_groups">Working Groups</a></li>
-            <li class="{{if (eq .PageName "Leaderboard")}}active{{end}}"><a href="/leaderboard">Leaderboard</a></li>
             <li class="{{if (eq .PageName "Power")}}active{{end}}"><a href="/power">Power</a></li>
 	    <li class="{{if (eq .IsAdmin false)}}hide{{end}} {{if (eq .PageName "UserList")}}active{{end}}"><a href="/admin/users">Users</a></li>
           </ul>
