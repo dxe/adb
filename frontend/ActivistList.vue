@@ -192,7 +192,7 @@ const allColumns = [
   header: 'Activist Level',
   data: {
     data: 'activist_level',
-    colWidths: 135,
+    colWidths: 150,
     type: 'dropdown',
     source: [
       "Community Member",
