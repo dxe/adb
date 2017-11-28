@@ -145,7 +145,6 @@ const allColumns = [
     colWidths: 35,
   },
   enabled: true,
-  manualColumnResize: true,
 },
 // Standard activist fields
 {
@@ -800,6 +799,7 @@ export default {
         afterChange: this.afterChangeCallback.bind(this),
         afterOnCellMouseDown: this.afterOnCellMouseDownCallback.bind(this),
         undo: true,
+        manualColumnResize: true,
         autoColumnSize: false,
         colWidths: 200,
         viewportRowRenderingOffset: 100,
