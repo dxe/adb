@@ -295,6 +295,37 @@ const allColumns = [
   },
   enabled: false,
 }, {
+  header: "Interested",
+  data: {
+    data: "interested",
+    colWidths: 125,
+    source: [
+      "Yes",
+      "No",
+      "",
+    ],
+  },
+  enabled: false,
+}, {
+  header: "Meeting Date",
+  data: {
+    data: "meeting_date",
+    colWidths: 125,
+  },
+  enabled: false,
+}, {
+  header: "Action Team",
+  data: {
+    data: "escalation",
+    colWidths: 125,
+    source: [
+      "Yes",
+      "No",
+      "",
+    ],
+  },
+  enabled: false,
+}, {
   header: "Core Training",
   data: {
     type: "checkbox",
@@ -307,28 +338,7 @@ const allColumns = [
   data: {
     type: "checkbox",
     data: "eligible_senior_organizer",
-    colWidths: 150,
-  },
-  enabled: false,
-}, {
-  header: "Escalation",
-  data: {
-    data: "escalation",
-    colWidths: 125,
-  },
-  enabled: false,
-}, {
-  header: "Interested",
-  data: {
-    data: "interested",
-    colWidths: 125,
-  },
-  enabled: false,
-}, {
-  header: "Meeting Date",
-  data: {
-    data: "meeting_date",
-    colWidths: 125,
+    colWidths: 170,
   },
   enabled: false,
 }
