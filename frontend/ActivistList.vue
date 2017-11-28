@@ -299,6 +299,7 @@ const allColumns = [
   data: {
     data: "interested",
     colWidths: 125,
+    type: 'dropdown',
     source: [
       "Yes",
       "No",
@@ -317,6 +318,7 @@ const allColumns = [
   header: "Action Team",
   data: {
     data: "escalation",
+    type: 'dropdown',
     colWidths: 125,
     source: [
       "Yes",
