@@ -61,7 +61,7 @@ SELECT
 
   MIN(e.date) AS first_event,
   MAX(e.date) AS last_event,
-  COUNT(e.id) as total_events
+  COUNT(e.id) as total_events,
   ifnull((Community + Outreach + WorkingGroup + Sanctuary + Protest + KeyEvent),0) as total_points
 FROM activists a
 
