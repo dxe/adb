@@ -200,6 +200,7 @@ type GetActivistOptions struct {
 var validOrderFields = map[string]struct{}{
 	"a.name":     struct{}{},
 	"last_event": struct{}{},
+	"total_points": struct{}{},
 }
 
 type ActivistRangeOptionsJSON struct {
