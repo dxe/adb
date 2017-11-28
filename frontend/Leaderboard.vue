@@ -154,6 +154,15 @@ const allColumns = [
   },
   enabled: true,
 }, {
+  header: "Points",
+  data: {
+    type: "numeric",
+    data: "total_points",
+    readOnly: true,
+    colWidths: 100,
+  },
+  enabled: true,
+}, {
   header: 'Email',
   data: {
     data: 'email',
@@ -269,15 +278,6 @@ const allColumns = [
     data: "total_events",
     readOnly: true,
     colWidths: 100,
-  },
-}, {
-  header: "Points",
-  data: {
-    type: "numeric",
-    data: "total_points",
-    readOnly: true,
-    colWidths: 100,
-    enabled: true,
   },
 }, {
   header: 'Status',
@@ -759,7 +759,7 @@ export default {
     listActivistsParameters: function() {
       return {
         order: DescOrder,
-        order_field: "last_event",
+        order_field: "total_points",
         last_event_date_to: this.lastEventDateTo,
         last_event_date_from: this.lastEventDateFrom
       };
