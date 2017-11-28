@@ -1,8 +1,10 @@
 {{template "header.html" .}}
 
-<div class="body-wrapper-wide activist-list-content">
-  <div>NOTE: This page is unfinished. Things may not work as expected.</div>
-  <div id="app"></div>
+<div class="body-wrapper-extra-wide activist-list-content">
+  <div class="title">
+    <h1>All Activists</h1>
+  </div>
+  <div id="app" class="main"></div>
   <script src="/dist/activist_list.js?{{ .StaticResourcesHash }}"></script>
   <script>activist_list.initializeApp()</script>
 </div>

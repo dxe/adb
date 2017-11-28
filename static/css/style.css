@@ -53,6 +53,15 @@ a.edit-link:hover {
         box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24),0 17px 50px 0 rgba(0,0,0,0.19);
 }
 
+.body-wrapper-extra-wide {
+        max-width: 95%;
+        background-color: white;
+        padding: 25px 40px 25px 40px; 
+        margin: 0 auto;
+        box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24),0 17px 50px 0 rgba(0,0,0,0.19);
+}
+
+
 @media (max-width: 610px) {
     .body-wrapper-wide {
         padding: 25px 10px 25px 10px;
@@ -63,6 +72,7 @@ a.edit-link:hover {
 /* title */
 .title {
     margin-left: -3px;
+    box-shadow: none;
 }
 .title h1 {
     font-weight: bold;
@@ -96,12 +106,6 @@ a.edit-link:hover {
     margin-bottom: 5px;
 }
 
-/* activist_list */
-.activist-list-content {
-    max-width: none;
-    width: 100%;
-    padding: 0;
-}
 
 /* working_group_list */
 .working-group-list-content {
@@ -127,6 +131,9 @@ a.edit-link:hover {
 }
 .adb-table td {
     padding-bottom: 10px;
+}
+#app {
+    box-shadow: none;
 }
 
 /* leaderboard */
