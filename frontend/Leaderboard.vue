@@ -159,7 +159,7 @@ const allColumns = [
     data: 'email',
     colWidths: 300,
   },
-  enabled: true,
+  enabled: false,
 }, {
   header: 'Chapter',
   data: {
@@ -178,13 +178,13 @@ const allColumns = [
   data: {
     data: 'location',
   },
-  enabled: true,
+  enabled: false,
 }, {
   header: 'Facebook',
   data: {
     data: 'facebook',
   },
-  enabled: true,
+  enabled: false,
 },
 
 // ActivistMembershipData
@@ -277,6 +277,7 @@ const allColumns = [
     data: "total_points",
     readOnly: true,
     colWidths: 100,
+    enabled: true,
   },
 }, {
   header: 'Status',
@@ -285,7 +286,7 @@ const allColumns = [
     readOnly: true,
     colWidths: 125,
   },
-  enabled: false,
+  enabled: true,,
 },
 
 {
@@ -862,7 +863,7 @@ export default {
       return {
         columns: columns,
         colHeaders: columnHeaders,
-        //rowHeaders: true, // enable this for leaderboard numbering + disable sorting?
+        rowHeaders: true, // enable this for leaderboard numbering + disable sorting?
         disableVisualSelection: 'area',
         multiSelect: false,
         fillHandle: false,
