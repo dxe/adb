@@ -834,8 +834,7 @@ var validActivistLevels = map[string]struct{}{
 
 func validateActivist(a ActivistExtra) error {
 	if _, ok := validActivistLevels[a.ActivistLevel]; !ok {
-		return errors.New("ActivistLevel must be one of: activist, not_local, " +
-			"organizer, hiatus, prospect, senior_organizer, none")
+		return errors.New("ActivistLevel is invalid.")
 	}
 	return nil
 }
