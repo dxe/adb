@@ -1,0 +1,30 @@
+{{template "header.html" .}}
+<script src="/dist/leaderboard.js?{{ .StaticResourcesHash }}"></script>
+
+<div class="body-wrapper-wide event-list-content">
+  <div class="title">
+    <h1>Community Leaderboard</h1>
+    <br />
+  </div>
+  <div class="main">
+    <table id="activist-list" class="adb-table table table-hover table-striped leaderboard-table">
+        <thead>
+        <tr>
+          <th></th>
+          <th>Name</th>
+          <th>Points</th>
+          <th>Events Last 30 Days</th>
+          <th>Total Events</th>
+          <th>Level</th>
+        </tr>
+      </thead>
+      <tbody id="activist-list-body">
+        <tr><td><i>Loading...</i></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+<script>leaderboard.initializeApp();</script>
+{{template "footer.html" .}}
