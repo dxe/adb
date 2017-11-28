@@ -109,8 +109,8 @@ type ActivistConnectionData struct {
 	CoreTraining            bool   `db:"core_training"`
 	EligibleSeniorOrganizer bool   `db:"eligible_senior_organizer"`
 	EligibleOrganizer 		bool   `db:"eligible_organizer"`
-	InterviewOrganizer 			time.Time   `db:"interview_organizer"`
-	InterviewSeniorOrganizer 	time.Time   `db:"interview_senior_organizer"`
+	InterviewOrganizer 			string   `db:"interview_organizer"`
+	InterviewSeniorOrganizer 	string   `db:"interview_senior_organizer"`
 	Escalation              string `db:"escalation"`
 	Interested              string `db:"interested"`
 	MeetingDate             string `db:"meeting_date"`
@@ -149,8 +149,8 @@ type ActivistJSON struct {
 	CoreTraining            bool   `json:"core_training"`
 	EligibleSeniorOrganizer bool   `json:"eligible_senior_organizer"`
 	EligibleOrganizer 		bool   `json:"eligible_organizer"`
-	InterviewOrganizer 			time.Time   `json:"interview_organizer"`
-	InterviewSeniorOrganizer 	time.Time   `json:"interview_senior_organizer"`
+	InterviewOrganizer 			string   `json:"interview_organizer"`
+	InterviewSeniorOrganizer 	string   `json:"interview_senior_organizer"`
 	Escalation              string `json:"escalation"`
 	Interested              string `json:"interested"`
 	MeetingDate             string `json:"meeting_date"`
