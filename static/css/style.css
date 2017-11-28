@@ -12,10 +12,6 @@ body {
     }
 }
 
-body.activist-list-body {
-    padding-top: 50px;
-}
-
 a {
         color: lightgrey;
         text-decoration: none;
