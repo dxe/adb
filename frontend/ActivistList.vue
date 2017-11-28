@@ -145,6 +145,7 @@ const allColumns = [
     colWidths: 35,
   },
   enabled: true,
+  manualColumnResize: true,
 },
 // Standard activist fields
 {
