@@ -342,6 +342,21 @@ const allColumns = [
   },
   enabled: false,
 }, {
+  header: 'Focus',
+  data: {
+    data: 'focus',
+    colWidths: 160,
+    type: 'dropdown',
+    source: [
+      "Direct Action",
+      "Community",
+      "Development",
+      "Finance",
+      "Communications",
+    ],
+  },
+  enabled: true,
+}, {
   header: "Core Training",
   data: {
     type: "checkbox",
@@ -455,7 +470,7 @@ function initialDateFromValue() {
   var rawYear = d.getFullYear();
   var rawMonth = d.getMonth() + 1;
 
-  var monthOffset = 3;
+  var monthOffset = 2;
   rawMonth -= monthOffset;
   if (rawMonth <= 0) {
     // 12 + rawMonth will be the correct month from the previous year
@@ -847,6 +862,7 @@ export default {
       return {
         columns: columns,
         colHeaders: columnHeaders,
+        //rowHeaders: true, // enable this for leaderboard numbering + disable sorting?
         disableVisualSelection: 'area',
         multiSelect: false,
         fillHandle: false,
