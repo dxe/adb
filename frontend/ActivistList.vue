@@ -308,10 +308,13 @@ const allColumns = [
   },
   enabled: false,
 }, {
-  header: "Meeting Date",
+  header: "Recruitment Connection Date",
   data: {
     data: "meeting_date",
-    colWidths: 125,
+    type: 'date',
+    dateFormat: 'YYYY-MM-DD',
+    correctFormat: true,
+    colWidths: 180,
   },
   enabled: false,
 }, {
