@@ -303,10 +303,10 @@ const allColumns = [
   },
   enabled: false,
 }, {
-  header: "Eligible Senior Connector",
+  header: "Eligible Senior Organizer",
   data: {
     type: "checkbox",
-    data: "eligible_senior_connector",
+    data: "eligible_senior_organizer",
     colWidths: 150,
   },
   enabled: false,

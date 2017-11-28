@@ -104,7 +104,7 @@ type ActivistConnectionData struct {
 	Connector               string `db:"connector"`
 	ContactedDate           string `db:"contacted_date"`
 	CoreTraining            bool   `db:"core_training"`
-	EligibleSeniorConnector bool   `db:"eligible_senior_organizer"`
+	EligibleSeniorOrganizer bool   `db:"eligible_senior_organizer"`
 	Escalation              string `db:"escalation"`
 	Interested              string `db:"interested"`
 	MeetingDate             string `db:"meeting_date"`
@@ -141,7 +141,7 @@ type ActivistJSON struct {
 	Connector               string `json:"connector"`
 	ContactedDate           string `json:"contacted_date"`
 	CoreTraining            bool   `json:"core_training"`
-	EligibleSeniorConnector bool   `json:"eligible_senior_organizer"`
+	EligibleSeniorOrganizer bool   `json:"eligible_senior_organizer"`
 	Escalation              string `json:"escalation"`
 	Interested              string `json:"interested"`
 	MeetingDate             string `json:"meeting_date"`
@@ -249,7 +249,7 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			Connector:               a.Connector,
 			ContactedDate:           a.ContactedDate,
 			CoreTraining:            a.CoreTraining,
-			EligibleSeniorConnector: a.EligibleSeniorConnector,
+			EligibleSeniorOrganizer: a.EligibleSeniorOrganizer,
 			Escalation:              a.Escalation,
 			Interested:              a.Interested,
 			MeetingDate:             a.MeetingDate,
@@ -809,7 +809,7 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			Connector:               strings.TrimSpace(activistJSON.Connector),
 			ContactedDate:           strings.TrimSpace(activistJSON.ContactedDate),
 			CoreTraining:            activistJSON.CoreTraining,
-			EligibleSeniorConnector: activistJSON.EligibleSeniorConnector,
+			EligibleSeniorOrganizer: activistJSON.EligibleSeniorOrganizer,
 			Escalation:              strings.TrimSpace(activistJSON.Escalation),
 			Interested:              strings.TrimSpace(activistJSON.Interested),
 			MeetingDate:             strings.TrimSpace(activistJSON.MeetingDate),
