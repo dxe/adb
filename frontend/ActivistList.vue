@@ -178,13 +178,13 @@ const allColumns = [
   data: {
     data: 'location',
   },
-  enabled: false,
+  enabled: true,
 }, {
   header: 'Facebook',
   data: {
     data: 'facebook',
   },
-  enabled: false,
+  enabled: true,
 },
 
 // ActivistMembershipData
@@ -192,7 +192,7 @@ const allColumns = [
   header: 'Activist Level',
   data: {
     data: 'activist_level',
-    colWidths: 150,
+    colWidths: 160,
     type: 'dropdown',
     source: [
       "Community Member",
