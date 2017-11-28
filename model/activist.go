@@ -825,13 +825,11 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 }
 
 var validActivistLevels = map[string]struct{}{
-	"activist":         struct{}{},
-	"not_local":        struct{}{},
-	"organizer":        struct{}{},
-	"hiatus":           struct{}{},
-	"prospect":         struct{}{},
-	"senior_organizer": struct{}{},
-	"none":             struct{}{},
+	"Community Member":  	struct{}{},
+	"Action Team Member":   struct{}{},
+	"Organizer":        	struct{}{},
+	"Senior Organizer":     struct{}{},
+	"Hiatus":         		struct{}{},
 }
 
 func validateActivist(a ActivistExtra) error {
