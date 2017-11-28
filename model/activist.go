@@ -62,6 +62,7 @@ SELECT
   MIN(e.date) AS first_event,
   MAX(e.date) AS last_event,
   COUNT(e.id) as total_events
+  ifnull((Community + Outreach + WorkingGroup + Sanctuary + Protest + KeyEvent),0) as total_points
 FROM activists a
 
 LEFT JOIN event_attendance ea
@@ -69,6 +70,32 @@ LEFT JOIN event_attendance ea
 
 LEFT JOIN events e
   ON ea.event_id = e.id
+
+LEFT JOIN (
+    select activist_id,
+    ifnull(sum(Community),0) as Community,
+    ifnull(sum(Outreach),0) as Outreach,
+    ifnull(sum(WorkingGroup),0) as WorkingGroup,
+    ifnull(sum(Sanctuary),0) as Sanctuary,
+    ifnull(sum(Protest),0) as Protest,
+    ifnull(sum(KeyEvent),0) as KeyEvent
+    from (
+      select
+      activist_id,
+      (case when event_type = "Community" then count(e.id) end) as Community,
+      (case when event_type = "Outreach" then count(e.id)*2 end) as Outreach,
+      (case when event_type = "Working Group" then count(e.id) end) as WorkingGroup,
+      (case when event_type = "Sanctuary" then count(e.id)*2 end) as Sanctuary,
+      (case when event_type = "Protest" then count(e.id)*2 end) as Protest,
+      (case when event_type = "Key Event" then count(e.id)*3 end) as KeyEvent
+      from event_attendance ea
+      join events e on e.id = ea.event_id
+      where e.date between (now() - interval 30 day) and now()
+      group by activist_id, e.event_type
+      ) inner_points
+    group by activist_id
+    ) points
+  ON points.activist_id = a.id
 `
 
 const DescOrder int = 2
@@ -91,6 +118,7 @@ type ActivistEventData struct {
 	FirstEvent  *time.Time `db:"first_event"`
 	LastEvent   *time.Time `db:"last_event"`
 	TotalEvents int        `db:"total_events"`
+	TotalPoints int        `db:"total_points"`
 	Status      string
 }
 
@@ -135,6 +163,7 @@ type ActivistJSON struct {
 	FirstEvent  string `json:"first_event"`
 	LastEvent   string `json:"last_event"`
 	TotalEvents int    `json:"total_events"`
+	TotalPoints int    `json:"total_points"`
 	Status      string `json:"status"`
 
 	ActivistLevel          string `json:"activist_level"`
@@ -247,6 +276,7 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			LastEvent:   lastEvent,
 			Status:      a.Status,
 			TotalEvents: a.TotalEvents,
+			TotalPoints: a.TotalPoints,
 
 			ActivistLevel:          a.ActivistLevel,
 			CoreStaff:              a.CoreStaff,

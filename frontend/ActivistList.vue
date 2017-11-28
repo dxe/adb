@@ -271,6 +271,14 @@ const allColumns = [
     colWidths: 100,
   },
 }, {
+  header: "Points",
+  data: {
+    type: "numeric",
+    data: "total_points",
+    readOnly: true,
+    colWidths: 100,
+  },
+}, {
   header: 'Status',
   data: {
     data: 'status',
