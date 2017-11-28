@@ -197,11 +197,14 @@ const allColumns = [
     source: [
       "activist",
       "not_local",
-      "organizer",
-      "hiatus",
+      "Organizer",
+      "Hiatus",
       "prospect",
-      "senior_organizer",
+      "Senior Organizer",
       "none",
+      "Community Member",
+      "Action Team Member",
+      ""
     ],
   },
   enabled: true,
