@@ -52,6 +52,7 @@ SELECT
   contacted_date,
   core_training,
   eligible_senior_organizer,
+  eligible_organizer,
   escalation,
   interested,
   meeting_date,
@@ -105,6 +106,7 @@ type ActivistConnectionData struct {
 	ContactedDate           string `db:"contacted_date"`
 	CoreTraining            bool   `db:"core_training"`
 	EligibleSeniorOrganizer bool   `db:"eligible_senior_organizer"`
+	EligibleOrganizer 		bool   `db:"eligible_organizer"`
 	Escalation              string `db:"escalation"`
 	Interested              string `db:"interested"`
 	MeetingDate             string `db:"meeting_date"`
@@ -142,6 +144,7 @@ type ActivistJSON struct {
 	ContactedDate           string `json:"contacted_date"`
 	CoreTraining            bool   `json:"core_training"`
 	EligibleSeniorOrganizer bool   `json:"eligible_senior_organizer"`
+	EligibleOrganizer 		bool   `json:"eligible_organizer"`
 	Escalation              string `json:"escalation"`
 	Interested              string `json:"interested"`
 	MeetingDate             string `json:"meeting_date"`
@@ -250,6 +253,7 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			ContactedDate:           a.ContactedDate,
 			CoreTraining:            a.CoreTraining,
 			EligibleSeniorOrganizer: a.EligibleSeniorOrganizer,
+			EligibleOrganizer: 		 a.EligibleOrganizer,
 			Escalation:              a.Escalation,
 			Interested:              a.Interested,
 			MeetingDate:             a.MeetingDate,
@@ -508,6 +512,7 @@ INSERT INTO activists (
   contacted_date,
   core_training,
   eligible_senior_organizer,
+  eligible_organizer,
   escalation,
   interested,
   meeting_date
@@ -532,6 +537,7 @@ INSERT INTO activists (
   :contacted_date,
   :core_training,
   :eligible_senior_organizer,
+  :eligible_organizer,
   :escalation,
   :interested,
   :meeting_date
@@ -576,6 +582,7 @@ SET
   contacted_date = :contacted_date,
   core_training = :core_training,
   eligible_senior_organizer = :eligible_senior_organizer,
+  eligible_organizer = :eligible_organizer,
   escalation = :escalation,
   interested = :interested,
   meeting_date = :meeting_date
@@ -810,6 +817,7 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			ContactedDate:           strings.TrimSpace(activistJSON.ContactedDate),
 			CoreTraining:            activistJSON.CoreTraining,
 			EligibleSeniorOrganizer: activistJSON.EligibleSeniorOrganizer,
+			EligibleOrganizer: 		 activistJSON.EligibleOrganizer,
 			Escalation:              strings.TrimSpace(activistJSON.Escalation),
 			Interested:              strings.TrimSpace(activistJSON.Interested),
 			MeetingDate:             strings.TrimSpace(activistJSON.MeetingDate),

@@ -336,6 +336,14 @@ const allColumns = [
   },
   enabled: false,
 }, {
+  header: "Eligible Organizer",
+  data: {
+    type: "checkbox",
+    data: "eligible_organizer",
+    colWidths: 135,
+  },
+  enabled: false,
+}, {
   header: "Eligible Senior Organizer",
   data: {
     type: "checkbox",
