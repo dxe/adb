@@ -291,6 +291,9 @@ const allColumns = [
   header: "Contacted Date",
   data: {
     data: "contacted_date",
+    type: 'date',
+    dateFormat: 'YYYY-MM-DD',
+    correctFormat: true,
     colWidths: 125,
   },
   enabled: false,
@@ -318,7 +321,7 @@ const allColumns = [
   },
   enabled: false,
 }, {
-  header: "Action Team",
+  header: "Action Team Eligible",
   data: {
     data: "escalation",
     type: 'dropdown',
@@ -339,7 +342,17 @@ const allColumns = [
   },
   enabled: false,
 }, {
-  header: "Eligible Organizer",
+  header: "Organizer Interview Date",
+  data: {
+    data: "interview_organizer",
+    type: 'date',
+    dateFormat: 'YYYY-MM-DD',
+    correctFormat: true,
+    colWidths: 180,
+  },
+  enabled: false,
+}, {
+  header: "Organizer Eligible",
   data: {
     type: "checkbox",
     data: "eligible_organizer",
@@ -347,7 +360,17 @@ const allColumns = [
   },
   enabled: false,
 }, {
-  header: "Eligible Senior Organizer",
+  header: "Senior Organizer Interview Date",
+  data: {
+    data: "interview_senior_organizer",
+    type: 'date',
+    dateFormat: 'YYYY-MM-DD',
+    correctFormat: true,
+    colWidths: 180,
+  },
+  enabled: false,
+}, {
+  header: "Senior Organizer Eligible",
   data: {
     type: "checkbox",
     data: "eligible_senior_organizer",
