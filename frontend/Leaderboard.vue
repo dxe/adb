@@ -286,7 +286,7 @@ const allColumns = [
     readOnly: true,
     colWidths: 125,
   },
-  enabled: true,,
+  enabled: true,
 },
 
 {
