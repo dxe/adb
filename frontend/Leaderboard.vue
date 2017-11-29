@@ -213,30 +213,6 @@ const allColumns = [
   },
   enabled: true,
 }, {
-  header: 'Core/Staff',
-  data: {
-    type: 'checkbox',
-    data: 'core_staff',
-    colWidths: 75,
-  },
-  enabled: false,
-}, {
-  header: "Exclude From Leaderboard",
-  data: {
-    type: "checkbox",
-    data: "exclude_from_leaderboard",
-    colWidths: 150,
-  },
-  enabled: false,
-}, {
-  header: 'Global Team Member',
-  data: {
-    type: 'checkbox',
-    data: 'global_team_member',
-    colWidths: 150,
-  },
-  enabled: false,
-}, {
   header: 'Liberation Pledge',
   data: {
     type: 'checkbox',
