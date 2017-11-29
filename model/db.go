@@ -48,7 +48,11 @@ CREATE TABLE IF NOT EXISTS activists (
   escalation VARCHAR(5) NOT NULL DEFAULT '',
   core_training TINYINT(1) NOT NULL DEFAULT '0',
   eligible_senior_organizer TINYINT(1) NOT NULL DEFAULT '0',
-  source VARCHAR(255) NOT NULL DEFAULT '0',
+  eligible_organizer TINYINT(1) NOT NULL DEFAULT '0',
+  source VARCHAR(255) NOT NULL DEFAULT '',
+  interview_organizer VARCHAR(20) NOT NULL DEFAULT '',
+  interview_senior_organizer VARCHAR(20) NOT NULL DEFAULT '',
+  focus VARCHAR(40) NOT NULL DEFAULT '',
 
   CONSTRAINT name_ukey UNIQUE (name)
 )`)
