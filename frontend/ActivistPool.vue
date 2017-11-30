@@ -321,9 +321,9 @@ const allColumns = [
   },
   enabled: false,
 }, {
-  header: 'Focus',
+  header: "Focus",
   data: {
-    data: 'focus',
+    data: "focus",
     colWidths: 160,
     type: 'dropdown',
     source: [
