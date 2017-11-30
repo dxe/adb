@@ -676,7 +676,15 @@ export default {
 
           // status === "success"
           var activistList = parsed.activist_list;
+
+          // testing filtering
           console.log (activistList); // testing
+          var activistListFiltered = activistList.filter(function (el) {
+            return el.interested == "";
+          });
+          console.log(activistListFiltered);
+          activistList = activistListFiltered;
+
           if (activistList !== null) {
             this.allActivists = activistList;
           }
