@@ -352,13 +352,13 @@ const allColumns = [
     data: "action_team_focus",
     colWidths: 160,
     type: 'dropdown',
-    source: [
-      "Direct Action",
-      "Community",
-      "Development",
-      "Finance",
-      "Communications",
-    ],
+    //source: [
+    //  "Direct Action",
+    //  "Community",
+    //  "Development",
+    //  "Finance",
+    //  "Communications",
+    //],
   },
   enabled: true,
 }, {
