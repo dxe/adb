@@ -60,8 +60,10 @@ SELECT
   meeting_date,
   focus,
 
-  MIN(e.date) AS first_event,
-  MAX(e.date) AS last_event,
+  eFirst.date as first_event,
+  eLast.date as last_event,
+  concat(eFirst.date, " ", eFirst.name) AS first_event_name,
+  concat(eLast.date, " ", eLast.name) AS last_event_name,
   COUNT(e.id) as total_events,
   ifnull((Community + Outreach + WorkingGroup + Sanctuary + Protest + KeyEvent),0) as total_points
 FROM activists a
@@ -71,7 +73,26 @@ LEFT JOIN event_attendance ea
 
 LEFT JOIN events e
   ON ea.event_id = e.id
+  
+left join (
+    select a.id, max(ea.event_id) as LastEventID
+    from event_attendance ea
+    join activists a on a.id = ea.activist_id
+    group by a.id
+) LastEvent on LastEvent.id = a.id
 
+left join (
+    select a.id, min(ea.event_id) as FirstEventID
+    from event_attendance ea
+    join activists a on a.id = ea.activist_id
+    group by a.id
+) FirstEvent on FirstEvent.id = a.id
+
+left join events eFirst on eFirst.id = FirstEvent.FirstEventID
+
+left join events eLast on eLast.id = LastEvent.LastEventID
+
+  
 LEFT JOIN (
     select activist_id,
     ifnull(sum(Community),0) as Community,
@@ -118,6 +139,8 @@ type Activist struct {
 type ActivistEventData struct {
 	FirstEvent  *time.Time `db:"first_event"`
 	LastEvent   *time.Time `db:"last_event"`
+	FirstEventName  string `db:"first_event_name"`
+	LastEventName  string `db:"last_event_name"`
 	TotalEvents int        `db:"total_events"`
 	TotalPoints int        `db:"total_points"`
 	Status      string
@@ -164,6 +187,8 @@ type ActivistJSON struct {
 
 	FirstEvent  string `json:"first_event"`
 	LastEvent   string `json:"last_event"`
+	FirstEventName  string `json:"first_event_name"`
+	LastEventName   string `json:"last_event_name"`
 	TotalEvents int    `json:"total_events"`
 	TotalPoints int    `json:"total_points"`
 	Status      string `json:"status"`
