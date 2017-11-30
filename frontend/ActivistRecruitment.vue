@@ -153,7 +153,62 @@ const allColumns = [
     data: 'name',
   },
   enabled: true,
-}, {
+},
+
+{
+  header: "Connector",
+  data: {
+    data: "connector",
+    colWidths: 125,
+  },
+  enabled: true,
+},
+
+{
+  header: "Recruitment Connection Date",
+  data: {
+    data: "meeting_date",
+    type: 'date',
+    dateFormat: 'YYYY-MM-DD',
+    correctFormat: true,
+    colWidths: 180,
+  },
+  enabled: true,
+},
+
+{
+  header: "Action Team",
+  data: {
+    data: "escalation",
+    type: 'dropdown',
+    colWidths: 125,
+    source: [
+      "Yes",
+      "No",
+      "",
+    ],
+  },
+  enabled: true,
+},
+
+{
+  header: 'Email',
+  data: {
+    data: 'email',
+    colWidths: 300,
+  },
+  enabled: true,
+},
+
+{
+  header: 'Facebook',
+  data: {
+    data: 'facebook',
+  },
+  enabled: true,
+},
+
+{
   header: "Points",
   data: {
     type: "numeric",
@@ -161,15 +216,8 @@ const allColumns = [
     readOnly: true,
     colWidths: 100,
   },
-  enabled: true,
-}, {
-  header: 'Email',
-  data: {
-    data: 'email',
-    colWidths: 300,
-  },
   enabled: false,
-}, {
+},  {
   header: 'Chapter',
   data: {
     data: 'chapter',
@@ -188,13 +236,7 @@ const allColumns = [
     data: 'location',
   },
   enabled: false,
-}, {
-  header: 'Facebook',
-  data: {
-    data: 'facebook',
-  },
-  enabled: false,
-},
+}, 
 
 // ActivistMembershipData
 {
@@ -212,7 +254,7 @@ const allColumns = [
       "Hiatus",
     ],
   },
-  enabled: true,
+  enabled: false,
 }, {
   header: 'Liberation Pledge',
   data: {
@@ -254,6 +296,7 @@ const allColumns = [
     readOnly: true,
     colWidths: 100,
   },
+  enabled: false,
 }, {
   header: 'Status',
   data: {
@@ -261,17 +304,10 @@ const allColumns = [
     readOnly: true,
     colWidths: 125,
   },
-  enabled: true,
-},
+  enabled: false,
+}, 
 
 {
-  header: "Connector",
-  data: {
-    data: "connector",
-    colWidths: 125,
-  },
-  enabled: false,
-}, {
   header: "Contacted Date",
   data: {
     data: "contacted_date",
@@ -294,30 +330,7 @@ const allColumns = [
     ],
   },
   enabled: false,
-}, {
-  header: "Recruitment Connection Date",
-  data: {
-    data: "meeting_date",
-    type: 'date',
-    dateFormat: 'YYYY-MM-DD',
-    correctFormat: true,
-    colWidths: 180,
-  },
-  enabled: false,
-}, {
-  header: "Action Team Eligible",
-  data: {
-    data: "escalation",
-    type: 'dropdown',
-    colWidths: 125,
-    source: [
-      "Yes",
-      "No",
-      "",
-    ],
-  },
-  enabled: false,
-}, {
+},  {
   header: 'Focus',
   data: {
     data: 'focus',
@@ -846,7 +859,7 @@ export default {
       return {
         columns: columns,
         colHeaders: columnHeaders,
-        rowHeaders: true, // enable this for leaderboard numbering + disable sorting?
+        //rowHeaders: false, // enable this for leaderboard numbering + disable sorting?
         disableVisualSelection: 'area',
         multiSelect: false,
         fillHandle: false,

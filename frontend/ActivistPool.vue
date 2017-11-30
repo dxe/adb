@@ -154,21 +154,12 @@ const allColumns = [
   },
   enabled: true,
 }, {
-  header: "Points",
-  data: {
-    type: "numeric",
-    data: "total_points",
-    readOnly: true,
-    colWidths: 100,
-  },
-  enabled: true,
-}, {
   header: 'Email',
   data: {
     data: 'email',
     colWidths: 300,
   },
-  enabled: false,
+  enabled: true,
 }, {
   header: 'Chapter',
   data: {
@@ -187,13 +178,13 @@ const allColumns = [
   data: {
     data: 'location',
   },
-  enabled: false,
+  enabled: true,
 }, {
   header: 'Facebook',
   data: {
     data: 'facebook',
   },
-  enabled: false,
+  enabled: true,
 },
 
 // ActivistMembershipData
@@ -212,7 +203,7 @@ const allColumns = [
       "Hiatus",
     ],
   },
-  enabled: true,
+  enabled: false,
 }, {
   header: 'Liberation Pledge',
   data: {
@@ -228,6 +219,31 @@ const allColumns = [
     colWidths: 75,
   },
   enabled: false,
+},
+
+{
+  header: "Contacted Date",
+  data: {
+    data: "contacted_date",
+    type: 'date',
+    dateFormat: 'YYYY-MM-DD',
+    correctFormat: true,
+    colWidths: 125,
+  },
+  enabled: true,
+}, {
+  header: "Interested",
+  data: {
+    data: "interested",
+    colWidths: 125,
+    type: 'dropdown',
+    source: [
+      "Yes",
+      "No",
+      "",
+    ],
+  },
+  enabled: true,
 },
 
 {
@@ -254,6 +270,16 @@ const allColumns = [
     readOnly: true,
     colWidths: 100,
   },
+  enabled: false
+}, {
+  header: "Points",
+  data: {
+    type: "numeric",
+    data: "total_points",
+    readOnly: true,
+    colWidths: 100,
+  },
+  enabled: false
 }, {
   header: 'Status',
   data: {
@@ -261,7 +287,7 @@ const allColumns = [
     readOnly: true,
     colWidths: 125,
   },
-  enabled: true,
+  enabled: false,
 },
 
 {
@@ -269,29 +295,6 @@ const allColumns = [
   data: {
     data: "connector",
     colWidths: 125,
-  },
-  enabled: false,
-}, {
-  header: "Contacted Date",
-  data: {
-    data: "contacted_date",
-    type: 'date',
-    dateFormat: 'YYYY-MM-DD',
-    correctFormat: true,
-    colWidths: 125,
-  },
-  enabled: false,
-}, {
-  header: "Interested",
-  data: {
-    data: "interested",
-    colWidths: 125,
-    type: 'dropdown',
-    source: [
-      "Yes",
-      "No",
-      "",
-    ],
   },
   enabled: false,
 }, {
@@ -305,7 +308,7 @@ const allColumns = [
   },
   enabled: false,
 }, {
-  header: "Action Team Eligible",
+  header: "Action Team",
   data: {
     data: "escalation",
     type: 'dropdown',
@@ -845,7 +848,7 @@ export default {
       return {
         columns: columns,
         colHeaders: columnHeaders,
-        rowHeaders: true, // enable this for leaderboard numbering + disable sorting?
+        //rowHeaders: false, // enable this for leaderboard numbering + disable sorting?
         disableVisualSelection: 'area',
         multiSelect: false,
         fillHandle: false,

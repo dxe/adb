@@ -196,6 +196,15 @@ const allColumns = [
   enabled: false,
 },
 
+{
+  header: "Connector",
+  data: {
+    data: "connector",
+    colWidths: 125,
+  },
+  enabled: false,
+},
+
 // ActivistMembershipData
 {
   header: 'Activist Level',
@@ -237,7 +246,7 @@ const allColumns = [
     readOnly: true,
     colWidths: 200,
   },
-  enabled: true,
+  enabled: false,
 }, {
   header: 'Last Event',
   data: {
@@ -245,7 +254,7 @@ const allColumns = [
     readOnly: true,
     colWidths: 200,
   },
-  enabled: true,
+  enabled: false,
 }, {
   header: "Total Events",
   data: {
@@ -259,15 +268,6 @@ const allColumns = [
   data: {
     data: 'status',
     readOnly: true,
-    colWidths: 125,
-  },
-  enabled: true,
-},
-
-{
-  header: "Connector",
-  data: {
-    data: "connector",
     colWidths: 125,
   },
   enabled: false,
@@ -305,7 +305,7 @@ const allColumns = [
   },
   enabled: false,
 }, {
-  header: "Action Team Eligible",
+  header: "Action Team",
   data: {
     data: "escalation",
     type: 'dropdown',
@@ -845,7 +845,7 @@ export default {
       return {
         columns: columns,
         colHeaders: columnHeaders,
-        rowHeaders: true, // enable this for leaderboard numbering + disable sorting?
+        //rowHeaders: false, // enable this for leaderboard numbering + disable sorting?
         disableVisualSelection: 'area',
         multiSelect: false,
         fillHandle: false,
