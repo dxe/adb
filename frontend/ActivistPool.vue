@@ -676,6 +676,7 @@ export default {
 
           // status === "success"
           var activistList = parsed.activist_list;
+          console.log (activistList); // testing
           if (activistList !== null) {
             this.allActivists = activistList;
           }
