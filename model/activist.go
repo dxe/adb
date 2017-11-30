@@ -303,6 +303,8 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 
 			FirstEvent:  firstEvent,
 			LastEvent:   lastEvent,
+			FirstEventName: a.FirstEventName,
+			LastEventName: a.LastEventName,
 			Status:      a.Status,
 			TotalEvents: a.TotalEvents,
 			TotalPoints: a.TotalPoints,
