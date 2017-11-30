@@ -352,13 +352,13 @@ const allColumns = [
     data: "action_team_focus",
     colWidths: 160,
     type: 'dropdown',
-    //source: [
-    //  "Direct Action",
-    //  "Community",
-    //  "Development",
-    //  "Finance",
-    //  "Communications",
-    //],
+    source: [
+      "Direct Action",
+      "Community",
+      "Development",
+      "Finance",
+      "Communications",
+    ],
   },
   enabled: true,
 }, {
@@ -736,6 +736,7 @@ export default {
         var newData = change[3];
 
         var activist = this.activists[columnIndex];
+        console.log(activist); // testing
         (function(change) {
           // TODO: use change?
           $.ajax({
