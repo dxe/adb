@@ -736,7 +736,6 @@ export default {
         var newData = change[3];
 
         var activist = this.activists[columnIndex];
-        console.log(activist); // testing
         (function(change) {
           // TODO: use change?
           $.ajax({
