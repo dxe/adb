@@ -679,7 +679,8 @@ export default {
 
           // filtering
           var activistListFiltered = activistList.filter(function (el) {
-            return el.interested == "";
+            return el.interested == "Yes"
+            && el.escalation == "";
           });
           activistList = activistListFiltered;
 

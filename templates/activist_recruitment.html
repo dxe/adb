@@ -1,0 +1,14 @@
+{{template "header.html" .}}
+
+<div class="body-wrapper-extra-wide activist-list-content">
+  <div class="title">
+    <h1>Activist Recruitment</h1>
+    <br />
+  </div>
+  <div id="app" class="main"></div>
+  <script src="/dist/activist_recruitment.js?{{ .StaticResourcesHash }}"></script>
+  <script>activist_recruitment.initializeApp()</script>
+</div>
+
+</body>
+<html>

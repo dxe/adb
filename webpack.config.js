@@ -8,6 +8,8 @@ module.exports = {
   entry: {
     activist_list: 'activist_list',
     activist_pool: 'activist_pool',
+    activist_recruitment: 'activist_recruitment',
+    activist_actionteam: 'activist_actionteam',
     event_list: 'event_list',
     event_new: 'event_new',
     leaderboard: 'leaderboard',
