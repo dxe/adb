@@ -201,6 +201,7 @@ const allColumns = [
   header: 'Activist Level',
   data: {
     data: 'activist_level',
+    readOnly: true,
     colWidths: 160,
     type: 'dropdown',
     source: [
