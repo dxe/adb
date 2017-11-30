@@ -755,7 +755,7 @@ export default {
     listActivistsParameters: function() {
       return {
         order: DescOrder,
-        order_field: "total_points",
+        order_field: "last_event",
         last_event_date_to: this.lastEventDateTo,
         last_event_date_from: this.lastEventDateFrom
       };

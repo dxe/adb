@@ -914,7 +914,7 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 
 var validActivistLevels = map[string]struct{}{
 	"Community Member":  	struct{}{},
-	"Action Team Member":   struct{}{},
+	"Action Team":   		struct{}{},
 	"Organizer":        	struct{}{},
 	"Senior Organizer":     struct{}{},
 	"Hiatus":         		struct{}{},
