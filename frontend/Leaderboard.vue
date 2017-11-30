@@ -206,7 +206,7 @@ const allColumns = [
     type: 'dropdown',
     source: [
       "Community Member",
-      "Action Team Member",
+      "Action Team",
       "Organizer",
       "Senior Organizer",
       "Hiatus",
