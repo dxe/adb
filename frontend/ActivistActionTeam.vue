@@ -135,8 +135,12 @@
             <h2 class="modal-title">Add maintenance connection</h2>
           </div>
           <div class="modal-body">
-            <p>Do you want to add a maintenance connection for {{currentActivist.name}}?</p>
             <p>WARNING: This feature is not yet available!</p>
+            <br />
+            <p>Activist ID: {{currentActivist.id}}</p>
+            <p>Activist Name: {{currentActivist.name}}</p>
+            <p>Connector: {{currentActivist.connector}}</p>
+            <p>Date: <input id="connection-date" type="date"></p>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" @click="hideModal">Cancel</button>
