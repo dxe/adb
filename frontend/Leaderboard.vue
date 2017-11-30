@@ -232,19 +232,17 @@ const allColumns = [
 {
   header: 'First Event',
   data: {
-    type: 'date',
-    data: 'first_event',
+    data: 'first_event_name',
     readOnly: true,
-    colWidths: 100,
+    colWidths: 200,
   },
   enabled: true,
 }, {
   header: 'Last Event',
   data: {
-    type: 'date',
-    data: 'last_event',
+    data: 'last_event_name',
     readOnly: true,
-    colWidths: 100,
+    colWidths: 200,
   },
   enabled: true,
 }, {
