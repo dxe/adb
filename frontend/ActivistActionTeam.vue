@@ -50,6 +50,9 @@
           <div class="modal-body">
             <ul class="activist-options-body">
               <li>
+                <a @click="showModal('connection-modal', currentActivist, activistIndex)">Add Maintenance Connection</a>
+              </li>
+              <li>
                 <a @click="showModal('merge-activist-modal', currentActivist, activistIndex)">Merge Activist</a>
               </li>
               <li>
@@ -115,6 +118,28 @@
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" @click="hideModal">Close</button>
             <button type="button" v-bind:disabled="disableConfirmButton" class="btn btn-danger" @click="confirmHideActivistModal" v-focus>Hide activist</button>
+          </div>
+        </div>
+      </div>
+    </modal>
+    <modal
+       name="connection-modal"
+       :height="400"
+       classes="no-background-color"
+       @opened="modalOpened"
+       @closed="modalClosed"
+       >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 class="modal-title">Add maintenance connection</h2>
+          </div>
+          <div class="modal-body">
+            <p>Do you want to add a maintenance connection for {{currentActivist.name}}?</p>
+            <p>WARNING: This feature is not yet available!</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="hideModal">Cancel</button>
           </div>
         </div>
       </div>
