@@ -5,7 +5,7 @@ export function initializeApp() {
   var vm = new Vue({
     el: "#app",
     render: function(h) {
-      return h(activist_pool);
+      return h(ActivistPool);
     }
   });
 }

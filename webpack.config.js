@@ -7,6 +7,7 @@ module.exports = {
   // need to also add it here.
   entry: {
     activist_list: 'activist_list',
+    activist_pool: 'activist_pool',
     event_list: 'event_list',
     event_new: 'event_new',
     leaderboard: 'leaderboard',
