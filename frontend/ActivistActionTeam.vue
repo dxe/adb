@@ -202,7 +202,7 @@ const allColumns = [
     data: "connector",
     colWidths: 125,
   },
-  enabled: false,
+  enabled: true,
 },
 
 // ActivistMembershipData
@@ -331,7 +331,7 @@ const allColumns = [
       "Communications",
     ],
   },
-  enabled: false,
+  enabled: true,
 }, {
   header: "Core Training",
   data: {
@@ -339,7 +339,7 @@ const allColumns = [
     data: "core_training",
     colWidths: 125,
   },
-  enabled: false,
+  enabled: true,
 }, {
   header: "Organizer Interview Date",
   data: {
@@ -349,7 +349,7 @@ const allColumns = [
     correctFormat: true,
     colWidths: 180,
   },
-  enabled: false,
+  enabled: true,
 }, {
   header: "Organizer Eligible",
   data: {
@@ -357,7 +357,7 @@ const allColumns = [
     data: "eligible_organizer",
     colWidths: 135,
   },
-  enabled: false,
+  enabled: true,
 }, {
   header: "Senior Organizer Interview Date",
   data: {
@@ -367,7 +367,7 @@ const allColumns = [
     correctFormat: true,
     colWidths: 180,
   },
-  enabled: false,
+  enabled: true,
 }, {
   header: "Senior Organizer Eligible",
   data: {
@@ -375,7 +375,7 @@ const allColumns = [
     data: "eligible_senior_organizer",
     colWidths: 170,
   },
-  enabled: false,
+  enabled: true,
 }
 ];
 
