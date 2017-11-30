@@ -135,7 +135,7 @@
             <h2 class="modal-title">Add maintenance connection</h2>
           </div>
           <div class="modal-body">
-            <p>WARNING: This feature is not yet available!</p>
+            <p><b>WARNING: This feature is not yet available!</b></p>
             <br />
             <p>Activist ID: {{currentActivist.id}}</p>
             <p>Activist Name: {{currentActivist.name}}</p>
@@ -349,7 +349,7 @@ const allColumns = [
 }, {
   header: "Focus",
   data: {
-    data: "focus",
+    data: "action_team_focus",
     colWidths: 160,
     type: 'dropdown',
     source: [

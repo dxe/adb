@@ -319,7 +319,7 @@ const allColumns = [
 }, {
   header: "Focus",
   data: {
-    data: "focus",
+    data: "action_team_focus",
     colWidths: 160,
     type: 'dropdown',
     source: [

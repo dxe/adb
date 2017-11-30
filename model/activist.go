@@ -58,7 +58,7 @@ SELECT
   escalation,
   interested,
   meeting_date,
-  focus,
+  action_team_focus,
 
   eFirst.date as first_event,
   eLast.date as last_event,
@@ -166,7 +166,7 @@ type ActivistConnectionData struct {
 	Escalation              string `db:"escalation"`
 	Interested              string `db:"interested"`
 	MeetingDate             string `db:"meeting_date"`
-	Focus             string 	`db:"focus"`
+	ActionTeamFocus             string 	`db:"action_team_focus"`
 }
 
 type ActivistExtra struct {
@@ -210,7 +210,7 @@ type ActivistJSON struct {
 	Escalation              string `json:"escalation"`
 	Interested              string `json:"interested"`
 	MeetingDate             string `json:"meeting_date"`
-	Focus             string 	`json:"focus"`
+	ActionTeamFocus             string 	`json:"action_team_focus"`
 }
 
 type GetActivistOptions struct {
@@ -587,7 +587,7 @@ INSERT INTO activists (
   escalation,
   interested,
   meeting_date,
-  focus
+  action_team_focus
 
 ) VALUES (
 
@@ -615,7 +615,7 @@ INSERT INTO activists (
   :escalation,
   :interested,
   :meeting_date,
-  :focus
+  :action_team_focus
 
 )`, activist)
 	if err != nil {
@@ -663,7 +663,7 @@ SET
   escalation = :escalation,
   interested = :interested,
   meeting_date = :meeting_date,
-  focus = :focus
+  action_team_focus = :action_team_focus
 
 WHERE
   id = :id`, activist)
