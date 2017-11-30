@@ -126,6 +126,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/update_event/{event_id:[0-9]+}", alice.New(main.authMiddleware).ThenFunc(main.UpdateEventHandler))
 	router.Handle("/list_events", alice.New(main.authMiddleware).ThenFunc(main.ListEventsHandler))
 	router.Handle("/list_activists", alice.New(main.authMiddleware).ThenFunc(main.ListActivistsHandler))
+	router.Handle("/list_activists_pool", alice.New(main.authMiddleware).ThenFunc(main.ListActivistsPoolHandler))
 	router.Handle("/leaderboard", alice.New(main.authMiddleware).ThenFunc(main.LeaderboardHandler))
 	router.Handle("/power", alice.New(main.authMiddleware).ThenFunc(main.PowerHandler)) // TODO: rename
 	router.Handle("/list_working_groups", alice.New(main.authMiddleware).ThenFunc(main.ListWorkingGroupsHandler))
@@ -324,6 +325,10 @@ func (c MainController) ListEventsHandler(w http.ResponseWriter, r *http.Request
 
 func (c MainController) ListActivistsHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, "activist_list", PageData{PageName: "ActivistList", IsAdmin: getUserFromContext(r.Context()).Admin})
+}
+
+func (c MainController) ListActivistsPoolHandler(w http.ResponseWriter, r *http.Request) {
+	renderPage(w, "activist_pool", PageData{PageName: "ActivistPool", IsAdmin: getUserFromContext(r.Context()).Admin})
 }
 
 func (c MainController) ListWorkingGroupsHandler(w http.ResponseWriter, r *http.Request) {
