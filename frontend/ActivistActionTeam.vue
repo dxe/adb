@@ -317,9 +317,9 @@ const allColumns = [
     colWidths: 125,
     type: 'dropdown',
     source: [
+      "",
       "Yes",
       "No",
-      "",
     ],
   },
   enabled: false,
@@ -340,9 +340,9 @@ const allColumns = [
     type: 'dropdown',
     colWidths: 125,
     source: [
+      "",
       "Yes",
       "No",
-      "",
     ],
   },
   enabled: false,
@@ -353,6 +353,7 @@ const allColumns = [
     colWidths: 160,
     type: 'dropdown',
     source: [
+      "",
       "Direct Action",
       "Community",
       "Development",
