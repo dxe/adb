@@ -326,6 +326,7 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			Escalation:              a.Escalation,
 			Interested:              a.Interested,
 			MeetingDate:             a.MeetingDate,
+			ActionTeamFocus:		 a.ActionTeamFocus,
 		})
 	}
 
@@ -663,7 +664,7 @@ SET
   escalation = :escalation,
   interested = :interested,
   meeting_date = :meeting_date,
-  action_team_focus = :action_team_focus
+  action_team_focus = :focus
 
 WHERE
   id = :id`, activist)
@@ -901,6 +902,7 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			Escalation:              strings.TrimSpace(activistJSON.Escalation),
 			Interested:              strings.TrimSpace(activistJSON.Interested),
 			MeetingDate:             strings.TrimSpace(activistJSON.MeetingDate),
+			ActionTeamFocus:         strings.TrimSpace(activistJSON.ActionTeamFocus),
 		},
 	}
 
