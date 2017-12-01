@@ -664,7 +664,7 @@ SET
   escalation = :escalation,
   interested = :interested,
   meeting_date = :meeting_date,
-  action_team_focus = :focus
+  action_team_focus = :action_team_focus
 
 WHERE
   id = :id`, activist)
