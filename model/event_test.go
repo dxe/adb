@@ -256,3 +256,25 @@ func TestDeleteEvents(t *testing.T) {
 
 	require.Len(t, attendees, 0)
 }
+
+func TestCleanEventAttendanceData(t *testing.T) {
+	db := newTestDB()
+	defer db.Close()
+
+	testAttendees := []string{"New Person", "Another person", "A third person"}
+
+	gotActivists, err := cleanEventAttendanceData(db, testAttendees)
+	require.NoError(t, err)
+
+	gotActivistNames := map[string]struct{}{}
+	for _, a := range gotActivists {
+		gotActivistNames[a.Name] = struct{}{}
+	}
+
+	wantActivistNames := map[string]struct{}{
+		"New Person":     struct{}{},
+		"Another Person": struct{}{},
+		"A Third Person": struct{}{},
+	}
+	require.Equal(t, gotActivistNames, wantActivistNames)
+}

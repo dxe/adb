@@ -426,7 +426,8 @@ func cleanEventAttendanceData(db *sqlx.DB, attendees []string) ([]Activist, erro
 		if err := checkForDangerousChars(attendee); err != nil {
 			return []Activist{}, err
 		}
-		activist, err := GetOrCreateActivist(db, strings.TrimSpace(attendee))
+		cleanAttendee := strings.Title(strings.TrimSpace(attendee))
+		activist, err := GetOrCreateActivist(db, cleanAttendee)
 		if err != nil {
 			return []Activist{}, err
 		}
