@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS activists (
   source VARCHAR(255) NOT NULL DEFAULT '',
   interview_organizer VARCHAR(20) NOT NULL DEFAULT '',
   interview_senior_organizer VARCHAR(20) NOT NULL DEFAULT '',
-  focus VARCHAR(40) NOT NULL DEFAULT '',
+  action_team_focus VARCHAR(40) NOT NULL DEFAULT '',
 
   CONSTRAINT name_ukey UNIQUE (name)
 )`)

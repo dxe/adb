@@ -62,10 +62,10 @@ SELECT
 
   eFirst.date as first_event,
   eLast.date as last_event,
-  concat(eFirst.date, " ", eFirst.name) AS first_event_name,
-  concat(eLast.date, " ", eLast.name) AS last_event_name,
+  IFNULL(concat(eFirst.date, " ", eFirst.name), "") AS first_event_name,
+  IFNULL(concat(eLast.date, " ", eLast.name), "") AS last_event_name,
   COUNT(e.id) as total_events,
-  ifnull((Community + Outreach + WorkingGroup + Sanctuary + Protest + KeyEvent),0) as total_points
+  IFNULL((Community + Outreach + WorkingGroup + Sanctuary + Protest + KeyEvent),0) as total_points
 FROM activists a
 
 LEFT JOIN event_attendance ea
@@ -73,7 +73,7 @@ LEFT JOIN event_attendance ea
 
 LEFT JOIN events e
   ON ea.event_id = e.id
-  
+
 left join (
     select a.id, max(ea.event_id) as LastEventID
     from event_attendance ea
@@ -92,7 +92,6 @@ left join events eFirst on eFirst.id = FirstEvent.FirstEventID
 
 left join events eLast on eLast.id = LastEvent.LastEventID
 
-  
 LEFT JOIN (
     select activist_id,
     ifnull(sum(Community),0) as Community,
@@ -137,13 +136,13 @@ type Activist struct {
 }
 
 type ActivistEventData struct {
-	FirstEvent  *time.Time `db:"first_event"`
-	LastEvent   *time.Time `db:"last_event"`
-	FirstEventName  string `db:"first_event_name"`
-	LastEventName  string `db:"last_event_name"`
-	TotalEvents int        `db:"total_events"`
-	TotalPoints int        `db:"total_points"`
-	Status      string
+	FirstEvent     *time.Time `db:"first_event"`
+	LastEvent      *time.Time `db:"last_event"`
+	FirstEventName string     `db:"first_event_name"`
+	LastEventName  string     `db:"last_event_name"`
+	TotalEvents    int        `db:"total_events"`
+	TotalPoints    int        `db:"total_points"`
+	Status         string
 }
 
 type ActivistMembershipData struct {
@@ -156,17 +155,17 @@ type ActivistMembershipData struct {
 }
 
 type ActivistConnectionData struct {
-	Connector               string `db:"connector"`
-	ContactedDate           string `db:"contacted_date"`
-	CoreTraining            bool   `db:"core_training"`
-	EligibleSeniorOrganizer bool   `db:"eligible_senior_organizer"`
-	EligibleOrganizer 		bool   `db:"eligible_organizer"`
-	InterviewOrganizer 			string   `db:"interview_organizer"`
-	InterviewSeniorOrganizer 	string   `db:"interview_senior_organizer"`
-	Escalation              string `db:"escalation"`
-	Interested              string `db:"interested"`
-	MeetingDate             string `db:"meeting_date"`
-	ActionTeamFocus             string 	`db:"action_team_focus"`
+	Connector                string `db:"connector"`
+	ContactedDate            string `db:"contacted_date"`
+	CoreTraining             bool   `db:"core_training"`
+	EligibleSeniorOrganizer  bool   `db:"eligible_senior_organizer"`
+	EligibleOrganizer        bool   `db:"eligible_organizer"`
+	InterviewOrganizer       string `db:"interview_organizer"`
+	InterviewSeniorOrganizer string `db:"interview_senior_organizer"`
+	Escalation               string `db:"escalation"`
+	Interested               string `db:"interested"`
+	MeetingDate              string `db:"meeting_date"`
+	ActionTeamFocus          string `db:"action_team_focus"`
 }
 
 type ActivistExtra struct {
@@ -185,13 +184,13 @@ type ActivistJSON struct {
 	Name     string `json:"name"`
 	Phone    string `json:"phone"`
 
-	FirstEvent  string `json:"first_event"`
-	LastEvent   string `json:"last_event"`
-	FirstEventName  string `json:"first_event_name"`
-	LastEventName   string `json:"last_event_name"`
-	TotalEvents int    `json:"total_events"`
-	TotalPoints int    `json:"total_points"`
-	Status      string `json:"status"`
+	FirstEvent     string `json:"first_event"`
+	LastEvent      string `json:"last_event"`
+	FirstEventName string `json:"first_event_name"`
+	LastEventName  string `json:"last_event_name"`
+	TotalEvents    int    `json:"total_events"`
+	TotalPoints    int    `json:"total_points"`
+	Status         string `json:"status"`
 
 	ActivistLevel          string `json:"activist_level"`
 	CoreStaff              bool   `json:"core_staff"`
@@ -200,17 +199,17 @@ type ActivistJSON struct {
 	LiberationPledge       bool   `json:"liberation_pledge"`
 	Source                 string `json:"source"`
 
-	Connector               string `json:"connector"`
-	ContactedDate           string `json:"contacted_date"`
-	CoreTraining            bool   `json:"core_training"`
-	EligibleSeniorOrganizer bool   `json:"eligible_senior_organizer"`
-	EligibleOrganizer 		bool   `json:"eligible_organizer"`
-	InterviewOrganizer 			string   `json:"interview_organizer"`
-	InterviewSeniorOrganizer 	string   `json:"interview_senior_organizer"`
-	Escalation              string `json:"escalation"`
-	Interested              string `json:"interested"`
-	MeetingDate             string `json:"meeting_date"`
-	ActionTeamFocus             string 	`json:"action_team_focus"`
+	Connector                string `json:"connector"`
+	ContactedDate            string `json:"contacted_date"`
+	CoreTraining             bool   `json:"core_training"`
+	EligibleSeniorOrganizer  bool   `json:"eligible_senior_organizer"`
+	EligibleOrganizer        bool   `json:"eligible_organizer"`
+	InterviewOrganizer       string `json:"interview_organizer"`
+	InterviewSeniorOrganizer string `json:"interview_senior_organizer"`
+	Escalation               string `json:"escalation"`
+	Interested               string `json:"interested"`
+	MeetingDate              string `json:"meeting_date"`
+	ActionTeamFocus          string `json:"action_team_focus"`
 }
 
 type GetActivistOptions struct {
@@ -223,8 +222,8 @@ type GetActivistOptions struct {
 }
 
 var validOrderFields = map[string]struct{}{
-	"a.name":     struct{}{},
-	"last_event": struct{}{},
+	"a.name":       struct{}{},
+	"last_event":   struct{}{},
 	"total_points": struct{}{},
 }
 
@@ -301,13 +300,13 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			Name:     a.Name,
 			Phone:    a.Phone,
 
-			FirstEvent:  firstEvent,
-			LastEvent:   lastEvent,
+			FirstEvent:     firstEvent,
+			LastEvent:      lastEvent,
 			FirstEventName: a.FirstEventName,
-			LastEventName: a.LastEventName,
-			Status:      a.Status,
-			TotalEvents: a.TotalEvents,
-			TotalPoints: a.TotalPoints,
+			LastEventName:  a.LastEventName,
+			Status:         a.Status,
+			TotalEvents:    a.TotalEvents,
+			TotalPoints:    a.TotalPoints,
 
 			ActivistLevel:          a.ActivistLevel,
 			CoreStaff:              a.CoreStaff,
@@ -316,17 +315,17 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			LiberationPledge:       a.LiberationPledge,
 			Source:                 a.Source,
 
-			Connector:               a.Connector,
-			ContactedDate:           a.ContactedDate,
-			CoreTraining:            a.CoreTraining,
-			EligibleSeniorOrganizer: a.EligibleSeniorOrganizer,
-			EligibleOrganizer: 		 a.EligibleOrganizer,
-			InterviewOrganizer: 	 a.InterviewOrganizer,
+			Connector:                a.Connector,
+			ContactedDate:            a.ContactedDate,
+			CoreTraining:             a.CoreTraining,
+			EligibleSeniorOrganizer:  a.EligibleSeniorOrganizer,
+			EligibleOrganizer:        a.EligibleOrganizer,
+			InterviewOrganizer:       a.InterviewOrganizer,
 			InterviewSeniorOrganizer: a.InterviewSeniorOrganizer,
-			Escalation:              a.Escalation,
-			Interested:              a.Interested,
-			MeetingDate:             a.MeetingDate,
-			ActionTeamFocus:		 a.ActionTeamFocus,
+			Escalation:               a.Escalation,
+			Interested:               a.Interested,
+			MeetingDate:              a.MeetingDate,
+			ActionTeamFocus:          a.ActionTeamFocus,
 		})
 	}
 
@@ -892,17 +891,17 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			Source:                 strings.TrimSpace(activistJSON.Source),
 		},
 		ActivistConnectionData: ActivistConnectionData{
-			Connector:               strings.TrimSpace(activistJSON.Connector),
-			ContactedDate:           strings.TrimSpace(activistJSON.ContactedDate),
-			CoreTraining:            activistJSON.CoreTraining,
-			EligibleSeniorOrganizer: activistJSON.EligibleSeniorOrganizer,
-			EligibleOrganizer: 		 activistJSON.EligibleOrganizer,
-			InterviewOrganizer:		 activistJSON.InterviewOrganizer,
+			Connector:                strings.TrimSpace(activistJSON.Connector),
+			ContactedDate:            strings.TrimSpace(activistJSON.ContactedDate),
+			CoreTraining:             activistJSON.CoreTraining,
+			EligibleSeniorOrganizer:  activistJSON.EligibleSeniorOrganizer,
+			EligibleOrganizer:        activistJSON.EligibleOrganizer,
+			InterviewOrganizer:       activistJSON.InterviewOrganizer,
 			InterviewSeniorOrganizer: activistJSON.InterviewSeniorOrganizer,
-			Escalation:              strings.TrimSpace(activistJSON.Escalation),
-			Interested:              strings.TrimSpace(activistJSON.Interested),
-			MeetingDate:             strings.TrimSpace(activistJSON.MeetingDate),
-			ActionTeamFocus:         strings.TrimSpace(activistJSON.ActionTeamFocus),
+			Escalation:               strings.TrimSpace(activistJSON.Escalation),
+			Interested:               strings.TrimSpace(activistJSON.Interested),
+			MeetingDate:              strings.TrimSpace(activistJSON.MeetingDate),
+			ActionTeamFocus:          strings.TrimSpace(activistJSON.ActionTeamFocus),
 		},
 	}
 
@@ -915,11 +914,11 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 }
 
 var validActivistLevels = map[string]struct{}{
-	"Community Member":  	struct{}{},
-	"Action Team":   		struct{}{},
-	"Organizer":        	struct{}{},
-	"Senior Organizer":     struct{}{},
-	"Hiatus":         		struct{}{},
+	"Community Member": struct{}{},
+	"Action Team":      struct{}{},
+	"Organizer":        struct{}{},
+	"Senior Organizer": struct{}{},
+	"Hiatus":           struct{}{},
 }
 
 func validateActivist(a ActivistExtra) error {

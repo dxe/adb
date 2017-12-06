@@ -175,7 +175,7 @@ function countAttendees(currentInput) {
 }
 
 // creates new event in ADB
-export function newEvent(event) {
+export function newEvent() {
   var eventName = document.getElementById('eventName').value;
   if (eventName === "") {
     flashMessage("Error: Please enter event name!", true);
