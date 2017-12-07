@@ -325,20 +325,53 @@ func (c MainController) ListEventsHandler(w http.ResponseWriter, r *http.Request
 	renderPage(w, "event_list", PageData{PageName: "EventList", IsAdmin: getUserFromContext(r.Context()).Admin})
 }
 
+type ActivistListData struct {
+	Title string
+	View  string
+}
+
 func (c MainController) ListActivistsHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "activist_list", PageData{PageName: "ActivistList", IsAdmin: getUserFromContext(r.Context()).Admin})
+	renderPage(w, "activist_list", PageData{
+		PageName: "ActivistList",
+		IsAdmin:  getUserFromContext(r.Context()).Admin,
+		Data: ActivistListData{
+			Title: "All Activists",
+			View:  "all_activists",
+		},
+	})
 }
 
 func (c MainController) ListActivistsPoolHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "activist_pool", PageData{PageName: "ActivistPool", IsAdmin: getUserFromContext(r.Context()).Admin})
+	renderPage(w, "activist_list", PageData{
+		PageName: "ActivistPool",
+		IsAdmin:  getUserFromContext(r.Context()).Admin,
+		Data: ActivistListData{
+			Title: "Activist Pool",
+			View:  "activist_pool",
+		},
+	})
 }
 
 func (c MainController) ListActivistsRecruitmentHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "activist_recruitment", PageData{PageName: "ActivistRecruitment", IsAdmin: getUserFromContext(r.Context()).Admin})
+	renderPage(w, "activist_list", PageData{
+		PageName: "ActivistRecruitment",
+		IsAdmin:  getUserFromContext(r.Context()).Admin,
+		Data: ActivistListData{
+			Title: "Activist Recruitment",
+			View:  "activist_recruitment",
+		},
+	})
 }
 
 func (c MainController) ListActivistsActionTeamHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "activist_actionteam", PageData{PageName: "ActivistActionTeam", IsAdmin: getUserFromContext(r.Context()).Admin})
+	renderPage(w, "activist_list", PageData{
+		PageName: "ActivistActionTeam",
+		IsAdmin:  getUserFromContext(r.Context()).Admin,
+		Data: ActivistListData{
+			Title: "Action Team",
+			View:  "action_team",
+		},
+	})
 }
 
 func (c MainController) ListWorkingGroupsHandler(w http.ResponseWriter, r *http.Request) {
@@ -346,7 +379,14 @@ func (c MainController) ListWorkingGroupsHandler(w http.ResponseWriter, r *http.
 }
 
 func (c MainController) LeaderboardHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "leaderboard", PageData{PageName: "Leaderboard", IsAdmin: getUserFromContext(r.Context()).Admin})
+	renderPage(w, "activist_list", PageData{
+		PageName: "Leaderboard",
+		IsAdmin:  getUserFromContext(r.Context()).Admin,
+		Data: ActivistListData{
+			Title: "Leaderboard",
+			View:  "leaderboard",
+		},
+	})
 }
 
 func (c MainController) ListUsersHandler(w http.ResponseWriter, r *http.Request) {

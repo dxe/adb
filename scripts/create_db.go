@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"time"
 	"strings"
+	"time"
 
 	"github.com/dxe/adb/config"
 	"github.com/dxe/adb/model"
@@ -61,20 +61,20 @@ func createDevDB(name string) {
 INSERT INTO activists
   (id, name, email, chapter, phone, location, facebook, activist_level, exclude_from_leaderboard, core_staff, global_team_member, liberation_pledge)
   VALUES
-  (1, 'Adam Kol', 'test@directactioneverywhere.com', 'Sf Bay', '7035558484', 'Berkeley, United States', '', 'activist', 0, 0, 1, 1),
-  (2, 'Robin Houseman', 'testtest@gmail.com', 'SF Bay', '7035558484', 'United States','', 'activist', 0, 0, 0, 0),
-  (3, 'aaa', 'test@comcast.net', 'SF Bay', '7035558484', 'Fairfield, United States', '', 'activist', 0, 0, 0, 0),
-  (4, 'bbb', 'test@comcast.net', 'SF Bay', '7035558484', 'Fairfield, United States', '', 'activist', 0, 0, 0, 0),
-  (5, 'ccc', 'test@comcast.net', 'SF Bay', '7035558484', 'Fairfield, United States', '', 'activist', 0, 0, 0, 0),
-  (100, 'ddd', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 'activist', 0, 0, 0, 0),
-(101, 'eee', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 'activist', 0, 0, 0, 0),
-(102, 'fff', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 'activist', 0, 0, 0, 0),
-(103, 'ggg', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 'activist', 0, 0, 0, 0),
-(104, 'hhh', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 'activist', 0, 0, 0, 0),
-(105, 'iii', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 'activist', 0, 0, 0, 0),
-(106, 'jjj', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 'activist', 0, 0, 0, 0),
-(107, 'lll', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 'activist', 0, 0, 0, 0),
-  (108, 'mmm', 'test@gmail.com', 'SF Bay', '', 'United States', '', 'activist', 0, 0, 0, 0);
+  (1, 'Adam Kol', 'test@directactioneverywhere.com', 'Sf Bay', '7035558484', 'Berkeley, United States', '', 'Community Member', 0, 0, 1, 1),
+  (2, 'Robin Houseman', 'testtest@gmail.com', 'SF Bay', '7035558484', 'United States','', 'Community Member', 0, 0, 0, 0),
+  (3, 'aaa', 'test@comcast.net', 'SF Bay', '7035558484', 'Fairfield, United States', '', 'Community Member', 0, 0, 0, 0),
+  (4, 'bbb', 'test@comcast.net', 'SF Bay', '7035558484', 'Fairfield, United States', '', 'Community Member', 0, 0, 0, 0),
+  (5, 'ccc', 'test@comcast.net', 'SF Bay', '7035558484', 'Fairfield, United States', '', 'Community Member', 0, 0, 0, 0),
+  (100, 'ddd', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 'Community Member', 0, 0, 0, 0),
+(101, 'eee', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 'Community Member', 0, 0, 0, 0),
+(102, 'fff', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 'Community Member', 0, 0, 0, 0),
+(103, 'ggg', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 'Community Member', 0, 0, 0, 0),
+(104, 'hhh', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 'Community Member', 0, 0, 0, 0),
+(105, 'iii', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 'Community Member', 0, 0, 0, 0),
+(106, 'jjj', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 'Community Member', 0, 0, 0, 0),
+(107, 'lll', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 'Community Member', 0, 0, 0, 0),
+  (108, 'mmm', 'test@gmail.com', 'SF Bay', '', 'United States', '', 'Community Member', 0, 0, 0, 0);
 
 INSERT INTO events VALUES
   %s

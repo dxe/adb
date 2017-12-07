@@ -2,12 +2,12 @@
 
 <div class="body-wrapper-extra-wide activist-list-content">
   <div class="title">
-    <h1>All Activists</h1>
+    <h1>{{ .Data.Title }}</h1>
     <br />
   </div>
   <div id="app" class="main"></div>
   <script src="/dist/activist_list.js?{{ .StaticResourcesHash }}"></script>
-  <script>activist_list.initializeApp()</script>
+  <script>activist_list.initializeApp({{ .Data.View }})</script>
 </div>
 
 </body>

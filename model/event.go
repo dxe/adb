@@ -435,5 +435,4 @@ func cleanEventAttendanceData(db *sqlx.DB, attendees []string) ([]Activist, erro
 	}
 
 	return activists, nil
-
 }

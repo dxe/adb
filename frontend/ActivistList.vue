@@ -50,6 +50,9 @@
           <div class="modal-body">
             <ul class="activist-options-body">
               <li>
+                <a @click="showModal('connection-modal', currentActivist, activistIndex)">Add Maintenance Connection</a>
+              </li>
+              <li>
                 <a @click="showModal('merge-activist-modal', currentActivist, activistIndex)">Merge Activist</a>
               </li>
               <li>
@@ -119,6 +122,32 @@
         </div>
       </div>
     </modal>
+    <modal
+       name="connection-modal"
+       :height="400"
+       classes="no-background-color"
+       @opened="modalOpened"
+       @closed="modalClosed"
+       >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 class="modal-title">Add maintenance connection</h2>
+          </div>
+          <div class="modal-body">
+            <p><b>WARNING: This feature is not yet available!</b></p>
+            <br />
+            <p>Activist ID: {{currentActivist.id}}</p>
+            <p>Activist Name: {{currentActivist.name}}</p>
+            <p>Connector: {{currentActivist.connector}}</p>
+            <p>Date: <input id="connection-date" type="date"></p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="hideModal">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </modal>
   </div>
 </template>
 
@@ -135,249 +164,255 @@ import debounce from 'debounce';
 
 Vue.use(vmodal);
 
-const allColumns = [
-{
-  header: '',
-  data: {
-    renderer: optionsButtonRenderer,
-    readOnly: true,
-    disableVisualSelection: true,
-    colWidths: 35,
-  },
-  enabled: true,
-},
-// Standard activist fields
-{
-  header: 'Name',
-  data: {
-    data: 'name',
-  },
-  enabled: true,
-}, {
-  header: 'Email',
-  data: {
-    data: 'email',
-    colWidths: 300,
-  },
-  enabled: true,
-}, {
-  header: 'Chapter',
-  data: {
-    data: 'chapter',
-  },
-  enabled: false,
-}, {
-  header: 'Phone',
-  data: {
-    data: 'phone',
-    colWidths: 120,
-  },
-  enabled: false,
-}, {
-  header: 'Location',
-  data: {
-    data: 'location',
-  },
-  enabled: true,
-}, {
-  header: 'Facebook',
-  data: {
-    data: 'facebook',
-  },
-  enabled: true,
-},
+function getDefaultColumns(view) {
+  return [
+    {
+      header: '',
+      data: {
+        renderer: optionsButtonRenderer,
+        readOnly: true,
+        disableVisualSelection: true,
+        colWidths: 35,
+      },
+      enabled: true,
+    },
+    // Standard activist fields
+    {
+      header: 'Name',
+      data: {
+        data: 'name',
+      },
+      enabled: true,
+    }, {
+      header: "Points",
+      data: {
+        type: "numeric",
+        data: "total_points",
+        readOnly: true,
+        colWidths: 100,
+      },
+      enabled: (view === "leaderboard" || view === "action_team"),
+    }, {
+      header: "Connector",
+      data: {
+        data: "connector",
+        colWidths: 125,
+      },
+      enabled: (view === "activist_recruitment" || view === "action_team"),
+    }, {
+      header: "Recruitment Connection Date",
+      data: {
+        data: "meeting_date",
+        type: 'date',
+        dateFormat: 'YYYY-MM-DD',
+        correctFormat: true,
+        colWidths: 180,
+      },
+      enabled: view === "activist_recruitment",
+    }, {
+      header: "Action Team Eligible",
+      data: {
+        data: "escalation",
+        type: 'dropdown',
+        colWidths: 125,
+        source: [
+          "",
+          "Yes",
+          "No",
+        ],
+      },
+      enabled: view === "activist_recruitment",
+    }, {
+      header: 'Email',
+      data: {
+        data: 'email',
+        colWidths: 300,
+      },
+      enabled: (view === "all_activists" ||
+                view === "activist_pool" ||
+                view === "activist_recruitment"),
+    }, {
+      header: 'Chapter',
+      data: {
+        data: 'chapter',
+      },
+      enabled: false,
+    }, {
+      header: 'Phone',
+      data: {
+        data: 'phone',
+        colWidths: 120,
+      },
+      enabled: false,
+    }, {
+      header: 'Location',
+      data: {
+        data: 'location',
+      },
+      enabled: (view === "all_activists" || view === "activist_pool"),
+    }, {
+      header: 'Facebook',
+      data: {
+        data: 'facebook',
+      },
+      enabled: (view === "all_activists" || view === "activist_recruitment" || view === "activist_pool"),
+    },
 
-// ActivistMembershipData
-{
-  header: 'Activist Level',
-  data: {
-    data: 'activist_level',
-    readOnly: true,
-    colWidths: 160,
-    type: 'dropdown',
-    source: [
-      "Community Member",
-      "Action Team",
-      "Organizer",
-      "Senior Organizer",
-      "Hiatus",
-    ],
-  },
-  enabled: true,
-}, {
-  header: 'Liberation Pledge',
-  data: {
-    type: 'checkbox',
-    data: 'liberation_pledge',
-    colWidths: 120,
-  },
-  enabled: false,
-}, {
-  header: "Source",
-  data: {
-    data: "source",
-    colWidths: 75,
-  },
-  enabled: false,
-},
+    // ActivistMembershipData
+    {
+      header: 'Activist Level',
+      data: {
+        data: 'activist_level',
+        readOnly: true,
+        colWidths: 160,
+        type: 'dropdown',
+        source: [
+          "Community Member",
+          "Action Team",
+          "Organizer",
+          "Senior Organizer",
+          "Hiatus",
+        ],
+      },
+      enabled: (view === "all_activists" || view === "leaderboard" || view === "action_team"),
+    }, {
+      header: 'Liberation Pledge',
+      data: {
+        type: 'checkbox',
+        data: 'liberation_pledge',
+        colWidths: 120,
+      },
+      enabled: false,
+    }, {
+      header: "Contacted Date",
+      data: {
+        data: "contacted_date",
+        type: 'date',
+        dateFormat: 'YYYY-MM-DD',
+        correctFormat: true,
+        colWidths: 125,
+      },
+      enabled: view === "activist_pool",
+    }, {
+      header: "Interested",
+      data: {
+        data: "interested",
+        colWidths: 125,
+        type: 'dropdown',
+        source: [
+          "",
+          "Yes",
+          "No",
+        ],
+      },
+      enabled: view === "activist_pool",
+    }, {
+      header: "Source",
+      data: {
+        data: "source",
+        colWidths: 75,
+      },
+      enabled: false,
+    },
 
-{
-  header: 'First Event',
-  data: {
-    data: 'first_event_name',
-    readOnly: true,
-    colWidths: 200,
-  },
-  enabled: true,
-}, {
-  header: 'Last Event',
-  data: {
-    data: 'last_event_name',
-    readOnly: true,
-    colWidths: 200,
-  },
-  enabled: true,
-}, {
-  header: "Total Events",
-  data: {
-    type: "numeric",
-    data: "total_events",
-    readOnly: true,
-    colWidths: 100,
-  },
-}, {
-  header: "Points",
-  data: {
-    type: "numeric",
-    data: "total_points",
-    readOnly: true,
-    colWidths: 100,
-  },
-}, {
-  header: 'Status',
-  data: {
-    data: 'status',
-    readOnly: true,
-    colWidths: 125,
-  },
-  enabled: false,
-},
+    {
+      header: 'First Event',
+      data: {
+        data: 'first_event_name',
+        readOnly: true,
+        colWidths: 200,
+      },
+      enabled: view !== "action_team",
+    }, {
+      header: 'Last Event',
+      data: {
+        data: 'last_event_name',
+        readOnly: true,
+        colWidths: 200,
+      },
+      enabled: view !== "action_team",
+    }, {
+      header: "Total Events",
+      data: {
+        type: "numeric",
+        data: "total_events",
+        readOnly: true,
+        colWidths: 100,
+      },
+      enabled: false,
+    }, {
+      header: 'Status',
+      data: {
+        data: 'status',
+        readOnly: true,
+        colWidths: 125,
+      },
+      enabled: false,
+    },
 
-{
-  header: "Connector",
-  data: {
-    data: "connector",
-    colWidths: 125,
-  },
-  enabled: false,
-}, {
-  header: "Contacted Date",
-  data: {
-    data: "contacted_date",
-    type: 'date',
-    dateFormat: 'YYYY-MM-DD',
-    correctFormat: true,
-    colWidths: 125,
-  },
-  enabled: false,
-}, {
-  header: "Interested",
-  data: {
-    data: "interested",
-    colWidths: 125,
-    type: 'dropdown',
-    source: [
-      "",
-      "Yes",
-      "No",
-    ],
-  },
-  enabled: false,
-}, {
-  header: "Recruitment Connection Date",
-  data: {
-    data: "meeting_date",
-    type: 'date',
-    dateFormat: 'YYYY-MM-DD',
-    correctFormat: true,
-    colWidths: 180,
-  },
-  enabled: false,
-}, {
-  header: "Action Team Eligible",
-  data: {
-    data: "escalation",
-    type: 'dropdown',
-    colWidths: 125,
-    source: [
-      "",
-      "Yes",
-      "No",
-    ],
-  },
-  enabled: false,
-}, {
-  header: "Focus",
-  data: {
-    data: "action_team_focus",
-    colWidths: 160,
-    type: 'dropdown',
-    source: [
-      "",
-      "Direct Action",
-      "Community",
-      "Development",
-      "Finance",
-      "Communications",
-    ],
-  },
-  enabled: false,
-}, {
-  header: "Core Training",
-  data: {
-    type: "checkbox",
-    data: "core_training",
-    colWidths: 125,
-  },
-  enabled: false,
-}, {
-  header: "Organizer Interview Date",
-  data: {
-    data: "interview_organizer",
-    type: 'date',
-    dateFormat: 'YYYY-MM-DD',
-    correctFormat: true,
-    colWidths: 180,
-  },
-  enabled: false,
-}, {
-  header: "Organizer Eligible",
-  data: {
-    type: "checkbox",
-    data: "eligible_organizer",
-    colWidths: 135,
-  },
-  enabled: false,
-}, {
-  header: "Senior Organizer Interview Date",
-  data: {
-    data: "interview_senior_organizer",
-    type: 'date',
-    dateFormat: 'YYYY-MM-DD',
-    correctFormat: true,
-    colWidths: 180,
-  },
-  enabled: false,
-}, {
-  header: "Senior Organizer Eligible",
-  data: {
-    type: "checkbox",
-    data: "eligible_senior_organizer",
-    colWidths: 170,
-  },
-  enabled: false,
+    {
+      header: "Focus",
+      data: {
+        data: "action_team_focus",
+        colWidths: 160,
+        type: 'dropdown',
+        source: [
+          "",
+          "Direct Action",
+          "Community",
+          "Development",
+          "Finance",
+          "Communications",
+        ],
+      },
+      enabled: view === "action_team",
+    }, {
+      header: "Core Training",
+      data: {
+        type: "checkbox",
+        data: "core_training",
+        colWidths: 125,
+      },
+      enabled: view === "action_team",
+    }, {
+      header: "Organizer Interview Date",
+      data: {
+        data: "interview_organizer",
+        type: 'date',
+        dateFormat: 'YYYY-MM-DD',
+        correctFormat: true,
+        colWidths: 180,
+      },
+      enabled: view === "action_team",
+    }, {
+      header: "Organizer Eligible",
+      data: {
+        type: "checkbox",
+        data: "eligible_organizer",
+        colWidths: 135,
+      },
+      enabled: view === "action_team",
+    }, {
+      header: "Senior Organizer Interview Date",
+      data: {
+        data: "interview_senior_organizer",
+        type: 'date',
+        dateFormat: 'YYYY-MM-DD',
+        correctFormat: true,
+        colWidths: 180,
+      },
+      enabled: view === "action_team",
+    }, {
+      header: "Senior Organizer Eligible",
+      data: {
+        type: "checkbox",
+        data: "eligible_senior_organizer",
+        colWidths: 170,
+      },
+      enabled: view === "action_team",
+    }
+  ];
 }
-];
 
 // Constants related to list ordering
 // Corresponds to the constants DescOrder and AscOrder in model/activist.go
@@ -514,6 +549,24 @@ function generateDateSortFn(field, ascending) {
 
 export default {
   name: 'activist-list',
+  props: {
+    // `view` is the default view to show. It can be one of:
+    // "all_activists", "leaderboard", "activist_pool",
+    // "activist_recruitment", or "action_team"
+    view: {
+      type: String,
+      validator: function(value) {
+        var validViews = [
+          "all_activists",
+          "leaderboard",
+          "activist_pool",
+          "activist_recruitment",
+          "action_team",
+        ];
+        return validViews.indexOf(value) !== -1;
+      }
+    }
+  },
   methods: {
     showOptionsModal: function(row) {
       var activist = this.activists[row];
@@ -676,9 +729,30 @@ export default {
 
           // status === "success"
           var activistList = parsed.activist_list;
+
+          // filtering
+          if (this.view === "activist_pool" ||
+              this.view === "activist_recruitment" ||
+              this.view === "action_team") {
+            var activistListFiltered;
+            activistListFiltered = activistList.filter((el) => {
+              if (this.view === "activist_pool") {
+                return el.interested === "";
+              } else if (this.view === "activist_recruitment") {
+                return el.interested === "Yes" && el.escalation === "";
+              } else if (this.view === "action_team") {
+                return el.escalation == "Yes";
+              } else {
+                return true; // unreachable
+              }
+            });
+            activistList = activistListFiltered;
+          }
+
           if (activistList !== null) {
             this.allActivists = activistList;
           }
+
         },
         error: () => {
           console.warn(err.responseText);
@@ -732,9 +806,11 @@ export default {
       this.height = window.innerHeight - y;
     },
     listActivistsParameters: function() {
+      var order_field = "last_event";
       return {
         order: DescOrder,
-        order_field: "last_event",
+        order_field: (this.view === "leaderboard" || this.view === "action_team") ?
+          "total_points" : "last_event",
         last_event_date_to: this.lastEventDateTo,
         last_event_date_from: this.lastEventDateFrom
       };
@@ -816,7 +892,7 @@ export default {
       disableConfirmButton: false,
       allActivists: [],
       height: 500,
-      columns: allColumns,
+      columns: getDefaultColumns(this.view),
       lastEventDateFrom: initialDateFromValue(),
       lastEventDateTo: initialDateToValue(),
       showOptions: '',
@@ -838,7 +914,7 @@ export default {
       return {
         columns: columns,
         colHeaders: columnHeaders,
-        //rowHeaders: true, // enable this for leaderboard numbering + disable sorting?
+        rowHeaders: this.view === "leaderboard",
         disableVisualSelection: 'area',
         multiSelect: false,
         fillHandle: false,

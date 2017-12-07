@@ -7,12 +7,8 @@ module.exports = {
   // need to also add it here.
   entry: {
     activist_list: 'activist_list',
-    activist_pool: 'activist_pool',
-    activist_recruitment: 'activist_recruitment',
-    activist_actionteam: 'activist_actionteam',
     event_list: 'event_list',
     event_new: 'event_new',
-    leaderboard: 'leaderboard',
     flash_message: 'flash_message',
     working_group_list: 'working_group_list',
     user_list: 'user_list',
