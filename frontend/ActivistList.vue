@@ -193,36 +193,6 @@ function getDefaultColumns(view) {
       },
       enabled: (view === "leaderboard" || view === "action_team"),
     }, {
-      header: "Connector",
-      data: {
-        data: "connector",
-        colWidths: 125,
-      },
-      enabled: (view === "activist_recruitment" || view === "action_team"),
-    }, {
-      header: "Recruitment Connection Date",
-      data: {
-        data: "meeting_date",
-        type: 'date',
-        dateFormat: 'YYYY-MM-DD',
-        correctFormat: true,
-        colWidths: 100,
-      },
-      enabled: view === "activist_recruitment",
-    }, {
-      header: "Escalation",
-      data: {
-        data: "escalation",
-        type: 'dropdown',
-        colWidths: 100,
-        source: [
-          "",
-          "Yes",
-          "No",
-        ],
-      },
-      enabled: view === "activist_recruitment",
-    }, {
       header: 'Email',
       data: {
         data: 'email',
@@ -261,6 +231,38 @@ function getDefaultColumns(view) {
     },
 
     // ActivistMembershipData
+    {
+      header: "Connector",
+      data: {
+        data: "connector",
+        colWidths: 125,
+      },
+      enabled: (view === "activist_recruitment" || view === "action_team"),
+    }, {
+      header: "Recruitment Connection Date",
+      data: {
+        data: "meeting_date",
+        type: 'date',
+        dateFormat: 'YYYY-MM-DD',
+        correctFormat: true,
+        colWidths: 100,
+      },
+      enabled: view === "activist_recruitment",
+    }, {
+      header: "Escalation",
+      data: {
+        data: "escalation",
+        type: 'dropdown',
+        colWidths: 100,
+        source: [
+          "",
+          "Yes",
+          "No",
+        ],
+      },
+      enabled: view === "activist_recruitment",
+    },
+    
     {
       header: 'Activist Level',
       data: {
