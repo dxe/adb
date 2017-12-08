@@ -206,7 +206,7 @@ function getDefaultColumns(view) {
         type: 'date',
         dateFormat: 'YYYY-MM-DD',
         correctFormat: true,
-        colWidths: 90,
+        colWidths: 100,
       },
       enabled: view === "activist_recruitment",
     }, {
@@ -378,8 +378,8 @@ function getDefaultColumns(view) {
         data: "active",
         readOnly: true,
         colWidths: 55,
-      },
-      enabled: view === "action_team",
+      },0
+      enabled: (view === "action_team" || view === "activist_recruitment" || view === "all_activists"),
     }, {
       header: "MPI",
       data: {
@@ -388,7 +388,7 @@ function getDefaultColumns(view) {
         readOnly: true,
         colWidths: 50,
       },
-      enabled: view === "action_team",
+      enabled: (view === "action_team" || view === "activist_recruitment" || view === "all_activists" || view === "leaderboard"),
     }, {
       header: "Doing Work",
       data: {
@@ -738,6 +738,8 @@ export default {
                 return el.interested === "Yes" && el.escalation != "No" && el.activist_level == "Community Member";
               } else if (this.view === "action_team") {
                 return el.activist_level == "Action Team" || el.activist_level == "Organizer" || el.activist_level == "Senior Organizer";
+              } else if (this.view === "leaderboard") {
+                return el.active == 1;
               } else {
                 return true; // unreachable
               }
