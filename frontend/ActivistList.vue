@@ -375,7 +375,7 @@ function getDefaultColumns(view) {
       header: "Active",
       data: {
         type: "checkbox",
-        data: "core_training",
+        data: "active",
         readOnly: true,
         colWidths: 55,
       },
@@ -735,7 +735,7 @@ export default {
               if (this.view === "activist_pool") {
                 return el.interested === "";
               } else if (this.view === "activist_recruitment") {
-                return el.interested === "Yes" && el.escalation === "";
+                return el.interested === "Yes" && el.escalation != "No" && el.activist_level == "Community Member";
               } else if (this.view === "action_team") {
                 return el.activist_level == "Action Team" || el.activist_level == "Organizer" || el.activist_level == "Senior Organizer";
               } else {
