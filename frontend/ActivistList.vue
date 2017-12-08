@@ -341,7 +341,9 @@ function getDefaultColumns(view) {
         colWidths: 90,
       },
       enabled: false,
-    }, {
+    },
+
+    /*{
       header: 'Status',
       data: {
         data: 'status',
@@ -349,7 +351,7 @@ function getDefaultColumns(view) {
         colWidths: 125,
       },
       enabled: false,
-    },
+    },*/
 
     {
       header: "Focus",
@@ -375,7 +377,7 @@ function getDefaultColumns(view) {
         type: "checkbox",
         data: "core_training",
         readOnly: true,
-        colWidths: 50,
+        colWidths: 55,
       },
       enabled: view === "action_team",
     }, {
