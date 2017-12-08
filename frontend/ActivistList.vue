@@ -365,6 +365,35 @@ function getDefaultColumns(view) {
         ],
       },
       enabled: view === "action_team",
+    },
+
+    {
+      header: "Active",
+      data: {
+        type: "checkbox",
+        data: "core_training",
+        readOnly: true,
+        colWidths: 100,
+      },
+      enabled: view === "action_team",
+    }, {
+      header: "MPI",
+      data: {
+        type: "checkbox",
+        data: "mpi",
+        readOnly: true,
+        colWidths: 100,
+      },
+      enabled: view === "action_team",
+    }, {
+      header: "Doing Work",
+      data: {
+        type: "checkbox",
+        data: "doing_work",
+        readOnly: false,
+        colWidths: 100,
+      },
+      enabled: view === "action_team",
     }, {
       header: "Core Training",
       data: {
