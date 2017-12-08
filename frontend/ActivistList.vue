@@ -275,7 +275,7 @@ function getDefaultColumns(view) {
           "Senior Organizer",
         ],
       },
-      enabled: (view === "all_activists" || view === "leaderboard" || view === "action_team"),
+      enabled: (view === "all_activists" || view === "activist_recruitment" || view === "leaderboard" || view === "action_team"),
     }, {
       header: 'Liberation Pledge',
       data: {
