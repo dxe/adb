@@ -378,7 +378,7 @@ function getDefaultColumns(view) {
         data: "active",
         readOnly: true,
         colWidths: 55,
-      },0
+      },
       enabled: (view === "action_team" || view === "activist_recruitment" || view === "all_activists"),
     }, {
       header: "MPI",
