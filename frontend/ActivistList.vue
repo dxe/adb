@@ -379,7 +379,7 @@ function getDefaultColumns(view) {
         readOnly: true,
         colWidths: 55,
       },
-      enabled: (view === "action_team" || view === "activist_recruitment" || view === "all_activists"),
+      enabled: (view === "action_team" || view === "activist_pool" || view === "activist_recruitment" || view === "all_activists"),
     }, {
       header: "MPI",
       data: {
@@ -388,7 +388,7 @@ function getDefaultColumns(view) {
         readOnly: true,
         colWidths: 50,
       },
-      enabled: (view === "action_team" || view === "activist_recruitment" || view === "all_activists" || view === "leaderboard"),
+      enabled: (view === "action_team" || view === "activist_pool" || view === "activist_recruitment" || view === "all_activists" || view === "leaderboard"),
     }, {
       header: "Doing Work",
       data: {
