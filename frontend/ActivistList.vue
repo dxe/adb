@@ -266,7 +266,7 @@ function getDefaultColumns(view) {
       data: {
         data: 'activist_level',
         readOnly: false,
-        colWidths: 150,
+        colWidths: 160,
         type: 'dropdown',
         source: [
           "Community Member",
