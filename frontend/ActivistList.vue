@@ -189,7 +189,7 @@ function getDefaultColumns(view) {
         type: "numeric",
         data: "total_points",
         readOnly: true,
-        colWidths: 100,
+        colWidths: 50,
       },
       enabled: (view === "leaderboard" || view === "action_team"),
     }, {
@@ -206,7 +206,7 @@ function getDefaultColumns(view) {
         type: 'date',
         dateFormat: 'YYYY-MM-DD',
         correctFormat: true,
-        colWidths: 180,
+        colWidths: 90,
       },
       enabled: view === "activist_recruitment",
     }, {
@@ -214,7 +214,7 @@ function getDefaultColumns(view) {
       data: {
         data: "escalation",
         type: 'dropdown',
-        colWidths: 125,
+        colWidths: 100,
         source: [
           "",
           "Yes",
@@ -226,7 +226,7 @@ function getDefaultColumns(view) {
       header: 'Email',
       data: {
         data: 'email',
-        colWidths: 300,
+        colWidths: 250,
       },
       enabled: (view === "all_activists" ||
                 view === "activist_pool" ||
@@ -235,19 +235,21 @@ function getDefaultColumns(view) {
       header: 'Chapter',
       data: {
         data: 'chapter',
+        colWidths: 120,
       },
       enabled: false,
     }, {
       header: 'Phone',
       data: {
         data: 'phone',
-        colWidths: 120,
+        colWidths: 100,
       },
       enabled: false,
     }, {
       header: 'Location',
       data: {
         data: 'location',
+        colWidths: 100,
       },
       enabled: (view === "all_activists" || view === "activist_pool"),
     }, {
@@ -264,7 +266,7 @@ function getDefaultColumns(view) {
       data: {
         data: 'activist_level',
         readOnly: false,
-        colWidths: 160,
+        colWidths: 150,
         type: 'dropdown',
         source: [
           "Community Member",
@@ -289,14 +291,14 @@ function getDefaultColumns(view) {
         type: 'date',
         dateFormat: 'YYYY-MM-DD',
         correctFormat: true,
-        colWidths: 125,
+        colWidths: 100,
       },
       enabled: view === "activist_pool",
     }, {
       header: "Interested",
       data: {
         data: "interested",
-        colWidths: 125,
+        colWidths: 100,
         type: 'dropdown',
         source: [
           "",
@@ -336,7 +338,7 @@ function getDefaultColumns(view) {
         type: "numeric",
         data: "total_events",
         readOnly: true,
-        colWidths: 100,
+        colWidths: 90,
       },
       enabled: false,
     }, {
@@ -399,7 +401,7 @@ function getDefaultColumns(view) {
       data: {
         type: "checkbox",
         data: "core_training",
-        colWidths: 75,
+        colWidths: 85,
       },
       enabled: view === "action_team",
     }
