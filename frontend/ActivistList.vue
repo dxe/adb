@@ -262,7 +262,7 @@ function getDefaultColumns(view) {
       },
       enabled: view === "activist_recruitment",
     },
-    
+
     {
       header: 'Activist Level',
       data: {
@@ -325,7 +325,7 @@ function getDefaultColumns(view) {
         readOnly: true,
         colWidths: 200,
       },
-      enabled: view !== "action_team",
+      enabled: (view === "activist_pool" || view === "activist_recruitment" || view === "leaderboard"),
     }, {
       header: 'Last Event',
       data: {
@@ -333,7 +333,7 @@ function getDefaultColumns(view) {
         readOnly: true,
         colWidths: 200,
       },
-      enabled: view !== "action_team",
+      enabled: (view === "activist_pool" || view === "activist_recruitment" || view === "leaderboard"),
     }, {
       header: "Total Events",
       data: {
