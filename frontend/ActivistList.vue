@@ -210,7 +210,7 @@ function getDefaultColumns(view) {
       },
       enabled: view === "activist_recruitment",
     }, {
-      header: "Action Team",
+      header: "Escalation",
       data: {
         data: "escalation",
         type: 'dropdown',
@@ -403,7 +403,7 @@ function getDefaultColumns(view) {
       data: {
         type: "checkbox",
         data: "core_training",
-        colWidths: 85,
+        colWidths: 90,
       },
       enabled: view === "action_team",
     }
@@ -737,7 +737,7 @@ export default {
               } else if (this.view === "activist_recruitment") {
                 return el.interested === "Yes" && el.escalation === "";
               } else if (this.view === "action_team") {
-                return el.escalation == "Yes";
+                return el.activist_level == "Action Team" || el.activist_level == "Organizer" || el.activist_level == "Senior Organizer";
               } else {
                 return true; // unreachable
               }
