@@ -729,7 +729,8 @@ export default {
           // filtering
           if (this.view === "activist_pool" ||
               this.view === "activist_recruitment" ||
-              this.view === "action_team") {
+              this.view === "action_team" ||
+              this.view === "leaderboard") {
             var activistListFiltered;
             activistListFiltered = activistList.filter((el) => {
               if (this.view === "activist_pool") {
