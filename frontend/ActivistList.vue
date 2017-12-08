@@ -201,14 +201,18 @@ function getDefaultColumns(view) {
       enabled: (view === "all_activists" ||
                 view === "activist_pool" ||
                 view === "activist_recruitment"),
-    }, {
+    },
+
+/*    {
       header: 'Chapter',
       data: {
         data: 'chapter',
         colWidths: 120,
       },
       enabled: false,
-    }, {
+    },*/
+
+    {
       header: 'Phone',
       data: {
         data: 'phone',
@@ -309,14 +313,16 @@ function getDefaultColumns(view) {
         ],
       },
       enabled: view === "activist_pool",
-    }, {
+    }, 
+
+    /*{
       header: "Source",
       data: {
         data: "source",
         colWidths: 75,
       },
       enabled: false,
-    },
+    },*/
 
     {
       header: 'First Event',
@@ -342,7 +348,7 @@ function getDefaultColumns(view) {
         readOnly: true,
         colWidths: 90,
       },
-      enabled: false,
+      enabled: (view === "leaderboard"),
     },
 
     /*{
@@ -359,7 +365,7 @@ function getDefaultColumns(view) {
       header: "Focus",
       data: {
         data: "action_team_focus",
-        colWidths: 130,
+        colWidths: 135,
         type: 'dropdown',
         source: [
           "",
