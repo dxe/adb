@@ -51,10 +51,6 @@ SELECT
   connector,
   contacted_date,
   core_training,
-  eligible_senior_organizer,
-  eligible_organizer,
-  interview_organizer,
-  interview_senior_organizer,
   escalation,
   interested,
   meeting_date,
@@ -158,10 +154,6 @@ type ActivistConnectionData struct {
 	Connector                string `db:"connector"`
 	ContactedDate            string `db:"contacted_date"`
 	CoreTraining             bool   `db:"core_training"`
-	EligibleSeniorOrganizer  bool   `db:"eligible_senior_organizer"`
-	EligibleOrganizer        bool   `db:"eligible_organizer"`
-	InterviewOrganizer       string `db:"interview_organizer"`
-	InterviewSeniorOrganizer string `db:"interview_senior_organizer"`
 	Escalation               string `db:"escalation"`
 	Interested               string `db:"interested"`
 	MeetingDate              string `db:"meeting_date"`
@@ -202,10 +194,6 @@ type ActivistJSON struct {
 	Connector                string `json:"connector"`
 	ContactedDate            string `json:"contacted_date"`
 	CoreTraining             bool   `json:"core_training"`
-	EligibleSeniorOrganizer  bool   `json:"eligible_senior_organizer"`
-	EligibleOrganizer        bool   `json:"eligible_organizer"`
-	InterviewOrganizer       string `json:"interview_organizer"`
-	InterviewSeniorOrganizer string `json:"interview_senior_organizer"`
 	Escalation               string `json:"escalation"`
 	Interested               string `json:"interested"`
 	MeetingDate              string `json:"meeting_date"`
@@ -318,10 +306,6 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			Connector:                a.Connector,
 			ContactedDate:            a.ContactedDate,
 			CoreTraining:             a.CoreTraining,
-			EligibleSeniorOrganizer:  a.EligibleSeniorOrganizer,
-			EligibleOrganizer:        a.EligibleOrganizer,
-			InterviewOrganizer:       a.InterviewOrganizer,
-			InterviewSeniorOrganizer: a.InterviewSeniorOrganizer,
 			Escalation:               a.Escalation,
 			Interested:               a.Interested,
 			MeetingDate:              a.MeetingDate,
@@ -580,10 +564,6 @@ INSERT INTO activists (
   connector,
   contacted_date,
   core_training,
-  eligible_senior_organizer,
-  eligible_organizer,
-  interview_organizer,
-  interview_senior_organizer,
   escalation,
   interested,
   meeting_date,
@@ -608,10 +588,6 @@ INSERT INTO activists (
   :connector,
   :contacted_date,
   :core_training,
-  :eligible_senior_organizer,
-  :eligible_organizer,
-  :interview_organizer,
-  :interview_senior_organizer,
   :escalation,
   :interested,
   :meeting_date,
@@ -656,10 +632,6 @@ SET
   connector = :connector,
   contacted_date = :contacted_date,
   core_training = :core_training,
-  eligible_senior_organizer = :eligible_senior_organizer,
-  eligible_organizer = :eligible_organizer,
-  interview_organizer = :interview_organizer,
-  interview_senior_organizer = :interview_senior_organizer,
   escalation = :escalation,
   interested = :interested,
   meeting_date = :meeting_date,
@@ -894,10 +866,6 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			Connector:                strings.TrimSpace(activistJSON.Connector),
 			ContactedDate:            strings.TrimSpace(activistJSON.ContactedDate),
 			CoreTraining:             activistJSON.CoreTraining,
-			EligibleSeniorOrganizer:  activistJSON.EligibleSeniorOrganizer,
-			EligibleOrganizer:        activistJSON.EligibleOrganizer,
-			InterviewOrganizer:       activistJSON.InterviewOrganizer,
-			InterviewSeniorOrganizer: activistJSON.InterviewSeniorOrganizer,
 			Escalation:               strings.TrimSpace(activistJSON.Escalation),
 			Interested:               strings.TrimSpace(activistJSON.Interested),
 			MeetingDate:              strings.TrimSpace(activistJSON.MeetingDate),
@@ -918,7 +886,6 @@ var validActivistLevels = map[string]struct{}{
 	"Action Team":      struct{}{},
 	"Organizer":        struct{}{},
 	"Senior Organizer": struct{}{},
-	"Hiatus":           struct{}{},
 }
 
 func validateActivist(a ActivistExtra) error {

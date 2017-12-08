@@ -210,7 +210,7 @@ function getDefaultColumns(view) {
       },
       enabled: view === "activist_recruitment",
     }, {
-      header: "Action Team Eligible",
+      header: "Action Team",
       data: {
         data: "escalation",
         type: 'dropdown',
@@ -263,7 +263,7 @@ function getDefaultColumns(view) {
       header: 'Activist Level',
       data: {
         data: 'activist_level',
-        readOnly: true,
+        readOnly: false,
         colWidths: 160,
         type: 'dropdown',
         source: [
@@ -271,7 +271,6 @@ function getDefaultColumns(view) {
           "Action Team",
           "Organizer",
           "Senior Organizer",
-          "Hiatus",
         ],
       },
       enabled: (view === "all_activists" || view === "leaderboard" || view === "action_team"),
@@ -372,42 +371,6 @@ function getDefaultColumns(view) {
         type: "checkbox",
         data: "core_training",
         colWidths: 125,
-      },
-      enabled: view === "action_team",
-    }, {
-      header: "Organizer Interview Date",
-      data: {
-        data: "interview_organizer",
-        type: 'date',
-        dateFormat: 'YYYY-MM-DD',
-        correctFormat: true,
-        colWidths: 180,
-      },
-      enabled: view === "action_team",
-    }, {
-      header: "Organizer Eligible",
-      data: {
-        type: "checkbox",
-        data: "eligible_organizer",
-        colWidths: 135,
-      },
-      enabled: view === "action_team",
-    }, {
-      header: "Senior Organizer Interview Date",
-      data: {
-        data: "interview_senior_organizer",
-        type: 'date',
-        dateFormat: 'YYYY-MM-DD',
-        correctFormat: true,
-        colWidths: 180,
-      },
-      enabled: view === "action_team",
-    }, {
-      header: "Senior Organizer Eligible",
-      data: {
-        type: "checkbox",
-        data: "eligible_senior_organizer",
-        colWidths: 170,
       },
       enabled: view === "action_team",
     }
