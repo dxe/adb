@@ -43,6 +43,7 @@ SELECT
 
   activist_level,
   core_staff,
+  doing_work,
   exclude_from_leaderboard,
   global_team_member,
   liberation_pledge,
@@ -61,7 +62,11 @@ SELECT
   IFNULL(concat(eFirst.date, " ", eFirst.name), "") AS first_event_name,
   IFNULL(concat(eLast.date, " ", eLast.name), "") AS last_event_name,
   COUNT(e.id) as total_events,
-  IFNULL((Community + Outreach + WorkingGroup + Sanctuary + Protest + KeyEvent),0) as total_points
+  IFNULL((Community + Outreach + WorkingGroup + Sanctuary + Protest + KeyEvent),0) as total_points,
+  IF(eLast.date >= (now() - interval 30 day), 1, 0) as active,
+  IF((a.id in (select activist_id from (select ea.activist_id AS activist_id,max((case when ((e.event_type = 'protest') or (e.event_type = 'key event') or (e.event_type = 'outreach') or (e.event_type = 'sanctuary')) then '1' else '0' end)) AS is_protest,max((case when (e.event_type = 'community') then '1' else '0' end)) AS is_community from ((adb2.event_attendance ea join adb2.events e on((ea.event_id = e.id))) join adb2.activists a on((ea.activist_id = a.id))) where ((e.date between (now() - interval 30 day) and now()) and (a.hidden <> 1)) group by ea.activist_id having ((is_protest = '1') and (is_community = '1'))) temp_mpi)), 1, 0) as mpi,
+  doing_work
+  
 FROM activists a
 
 LEFT JOIN event_attendance ea
@@ -138,12 +143,15 @@ type ActivistEventData struct {
 	LastEventName  string     `db:"last_event_name"`
 	TotalEvents    int        `db:"total_events"`
 	TotalPoints    int        `db:"total_points"`
+	Active 		   	bool		`db:"active"`
+	MPI 			bool		`db:"mpi"`
 	Status         string
 }
 
 type ActivistMembershipData struct {
 	ActivistLevel          string `db:"activist_level"`
 	CoreStaff              bool   `db:"core_staff"`
+	DoingWork 		bool		`db:"doing_work"`
 	ExcludeFromLeaderboard bool   `db:"exclude_from_leaderboard"`
 	GlobalTeamMember       bool   `db:"global_team_member"`
 	LiberationPledge       bool   `db:"liberation_pledge"`
@@ -182,10 +190,13 @@ type ActivistJSON struct {
 	LastEventName  string `json:"last_event_name"`
 	TotalEvents    int    `json:"total_events"`
 	TotalPoints    int    `json:"total_points"`
+	Active    bool    `json:"active"`
+	MPI    bool    `json:"mpi"`
 	Status         string `json:"status"`
 
 	ActivistLevel          string `json:"activist_level"`
 	CoreStaff              bool   `json:"core_staff"`
+	DoingWork    bool    `json:"doing_work"`
 	ExcludeFromLeaderboard bool   `json:"exclude_from_leaderboard"`
 	GlobalTeamMember       bool   `json:"global_team_member"`
 	LiberationPledge       bool   `json:"liberation_pledge"`
@@ -295,9 +306,12 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			Status:         a.Status,
 			TotalEvents:    a.TotalEvents,
 			TotalPoints:    a.TotalPoints,
+			Active:    a.Active,
+			MPI:    a.MPI,
 
 			ActivistLevel:          a.ActivistLevel,
 			CoreStaff:              a.CoreStaff,
+			DoingWork:    			a.DoingWork,
 			ExcludeFromLeaderboard: a.ExcludeFromLeaderboard,
 			GlobalTeamMember:       a.GlobalTeamMember,
 			LiberationPledge:       a.LiberationPledge,
@@ -556,6 +570,7 @@ INSERT INTO activists (
 
   activist_level,
   core_staff,
+  doing_work,
   exclude_from_leaderboard,
   global_team_member,
   liberation_pledge,
@@ -580,6 +595,7 @@ INSERT INTO activists (
 
   :activist_level,
   :core_staff,
+  :doing_work,
   :exclude_from_leaderboard,
   :global_team_member,
   :liberation_pledge,
@@ -624,6 +640,7 @@ SET
 
   activist_level = :activist_level,
   core_staff = :core_staff,
+  doing_work = :doing_work,
   exclude_from_leaderboard = :exclude_from_leaderboard,
   global_team_member = :global_team_member,
   liberation_pledge = :liberation_pledge,
@@ -857,6 +874,7 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 		ActivistMembershipData: ActivistMembershipData{
 			ActivistLevel:          strings.TrimSpace(activistJSON.ActivistLevel),
 			CoreStaff:              activistJSON.CoreStaff,
+			DoingWork:				activistJSON.DoingWork,
 			ExcludeFromLeaderboard: activistJSON.ExcludeFromLeaderboard,
 			GlobalTeamMember:       activistJSON.GlobalTeamMember,
 			LiberationPledge:       activistJSON.LiberationPledge,
