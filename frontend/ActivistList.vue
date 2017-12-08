@@ -353,7 +353,7 @@ function getDefaultColumns(view) {
       header: "Focus",
       data: {
         data: "action_team_focus",
-        colWidths: 160,
+        colWidths: 130,
         type: 'dropdown',
         source: [
           "",
@@ -373,7 +373,7 @@ function getDefaultColumns(view) {
         type: "checkbox",
         data: "core_training",
         readOnly: true,
-        colWidths: 100,
+        colWidths: 50,
       },
       enabled: view === "action_team",
     }, {
@@ -382,7 +382,7 @@ function getDefaultColumns(view) {
         type: "checkbox",
         data: "mpi",
         readOnly: true,
-        colWidths: 100,
+        colWidths: 50,
       },
       enabled: view === "action_team",
     }, {
@@ -391,7 +391,7 @@ function getDefaultColumns(view) {
         type: "checkbox",
         data: "doing_work",
         readOnly: false,
-        colWidths: 100,
+        colWidths: 85,
       },
       enabled: view === "action_team",
     }, {
@@ -399,7 +399,7 @@ function getDefaultColumns(view) {
       data: {
         type: "checkbox",
         data: "core_training",
-        colWidths: 125,
+        colWidths: 75,
       },
       enabled: view === "action_team",
     }
