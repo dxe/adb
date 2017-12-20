@@ -61,7 +61,7 @@ SELECT
   eLast.date as last_event,
   IFNULL(concat(eFirst.date, " ", eFirst.name), "") AS first_event_name,
   IFNULL(concat(eLast.date, " ", eLast.name), "") AS last_event_name,
-  COUNT(e.id) as total_events,
+  COUNT(distinct e.id) as total_events,
   IFNULL((Community + Outreach + WorkingGroup + Sanctuary + Protest + KeyEvent),0) as total_points,
   IF(eLast.date >= (now() - interval 30 day), 1, 0) as active,
   IF((a.id in (select activist_id from (select ea.activist_id AS activist_id,max((case when ((e.event_type = 'protest') or (e.event_type = 'key event') or (e.event_type = 'outreach') or (e.event_type = 'sanctuary')) then '1' else '0' end)) AS is_protest,max((case when (e.event_type = 'community') then '1' else '0' end)) AS is_community from ((adb2.event_attendance ea join adb2.events e on((ea.event_id = e.id))) join adb2.activists a on((ea.activist_id = a.id))) where ((e.date between (now() - interval 30 day) and now()) and (a.hidden <> 1)) group by ea.activist_id having ((is_protest = '1') and (is_community = '1'))) temp_mpi)), 1, 0) as mpi,
