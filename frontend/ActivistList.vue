@@ -943,7 +943,7 @@ export default {
         viewportRowRenderingOffset: 100,
         viewportColumnRenderingOffset: 20,
         wordWrap: false,
-        fixedColumnsLeft: 1,
+        fixedColumnsLeft: 2,
       };
     },
     activists: function() {
