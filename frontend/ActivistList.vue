@@ -414,6 +414,15 @@ function getDefaultColumns(view) {
         colWidths: 90,
       },
       enabled: view === "action_team",
+    } , {
+      header: "ID",
+      data: {
+        type: "numeric",
+        data: "ID",
+        readOnly: true,
+        colWidths: 50,
+      },
+      enabled: false,
     }
   ];
 }
