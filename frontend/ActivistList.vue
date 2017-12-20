@@ -943,8 +943,7 @@ export default {
         viewportRowRenderingOffset: 100,
         viewportColumnRenderingOffset: 20,
         wordWrap: false,
-        // Don't fix the first to columns to see if that improves performance.
-        // fixedColumnsLeft: 2,
+        fixedColumnsLeft: 1,
       };
     },
     activists: function() {
