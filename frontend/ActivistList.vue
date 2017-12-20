@@ -234,6 +234,41 @@ function getDefaultColumns(view) {
       enabled: (view === "all_activists" || view === "activist_recruitment" || view === "activist_pool"),
     },
 
+    {
+      header: 'Liberation Pledge',
+      data: {
+        type: 'checkbox',
+        data: 'liberation_pledge',
+        colWidths: 120,
+      },
+      enabled: false,
+    }, 
+
+    {
+      header: "Contacted Date",
+      data: {
+        data: "contacted_date",
+        type: 'date',
+        dateFormat: 'YYYY-MM-DD',
+        correctFormat: true,
+        colWidths: 100,
+      },
+      enabled: view === "activist_pool",
+    }, {
+      header: "Interested",
+      data: {
+        data: "interested",
+        colWidths: 100,
+        type: 'dropdown',
+        source: [
+          "",
+          "Yes",
+          "No",
+        ],
+      },
+      enabled: view === "activist_pool",
+    },
+
     // ActivistMembershipData
     {
       header: "Connector",
@@ -282,38 +317,25 @@ function getDefaultColumns(view) {
         ],
       },
       enabled: (view === "all_activists" || view === "activist_recruitment" || view === "leaderboard" || view === "action_team"),
-    }, {
-      header: 'Liberation Pledge',
+    },  
+
+    {
+      header: "Focus",
       data: {
-        type: 'checkbox',
-        data: 'liberation_pledge',
-        colWidths: 120,
-      },
-      enabled: false,
-    }, {
-      header: "Contacted Date",
-      data: {
-        data: "contacted_date",
-        type: 'date',
-        dateFormat: 'YYYY-MM-DD',
-        correctFormat: true,
-        colWidths: 100,
-      },
-      enabled: view === "activist_pool",
-    }, {
-      header: "Interested",
-      data: {
-        data: "interested",
-        colWidths: 100,
+        data: "action_team_focus",
+        colWidths: 135,
         type: 'dropdown',
         source: [
           "",
-          "Yes",
-          "No",
+          "Direct Action",
+          "Community",
+          "Development",
+          "Finance",
+          "Communications",
         ],
       },
-      enabled: view === "activist_pool",
-    }, 
+      enabled: view === "action_team",
+    },
 
     /*{
       header: "Source",
@@ -361,23 +383,6 @@ function getDefaultColumns(view) {
       enabled: false,
     },*/
 
-    {
-      header: "Focus",
-      data: {
-        data: "action_team_focus",
-        colWidths: 135,
-        type: 'dropdown',
-        source: [
-          "",
-          "Direct Action",
-          "Community",
-          "Development",
-          "Finance",
-          "Communications",
-        ],
-      },
-      enabled: view === "action_team",
-    },
 
     {
       header: "Active",
