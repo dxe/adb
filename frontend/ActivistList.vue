@@ -337,6 +337,16 @@ function getDefaultColumns(view) {
       enabled: view === "action_team",
     },
 
+    {
+      header: 'Working Groups',
+      data: {
+        data: 'working_group_list',
+        readOnly: true,
+        colWidths: 200,
+      },
+      enabled: (view === "action_team"),
+    },
+
     /*{
       header: "Source",
       data: {
