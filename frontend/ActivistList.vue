@@ -418,7 +418,7 @@ function getDefaultColumns(view) {
       header: "ID",
       data: {
         type: "numeric",
-        data: "ID",
+        data: "id",
         readOnly: true,
         colWidths: 50,
       },
