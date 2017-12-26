@@ -20,6 +20,10 @@
           <label>Last Event To:</label>
           <input v-model="lastEventDateTo" class="form-control filter-margin" type="date" />
         </div>
+        <div v-if="view === 'action_team'">
+          <label>Action Team:</label>
+          <input v-model="filterActionTeam" class="form-control filter-margin" type="text" />
+        </div>
       </div>
 
       <div v-if="showOptions === 'columns'">
