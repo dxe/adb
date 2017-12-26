@@ -23,7 +23,7 @@
         <div v-if="view === 'action_team'">
           <label>Action Team:</label>
           <select id="filterActionTeam" v-model="filterActionTeam" class="form-control filter-margin">
-            <option selected>All</option>
+            <option>All</option>
             <option>Communications</option>
             <option>Community</option>
             <option>Development</option>
@@ -939,6 +939,7 @@ export default {
       columns: getDefaultColumns(this.view),
       lastEventDateFrom: initialDateFromValue(),
       lastEventDateTo: initialDateToValue(),
+      filterActionTeam: "All",
       showOptions: '',
       search: '',
     };
