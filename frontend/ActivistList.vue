@@ -782,8 +782,15 @@ export default {
                 return el.interested === "Yes" && el.escalation != "No" && el.activist_level == "Community Member";
               } else if (this.view === "action_team") {
                 var selectedActionTeam = $("#filterActionTeam :selected").text();
-                console.log("Action Team: " + selectedActionTeam);
-                return el.activist_level == "Action Team" || el.activist_level == "Organizer" || el.activist_level == "Senior Organizer";
+
+                if (selectedActionTeam != "All" && selectedActionTeam != "" && selectedActionTeam != null) {
+                  console.log("Action Team: " + selectedActionTeam);
+                  return ((el.activist_level == "Action Team" || el.activist_level == "Organizer" || el.activist_level == "Senior Organizer") && el.focus == selectedActionTeam);
+                }
+                else {
+                  return el.activist_level == "Action Team" || el.activist_level == "Organizer" || el.activist_level == "Senior Organizer";
+                }
+                
               } else if (this.view === "leaderboard") {
                 return el.active == 1;
               } else {
