@@ -946,8 +946,8 @@ export default {
         columns: columns,
         colHeaders: columnHeaders,
         rowHeaders: this.view === "leaderboard",
-        disableVisualSelection: false, // testing, prev value: 'area'
-        multiSelect: true, // testing, prev value: false
+        disableVisualSelection: false,
+        multiSelect: true,
         fillHandle: false,
         afterChange: this.afterChangeCallback.bind(this),
         afterOnCellMouseDown: this.afterOnCellMouseDownCallback.bind(this),
@@ -958,7 +958,7 @@ export default {
         viewportRowRenderingOffset: 100,
         viewportColumnRenderingOffset: 20,
         wordWrap: false,
-        fixedColumnsLeft: 2,
+        //fixedColumnsLeft: 2, // this causes too much havoc
       };
     },
     activists: function() {
