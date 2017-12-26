@@ -23,7 +23,7 @@
         <div v-if="view === 'action_team'">
           <label>Action Team:</label>
           <select id="filterActionTeam" v-model="filterActionTeam" class="form-control filter-margin">
-            <option selected="selected">All</option>
+            <option selected>All</option>
             <option>Communications</option>
             <option>Community</option>
             <option>Development</option>
