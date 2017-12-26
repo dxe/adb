@@ -1000,6 +1000,9 @@ export default {
     lastEventDateTo: function() {
       this.loadActivists();
     },
+    filterActionTeam: function() {
+      this.loadActivists();
+    }
   },
   created() {
     this.loadActivists();
