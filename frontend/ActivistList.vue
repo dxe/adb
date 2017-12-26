@@ -784,7 +784,6 @@ export default {
                 var selectedActionTeam = $("#filterActionTeam :selected").text();
 
                 if (selectedActionTeam != "All" && selectedActionTeam != "" && selectedActionTeam != null) {
-                  console.log("Action Team: " + selectedActionTeam);
                   return ((el.activist_level == "Action Team" || el.activist_level == "Organizer" || el.activist_level == "Senior Organizer") && el.action_team_focus == selectedActionTeam);
                 }
                 else {
