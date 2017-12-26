@@ -781,7 +781,7 @@ export default {
               } else if (this.view === "activist_recruitment") {
                 return el.interested === "Yes" && el.escalation != "No" && el.activist_level == "Community Member";
               } else if (this.view === "action_team") {
-                console.log("Action Team: " + {{ filterActionTeam }} );
+                console.log("Action Team: " + "{{ filterActionTeam }}" );
                 return el.activist_level == "Action Team" || el.activist_level == "Organizer" || el.activist_level == "Senior Organizer";
               } else if (this.view === "leaderboard") {
                 return el.active == 1;
