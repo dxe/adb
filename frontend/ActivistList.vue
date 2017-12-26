@@ -22,7 +22,14 @@
         </div>
         <div v-if="view === 'action_team'">
           <label>Action Team:</label>
-          <input v-model="filterActionTeam" class="form-control filter-margin" type="text" />
+          <select v-model="filterActionTeam" class="form-control filter-margin">
+            <option>All</option>
+            <option>Communications</option>
+            <option>Community</option>
+            <option>Development</option>
+            <option>Direct Action</option>
+            <option>Finance</option>
+          </select>
         </div>
       </div>
 
@@ -774,6 +781,7 @@ export default {
               } else if (this.view === "activist_recruitment") {
                 return el.interested === "Yes" && el.escalation != "No" && el.activist_level == "Community Member";
               } else if (this.view === "action_team") {
+                console.log("Action Team: " + filterActionTeam);
                 return el.activist_level == "Action Team" || el.activist_level == "Organizer" || el.activist_level == "Senior Organizer";
               } else if (this.view === "leaderboard") {
                 return el.active == 1;
