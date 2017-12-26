@@ -49,9 +49,9 @@
           </div>
           <div class="modal-body">
             <ul class="activist-options-body">
-              <li>
+              <!-- <li>
                 <a @click="showModal('connection-modal', currentActivist, activistIndex)">Add Maintenance Connection</a>
-              </li>
+              </li> -->
               <li>
                 <a @click="showModal('merge-activist-modal', currentActivist, activistIndex)">Merge Activist</a>
               </li>
@@ -122,7 +122,7 @@
         </div>
       </div>
     </modal>
-    <modal
+    <!-- <modal
        name="connection-modal"
        :height="400"
        classes="no-background-color"
@@ -147,7 +147,7 @@
           </div>
         </div>
       </div>
-    </modal>
+    </modal> -->
   </div>
 </template>
 
@@ -271,7 +271,7 @@ function getDefaultColumns(view) {
 
     // ActivistMembershipData
     {
-      header: "Connector",
+      header: "Mentor",
       data: {
         data: "connector",
         colWidths: 125,
