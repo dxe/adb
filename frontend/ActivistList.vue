@@ -946,8 +946,8 @@ export default {
         columns: columns,
         colHeaders: columnHeaders,
         rowHeaders: this.view === "leaderboard",
-        disableVisualSelection: 'area',
-        multiSelect: false,
+        disableVisualSelection: false, // testing, prev value: 'area'
+        multiSelect: true, // testing, prev value: false
         fillHandle: false,
         afterChange: this.afterChangeCallback.bind(this),
         afterOnCellMouseDown: this.afterOnCellMouseDownCallback.bind(this),
