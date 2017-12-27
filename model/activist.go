@@ -64,10 +64,10 @@ SELECT
   COUNT(distinct e.id) as total_events,
   IFNULL((Community + Outreach + WorkingGroup + Sanctuary + Protest + KeyEvent),0) as total_points,
   IF(eLast.date >= (now() - interval 30 day), 1, 0) as active,
-  IF((a.id in (select activist_id from (select ea.activist_id AS activist_id,max((case when ((e.event_type = 'protest') or (e.event_type = 'key event') or (e.event_type = 'outreach') or (e.event_type = 'sanctuary')) then '1' else '0' end)) AS is_protest,max((case when (e.event_type = 'community') then '1' else '0' end)) AS is_community from ((adb2.event_attendance ea join adb2.events e on((ea.event_id = e.id))) join adb2.activists a on((ea.activist_id = a.id))) where ((e.date between (now() - interval 30 day) and now()) and (a.hidden <> 1)) group by ea.activist_id having ((is_protest = '1') and (is_community = '1'))) temp_mpi)), 1, 0) as mpi,
+  IF((a.id in (select activist_id from (select ea.activist_id AS activist_id,max((case when ((e.event_type = 'protest') or (e.event_type = 'key event') or (e.event_type = 'outreach') or (e.event_type = 'sanctuary')) then '1' else '0' end)) AS is_protest,max((case when (e.event_type = 'community') then '1' else '0' end)) AS is_community from ((event_attendance ea join events e on((ea.event_id = e.id))) join activists a on((ea.activist_id = a.id))) where ((e.date between (now() - interval 30 day) and now()) and (a.hidden <> 1)) group by ea.activist_id having ((is_protest = '1') and (is_community = '1'))) temp_mpi)), 1, 0) as mpi,
   doing_work,
   ifnull(GROUP_CONCAT(DISTINCT wg.name SEPARATOR ', '),'') as 'working_group_list'
-  
+
 FROM activists a
 
 LEFT JOIN event_attendance ea
@@ -148,30 +148,30 @@ type ActivistEventData struct {
 	LastEventName  string     `db:"last_event_name"`
 	TotalEvents    int        `db:"total_events"`
 	TotalPoints    int        `db:"total_points"`
-	Active 		   	bool		`db:"active"`
-	MPI 			bool		`db:"mpi"`
+	Active         bool       `db:"active"`
+	MPI            bool       `db:"mpi"`
 	Status         string
 }
 
 type ActivistMembershipData struct {
 	ActivistLevel          string `db:"activist_level"`
 	CoreStaff              bool   `db:"core_staff"`
-	DoingWork 		bool		`db:"doing_work"`
+	DoingWork              bool   `db:"doing_work"`
 	ExcludeFromLeaderboard bool   `db:"exclude_from_leaderboard"`
 	GlobalTeamMember       bool   `db:"global_team_member"`
 	LiberationPledge       bool   `db:"liberation_pledge"`
 	Source                 string `db:"source"`
-	WorkingGroups                 string `db:"working_group_list"`
+	WorkingGroups          string `db:"working_group_list"`
 }
 
 type ActivistConnectionData struct {
-	Connector                string `db:"connector"`
-	ContactedDate            string `db:"contacted_date"`
-	CoreTraining             bool   `db:"core_training"`
-	Escalation               string `db:"escalation"`
-	Interested               string `db:"interested"`
-	MeetingDate              string `db:"meeting_date"`
-	ActionTeamFocus          string `db:"action_team_focus"`
+	Connector       string `db:"connector"`
+	ContactedDate   string `db:"contacted_date"`
+	CoreTraining    bool   `db:"core_training"`
+	Escalation      string `db:"escalation"`
+	Interested      string `db:"interested"`
+	MeetingDate     string `db:"meeting_date"`
+	ActionTeamFocus string `db:"action_team_focus"`
 }
 
 type ActivistExtra struct {
@@ -196,26 +196,26 @@ type ActivistJSON struct {
 	LastEventName  string `json:"last_event_name"`
 	TotalEvents    int    `json:"total_events"`
 	TotalPoints    int    `json:"total_points"`
-	Active    bool    `json:"active"`
-	MPI    bool    `json:"mpi"`
+	Active         bool   `json:"active"`
+	MPI            bool   `json:"mpi"`
 	Status         string `json:"status"`
 
 	ActivistLevel          string `json:"activist_level"`
 	CoreStaff              bool   `json:"core_staff"`
-	DoingWork    bool    `json:"doing_work"`
+	DoingWork              bool   `json:"doing_work"`
 	ExcludeFromLeaderboard bool   `json:"exclude_from_leaderboard"`
 	GlobalTeamMember       bool   `json:"global_team_member"`
 	LiberationPledge       bool   `json:"liberation_pledge"`
 	Source                 string `json:"source"`
-	WorkingGroups                 string `json:"working_group_list"`
+	WorkingGroups          string `json:"working_group_list"`
 
-	Connector                string `json:"connector"`
-	ContactedDate            string `json:"contacted_date"`
-	CoreTraining             bool   `json:"core_training"`
-	Escalation               string `json:"escalation"`
-	Interested               string `json:"interested"`
-	MeetingDate              string `json:"meeting_date"`
-	ActionTeamFocus          string `json:"action_team_focus"`
+	Connector       string `json:"connector"`
+	ContactedDate   string `json:"contacted_date"`
+	CoreTraining    bool   `json:"core_training"`
+	Escalation      string `json:"escalation"`
+	Interested      string `json:"interested"`
+	MeetingDate     string `json:"meeting_date"`
+	ActionTeamFocus string `json:"action_team_focus"`
 }
 
 type GetActivistOptions struct {
@@ -313,25 +313,25 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			Status:         a.Status,
 			TotalEvents:    a.TotalEvents,
 			TotalPoints:    a.TotalPoints,
-			Active:    a.Active,
-			MPI:    a.MPI,
+			Active:         a.Active,
+			MPI:            a.MPI,
 
 			ActivistLevel:          a.ActivistLevel,
 			CoreStaff:              a.CoreStaff,
-			DoingWork:    			a.DoingWork,
-			WorkingGroups:			a.WorkingGroups,
+			DoingWork:              a.DoingWork,
+			WorkingGroups:          a.WorkingGroups,
 			ExcludeFromLeaderboard: a.ExcludeFromLeaderboard,
 			GlobalTeamMember:       a.GlobalTeamMember,
 			LiberationPledge:       a.LiberationPledge,
 			Source:                 a.Source,
 
-			Connector:                a.Connector,
-			ContactedDate:            a.ContactedDate,
-			CoreTraining:             a.CoreTraining,
-			Escalation:               a.Escalation,
-			Interested:               a.Interested,
-			MeetingDate:              a.MeetingDate,
-			ActionTeamFocus:          a.ActionTeamFocus,
+			Connector:       a.Connector,
+			ContactedDate:   a.ContactedDate,
+			CoreTraining:    a.CoreTraining,
+			Escalation:      a.Escalation,
+			Interested:      a.Interested,
+			MeetingDate:     a.MeetingDate,
+			ActionTeamFocus: a.ActionTeamFocus,
 		})
 	}
 
@@ -882,20 +882,20 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 		ActivistMembershipData: ActivistMembershipData{
 			ActivistLevel:          strings.TrimSpace(activistJSON.ActivistLevel),
 			CoreStaff:              activistJSON.CoreStaff,
-			DoingWork:				activistJSON.DoingWork,
+			DoingWork:              activistJSON.DoingWork,
 			ExcludeFromLeaderboard: activistJSON.ExcludeFromLeaderboard,
 			GlobalTeamMember:       activistJSON.GlobalTeamMember,
 			LiberationPledge:       activistJSON.LiberationPledge,
 			Source:                 strings.TrimSpace(activistJSON.Source),
 		},
 		ActivistConnectionData: ActivistConnectionData{
-			Connector:                strings.TrimSpace(activistJSON.Connector),
-			ContactedDate:            strings.TrimSpace(activistJSON.ContactedDate),
-			CoreTraining:             activistJSON.CoreTraining,
-			Escalation:               strings.TrimSpace(activistJSON.Escalation),
-			Interested:               strings.TrimSpace(activistJSON.Interested),
-			MeetingDate:              strings.TrimSpace(activistJSON.MeetingDate),
-			ActionTeamFocus:          strings.TrimSpace(activistJSON.ActionTeamFocus),
+			Connector:       strings.TrimSpace(activistJSON.Connector),
+			ContactedDate:   strings.TrimSpace(activistJSON.ContactedDate),
+			CoreTraining:    activistJSON.CoreTraining,
+			Escalation:      strings.TrimSpace(activistJSON.Escalation),
+			Interested:      strings.TrimSpace(activistJSON.Interested),
+			MeetingDate:     strings.TrimSpace(activistJSON.MeetingDate),
+			ActionTeamFocus: strings.TrimSpace(activistJSON.ActionTeamFocus),
 		},
 	}
 
