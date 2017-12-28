@@ -86,11 +86,25 @@ SELECT
   -- For first_event_name and last_event_name, we just want to pick
   -- any event with the correct date.
   IFNULL(
-    concat(@first_event, ' ', (SELECT name FROM events e WHERE e.date = first_event LIMIT 1)),
+    concat(@first_event, ' ', (
+      SELECT name
+      FROM events e
+      JOIN event_attendance ea ON ea.event_id = e.id
+      WHERE
+	e.date = first_event
+        AND ea.activist_id = a.id
+      LIMIT 1)),
     '') AS first_event_name,
 
   IFNULL(
-    concat(@last_event, ' ', (SELECT name FROM events e WHERE e.date = last_event LIMIT 1)),
+    concat(@last_event, ' ', (
+      SELECT name
+      FROM events e
+      JOIN event_attendance ea ON ea.event_id = e.id
+      WHERE
+        e.date = last_event
+        AND ea.activist_id = a.id
+      LIMIT 1)),
     '') AS last_event_name,
 
   (SELECT COUNT(DISTINCT ea.event_id)

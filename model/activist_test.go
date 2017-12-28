@@ -259,20 +259,27 @@ func TestGetActivistsJSON_FirstAndLastEvent(t *testing.T) {
 	require.NoError(t, err)
 
 	insertEvents := []Event{{
-		ID:             1,
 		EventName:      "event one",
 		EventDate:      d2,
 		EventType:      "Working Group",
 		AddedAttendees: []Activist{a1},
 	}, {
-		ID:             2,
-		EventName:      "event two",
+		EventName:      "yo yo yo",
+		EventDate:      d3,
+		EventType:      "Working Group",
+		AddedAttendees: []Activist{},
+	}, {
+		EventName:      "heyo",
 		EventDate:      d3,
 		EventType:      "Working Group",
 		AddedAttendees: []Activist{a1},
 	}, {
-		ID:             3,
-		EventName:      "event three",
+		EventName:      "hello",
+		EventDate:      d1,
+		EventType:      "Working Group",
+		AddedAttendees: []Activist{},
+	}, {
+		EventName:      "hi there",
 		EventDate:      d1,
 		EventType:      "Working Group",
 		AddedAttendees: []Activist{a1},
@@ -285,6 +292,9 @@ func TestGetActivistsJSON_FirstAndLastEvent(t *testing.T) {
 	gotActivist := activists[0]
 	require.Equal(t, gotActivist.FirstEvent, "2017-04-15")
 	require.Equal(t, gotActivist.LastEvent, "2017-04-17")
+
+	require.Equal(t, gotActivist.FirstEventName, "2017-04-15 hi there")
+	require.Equal(t, gotActivist.LastEventName, "2017-04-17 heyo")
 }
 
 func TestHideActivist(t *testing.T) {
