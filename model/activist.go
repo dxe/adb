@@ -8,6 +8,7 @@ import (
 
 	"strings"
 
+	"github.com/go-sql-driver/mysql"
 	"github.com/pkg/errors"
 
 	"github.com/jmoiron/sqlx"
@@ -30,6 +31,11 @@ SELECT
 FROM activists
 `
 
+// Query perf tips:
+//  - Test changes to this query against production data to see
+//    how they effect performance
+//  - It seems like it's usually faster to use subqueries in the top
+//    part of the SELECT expression vs joining on a table.
 const selectActivistExtraBaseQuery string = `
 SELECT
 
@@ -57,72 +63,110 @@ SELECT
   meeting_date,
   action_team_focus,
 
-  eFirst.date as first_event,
-  eLast.date as last_event,
-  IFNULL(concat(eFirst.date, " ", eFirst.name), "") AS first_event_name,
-  IFNULL(concat(eLast.date, " ", eLast.name), "") AS last_event_name,
-  COUNT(distinct e.id) as total_events,
-  IFNULL((Community + Outreach + WorkingGroup + Sanctuary + Protest + KeyEvent),0) as total_points,
-  IF(eLast.date >= (now() - interval 30 day), 1, 0) as active,
-  IF((a.id in (select activist_id from (select ea.activist_id AS activist_id,max((case when ((e.event_type = 'protest') or (e.event_type = 'key event') or (e.event_type = 'outreach') or (e.event_type = 'sanctuary')) then '1' else '0' end)) AS is_protest,max((case when (e.event_type = 'community') then '1' else '0' end)) AS is_community from ((event_attendance ea join events e on((ea.event_id = e.id))) join activists a on((ea.activist_id = a.id))) where ((e.date between (now() - interval 30 day) and now()) and (a.hidden <> 1)) group by ea.activist_id having ((is_protest = '1') and (is_community = '1'))) temp_mpi)), 1, 0) as mpi,
+  -- Do the first/last event subqueries here b/c the performance is
+  -- better than when you join on events and event_attendance multiple times.
+  -- Set the @first_event and @last_event variables so we can use them
+  -- within the query.
+  @first_event := (
+      SELECT min(e.date) AS min_date
+      FROM event_attendance ea
+      JOIN activists inner_a ON inner_a.id = ea.activist_id
+      JOIN events e ON e.id = ea.event_id
+      WHERE inner_a.id = a.id
+  ) AS first_event,
+
+  @last_event := (
+    SELECT max(e.date) AS max_date
+    FROM event_attendance ea
+    JOIN activists inner_a ON inner_a.id = ea.activist_id
+    JOIN events e ON e.id = ea.event_id
+    WHERE inner_a.id = a.id
+  ) AS last_event,
+
+  -- For first_event_name and last_event_name, we just want to pick
+  -- any event with the correct date.
+  IFNULL(
+    concat(@first_event, ' ', (SELECT name FROM events e WHERE e.date = first_event LIMIT 1)),
+    '') AS first_event_name,
+
+  IFNULL(
+    concat(@last_event, ' ', (SELECT name FROM events e WHERE e.date = last_event LIMIT 1)),
+    '') AS last_event_name,
+
+  (SELECT COUNT(DISTINCT ea.event_id)
+    FROM event_attendance ea
+    WHERE
+      ea.activist_id = a.id) as total_events,
+
+  IFNULL((Community + Outreach + WorkingGroup + Sanctuary + Protest + KeyEvent), 0) as total_points,
+  IF(@last_event >= (now() - interval 30 day), 1, 0) as active,
+
+  -- Calculate MPI
+  IF(
+    (a.id IN (
+      SELECT activist_id FROM (
+        SELECT
+          ea.activist_id AS activist_id,
+          max((CASE
+                WHEN ((e.event_type = 'protest') OR (e.event_type = 'key event') OR (e.event_type = 'outreach') OR (e.event_type = 'sanctuary'))
+                THEN '1' ELSE '0'
+          END)) AS is_protest,
+          max((CASE
+                WHEN (e.event_type = 'community') THEN '1' ELSE '0'
+          END)) AS is_community
+        FROM
+          event_attendance ea
+        JOIN events e ON ea.event_id = e.id
+        JOIN activists a ON ea.activist_id = a.id
+        WHERE (
+          (e.date BETWEEN (now() - INTERVAL 30 DAY) AND now())
+          AND (a.hidden <> 1)
+        )
+        GROUP BY ea.activist_id
+        HAVING (
+          (is_protest = '1')
+          AND (is_community = '1')
+        )
+      ) temp_mpi)
+    ), 1, 0) AS mpi,
   doing_work,
-  ifnull(GROUP_CONCAT(DISTINCT wg.name SEPARATOR ', '),'') as 'working_group_list'
+  IFNULL(
+    (SELECT
+      GROUP_CONCAT(DISTINCT wg.name SEPARATOR ', ')
+    FROM working_groups wg
+    JOIN working_group_members wgm ON wg.id = wgm.working_group_id
+    WHERE
+      wgm.activist_id = a.id),
+    '') AS working_group_list
 
 FROM activists a
 
-LEFT JOIN event_attendance ea
-  ON ea.activist_id = a.id
-
-LEFT JOIN events e
-  ON ea.event_id = e.id
-
-left join (
-    select a.id, max(ea.event_id) as LastEventID
-    from event_attendance ea
-    join activists a on a.id = ea.activist_id
-    group by a.id
-) LastEvent on LastEvent.id = a.id
-
-left join (
-    select a.id, min(ea.event_id) as FirstEventID
-    from event_attendance ea
-    join activists a on a.id = ea.activist_id
-    group by a.id
-) FirstEvent on FirstEvent.id = a.id
-
-left join events eFirst on eFirst.id = FirstEvent.FirstEventID
-
-left join events eLast on eLast.id = LastEvent.LastEventID
-
 LEFT JOIN (
-    select activist_id,
-    ifnull(sum(Community),0) as Community,
-    ifnull(sum(Outreach),0) as Outreach,
-    ifnull(sum(WorkingGroup),0) as WorkingGroup,
-    ifnull(sum(Sanctuary),0) as Sanctuary,
-    ifnull(sum(Protest),0) as Protest,
-    ifnull(sum(KeyEvent),0) as KeyEvent
-    from (
-      select
+  SELECT activist_id,
+  IFNULL(SUM(Community),0) AS Community,
+  IFNULL(SUM(Outreach),0) AS Outreach,
+  IFNULL(SUM(WorkingGroup),0) AS WorkingGroup,
+  IFNULL(SUM(Sanctuary),0) AS Sanctuary,
+  IFNULL(SUM(Protest),0) AS Protest,
+  IFNULL(SUM(KeyEvent),0) AS KeyEvent
+  FROM (
+    SELECT
       activist_id,
-      (case when event_type = "Community" then count(e.id) end) as Community,
-      (case when event_type = "Outreach" then count(e.id)*2 end) as Outreach,
-      (case when event_type = "Working Group" then count(e.id) end) as WorkingGroup,
-      (case when event_type = "Sanctuary" then count(e.id)*2 end) as Sanctuary,
-      (case when event_type = "Protest" then count(e.id)*2 end) as Protest,
-      (case when event_type = "Key Event" then count(e.id)*3 end) as KeyEvent
-      from event_attendance ea
-      join events e on e.id = ea.event_id
-      where e.date between (now() - interval 30 day) and now()
-      group by activist_id, e.event_type
-      ) inner_points
-    group by activist_id
-    ) points
+      (CASE WHEN event_type = 'Community' THEN count(e.id) END) AS Community,
+      (CASE WHEN event_type = 'Outreach' THEN count(e.id)*2 END) AS Outreach,
+      (CASE WHEN event_type = 'Working Group' THEN count(e.id) END) AS WorkingGroup,
+      (CASE WHEN event_type = 'Sanctuary' THEN count(e.id)*2 END) AS Sanctuary,
+      (CASE WHEN event_type = 'Protest' THEN count(e.id)*2 END) AS Protest,
+      (CASE WHEN event_type = 'Key Event' THEN count(e.id)*3 END) AS KeyEvent
+      FROM event_attendance ea
+      JOIN events e ON e.id = ea.event_id
+      WHERE
+        e.date BETWEEN (NOW() - INTERVAL 30 DAY) AND NOW()
+      GROUP BY activist_id, e.event_type
+  ) inner_points
+  GROUP BY activist_id
+) points
   ON points.activist_id = a.id
-
-left join working_group_members wgm on a.id = wgm.activist_id
-
-left join working_groups wg on wgm.working_group_id = wg.id
 `
 
 const DescOrder int = 2
@@ -142,14 +186,14 @@ type Activist struct {
 }
 
 type ActivistEventData struct {
-	FirstEvent     *time.Time `db:"first_event"`
-	LastEvent      *time.Time `db:"last_event"`
-	FirstEventName string     `db:"first_event_name"`
-	LastEventName  string     `db:"last_event_name"`
-	TotalEvents    int        `db:"total_events"`
-	TotalPoints    int        `db:"total_points"`
-	Active         bool       `db:"active"`
-	MPI            bool       `db:"mpi"`
+	FirstEvent     mysql.NullTime `db:"first_event"`
+	LastEvent      mysql.NullTime `db:"last_event"`
+	FirstEventName string         `db:"first_event_name"`
+	LastEventName  string         `db:"last_event_name"`
+	TotalEvents    int            `db:"total_events"`
+	TotalPoints    int            `db:"total_points"`
+	Active         bool           `db:"active"`
+	MPI            bool           `db:"mpi"`
 	Status         string
 }
 
@@ -285,12 +329,12 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 
 	for _, a := range activists {
 		firstEvent := ""
-		if a.ActivistEventData.FirstEvent != nil {
-			firstEvent = a.ActivistEventData.FirstEvent.Format(EventDateLayout)
+		if a.ActivistEventData.FirstEvent.Valid {
+			firstEvent = a.ActivistEventData.FirstEvent.Time.Format(EventDateLayout)
 		}
 		lastEvent := ""
-		if a.ActivistEventData.LastEvent != nil {
-			lastEvent = a.ActivistEventData.LastEvent.Format(EventDateLayout)
+		if a.ActivistEventData.LastEvent.Valid {
+			lastEvent = a.ActivistEventData.LastEvent.Time.Format(EventDateLayout)
 		}
 		location := ""
 		if a.Activist.Location.Valid {
@@ -985,15 +1029,15 @@ func CleanGetActivistOptions(body io.Reader) (GetActivistOptions, error) {
 //  - Former
 //  - No attendance
 // Must be kept in sync with the list in frontend/ActivistList.vue
-func getStatus(firstEvent *time.Time, lastEvent *time.Time, totalEvents int) string {
-	if firstEvent == nil || lastEvent == nil {
+func getStatus(firstEvent mysql.NullTime, lastEvent mysql.NullTime, totalEvents int) string {
+	if !firstEvent.Valid || !lastEvent.Valid {
 		return "No attendance"
 	}
 
-	if time.Since(*lastEvent) > Duration60Days {
+	if time.Since(lastEvent.Time) > Duration60Days {
 		return "Former"
 	}
-	if time.Since(*firstEvent) < Duration90Days && totalEvents < 5 {
+	if time.Since(firstEvent.Time) < Duration90Days && totalEvents < 5 {
 		return "New"
 	}
 	return "Current"

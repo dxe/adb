@@ -152,7 +152,6 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/activist/save", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistSaveHandler))
 	router.Handle("/activist/hide", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistHideHandler))
 	router.Handle("/activist/merge", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistMergeHandler))
-	router.Handle("/leaderboard/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.LeaderboardListHandler))
 	router.Handle("/working_group/save", alice.New(main.apiAuthMiddleware).ThenFunc(main.WorkingGroupSaveHandler))
 	router.Handle("/working_group/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.WorkingGroupListHandler))
 	router.Handle("/working_group/delete", alice.New(main.apiAuthMiddleware).ThenFunc(main.WorkingGroupDeleteHandler))
@@ -759,15 +758,6 @@ func (c MainController) ActivistListHandler(w http.ResponseWriter, r *http.Reque
 		"status":        "success",
 		"activist_list": activists,
 	})
-}
-
-func (c MainController) LeaderboardListHandler(w http.ResponseWriter, r *http.Request) {
-	activists, err := model.GetLeaderboardActivistsJSON(c.db)
-	if err != nil {
-		panic(err)
-	}
-
-	writeJSON(w, activists)
 }
 
 func (c MainController) PowerHandler(w http.ResponseWriter, r *http.Request) {

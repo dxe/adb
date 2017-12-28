@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/require"
 )
@@ -86,8 +87,10 @@ func TestGetActivistEventData(t *testing.T) {
 	d, err := a1.GetActivistEventData(db)
 	require.NoError(t, err)
 
-	d.FirstEvent.Equal(d1)
-	d.LastEvent.Equal(d3)
+	require.Equal(t, d.FirstEvent.Valid, true)
+	d.FirstEvent.Time.Equal(d1)
+	require.Equal(t, d.LastEvent.Valid, true)
+	d.LastEvent.Time.Equal(d3)
 	require.Equal(t, d.TotalEvents, 4)
 }
 
@@ -102,8 +105,8 @@ func TestGetActivistEventData_noEvents(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, d, ActivistEventData{
-		FirstEvent:  nil,
-		LastEvent:   nil,
+		FirstEvent:  mysql.NullTime{},
+		LastEvent:   mysql.NullTime{},
 		TotalEvents: 0,
 	})
 }
@@ -241,6 +244,49 @@ func TestGetActivistsJSON_OrderField(t *testing.T) {
 	assertActivistJSONSliceContainsOrderedNames(t, activists, []string{"B", "C", "A"})
 }
 
+func TestGetActivistsJSON_FirstAndLastEvent(t *testing.T) {
+	db := newTestDB()
+	defer db.Close()
+
+	a1, err := GetOrCreateActivist(db, "A")
+	require.NoError(t, err)
+
+	d1, err := time.Parse("2006-01-02", "2017-04-15")
+	require.NoError(t, err)
+	d2, err := time.Parse("2006-01-02", "2017-04-16")
+	require.NoError(t, err)
+	d3, err := time.Parse("2006-01-02", "2017-04-17")
+	require.NoError(t, err)
+
+	insertEvents := []Event{{
+		ID:             1,
+		EventName:      "event one",
+		EventDate:      d2,
+		EventType:      "Working Group",
+		AddedAttendees: []Activist{a1},
+	}, {
+		ID:             2,
+		EventName:      "event two",
+		EventDate:      d3,
+		EventType:      "Working Group",
+		AddedAttendees: []Activist{a1},
+	}, {
+		ID:             3,
+		EventName:      "event three",
+		EventDate:      d1,
+		EventType:      "Working Group",
+		AddedAttendees: []Activist{a1},
+	}}
+	mustInsertAllEvents(t, db, insertEvents)
+
+	activists, err := GetActivistsJSON(db, GetActivistOptions{})
+	require.NoError(t, err)
+
+	gotActivist := activists[0]
+	require.Equal(t, gotActivist.FirstEvent, "2017-04-15")
+	require.Equal(t, gotActivist.LastEvent, "2017-04-17")
+}
+
 func TestHideActivist(t *testing.T) {
 	db := newTestDB()
 	defer db.Close()
@@ -289,15 +335,11 @@ func TestHideActivist(t *testing.T) {
 	// Hidden activists *should* show up in the event attendance
 	event, err := GetEvent(db, GetEventOptions{EventID: eventID})
 	require.NoError(t, err)
-	require.Equal(t, len(event.Attendees), 2)
-	require.Equal(t, event.Attendees[0], a1.Name)
-	require.Equal(t, event.Attendees[1], a2.Name)
+	assertStringsSliceUnorderedEquals(t, event.Attendees, []string{a1.Name, a2.Name})
 
 	attendanceNames, err := GetEventAttendance(db, eventID)
 	require.NoError(t, err)
-	require.Equal(t, len(attendanceNames), 2)
-	require.Equal(t, attendanceNames[0], a1.Name)
-	require.Equal(t, attendanceNames[1], a2.Name)
+	assertStringsSliceUnorderedEquals(t, attendanceNames, []string{a1.Name, a2.Name})
 }
 
 func TestMergeActivist(t *testing.T) {
@@ -551,6 +593,20 @@ func TestActivistRange_NameAndLimitDescOrder_returnsSubsetofActivists(t *testing
 	fetchedActivists, err = GetActivistRangeJSON(db, activistOptions)
 	require.NoError(t, err)
 	require.Nil(t, fetchedActivists)
+}
+
+func assertStringsSliceUnorderedEquals(t *testing.T, s0, s1 []string) {
+	m0 := map[string]struct{}{}
+	for _, s := range s0 {
+		m0[s] = struct{}{}
+	}
+	m1 := map[string]struct{}{}
+	for _, s := range s1 {
+		m1[s] = struct{}{}
+	}
+	require.Equalf(t, m0, m1,
+		"expected s0 and s1 to be equal:\ns0: %v\ns1: %v",
+		s0, s1)
 }
 
 func assertActivistJSONSliceContainsNames(t *testing.T, activists []ActivistJSON, names []string) {

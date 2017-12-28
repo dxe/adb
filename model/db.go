@@ -62,7 +62,8 @@ CREATE TABLE IF NOT EXISTS activists (
 CREATE TABLE IF NOT EXISTS event_attendance (
   activist_id INTEGER NOT NULL,
   event_id INTEGER NOT NULL,
-  CONSTRAINT activist_event_ukey UNIQUE (activist_id, event_id)
+  CONSTRAINT activist_event_ukey UNIQUE (activist_id, event_id),
+  CONSTRAINT event_activist_ukey UNIQUE (event_id, activist_id)
 )`)
 
 	db.MustExec(`
