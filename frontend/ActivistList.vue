@@ -11,6 +11,8 @@
         <span v-if="showOptions !== 'columns'">+</span><span v-if="showOptions === 'columns'">-</span> Columns
       </button>
 
+      <span>&nbsp;&nbsp;&nbsp;&nbsp;<b>Total rows:</b> </span><span id="rowCount">0</span>
+
       <div v-if="showOptions === 'filters'">
         <div>
           <label>Last Event From:</label>
@@ -44,7 +46,7 @@
 
     </div>
     <div id="hot-table-container">
-      <HotTable :ref="hot" :root="root" :settings="hotSettings" :data="activists" :height="height"></HotTable>
+      <HotTable ref="hot" :root="root" :settings="hotSettings" :data="activists" :height="height"></HotTable>
     </div>
     <modal
        name="activist-options-modal"
@@ -809,12 +811,6 @@ export default {
           flasMessage("Server error: " + err.responseText, true);
         },
       });
-      //var table = this.$refs.hot.table;
-      console.log(this.$refs);
-      console.log("hello there");
-      var table = this.$refs.hot.table
-      var rowCount = table.countRows();
-      console.log(rowCount);
     },
     afterChangeCallback: function(changes, source) {
       if (source !== 'edit' &&
@@ -1027,6 +1023,10 @@ export default {
   },
   mounted() {
     this.setHOTHeight();
+  },
+  updated() {
+  	var rowCount = this.$refs.hot.table.countRows();
+	$('#rowCount').html(rowCount);
   },
   components: {
     HotTable,
