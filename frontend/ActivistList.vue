@@ -790,7 +790,7 @@ export default {
               if (this.view === "activist_pool") {
                 return el.interested === "";
               } else if (this.view === "activist_recruitment") {
-                return el.interested === "Yes" && el.escalation != "No" && el.activist_level == "Community Member";
+                return (el.interested === "Yes" && el.escalation != "No") && ((el.activist_level == "Community Member" && el.escalation == "Yes") || (el.escalation == ""));
               } else if (this.view === "action_team") {
                 var selectedActionTeam = $("#filterActionTeam :selected").text();
 

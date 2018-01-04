@@ -231,7 +231,7 @@ type ActivistConnectionData struct {
 	Interested      string `db:"interested"`
 	MeetingDate     string `db:"meeting_date"`
 	ActionTeamFocus string `db:"action_team_focus"`
-	ActionTeamFocusSecondary string `db:"action_team_focus_secondary"`
+	ActionTeamFocusSecondary sql.NullString `db:"action_team_focus_secondary"`
 }
 
 type ActivistExtra struct {
@@ -357,6 +357,10 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 		if a.Activist.Location.Valid {
 			location = a.Activist.Location.String
 		}
+		action_team_focus_secondary := ""
+		if a.ActivistConnectionData.ActionTeamFocusSecondary.Valid {
+			action_team_focus_secondary = a.ActivistConnectionData.ActionTeamFocusSecondary.String
+		}
 
 		activistsJSON = append(activistsJSON, ActivistJSON{
 			Chapter:  a.Chapter,
@@ -393,7 +397,7 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			Interested:      a.Interested,
 			MeetingDate:     a.MeetingDate,
 			ActionTeamFocus: a.ActionTeamFocus,
-			ActionTeamFocusSecondary: a.ActionTeamFocusSecondary,
+			ActionTeamFocusSecondary: action_team_focus_secondary,
 		})
 	}
 
@@ -933,6 +937,10 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 		// No location specified so insert null value into database
 		valid = false
 	}
+	if activistJSON.ActionTeamFocusSecondary == "" {
+		// Not specified so insert null value into database
+		valid = false
+	}
 
 	activistExtra := ActivistExtra{
 		Activist: Activist{
@@ -961,7 +969,7 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			Interested:      strings.TrimSpace(activistJSON.Interested),
 			MeetingDate:     strings.TrimSpace(activistJSON.MeetingDate),
 			ActionTeamFocus: strings.TrimSpace(activistJSON.ActionTeamFocus),
-			ActionTeamFocusSecondary: strings.TrimSpace(activistJSON.ActionTeamFocusSecondary),
+			ActionTeamFocusSecondary: sql.NullString{String: strings.TrimSpace(activistJSON.ActionTeamFocusSecondary), Valid: valid},
 		},
 	}
 
