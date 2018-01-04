@@ -810,6 +810,8 @@ export default {
         },
       });
       console.log("hello");
+      var rowCount = this.$refs.hot.table.countRows();
+      console.log(rowCount);
     },
     afterChangeCallback: function(changes, source) {
       if (source !== 'edit' &&
