@@ -62,6 +62,7 @@ SELECT
   interested,
   meeting_date,
   action_team_focus,
+  action_team_focus_secondary,
 
   -- Do the first/last event subqueries here b/c the performance is
   -- better than when you join on events and event_attendance multiple times.
@@ -230,6 +231,7 @@ type ActivistConnectionData struct {
 	Interested      string `db:"interested"`
 	MeetingDate     string `db:"meeting_date"`
 	ActionTeamFocus string `db:"action_team_focus"`
+	ActionTeamFocusSecondary string `db:"action_team_focus_secondary"`
 }
 
 type ActivistExtra struct {
@@ -274,6 +276,7 @@ type ActivistJSON struct {
 	Interested      string `json:"interested"`
 	MeetingDate     string `json:"meeting_date"`
 	ActionTeamFocus string `json:"action_team_focus"`
+	ActionTeamFocusSecondary string `json:"action_team_focus_secondary"`
 }
 
 type GetActivistOptions struct {
@@ -390,6 +393,7 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			Interested:      a.Interested,
 			MeetingDate:     a.MeetingDate,
 			ActionTeamFocus: a.ActionTeamFocus,
+			ActionTeamFocusSecondary: a.ActionTeamFocusSecondary,
 		})
 	}
 
@@ -648,7 +652,8 @@ INSERT INTO activists (
   escalation,
   interested,
   meeting_date,
-  action_team_focus
+  action_team_focus,
+  action_team_focus_secondary
 
 ) VALUES (
 
@@ -673,7 +678,8 @@ INSERT INTO activists (
   :escalation,
   :interested,
   :meeting_date,
-  :action_team_focus
+  :action_team_focus,
+  :action_team_focus_secondary
 
 )`, activist)
 	if err != nil {
@@ -718,7 +724,8 @@ SET
   escalation = :escalation,
   interested = :interested,
   meeting_date = :meeting_date,
-  action_team_focus = :action_team_focus
+  action_team_focus = :action_team_focus,
+  action_team_focus_secondary = :action_team_focus_secondary
 
 WHERE
   id = :id`, activist)
@@ -954,6 +961,7 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			Interested:      strings.TrimSpace(activistJSON.Interested),
 			MeetingDate:     strings.TrimSpace(activistJSON.MeetingDate),
 			ActionTeamFocus: strings.TrimSpace(activistJSON.ActionTeamFocus),
+			ActionTeamFocusSecondary: strings.TrimSpace(activistJSON.ActionTeamFocusSecondary),
 		},
 	}
 

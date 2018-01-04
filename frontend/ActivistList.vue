@@ -351,6 +351,15 @@ function getDefaultColumns(view) {
     },
 
     {
+      header: "Secondary Focus",
+      data: {
+        data: "action_team_focus_secondary",
+        colWidths: 135,
+      },
+      enabled: view === "action_team",
+    },
+
+    {
       header: 'Working Groups',
       data: {
         data: 'working_group_list',
@@ -1026,7 +1035,7 @@ export default {
   },
   updated() {
   	var rowCount = this.$refs.hot.table.countRows();
-	$('#rowCount').html(rowCount);
+	  $('#rowCount').html(rowCount);
   },
   components: {
     HotTable,
