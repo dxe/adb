@@ -809,9 +809,6 @@ export default {
           flasMessage("Server error: " + err.responseText, true);
         },
       });
-      console.log("hello");
-      var rowCount = this.$refs.hot.table.countRows();
-      console.log(rowCount);
     },
     afterChangeCallback: function(changes, source) {
       if (source !== 'edit' &&
@@ -884,7 +881,9 @@ export default {
         data: rewriteSettings(this.activists),
       };
       table.updateSettings(newSettings);
-      logger.log("hello there");
+      console.log("hello there");
+      var rowCount = table.countRows();
+      console.log(rowCount);
     },
     sortColumn: function(col) {
       var field = col.data.data;
