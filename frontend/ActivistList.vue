@@ -11,7 +11,7 @@
         <span v-if="showOptions !== 'columns'">+</span><span v-if="showOptions === 'columns'">-</span> Columns
       </button>
 
-      <span>&nbsp;&nbsp;&nbsp;&nbsp;<b>Total rows:</b> </span><span id="rowCount">0</span>
+      <span>&nbsp;&nbsp;&nbsp;&nbsp;<b>Total rows: </b></span><span id="rowCount">0</span>
 
       <div v-if="showOptions === 'filters'">
         <div>
