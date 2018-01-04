@@ -884,6 +884,7 @@ export default {
         data: rewriteSettings(this.activists),
       };
       table.updateSettings(newSettings);
+      logger.log("hello there");
     },
     sortColumn: function(col) {
       var field = col.data.data;
