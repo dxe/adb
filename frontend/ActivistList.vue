@@ -44,7 +44,7 @@
 
     </div>
     <div id="hot-table-container">
-      <HotTable ref="hot" :root="root" :settings="hotSettings" :data="activists" :height="height"></HotTable>
+      <HotTable :ref="hot" :root="root" :settings="hotSettings" :data="activists" :height="height"></HotTable>
     </div>
     <modal
        name="activist-options-modal"
@@ -812,8 +812,9 @@ export default {
       //var table = this.$refs.hot.table;
       console.log(this.$refs);
       console.log("hello there");
-      //var rowCount = table.countRows();
-      //console.log(rowCount);
+      var table = this.$refs.hot.table
+      var rowCount = table.countRows();
+      console.log(rowCount);
     },
     afterChangeCallback: function(changes, source) {
       if (source !== 'edit' &&
