@@ -809,6 +809,7 @@ export default {
           flasMessage("Server error: " + err.responseText, true);
         },
       });
+      console.log("hello");
     },
     afterChangeCallback: function(changes, source) {
       if (source !== 'edit' &&
