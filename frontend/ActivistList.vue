@@ -809,10 +809,11 @@ export default {
           flasMessage("Server error: " + err.responseText, true);
         },
       });
-      var table = this.$refs.hot.table;
+      //var table = this.$refs.hot.table;
+      console.log(this.$refs);
       console.log("hello there");
-      var rowCount = table.countRows();
-      console.log(rowCount);
+      //var rowCount = table.countRows();
+      //console.log(rowCount);
     },
     afterChangeCallback: function(changes, source) {
       if (source !== 'edit' &&
