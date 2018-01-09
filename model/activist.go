@@ -932,14 +932,15 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 		return ActivistExtra{}, err
 	}
 
-	valid := true
+	validLoc := true
 	if activistJSON.Location == "" {
 		// No location specified so insert null value into database
-		valid = false
+		validLoc = false
 	}
+	validFoc := true
 	if activistJSON.ActionTeamFocusSecondary == "" {
 		// Not specified so insert null value into database
-		valid = false
+		validFoc = false
 	}
 
 	activistExtra := ActivistExtra{
@@ -948,7 +949,7 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			Email:    strings.TrimSpace(activistJSON.Email),
 			Facebook: strings.TrimSpace(activistJSON.Facebook),
 			ID:       activistJSON.ID,
-			Location: sql.NullString{String: strings.TrimSpace(activistJSON.Location), Valid: valid},
+			Location: sql.NullString{String: strings.TrimSpace(activistJSON.Location), Valid: validLoc},
 			Name:     strings.TrimSpace(activistJSON.Name),
 			Phone:    strings.TrimSpace(activistJSON.Phone),
 		},
@@ -969,7 +970,7 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			Interested:      strings.TrimSpace(activistJSON.Interested),
 			MeetingDate:     strings.TrimSpace(activistJSON.MeetingDate),
 			ActionTeamFocus: strings.TrimSpace(activistJSON.ActionTeamFocus),
-			ActionTeamFocusSecondary: sql.NullString{String: strings.TrimSpace(activistJSON.ActionTeamFocusSecondary), Valid: valid},
+			ActionTeamFocusSecondary: sql.NullString{String: strings.TrimSpace(activistJSON.ActionTeamFocusSecondary), Valid: validFoc},
 		},
 	}
 
