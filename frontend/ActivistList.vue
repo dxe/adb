@@ -822,8 +822,8 @@ export default {
       });
     },
     afterChangeCallback: function(changes, source) {
-      console.log("afterChangeCallack running!");
       if (source !== 'edit' &&
+          source !== 'CopyPaste.paste' &&
           source !== 'UndoRedo.undo' &&
           source !== 'UndoRedo.redo') {
         return;
