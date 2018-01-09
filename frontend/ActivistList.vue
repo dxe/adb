@@ -822,6 +822,7 @@ export default {
       });
     },
     afterChangeCallback: function(changes, source) {
+      console.log("afterChangeCallack running!");
       if (source !== 'edit' &&
           source !== 'UndoRedo.undo' &&
           source !== 'UndoRedo.redo') {
