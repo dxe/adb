@@ -351,7 +351,7 @@ function getDefaultColumns(view) {
     },
 
     {
-      header: "Secondary Focus",
+      header: "Interests",
       data: {
         data: "action_team_focus_secondary",
         colWidths: 135,
@@ -795,7 +795,7 @@ export default {
                 var selectedActionTeam = $("#filterActionTeam :selected").text();
 
                 if (selectedActionTeam != "All" && selectedActionTeam != "" && selectedActionTeam != null) {
-                  return ((el.activist_level == "Action Team" || el.activist_level == "Organizer" || el.activist_level == "Senior Organizer") && el.action_team_focus == selectedActionTeam);
+                  return ((el.activist_level == "Action Team" || el.activist_level == "Organizer" || el.activist_level == "Senior Organizer") && (el.action_team_focus == selectedActionTeam || (el.action_team_focus_secondary.toLowerCase().indexOf(selectedActionTeam.toLowerCase()) != -1)));
                 }
                 else {
                   return el.activist_level == "Action Team" || el.activist_level == "Organizer" || el.activist_level == "Senior Organizer";
