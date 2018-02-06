@@ -204,7 +204,7 @@ function getDefaultColumns(view) {
         readOnly: true,
         colWidths: 50,
       },
-      enabled: (view === "leaderboard" || view === "action_team"),
+      enabled: (view === "leaderboard" || view === "action_team" || view === "development"),
     }, {
       header: 'Email',
       data: {
@@ -215,16 +215,6 @@ function getDefaultColumns(view) {
                 view === "activist_pool" ||
                 view === "activist_recruitment"),
     },
-
-/*    {
-      header: 'Chapter',
-      data: {
-        data: 'chapter',
-        colWidths: 120,
-      },
-      enabled: false,
-    },*/
-
     {
       header: 'Phone',
       data: {
@@ -329,9 +319,12 @@ function getDefaultColumns(view) {
           "Senior Organizer",
         ],
       },
-      enabled: (view === "all_activists" || view === "activist_recruitment" || view === "leaderboard" || view === "action_team"),
-    },  
-
+      enabled: (view === "all_activists" ||
+                view === "activist_recruitment" ||
+                view === "leaderboard" ||
+                view === "action_team" ||
+                view === "development"),
+    },
     {
       header: "Focus",
       data: {
@@ -347,7 +340,7 @@ function getDefaultColumns(view) {
           "Communications",
         ],
       },
-      enabled: view === "action_team",
+      enabled: (view === "action_team" || view === "development"),
     },
 
     {
@@ -356,7 +349,7 @@ function getDefaultColumns(view) {
         data: "action_team_focus_secondary",
         colWidths: 135,
       },
-      enabled: view === "action_team",
+      enabled: (view === "action_team" || view === "development"),
     },
 
     {
@@ -366,18 +359,8 @@ function getDefaultColumns(view) {
         readOnly: true,
         colWidths: 200,
       },
-      enabled: (view === "action_team"),
+      enabled: (view === "action_team" || view === "development"),
     },
-
-    /*{
-      header: "Source",
-      data: {
-        data: "source",
-        colWidths: 75,
-      },
-      enabled: false,
-    },*/
-
     {
       header: 'First Event',
       data: {
@@ -404,18 +387,6 @@ function getDefaultColumns(view) {
       },
       enabled: (view === "leaderboard"),
     },
-
-    /*{
-      header: 'Status',
-      data: {
-        data: 'status',
-        readOnly: true,
-        colWidths: 125,
-      },
-      enabled: false,
-    },*/
-
-
     {
       header: "Active",
       data: {
@@ -433,7 +404,12 @@ function getDefaultColumns(view) {
         readOnly: true,
         colWidths: 50,
       },
-      enabled: (view === "action_team" || view === "activist_pool" || view === "activist_recruitment" || view === "all_activists" || view === "leaderboard"),
+      enabled: (view === "action_team" ||
+                view === "activist_pool" ||
+                view === "activist_recruitment" ||
+                view === "all_activists" ||
+                view === "leaderboard" ||
+                view === "development"),
     }, {
       header: "Doing Work",
       data: {
@@ -612,6 +588,7 @@ export default {
           "activist_pool",
           "activist_recruitment",
           "action_team",
+          "development",
         ];
         return validViews.indexOf(value) !== -1;
       }
@@ -800,7 +777,6 @@ export default {
                 else {
                   return el.activist_level == "Action Team" || el.activist_level == "Organizer" || el.activist_level == "Senior Organizer";
                 }
-                
               } else if (this.view === "leaderboard") {
                 return el.active == 1;
               } else {
