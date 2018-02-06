@@ -279,7 +279,7 @@ function getDefaultColumns(view) {
         data: "connector",
         colWidths: 125,
       },
-      enabled: (view === "activist_recruitment" || view === "action_team"),
+      enabled: (view === "activist_recruitment" || view === "action_team" || view === "development"),
     }, {
       header: "Recruitment Connection Date",
       data: {
