@@ -411,15 +411,6 @@ function getDefaultColumns(view) {
                 view === "leaderboard" ||
                 view === "development"),
     }, {
-      header: "Doing Work",
-      data: {
-        type: "checkbox",
-        data: "doing_work",
-        readOnly: false,
-        colWidths: 85,
-      },
-      enabled: view === "action_team",
-    }, {
       header: "Core Training",
       data: {
         type: "checkbox",
