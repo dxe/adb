@@ -494,6 +494,7 @@ function optionsButtonRenderer(instance, td, row, col, prop, value, cellProperti
 }
 
 function initialDateFromValue() {
+
   var d = new Date();
   var rawYear = d.getFullYear();
   var rawMonth = d.getMonth() + 1;
@@ -913,6 +914,14 @@ export default {
     }, 500),
   },
   data: function() {
+  	if (this.view === "action_team") {
+  		var initDateFrom = '';
+  		var initDateTo = '';
+  	}
+  	else {
+  		var initDateFrom = initialDateFromValue();
+  		var initDateTo = initialDateToValue();
+  	}
     return {
       root: 'activists-root',
       currentModalName: '',
@@ -922,8 +931,8 @@ export default {
       allActivists: [],
       height: 500,
       columns: getDefaultColumns(this.view),
-      lastEventDateFrom: initialDateFromValue(),
-      lastEventDateTo: initialDateToValue(),
+      lastEventDateFrom: initDateFrom,
+      lastEventDateTo: initDateTo,
       filterActionTeam: "All",
       showOptions: '',
       search: '',
