@@ -36,6 +36,7 @@ type EventJSON struct {
 	EventDate        string   `json:"event_date"`
 	EventType        string   `json:"event_type"`
 	Attendees        []string `json:"attendees"`         // For displaying all event attendees
+	AttendeeEmails   []string `json:"attendee_emails"`
 	AddedAttendees   []string `json:"added_attendees"`   // Used for Updating Events
 	DeletedAttendees []string `json:"deleted_attendees"` // Used for Updating Events
 }
@@ -47,6 +48,7 @@ type Event struct {
 	EventDate        time.Time  `db:"date"`
 	EventType        EventType  `db:"event_type"`
 	Attendees        []string   // For retrieving all event attendees
+	AttendeeEmails   []string
 	AddedAttendees   []Activist // Used for Updating Events
 	DeletedAttendees []Activist // Used for Updating Events
 }
@@ -80,6 +82,7 @@ func GetEventsJSON(db *sqlx.DB, options GetEventOptions) ([]EventJSON, error) {
 			EventDate: event.EventDate.Format(EventDateLayout),
 			EventType: string(event.EventType),
 			Attendees: event.Attendees,
+			AttendeeEmails: event.AttendeeEmails,
 		})
 	}
 	return events, nil
@@ -177,7 +180,8 @@ ON (e.id = ea.event_id AND ea.activist_id = a.id)
 	attendanceQuery, attendanceArgs, err := sqlx.In(`
 SELECT
   ea.event_id,
-  a.name as activist_name
+  a.name as activist_name,
+  a.email as activist_email
 FROM activists a
 JOIN event_attendance ea
   ON a.id = ea.activist_id
@@ -191,6 +195,7 @@ WHERE
 	type Attendance struct {
 		EventID      int    `db:"event_id"`
 		ActivistName string `db:"activist_name"`
+		ActivistEmail string `db:"activist_email"`
 	}
 	var allAttendance []Attendance
 	err = db.Select(&allAttendance, attendanceQuery, attendanceArgs...)
@@ -201,6 +206,7 @@ WHERE
 	for _, a := range allAttendance {
 		i := eventIDToIndex[a.EventID]
 		events[i].Attendees = append(events[i].Attendees, a.ActivistName)
+		events[i].AttendeeEmails = append(events[i].AttendeeEmails, a.ActivistEmail)
 	}
 
 	return events, nil
