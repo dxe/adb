@@ -48,6 +48,7 @@ function listEvents(events) {
   for (var i = 0; i < events.length; i++) {
     var event = events[i];
     var attendeeString = '';
+    var emailString = '';
 
     if (event.attendees == null) {
       event.attendees = [];
@@ -55,6 +56,10 @@ function listEvents(events) {
 
     for (var j = 0; j < event.attendees.length; j++) {
       attendeeString += '<li>' + event.attendees[j]; '</li>';
+    }
+
+    for (var k = 0; k < event.attendee_emails.length; k++) {
+      emailString += event.attendee_emails[k] + ',';
     }
 
     // Now, create the links.
@@ -73,7 +78,7 @@ function listEvents(events) {
         '<td nowrap>' + event.event_type + '</td>' +
         '<td nowrap>' + event.attendees.length + '</td>' +
         '<td>' +
-          '<button class="show-attendees btn btn-link" onclick="event_list.toggleAttendees(\'' + rowID + '\')" >+ Attendees</button>' +
+          '<button class="show-attendees btn btn-link" onclick="event_list.toggleAttendees(\'' + rowID + '\')" >+ Attendees</button><a target="_blank" href="https://mail.google.com/mail/?view=cm&fs=1&bcc=' + emailString + '" class="btn btn-link"><span class="glyphicon glyphicon-envelope"></span></a>' +
           '<ul class="attendee-list" style="display: none">' + attendeeString + '</ul></td>' +
         '</tr>';
     d.insertAdjacentHTML('beforeend', newRow);
