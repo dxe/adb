@@ -14,11 +14,11 @@
       <span>&nbsp;&nbsp;&nbsp;&nbsp;<b>Total rows: </b></span><span id="rowCount">0</span>
 
       <div v-if="showOptions === 'filters'">
-        <div>
+        <div v-if="view != 'action_team'">
           <label>Last Event From:</label>
           <input v-model="lastEventDateFrom" class="form-control filter-margin" type="date"  />
         </div>
-        <div>
+        <div v-if="view != 'action_team'">
           <label>Last Event To:</label>
           <input v-model="lastEventDateTo" class="form-control filter-margin" type="date" />
         </div>
