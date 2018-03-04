@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <meta http-equiv="refresh" content="300">
+    <meta http-equiv="refresh" content="600">
     <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
     <title>Activist Database</title>
     <meta name="description" content="">
@@ -19,7 +19,7 @@
 
     <style>
       body {
-          font-family: "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+          font-family: "Proxima Nova", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
           font-weight: medium;
           background-color: black;
           color: white;
@@ -39,115 +39,79 @@
     left: 50%;
     transform: translate(-50%, -50%);
   }
+  .lower-text {
+	position: absolute;
+	bottom: 8px;
+	right: 16px;
+	text-align: right;
+	text-shadow: 2px 2px 4px #000000;
+  }
 </style>
 
 
 <div class="body-full" style="height:100%; width: 100%; cursor: none;">
 
 <div id="powerCarousel" class="carousel" data-ride="carousel" data-pause="false" data-interval="7000" style="height:100%; width: 100%;">
-  <div class="carousel-inner centered">
-    <div class="item active">
-      <center>
-        <br/>
-        <h1><span style="font-size:175px;">Movement Power Index</span></h1>
-        <br/>
-        <h2><span style="font-size: 400px;">{{ .Data.Power }}</span></h2>
-        <br/>
-        <h2 style="font-size: 150px;">2018 Goal: 250</h2>
-        <br/>
-        <br/>
-        <h4 style="font-size: 100px;">Month to Date: {{ .Data.PowerMTD }}</h3>
-        <br/>
-      </center>
+
+	<div class="carousel-inner centered">
+
+    <div class="item active"><img src="/static/img/1131154634.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>MPI: {{ .Data.Power }}</b></span><br><span style="font-size: 50px;">Month to Date: {{ .Data.PowerMTD }}<br>2018 Goal: 250</span></div></div>
+	<div class="item"><img src="/static/img/963732874.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>Open Rescues YTD: 2</b></span><br><span style="font-size: 50px;">Goal: 24</span></div></div>
+
+	<div class="item"><img src="/static/img/1151759700.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>MPI: {{ .Data.Power }}</b></span><br><span style="font-size: 50px;">Month to Date: {{ .Data.PowerMTD }}<br>2018 Goal: 250</span></div></div>
+	<div class="item"><img src="/static/img/1168287872.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>Open Rescues YTD: 2</b></span><br><span style="font-size: 50px;">Goal: 24</span></div></div>
+
+	<div class="item"><img src="/static/img/1282794929.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>MPI: {{ .Data.Power }}</b></span><br><span style="font-size: 50px;">Month to Date: {{ .Data.PowerMTD }}<br>2018 Goal: 250</span></div></div>
+	<div class="item"><img src="/static/img/1305278726.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>Open Rescues YTD: 2</b></span><br><span style="font-size: 50px;">Goal: 24</span></div></div>
+
+	<div class="item"><img src="/static/img/1482956601.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>MPI: {{ .Data.Power }}</b></span><br><span style="font-size: 50px;">Month to Date: {{ .Data.PowerMTD }}<br>2018 Goal: 250</span></div></div>
+	<div class="item"><img src="/static/img/1493895135.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>Open Rescues YTD: 2</b></span><br><span style="font-size: 50px;">Goal: 24</span></div></div>
+
+	<div class="item"><img src="/static/img/1533770023.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>MPI: {{ .Data.Power }}</b></span><br><span style="font-size: 50px;">Month to Date: {{ .Data.PowerMTD }}<br>2018 Goal: 250</span></div></div>
+	<div class="item"><img src="/static/img/1560402906.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>Open Rescues YTD: 2</b></span><br><span style="font-size: 50px;">Goal: 24</span></div></div>
+
+	<div class="item"><img src="/static/img/868203295.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>MPI: {{ .Data.Power }}</b></span><br><span style="font-size: 50px;">Month to Date: {{ .Data.PowerMTD }}<br>2018 Goal: 250</span></div></div>
+	<div class="item"><img src="/static/img/1756505038.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>Open Rescues YTD: 2</b></span><br><span style="font-size: 50px;">Goal: 24</span></div></div>
+
+	<div class="item"><img src="/static/img/1823712859.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>MPI: {{ .Data.Power }}</b></span><br><span style="font-size: 50px;">Month to Date: {{ .Data.PowerMTD }}<br>2018 Goal: 250</span></div></div>
+	<div class="item"><img src="/static/img/1837422764.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>Open Rescues YTD: 2</b></span><br><span style="font-size: 50px;">Goal: 24</span></div></div>
+
+	<div class="item"><img src="/static/img/1870547284.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>MPI: {{ .Data.Power }}</b></span><br><span style="font-size: 50px;">Month to Date: {{ .Data.PowerMTD }}<br>2018 Goal: 250</span></div></div>
+	<div class="item"><img src="/static/img/1874976233.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>Open Rescues YTD: 2</b></span><br><span style="font-size: 50px;">Goal: 24</span></div></div>
+
+	<div class="item"><img src="/static/img/1899157715.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>MPI: {{ .Data.Power }}</b></span><br><span style="font-size: 50px;">Month to Date: {{ .Data.PowerMTD }}<br>2018 Goal: 250</span></div></div>
+	<div class="item"><img src="/static/img/1916557436.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>Open Rescues YTD: 2</b></span><br><span style="font-size: 50px;">Goal: 24</span></div></div>
+
+	<div class="item"><img src="/static/img/1920923132.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>MPI: {{ .Data.Power }}</b></span><br><span style="font-size: 50px;">Month to Date: {{ .Data.PowerMTD }}<br>2018 Goal: 250</span></div></div>
+	<div class="item"><img src="/static/img/1939765875.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>Open Rescues YTD: 2</b></span><br><span style="font-size: 50px;">Goal: 24</span></div></div>
+
+	<div class="item"><img src="/static/img/2008077345.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>MPI: {{ .Data.Power }}</b></span><br><span style="font-size: 50px;">Month to Date: {{ .Data.PowerMTD }}<br>2018 Goal: 250</span></div></div>
+	<div class="item"><img src="/static/img/2127899461.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>Open Rescues YTD: 2</b></span><br><span style="font-size: 50px;">Goal: 24</span></div></div>
+
+	<div class="item"><img src="/static/img/50874240.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>MPI: {{ .Data.Power }}</b></span><br><span style="font-size: 50px;">Month to Date: {{ .Data.PowerMTD }}<br>2018 Goal: 250</span></div></div>
+	<div class="item"><img src="/static/img/567950194.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>Open Rescues YTD: 2</b></span><br><span style="font-size: 50px;">Goal: 24</span></div></div>
+
+	<div class="item"><img src="/static/img/570127109.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>MPI: {{ .Data.Power }}</b></span><br><span style="font-size: 50px;">Month to Date: {{ .Data.PowerMTD }}<br>2018 Goal: 250</span></div></div>
+	<div class="item"><img src="/static/img/632767302.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>Open Rescues YTD: 2</b></span><br><span style="font-size: 50px;">Goal: 24</span></div></div>
+
+	<div class="item"><img src="/static/img/691937638.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>MPI: {{ .Data.Power }}</b></span><br><span style="font-size: 50px;">Month to Date: {{ .Data.PowerMTD }}<br>2018 Goal: 250</span></div></div>
+	<div class="item"><img src="/static/img/69821504.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>Open Rescues YTD: 2</b></span><br><span style="font-size: 50px;">Goal: 24</span></div></div>
+
+	<div class="item"><img src="/static/img/725659578.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>MPI: {{ .Data.Power }}</b></span><br><span style="font-size: 50px;">Month to Date: {{ .Data.PowerMTD }}<br>2018 Goal: 250</span></div></div>
+	<div class="item"><img src="/static/img/84301579.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>Open Rescues YTD: 2</b></span><br><span style="font-size: 50px;">Goal: 24</span></div></div>
+
+	<div class="item"><img src="/static/img/164551051.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>MPI: {{ .Data.Power }}</b></span><br><span style="font-size: 50px;">Month to Date: {{ .Data.PowerMTD }}<br>2018 Goal: 250</span></div></div>
+	<div class="item"><img src="/static/img/889329711.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>Open Rescues YTD: 2</b></span><br><span style="font-size: 50px;">Goal: 24</span></div></div>
+
+	<div class="item"><img src="/static/img/909656204.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>MPI: {{ .Data.Power }}</b></span><br><span style="font-size: 50px;">Month to Date: {{ .Data.PowerMTD }}<br>2018 Goal: 250</span></div></div>
+	<div class="item"><img src="/static/img/1361149755.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>Open Rescues YTD: 2</b></span><br><span style="font-size: 50px;">Goal: 24</span></div></div>
+		
+	<div class="item"><img src="/static/img/1529344028.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>MPI: {{ .Data.Power }}</b></span><br><span style="font-size: 50px;">Month to Date: {{ .Data.PowerMTD }}<br>2018 Goal: 250</span></div></div>
+	<div class="item"><img src="/static/img/423232323.jpg" style="width:100%;"><div class="lower-text"><span style="font-size: 100px;"><b>Open Rescues YTD: 2</b></span><br><span style="font-size: 50px;">Goal: 24</span></div></div>
+
+
     </div>
 
-<!--     <div class="item"><img src="/static/img/mpi_photos/1089383445.jpg" style="width:100%;"></div>
-	<div class="item"><img src="/static/img/mpi_photos/1131154634.jpg" style="width:100%;"></div>
-	<div class="item"><img src="/static/img/mpi_photos/1151759700.jpg" style="width:100%;"></div>
-
-
-
-	<div class="item"><img src="/static/img/mpi_photos/1168287872.jpg" style="width:100%;"></div>
-	<div class="item"><img src="/static/img/mpi_photos/1282794929.jpg" style="width:100%;"></div>
-	<div class="item"><img src="/static/img/mpi_photos/1305278726.jpg" style="width:100%;"></div>
-
-
-
-	<div class="item"><img src="/static/img/mpi_photos/1361149755.jpg" style="width:100%;"></div>
-	<div class="item"><img src="/static/img/mpi_photos/1482956601.jpg" style="width:100%;"></div>
-	<div class="item"><img src="/static/img/mpi_photos/1493895135.jpg" style="width:100%;"></div>
-
-
-
-	<div class="item"><img src="/static/img/mpi_photos/1529344028.jpg" style="width:100%;"></div>
-	<div class="item"><img src="/static/img/mpi_photos/1533770023.jpg" style="width:100%;"></div>
-	<div class="item"><img src="/static/img/mpi_photos/1560402906.jpg" style="width:100%;"></div>
-
-
-
-	<div class="item"><img src="/static/img/mpi_photos/164551051.jpg" style="width:100%;"></div>
-	<div class="item"><img src="/static/img/mpi_photos/1756505038.jpg" style="width:100%;"></div>
-	<div class="item"><img src="/static/img/mpi_photos/1823712859.jpg" style="width:100%;"></div>
-
-
-
-	<div class="item"><img src="/static/img/mpi_photos/1837422764.jpg" style="width:100%;"></div>
-	<div class="item"><img src="/static/img/mpi_photos/1870547284.jpg" style="width:100%;"></div>
-	<div class="item"><img src="/static/img/mpi_photos/1874976233.jpg" style="width:100%;"></div>
-
-
-
-	<div class="item"><img src="/static/img/mpi_photos/1899157715.jpg" style="width:100%;"></div>
-	<div class="item"><img src="/static/img/mpi_photos/1916557436.jpg" style="width:100%;"></div>
-	<div class="item"><img src="/static/img/mpi_photos/1920923132.jpg" style="width:100%;"></div>
-
-
-
-	<div class="item"><img src="/static/img/mpi_photos/1939765875.jpg" style="width:100%;"></div>
-	<div class="item"><img src="/static/img/mpi_photos/2008077345.jpg" style="width:100%;"></div>
-	<div class="item"><img src="/static/img/mpi_photos/2127899461.jpg" style="width:100%;"></div>
-
-
-
-	<div class="item"><img src="/static/img/mpi_photos/423232323.jpg" style="width:100%;"></div>
-	<div class="item"><img src="/static/img/mpi_photos/50874240.jpg" style="width:100%;"></div>
-	<div class="item"><img src="/static/img/mpi_photos/567950194.jpg" style="width:100%;"></div>
-
-
-
-	<div class="item"><img src="/static/img/mpi_photos/570127109.jpg" style="width:100%;"></div>
-	<div class="item"><img src="/static/img/mpi_photos/632767302.jpg" style="width:100%;"></div>
-	<div class="item"><img src="/static/img/mpi_photos/691937638.jpg" style="width:100%;"></div>
-
-
-
-	<div class="item"><img src="/static/img/mpi_photos/69821504.jpg" style="width:100%;"></div>
-	<div class="item"><img src="/static/img/mpi_photos/725659578.jpg" style="width:100%;"></div>
-	<div class="item"><img src="/static/img/mpi_photos/84301579.jpg" style="width:100%;"></div>
-
-
-
-	<div class="item"><img src="/static/img/mpi_photos/868203295.jpg" style="width:100%;"></div>
-	<div class="item"><img src="/static/img/mpi_photos/889329711.jpg" style="width:100%;"></div>
-	<div class="item"><img src="/static/img/mpi_photos/909656204.jpg" style="width:100%;"></div>
-	<div class="item"><img src="/static/img/mpi_photos/963732874.jpg" style="width:100%;"></div>
-
-    <div class="item">
-      <center>
-        <br/>
-        <h1><span style="font-size:175px;">Movement Power Index</span></h1>
-        <br/>
-        <h2><span style="font-size: 400px;">{{ .Data.Power }}</span></h2>
-        <br/>
-        <h2 style="font-size: 150px;">2018 Goal: 150</h2>
-        <br/>
-        <br/>
-        <h4 style="font-size: 100px;">Month to Date: {{ .Data.PowerMTD }}</h3>
-        <br/>
-      </center>
-    </div> -->
-    
-  </div>
 </div>
 
 
