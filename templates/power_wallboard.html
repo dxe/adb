@@ -32,44 +32,6 @@
     <div id="flash" role="alert"></div>
     <script>flash_message.initializeFlashMessage();</script>
 
-<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-
-<script type="text/javascript">
-	google.charts.load('current', {packages: ['corechart']});
-	google.charts.setOnLoadCallback(drawChart);
-
-	function drawChart() {
-	      var data = new google.visualization.DataTable();
-	      data.addColumn('string', 'Month');
-	      data.addColumn('number', 'Power Index');
-
-	      data.addRows([
-	        {{range $a := .Data.PowerHist}}
-				["{{$a.Month}}/{{$a.Year}}",
-				{{$a.Power}}],
-    		{{end}}
-	      ]);
-
-	      var options = {
-          'width':1400,
-          'height':600,
-	        hAxis: {
-	          title: 'Month',
-	          textPosition : 'out'
-	        },
-	        vAxis: {
-	          title: 'Power Index'
-	        },
-	        series: {
-	          1: {curveType: 'function'}
-	        },
-	        legend: {position: 'none'}
-	      };
-
-	      var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
-	      chart.draw(data, options);
-	    }
-</script>
 <style>
   .centered {
     position: fixed;
@@ -99,10 +61,76 @@
       </center>
     </div>
 
-    <div class="item"><center><img src="/static/img/photo2.jpeg" style="width:50%;"></center></div>
-    <div class="item"><img src="/static/img/photo6.jpeg" style="width:100%;"></div>
-    <div class="item"><img src="/static/img/photo7.jpeg" style="width:100%;"></div>
+<!--     <div class="item"><img src="/static/img/mpi_photos/1089383445.jpg" style="width:100%;"></div>
+	<div class="item"><img src="/static/img/mpi_photos/1131154634.jpg" style="width:100%;"></div>
+	<div class="item"><img src="/static/img/mpi_photos/1151759700.jpg" style="width:100%;"></div>
 
+
+
+	<div class="item"><img src="/static/img/mpi_photos/1168287872.jpg" style="width:100%;"></div>
+	<div class="item"><img src="/static/img/mpi_photos/1282794929.jpg" style="width:100%;"></div>
+	<div class="item"><img src="/static/img/mpi_photos/1305278726.jpg" style="width:100%;"></div>
+
+
+
+	<div class="item"><img src="/static/img/mpi_photos/1361149755.jpg" style="width:100%;"></div>
+	<div class="item"><img src="/static/img/mpi_photos/1482956601.jpg" style="width:100%;"></div>
+	<div class="item"><img src="/static/img/mpi_photos/1493895135.jpg" style="width:100%;"></div>
+
+
+
+	<div class="item"><img src="/static/img/mpi_photos/1529344028.jpg" style="width:100%;"></div>
+	<div class="item"><img src="/static/img/mpi_photos/1533770023.jpg" style="width:100%;"></div>
+	<div class="item"><img src="/static/img/mpi_photos/1560402906.jpg" style="width:100%;"></div>
+
+
+
+	<div class="item"><img src="/static/img/mpi_photos/164551051.jpg" style="width:100%;"></div>
+	<div class="item"><img src="/static/img/mpi_photos/1756505038.jpg" style="width:100%;"></div>
+	<div class="item"><img src="/static/img/mpi_photos/1823712859.jpg" style="width:100%;"></div>
+
+
+
+	<div class="item"><img src="/static/img/mpi_photos/1837422764.jpg" style="width:100%;"></div>
+	<div class="item"><img src="/static/img/mpi_photos/1870547284.jpg" style="width:100%;"></div>
+	<div class="item"><img src="/static/img/mpi_photos/1874976233.jpg" style="width:100%;"></div>
+
+
+
+	<div class="item"><img src="/static/img/mpi_photos/1899157715.jpg" style="width:100%;"></div>
+	<div class="item"><img src="/static/img/mpi_photos/1916557436.jpg" style="width:100%;"></div>
+	<div class="item"><img src="/static/img/mpi_photos/1920923132.jpg" style="width:100%;"></div>
+
+
+
+	<div class="item"><img src="/static/img/mpi_photos/1939765875.jpg" style="width:100%;"></div>
+	<div class="item"><img src="/static/img/mpi_photos/2008077345.jpg" style="width:100%;"></div>
+	<div class="item"><img src="/static/img/mpi_photos/2127899461.jpg" style="width:100%;"></div>
+
+
+
+	<div class="item"><img src="/static/img/mpi_photos/423232323.jpg" style="width:100%;"></div>
+	<div class="item"><img src="/static/img/mpi_photos/50874240.jpg" style="width:100%;"></div>
+	<div class="item"><img src="/static/img/mpi_photos/567950194.jpg" style="width:100%;"></div>
+
+
+
+	<div class="item"><img src="/static/img/mpi_photos/570127109.jpg" style="width:100%;"></div>
+	<div class="item"><img src="/static/img/mpi_photos/632767302.jpg" style="width:100%;"></div>
+	<div class="item"><img src="/static/img/mpi_photos/691937638.jpg" style="width:100%;"></div>
+
+
+
+	<div class="item"><img src="/static/img/mpi_photos/69821504.jpg" style="width:100%;"></div>
+	<div class="item"><img src="/static/img/mpi_photos/725659578.jpg" style="width:100%;"></div>
+	<div class="item"><img src="/static/img/mpi_photos/84301579.jpg" style="width:100%;"></div>
+
+
+
+	<div class="item"><img src="/static/img/mpi_photos/868203295.jpg" style="width:100%;"></div>
+	<div class="item"><img src="/static/img/mpi_photos/889329711.jpg" style="width:100%;"></div>
+	<div class="item"><img src="/static/img/mpi_photos/909656204.jpg" style="width:100%;"></div>
+	<div class="item"><img src="/static/img/mpi_photos/963732874.jpg" style="width:100%;"></div>
 
     <div class="item">
       <center>
@@ -111,17 +139,13 @@
         <br/>
         <h2><span style="font-size: 400px;">{{ .Data.Power }}</span></h2>
         <br/>
-        <h2 style="font-size: 150px;">2017 Goal: 150</h2>
+        <h2 style="font-size: 150px;">2018 Goal: 150</h2>
         <br/>
         <br/>
         <h4 style="font-size: 100px;">Month to Date: {{ .Data.PowerMTD }}</h3>
         <br/>
       </center>
-    </div>
-
-    <div class="item"><img src="/static/img/photo5.jpeg" style="width:100%;"></div>
-    <div class="item"><img src="/static/img/photo3.jpeg" style="width:100%;"></div>
-    <div class="item"><img src="/static/img/photo8.jpeg" style="width:100%;"></div>
+    </div> -->
     
   </div>
 </div>
