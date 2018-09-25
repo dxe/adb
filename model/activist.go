@@ -152,7 +152,15 @@ SELECT
     JOIN working_group_members wgm ON wg.id = wgm.working_group_id
     WHERE
       wgm.activist_id = a.id),
-    '') AS working_group_list
+    '') AS working_group_list,
+    IFNULL(
+    (SELECT
+      GROUP_CONCAT(DISTINCT circles.name SEPARATOR ', ')
+    FROM circles
+    JOIN circle_members ON circles.id = circle_members.circle_id
+    WHERE
+      circle_members.activist_id = a.id),
+    '') AS circles_list
 
 FROM activists a
 
@@ -221,6 +229,7 @@ type ActivistMembershipData struct {
 	LiberationPledge       bool   `db:"liberation_pledge"`
 	Source                 string `db:"source"`
 	WorkingGroups          string `db:"working_group_list"`
+	Circles          	   string `db:"circles_list"`
 }
 
 type ActivistConnectionData struct {
@@ -268,6 +277,7 @@ type ActivistJSON struct {
 	LiberationPledge       bool   `json:"liberation_pledge"`
 	Source                 string `json:"source"`
 	WorkingGroups          string `json:"working_group_list"`
+	Circles          	   string `json:"circles_list"`
 
 	Connector       string `json:"connector"`
 	ContactedDate   string `json:"contacted_date"`

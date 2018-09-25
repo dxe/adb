@@ -237,40 +237,40 @@ function getDefaultColumns(view) {
       enabled: (view === "all_activists" || view === "activist_recruitment" || view === "activist_pool"),
     },
 
-    {
-      header: 'Liberation Pledge',
-      data: {
-        type: 'checkbox',
-        data: 'liberation_pledge',
-        colWidths: 120,
-      },
-      enabled: false,
-    }, 
+    //{
+    //  header: 'Liberation Pledge',
+    //  data: {
+    //    type: 'checkbox',
+    //    data: 'liberation_pledge',
+    //    colWidths: 120,
+    //  },
+    //  enabled: false,
+    //}, 
 
-    {
-      header: "Contacted Date",
-      data: {
-        data: "contacted_date",
-        type: 'date',
-        dateFormat: 'YYYY-MM-DD',
-        correctFormat: true,
-        colWidths: 100,
-      },
-      enabled: view === "activist_pool",
-    }, {
-      header: "Interested",
-      data: {
-        data: "interested",
-        colWidths: 100,
-        type: 'dropdown',
-        source: [
-          "",
-          "Yes",
-          "No",
-        ],
-      },
-      enabled: view === "activist_pool",
-    },
+    //{
+    //  header: "Contacted Date",
+    //  data: {
+    //    data: "contacted_date",
+    //    type: 'date',
+    //    dateFormat: 'YYYY-MM-DD',
+    //    correctFormat: true,
+    //    colWidths: 100,
+    //  },
+    //  enabled: view === "activist_pool",
+    //}, {
+    //  header: "Interested",
+    //  data: {
+    //    data: "interested",
+    //    colWidths: 100,
+    //    type: 'dropdown',
+    //    source: [
+    //     "",
+    //      "Yes",
+    //      "No",
+    //    ],
+    //  },
+    //  enabled: view === "activist_pool",
+    //},
 
     // ActivistMembershipData
     {
@@ -280,30 +280,31 @@ function getDefaultColumns(view) {
         colWidths: 125,
       },
       enabled: (view === "activist_recruitment" || view === "action_team" || view === "development"),
-    }, {
-      header: "Recruitment Connection Date",
-      data: {
-        data: "meeting_date",
-        type: 'date',
-        dateFormat: 'YYYY-MM-DD',
-        correctFormat: true,
-        colWidths: 100,
-      },
-      enabled: view === "activist_recruitment",
-    }, {
-      header: "Escalation",
-      data: {
-        data: "escalation",
-        type: 'dropdown',
-        colWidths: 100,
-        source: [
-          "",
-          "Yes",
-          "No",
-        ],
-      },
-      enabled: view === "activist_recruitment",
     },
+    //{
+    //  header: "Recruitment Connection Date",
+    //  data: {
+    //    data: "meeting_date",
+    //    type: 'date',
+    //    dateFormat: 'YYYY-MM-DD',
+    //    correctFormat: true,
+    //    colWidths: 100,
+    //  },
+    //  enabled: view === "activist_recruitment",
+    //}, {
+    //  header: "Escalation",
+    //  data: {
+    //    data: "escalation",
+    //    type: 'dropdown',
+    //    colWidths: 100,
+    //    source: [
+    //      "",
+    //      "Yes",
+    //      "No",
+    //    ],
+    //  },
+    //  enabled: view === "activist_recruitment",
+    //},
 
     {
       header: 'Activist Level',
@@ -356,6 +357,15 @@ function getDefaultColumns(view) {
       header: 'Working Groups',
       data: {
         data: 'working_group_list',
+        readOnly: true,
+        colWidths: 200,
+      },
+      enabled: (view === "action_team" || view === "development"),
+    },
+    {
+      header: 'Circles',
+      data: {
+        data: 'circles_list',
         readOnly: true,
         colWidths: 200,
       },
