@@ -395,6 +395,7 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			CoreStaff:              a.CoreStaff,
 			DoingWork:              a.DoingWork,
 			WorkingGroups:          a.WorkingGroups,
+			Circles:          		a.Circles,
 			ExcludeFromLeaderboard: a.ExcludeFromLeaderboard,
 			GlobalTeamMember:       a.GlobalTeamMember,
 			LiberationPledge:       a.LiberationPledge,
