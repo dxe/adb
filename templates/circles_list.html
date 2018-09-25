@@ -1,0 +1,13 @@
+{{template "header.html" .}}
+
+<div class="body-wrapper-wide circles-list-content">
+  <div class="title">
+    <h1>Circles</h1>
+    <br />
+  </div>
+  <div id="app"></div>
+  <script src="/dist/circles_list.js?{{ .StaticResourcesHash }}"></script>
+  <script>circles_list.initializeApp()</script>
+</div>
+
+{{template "footer.html" .}}

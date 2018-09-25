@@ -133,6 +133,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/leaderboard", alice.New(main.authMiddleware).ThenFunc(main.LeaderboardHandler))
 	router.Handle("/power", alice.New(main.authMiddleware).ThenFunc(main.PowerHandler)) // TODO: rename
 	router.Handle("/list_working_groups", alice.New(main.authMiddleware).ThenFunc(main.ListWorkingGroupsHandler))
+	router.Handle("/list_circles", alice.New(main.authMiddleware).ThenFunc(main.ListCirclesHandler))
 
 	// Authed Admin pages
 	router.Handle("/admin/users", alice.New(main.authAdminMiddleware).ThenFunc(main.ListUsersHandler))
@@ -156,6 +157,9 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/working_group/save", alice.New(main.apiAuthMiddleware).ThenFunc(main.WorkingGroupSaveHandler))
 	router.Handle("/working_group/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.WorkingGroupListHandler))
 	router.Handle("/working_group/delete", alice.New(main.apiAuthMiddleware).ThenFunc(main.WorkingGroupDeleteHandler))
+	router.Handle("/circle/save", alice.New(main.apiAuthMiddleware).ThenFunc(main.CircleGroupSaveHandler))
+	router.Handle("/circle/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.CircleGroupListHandler))
+	router.Handle("/circle/delete", alice.New(main.apiAuthMiddleware).ThenFunc(main.CircleGroupDeleteHandler))
 
 	// Authed Admin API
 	router.Handle("/user/list", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserListHandler))
@@ -388,6 +392,11 @@ func (c MainController) ListActivistsDevelopmentHandler(w http.ResponseWriter, r
 func (c MainController) ListWorkingGroupsHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, "working_group_list", PageData{PageName: "WorkingGroupList", IsAdmin: getUserFromContext(r.Context()).Admin})
 }
+
+func (c MainController) ListCirclesHandler(w http.ResponseWriter, r *http.Request) {
+	renderPage(w, "circles_list", PageData{PageName: "CirclesList", IsAdmin: getUserFromContext(r.Context()).Admin})
+}
+
 
 func (c MainController) LeaderboardHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, "activist_list", PageData{
@@ -753,6 +762,72 @@ func (c MainController) WorkingGroupDeleteHandler(w http.ResponseWriter, r *http
 		"status": "success",
 	})
 }
+
+//start circle
+func (c MainController) CircleGroupSaveHandler(w http.ResponseWriter, r *http.Request) {
+	cir, err := model.CleanCircleGroupData(c.db, r.Body)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	var cirID int
+	if cir.ID == 0 {
+		cirID, err = model.CreateCircleGroup(c.db, cir)
+	} else {
+		cirID, err = model.UpdateCircleGroup(c.db, cir)
+	}
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	cirJSON, err := model.GetCircleGroupJSON(c.db, cirID)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	writeJSON(w, map[string]interface{}{
+		"status":        "success",
+		"circle": cirJSON,
+	})
+}
+
+func (c MainController) CircleGroupListHandler(w http.ResponseWriter, r *http.Request) {
+	cirs, err := model.GetCircleGroupsJSON(c.db, model.CircleGroupQueryOptions{})
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	writeJSON(w, map[string]interface{}{
+		"status":         "success",
+		"working_groups": cirs,
+	})
+}
+
+func (c MainController) CircleGroupDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	var requestData struct {
+		ID int `json:"circle_id"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&requestData)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	err = model.DeleteCircleGroup(c.db, requestData.ID)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	writeJSON(w, map[string]string{
+		"status": "success",
+	})
+}
+//end circle
 
 func (c MainController) ActivistListHandler(w http.ResponseWriter, r *http.Request) {
 	options, err := model.CleanGetActivistOptions(r.Body)
