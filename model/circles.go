@@ -16,7 +16,7 @@ const (
 )
 
 var CircleGroupTypes map[int]string = map[int]string{
-	circle_group_db_value: "circle_group",
+	circle_group_db_value: "circle",
 }
 
 var CircleGroupTypeStringToInt map[string]int
@@ -400,7 +400,7 @@ func fetchCircleGroupMembers(db *sqlx.DB, circleGroups []CircleGroup) error {
 	}
 	membersQuery, membersArgs, err := sqlx.In(`
 SELECT
-  wm.circle_group_id,
+  wm.circle_id,
   a.name as activist_name,
   a.email as activist_email,
   a.id as activist_id,
@@ -410,7 +410,7 @@ FROM activists a
 JOIN circle_members wm
   on a.id = wm.activist_id
 WHERE
-  wm.circle_group_id IN (?)`, circleGroupIDs)
+  wm.circle_id IN (?)`, circleGroupIDs)
 	if err != nil {
 		return errors.Wrapf(err, "Could not create sqlx.In query for fetching circle members")
 	}

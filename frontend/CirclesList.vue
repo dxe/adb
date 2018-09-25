@@ -8,11 +8,9 @@
           <th></th>
           <th>Name</th>
           <th>Email</th>
-          <th>Type</th>
           <th>Total Members</th>
           <th>Point Person</th>
           <th>Members</th>
-          <th>Non Members On Mailing List</th>
         </tr>
       </thead>
       <tbody id="working-group-list-body">
@@ -29,8 +27,7 @@
           </td>
           <td>{{circleGroup.name}}</td>
           <td>{{circleGroup.email}}</td>
-          <td>{{displaycircleGroupType(circleGroup.type)}}</td>
-          <td>{{numberOfcircleGroupMembers(circleGroup)}}</td>
+          <td>{{numberOfCircleGroupMembers(circleGroup)}}</td>
           <td>
             <!-- There should only ever be one point person -->
             <template v-for="member in circleGroup.members">
@@ -42,13 +39,6 @@
           <td>
             <ul v-for="member in circleGroup.members">
               <template v-if="!member.point_person && !member.non_member_on_mailing_list">
-                <li>{{member.name}}</li>
-              </template>
-            </ul>
-          </td>
-          <td>
-            <ul v-for="member in circleGroup.members">
-              <template v-if="member.non_member_on_mailing_list">
                 <li>{{member.name}}</li>
               </template>
             </ul>
@@ -70,7 +60,7 @@
             <h2 class="modal-title">Delete Circle</h2>
           </div>
           <div class="modal-body">
-            <p>Are you sure you want to delete the Circle, {{currentcircleGroup.name}}?</p>
+            <p>Are you sure you want to delete the Circle, {{currentCircleGroup.name}}?</p>
             <p>Before you delete a Circle, you need to remove all members of that Circle.</p>
           </div>
           <div class="modal-footer">
@@ -91,8 +81,8 @@
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
-            <h2 class="modal-title" v-if="currentcircleGroup.id">Edit Circle</h2>
-            <h2 class="modal-title" v-if="!currentcircleGroup.id">New Circle</h2>
+            <h2 class="modal-title" v-if="currentCircleGroup.id">Edit Circle</h2>
+            <h2 class="modal-title" v-if="!currentCircleGroup.id">New Circle</h2>
           </div>
           <div class="modal-body">
             <form action="" id="editCircleGroupForm">
@@ -135,22 +125,6 @@
                   </template>
                 </div>
                 <button type="button" class="btn btn-sm" @click="addMember">Add member</button>
-              </p>
-              <p>
-                <label for="non-members">Non-members on the mailing list: </label>
-                <div class="select-row" v-for="(member, index) in currentCircleGroup.members">
-                  <template v-if="member.non_member_on_mailing_list">
-                    <basic-select
-                       :options="activistOptions"
-                       :selected-option="memberOption(member)"
-                       :extra-data="{index: index, nonMemberOnMailingList: true}"
-                       inheritStyle="min-width: 500px"
-                       @select="onMemberSelect">
-                    </basic-select>
-                    <button type="button" class="select-row-btn btn btn-sm btn-danger" @click="removeMember(index)"> - </button>
-                  </template>
-                </div>
-                <button type="button" class="btn btn-sm" @click="addNonMember">Add non-member to mailing list</button>
               </p>
             </form>
           </div>
