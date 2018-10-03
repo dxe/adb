@@ -20,12 +20,47 @@ var _ = function (input, o) {
 
 	o = o || {};
 
+	// Match every token with any characters between them, e.g.
+	// "token1.*token2" (case insensitive)
+	function awesompleteFilter1(text, input) {
+	  var tokens = input.trim().split(" ");
+	  // Construct regexp that matches any text between tokens
+	  var reg = ''
+	  for (var i = 0; i < tokens.length; i++) {
+	  	var token = tokens[i];
+	    reg += $.regExpEscape(token);
+	    if (i != tokens.length - 1) {
+	      reg += ".*";  // Match any number of any character
+	    }
+	  }
+
+	  return RegExp(reg, "i").test(text);
+	}
+
+	// Match any token, e.g. for "Jake Hobbs", matches any text that
+	// contains "Jake" or "Hobbs" (case insensitive)
+	function awesomepleteFilter2(text, input) {
+	  var tokens = input.trim().split(" ");
+	  // Check every token
+	  for (var i = 0; i < tokens.length; i++) {
+	    var token = tokens[i];
+	    if (!token) {
+	      continue
+	    }
+	    if (RegExp($.regExpEscape(token), "i").test(text)) {
+	      return true;
+	    }
+	  }
+	  return false;
+	}
+
+
 	configure(this, {
 		minChars: 2,
 		maxItems: 10,
 		autoFirst: false,
 		data: _.DATA,
-		filter: _.FILTER_CONTAINS,
+		filter: awesomepleteFilter2,
 		sort: o.sort === false ? false : _.SORT_BYLENGTH,
 		item: _.ITEM,
 		replace: _.REPLACE
@@ -282,6 +317,8 @@ _.prototype = {
 _.all = [];
 
 _.FILTER_CONTAINS = function (text, input) {
+	console.log("text: " + text);
+	console.log("input:" + input);
 	return RegExp($.regExpEscape(input.trim()), "i").test(text);
 };
 
