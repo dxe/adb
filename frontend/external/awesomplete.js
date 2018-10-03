@@ -60,7 +60,7 @@ var _ = function (input, o) {
 		maxItems: 10,
 		autoFirst: false,
 		data: _.DATA,
-		filter: awesomepleteFilter2,
+		filter: awesompleteFilter1,
 		sort: o.sort === false ? false : _.SORT_BYLENGTH,
 		item: _.ITEM,
 		replace: _.REPLACE
