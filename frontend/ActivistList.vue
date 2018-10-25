@@ -228,7 +228,7 @@ function getDefaultColumns(view) {
         data: 'location',
         colWidths: 100,
       },
-      enabled: (view === "all_activists" || view === "activist_pool"),
+      enabled: view === "all_activists",
     }, {
       header: 'Facebook',
       data: {
@@ -247,51 +247,52 @@ function getDefaultColumns(view) {
     //  enabled: false,
     //}, 
 
-    //{
-    //  header: "Contacted Date",
-    //  data: {
-    //    data: "contacted_date",
-    //    type: 'date',
-    //    dateFormat: 'YYYY-MM-DD',
-    //    correctFormat: true,
-    //    colWidths: 100,
-    //  },
-    //  enabled: view === "activist_pool",
-    //}, {
-    //  header: "Interested",
-    //  data: {
-    //    data: "interested",
-    //    colWidths: 100,
-    //    type: 'dropdown',
-    //    source: [
-    //     "",
-    //      "Yes",
-    //      "No",
-    //    ],
-    //  },
-    //  enabled: view === "activist_pool",
-    //},
+    {
+     header: "Contacted Date",
+     data: {
+       data: "contacted_date",
+       type: 'date',
+       dateFormat: 'YYYY-MM-DD',
+       correctFormat: true,
+       colWidths: 100,
+     },
+     enabled: view === "activist_pool",
+    }, {
+     header: "Interested",
+     data: {
+       data: "interested",
+       colWidths: 100,
+       type: 'dropdown',
+       source: [
+        "",
+         "Yes",
+         "No",
+       ],
+     },
+     enabled: view === "activist_pool",
+    },
 
     // ActivistMembershipData
     {
-      header: "Mentor",
+      header: "Connector",
       data: {
         data: "connector",
         colWidths: 125,
       },
-      enabled: (view === "activist_recruitment" || view === "action_team" || view === "development"),
+      enabled: (view === "activist_pool" || view === "action_team" || view === "development"),
     },
+    {
+     header: "Connection Date",
+     data: {
+       data: "meeting_date",
+       type: 'date',
+       dateFormat: 'YYYY-MM-DD',
+       correctFormat: true,
+       colWidths: 100,
+     },
+     enabled: view === "activist_pool",
+    }, 
     //{
-    //  header: "Recruitment Connection Date",
-    //  data: {
-    //    data: "meeting_date",
-    //    type: 'date',
-    //    dateFormat: 'YYYY-MM-DD',
-    //    correctFormat: true,
-    //    colWidths: 100,
-    //  },
-    //  enabled: view === "activist_recruitment",
-    //}, {
     //  header: "Escalation",
     //  data: {
     //    data: "escalation",
@@ -386,7 +387,7 @@ function getDefaultColumns(view) {
         readOnly: true,
         colWidths: 200,
       },
-      enabled: (view === "activist_pool" || view === "activist_recruitment" || view === "leaderboard"),
+      enabled: (view === "activist_recruitment" || view === "leaderboard"),
     }, {
       header: "Total Events",
       data: {
@@ -767,9 +768,7 @@ export default {
             var activistListFiltered;
             activistListFiltered = activistList.filter((el) => {
               if (this.view === "activist_pool") {
-                return el.interested === "";
-              } else if (this.view === "activist_recruitment") {
-                return (el.interested === "Yes" && el.escalation != "No") && ((el.activist_level == "Community Member" && el.escalation == "Yes") || (el.escalation == ""));
+                return (el.activist_level == "Community Member");
               } else if (this.view === "action_team") {
                 var selectedActionTeam = $("#filterActionTeam :selected").text();
 

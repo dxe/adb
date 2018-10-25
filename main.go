@@ -350,7 +350,7 @@ func (c MainController) ListActivistsPoolHandler(w http.ResponseWriter, r *http.
 		PageName: "ActivistPool",
 		IsAdmin:  getUserFromContext(r.Context()).Admin,
 		Data: ActivistListData{
-			Title: "Activist Pool",
+			Title: "Recruitment Connections",
 			View:  "activist_pool",
 		},
 	})
