@@ -167,7 +167,15 @@ SELECT
     JOIN circle_members ON circles.id = circle_members.circle_id
     WHERE
       circle_members.activist_id = a.id),
-    '') AS circles_list
+    '') AS circles_list,
+
+    IFNULL((
+    SELECT max(e.date) AS max_date
+    FROM event_attendance ea
+    JOIN activists inner_a ON inner_a.id = ea.activist_id
+    JOIN events e ON e.id = ea.event_id
+    WHERE inner_a.id = a.id and e.event_type = "Connection"
+  	),"") AS last_connection
 
 FROM activists a
 
@@ -250,6 +258,7 @@ type ActivistConnectionData struct {
 	Training4    sql.NullString   `db:"training4"`
 	Training5    sql.NullString   `db:"training5"`
 	Training6    sql.NullString   `db:"training6"`
+	LastConnection    sql.NullString   `db:"last_connection"`
 	Escalation      string `db:"escalation"`
 	Interested      string `db:"interested"`
 	MeetingDate     string `db:"meeting_date"`
@@ -303,6 +312,7 @@ type ActivistJSON struct {
 	Training4    string   `json:"training4"`
 	Training5    string   `json:"training5"`
 	Training6    string   `json:"training6"`
+	LastConnection    string   `json:"last_connection"`
 	Escalation      string `json:"escalation"`
 	Interested      string `json:"interested"`
 	MeetingDate     string `json:"meeting_date"`
@@ -393,32 +403,36 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			action_team_focus_secondary = a.ActivistConnectionData.ActionTeamFocusSecondary.String
 		}
 		training0 := ""
-		if a.Activist.Training0.Valid {
-			training0 = a.Activist.Training0.String
+		if a.ActivistConnectionData.Training0.Valid {
+			training0 = a.ActivistConnectionData.Training0.String
 		}
 		training1 := ""
-		if a.Activist.Training1.Valid {
-			training1 = a.Activist.Training1.String
+		if a.ActivistConnectionData.Training1.Valid {
+			training1 = a.ActivistConnectionData.Training1.String
 		}
 		training2 := ""
-		if a.Activist.Training2.Valid {
-			training2 = a.Activist.Training2.String
+		if a.ActivistConnectionData.Training2.Valid {
+			training2 = a.ActivistConnectionData.Training2.String
 		}
 		training3 := ""
-		if a.Activist.Training3.Valid {
-			training3 = a.Activist.Training3.String
+		if a.ActivistConnectionData.Training3.Valid {
+			training3 = a.ActivistConnectionData.Training3.String
 		}
 		training4 := ""
-		if a.Activist.Training4.Valid {
-			training4 = a.Activist.Training4.String
+		if a.ActivistConnectionData.Training4.Valid {
+			training4 = a.ActivistConnectionData.Training4.String
 		}
 		training5 := ""
-		if a.Activist.Training5.Valid {
-			training5 = a.Activist.Training5.String
+		if a.ActivistConnectionData.Training5.Valid {
+			training5 = a.ActivistConnectionData.Training5.String
 		}
 		training6 := ""
-		if a.Activist.Training6.Valid {
-			training6 = a.Activist.Training6.String
+		if a.ActivistConnectionData.Training6.Valid {
+			training6 = a.ActivistConnectionData.Training6.String
+		}
+		last_connection := ""
+		if a.ActivistConnectionData.LastConnection.Valid {
+			last_connection = a.ActivistConnectionData.LastConnection.String
 		}
 
 		activistsJSON = append(activistsJSON, ActivistJSON{
@@ -460,6 +474,7 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			Training4:    	 training4,
 			Training5:    	 training5,
 			Training6:    	 training6,
+			LastConnection:	 last_connection,
 			Escalation:      a.Escalation,
 			Interested:      a.Interested,
 			MeetingDate:     a.MeetingDate,
@@ -727,6 +742,7 @@ INSERT INTO activists (
   training4,
   training5,
   training6,
+  last_connection,
   escalation,
   interested,
   meeting_date,
@@ -760,6 +776,7 @@ INSERT INTO activists (
   :training4,
   :training5,
   :training6,
+  :last_connection,
   :escalation,
   :interested,
   :meeting_date,

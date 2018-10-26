@@ -13,25 +13,26 @@
     <form action="" id="eventForm">
       <input id="eventID" type="hidden" value="{{ .Data.Event.ID }}">
 
-      <label for="eventName"><b>Event name</b><br /></label>
+      <label for="eventName" id="nameLabel"><b>Event name</b><br /></label>
       <input id="eventName" class="form-control" value="{{ .Data.Event.EventName }}"><br />
 
       <label for="eventType"><b>Event type</b><br /></label>
       <select id="eventType" class="form-control">
         <option disabled selected value> -- select an option -- </option>
-        <option value="Working Group" {{if (eq .Data.Event.EventType "Working Group")}}selected{{end}}>Working Group</option>
-        <option value="Community" {{if (eq .Data.Event.EventType "Community")}}selected{{end}}>Community</option>
-        <option value="Protest" {{if (eq .Data.Event.EventType "Protest")}}selected{{end}}>Protest</option>
-        <option value="Outreach" {{if (eq .Data.Event.EventType "Outreach")}}selected{{end}}>Outreach</option>
-        <option value="Key Event" {{if (eq .Data.Event.EventType "Key Event")}}selected{{end}}>Key Event</option>
-        <option value="Sanctuary" {{if (eq .Data.Event.EventType "Sanctuary")}}selected{{end}}>Sanctuary (Rescue/Work Day)</option>
+        <option value="Working Group" data-name="Event name" data-attendee="Attendees" {{if (eq .Data.Event.EventType "Working Group")}}selected{{end}}>Working Group</option>
+        <option value="Community" data-name="Event name" data-attendee="Attendees" {{if (eq .Data.Event.EventType "Community")}}selected{{end}}>Community</option>
+        <option value="Protest" data-name="Event name" data-attendee="Attendees" {{if (eq .Data.Event.EventType "Protest")}}selected{{end}}>Protest</option>
+        <option value="Outreach" data-name="Event name" data-attendee="Attendees" {{if (eq .Data.Event.EventType "Outreach")}}selected{{end}}>Outreach</option>
+        <option value="Key Event" data-name="Event name" data-attendee="Attendees" {{if (eq .Data.Event.EventType "Key Event")}}selected{{end}}>Key Event</option>
+        <option value="Sanctuary" data-name="Event name" data-attendee="Attendees" {{if (eq .Data.Event.EventType "Sanctuary")}}selected{{end}}>Sanctuary (Rescue/Work Day)</option>
+        <option value="Connection" data-name="Connector name" data-attendee="Connectee" {{if (eq .Data.Event.EventType "Connection")}}selected{{end}}>Connection</option>
       </select>
       <br />
 
       <label for="eventDate"><b>Event date</b><button class="btn btn-xs btn-primary" style="margin: 0px 10px" onclick="event_new.setDateToToday(); return false;">today</button><br /></label>
       <input id="eventDate" class="form-control" type="date" value="{{if .Data.Event.EventDate | datenotzero }}{{.Data.Event.EventDate | formatdate}}{{end}}"><br />
 
-      <label for="attendee1"><b>Attendees</b><br /></label>
+      <label for="attendee1" id="attendeeLabel"><b>Attendees</b><br /></label>
       <div id="attendee-rows">
         {{range $a := .Data.Event.Attendees}}
             <input class="attendee-input form-control" value="{{$a}}" />
@@ -43,8 +44,6 @@
       <label for="attendeeTotal"><b>Total attendance: </b></label>
       <span id="attendeeTotal">0</span><br />
 
-      <span style="color: orange;"><i>Remember to have new attendees fill out the survey <br />at <a style="color: orange;" href="http://dxe.io/new" target="_blank">dxe.io/new</a>!</i></span>
-
     </form>
     <br />
     <center>
@@ -55,3 +54,11 @@
 </div>
 <script>event_new.initializeApp({{.Data.Event.Attendees}})</script>
 {{template "footer.html" .}}
+
+<script>
+  $('#eventType').change(function() {
+      $('#nameLabel').text($('option:selected').attr('data-name'));
+      $('#attendeeLabel').text($('option:selected').attr('data-attendee'));
+      //$('#example-text').text($('option:selected').attr('data-example'));
+  }).change();
+</script>

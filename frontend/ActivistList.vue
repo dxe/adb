@@ -14,15 +14,15 @@
       <span>&nbsp;&nbsp;&nbsp;&nbsp;<b>Total rows: </b></span><span id="rowCount">0</span>
 
       <div v-if="showOptions === 'filters'">
-        <div v-if="view != 'action_team'">
+        <div v-if="view != 'development'">
           <label>Last Event From:</label>
           <input v-model="lastEventDateFrom" class="form-control filter-margin" type="date"  />
         </div>
-        <div v-if="view != 'action_team'">
+        <div v-if="view != 'development'">
           <label>Last Event To:</label>
           <input v-model="lastEventDateTo" class="form-control filter-margin" type="date" />
         </div>
-        <div v-if="view === 'action_team'">
+<!--         <div v-if="view === 'action_team'">
           <label>Action Team:</label>
           <select id="filterActionTeam" v-model="filterActionTeam" class="form-control filter-margin">
             <option>All</option>
@@ -32,7 +32,7 @@
             <option>Direct Action</option>
             <option>Finance</option>
           </select>
-        </div>
+        </div> -->
       </div>
 
       <div v-if="showOptions === 'columns'">
@@ -204,7 +204,7 @@ function getDefaultColumns(view) {
         readOnly: true,
         colWidths: 50,
       },
-      enabled: (view === "leaderboard" || view === "action_team" || view === "development"),
+      enabled: (view === "leaderboard" || view === "action_team"),
     }, {
       header: 'Email',
       data: {
@@ -282,7 +282,7 @@ function getDefaultColumns(view) {
       enabled: (view === "activist_pool" || view === "action_team"),
     },
     {
-     header: "Connection Date",
+     header: "Recruitment Connection Date",
      data: {
        data: "meeting_date",
        type: 'date',
@@ -324,7 +324,8 @@ function getDefaultColumns(view) {
       enabled: (view === "all_activists" ||
                 view === "activist_recruitment" ||
                 view === "leaderboard" ||
-                view === "action_team"),
+                view === "action_team" ||
+                view === "development"),
     },
     {
       header: "Focus",
@@ -421,6 +422,18 @@ function getDefaultColumns(view) {
                 view === "leaderboard" ||
                 view === "development"),
     },
+    {
+      header: "Last Maintenance Connection",
+      data: {
+        type: "date",
+        data: "last_connection",
+        dateFormat: 'YYYY-MM-DD',
+       correctFormat: true,
+       colWidths: 100,
+       readOnly: true,
+      },
+      enabled: view === "development",
+    } , 
     // {
     //   header: "Core Training",
     //   data: {
@@ -842,7 +855,8 @@ export default {
           if (this.view === "activist_pool" ||
               this.view === "activist_recruitment" ||
               this.view === "action_team" ||
-              this.view === "leaderboard") {
+              this.view === "leaderboard" ||
+              this.view === "development") {
             var activistListFiltered;
             activistListFiltered = activistList.filter((el) => {
               if (this.view === "activist_pool") {
@@ -858,6 +872,8 @@ export default {
                 }
               } else if (this.view === "leaderboard") {
                 return el.active == 1;
+              } else if (this.view === "development"){
+                return el.activist_level == "Organizer" || el.activist_level == "Senior Organizer";
               } else {
                 return true; // unreachable
               }

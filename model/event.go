@@ -23,6 +23,7 @@ var EventTypes map[string]bool = map[string]bool{
 	"Outreach":      true,
 	"Key Event":     true,
 	"Sanctuary":     true,
+	"Connection":     true,
 }
 
 /** Type Definitions */
@@ -138,7 +139,9 @@ ON (e.id = ea.event_id AND ea.activist_id = a.id)
 		whereClause = append(whereClause, "e.date <= ?")
 		queryArgs = append(queryArgs, options.DateTo)
 	}
-	if options.EventType != "" {
+	if options.EventType == "noConnections" {
+		whereClause = append(whereClause, "e.event_type <> 'Connection'")
+	} else if options.EventType != "" {
 		whereClause = append(whereClause, "e.event_type = ?")
 		queryArgs = append(queryArgs, options.EventType)
 	}
