@@ -279,7 +279,7 @@ function getDefaultColumns(view) {
         data: "connector",
         colWidths: 125,
       },
-      enabled: (view === "activist_pool" || view === "action_team" || view === "development"),
+      enabled: (view === "activist_pool" || view === "action_team"),
     },
     {
      header: "Connection Date",
@@ -324,8 +324,7 @@ function getDefaultColumns(view) {
       enabled: (view === "all_activists" ||
                 view === "activist_recruitment" ||
                 view === "leaderboard" ||
-                view === "action_team" ||
-                view === "development"),
+                view === "action_team"),
     },
     {
       header: "Focus",
@@ -342,7 +341,7 @@ function getDefaultColumns(view) {
           "Communications",
         ],
       },
-      enabled: (view === "action_team" || view === "development"),
+      enabled: (view === "action_team"),
     },
 
     {
@@ -351,7 +350,7 @@ function getDefaultColumns(view) {
         data: "action_team_focus_secondary",
         colWidths: 135,
       },
-      enabled: (view === "action_team" || view === "development"),
+      enabled: (view === "action_team"),
     },
 
     {
@@ -361,7 +360,7 @@ function getDefaultColumns(view) {
         readOnly: true,
         colWidths: 200,
       },
-      enabled: (view === "action_team" || view === "development"),
+      enabled: (view === "action_team"),
     },
     {
       header: 'Circles',
@@ -370,7 +369,7 @@ function getDefaultColumns(view) {
         readOnly: true,
         colWidths: 200,
       },
-      enabled: (view === "action_team" || view === "development"),
+      enabled: (view === "action_team"),
     },
     {
       header: 'First Event',
@@ -406,7 +405,7 @@ function getDefaultColumns(view) {
         readOnly: true,
         colWidths: 55,
       },
-      enabled: (view === "action_team" || view === "activist_pool" || view === "activist_recruitment" || view === "all_activists"),
+      enabled: (view === "action_team" || view === "activist_pool" || view === "activist_recruitment" || view === "all_activists" || view === "development"),
     }, {
       header: "MPI",
       data: {
@@ -421,15 +420,94 @@ function getDefaultColumns(view) {
                 view === "all_activists" ||
                 view === "leaderboard" ||
                 view === "development"),
-    }, {
-      header: "Core Training",
+    },
+    // {
+    //   header: "Core Training",
+    //   data: {
+    //     type: "checkbox",
+    //     data: "core_training",
+    //     colWidths: 90,
+    //   },
+    //   enabled: view === "action_team",
+    // } , 
+    {
+      header: "Workshop",
       data: {
-        type: "checkbox",
-        data: "core_training",
-        colWidths: 90,
+        type: "date",
+        data: "training0",
+        dateFormat: 'YYYY-MM-DD',
+       correctFormat: true,
+       colWidths: 100,
       },
-      enabled: view === "action_team",
-    } , {
+      enabled: view === "development",
+    } , 
+    {
+      header: "Training 1",
+      data: {
+        type: "date",
+        data: "training1",
+        dateFormat: 'YYYY-MM-DD',
+       correctFormat: true,
+       colWidths: 100,
+      },
+      enabled: view === "development",
+    } , 
+    {
+      header: "Training 2",
+      data: {
+        type: "date",
+        data: "training2",
+        dateFormat: 'YYYY-MM-DD',
+       correctFormat: true,
+       colWidths: 100,
+      },
+      enabled: view === "development",
+    } , 
+    {
+      header: "Training 3",
+      data: {
+        type: "date",
+        data: "training3",
+        dateFormat: 'YYYY-MM-DD',
+       correctFormat: true,
+       colWidths: 100,
+      },
+      enabled: view === "development",
+    } , 
+    {
+      header: "Training 4",
+      data: {
+        type: "date",
+        data: "training4",
+        dateFormat: 'YYYY-MM-DD',
+       correctFormat: true,
+       colWidths: 100,
+      },
+      enabled: view === "development",
+    } , 
+    {
+      header: "Training 5",
+      data: {
+        type: "date",
+        data: "training5",
+        dateFormat: 'YYYY-MM-DD',
+       correctFormat: true,
+       colWidths: 100,
+      },
+      enabled: view === "development",
+    } , 
+    {
+      header: "Training 6",
+      data: {
+        type: "date",
+        data: "training6",
+        dateFormat: 'YYYY-MM-DD',
+       correctFormat: true,
+       colWidths: 100,
+      },
+      enabled: view === "development",
+    } , 
+    {
       header: "ID",
       data: {
         type: "numeric",

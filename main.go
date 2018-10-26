@@ -380,7 +380,7 @@ func (c MainController) ListActivistsActionTeamHandler(w http.ResponseWriter, r 
 
 func (c MainController) ListActivistsDevelopmentHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, "activist_list", PageData{
-		PageName: "ActivistDevelopment",
+		PageName: "Organizer Development",
 		IsAdmin:  getUserFromContext(r.Context()).Admin,
 		Data: ActivistListData{
 			Title: "Development",

@@ -58,6 +58,13 @@ SELECT
   connector,
   contacted_date,
   core_training,
+  training0,
+  training1,
+  training2,
+  training3,
+  training4,
+  training5,
+  training6,
   escalation,
   interested,
   meeting_date,
@@ -236,6 +243,13 @@ type ActivistConnectionData struct {
 	Connector       string `db:"connector"`
 	ContactedDate   string `db:"contacted_date"`
 	CoreTraining    bool   `db:"core_training"`
+	Training0    sql.NullString   `db:"training0"`
+	Training1    sql.NullString   `db:"training1"`
+	Training2    sql.NullString   `db:"training2"`
+	Training3    sql.NullString   `db:"training3"`
+	Training4    sql.NullString   `db:"training4"`
+	Training5    sql.NullString   `db:"training5"`
+	Training6    sql.NullString   `db:"training6"`
 	Escalation      string `db:"escalation"`
 	Interested      string `db:"interested"`
 	MeetingDate     string `db:"meeting_date"`
@@ -282,6 +296,13 @@ type ActivistJSON struct {
 	Connector       string `json:"connector"`
 	ContactedDate   string `json:"contacted_date"`
 	CoreTraining    bool   `json:"core_training"`
+	Training0    string   `json:"training0"`
+	Training1    string   `json:"training1"`
+	Training2    string   `json:"training2"`
+	Training3    string   `json:"training3"`
+	Training4    string   `json:"training4"`
+	Training5    string   `json:"training5"`
+	Training6    string   `json:"training6"`
 	Escalation      string `json:"escalation"`
 	Interested      string `json:"interested"`
 	MeetingDate     string `json:"meeting_date"`
@@ -371,6 +392,34 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 		if a.ActivistConnectionData.ActionTeamFocusSecondary.Valid {
 			action_team_focus_secondary = a.ActivistConnectionData.ActionTeamFocusSecondary.String
 		}
+		training0 := ""
+		if a.Activist.Training0.Valid {
+			training0 = a.Activist.Training0.String
+		}
+		training1 := ""
+		if a.Activist.Training1.Valid {
+			training1 = a.Activist.Training1.String
+		}
+		training2 := ""
+		if a.Activist.Training2.Valid {
+			training2 = a.Activist.Training2.String
+		}
+		training3 := ""
+		if a.Activist.Training3.Valid {
+			training3 = a.Activist.Training3.String
+		}
+		training4 := ""
+		if a.Activist.Training4.Valid {
+			training4 = a.Activist.Training4.String
+		}
+		training5 := ""
+		if a.Activist.Training5.Valid {
+			training5 = a.Activist.Training5.String
+		}
+		training6 := ""
+		if a.Activist.Training6.Valid {
+			training6 = a.Activist.Training6.String
+		}
 
 		activistsJSON = append(activistsJSON, ActivistJSON{
 			Chapter:  a.Chapter,
@@ -404,6 +453,13 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			Connector:       a.Connector,
 			ContactedDate:   a.ContactedDate,
 			CoreTraining:    a.CoreTraining,
+			Training0:    	 training0,
+			Training1:    	 training1,
+			Training2:    	 training2,
+			Training3:    	 training3,
+			Training4:    	 training4,
+			Training5:    	 training5,
+			Training6:    	 training6,
 			Escalation:      a.Escalation,
 			Interested:      a.Interested,
 			MeetingDate:     a.MeetingDate,
@@ -664,6 +720,13 @@ INSERT INTO activists (
   connector,
   contacted_date,
   core_training,
+  training0,
+  training1,
+  training2,
+  training3,
+  training4,
+  training5,
+  training6,
   escalation,
   interested,
   meeting_date,
@@ -690,6 +753,13 @@ INSERT INTO activists (
   :connector,
   :contacted_date,
   :core_training,
+  :training0,
+  :training1,
+  :training2,
+  :training3,
+  :training4,
+  :training5,
+  :training6,
   :escalation,
   :interested,
   :meeting_date,
@@ -736,6 +806,13 @@ SET
   connector = :connector,
   contacted_date = :contacted_date,
   core_training = :core_training,
+  training0 = :training0,
+  training1 = :training1,
+  training2 = :training2,
+  training3 = :training3,
+  training4 = :training4,
+  training5 = :training5,
+  training6 = :training6,
   escalation = :escalation,
   interested = :interested,
   meeting_date = :meeting_date,
@@ -953,6 +1030,41 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 		// Not specified so insert null value into database
 		validFoc = false
 	}
+	validTraining0 := true
+	if activistJSON.Training0 == "" {
+		// Not specified so insert null value into database
+		validTraining0 = false
+	}
+	validTraining1 := true
+	if activistJSON.Training1 == "" {
+		// Not specified so insert null value into database
+		validTraining1 = false
+	}
+	validTraining2 := true
+	if activistJSON.Training2 == "" {
+		// Not specified so insert null value into database
+		validTraining2 = false
+	}
+	validTraining3 := true
+	if activistJSON.Training3 == "" {
+		// Not specified so insert null value into database
+		validTraining3 = false
+	}
+	validTraining4 := true
+	if activistJSON.Training4 == "" {
+		// Not specified so insert null value into database
+		validTraining4 = false
+	}
+	validTraining5 := true
+	if activistJSON.Training5 == "" {
+		// Not specified so insert null value into database
+		validTraining5 = false
+	}
+	validTraining6 := true
+	if activistJSON.Training6 == "" {
+		// Not specified so insert null value into database
+		validTraining6 = false
+	}
 
 	activistExtra := ActivistExtra{
 		Activist: Activist{
@@ -977,6 +1089,13 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			Connector:       strings.TrimSpace(activistJSON.Connector),
 			ContactedDate:   strings.TrimSpace(activistJSON.ContactedDate),
 			CoreTraining:    activistJSON.CoreTraining,
+			Training0:    sql.NullString{String: strings.TrimSpace(activistJSON.Training0), Valid: validTraining0},
+			Training1:    sql.NullString{String: strings.TrimSpace(activistJSON.Training1), Valid: validTraining1},
+			Training2:    sql.NullString{String: strings.TrimSpace(activistJSON.Training2), Valid: validTraining2},
+			Training3:    sql.NullString{String: strings.TrimSpace(activistJSON.Training3), Valid: validTraining3},
+			Training4:    sql.NullString{String: strings.TrimSpace(activistJSON.Training4), Valid: validTraining4},
+			Training5:    sql.NullString{String: strings.TrimSpace(activistJSON.Training5), Valid: validTraining5},
+			Training6:    sql.NullString{String: strings.TrimSpace(activistJSON.Training6), Valid: validTraining6},
 			Escalation:      strings.TrimSpace(activistJSON.Escalation),
 			Interested:      strings.TrimSpace(activistJSON.Interested),
 			MeetingDate:     strings.TrimSpace(activistJSON.MeetingDate),
