@@ -56,9 +56,23 @@
 {{template "footer.html" .}}
 
 <script>
-  $('#eventType').change(function() {
+  if ((window.location.href).indexOf('update') == -1) {
+    // new event, not editing
+    console.log("New event!");
+    $('#eventType').change(function() {
       $('#nameLabel').text($('option:selected').attr('data-name'));
       $('#attendeeLabel').text($('option:selected').attr('data-attendee'));
-      //$('#example-text').text($('option:selected').attr('data-example'));
-  }).change();
+    });
+  }
+  else {
+    console.log("Editing existing event!");
+    // change field names on load if it's a connection event
+    if ($('#eventType').val() == 'Connection') {
+      $('#eventType').change(function() {
+        $('#nameLabel').text($('option:selected').attr('data-name'));
+        $('#attendeeLabel').text($('option:selected').attr('data-attendee'));
+      }).change();
+    }
+  }
+  
 </script>
