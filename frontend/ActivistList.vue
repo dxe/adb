@@ -873,7 +873,7 @@ export default {
             var activistListFiltered;
             activistListFiltered = activistList.filter((el) => {
               if (this.view === "activist_pool") {
-                return (el.activist_level == "Community Member");
+                return (el.activist_level == "Supporter");
               } else if (this.view === "action_team") {
                 var selectedActionTeam = $("#filterActionTeam :selected").text();
 
