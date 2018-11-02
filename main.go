@@ -130,6 +130,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/activist_recruitment", alice.New(main.authMiddleware).ThenFunc(main.ListActivistsRecruitmentHandler))
 	router.Handle("/activist_actionteam", alice.New(main.authMiddleware).ThenFunc(main.ListActivistsActionTeamHandler))
 	router.Handle("/activist_development", alice.New(main.authMiddleware).ThenFunc(main.ListActivistsDevelopmentHandler))
+	router.Handle("/organizer_prospects", alice.New(main.authMiddleware).ThenFunc(main.ListOrganizerProspectsHandler))
 	router.Handle("/leaderboard", alice.New(main.authMiddleware).ThenFunc(main.LeaderboardHandler))
 	router.Handle("/power", alice.New(main.authMiddleware).ThenFunc(main.PowerHandler)) // TODO: rename
 	router.Handle("/list_working_groups", alice.New(main.authMiddleware).ThenFunc(main.ListWorkingGroupsHandler))
@@ -385,6 +386,17 @@ func (c MainController) ListActivistsDevelopmentHandler(w http.ResponseWriter, r
 		Data: ActivistListData{
 			Title: "Organizer Development",
 			View:  "development",
+		},
+	})
+}
+
+func (c MainController) ListOrganizerProspectsHandler(w http.ResponseWriter, r *http.Request) {
+	renderPage(w, "activist_list", PageData{
+		PageName: "Organizer Prospects",
+		IsAdmin:  getUserFromContext(r.Context()).Admin,
+		Data: ActivistListData{
+			Title: "Organizer Prospects",
+			View:  "organizer_prospects",
 		},
 	})
 }

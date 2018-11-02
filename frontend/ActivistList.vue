@@ -14,11 +14,11 @@
       <span>&nbsp;&nbsp;&nbsp;&nbsp;<b>Total rows: </b></span><span id="rowCount">0</span>
 
       <div v-if="showOptions === 'filters'">
-        <div v-if="view != 'development'">
+        <div v-if="view != 'development' || view != 'organizer_prospects'">
           <label>Last Event From:</label>
           <input v-model="lastEventDateFrom" class="form-control filter-margin" type="date"  />
         </div>
-        <div v-if="view != 'development'">
+        <div v-if="view != 'development' || view != 'organizer_prospects'">
           <label>Last Event To:</label>
           <input v-model="lastEventDateTo" class="form-control filter-margin" type="date" />
         </div>
@@ -315,8 +315,9 @@ function getDefaultColumns(view) {
         colWidths: 160,
         type: 'dropdown',
         source: [
-          "Community Member",
-          "Action Team",
+          "Supporter",
+          "Circle Member",
+          "Chapter Member",
           "Organizer",
           "Senior Organizer",
         ],
@@ -325,7 +326,8 @@ function getDefaultColumns(view) {
                 view === "activist_recruitment" ||
                 view === "leaderboard" ||
                 view === "action_team" ||
-                view === "development"),
+                view === "development" ||
+                view === "organizer_prospects"),
     },
     {
       header: "Focus",
@@ -361,7 +363,7 @@ function getDefaultColumns(view) {
         readOnly: true,
         colWidths: 200,
       },
-      enabled: (view === "action_team"),
+      enabled: (view === "action_team" || view === "organizer_prospects"),
     },
     {
       header: 'Circles',
@@ -370,7 +372,7 @@ function getDefaultColumns(view) {
         readOnly: true,
         colWidths: 200,
       },
-      enabled: (view === "action_team"),
+      enabled: (view === "action_team" || view === "organizer_prospects"),
     },
     {
       header: 'First Event',
@@ -406,7 +408,7 @@ function getDefaultColumns(view) {
         readOnly: true,
         colWidths: 55,
       },
-      enabled: (view === "action_team" || view === "activist_pool" || view === "activist_recruitment" || view === "all_activists" || view === "development"),
+      enabled: (view === "action_team" || view === "activist_pool" || view === "activist_recruitment" || view === "all_activists" || view === "development" || view === "organizer_prospects"),
     }, {
       header: "MPI",
       data: {
@@ -420,8 +422,18 @@ function getDefaultColumns(view) {
                 view === "activist_recruitment" ||
                 view === "all_activists" ||
                 view === "leaderboard" ||
-                view === "development"),
+                view === "development" ||
+                view === "organizer_prospects"),
     },
+    {
+      header: "Organizer Interest",
+      data: {
+        type: "checkbox",
+        data: "organizer_interest",
+       colWidths: 120,
+      },
+      enabled: (view === "all_activists" || view === "organizer_prospects"),
+    } , 
     {
       header: "Last Maintenance Connection",
       data: {
@@ -452,7 +464,7 @@ function getDefaultColumns(view) {
        correctFormat: true,
        colWidths: 100,
       },
-      enabled: view === "development",
+      enabled: view === "organizer_prospects",
     } , 
     {
       header: "Training 1",
@@ -856,7 +868,8 @@ export default {
               this.view === "activist_recruitment" ||
               this.view === "action_team" ||
               this.view === "leaderboard" ||
-              this.view === "development") {
+              this.view === "development" ||
+              this.view === "organizer_prospects" ) {
             var activistListFiltered;
             activistListFiltered = activistList.filter((el) => {
               if (this.view === "activist_pool") {
@@ -874,6 +887,8 @@ export default {
                 return el.active == 1;
               } else if (this.view === "development"){
                 return el.activist_level == "Organizer" || el.activist_level == "Senior Organizer";
+              } else if (this.view === "organizer_prospects"){
+                return el.organizer_interest == 1;
               } else {
                 return true; // unreachable
               }

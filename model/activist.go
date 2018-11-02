@@ -65,6 +65,7 @@ SELECT
   training4,
   training5,
   training6,
+  organizer_interest,
   escalation,
   interested,
   meeting_date,
@@ -258,6 +259,7 @@ type ActivistConnectionData struct {
 	Training4    sql.NullString   `db:"training4"`
 	Training5    sql.NullString   `db:"training5"`
 	Training6    sql.NullString   `db:"training6"`
+	OrganizerInterest bool  `db:"organizer_interest"`
 	LastConnection    sql.NullString   `db:"last_connection"`
 	Escalation      string `db:"escalation"`
 	Interested      string `db:"interested"`
@@ -312,6 +314,7 @@ type ActivistJSON struct {
 	Training4    string   `json:"training4"`
 	Training5    string   `json:"training5"`
 	Training6    string   `json:"training6"`
+	OrganizerInterest    bool   `json:"organizer_interest"`
 	LastConnection    string   `json:"last_connection"`
 	Escalation      string `json:"escalation"`
 	Interested      string `json:"interested"`
@@ -474,6 +477,7 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			Training4:    	 training4,
 			Training5:    	 training5,
 			Training6:    	 training6,
+			OrganizerInterest: a.OrganizerInterest,
 			LastConnection:	 last_connection,
 			Escalation:      a.Escalation,
 			Interested:      a.Interested,
@@ -742,6 +746,7 @@ INSERT INTO activists (
   training4,
   training5,
   training6,
+  organizer_interest,
   last_connection,
   escalation,
   interested,
@@ -776,6 +781,7 @@ INSERT INTO activists (
   :training4,
   :training5,
   :training6,
+  :organizer_interest,
   :last_connection,
   :escalation,
   :interested,
@@ -830,6 +836,7 @@ SET
   training4 = :training4,
   training5 = :training5,
   training6 = :training6,
+  organizer_interest = :organizer_interest,
   escalation = :escalation,
   interested = :interested,
   meeting_date = :meeting_date,
@@ -1113,6 +1120,7 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			Training4:    sql.NullString{String: strings.TrimSpace(activistJSON.Training4), Valid: validTraining4},
 			Training5:    sql.NullString{String: strings.TrimSpace(activistJSON.Training5), Valid: validTraining5},
 			Training6:    sql.NullString{String: strings.TrimSpace(activistJSON.Training6), Valid: validTraining6},
+			OrganizerInterest: activistJSON.OrganizerInterest,
 			Escalation:      strings.TrimSpace(activistJSON.Escalation),
 			Interested:      strings.TrimSpace(activistJSON.Interested),
 			MeetingDate:     strings.TrimSpace(activistJSON.MeetingDate),
@@ -1130,8 +1138,9 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 }
 
 var validActivistLevels = map[string]struct{}{
-	"Community Member": struct{}{},
-	"Action Team":      struct{}{},
+	"Supporter": struct{}{},
+	"Circle Member":      struct{}{},
+	"Chapter Member":      struct{}{},
 	"Organizer":        struct{}{},
 	"Senior Organizer": struct{}{},
 }
