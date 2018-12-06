@@ -131,6 +131,8 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/activist_actionteam", alice.New(main.authMiddleware).ThenFunc(main.ListActivistsActionTeamHandler))
 	router.Handle("/activist_development", alice.New(main.authMiddleware).ThenFunc(main.ListActivistsDevelopmentHandler))
 	router.Handle("/organizer_prospects", alice.New(main.authMiddleware).ThenFunc(main.ListOrganizerProspectsHandler))
+	router.Handle("/chapter_member_prospects", alice.New(main.authMiddleware).ThenFunc(main.ListChapterMemberProspectsHandler))
+	router.Handle("/circle_member_prospects", alice.New(main.authMiddleware).ThenFunc(main.ListCircleMemberProspectsHandler))
 	router.Handle("/leaderboard", alice.New(main.authMiddleware).ThenFunc(main.LeaderboardHandler))
 	router.Handle("/power", alice.New(main.authMiddleware).ThenFunc(main.PowerHandler)) // TODO: rename
 	router.Handle("/list_working_groups", alice.New(main.authMiddleware).ThenFunc(main.ListWorkingGroupsHandler))
@@ -381,7 +383,7 @@ func (c MainController) ListActivistsActionTeamHandler(w http.ResponseWriter, r 
 
 func (c MainController) ListActivistsDevelopmentHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, "activist_list", PageData{
-		PageName: "Development",
+		PageName: "OrganizerDevelopment",
 		IsAdmin:  getUserFromContext(r.Context()).Admin,
 		Data: ActivistListData{
 			Title: "Organizer Development",
@@ -392,7 +394,7 @@ func (c MainController) ListActivistsDevelopmentHandler(w http.ResponseWriter, r
 
 func (c MainController) ListOrganizerProspectsHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, "activist_list", PageData{
-		PageName: "Organizer Prospects",
+		PageName: "OrganizerProspects",
 		IsAdmin:  getUserFromContext(r.Context()).Admin,
 		Data: ActivistListData{
 			Title: "Organizer Prospects",
@@ -400,6 +402,29 @@ func (c MainController) ListOrganizerProspectsHandler(w http.ResponseWriter, r *
 		},
 	})
 }
+
+func (c MainController) ListChapterMemberProspectsHandler(w http.ResponseWriter, r *http.Request) {
+	renderPage(w, "activist_list", PageData{
+		PageName: "ChapterMemberProspects",
+		IsAdmin:  getUserFromContext(r.Context()).Admin,
+		Data: ActivistListData{
+			Title: "Chapter Member Prospects",
+			View:  "chapter_member_prospects",
+		},
+	})
+}
+
+func (c MainController) ListCircleMemberProspectsHandler(w http.ResponseWriter, r *http.Request) {
+	renderPage(w, "activist_list", PageData{
+		PageName: "CircleMemberProspects",
+		IsAdmin:  getUserFromContext(r.Context()).Admin,
+		Data: ActivistListData{
+			Title: "Circle Member Prospects",
+			View:  "circle_member_prospects",
+		},
+	})
+}
+
 
 func (c MainController) ListWorkingGroupsHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, "working_group_list", PageData{PageName: "WorkingGroupList", IsAdmin: getUserFromContext(r.Context()).Admin})

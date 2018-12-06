@@ -4,7 +4,7 @@
       <input v-on:input="debounceSearchInput" class="form-control filter-margin" type="text"
         placeholder="Search" />
 
-      <button class="btn-link" @click="toggleShowOptions('filters')">
+      <button class="btn-link" @click="toggleShowOptions('filters')" v-if="view == 'all_activists' || view == 'activist_pool'">
         <span v-if="showOptions !== 'filters'">+</span><span v-if="showOptions === 'filters'">-</span> Filters
       </button>
       <button class="btn-link" @click="toggleShowOptions('columns')">
@@ -14,11 +14,11 @@
       <span>&nbsp;&nbsp;&nbsp;&nbsp;<b>Total rows: </b></span><span id="rowCount">0</span>
 
       <div v-if="showOptions === 'filters'">
-        <div v-if="view != 'development' || view != 'organizer_prospects'">
+        <div v-if="view == 'all_activists' || view == 'activist_pool'">
           <label>Last Event From:</label>
           <input v-model="lastEventDateFrom" class="form-control filter-margin" type="date"  />
         </div>
-        <div v-if="view != 'development' || view != 'organizer_prospects'">
+        <div v-if="view == 'all_activists' || view == 'activist_pool'">
           <label>Last Event To:</label>
           <input v-model="lastEventDateTo" class="form-control filter-margin" type="date" />
         </div>
@@ -228,7 +228,7 @@ function getDefaultColumns(view) {
         data: 'location',
         colWidths: 100,
       },
-      enabled: view === "all_activists",
+      enabled: (view === "action_team"),
     }, {
       header: 'Facebook',
       data: {
@@ -363,7 +363,7 @@ function getDefaultColumns(view) {
         readOnly: true,
         colWidths: 200,
       },
-      enabled: (view === "action_team" || view === "organizer_prospects"),
+      enabled: (view === "action_team"),
     },
     {
       header: 'Circles',
@@ -372,7 +372,7 @@ function getDefaultColumns(view) {
         readOnly: true,
         colWidths: 200,
       },
-      enabled: (view === "action_team" || view === "organizer_prospects"),
+      enabled: (view === "action_team"),
     },
     {
       header: 'First Event',
@@ -400,16 +400,17 @@ function getDefaultColumns(view) {
       },
       enabled: (view === "leaderboard"),
     },
+    // {
+    //   header: "Active",
+    //   data: {
+    //     type: "checkbox",
+    //     data: "active",
+    //     readOnly: true,
+    //     colWidths: 55,
+    //   },
+    //   enabled: (view === "action_team"),
+    // },
     {
-      header: "Active",
-      data: {
-        type: "checkbox",
-        data: "active",
-        readOnly: true,
-        colWidths: 55,
-      },
-      enabled: (view === "action_team" || view === "activist_pool" || view === "activist_recruitment" || view === "all_activists" || view === "development" || view === "organizer_prospects"),
-    }, {
       header: "MPI",
       data: {
         type: "checkbox",
@@ -422,17 +423,34 @@ function getDefaultColumns(view) {
                 view === "activist_recruitment" ||
                 view === "all_activists" ||
                 view === "leaderboard" ||
-                view === "development" ||
-                view === "organizer_prospects"),
+                view === "development"),
     },
     {
-      header: "Organizer Interest",
+      header: "Prosp. Organizer",
       data: {
         type: "checkbox",
-        data: "organizer_interest",
+        data: "prospect_organizer",
        colWidths: 120,
       },
       enabled: (view === "all_activists" || view === "organizer_prospects"),
+    } , 
+    {
+      header: "Prosp. Ch. Member",
+      data: {
+        type: "checkbox",
+        data: "prospect_chapter_member",
+       colWidths: 120,
+      },
+      enabled: (view === "all_activists" || view === "chapter_member_prospects"),
+    } , 
+    {
+      header: "Prosp. Cir. Member",
+      data: {
+        type: "checkbox",
+        data: "prospect_circle_member",
+       colWidths: 120,
+      },
+      enabled: (view === "all_activists" || view === "circle_member_prospects"),
     } , 
     {
       header: "Last Maintenance Connection",
@@ -467,7 +485,7 @@ function getDefaultColumns(view) {
       enabled: view === "organizer_prospects",
     } , 
     {
-      header: "Training 1",
+      header: "Consent&A-O",
       data: {
         type: "date",
         data: "training1",
@@ -478,7 +496,7 @@ function getDefaultColumns(view) {
       enabled: view === "development",
     } , 
     {
-      header: "Training 2",
+      header: "Nuts&Bolts",
       data: {
         type: "date",
         data: "training2",
@@ -489,7 +507,7 @@ function getDefaultColumns(view) {
       enabled: view === "development",
     } , 
     {
-      header: "Training 3",
+      header: "Exp. Cmnty",
       data: {
         type: "date",
         data: "training3",
@@ -500,7 +518,7 @@ function getDefaultColumns(view) {
       enabled: view === "development",
     } , 
     {
-      header: "Training 4",
+      header: "Healthy Cmnty",
       data: {
         type: "date",
         data: "training4",
@@ -511,7 +529,7 @@ function getDefaultColumns(view) {
       enabled: view === "development",
     } , 
     {
-      header: "Training 5",
+      header: "Emergent Ldshp",
       data: {
         type: "date",
         data: "training5",
@@ -522,7 +540,7 @@ function getDefaultColumns(view) {
       enabled: view === "development",
     } , 
     {
-      header: "Training 6",
+      header: "Histry&Vision",
       data: {
         type: "date",
         data: "training6",
@@ -869,7 +887,9 @@ export default {
               this.view === "action_team" ||
               this.view === "leaderboard" ||
               this.view === "development" ||
-              this.view === "organizer_prospects" ) {
+              this.view === "organizer_prospects" ||
+              this.view === "chapter_member_prospects" ||
+              this.view === "circle_member_prospects" ) {
             var activistListFiltered;
             activistListFiltered = activistList.filter((el) => {
               if (this.view === "activist_pool") {
@@ -888,7 +908,11 @@ export default {
               } else if (this.view === "development"){
                 return el.activist_level == "Organizer" || el.activist_level == "Senior Organizer";
               } else if (this.view === "organizer_prospects"){
-                return el.organizer_interest == 1;
+                return el.prospect_organizer == 1;
+              } else if (this.view === "chapter_member_prospects"){
+                return el.prospect_chapter_member == 1;
+              } else if (this.view === "circle_member_prospects"){
+                return el.prospect_circle_member == 1;
               } else {
                 return true; // unreachable
               }

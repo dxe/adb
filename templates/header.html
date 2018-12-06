@@ -34,26 +34,55 @@
         </div>
         <div id="navbar" class="collapse navbar-collapse">
           <ul class="nav navbar-nav">
-            <li class="{{if (eq .PageName "NewEvent")}}active{{end}}"><a href="/">New Event</a></li>
-            <li class="{{if (eq .PageName "EventList")}}active{{end}}"><a href="/list_events">Events</a></li>
-            <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#">Activists <span class="caret"></span></a>
+            <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#">Events <span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li class="{{if (eq .PageName "NewEvent")}}active{{end}}"><a href="/">New Event</a></li>
+                <li class="{{if (eq .PageName "EventList")}}active{{end}}"><a href="/list_events">All Events</a></li>
+              </ul>
+            </li>
+            <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#">Connections <span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li class="disabled {{if (eq .PageName "dummy")}}active{{end}}"><a href="#">New Maintenance Connection</a></li>
+                <li class="disabled {{if (eq .PageName "dummy")}}active{{end}}"><a href="#">All Maintenance Connections</a></li>
+                <li class="{{if (eq .PageName "ActivistPool")}}active{{end}}"><a href="/activist_pool">Recruitment Connections</a></li>
+              </ul>
+            </li>
+            <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#">Circles <span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li class="{{if (eq .PageName "CircleMemberProspects")}}active{{end}}"><a href="/circle_member_prospects">Circle Member Prospects</a></li>
+                <li class="{{if (eq .PageName "CirclesList")}}active{{end}}"><a href="/list_circles">Circles</a></li>
+              </ul>
+            </li>
+            <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#">Chapter Members <span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li class="{{if (eq .PageName "ChapterMemberProspects")}}active{{end}}"><a href="/chapter_member_prospects">Chapter Member Prospects</a></li>
+                <li class="disabled {{if (eq .PageName "dummy")}}active{{end}}"><a href="#">Chapter Member Development (?)</a></li>
+              </ul>
+            </li>
+            <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#">Organizers <span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li class="{{if (eq .PageName "OrganizerProspects")}}active{{end}}"><a href="/organizer_prospects">Organizer Prospects</a></li>
+                <li class="{{if (eq .PageName "OrganizerDevelopment")}}active{{end}}"><a href="/activist_development">Organizer Development</a></li>
+                <li class="{{if (eq .PageName "WorkingGroupList")}}active{{end}}"><a href="/list_working_groups">Working Groups</a></li>
+              </ul>
+            </li>
+            <li class="dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#">All <span class="caret"></span></a>
               <ul class="dropdown-menu">
                 <li class="{{if (eq .PageName "ActivistList")}}active{{end}}"><a href="/list_activists">All Activists</a></li>
-                <li class="{{if (eq .PageName "OrganizerProspects")}}active{{end}}"><a href="/organizer_prospects">Organizer Prospects</a></li>
-                <li class="{{if (eq .PageName "ActivistDevelopment")}}active{{end}}"><a href="/activist_development">Organizer Development</a></li>
-                <li class="{{if (eq .PageName "ActivistPool")}}active{{end}}"><a href="/activist_pool">Recruitment Connections</a></li>
                 <li class="{{if (eq .PageName "Leaderboard")}}active{{end}}"><a href="/leaderboard">Leaderboard</a></li>
                 <!---<li class="{{if (eq .PageName "ActivistRecruitment")}}active{{end}}"><a href="/activist_recruitment">Recruitment</a></li>-->
                 <!--<li class="{{if (eq .PageName "ActivistActionTeam")}}active{{end}}"><a href="/activist_actionteam">Action Team</a></li>-->
               </ul>
             </li>
-            <li class="{{if (eq .PageName "WorkingGroupList")}}active{{end}}"><a href="/list_working_groups">Working Groups</a></li>
-            <li class="{{if (eq .PageName "CirclesList")}}active{{end}}"><a href="/list_circles">Circles</a></li>
+            
             <!---<li class="{{if (eq .PageName "Power")}}active{{end}}"><a href="/power">MPI</a></li>--->
-	    <li class="{{if (eq .IsAdmin false)}}hide{{end}} {{if (eq .PageName "UserList")}}active{{end}}"><a href="/admin/users">Users</a></li>
+	          <li class="{{if (eq .IsAdmin false)}}hide{{end}} {{if (eq .PageName "UserList")}}active{{end}}"><a href="/admin/users">Users</a></li>
           </ul>
           
         </div><!--/.nav-collapse -->
       </div>
     </nav>
+
+
+
 
