@@ -218,40 +218,78 @@ export function newEvent() {
       return !attendeesSet.has(activist);
   });
 
-  $.ajax({
-    url: "/event/save",
-    method: "POST",
-    contentType: "application/json",
-    data: JSON.stringify({
-      event_id: eventID,
-      event_name: eventName,
-      event_date: eventDate,
-      event_type: eventType,
-      added_attendees: addedActivists,
-      deleted_attendees: deletedActivists,
-    }),
-    success: function(data) {
-      var parsed = JSON.parse(data);
-      if (parsed.status === "error") {
-        flashMessage("Error: " + parsed.message, true);
-        return;
-      }
-      // status === "success"
-      // Saved successfully, mark the page as clean.
-      DIRTY = false;
+  if ((window.location.href).indexOf('connection') != -1) {
+    $.ajax({
+      url: "/connection/save",
+      method: "POST",
+      contentType: "application/json",
+      data: JSON.stringify({
+        event_id: eventID,
+        event_name: eventName,
+        event_date: eventDate,
+        event_type: eventType,
+        added_attendees: addedActivists,
+        deleted_attendees: deletedActivists,
+      }),
+      success: function(data) {
+        var parsed = JSON.parse(data);
+        if (parsed.status === "error") {
+          flashMessage("Error: " + parsed.message, true);
+          return;
+        }
+        // status === "success"
+        // Saved successfully, mark the page as clean.
+        DIRTY = false;
 
-      if (parsed.redirect) {
-        setFlashMessageSuccessCookie("Saved!");
-        window.location = parsed.redirect;
-      } else {
-        flashMessage("Saved!", false);
-        refreshEventAttendance(parsed.attendees)
-      }
-    },
-    error: function() {
-      flashMessage("Error, did not save data", true);
-    },
-  });
+        if (parsed.redirect) {
+          setFlashMessageSuccessCookie("Saved!");
+          window.location = parsed.redirect;
+        } else {
+          flashMessage("Saved!", false);
+          refreshEventAttendance(parsed.attendees)
+        }
+      },
+      error: function() {
+        flashMessage("Error, did not save data", true);
+      },
+    });
+  }
+  else {
+    $.ajax({
+      url: "/event/save",
+      method: "POST",
+      contentType: "application/json",
+      data: JSON.stringify({
+        event_id: eventID,
+        event_name: eventName,
+        event_date: eventDate,
+        event_type: eventType,
+        added_attendees: addedActivists,
+        deleted_attendees: deletedActivists,
+      }),
+      success: function(data) {
+        var parsed = JSON.parse(data);
+        if (parsed.status === "error") {
+          flashMessage("Error: " + parsed.message, true);
+          return;
+        }
+        // status === "success"
+        // Saved successfully, mark the page as clean.
+        DIRTY = false;
+
+        if (parsed.redirect) {
+          setFlashMessageSuccessCookie("Saved!");
+          window.location = parsed.redirect;
+        } else {
+          flashMessage("Saved!", false);
+          refreshEventAttendance(parsed.attendees)
+        }
+      },
+      error: function() {
+        flashMessage("Error, did not save data", true);
+      },
+    });
+  }
 
 }
 

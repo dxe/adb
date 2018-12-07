@@ -124,7 +124,11 @@ func router() (*mux.Router, *sqlx.DB) {
 	// Authed pages
 	router.Handle("/", alice.New(main.authMiddleware).ThenFunc(main.UpdateEventHandler))
 	router.Handle("/update_event/{event_id:[0-9]+}", alice.New(main.authMiddleware).ThenFunc(main.UpdateEventHandler))
+	router.Handle("/new_connection", alice.New(main.authMiddleware).ThenFunc(main.UpdateConnectionHandler))
+	router.Handle("/update_connection/{event_id:[0-9]+}", alice.New(main.authMiddleware).ThenFunc(main.UpdateConnectionHandler))
+	router.Handle("/update_event/{event_id:[0-9]+}", alice.New(main.authMiddleware).ThenFunc(main.UpdateEventHandler))
 	router.Handle("/list_events", alice.New(main.authMiddleware).ThenFunc(main.ListEventsHandler))
+	router.Handle("/list_connections", alice.New(main.authMiddleware).ThenFunc(main.ListConnectionsHandler))
 	router.Handle("/list_activists", alice.New(main.authMiddleware).ThenFunc(main.ListActivistsHandler))
 	router.Handle("/activist_pool", alice.New(main.authMiddleware).ThenFunc(main.ListActivistsPoolHandler))
 	router.Handle("/activist_recruitment", alice.New(main.authMiddleware).ThenFunc(main.ListActivistsRecruitmentHandler))
@@ -150,6 +154,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	// Authed API
 	router.Handle("/activist_names/get", alice.New(main.apiAuthMiddleware).ThenFunc(main.AutocompleteActivistsHandler))
 	router.Handle("/event/save", alice.New(main.apiAuthMiddleware).ThenFunc(main.EventSaveHandler))
+	router.Handle("/connection/save", alice.New(main.apiAuthMiddleware).ThenFunc(main.ConnectionSaveHandler))
 	router.Handle("/event/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.EventListHandler))
 	router.Handle("/event/delete", alice.New(main.apiAuthMiddleware).ThenFunc(main.EventDeleteHandler))
 	router.Handle("/activist/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistListHandler))
@@ -330,6 +335,10 @@ func (c MainController) ForbiddenHandler(w http.ResponseWriter, r *http.Request)
 
 func (c MainController) ListEventsHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, "event_list", PageData{PageName: "EventList", IsAdmin: getUserFromContext(r.Context()).Admin})
+}
+
+func (c MainController) ListConnectionsHandler(w http.ResponseWriter, r *http.Request) {
+	renderPage(w, "connection_list", PageData{PageName: "ConnectionsList", IsAdmin: getUserFromContext(r.Context()).Admin})
 }
 
 type ActivistListData struct {
@@ -526,6 +535,29 @@ func (c MainController) UpdateEventHandler(w http.ResponseWriter, r *http.Reques
 	})
 }
 
+func (c MainController) UpdateConnectionHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	var event model.Event
+	if eventIDStr, ok := vars["event_id"]; ok {
+		eventID, err := strconv.Atoi(eventIDStr)
+		if err != nil {
+			panic(err)
+		}
+		event, err = model.GetEvent(c.db, model.GetEventOptions{EventID: eventID})
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	renderPage(w, "connection_new", PageData{
+		PageName: "NewConnection",
+		Data: map[string]interface{}{
+			"Event": event,
+		},
+		IsAdmin: getUserFromContext(r.Context()).Admin,
+	})
+}
+
 func (c MainController) TransposedEventsDataJsonHandler(w http.ResponseWriter, r *http.Request) {
 	events, err := model.GetEventsJSON(c.db, model.GetEventOptions{
 		OrderBy:   "e.date ASC",
@@ -682,6 +714,39 @@ func (c MainController) EventSaveHandler(w http.ResponseWriter, r *http.Request)
 	}
 	if isNewEvent {
 		out["redirect"] = fmt.Sprintf("/update_event/%d", eventID)
+	}
+	writeJSON(w, out)
+}
+
+func (c MainController) ConnectionSaveHandler(w http.ResponseWriter, r *http.Request) {
+	event, err := model.CleanEventData(c.db, r.Body)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	// Events with no event ID are new events.
+	isNewEvent := event.ID == 0
+
+	eventID, err := model.InsertUpdateEvent(c.db, event)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	attendees, err := model.GetEventAttendance(c.db, eventID)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	out := map[string]interface{}{
+		"status":    "success",
+		"redirect":  "",
+		"attendees": attendees,
+	}
+	if isNewEvent {
+		out["redirect"] = fmt.Sprintf("/update_connection/%d", eventID)
 	}
 	writeJSON(w, out)
 }

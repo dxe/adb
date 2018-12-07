@@ -64,6 +64,10 @@ a.edit-link:hover {
     }
 }
 
+.display-none {
+    display: none;
+}
+
 
 /* title */
 .title {

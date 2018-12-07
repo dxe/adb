@@ -63,7 +63,12 @@ function listEvents(events) {
     }
 
     // Now, create the links.
-    var updateLink = '/update_event/' + event.event_id;
+    if ((window.location.href).indexOf('connection') != -1) {
+        var updateLink = '/update_connection/' + event.event_id;
+    }
+    else {
+      var updateLink = '/update_event/' + event.event_id;
+    }
 
     var rowID = "event-id-" + event.event_id;
 

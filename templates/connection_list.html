@@ -4,14 +4,14 @@
 
 <div class="body-wrapper-wide event-list-content">
   <div class="title">
-    <h1>Events</h1>
+    <h1>All Maintenance Connections</h1>
     <br />
   </div>
   <div>
     <form class="form-inline" onsubmit="event_list.eventListRequest(); return false">
-      <label for="event-name">Event Name:</label>
+      <label for="event-name">Connector:</label>
       <input id="event-name" class="form-control filter-margin" style="width: 100%">
-      <label for="event-activist">Activist:</label>
+      <label for="event-activist">Connectee:</label>
       <select id="event-activist" class="filter-margin" style="width: 100%"></select>
       <label for="event-date-start">From:</label>
       <input id="event-date-start" class="form-control filter-margin" type="date">
@@ -19,13 +19,7 @@
       <input id="event-date-end" class="form-control filter-margin" type="date">
       <label for="event-type">Type:</label>
       <select id="event-type" class="form-control filter-margin">
-        <option value="noConnections">All</option>
-        <option value="Working Group">Working Group</option>
-        <option value="Community">Community</option>
-        <option value="Protest">Protest</option>
-        <option value="Outreach">Outreach</option>
-        <option value="Sanctuary">Sanctuary</option>
-        <option value="Key Event">Key Event</option>
+        <option value="Connection">Connection</option>
       </select>
       <button type="submit" id="event-date-filter" class="btn btn-primary filter-margin">Filter</button>
     </form>
@@ -37,9 +31,9 @@
       	<tr>
           <th class="col-xs-1"></th>
           <th class="col-xs-2">Date</th>
-          <th class="col-xs-2">Name</th>
+          <th class="col-xs-2">Connector</th>
           <th class="col-xs-2">Type</th>
-          <th class="col-xs-1">Total Attendance</th>
+          <th class="col-xs-1">Total Connectees</th>
           <th class="col-xs-4">
             Attendees
             <span style="display: inline-block">

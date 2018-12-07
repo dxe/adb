@@ -25,7 +25,6 @@
         <option value="Outreach" data-name="Event name" data-attendee="Attendees" {{if (eq .Data.Event.EventType "Outreach")}}selected{{end}}>Outreach</option>
         <option value="Key Event" data-name="Event name" data-attendee="Attendees" {{if (eq .Data.Event.EventType "Key Event")}}selected{{end}}>Key Event</option>
         <option value="Sanctuary" data-name="Event name" data-attendee="Attendees" {{if (eq .Data.Event.EventType "Sanctuary")}}selected{{end}}>Sanctuary (Rescue/Work Day)</option>
-        <option value="Connection" data-name="Connector name" data-attendee="Connectee" {{if (eq .Data.Event.EventType "Connection")}}selected{{end}}>Connection</option>
       </select>
       <br />
 
@@ -54,25 +53,3 @@
 </div>
 <script>event_new.initializeApp({{.Data.Event.Attendees}})</script>
 {{template "footer.html" .}}
-
-<script>
-  if ((window.location.href).indexOf('update') == -1) {
-    // new event, not editing
-    console.log("New event!");
-    $('#eventType').change(function() {
-      $('#nameLabel').text($('option:selected').attr('data-name'));
-      $('#attendeeLabel').text($('option:selected').attr('data-attendee'));
-    });
-  }
-  else {
-    console.log("Editing existing event!");
-    // change field names on load if it's a connection event
-    if ($('#eventType').val() == 'Connection') {
-      $('#eventType').change(function() {
-        $('#nameLabel').text($('option:selected').attr('data-name'));
-        $('#attendeeLabel').text($('option:selected').attr('data-attendee'));
-      }).change();
-    }
-  }
-  
-</script>
