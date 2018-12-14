@@ -65,6 +65,13 @@ SELECT
   training4,
   training5,
   training6,
+  dev_manager,
+  dev_interest,
+  dev_auth,
+  dev_email_sent,
+  dev_vetted,
+  dev_interview,
+  dev_onboarding,
   prospect_organizer,
   prospect_chapter_member,
   prospect_circle_member,
@@ -261,6 +268,13 @@ type ActivistConnectionData struct {
 	Training4    sql.NullString   `db:"training4"`
 	Training5    sql.NullString   `db:"training5"`
 	Training6    sql.NullString   `db:"training6"`
+	DevManager string `db:"dev_manager"`
+	DevInterest string `db:"dev_interest"`
+	DevAuth sql.NullString `db:"dev_auth"`
+	DevEmailSent sql.NullString `db:"dev_email_sent"`
+	DevVetted bool `db:"dev_vetted"`
+	DevInterview sql.NullString `db:"dev_interview"`
+	DevOnboarding bool `db:"dev_onboarding"`
 	ProspectOrganizer bool  `db:"prospect_organizer"`
 	ProspectChapterMember bool  `db:"prospect_chapter_member"`
 	ProspectCircleMember bool  `db:"prospect_circle_member"`
@@ -318,6 +332,13 @@ type ActivistJSON struct {
 	Training4    string   `json:"training4"`
 	Training5    string   `json:"training5"`
 	Training6    string   `json:"training6"`
+	DevManager string `json:"dev_manager"`
+	DevInterest string `json:"dev_interest"`
+	DevAuth string `json:"dev_auth"`
+	DevEmailSent string `json:"dev_email_sent"`
+	DevVetted bool `json:"dev_vetted"`
+	DevInterview string `json:"dev_interview"`
+	DevOnboarding bool `json:"dev_onboarding"`
 	ProspectOrganizer    bool   `json:"prospect_organizer"`
 	ProspectChapterMember    bool   `json:"prospect_chapter_member"`
 	ProspectCircleMember    bool   `json:"prospect_circle_member"`
@@ -439,6 +460,18 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 		if a.ActivistConnectionData.Training6.Valid {
 			training6 = a.ActivistConnectionData.Training6.String
 		}
+		dev_auth := ""
+		if a.ActivistConnectionData.DevAuth.Valid {
+			dev_auth = a.ActivistConnectionData.DevAuth.String
+		}
+		dev_email_sent := ""
+		if a.ActivistConnectionData.DevEmailSent.Valid {
+			dev_email_sent = a.ActivistConnectionData.DevEmailSent.String
+		}
+		dev_interview := ""
+		if a.ActivistConnectionData.DevInterview.Valid {
+			dev_interview = a.ActivistConnectionData.DevInterview.String
+		}
 		last_connection := ""
 		if a.ActivistConnectionData.LastConnection.Valid {
 			last_connection = a.ActivistConnectionData.LastConnection.String
@@ -483,6 +516,13 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			Training4:    	 training4,
 			Training5:    	 training5,
 			Training6:    	 training6,
+			DevManager: a.DevManager,
+			DevInterest: a.DevInterest,
+			DevAuth: dev_auth,
+			DevEmailSent: dev_email_sent,
+			DevVetted: a.DevVetted,
+			DevInterview: dev_interview,
+			DevOnboarding: a.DevOnboarding,
 			ProspectOrganizer: a.ProspectOrganizer,
 			ProspectChapterMember: a.ProspectChapterMember,
 			ProspectCircleMember: a.ProspectCircleMember,
@@ -754,6 +794,13 @@ INSERT INTO activists (
   training4,
   training5,
   training6,
+  dev_manager,
+  dev_interest,
+  dev_auth,
+  dev_email_sent,
+  dev_vetted,
+  dev_interview,
+  dev_onboarding,
   prospect_organizer,
   prospect_chapter_member,
   prospect_circle_member,
@@ -791,6 +838,13 @@ INSERT INTO activists (
   :training4,
   :training5,
   :training6,
+  dev_manager,
+  dev_interest,
+  dev_auth,
+  dev_email_sent,
+  dev_vetted,
+  dev_interview,
+  dev_onboarding,
   :prospect_organizer,
   :prospect_chapter_member,
   :prospect_circle_member,
@@ -848,6 +902,13 @@ SET
   training4 = :training4,
   training5 = :training5,
   training6 = :training6,
+  dev_manager = :dev_manager,
+  dev_interest = :dev_interest,
+  dev_auth = :dev_auth,
+  dev_email_sent = :dev_email_sent,
+  dev_vetted = :dev_vetted,
+  dev_interview = :dev_interview,
+  dev_onboarding = :dev_onboarding,
   prospect_organizer = :prospect_organizer,
   prospect_chapter_member = :prospect_chapter_member,
   prospect_circle_member = :prospect_circle_member,
@@ -1103,6 +1164,21 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 		// Not specified so insert null value into database
 		validTraining6 = false
 	}
+	validDevAuth := true
+	if activistJSON.DevAuth == "" {
+		// Not specified so insert null value into database
+		validDevAuth = false
+	}
+	validDevEmailSent := true
+	if activistJSON.DevEmailSent == "" {
+		// Not specified so insert null value into database
+		validDevEmailSent = false
+	}
+	validDevInterview := true
+	if activistJSON.DevInterview == "" {
+		// Not specified so insert null value into database
+		validDevInterview = false
+	}
 
 	activistExtra := ActivistExtra{
 		Activist: Activist{
@@ -1134,6 +1210,13 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			Training4:    sql.NullString{String: strings.TrimSpace(activistJSON.Training4), Valid: validTraining4},
 			Training5:    sql.NullString{String: strings.TrimSpace(activistJSON.Training5), Valid: validTraining5},
 			Training6:    sql.NullString{String: strings.TrimSpace(activistJSON.Training6), Valid: validTraining6},
+			DevManager: strings.TrimSpace(activistJSON.DevManager),
+			DevInterest: strings.TrimSpace(activistJSON.DevInterest),
+			DevAuth: sql.NullString{String: strings.TrimSpace(activistJSON.DevAuth), Valid: validDevAuth},
+			DevEmailSent: sql.NullString{String: strings.TrimSpace(activistJSON.DevEmailSent), Valid: validDevEmailSent},
+			DevVetted: activistJSON.DevVetted,
+			DevInterview: sql.NullString{String: strings.TrimSpace(activistJSON.DevInterview), Valid: validDevInterview},
+			DevOnboarding: activistJSON.DevOnboarding,
 			ProspectOrganizer: activistJSON.ProspectOrganizer,
 			ProspectChapterMember: activistJSON.ProspectChapterMember,
 			ProspectCircleMember: activistJSON.ProspectCircleMember,

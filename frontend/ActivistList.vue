@@ -194,9 +194,19 @@ function getDefaultColumns(view) {
       header: 'Name',
       data: {
         data: 'name',
+        colWidths: 150,
       },
       enabled: true,
-    }, {
+    },
+    {
+      header: 'Managing',
+      data: {
+        data: 'dev_manager',
+        colWidths: 100,
+      },
+      enabled: (view === "organizer_prospects"),
+    },
+    {
       header: "Points",
       data: {
         type: "numeric",
@@ -273,14 +283,6 @@ function getDefaultColumns(view) {
     },
 
     // ActivistMembershipData
-    {
-      header: "Connector",
-      data: {
-        data: "connector",
-        colWidths: 125,
-      },
-      enabled: (view === "activist_pool" || view === "action_team"),
-    },
     {
      header: "Recruitment Connection Date",
      data: {
@@ -426,6 +428,14 @@ function getDefaultColumns(view) {
                 view === "development"),
     },
     {
+      header: "Connector",
+      data: {
+        data: "connector",
+        colWidths: 125,
+      },
+      enabled: (view === "activist_pool" || view === "action_team" || view === "development"),
+    },
+    {
       header: "Prosp. Organizer",
       data: {
         type: "checkbox",
@@ -482,7 +492,7 @@ function getDefaultColumns(view) {
        correctFormat: true,
        colWidths: 100,
       },
-      enabled: view === "organizer_prospects",
+      enabled: view === "action_team",
     } , 
     {
       header: "Consent&A-O",
@@ -551,6 +561,65 @@ function getDefaultColumns(view) {
       enabled: view === "development",
     } , 
     {
+      header: 'CH or WG Interest',
+      data: {
+        data: 'dev_interest',
+        colWidths: 100,
+      },
+      enabled: (view === "organizer_prospects"),
+    },
+    {
+      header: 'Point Auth',
+      data: {
+        type: "date",
+        data: 'dev_auth',
+        dateFormat: 'YYYY-MM-DD',
+        correctFormat: true,
+        colWidths: 100,
+      },
+      enabled: (view === "organizer_prospects"),
+    },
+    {
+      header: 'Sent Elig. Email',
+      data: {
+        type: "date",
+        data: 'dev_email_sent',
+        dateFormat: 'YYYY-MM-DD',
+        correctFormat: true,
+        colWidths: 100,
+      },
+      enabled: (view === "organizer_prospects"),
+    },
+    {
+      header: 'Vetting',
+      data: {
+        type: "checkbox",
+        data: 'dev_vetted',
+        colWidths: 60,
+      },
+      enabled: (view === "organizer_prospects"),
+    },
+    {
+      header: 'Interview',
+      data: {
+        type: "date",
+        data: 'dev_interview',
+        dateFormat: 'YYYY-MM-DD',
+        correctFormat: true,
+        colWidths: 100,
+      },
+      enabled: (view === "organizer_prospects"),
+    },
+    {
+      header: 'Completed Onboarding Logistics',
+      data: {
+        type: "checkbox",
+        data: 'dev_onboarding',
+        colWidths: 100,
+      },
+      enabled: (view === "organizer_prospects"),
+    },
+    {
       header: "ID",
       data: {
         type: "numeric",
@@ -559,7 +628,7 @@ function getDefaultColumns(view) {
         colWidths: 50,
       },
       enabled: false,
-    }
+    },
   ];
 }
 
