@@ -721,10 +721,22 @@ function initialDateToValue() {
   // An ISO date looks like "2017-11-01T23:21:50.377Z", so we cut off
   // everything after the date.
   return d.toISOString().slice(0, 10);
+  }
+
+function generateBooleanSortFn(field, ascending) {
+  return function (a, b) {
+
+    var order = (a[field] === b[field]) ? 0 : Number(a[field]) - Number(b[field]);
+    if (ascending) {
+      return order;
+    }
+    return -1 * order;
+  };
 }
 
 function generateStringSortFn(field, ascending) {
-  return function(a, b) {
+  return function (a, b) {
+
     var order = (a[field].toLowerCase() < b[field].toLowerCase()) ? -1 : 1;
     if (ascending) {
       return order;
@@ -1073,7 +1085,7 @@ export default {
       };
       table.updateSettings(newSettings);
     },
-    sortColumn: function(col) {
+    sortColumn: function (col) {
       var field = col.data.data;
       if (!field) {
         // Don't sort columsn with no data field (e.g. the first
@@ -1088,6 +1100,8 @@ export default {
         sortFunction = generateDateSortFn(field, ascending);
       } else if (type === 'numeric') {
         sortFunction = generateGenericSortFn(field, ascending);
+      } else if (type === 'checkbox') {
+        sortFunction = generateBooleanSortFn(field, ascending);
       } else {
         sortFunction = generateStringSortFn(field, ascending);
       }
