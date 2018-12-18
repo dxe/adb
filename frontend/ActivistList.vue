@@ -405,7 +405,7 @@ function getDefaultColumns(view) {
         data: "prospect_organizer",
        colWidths: 120,
       },
-      enabled: (view === "all_activists" || view === "organizer_prospects"),
+      enabled: (view === "organizer_prospects"),
     } , 
     {
       header: "Prosp. Ch. Member",
@@ -414,7 +414,7 @@ function getDefaultColumns(view) {
         data: "prospect_chapter_member",
        colWidths: 120,
       },
-      enabled: (view === "all_activists" || view === "chapter_member_prospects"),
+      enabled: (view === "chapter_member_prospects"),
     } , 
     {
       header: "Prosp. Cir. Member",
@@ -423,7 +423,7 @@ function getDefaultColumns(view) {
         data: "prospect_circle_member",
        colWidths: 120,
       },
-      enabled: (view === "all_activists" || view === "circle_member_prospects"),
+      enabled: (view === "circle_member_prospects"),
     } , 
     {
       header: "Last Maintenance Connection",
