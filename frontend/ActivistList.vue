@@ -247,16 +247,6 @@ function getDefaultColumns(view) {
       enabled: (view === "all_activists" || view === "activist_recruitment" || view === "activist_pool"),
     },
 
-    //{
-    //  header: 'Liberation Pledge',
-    //  data: {
-    //    type: 'checkbox',
-    //    data: 'liberation_pledge',
-    //    colWidths: 120,
-    //  },
-    //  enabled: false,
-    //}, 
-
     {
      header: "Contacted Date",
      data: {
@@ -447,15 +437,6 @@ function getDefaultColumns(view) {
       },
       enabled: view === "development",
     } , 
-    // {
-    //   header: "Core Training",
-    //   data: {
-    //     type: "checkbox",
-    //     data: "core_training",
-    //     colWidths: 90,
-    //   },
-    //   enabled: view === "action_team",
-    // } , 
     {
       header: "Workshop",
       data: {
