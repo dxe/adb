@@ -78,8 +78,6 @@ SELECT
   escalation,
   interested,
   meeting_date,
-  action_team_focus,
-  action_team_focus_secondary,
 
   -- Do the first/last event subqueries here b/c the performance is
   -- better than when you join on events and event_attendance multiple times.
@@ -282,8 +280,6 @@ type ActivistConnectionData struct {
 	Escalation      string `db:"escalation"`
 	Interested      string `db:"interested"`
 	MeetingDate     string `db:"meeting_date"`
-	ActionTeamFocus string `db:"action_team_focus"`
-	ActionTeamFocusSecondary sql.NullString `db:"action_team_focus_secondary"`
 }
 
 type ActivistExtra struct {
@@ -346,8 +342,6 @@ type ActivistJSON struct {
 	Escalation      string `json:"escalation"`
 	Interested      string `json:"interested"`
 	MeetingDate     string `json:"meeting_date"`
-	ActionTeamFocus string `json:"action_team_focus"`
-	ActionTeamFocusSecondary string `json:"action_team_focus_secondary"`
 }
 
 type GetActivistOptions struct {
@@ -427,10 +421,6 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 		location := ""
 		if a.Activist.Location.Valid {
 			location = a.Activist.Location.String
-		}
-		action_team_focus_secondary := ""
-		if a.ActivistConnectionData.ActionTeamFocusSecondary.Valid {
-			action_team_focus_secondary = a.ActivistConnectionData.ActionTeamFocusSecondary.String
 		}
 		training0 := ""
 		if a.ActivistConnectionData.Training0.Valid {
@@ -530,8 +520,6 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			Escalation:      a.Escalation,
 			Interested:      a.Interested,
 			MeetingDate:     a.MeetingDate,
-			ActionTeamFocus: a.ActionTeamFocus,
-			ActionTeamFocusSecondary: action_team_focus_secondary,
 		})
 	}
 
@@ -807,9 +795,7 @@ INSERT INTO activists (
   last_connection,
   escalation,
   interested,
-  meeting_date,
-  action_team_focus,
-  action_team_focus_secondary
+  meeting_date
 
 ) VALUES (
 
@@ -851,9 +837,7 @@ INSERT INTO activists (
   :last_connection,
   :escalation,
   :interested,
-  :meeting_date,
-  :action_team_focus,
-  :action_team_focus_secondary
+  :meeting_date
 
 )`, activist)
 	if err != nil {
@@ -914,9 +898,7 @@ SET
   prospect_circle_member = :prospect_circle_member,
   escalation = :escalation,
   interested = :interested,
-  meeting_date = :meeting_date,
-  action_team_focus = :action_team_focus,
-  action_team_focus_secondary = :action_team_focus_secondary
+  meeting_date = :meeting_date
 
 WHERE
   id = :id`, activist)
@@ -1124,11 +1106,6 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 		// No location specified so insert null value into database
 		validLoc = false
 	}
-	validFoc := true
-	if activistJSON.ActionTeamFocusSecondary == "" {
-		// Not specified so insert null value into database
-		validFoc = false
-	}
 	validTraining0 := true
 	if activistJSON.Training0 == "" {
 		// Not specified so insert null value into database
@@ -1223,8 +1200,6 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			Escalation:      strings.TrimSpace(activistJSON.Escalation),
 			Interested:      strings.TrimSpace(activistJSON.Interested),
 			MeetingDate:     strings.TrimSpace(activistJSON.MeetingDate),
-			ActionTeamFocus: strings.TrimSpace(activistJSON.ActionTeamFocus),
-			ActionTeamFocusSecondary: sql.NullString{String: strings.TrimSpace(activistJSON.ActionTeamFocusSecondary), Valid: validFoc},
 		},
 	}
 

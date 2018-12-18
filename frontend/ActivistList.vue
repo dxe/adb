@@ -332,33 +332,6 @@ function getDefaultColumns(view) {
                 view === "organizer_prospects"),
     },
     {
-      header: "Focus",
-      data: {
-        data: "action_team_focus",
-        colWidths: 135,
-        type: 'dropdown',
-        source: [
-          "",
-          "Direct Action",
-          "Community",
-          "Development",
-          "Finance",
-          "Communications",
-        ],
-      },
-      enabled: (view === "action_team"),
-    },
-
-    {
-      header: "Interests",
-      data: {
-        data: "action_team_focus_secondary",
-        colWidths: 135,
-      },
-      enabled: (view === "action_team"),
-    },
-
-    {
       header: 'Working Groups',
       data: {
         data: 'working_group_list',
