@@ -84,7 +84,7 @@ function listEvents(events) {
         '<td nowrap>' + event.attendees.length + '</td>' +
         '<td>' +
           '<button class="show-attendees btn btn-link" onclick="event_list.toggleAttendees(\'' + rowID + '\')" >+ Attendees</button><a target="_blank" href="https://mail.google.com/mail/?view=cm&fs=1&bcc=' + emailString + '" class="btn btn-link"><span class="glyphicon glyphicon-envelope"></span></a>' +
-          '<ul class="attendee-list" style="display: none">' + attendeeString + '</ul></td>' +
+          '<ul class="attendee-list">' + attendeeString + '</ul></td>' +
         '</tr>';
     d.insertAdjacentHTML('beforeend', newRow);
   }
@@ -181,3 +181,29 @@ export function initializeApp() {
   initActivistSelect("#event-activist");
   eventListRequest();
 }
+
+// show attendee lists if connections page, but not events page
+if ((window.location.href).indexOf('events') != -1) {
+  $("<style>")
+    .prop("type", "text/css")
+    .html("\
+    .attendee-list {\
+        display: none;\
+    }")
+    .appendTo("head");
+
+}
+if ((window.location.href).indexOf('connections') != -1) {
+  $("<style>")
+    .prop("type", "text/css")
+    .html("\
+    .show-attendees {\
+        display: none;\
+    }")
+    .appendTo("head");
+}
+
+
+
+
+
