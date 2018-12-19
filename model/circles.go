@@ -36,6 +36,11 @@ type CircleGroup struct {
 	Type       int    `db:"type"`
 	GroupEmail string `db:"group_email"`
 	Members    []CircleGroupMember
+	Visible bool `db:"visible"`
+	Description string `db:"description"`
+	MeetingTime string `db:"meeting_time"`
+	MeetingLocation string `db:"meeting_location"`
+	Coords string `db:"coords"`
 }
 
 type CircleGroupQueryOptions struct {
@@ -57,6 +62,11 @@ type CircleGroupJSON struct {
 	Type    string                   `json:"type"`
 	Email   string                   `json:"email"`
 	Members []CircleGroupMemberJSON `json:"members"`
+	Visible 		bool 		`json:"visible"`
+	Description 	string 		`json:"description"`
+	MeetingTime 	string 		`json:"meeting_time"`
+	MeetingLocation string 		`json:"meeting_location"`
+	Coords 			string 		`json:"coords"`
 }
 
 type CircleGroupMemberJSON struct {
@@ -64,6 +74,11 @@ type CircleGroupMemberJSON struct {
 	Email                  string `json:"email"`
 	PointPerson            bool   `json:"point_person"`
 	NonMemberOnMailingList bool   `json:"non_member_on_mailing_list"`
+	Visible 		bool 		`json:"visible"`
+	Description 	string 		`json:"description"`
+	MeetingTime 	string 		`json:"meeting_time"`
+	MeetingLocation string 		`json:"meeting_location"`
+	Coords 			string 		`json:"coords"`
 }
 
 /** Functions and Methods */
@@ -95,8 +110,8 @@ func createOrUpdateCircleGroup(db *sqlx.DB, circleGroup CircleGroup) (int, error
 	if circleGroup.ID == 0 {
 		// Create Circle
 		query = `
-    INSERT INTO circles (name, type, group_email)
-    VALUES (:name, :type, :group_email)
+    INSERT INTO circles (name, type, group_email, visible, description, meeting_time, meeting_location, coords)
+    VALUES (:name, :type, :group_email, :visible, :description, :meeting_time, :meeting_location, :coords)
     `
 	} else {
 		// Update existing working group
@@ -105,7 +120,12 @@ UPDATE circles
 SET
   name = :name,
   type = :type,
-  group_email = :group_email
+  group_email = :group_email,
+  visible = :visible,
+  description = :description,
+  meeting_time = :meeting_time,
+  meeting_location = :meeting_location,
+  coords = :coords
 WHERE
 id = :id
 `
@@ -212,6 +232,11 @@ func CleanCircleGroupData(db *sqlx.DB, body io.Reader) (CircleGroup, error) {
 		Type:       wgType,
 		GroupEmail: strings.TrimSpace(circleGroupJSON.Email),
 		Members:    members,
+		Visible:	circleGroupJSON.Visible,
+		Description: circleGroupJSON.Description,
+		MeetingTime: circleGroupJSON.MeetingTime,
+		MeetingLocation: circleGroupJSON.MeetingLocation,
+		Coords: circleGroupJSON.Coords,
 	}, nil
 }
 
@@ -311,6 +336,11 @@ func getCircleGroupsJSON(db *sqlx.DB, options CircleGroupQueryOptions) ([]Circle
 			Type:    CircleGroupTypes[cir.Type],
 			Email:   cir.GroupEmail,
 			Members: cirMembers,
+			Visible: cir.Visible,
+			Description: cir.Description,
+			MeetingTime: cir.MeetingTime,
+			MeetingLocation: cir.MeetingLocation,
+			Coords: cir.Coords,
 		})
 	}
 
@@ -353,7 +383,7 @@ func GetCircleGroup(db *sqlx.DB, options CircleGroupQueryOptions) (CircleGroup, 
 
 func getCircleGroups(db *sqlx.DB, options CircleGroupQueryOptions) ([]CircleGroup, error) {
 	query := `
-SELECT w.id, w.name, w.type, w.group_email FROM circles w
+SELECT w.id, w.name, w.type, w.group_email, w.visible, w.description, w.meeting_time, w.meeting_location, w.coords FROM circles w
 `
 
 	var queryArgs []interface{}
@@ -372,6 +402,8 @@ SELECT w.id, w.name, w.type, w.group_email FROM circles w
 	if len(whereClause) > 0 {
 		query += ` WHERE ` + strings.Join(whereClause, " AND ")
 	}
+
+	query += ` ORDER BY w.name`
 
 	var circleGroups []CircleGroup
 	if err := db.Select(&circleGroups, query, queryArgs...); err != nil {

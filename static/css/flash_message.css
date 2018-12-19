@@ -1,10 +1,12 @@
 #flash {
     z-index:5500;
     position:fixed;
-    margin-left: 25%;
-    margin-right: 25%;
-    width: 50%;
-    text-align:center;
+    /* margin-left: 50%;
+    margin-top: 80%; */
+    bottom: 10px;
+    right: 10px;
+    width: 20%;
+    text-align:left;
     opacity:0.8;
     display: none;
 }

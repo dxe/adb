@@ -105,6 +105,12 @@
                   <option value="committee">Committee</option>
                 </select>
               </p>
+              <p><label for="visible">Visible on application: </label><input class="form-control" type="checkbox" v-model.trim="currentWorkingGroup.visible" id="visible" /></p>
+              <p><label for="description">Description: </label><input class="form-control" type="text" v-model.trim="currentWorkingGroup.description" id="description" /></p>
+              <p><label for="meeting_time">Meeting Time: </label><input class="form-control" type="text" v-model.trim="currentWorkingGroup.meeting_time" id="meeting_time" /></p>
+              <p><label for="meeting_location">Meeting Location: </label><input class="form-control" type="text" v-model.trim="currentWorkingGroup.meeting_location" id="meeting_location" /></p>
+
+              <!-- <p><label for="coords">Coordinates: </label><input class="form-control" type="text" v-model.trim="currentWorkingGroup.coords" id="coords" /></p> -->
               <p>
                 <label for="point-person">Point person: </label>
                 <div class="select-row" v-for="(member, index) in currentWorkingGroup.members">

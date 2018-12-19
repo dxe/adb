@@ -38,6 +38,11 @@ type WorkingGroup struct {
 	Type       int    `db:"type"`
 	GroupEmail string `db:"group_email"`
 	Members    []WorkingGroupMember
+	Visible bool `db:"visible"`
+	Description string `db:"description"`
+	MeetingTime string `db:"meeting_time"`
+	MeetingLocation string `db:"meeting_location"`
+	Coords string `db:"coords"`
 }
 
 type WorkingGroupQueryOptions struct {
@@ -59,6 +64,11 @@ type WorkingGroupJSON struct {
 	Type    string                   `json:"type"`
 	Email   string                   `json:"email"`
 	Members []WorkingGroupMemberJSON `json:"members"`
+	Visible 		bool 		`json:"visible"`
+	Description 	string 		`json:"description"`
+	MeetingTime 	string 		`json:"meeting_time"`
+	MeetingLocation string 		`json:"meeting_location"`
+	Coords 			string 		`json:"coords"`
 }
 
 type WorkingGroupMemberJSON struct {
@@ -97,8 +107,8 @@ func createOrUpdateWorkingGroup(db *sqlx.DB, workingGroup WorkingGroup) (int, er
 	if workingGroup.ID == 0 {
 		// Create working Group
 		query = `
-    INSERT INTO working_groups (name, type, group_email)
-    VALUES (:name, :type, :group_email)
+    INSERT INTO working_groups (name, type, group_email, visible, description, meeting_time, meeting_location, coords)
+    VALUES (:name, :type, :group_email, :visible, :description, :meeting_time, :meeting_location, :coords)
     `
 	} else {
 		// Update existing working group
@@ -107,7 +117,12 @@ UPDATE working_groups
 SET
   name = :name,
   type = :type,
-  group_email = :group_email
+  group_email = :group_email,
+  visible = :visible,
+  description = :description,
+  meeting_time = :meeting_time,
+  meeting_location = :meeting_location,
+  coords = :coords
 WHERE
 id = :id
 `
@@ -214,6 +229,11 @@ func CleanWorkingGroupData(db *sqlx.DB, body io.Reader) (WorkingGroup, error) {
 		Type:       wgType,
 		GroupEmail: strings.TrimSpace(workingGroupJSON.Email),
 		Members:    members,
+		Visible:	workingGroupJSON.Visible,
+		Description: workingGroupJSON.Description,
+		MeetingTime: workingGroupJSON.MeetingTime,
+		MeetingLocation: workingGroupJSON.MeetingLocation,
+		Coords: workingGroupJSON.Coords,
 	}, nil
 }
 
@@ -313,6 +333,11 @@ func getWorkingGroupsJSON(db *sqlx.DB, options WorkingGroupQueryOptions) ([]Work
 			Type:    WorkingGroupTypes[wg.Type],
 			Email:   wg.GroupEmail,
 			Members: wgMembers,
+			Visible: wg.Visible,
+			Description: wg.Description,
+			MeetingTime: wg.MeetingTime,
+			MeetingLocation: wg.MeetingLocation,
+			Coords: wg.Coords,
 		})
 	}
 
@@ -355,7 +380,7 @@ func GetWorkingGroup(db *sqlx.DB, options WorkingGroupQueryOptions) (WorkingGrou
 
 func getWorkingGroups(db *sqlx.DB, options WorkingGroupQueryOptions) ([]WorkingGroup, error) {
 	query := `
-SELECT w.id, w.name, w.type, w.group_email FROM working_groups w
+SELECT w.id, w.name, w.type, w.group_email, w.visible, w.description, w.meeting_time, w.meeting_location, w.coords FROM working_groups w
 `
 
 	var queryArgs []interface{}
@@ -374,6 +399,8 @@ SELECT w.id, w.name, w.type, w.group_email FROM working_groups w
 	if len(whereClause) > 0 {
 		query += ` WHERE ` + strings.Join(whereClause, " AND ")
 	}
+
+	query += ` ORDER BY w.name`
 
 	var workingGroups []WorkingGroup
 	if err := db.Select(&workingGroups, query, queryArgs...); err != nil {
