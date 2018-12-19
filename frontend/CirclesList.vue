@@ -97,9 +97,11 @@
 
               <p><label for="visible">Visible on application: </label><input class="form-control" type="checkbox" v-model.trim="currentCircleGroup.visible" id="visible" /></p>
               <p><label for="description">Description: </label><input class="form-control" type="text" v-model.trim="currentCircleGroup.description" id="description" /></p>
-              <p><label for="meeting_time">Meeting Time: </label><input class="form-control" type="text" v-model.trim="currentCircleGroup.meeting_time" id="meeting_time" /></p>
+              <p><label for="meeting_time">Meeting Day & Time: </label><input class="form-control" type="text" v-model.trim="currentCircleGroup.meeting_time" id="meeting_time" /></p>
               <p><label for="meeting_location">Meeting Location: </label><input class="form-control" type="text" v-model.trim="currentCircleGroup.meeting_location" id="meeting_location" /></p>
               <p><label for="coords">Coordinates: </label><input class="form-control" type="text" v-model.trim="currentCircleGroup.coords" id="coords" /></p>
+
+              <hr />
               
               <p>
                 <label for="point-person">Host: </label>
