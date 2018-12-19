@@ -1,6 +1,9 @@
 <template>
   <div id="app" class="main">
     <button class="btn btn-default" @click="showModal('edit-circle-modal')">Add New Circle</button>
+    <button class="btn btn-default" onclick="$('.wgMembers').show()">Show members</button>
+    <button class="btn btn-default" onclick="$('.wgMembers').hide()">Hide members</button>
+
     <table id="working-group-list" class="adb-table table table-hover table-striped">
       <thead>
         <tr>
@@ -417,7 +420,7 @@ export default {
   .select-row-btn {
     margin: 0 5px;
   }
-  
+
   .wgMembers {
     display: none;
   }
