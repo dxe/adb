@@ -10,7 +10,7 @@
           <th>Email</th>
           <th>Total Members</th>
           <th>Host</th>
-          <th>Members</th>
+          <th class="wgMembers">Members</th>
         </tr>
       </thead>
       <tbody id="working-group-list-body">
@@ -39,7 +39,7 @@
           <td>
             <ul v-for="member in circleGroup.members">
               <template v-if="!member.point_person && !member.non_member_on_mailing_list">
-                <li>{{member.name}}</li>
+                <li class="wgMembers">{{member.name}}</li>
               </template>
             </ul>
           </td>
@@ -416,5 +416,9 @@ export default {
 
   .select-row-btn {
     margin: 0 5px;
+  }
+  
+  .wgMembers {
+    display: none;
   }
 </style>
