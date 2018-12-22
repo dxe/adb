@@ -57,6 +57,7 @@ SELECT
   training4,
   training5,
   training6,
+  dev_application_date,
   dev_manager,
   dev_interest,
   dev_auth,
@@ -64,6 +65,10 @@ SELECT
   dev_vetted,
   dev_interview,
   dev_onboarding,
+  cm_first_email,
+  cm_approval_email,
+  cm_warning_email,
+  cir_first_email,
   prospect_organizer,
   prospect_chapter_member,
   prospect_circle_member,
@@ -174,7 +179,10 @@ SELECT
     JOIN activists inner_a ON inner_a.id = ea.activist_id
     JOIN events e ON e.id = ea.event_id
     WHERE inner_a.id = a.id and e.event_type = "Connection"
-  	),"") AS last_connection
+  	),"") AS last_connection,
+
+  	IF((CONCAT( (IFNULL((SELECT GROUP_CONCAT(DISTINCT wg.name SEPARATOR ', ') FROM working_groups wg JOIN working_group_members wgm ON wg.id = wgm.working_group_id WHERE   wgm.activist_id = a.id), '')), (IFNULL( (SELECT   GROUP_CONCAT(DISTINCT circles.name SEPARATOR ', ') FROM circles JOIN circle_members ON circles.id = circle_members.circle_id WHERE   circle_members.activist_id = a.id), '')))) <> "","1","0")
+  	as wg_or_cir_member
 
 FROM activists a
 
@@ -238,6 +246,7 @@ type ActivistMembershipData struct {
 	Source                 string `db:"source"`
 	WorkingGroups          string `db:"working_group_list"`
 	Circles          	   string `db:"circles_list"`
+	WgOrCirMember          bool `db:"wg_or_cir_member"`
 }
 
 type ActivistConnectionData struct {
@@ -250,6 +259,7 @@ type ActivistConnectionData struct {
 	Training4    sql.NullString   `db:"training4"`
 	Training5    sql.NullString   `db:"training5"`
 	Training6    sql.NullString   `db:"training6"`
+	ApplicationDate mysql.NullTime `db:"dev_application_date"`
 	DevManager string `db:"dev_manager"`
 	DevInterest string `db:"dev_interest"`
 	DevAuth sql.NullString `db:"dev_auth"`
@@ -257,6 +267,10 @@ type ActivistConnectionData struct {
 	DevVetted bool `db:"dev_vetted"`
 	DevInterview sql.NullString `db:"dev_interview"`
 	DevOnboarding bool `db:"dev_onboarding"`
+	CMFirstEmail sql.NullString `db:"cm_first_email"`
+	CMApprovalEmail sql.NullString `db:"cm_approval_email"`
+	CMWarningEmail sql.NullString `db:"cm_warning_email"`
+	CirFirstEmail sql.NullString `db:"cir_first_email"`
 	ProspectOrganizer bool  `db:"prospect_organizer"`
 	ProspectChapterMember bool  `db:"prospect_chapter_member"`
 	ProspectCircleMember bool  `db:"prospect_circle_member"`
@@ -295,6 +309,7 @@ type ActivistJSON struct {
 	Source                 string `json:"source"`
 	WorkingGroups          string `json:"working_group_list"`
 	Circles          	   string `json:"circles_list"`
+	WgOrCirMember  bool  `json:"wg_or_cir_member"`
 
 	Connector       string `json:"connector"`
 	ContactedDate   string `json:"contacted_date"`
@@ -305,6 +320,7 @@ type ActivistJSON struct {
 	Training4    string   `json:"training4"`
 	Training5    string   `json:"training5"`
 	Training6    string   `json:"training6"`
+	ApplicationDate string `json:"dev_application_date"`
 	DevManager string `json:"dev_manager"`
 	DevInterest string `json:"dev_interest"`
 	DevAuth string `json:"dev_auth"`
@@ -312,6 +328,10 @@ type ActivistJSON struct {
 	DevVetted bool `json:"dev_vetted"`
 	DevInterview string `json:"dev_interview"`
 	DevOnboarding bool `json:"dev_onboarding"`
+	CMFirstEmail string `json:"cm_first_email"`
+	CMApprovalEmail string `json:"cm_approval_email"`
+	CMWarningEmail string `json:"cm_warning_email"`
+	CirFirstEmail string `json:"cir_first_email"`
 	ProspectOrganizer    bool   `json:"prospect_organizer"`
 	ProspectChapterMember    bool   `json:"prospect_chapter_member"`
 	ProspectCircleMember    bool   `json:"prospect_circle_member"`
@@ -395,6 +415,10 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 		if a.ActivistEventData.LastEvent.Valid {
 			lastEvent = a.ActivistEventData.LastEvent.Time.Format(EventDateLayout)
 		}
+		applicationDate := ""
+		if a.ActivistConnectionData.ApplicationDate.Valid {
+			applicationDate = a.ActivistConnectionData.ApplicationDate.Time.Format(EventDateLayout)
+		}
 		location := ""
 		if a.Activist.Location.Valid {
 			location = a.Activist.Location.String
@@ -443,6 +467,22 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 		if a.ActivistConnectionData.LastConnection.Valid {
 			last_connection = a.ActivistConnectionData.LastConnection.String
 		}
+		cm_first_email := ""
+		if a.ActivistConnectionData.CMFirstEmail.Valid {
+			cm_first_email = a.ActivistConnectionData.CMFirstEmail.String
+		}
+		cm_approval_email := ""
+		if a.ActivistConnectionData.CMApprovalEmail.Valid {
+			cm_approval_email = a.ActivistConnectionData.CMApprovalEmail.String
+		}
+		cm_warning_email := ""
+		if a.ActivistConnectionData.CMWarningEmail.Valid {
+			cm_warning_email = a.ActivistConnectionData.CMWarningEmail.String
+		}
+		cir_first_email := ""
+		if a.ActivistConnectionData.CirFirstEmail.Valid {
+			cir_first_email = a.ActivistConnectionData.CirFirstEmail.String
+		}
 
 		activistsJSON = append(activistsJSON, ActivistJSON{
 			Email:    a.Email,
@@ -465,6 +505,7 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			ActivistLevel:          a.ActivistLevel,
 			WorkingGroups:          a.WorkingGroups,
 			Circles:          		a.Circles,
+			WgOrCirMember:          a.WgOrCirMember,
 			Source:                 a.Source,
 
 			Connector:       a.Connector,
@@ -476,6 +517,7 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			Training4:    	 training4,
 			Training5:    	 training5,
 			Training6:    	 training6,
+			ApplicationDate: applicationDate,
 			DevManager: a.DevManager,
 			DevInterest: a.DevInterest,
 			DevAuth: dev_auth,
@@ -483,6 +525,10 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			DevVetted: a.DevVetted,
 			DevInterview: dev_interview,
 			DevOnboarding: a.DevOnboarding,
+			CMFirstEmail: cm_first_email,
+			CMApprovalEmail: cm_approval_email,
+			CMWarningEmail: cm_warning_email,
+			CirFirstEmail: cir_first_email,
 			ProspectOrganizer: a.ProspectOrganizer,
 			ProspectChapterMember: a.ProspectChapterMember,
 			ProspectCircleMember: a.ProspectCircleMember,
@@ -752,6 +798,10 @@ INSERT INTO activists (
   dev_vetted,
   dev_interview,
   dev_onboarding,
+  cm_first_email,
+  cm_approval_email,
+  cm_warning_email,
+  cir_first_email,
   prospect_organizer,
   prospect_chapter_member,
   prospect_circle_member,
@@ -780,13 +830,17 @@ INSERT INTO activists (
   :training4,
   :training5,
   :training6,
-  dev_manager,
-  dev_interest,
-  dev_auth,
-  dev_email_sent,
-  dev_vetted,
-  dev_interview,
-  dev_onboarding,
+  :dev_manager,
+  :dev_interest,
+  :dev_auth,
+  :dev_email_sent,
+  :dev_vetted,
+  :dev_interview,
+  :dev_onboarding,
+  :cm_first_email,
+  :cm_approval_email,
+  :cm_warning_email,
+  :cir_first_email,
   :prospect_organizer,
   :prospect_chapter_member,
   :prospect_circle_member,
@@ -842,6 +896,10 @@ SET
   dev_vetted = :dev_vetted,
   dev_interview = :dev_interview,
   dev_onboarding = :dev_onboarding,
+  cm_first_email = :cm_first_email,
+  cm_approval_email = :cm_approval_email,
+  cm_warning_email = :cm_warning_email,
+  cir_first_email = :cir_first_email,
   prospect_organizer = :prospect_organizer,
   prospect_chapter_member = :prospect_chapter_member,
   prospect_circle_member = :prospect_circle_member,
@@ -1105,6 +1163,26 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 		// Not specified so insert null value into database
 		validDevInterview = false
 	}
+	validCMFirstEmail := true
+	if activistJSON.CMFirstEmail == "" {
+		// Not specified so insert null value into database
+		validCMFirstEmail = false
+	}
+	validCMApprovalEmail := true
+	if activistJSON.CMApprovalEmail == "" {
+		// Not specified so insert null value into database
+		validCMApprovalEmail = false
+	}
+	validCMWarningEmail := true
+	if activistJSON.CMWarningEmail == "" {
+		// Not specified so insert null value into database
+		validCMWarningEmail = false
+	}
+	validCirFirstEmail := true
+	if activistJSON.CirFirstEmail == "" {
+		// Not specified so insert null value into database
+		validCirFirstEmail = false
+	}
 
 	activistExtra := ActivistExtra{
 		Activist: Activist{
@@ -1136,6 +1214,10 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			DevVetted: activistJSON.DevVetted,
 			DevInterview: sql.NullString{String: strings.TrimSpace(activistJSON.DevInterview), Valid: validDevInterview},
 			DevOnboarding: activistJSON.DevOnboarding,
+			CMFirstEmail:    sql.NullString{String: strings.TrimSpace(activistJSON.CMFirstEmail), Valid: validCMFirstEmail},
+			CMApprovalEmail:    sql.NullString{String: strings.TrimSpace(activistJSON.CMApprovalEmail), Valid: validCMApprovalEmail},
+			CMWarningEmail:    sql.NullString{String: strings.TrimSpace(activistJSON.CMWarningEmail), Valid: validCMWarningEmail},
+			CirFirstEmail:    sql.NullString{String: strings.TrimSpace(activistJSON.CirFirstEmail), Valid: validCirFirstEmail},
 			ProspectOrganizer: activistJSON.ProspectOrganizer,
 			ProspectChapterMember: activistJSON.ProspectChapterMember,
 			ProspectCircleMember: activistJSON.ProspectCircleMember,

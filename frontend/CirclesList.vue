@@ -1,9 +1,9 @@
 <template>
   <div id="app" class="main">
-    <button class="btn btn-default" @click="showModal('edit-circle-modal')">Add New Circle</button>
+    <button class="btn btn-default" @click="showModal('edit-circle-modal')"><span class="glyphicon glyphicon-plus"></span>&nbsp;&nbsp;Add New Circle</button>
     &nbsp;&nbsp;&nbsp;&nbsp;
-    <button class="btn btn-default" onclick="$('.wgMembers').show()">Show members</button>
-    <button class="btn btn-default" onclick="$('.wgMembers').hide()">Hide members</button>
+    <button id="showMem" class="btn btn-default" onclick="$('.wgMembers').show(); $('#showMem').hide(); $('#hideMem').show();"><span class="glyphicon glyphicon-eye-open"></span>&nbsp;&nbsp;Show members</button>
+    <button id="hideMem" class="btn btn-default" onclick="$('.wgMembers').hide(); $('#showMem').show(); $('#hideMem').hide();" style="display: none;"><span class="glyphicon glyphicon-eye-close"></span>&nbsp;&nbsp;Hide members</button>
 
     <table id="working-group-list" class="adb-table table table-hover table-striped">
       <thead>
@@ -92,18 +92,22 @@
             <form action="" id="editCircleGroupForm">
               <p><label for="name">Name: </label><input class="form-control" type="text" v-model.trim="currentCircleGroup.name" id="name" v-focus  /></p>
               <p><label for="email">Email: </label><input class="form-control" type="text" v-model.trim="currentCircleGroup.email" id="email" /></p>
-              <p>
+              
+              <!--
+              <p
                 <label for="type">Type: </label>
                 <select id="type" class="form-control" v-model="currentCircleGroup.type">
                   <option value="circle">Circle</option>
                 </select>
               </p>
+            -->
 
-              <p><label for="visible">Visible on application: </label><input class="form-control" type="checkbox" v-model.trim="currentCircleGroup.visible" id="visible" /></p>
+              
               <p><label for="description">Description: </label><input class="form-control" type="text" v-model.trim="currentCircleGroup.description" id="description" /></p>
               <p><label for="meeting_time">Meeting Day & Time: </label><input class="form-control" type="text" v-model.trim="currentCircleGroup.meeting_time" id="meeting_time" /></p>
               <p><label for="meeting_location">Meeting Location: </label><input class="form-control" type="text" v-model.trim="currentCircleGroup.meeting_location" id="meeting_location" /></p>
               <p><label for="coords">Coordinates: </label><input class="form-control" type="text" v-model.trim="currentCircleGroup.coords" id="coords" /></p>
+              <p><label for="visible">Visible on application: </label><input class="form-control" type="checkbox" v-model.trim="currentCircleGroup.visible" id="visible" /></p>
 
               <hr />
               

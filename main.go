@@ -136,6 +136,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/activist_development", alice.New(main.authMiddleware).ThenFunc(main.ListActivistsDevelopmentHandler))
 	router.Handle("/organizer_prospects", alice.New(main.authMiddleware).ThenFunc(main.ListOrganizerProspectsHandler))
 	router.Handle("/chapter_member_prospects", alice.New(main.authMiddleware).ThenFunc(main.ListChapterMemberProspectsHandler))
+	router.Handle("/chapter_member_development", alice.New(main.authMiddleware).ThenFunc(main.ListChapterMemberDevelopmentHandler))
 	router.Handle("/circle_member_prospects", alice.New(main.authMiddleware).ThenFunc(main.ListCircleMemberProspectsHandler))
 	router.Handle("/leaderboard", alice.New(main.authMiddleware).ThenFunc(main.LeaderboardHandler))
 	router.Handle("/power", alice.New(main.authMiddleware).ThenFunc(main.PowerHandler)) // TODO: rename
@@ -400,6 +401,18 @@ func (c MainController) ListActivistsDevelopmentHandler(w http.ResponseWriter, r
 		},
 	})
 }
+
+func (c MainController) ListChapterMemberDevelopmentHandler(w http.ResponseWriter, r *http.Request) {
+	renderPage(w, "activist_list", PageData{
+		PageName: "ChapterMemberDevelopment",
+		IsAdmin:  getUserFromContext(r.Context()).Admin,
+		Data: ActivistListData{
+			Title: "Chapter Member Development",
+			View:  "chapter_member_development",
+		},
+	})
+}
+
 
 func (c MainController) ListOrganizerProspectsHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, "activist_list", PageData{

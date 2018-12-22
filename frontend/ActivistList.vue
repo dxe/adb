@@ -204,7 +204,8 @@ function getDefaultColumns(view) {
         data: 'dev_manager',
         colWidths: 100,
       },
-      enabled: (view === "organizer_prospects"),
+      enabled: (view === "organizer_prospects"  ||
+                view === "circle_member_prospects"),
     },
     {
       header: "Points",
@@ -223,7 +224,10 @@ function getDefaultColumns(view) {
       },
       enabled: (view === "all_activists" ||
                 view === "activist_pool" ||
-                view === "activist_recruitment"),
+                view === "activist_recruitment" ||
+                view === "chapter_member_prospects" ||
+                view === "chapter_member_development" ||
+                view === "circle_member_prospects"),
     },
     {
       header: 'Phone',
@@ -319,7 +323,10 @@ function getDefaultColumns(view) {
                 view === "leaderboard" ||
                 view === "action_team" ||
                 view === "development" ||
-                view === "organizer_prospects"),
+                view === "organizer_prospects" ||
+                view === "chapter_member_prospects" ||
+                view === "chapter_member_development" ||
+                view === "circle_member_prospects"),
     },
     {
       header: 'Working Groups',
@@ -337,8 +344,20 @@ function getDefaultColumns(view) {
         readOnly: true,
         colWidths: 200,
       },
-      enabled: (view === "action_team"),
+      enabled: (view === "action_team"  ||
+                view === "circle_member_prospects"),
     },
+    {
+      header: "WG or Cir. Member",
+      data: {
+        type: "checkbox",
+        readOnly: true,
+        data: "wg_or_cir_member",
+       colWidths: 100,
+      },
+      enabled: (view === "chapter_member_prospects" ||
+                view === "chapter_member_development"),
+    } , 
     {
       header: 'First Event',
       data: {
@@ -388,7 +407,9 @@ function getDefaultColumns(view) {
                 view === "activist_recruitment" ||
                 view === "all_activists" ||
                 view === "leaderboard" ||
-                view === "development"),
+                view === "development" ||
+                view === "chapter_member_prospects" ||
+                view === "chapter_member_development"),
     },
     {
       header: "Connector",
@@ -446,7 +467,7 @@ function getDefaultColumns(view) {
        correctFormat: true,
        colWidths: 100,
       },
-      enabled: view === "action_team",
+      enabled: (view === "action_team" || view === "chapter_member_prospects"),
     } , 
     {
       header: "Consent&A-O",
@@ -515,13 +536,59 @@ function getDefaultColumns(view) {
       enabled: view === "development",
     } , 
     {
-      header: 'CH or WG Interest',
+      header: 'Interest',
       data: {
         data: 'dev_interest',
         colWidths: 100,
       },
-      enabled: (view === "organizer_prospects"),
+      enabled: (view === "organizer_prospects"  ||
+                view === "circle_member_prospects"),
     },
+    {
+      header: 'First Email (Ch. Mem.)',
+      data: {
+        type: "date",
+        data: 'cm_first_email',
+        dateFormat: 'YYYY-MM-DD',
+        correctFormat: true,
+        colWidths: 100,
+      },
+      enabled: (view === "chapter_member_prospects"),
+    },
+    {
+      header: 'Apprv. Email (Ch. Mem.)',
+      data: {
+        type: "date",
+        data: 'cm_approval_email',
+        dateFormat: 'YYYY-MM-DD',
+        correctFormat: true,
+        colWidths: 100,
+      },
+      enabled: (view === "chapter_member_prospects"),
+    },
+    {
+      header: 'Removal Email (Ch. Mem.)',
+      data: {
+        type: "date",
+        data: 'cm_warning_email',
+        dateFormat: 'YYYY-MM-DD',
+        correctFormat: true,
+        colWidths: 100,
+      },
+      enabled: (view === "chapter_member_development"),
+    },
+    {
+      header: 'First Email (Circle Mem.)',
+      data: {
+        type: "date",
+        data: 'cir_first_email',
+        dateFormat: 'YYYY-MM-DD',
+        correctFormat: true,
+        colWidths: 100,
+      },
+      enabled: (view === "circle_member_prospects"),
+    },
+
     {
       header: 'Point Auth',
       data: {
@@ -573,6 +640,18 @@ function getDefaultColumns(view) {
       },
       enabled: (view === "organizer_prospects"),
     },
+    {
+      header: "Application Date",
+      data: {
+        type: "date",
+        data: "dev_application_date",
+        dateFormat: 'YYYY-MM-DD',
+       correctFormat: true,
+       colWidths: 100,
+       readOnly: true,
+      },
+      enabled: (view === "circle_member_prospects" || view === "chapter_member_prospects" || view == "organizer_prospects"),
+    } , 
     {
       header: "ID",
       data: {
@@ -924,7 +1003,8 @@ export default {
               this.view === "development" ||
               this.view === "organizer_prospects" ||
               this.view === "chapter_member_prospects" ||
-              this.view === "circle_member_prospects" ) {
+              this.view === "circle_member_prospects" ||
+              this.view === "chapter_member_development") {
             var activistListFiltered;
             activistListFiltered = activistList.filter((el) => {
               if (this.view === "activist_pool") {
@@ -948,6 +1028,8 @@ export default {
                 return el.prospect_chapter_member == 1;
               } else if (this.view === "circle_member_prospects"){
                 return el.prospect_circle_member == 1;
+              } else if (this.view === "chapter_member_development"){
+                return el.activist_level == "Chapter Member" || el.activist_level == "Organizer" || el.activist_level == "Senior Organizer";
               } else {
                 return true; // unreachable
               }

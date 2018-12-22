@@ -1,9 +1,9 @@
 <template>
   <div id="app" class="main">
-    <button class="btn btn-default" @click="showModal('edit-working-group-modal')">Add New Working Group</button>
+    <button class="btn btn-default" @click="showModal('edit-working-group-modal')"><span class="glyphicon glyphicon-plus"></span>&nbsp;&nbsp;Add New Working Group</button>
     &nbsp;&nbsp;&nbsp;&nbsp;
-    <button class="btn btn-default" onclick="$('.wgMembers').show()">Show members</button>
-    <button class="btn btn-default" onclick="$('.wgMembers').hide()">Hide members</button>
+    <button id="showMem" class="btn btn-default" onclick="$('.wgMembers').show(); $('#showMem').hide(); $('#hideMem').show();"><span class="glyphicon glyphicon-eye-open"></span>&nbsp;&nbsp;Show members</button>
+    <button id="hideMem" class="btn btn-default" onclick="$('.wgMembers').hide(); $('#showMem').show(); $('#hideMem').hide();" style="display: none;"><span class="glyphicon glyphicon-eye-close"></span>&nbsp;&nbsp;Hide members</button>
 
     <table id="working-group-list" class="adb-table table table-hover table-striped">
       <thead>
@@ -109,18 +109,15 @@
                   <option value="committee">Committee</option>
                 </select>
               </p>
-
-              <!-- only show next two fields for wg, not committee -->
-              <span v-if="currentWorkingGroup.type === 'working_group'">
-                <p><label for="visible">Visible on application: </label><input class="form-control" type="checkbox" v-model.trim="currentWorkingGroup.visible" id="visible" /></p>
-                <p><label for="description">Description: </label><input class="form-control" type="text" v-model.trim="currentWorkingGroup.description" id="description" /></p>
-              </span>
+              
+              <p v-if="currentWorkingGroup.type === 'working_group'"><label for="description">Description: </label><input class="form-control" type="text" v-model.trim="currentWorkingGroup.description" id="description" /></p>
 
               <p><label for="meeting_time">Meeting Day & Time: </label><input class="form-control" type="text" v-model.trim="currentWorkingGroup.meeting_time" id="meeting_time" /></p>
               <p><label for="meeting_location">Meeting Location: </label><input class="form-control" type="text" v-model.trim="currentWorkingGroup.meeting_location" id="meeting_location" /></p>
 
+              <p v-if="currentWorkingGroup.type === 'working_group'"><label for="visible">Visible on application: </label><input class="form-control" type="checkbox" v-model.trim="currentWorkingGroup.visible" id="visible" /></p>
+
               <hr />
-              
 
               <!-- <p><label for="coords">Coordinates: </label><input class="form-control" type="text" v-model.trim="currentWorkingGroup.coords" id="coords" /></p> -->
               <p>

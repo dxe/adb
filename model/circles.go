@@ -111,7 +111,7 @@ func createOrUpdateCircleGroup(db *sqlx.DB, circleGroup CircleGroup) (int, error
 		// Create Circle
 		query = `
     INSERT INTO circles (name, type, group_email, visible, description, meeting_time, meeting_location, coords)
-    VALUES (:name, :type, :group_email, :visible, :description, :meeting_time, :meeting_location, :coords)
+    VALUES (:name, "1", :group_email, :visible, :description, :meeting_time, :meeting_location, :coords)
     `
 	} else {
 		// Update existing working group
@@ -119,7 +119,7 @@ func createOrUpdateCircleGroup(db *sqlx.DB, circleGroup CircleGroup) (int, error
 UPDATE circles
 SET
   name = :name,
-  type = :type,
+  type = "1",
   group_email = :group_email,
   visible = :visible,
   description = :description,
@@ -199,7 +199,8 @@ func CleanCircleGroupData(db *sqlx.DB, body io.Reader) (CircleGroup, error) {
 	}
 
 	if circleGroupJSON.Type == "" {
-		return CircleGroup{}, errors.New("Circle type can't be empty")
+		circleGroupJSON.Type = "circle"
+	//	return CircleGroup{}, errors.New("Circle type can't be empty")
 	}
 
 	wgType, ok := CircleGroupTypeStringToInt[circleGroupJSON.Type]
