@@ -59,22 +59,22 @@ func createDevDB(name string) {
 	model.WipeDatabase(db)
 	insertStatement := fmt.Sprintf(`
 INSERT INTO activists
-  (id, name, email, chapter, phone, location, facebook, activist_level, exclude_from_leaderboard, core_staff, global_team_member, liberation_pledge)
+  (id, name, email, phone, location, activist_level)
   VALUES
-  (1, 'Adam Kol', 'test@directactioneverywhere.com', 'Sf Bay', '7035558484', 'Berkeley, United States', '', 'Community Member', 0, 0, 1, 1),
-  (2, 'Robin Houseman', 'testtest@gmail.com', 'SF Bay', '7035558484', 'United States','', 'Community Member', 0, 0, 0, 0),
-  (3, 'aaa', 'test@comcast.net', 'SF Bay', '7035558484', 'Fairfield, United States', '', 'Community Member', 0, 0, 0, 0),
-  (4, 'bbb', 'test@comcast.net', 'SF Bay', '7035558484', 'Fairfield, United States', '', 'Community Member', 0, 0, 0, 0),
-  (5, 'ccc', 'test@comcast.net', 'SF Bay', '7035558484', 'Fairfield, United States', '', 'Community Member', 0, 0, 0, 0),
-  (100, 'ddd', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 'Community Member', 0, 0, 0, 0),
-(101, 'eee', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 'Community Member', 0, 0, 0, 0),
-(102, 'fff', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 'Community Member', 0, 0, 0, 0),
-(103, 'ggg', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 'Community Member', 0, 0, 0, 0),
-(104, 'hhh', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 'Community Member', 0, 0, 0, 0),
-(105, 'iii', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 'Community Member', 0, 0, 0, 0),
-(106, 'jjj', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 'Community Member', 0, 0, 0, 0),
-(107, 'lll', 'test.test.test@gmail.com', 'SF Bay', '', 'United States', '', 'Community Member', 0, 0, 0, 0),
-  (108, 'mmm', 'test@gmail.com', 'SF Bay', '', 'United States', '', 'Community Member', 0, 0, 0, 0);
+  (1, 'Adam Kol', 'test@directactioneverywhere.com', '7035558484', 'Berkeley, United States', 'Community Member'),
+  (2, 'Robin Houseman', 'testtest@gmail.com', '7035558484', 'United States', 'Community Member'),
+  (3, 'aaa', 'test@comcast.net', '7035558484', 'Fairfield, United States', 'Community Member'),
+  (4, 'bbb', 'test@comcast.net', '7035558484', 'Fairfield, United States', 'Community Member'),
+  (5, 'ccc', 'test@comcast.net', '7035558484', 'Fairfield, United States', 'Community Member'),
+  (100, 'ddd', 'test.test.test@gmail.com', '', 'United States', 'Community Member'),
+  (101, 'eee', 'test.test.test@gmail.com', '', 'United States', 'Community Member'),
+  (102, 'fff', 'test.test.test@gmail.com', '', 'United States', 'Community Member'),
+  (103, 'ggg', 'test.test.test@gmail.com', '', 'United States', 'Community Member'),
+  (104, 'hhh', 'test.test.test@gmail.com', '', 'United States', 'Community Member'),
+  (105, 'iii', 'test.test.test@gmail.com', '', 'United States', 'Community Member'),
+  (106, 'jjj', 'test.test.test@gmail.com', '', 'United States', 'Community Member'),
+  (107, 'lll', 'test.test.test@gmail.com', '', 'United States', 'Community Member'),
+  (108, 'mmm', 'test@gmail.com', '', 'United States', 'Community Member');
 
 INSERT INTO events VALUES
   %s
