@@ -170,3 +170,7 @@ a.edit-link:hover {
 .dropdown-menu>li:hover {
     cursor: pointer;
 }
+
+.colHeader {
+    font-size: 0.8em;
+}

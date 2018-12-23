@@ -1175,14 +1175,15 @@ export default {
     }, 500),
   },
   data: function() {
-  	if (this.view === "action_team") {
-  		var initDateFrom = '';
-  		var initDateTo = '';
-  	}
-  	else {
-  		var initDateFrom = initialDateFromValue();
-  		var initDateTo = initialDateToValue();
-  	}
+    if (this.view === ("all_activists" || "leaderboard")) {
+      var initDateFrom = initialDateFromValue();
+      var initDateTo = initialDateToValue();
+    }
+    else {
+      var initDateFrom = '';
+      var initDateTo = '';
+    }
+
     return {
       root: 'activists-root',
       currentModalName: '',
