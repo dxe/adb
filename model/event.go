@@ -23,7 +23,7 @@ var EventTypes map[string]bool = map[string]bool{
 	"Outreach":      true,
 	"Key Event":     true,
 	"Sanctuary":     true,
-	"Connection":     true,
+	"Connection":    true,
 }
 
 /** Type Definitions */
@@ -36,7 +36,7 @@ type EventJSON struct {
 	EventName        string   `json:"event_name"`
 	EventDate        string   `json:"event_date"`
 	EventType        string   `json:"event_type"`
-	Attendees        []string `json:"attendees"`         // For displaying all event attendees
+	Attendees        []string `json:"attendees"` // For displaying all event attendees
 	AttendeeEmails   []string `json:"attendee_emails"`
 	AddedAttendees   []string `json:"added_attendees"`   // Used for Updating Events
 	DeletedAttendees []string `json:"deleted_attendees"` // Used for Updating Events
@@ -44,14 +44,25 @@ type EventJSON struct {
 
 /* TODO Restructure this Struct */
 type Event struct {
-	ID               int        `db:"id"`
-	EventName        string     `db:"name"`
-	EventDate        time.Time  `db:"date"`
-	EventType        EventType  `db:"event_type"`
-	Attendees        []string   // For retrieving all event attendees
+	ID               int       `db:"id"`
+	EventName        string    `db:"name"`
+	EventDate        time.Time `db:"date"`
+	EventType        EventType `db:"event_type"`
+	Attendees        []string  // For retrieving all event attendees
 	AttendeeEmails   []string
 	AddedAttendees   []Activist // Used for Updating Events
 	DeletedAttendees []Activist // Used for Updating Events
+}
+
+func (event *Event) ToJSON() EventJSON {
+	return EventJSON{
+		EventID:        event.ID,
+		EventName:      event.EventName,
+		EventDate:      event.EventDate.Format(EventDateLayout),
+		EventType:      string(event.EventType),
+		Attendees:      event.Attendees,
+		AttendeeEmails: event.AttendeeEmails,
+	}
 }
 
 type GetEventOptions struct {
@@ -77,14 +88,7 @@ func GetEventsJSON(db *sqlx.DB, options GetEventOptions) ([]EventJSON, error) {
 
 	events := make([]EventJSON, 0, len(dbEvents))
 	for _, event := range dbEvents {
-		events = append(events, EventJSON{
-			EventID:   event.ID,
-			EventName: event.EventName,
-			EventDate: event.EventDate.Format(EventDateLayout),
-			EventType: string(event.EventType),
-			Attendees: event.Attendees,
-			AttendeeEmails: event.AttendeeEmails,
-		})
+		events = append(events, event.ToJSON())
 	}
 	return events, nil
 }
@@ -196,8 +200,8 @@ WHERE
 
 	attendanceQuery = db.Rebind(attendanceQuery)
 	type Attendance struct {
-		EventID      int    `db:"event_id"`
-		ActivistName string `db:"activist_name"`
+		EventID       int    `db:"event_id"`
+		ActivistName  string `db:"activist_name"`
 		ActivistEmail string `db:"activist_email"`
 	}
 	var allAttendance []Attendance

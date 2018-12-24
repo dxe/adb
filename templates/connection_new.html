@@ -1,49 +1,8 @@
 {{template "header.html" .}}
 
-<!-- Load the CSS and JS that we need. -->
-<link rel="stylesheet" href="/static/external/awesomplete/awesomplete.css" />
+<div id="app">
+  <event-edit connections id="{{.Data.Event.ID}}"></event-edit>
+</div>
 <script src="/dist/event_new.js?{{ .StaticResourcesHash }}"></script>
 
-<div class="body-wrapper event-new-content">
-  <div class="title">
-    <h1>Maintenance Connection</h1>
-  </div>
-  <br />
-  <div class="main">
-    <form action="" id="eventForm">
-      <input id="eventID" type="hidden" value="{{ .Data.Event.ID }}">
-
-      <label for="eventName" id="nameLabel"><b>Connector name</b><br /></label>
-      <input id="eventName" class="form-control" value="{{ .Data.Event.EventName }}"><br />
-
-      <label for="eventType" class="display-none"><b>Event type</b><br /></label>
-      <select id="eventType" class="form-control display-none">
-        <option selected value="Connection" data-name="Connector name" data-attendee="Connectee" {{if (eq .Data.Event.EventType "Connection")}}selected{{end}}>Connection</option>
-      </select>
-
-      <label for="eventDate"><b>Connection date</b><button class="btn btn-xs btn-primary" style="margin: 0px 10px" onclick="event_new.setDateToToday(); return false;">today</button><br /></label>
-      <input id="eventDate" class="form-control" type="date" value="{{if .Data.Event.EventDate | datenotzero }}{{.Data.Event.EventDate | formatdate}}{{end}}"><br />
-
-      <label for="attendee1" id="attendeeLabel"><b>Connectees</b><br /></label>
-      <div id="attendee-rows">
-        {{range $a := .Data.Event.Attendees}}
-            <input class="attendee-input form-control" value="{{$a}}" />
-        {{end}}
-      </div>
-
-      <br />
-
-      <label for="attendeeTotal" class="display-none"><b>Total attendance: </b></label>
-      <span id="attendeeTotal" class="display-none">0</span><br />
-
-    </form>
-    <br />
-    <center>
-      <button class="btn btn-success btn-lg" id="submit-button" onclick="event_new.newEvent()"><span>Save connection</span></button>
-    </center>
-    <br />
-  </div>
-</div>
-<script>event_new.initializeApp({{.Data.Event.Attendees}})</script>
 {{template "footer.html" .}}
-

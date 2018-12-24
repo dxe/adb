@@ -154,6 +154,7 @@ func router() (*mux.Router, *sqlx.DB) {
 
 	// Authed API
 	router.Handle("/activist_names/get", alice.New(main.apiAuthMiddleware).ThenFunc(main.AutocompleteActivistsHandler))
+	router.Handle("/event/get/{event_id:[0-9]+}", alice.New(main.apiAuthMiddleware).ThenFunc(main.EventGetHandler))
 	router.Handle("/event/save", alice.New(main.apiAuthMiddleware).ThenFunc(main.EventSaveHandler))
 	router.Handle("/connection/save", alice.New(main.apiAuthMiddleware).ThenFunc(main.ConnectionSaveHandler))
 	router.Handle("/event/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.EventListHandler))
@@ -413,7 +414,6 @@ func (c MainController) ListChapterMemberDevelopmentHandler(w http.ResponseWrite
 	})
 }
 
-
 func (c MainController) ListOrganizerProspectsHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, "activist_list", PageData{
 		PageName: "OrganizerProspects",
@@ -447,7 +447,6 @@ func (c MainController) ListCircleMemberProspectsHandler(w http.ResponseWriter, 
 	})
 }
 
-
 func (c MainController) ListWorkingGroupsHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, "working_group_list", PageData{PageName: "WorkingGroupList", IsAdmin: getUserFromContext(r.Context()).Admin})
 }
@@ -455,7 +454,6 @@ func (c MainController) ListWorkingGroupsHandler(w http.ResponseWriter, r *http.
 func (c MainController) ListCirclesHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, "circles_list", PageData{PageName: "CirclesList", IsAdmin: getUserFromContext(r.Context()).Admin})
 }
-
 
 func (c MainController) LeaderboardHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, "activist_list", PageData{
@@ -698,6 +696,26 @@ func (c MainController) ActivistMergeHandler(w http.ResponseWriter, r *http.Requ
 	writeJSON(w, out)
 }
 
+func (c MainController) EventGetHandler(w http.ResponseWriter, r *http.Request) {
+	eventID, err := strconv.Atoi(mux.Vars(r)["event_id"])
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	event, err := model.GetEvent(c.db, model.GetEventOptions{EventID: eventID})
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	out := map[string]interface{}{
+		"status": "success",
+		"event":  event.ToJSON(),
+	}
+	writeJSON(w, out)
+}
+
 func (c MainController) EventSaveHandler(w http.ResponseWriter, r *http.Request) {
 	event, err := model.CleanEventData(c.db, r.Body)
 	if err != nil {
@@ -904,7 +922,7 @@ func (c MainController) CircleGroupSaveHandler(w http.ResponseWriter, r *http.Re
 	}
 
 	writeJSON(w, map[string]interface{}{
-		"status":        "success",
+		"status": "success",
 		"circle": cirJSON,
 	})
 }
@@ -942,6 +960,7 @@ func (c MainController) CircleGroupDeleteHandler(w http.ResponseWriter, r *http.
 		"status": "success",
 	})
 }
+
 //end circle
 
 func (c MainController) ActivistListHandler(w http.ResponseWriter, r *http.Request) {
