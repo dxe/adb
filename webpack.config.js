@@ -1,9 +1,7 @@
 var path = require('path')
 var webpack = require('webpack')
-var VueLoaderPlugin = require('vue-loader/lib/plugin')
 
 module.exports = {
-  mode: 'development',
 
   // List of bundles to create. If you want to add a new page, you'll
   // need to also add it here.
@@ -23,10 +21,6 @@ module.exports = {
     library: '[name]',
     libraryTarget: 'var',
   },
-
-  plugins: [
-    new VueLoaderPlugin(),
-  ],
 
   module: {
     rules: [
@@ -76,5 +70,22 @@ module.exports = {
 }
 
 if (process.env.NODE_ENV === 'production') {
-  module.exports.mode = 'production';
+  module.exports.devtool = '#source-map'
+  // http://vue-loader.vuejs.org/en/workflow/production.html
+  module.exports.plugins = (module.exports.plugins || []).concat([
+    new webpack.DefinePlugin({
+      'process.env': {
+        NODE_ENV: '"production"'
+      }
+    }),
+    new webpack.optimize.UglifyJsPlugin({
+      sourceMap: true,
+      compress: {
+        warnings: false
+      }
+    }),
+    new webpack.LoaderOptionsPlugin({
+      minimize: true
+    })
+  ])
 }
