@@ -174,3 +174,8 @@ a.edit-link:hover {
 .colHeader {
     font-size: 0.8em;
 }
+
+
+.htDimmed input[type=checkbox] {
+    filter: invert(10%);
+}
