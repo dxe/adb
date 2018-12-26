@@ -1,5 +1,6 @@
 {
     "presets": [
-        ["@babel/preset-env"]
+        ["stage-2"],
+        ["es2015",  {"modules": false}]
     ]
 }
