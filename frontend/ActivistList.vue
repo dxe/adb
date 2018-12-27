@@ -39,7 +39,7 @@
         <div v-for="column in columns">
           <span v-if="column.header !== ''">
             <input type="checkbox" :id="column.header" v-model="column.enabled">
-            <label :for="column.header">{{ column.header }}</label>
+            <label :for="column.header">{{ column.longHeader }}</label>
           </span>
         </div>
       </div>
@@ -192,6 +192,7 @@ function getDefaultColumns(view) {
     // Standard activist fields
     {
       header: "ID",
+      longHeader: "Activist ID",
       data: {
         type: "numeric",
         data: "id",
@@ -202,6 +203,7 @@ function getDefaultColumns(view) {
     },
     {
       header: 'Name',
+      longHeader: "Activist Name",
       data: {
         data: 'name',
         colWidths: 150,
@@ -210,6 +212,7 @@ function getDefaultColumns(view) {
     },
     {
       header: 'Managing',
+      longHeader: "Managing",
       data: {
         data: 'dev_manager',
         colWidths: 100,
@@ -218,6 +221,7 @@ function getDefaultColumns(view) {
     },
     {
       header: "Points",
+      longHeader: "Leaderboard Points",
       data: {
         type: "numeric",
         data: "total_points",
@@ -227,6 +231,7 @@ function getDefaultColumns(view) {
       enabled: (view === "leaderboard" || view === "action_team"),
     }, {
       header: 'Email',
+      longHeader: "Email",
       data: {
         data: 'email',
         colWidths: 150,
@@ -240,6 +245,7 @@ function getDefaultColumns(view) {
     },
     {
       header: 'Phone',
+      longHeader: "Phone Number",
       data: {
         data: 'phone',
         colWidths: 100,
@@ -247,6 +253,7 @@ function getDefaultColumns(view) {
       enabled: false,
     }, {
       header: 'Location',
+      longHeader: "Location",
       data: {
         data: 'location',
         colWidths: 100,
@@ -254,6 +261,7 @@ function getDefaultColumns(view) {
       enabled: (view === "action_team"),
     }, {
       header: 'Facebook',
+      longHeader: "Facebook URL",
       data: {
         data: 'facebook',
       },
@@ -313,7 +321,8 @@ function getDefaultColumns(view) {
     //},
 
     {
-      header: 'Activist Level',
+      header: 'Level',
+      longHeader: "Activist Level",
       data: {
         data: 'activist_level',
         readOnly: false,
@@ -337,7 +346,8 @@ function getDefaultColumns(view) {
                 view === "circle_member_prospects"),
     },
     {
-      header: "Application Date",
+      header: "Applied",
+      longHeader: "Application Date",
       data: {
         type: "date",
         data: "dev_application_date",
@@ -350,6 +360,7 @@ function getDefaultColumns(view) {
     } ,
     {
       header: "Prosp. Organizer",
+      longHeader: "Prospective Organizer",
       data: {
         type: "checkbox",
         data: "prospect_organizer",
@@ -359,6 +370,7 @@ function getDefaultColumns(view) {
     } , 
     {
       header: "Prosp. Ch. Member",
+      longHeader: "Prospective Chapter Member",
       data: {
         type: "checkbox",
         data: "prospect_chapter_member",
@@ -368,6 +380,7 @@ function getDefaultColumns(view) {
     } , 
     {
       header: "Prosp. Cir. Member",
+      longHeader: "Prospective Circle Member",
       data: {
         type: "checkbox",
         data: "prospect_circle_member",
@@ -377,6 +390,7 @@ function getDefaultColumns(view) {
     } , 
     {
       header: 'Interest',
+      longHeader: "Interest",
       data: {
         data: 'dev_interest',
         colWidths: 100,
@@ -386,6 +400,7 @@ function getDefaultColumns(view) {
     },
     {
       header: 'Working Groups',
+      longHeader: "Working Group Membership",
       data: {
         data: 'working_group_list',
         readOnly: true,
@@ -395,6 +410,7 @@ function getDefaultColumns(view) {
     },
     {
       header: 'Circles',
+      longHeader: "Circle Membership",
       data: {
         data: 'circles_list',
         readOnly: true,
@@ -404,6 +420,7 @@ function getDefaultColumns(view) {
     },
     {
       header: "WG or Cir. Member",
+      longHeader: "Working Group or Circle Member",
       data: {
         type: "checkbox",
         readOnly: true,
@@ -415,6 +432,7 @@ function getDefaultColumns(view) {
     } , 
     {
       header: 'First Event',
+      longHeader: "First Event Attended",
       data: {
         data: 'first_event_name',
         readOnly: true,
@@ -423,6 +441,7 @@ function getDefaultColumns(view) {
       enabled: (view === "activist_pool" || view === "activist_recruitment" || view === "leaderboard"),
     }, {
       header: 'Last Event',
+      longHeader: "Last Event Attended",
       data: {
         data: 'last_event_name',
         readOnly: true,
@@ -431,6 +450,7 @@ function getDefaultColumns(view) {
       enabled: (view === "activist_recruitment" || view === "leaderboard"),
     }, {
       header: "Total Events",
+      longHeader: "Total Events Attended",
       data: {
         type: "numeric",
         data: "total_events",
@@ -451,6 +471,7 @@ function getDefaultColumns(view) {
     // },
     {
       header: "MPI",
+      longHeader: "Movement Power Index Status",
       data: {
         type: "checkbox",
         data: "mpi",
@@ -468,6 +489,7 @@ function getDefaultColumns(view) {
     },
     {
       header: "Connector",
+      longHeader: "Connector Name",
       data: {
         data: "connector",
         colWidths: 125,
@@ -475,7 +497,8 @@ function getDefaultColumns(view) {
       enabled: (view === "activist_pool" || view === "action_team" || view === "development"),
     },
     {
-      header: "Last Maintenance Connection",
+      header: "Last Maint. Conn.",
+      longHeader: "Last Maintenance Connection",
       data: {
         type: "date",
         data: "last_connection",
@@ -488,6 +511,7 @@ function getDefaultColumns(view) {
     } , 
     {
       header: "Workshop",
+      longHeader: "Date Attended Training: Workshop",
       data: {
         type: "date",
         data: "training0",
@@ -499,6 +523,7 @@ function getDefaultColumns(view) {
     } , 
     {
       header: "Consent&A-O",
+      longHeader: "Date Attended Training: Consent & Anti-Opression",
       data: {
         type: "date",
         data: "training1",
@@ -510,6 +535,7 @@ function getDefaultColumns(view) {
     } , 
     {
       header: "Nuts&Bolts",
+      longHeader: "Date Attended Training: Nuts & Bolts",
       data: {
         type: "date",
         data: "training2",
@@ -521,6 +547,7 @@ function getDefaultColumns(view) {
     } , 
     {
       header: "Exp. Cmnty",
+      longHeader: "Date Attended Training: Expanding Our Community",
       data: {
         type: "date",
         data: "training3",
@@ -532,6 +559,7 @@ function getDefaultColumns(view) {
     } , 
     {
       header: "Healthy Cmnty",
+      longHeader: "Date Attended Training: Healthy Community",
       data: {
         type: "date",
         data: "training4",
@@ -543,6 +571,7 @@ function getDefaultColumns(view) {
     } , 
     {
       header: "Emergent Ldshp",
+      longHeader: "Date Attended Training: Emergent Leadership",
       data: {
         type: "date",
         data: "training5",
@@ -554,6 +583,7 @@ function getDefaultColumns(view) {
     } , 
     {
       header: "Histry&Vision",
+      longHeader: "Date Attended Training: History & Vision",
       data: {
         type: "date",
         data: "training6",
@@ -564,7 +594,8 @@ function getDefaultColumns(view) {
       enabled: view === "development",
     } , 
     {
-      header: 'First Email (Ch. Mem.)',
+      header: 'First Email',
+      longHeader: "Chapter Membership: Date First Email Sent",
       data: {
         type: "date",
         data: 'cm_first_email',
@@ -575,7 +606,8 @@ function getDefaultColumns(view) {
       enabled: (view === "chapter_member_prospects"),
     },
     {
-      header: 'Apprv. Email (Ch. Mem.)',
+      header: 'Apprv. Email',
+      longHeader: "Chapter Membership: Date Approval Email Sent",
       data: {
         type: "date",
         data: 'cm_approval_email',
@@ -586,7 +618,8 @@ function getDefaultColumns(view) {
       enabled: (view === "chapter_member_prospects"),
     },
     {
-      header: 'Removal Email (Ch. Mem.)',
+      header: 'Warning Email',
+      longHeader: "Chapter Membership: Date Removal Warning Email Sent",
       data: {
         type: "date",
         data: 'cm_warning_email',
@@ -597,7 +630,8 @@ function getDefaultColumns(view) {
       enabled: (view === "chapter_member_development"),
     },
     {
-      header: 'First Email (Circle Mem.)',
+      header: 'First Email',
+      longHeader: "Circle Membership: Date First Email Sent",
       data: {
         type: "date",
         data: 'cir_first_email',
@@ -609,7 +643,8 @@ function getDefaultColumns(view) {
     },
 
     {
-      header: 'Point Auth (Org.)',
+      header: 'Point Auth',
+      longHeader: "Organizer: Date of Point Authorization",
       data: {
         type: "date",
         data: 'dev_auth',
@@ -620,7 +655,8 @@ function getDefaultColumns(view) {
       enabled: (view === "organizer_prospects"),
     },
     {
-      header: 'Sent Elig. Email (Org.)',
+      header: 'Sent Elig. Email',
+      longHeader: "Organizer: Date Eligibility Email Sent",
       data: {
         type: "date",
         data: 'dev_email_sent',
@@ -631,7 +667,8 @@ function getDefaultColumns(view) {
       enabled: (view === "organizer_prospects"),
     },
     {
-      header: 'Vetting (Org.)',
+      header: 'Vetting',
+      longHeader: "Organizer: Vetting Completed",
       data: {
         type: "checkbox",
         data: 'dev_vetted',
@@ -640,7 +677,8 @@ function getDefaultColumns(view) {
       enabled: (view === "organizer_prospects"),
     },
     {
-      header: 'Interview (Org.)',
+      header: 'Interview',
+      longHeader: "Organizer: Date of Interview",
       data: {
         type: "date",
         data: 'dev_interview',
@@ -651,7 +689,8 @@ function getDefaultColumns(view) {
       enabled: (view === "organizer_prospects"),
     },
     {
-      header: 'Completed Onboarding Logistics (Org.)',
+      header: 'Completed Onboarding Logistics',
+      longHeader: "Organizer: Date of Onboarding Logistics Completion",
       data: {
         type: "checkbox",
         data: 'dev_onboarding',
