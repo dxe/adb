@@ -177,5 +177,6 @@ a.edit-link:hover {
 
 
 .htDimmed input[type=checkbox] {
-    filter: invert(10%);
+    filter: invert(20%);
 }
+

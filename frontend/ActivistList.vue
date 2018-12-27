@@ -191,6 +191,16 @@ function getDefaultColumns(view) {
     },
     // Standard activist fields
     {
+      header: "ID",
+      data: {
+        type: "numeric",
+        data: "id",
+        readOnly: true,
+        colWidths: 50,
+      },
+      enabled: false,
+    },
+    {
       header: 'Name',
       data: {
         data: 'name',
@@ -204,8 +214,7 @@ function getDefaultColumns(view) {
         data: 'dev_manager',
         colWidths: 100,
       },
-      enabled: (view === "organizer_prospects"  ||
-                view === "circle_member_prospects"),
+      enabled: (view === "organizer_prospects"),
     },
     {
       header: "Points",
@@ -220,7 +229,7 @@ function getDefaultColumns(view) {
       header: 'Email',
       data: {
         data: 'email',
-        colWidths: 250,
+        colWidths: 150,
       },
       enabled: (view === "all_activists" ||
                 view === "activist_pool" ||
@@ -251,43 +260,43 @@ function getDefaultColumns(view) {
       enabled: (view === "all_activists" || view === "activist_recruitment" || view === "activist_pool"),
     },
 
-    {
-     header: "Contacted Date",
-     data: {
-       data: "contacted_date",
-       type: 'date',
-       dateFormat: 'YYYY-MM-DD',
-       correctFormat: true,
-       colWidths: 100,
-     },
-     enabled: view === "activist_pool",
-    }, {
-     header: "Interested",
-     data: {
-       data: "interested",
-       colWidths: 100,
-       type: 'dropdown',
-       source: [
-        "",
-         "Yes",
-         "No",
-       ],
-     },
-     enabled: view === "activist_pool",
-    },
+    // {
+    //  header: "Contacted Date",
+    //  data: {
+    //    data: "contacted_date",
+    //    type: 'date',
+    //    dateFormat: 'YYYY-MM-DD',
+    //    correctFormat: true,
+    //    colWidths: 100,
+    //  },
+    //  enabled: view === "activist_pool",
+    // }, {
+    //  header: "Interested",
+    //  data: {
+    //    data: "interested",
+    //    colWidths: 100,
+    //    type: 'dropdown',
+    //    source: [
+    //     "",
+    //      "Yes",
+    //      "No",
+    //    ],
+    //  },
+    //  enabled: view === "activist_pool",
+    // },
 
     // ActivistMembershipData
-    {
-     header: "Recruitment Connection Date",
-     data: {
-       data: "meeting_date",
-       type: 'date',
-       dateFormat: 'YYYY-MM-DD',
-       correctFormat: true,
-       colWidths: 100,
-     },
-     enabled: view === "activist_pool",
-    }, 
+    // {
+    //  header: "Recruitment Connection Date",
+    //  data: {
+    //    data: "meeting_date",
+    //    type: 'date',
+    //    dateFormat: 'YYYY-MM-DD',
+    //    correctFormat: true,
+    //    colWidths: 100,
+    //  },
+    //  enabled: view === "activist_pool",
+    // }, 
     //{
     //  header: "Escalation",
     //  data: {
@@ -308,7 +317,7 @@ function getDefaultColumns(view) {
       data: {
         data: 'activist_level',
         readOnly: false,
-        colWidths: 160,
+        colWidths: 140,
         type: 'dropdown',
         source: [
           "Supporter",
@@ -322,10 +331,57 @@ function getDefaultColumns(view) {
                 view === "activist_recruitment" ||
                 view === "leaderboard" ||
                 view === "action_team" ||
-                view === "development" ||
                 view === "organizer_prospects" ||
                 view === "chapter_member_prospects" ||
                 view === "chapter_member_development" ||
+                view === "circle_member_prospects"),
+    },
+    {
+      header: "Application Date",
+      data: {
+        type: "date",
+        data: "dev_application_date",
+        dateFormat: 'YYYY-MM-DD',
+       correctFormat: true,
+       colWidths: 100,
+       readOnly: true,
+      },
+      enabled: (view === "circle_member_prospects" || view === "chapter_member_prospects" || view == "organizer_prospects"),
+    } ,
+    {
+      header: "Prosp. Organizer",
+      data: {
+        type: "checkbox",
+        data: "prospect_organizer",
+       colWidths: 100,
+      },
+      enabled: (view === "organizer_prospects"),
+    } , 
+    {
+      header: "Prosp. Ch. Member",
+      data: {
+        type: "checkbox",
+        data: "prospect_chapter_member",
+       colWidths: 110,
+      },
+      enabled: (view === "chapter_member_prospects"),
+    } , 
+    {
+      header: "Prosp. Cir. Member",
+      data: {
+        type: "checkbox",
+        data: "prospect_circle_member",
+       colWidths: 105,
+      },
+      enabled: (view === "circle_member_prospects"),
+    } , 
+    {
+      header: 'Interest',
+      data: {
+        data: 'dev_interest',
+        colWidths: 100,
+      },
+      enabled: (view === "organizer_prospects"  ||
                 view === "circle_member_prospects"),
     },
     {
@@ -344,8 +400,7 @@ function getDefaultColumns(view) {
         readOnly: true,
         colWidths: 200,
       },
-      enabled: (view === "action_team"  ||
-                view === "circle_member_prospects"),
+      enabled: (view === "action_team"),
     },
     {
       header: "WG or Cir. Member",
@@ -400,7 +455,7 @@ function getDefaultColumns(view) {
         type: "checkbox",
         data: "mpi",
         readOnly: true,
-        colWidths: 50,
+        colWidths: 30,
       },
       enabled: (view === "action_team" ||
                 view === "activist_pool" ||
@@ -419,33 +474,6 @@ function getDefaultColumns(view) {
       },
       enabled: (view === "activist_pool" || view === "action_team" || view === "development"),
     },
-    {
-      header: "Prosp. Organizer",
-      data: {
-        type: "checkbox",
-        data: "prospect_organizer",
-       colWidths: 120,
-      },
-      enabled: (view === "organizer_prospects"),
-    } , 
-    {
-      header: "Prosp. Ch. Member",
-      data: {
-        type: "checkbox",
-        data: "prospect_chapter_member",
-       colWidths: 120,
-      },
-      enabled: (view === "chapter_member_prospects"),
-    } , 
-    {
-      header: "Prosp. Cir. Member",
-      data: {
-        type: "checkbox",
-        data: "prospect_circle_member",
-       colWidths: 120,
-      },
-      enabled: (view === "circle_member_prospects"),
-    } , 
     {
       header: "Last Maintenance Connection",
       data: {
@@ -536,15 +564,6 @@ function getDefaultColumns(view) {
       enabled: view === "development",
     } , 
     {
-      header: 'Interest',
-      data: {
-        data: 'dev_interest',
-        colWidths: 100,
-      },
-      enabled: (view === "organizer_prospects"  ||
-                view === "circle_member_prospects"),
-    },
-    {
       header: 'First Email (Ch. Mem.)',
       data: {
         type: "date",
@@ -590,7 +609,7 @@ function getDefaultColumns(view) {
     },
 
     {
-      header: 'Point Auth',
+      header: 'Point Auth (Org.)',
       data: {
         type: "date",
         data: 'dev_auth',
@@ -601,7 +620,7 @@ function getDefaultColumns(view) {
       enabled: (view === "organizer_prospects"),
     },
     {
-      header: 'Sent Elig. Email',
+      header: 'Sent Elig. Email (Org.)',
       data: {
         type: "date",
         data: 'dev_email_sent',
@@ -612,16 +631,16 @@ function getDefaultColumns(view) {
       enabled: (view === "organizer_prospects"),
     },
     {
-      header: 'Vetting',
+      header: 'Vetting (Org.)',
       data: {
         type: "checkbox",
         data: 'dev_vetted',
-        colWidths: 60,
+        colWidths: 50,
       },
       enabled: (view === "organizer_prospects"),
     },
     {
-      header: 'Interview',
+      header: 'Interview (Org.)',
       data: {
         type: "date",
         data: 'dev_interview',
@@ -632,35 +651,13 @@ function getDefaultColumns(view) {
       enabled: (view === "organizer_prospects"),
     },
     {
-      header: 'Completed Onboarding Logistics',
+      header: 'Completed Onboarding Logistics (Org.)',
       data: {
         type: "checkbox",
         data: 'dev_onboarding',
         colWidths: 100,
       },
       enabled: (view === "organizer_prospects"),
-    },
-    {
-      header: "Application Date",
-      data: {
-        type: "date",
-        data: "dev_application_date",
-        dateFormat: 'YYYY-MM-DD',
-       correctFormat: true,
-       colWidths: 100,
-       readOnly: true,
-      },
-      enabled: (view === "circle_member_prospects" || view === "chapter_member_prospects" || view == "organizer_prospects"),
-    } , 
-    {
-      header: "ID",
-      data: {
-        type: "numeric",
-        data: "id",
-        readOnly: true,
-        colWidths: 50,
-      },
-      enabled: false,
     },
   ];
 }

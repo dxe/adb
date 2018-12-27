@@ -407,7 +407,7 @@ func (c MainController) ListChapterMemberDevelopmentHandler(w http.ResponseWrite
 		PageName: "ChapterMemberDevelopment",
 		IsAdmin:  getUserFromContext(r.Context()).Admin,
 		Data: ActivistListData{
-			Title: "Chapter Member Development",
+			Title: "Chapter Members",
 			View:  "chapter_member_development",
 		},
 	})
