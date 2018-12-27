@@ -1,55 +1,8 @@
 {{template "header.html" .}}
 
-<!-- Load the CSS and JS that we need. -->
-<link rel="stylesheet" href="/static/external/awesomplete/awesomplete.css" />
+<div id="app">
+  <event-edit id="{{.Data.Event.ID}}"></event-edit>
+</div>
 <script src="/dist/event_new.js?{{ .StaticResourcesHash }}"></script>
 
-<div class="body-wrapper event-new-content">
-  <div class="title">
-    <h1>Event</h1>
-  </div>
-  <br />
-  <div class="main">
-    <form action="" id="eventForm">
-      <input id="eventID" type="hidden" value="{{ .Data.Event.ID }}">
-
-      <label for="eventName" id="nameLabel"><b>Event name</b><br /></label>
-      <input id="eventName" class="form-control" value="{{ .Data.Event.EventName }}"><br />
-
-      <label for="eventType"><b>Event type</b><br /></label>
-      <select id="eventType" class="form-control">
-        <option disabled selected value> -- select an option -- </option>
-        <option value="Working Group" data-name="Event name" data-attendee="Attendees" {{if (eq .Data.Event.EventType "Working Group")}}selected{{end}}>Working Group</option>
-        <option value="Community" data-name="Event name" data-attendee="Attendees" {{if (eq .Data.Event.EventType "Community")}}selected{{end}}>Community</option>
-        <option value="Protest" data-name="Event name" data-attendee="Attendees" {{if (eq .Data.Event.EventType "Protest")}}selected{{end}}>Protest</option>
-        <option value="Outreach" data-name="Event name" data-attendee="Attendees" {{if (eq .Data.Event.EventType "Outreach")}}selected{{end}}>Outreach</option>
-        <option value="Key Event" data-name="Event name" data-attendee="Attendees" {{if (eq .Data.Event.EventType "Key Event")}}selected{{end}}>Key Event</option>
-        <option value="Sanctuary" data-name="Event name" data-attendee="Attendees" {{if (eq .Data.Event.EventType "Sanctuary")}}selected{{end}}>Sanctuary (Rescue/Work Day)</option>
-      </select>
-      <br />
-
-      <label for="eventDate"><b>Event date</b><button class="btn btn-xs btn-primary" style="margin: 0px 10px" onclick="event_new.setDateToToday(); return false;">today</button><br /></label>
-      <input id="eventDate" class="form-control" type="date" value="{{if .Data.Event.EventDate | datenotzero }}{{.Data.Event.EventDate | formatdate}}{{end}}"><br />
-
-      <label for="attendee1" id="attendeeLabel"><b>Attendees</b><br /></label>
-      <div id="attendee-rows">
-        {{range $a := .Data.Event.Attendees}}
-            <input class="attendee-input form-control" value="{{$a}}" />
-        {{end}}
-      </div>
-
-      <br />
-
-      <label for="attendeeTotal"><b>Total attendance: </b></label>
-      <span id="attendeeTotal">0</span><br />
-
-    </form>
-    <br />
-    <center>
-      <button class="btn btn-success btn-lg" id="submit-button" onclick="event_new.newEvent()"><span>Save event</span></button>
-    </center>
-    <br />
-  </div>
-</div>
-<script>event_new.initializeApp({{.Data.Event.Attendees}})</script>
 {{template "footer.html" .}}

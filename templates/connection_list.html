@@ -1,57 +1,8 @@
 {{template "header.html" .}}
-<!-- bootstrap js needed for toggle-dropdown -->
+
+<div id="app">
+    <event-list connections></event-list>
+</div>
 <script src="/dist/event_list.js?{{ .StaticResourcesHash }}"></script>
 
-<div class="body-wrapper-wide event-list-content">
-  <div class="title">
-    <h1>All Maintenance Connections</h1>
-    <br />
-  </div>
-  <div>
-    <form class="form-inline" onsubmit="event_list.eventListRequest(); return false">
-      <label for="event-name">Connector:</label>
-      <input id="event-name" class="form-control filter-margin" style="width: 100%">
-      <label for="event-activist">Connectee:</label>
-      <select id="event-activist" class="filter-margin" style="width: 100%"></select>
-      <label for="event-date-start">From:</label>
-      <input id="event-date-start" class="form-control filter-margin" type="date">
-      <label for="event-date-end">To:</label>
-      <input id="event-date-end" class="form-control filter-margin" type="date">
-      <label for="event-type">Type:</label>
-      <select id="event-type" class="form-control filter-margin">
-        <option value="Connection">Connection</option>
-      </select>
-      <button type="submit" id="event-date-filter" class="btn btn-primary filter-margin">Filter</button>
-    </form>
-    <br />
-  </div>
-  <div class="main">
-    <table id="event-list" class="adb-table table table-hover table-striped">
-      <thead>
-      	<tr>
-          <th class="col-xs-1"></th>
-          <th class="col-xs-2">Date</th>
-          <th class="col-xs-2">Connector</th>
-          <th class="col-xs-2">Type</th>
-          <th class="col-xs-1">Total Connectees</th>
-          <th class="col-xs-4">
-            Attendees
-            <span style="display: inline-block">
-              (
-              <button title="Show all attendees" class="btn btn-link" onclick="event_list.showAllAttendees()"> + </button>
-              /
-              <button title="Hide all attendees" class="btn btn-link" onclick="event_list.hideAllAttendees()"> - </button>
-              )
-            </span>
-          </th>
-      	</tr>
-      </thead>
-      <tbody id="event-list-body">
-        <tr><td></td><td><i>Loading...</i></td><td></td><td></td><td></td><td></td></tr>
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<script>event_list.initializeApp();</script>
 {{template "footer.html" .}}
