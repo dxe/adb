@@ -74,7 +74,7 @@ FROM adb_users
 
 	adbUser := &ADBUser{}
 	if err := db.Get(adbUser, query, queryArgs...); err != nil {
-		return ADBUser{}, errors.Wrapf(err, "cannot get adb user %d")
+		return ADBUser{}, errors.Wrapf(err, "cannot get adb user %d", id)
 	}
 
 	return *adbUser, nil
