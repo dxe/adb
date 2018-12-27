@@ -78,7 +78,7 @@
         </button>
       </center>
       <br>
-    </div>Ricky
+    </div>
   </div>
 </template>
 
