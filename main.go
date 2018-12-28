@@ -150,6 +150,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.HandleFunc("/tokensignin", main.TokenSignInHandler)
 	router.HandleFunc(config.Route0, main.TransposedEventsDataJsonHandler)
 	router.HandleFunc(config.Route1, main.PowerWallboard)      // used for showing power on wallboard at ARC
+	router.Handle("/wallboard_mpi", main.newPowerWallboard)
 	router.HandleFunc(config.Route2, main.ActivistListHandler) // used for connections google sheet
 
 	// Authed API
@@ -1104,6 +1105,18 @@ func (c MainController) PowerWallboard(w http.ResponseWriter, r *http.Request) {
 			"PowerHist": powerHist,
 			"PowerMTD":  powerMTD,
 		},
+	})
+}
+
+func (c MainController) newPowerWallboard(w http.ResponseWriter, r *http.Request) {
+	power, err := model.GetPower(c.db)
+	if err != nil {
+		panic(err)
+	}
+
+	writeJSON(w, map[string]interface{}{
+		"status":        "success",
+		"Power": 		 power,
 	})
 }
 
