@@ -6,8 +6,8 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"encoding/json"
+	"fmt"
 	"io"
-  "fmt"
 )
 
 /** Constant and Variable Definitions */
@@ -31,11 +31,11 @@ FROM users_roles ur
 /** Type Definitions */
 
 type ADBUser struct {
-	ID       int        `db:"id"`
-	Email    string     `db:"email"`
-	Admin    bool       `db:"admin"`
-	Disabled bool       `db:"disabled"`
-  Roles    []UserRole
+	ID       int    `db:"id"`
+	Email    string `db:"email"`
+	Admin    bool   `db:"admin"`
+	Disabled bool   `db:"disabled"`
+	Roles    []UserRole
 }
 
 type UserJSON struct {
@@ -43,7 +43,7 @@ type UserJSON struct {
 	Email    string   `json:"email"`
 	Admin    bool     `json:"admin"`
 	Disabled bool     `json:"disabled"`
-  Roles    []string `json:"roles"`
+	Roles    []string `json:"roles"`
 }
 
 type GetUserOptions struct {
@@ -54,8 +54,8 @@ type GetUserOptions struct {
 }
 
 type GetUsersRolesOptions struct {
-  Users []ADBUser
-  Roles []string
+	Users []ADBUser
+	Roles []string
 }
 
 var DevTestUser = ADBUser{
@@ -66,13 +66,13 @@ var DevTestUser = ADBUser{
 }
 
 type UserRole struct {
-  UserID    int     `db:"user_id"`
-  Role      string  `db:"role"`
+	UserID int    `db:"user_id"`
+	Role   string `db:"role"`
 }
 
 type UserRoleJSON struct {
-  UserID    int     `json:"user_id"`
-  Role      string  `json:"role"`
+	UserID int    `json:"user_id"`
+	Role   string `json:"role"`
 }
 
 /** Functions and Methods */
@@ -126,39 +126,39 @@ func getUsersJSON(db *sqlx.DB, options GetUserOptions) ([]UserJSON, error) {
 func GetUsers(db *sqlx.DB, options GetUserOptions) ([]ADBUser, error) {
 	users, err := getUsers(db, options)
 
-  if err != nil {
-    return nil, err
-  }
+	if err != nil {
+		return nil, err
+	}
 
-  if len(users) == 0 {
-    return users, nil
-  }
-  
-  usersRolesOptions := GetUsersRolesOptions{
-    Users: users,
-  }
+	if len(users) == 0 {
+		return users, nil
+	}
 
-  usersRoles, err := getUsersRoles(db, usersRolesOptions)
-  
-  if err != nil {
-    return nil, err
-  }
-  
-  if len(usersRoles) == 0 {
-    return users, nil
-  }
+	usersRolesOptions := GetUsersRolesOptions{
+		Users: users,
+	}
 
-  userIDToIndex := map[int]int{}
-  for i, user := range users {
-    userIDToIndex[user.ID] = i
-  }
-  
-  for _, r := range usersRoles {
-    i := userIDToIndex[r.UserID]
-    users[i].Roles = append(users[i].Roles, r)
-  }
-  
-  return users, nil
+	usersRoles, err := getUsersRoles(db, usersRolesOptions)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(usersRoles) == 0 {
+		return users, nil
+	}
+
+	userIDToIndex := map[int]int{}
+	for i, user := range users {
+		userIDToIndex[user.ID] = i
+	}
+
+	for _, r := range usersRoles {
+		i := userIDToIndex[r.UserID]
+		users[i].Roles = append(users[i].Roles, r)
+	}
+
+	return users, nil
 }
 
 func getUsers(db *sqlx.DB, options GetUserOptions) ([]ADBUser, error) {
@@ -182,59 +182,59 @@ func getUsers(db *sqlx.DB, options GetUserOptions) ([]ADBUser, error) {
 }
 
 func getUsersRoles(db *sqlx.DB, options GetUsersRolesOptions) ([]UserRole, error) {
-  query := selectUsersRolesBaseQuery
-  /*
-  var queryArgs []interface{}
-  var whereClause []string
+	query := selectUsersRolesBaseQuery
+	/*
+	  var queryArgs []interface{}
+	  var whereClause []string
 
-  if len(options.Users) != 0 {
-    var userIds = []int{4, 6, 7}
-    //for _, user := range options.Users {
-    //  userIds = append(userIds, strconv.Itoa(user.ID))
-    //}
-    whereClause = append(whereClause, "ur.user_id IN (?)")
-    queryArgs = append(queryArgs, userIds)
-  }
+	  if len(options.Users) != 0 {
+	    var userIds = []int{4, 6, 7}
+	    //for _, user := range options.Users {
+	    //  userIds = append(userIds, strconv.Itoa(user.ID))
+	    //}
+	    whereClause = append(whereClause, "ur.user_id IN (?)")
+	    queryArgs = append(queryArgs, userIds)
+	  }
 
-  if len(options.Roles) != 0 {
-    whereClause = append(whereClause, "ur.role IN (?)")
-    queryArgs = append(queryArgs, options.Roles)
-  }
+	  if len(options.Roles) != 0 {
+	    whereClause = append(whereClause, "ur.role IN (?)")
+	    queryArgs = append(queryArgs, options.Roles)
+	  }
 
-  if len(whereClause) != 0 {
-    query += ` WHERE ` + strings.Join(whereClause, " AND ")
-  }
-  */
-  fmt.Println(query)
-  var userRoles []UserRole
-  err := db.Select(&userRoles, query)
+	  if len(whereClause) != 0 {
+	    query += ` WHERE ` + strings.Join(whereClause, " AND ")
+	  }
+	*/
+	fmt.Println(query)
+	var userRoles []UserRole
+	err := db.Select(&userRoles, query)
 
-  if err != nil {
-    return nil, errors.Wrap(err, "failed to select UserRoles")
-  }
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to select UserRoles")
+	}
 
-  if len(userRoles) == 0 {
-    return nil, nil
-  }
+	if len(userRoles) == 0 {
+		return nil, nil
+	}
 
-  return userRoles, nil
+	return userRoles, nil
 }
 
 func buildUserJSONArray(users []ADBUser) []UserJSON {
 	var usersJSON []UserJSON
 
 	for _, u := range users {
-    var roles []string
-    for _, userRole := range u.Roles {
-      roles = append(roles, userRole.Role)
-    }
+		var roles []string
+		for _, userRole := range u.Roles {
+			roles = append(roles, userRole.Role)
+		}
 
 		usersJSON = append(usersJSON, UserJSON{
 			ID:       u.ID,
 			Email:    u.Email,
 			Admin:    u.Admin,
 			Disabled: u.Disabled,
-      Roles:    roles,
+			Roles:    roles,
 		})
 	}
 
