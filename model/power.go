@@ -18,7 +18,7 @@ type PowerHist struct {
 
 /** Functions and Methods */
 
-func GetPower(db *sqlx.DB) (int, error) {
+func GetPower(db *sqlx.DB) (string, error) {
 	query := `
 SELECT COUNT(*) AS movement_power_index
 FROM (
@@ -35,9 +35,9 @@ FROM (
 	HAVING is_protest = "1" AND is_community = "1"
 ) AS power_index
 `
-	var power int
+	var power string
 	if err := db.Get(&power, query); err != nil {
-		return 0, err
+		return "error", err
 	}
 	return power, nil
 }
