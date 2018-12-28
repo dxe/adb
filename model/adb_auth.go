@@ -20,13 +20,21 @@ SELECT
 FROM adb_users
 `
 
+const selectUsersRolesBaseQuery string = `
+SELECT
+  ur.user_id,
+  ur.role
+FROM users_roles ur
+`
+
 /** Type Definitions */
 
 type ADBUser struct {
-	ID       int    `db:"id"`
-	Email    string `db:"email"`
-	Admin    bool   `db:"admin"`
-	Disabled bool   `db:"disabled"`
+	ID       int        `db:"id"`
+	Email    string     `db:"email"`
+	Admin    bool       `db:"admin"`
+	Disabled bool       `db:"disabled"`
+  Roles    []UserRole
 }
 
 type UserJSON struct {
@@ -43,11 +51,26 @@ type GetUserOptions struct {
 	Disabled bool
 }
 
+type GetUsersRolesOptions struct {
+  Users []ADBUser
+  Roles []string
+}
+
 var DevTestUser = ADBUser{
 	ID:       1,
 	Email:    "test@test.com",
 	Admin:    true,
 	Disabled: false,
+}
+
+type UserRole struct {
+  UserID    int     `db:"user_id"`
+  Role      string  `db:"role"`
+}
+
+type UserRoleJSON struct {
+  UserID    int     `json:"user_id"`
+  Role      string  `json:"role"`
 }
 
 /** Functions and Methods */
@@ -99,7 +122,44 @@ func getUsersJSON(db *sqlx.DB, options GetUserOptions) ([]UserJSON, error) {
 }
 
 func GetUsers(db *sqlx.DB, options GetUserOptions) ([]ADBUser, error) {
-	return getUsers(db, options)
+	users, err := getUsers(db, options)
+
+  if err != nil {
+    return nil, err
+  }
+
+  if len(users) == 0 {
+    return users, nil
+  }
+
+  usersRolesOptions := GetUsersRolesOptions{
+    Users: users
+  }
+
+  usersRoles, err := getUsersRoles(db, usersRolesOptions)
+
+  if err != nil {
+    // NOTE: Should we return the error here and nil for users?
+    // My thinking is that if we can't successfully get the UsersRoles info
+    // we still should send the Users data we already retrieved.
+    return users, nil
+  }
+
+  if len(usersRoles) == 0 {
+    return users, nil
+  }
+
+  userIDToIndex := map[int]int{}
+  for i, user := range users {
+    userIDToIndex[user.ID] = i
+  }
+
+  for _, r := range userRoles {
+    i := userIDToIndex[r.UserID]
+    users[i].Roles = append(users[i].Roles, r.Role)
+  }
+
+  return users, nil
 }
 
 func getUsers(db *sqlx.DB, options GetUserOptions) ([]ADBUser, error) {
@@ -120,6 +180,45 @@ func getUsers(db *sqlx.DB, options GetUserOptions) ([]ADBUser, error) {
 	}
 
 	return users, nil
+}
+
+func getUsersRoles(db *sqlx.DB, options GetUsersRolesOptions) ([]UserRole, error) {
+  query := selectUsersRolesBaseQuery
+
+  var queryArgs []interface{}
+  var whereClause []string
+
+  if len(options.Users) != 0 {
+    userIds := make([]int, 0, len(options.Users))
+    for _, user := range options.Users {
+      userIds = append(userIds, user.ID)
+    }
+
+    whereClause = append(whereClause, "ur.user_id IN (?)")
+    queryArgs = append(queryArgs, userIds)
+  }
+
+  if len(options.Roles) != 0 {
+    whereClause = append(whereClause, "ur.role IN (?)")
+    queryArgs = append(queryArgs, options.Roles)
+  }
+
+  if len(whereClause) != 0 {
+    query += ` WHERE ` + strings.Join(whereClause, " AND ")
+  }
+
+  var userRoles []UserRole
+  err := db.Select(&userRoles, query, queryArgs...)
+
+  if err != nil {
+    return nil, errors.Wrap(err, "failed to select UserRoles")
+  }
+
+  if len(userRoles) == 0 {
+    return nil, nil
+  }
+
+  return userRoles, nil
 }
 
 func buildUserJSONArray(users []ADBUser) []UserJSON {
