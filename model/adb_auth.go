@@ -38,10 +38,11 @@ type ADBUser struct {
 }
 
 type UserJSON struct {
-	ID       int    `json:"id"`
-	Email    string `json:"email"`
-	Admin    bool   `json:"admin"`
-	Disabled bool   `json:"disabled"`
+	ID       int      `json:"id"`
+	Email    string   `json:"email"`
+	Admin    bool     `json:"admin"`
+	Disabled bool     `json:"disabled"`
+  Roles    []string `json:"roles"`
 }
 
 type GetUserOptions struct {
@@ -225,12 +226,17 @@ func buildUserJSONArray(users []ADBUser) []UserJSON {
 	var usersJSON []UserJSON
 
 	for _, u := range users {
+    var roles []string
+    for _, userRole := range u.Roles {
+      roles = append(roles, userRole.Role)
+    }
 
 		usersJSON = append(usersJSON, UserJSON{
 			ID:       u.ID,
 			Email:    u.Email,
 			Admin:    u.Admin,
 			Disabled: u.Disabled,
+      Roles:    roles
 		})
 	}
 
