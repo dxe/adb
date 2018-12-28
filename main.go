@@ -149,8 +149,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	// Unauthed API
 	router.HandleFunc("/tokensignin", main.TokenSignInHandler)
 	router.HandleFunc(config.Route0, main.TransposedEventsDataJsonHandler)
-	router.HandleFunc(config.Route1, main.PowerWallboard)      // used for showing power on wallboard at ARC
-	router.Handle("/wallboard_mpi", main.newPowerWallboard)
+	router.HandleFunc("/wallboard_mpi", main.newPowerWallboard) // new endpoint for arc tv to get mpi
 	router.HandleFunc(config.Route2, main.ActivistListHandler) // used for connections google sheet
 
 	// Authed API
@@ -1080,32 +1079,6 @@ func (c MainController) UserDeleteHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	writeJSON(w, out)
-}
-
-func (c MainController) PowerWallboard(w http.ResponseWriter, r *http.Request) {
-	power, err := model.GetPower(c.db)
-	if err != nil {
-		panic(err)
-	}
-
-	powerHist, err := model.GetPowerHistArray(c.db)
-	if err != nil {
-		panic(err)
-	}
-
-	powerMTD, err := model.GetPowerMTD(c.db)
-	if err != nil {
-		panic(err)
-	}
-
-	renderPage(w, "power_wallboard", PageData{
-		PageName: "PowerWallboard",
-		Data: map[string]interface{}{
-			"Power":     power,
-			"PowerHist": powerHist,
-			"PowerMTD":  powerMTD,
-		},
-	})
 }
 
 func (c MainController) newPowerWallboard(w http.ResponseWriter, r *http.Request) {
