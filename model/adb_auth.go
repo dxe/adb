@@ -7,6 +7,7 @@ import (
 
 	"encoding/json"
 	"io"
+  "fmt"
 )
 
 /** Constant and Variable Definitions */
@@ -132,20 +133,17 @@ func GetUsers(db *sqlx.DB, options GetUserOptions) ([]ADBUser, error) {
   if len(users) == 0 {
     return users, nil
   }
-
+  
   usersRolesOptions := GetUsersRolesOptions{
-    Users: users
+    Users: users,
   }
 
   usersRoles, err := getUsersRoles(db, usersRolesOptions)
-
+  
   if err != nil {
-    // NOTE: Should we return the error here and nil for users?
-    // My thinking is that if we can't successfully get the UsersRoles info
-    // we still should send the Users data we already retrieved.
-    return users, nil
+    return nil, err
   }
-
+  
   if len(usersRoles) == 0 {
     return users, nil
   }
@@ -154,12 +152,12 @@ func GetUsers(db *sqlx.DB, options GetUserOptions) ([]ADBUser, error) {
   for i, user := range users {
     userIDToIndex[user.ID] = i
   }
-
-  for _, r := range userRoles {
+  
+  for _, r := range usersRoles {
     i := userIDToIndex[r.UserID]
-    users[i].Roles = append(users[i].Roles, r.Role)
+    users[i].Roles = append(users[i].Roles, r)
   }
-
+  
   return users, nil
 }
 
@@ -185,16 +183,15 @@ func getUsers(db *sqlx.DB, options GetUserOptions) ([]ADBUser, error) {
 
 func getUsersRoles(db *sqlx.DB, options GetUsersRolesOptions) ([]UserRole, error) {
   query := selectUsersRolesBaseQuery
-
+  /*
   var queryArgs []interface{}
   var whereClause []string
 
   if len(options.Users) != 0 {
-    userIds := make([]int, 0, len(options.Users))
-    for _, user := range options.Users {
-      userIds = append(userIds, user.ID)
-    }
-
+    var userIds = []int{4, 6, 7}
+    //for _, user := range options.Users {
+    //  userIds = append(userIds, strconv.Itoa(user.ID))
+    //}
     whereClause = append(whereClause, "ur.user_id IN (?)")
     queryArgs = append(queryArgs, userIds)
   }
@@ -207,9 +204,10 @@ func getUsersRoles(db *sqlx.DB, options GetUsersRolesOptions) ([]UserRole, error
   if len(whereClause) != 0 {
     query += ` WHERE ` + strings.Join(whereClause, " AND ")
   }
-
+  */
+  fmt.Println(query)
   var userRoles []UserRole
-  err := db.Select(&userRoles, query, queryArgs...)
+  err := db.Select(&userRoles, query)
 
   if err != nil {
     return nil, errors.Wrap(err, "failed to select UserRoles")
@@ -236,7 +234,7 @@ func buildUserJSONArray(users []ADBUser) []UserJSON {
 			Email:    u.Email,
 			Admin:    u.Admin,
 			Disabled: u.Disabled,
-      Roles:    roles
+      Roles:    roles,
 		})
 	}
 
