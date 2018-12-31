@@ -99,7 +99,7 @@ export default {
       name: "",
       date: "",
       type: "",
-      attendees: ["", "", "", "", ""],
+      attendees: [],
 
       oldName: "",
       oldDate: "",
@@ -181,9 +181,22 @@ export default {
         return true;
       }
 
-      const oldSet = new Set(this.oldAttendees);
-      const newSet = new Set(this.attendees);
-      if (oldSet.length != newSet.length) {
+      var newSet = new Set();
+      for (let attendee of this.attendees) {
+        attendee = attendee.trim();
+        if (attendee != "") {
+          newSet.add(attendee);
+        }
+      }
+      var oldSet = new Set();
+      for (let attendee of this.oldAttendees) {
+        attendee = attendee.trim();
+        if (attendee != "") {
+          oldSet.add(attendee.trim());
+        }
+      }
+
+      if (oldSet.size != newSet.size) {
         return true;
       }
       for (let attendee of oldSet) {
@@ -362,7 +375,7 @@ export default {
             this.allActivists.push(name);
             this.allActivistsSet.add(name);
           }
-          this.changed('autocomplete', -1);
+          this.changed("autocomplete", -1);
         },
         error: () => {
           flashMessage("Error: could not load activist names", true);
