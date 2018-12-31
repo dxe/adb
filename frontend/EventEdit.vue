@@ -73,7 +73,12 @@
       </form>
       <br>
       <center>
-        <button class="btn btn-success btn-lg" id="submit-button" v-on:click="save">
+        <button
+          class="btn btn-success btn-lg"
+          id="submit-button"
+          v-on:click="save"
+          :disabled="saving"
+        >
           <span>Save {{connections ? "connection" : "event"}}</span>
         </button>
       </center>
@@ -95,6 +100,7 @@ export default {
   data() {
     return {
       disabled: Number(this.id) != 0,
+      saving: false,
 
       name: "",
       date: "",
@@ -318,6 +324,7 @@ export default {
         return !attendeesSet.has(activist);
       });
 
+      this.saving = true;
       $.ajax({
         url: this.connections ? "/connection/save" : "/event/save",
         method: "POST",
@@ -331,6 +338,7 @@ export default {
           deleted_attendees: deletedActivists
         }),
         success: data => {
+          this.saving = false;
           let parsed = JSON.parse(data);
           if (parsed.status === "error") {
             flashMessage("Error: " + parsed.message, true);
@@ -355,6 +363,7 @@ export default {
           this.updateAutocompleteNames();
         },
         error: () => {
+          this.saving = false;
           flashMessage("Error, did not save data", true);
         }
       });
