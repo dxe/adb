@@ -21,17 +21,19 @@ func TestGetEvents(t *testing.T) {
 	d2, err := time.Parse("2006-01-02", "2017-01-16")
 	require.NoError(t, err)
 	var wantEvents = []Event{{
-		ID:        1,
-		EventName: "event one",
-		EventDate: d1,
-		EventType: "Working Group",
-		Attendees: []string{a1.Name},
+		ID:             1,
+		EventName:      "event one",
+		EventDate:      d1,
+		EventType:      "Working Group",
+		Attendees:      []string{a1.Name},
+		AttendeeEmails: []string{a1.Email},
 	}, {
-		ID:        2,
-		EventName: "event two",
-		EventDate: d2,
-		EventType: "Protest",
-		Attendees: []string{a1.Name, a2.Name},
+		ID:             2,
+		EventName:      "event two",
+		EventDate:      d2,
+		EventType:      "Protest",
+		Attendees:      []string{a1.Name, a2.Name},
+		AttendeeEmails: []string{a1.Email, a2.Email},
 	}}
 
 	for _, e := range wantEvents {
