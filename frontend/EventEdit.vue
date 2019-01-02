@@ -188,7 +188,7 @@ export default {
 
     dirty() {
       if (
-        this.name != this.oldName ||
+        this.name.trim() != this.oldName ||
         (!this.connections && this.type != this.oldType) || // Connections are always "Connection"
         this.date != this.oldDate
       ) {
@@ -206,7 +206,7 @@ export default {
       for (let attendee of this.oldAttendees) {
         attendee = attendee.trim();
         if (attendee != "") {
-          oldSet.add(attendee.trim());
+          oldSet.add(attendee);
         }
       }
 
