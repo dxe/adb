@@ -349,6 +349,24 @@ export default {
           this.oldDate = date;
           this.oldAttendees = attendees;
 
+          // TODO(mdempsky): Remove after figuring out Safari issue.
+          if (this.dirty()) {
+            console.log("Oops, still dirty after save!", JSON.stringify({
+              new: {
+                name: this.name,
+                type: this.type,
+                date: this.date,
+                attendees: this.attendees,
+              },
+              old: {
+                name: this.oldName,
+                type: this.oldType,
+                date: this.oldDate,
+                attendees: this.oldAttendees,
+              },
+            }));
+          }
+
           if (parsed.redirect) {
             // TODO(mdempsky): Implement as history rewrite.
             setFlashMessageSuccessCookie("Saved!");
