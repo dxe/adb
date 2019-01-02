@@ -162,6 +162,25 @@ export default {
     // TODO(mdempsky): Unregister event listener when destroyed.
     window.addEventListener("beforeunload", e => {
       if (this.dirty()) {
+        // TODO(mdempsky): Remove after figuring out Safari issue.
+        console.log(
+          "Event data looks dirty",
+          JSON.stringify({
+            new: {
+              name: this.name,
+              type: this.type,
+              date: this.date,
+              attendees: this.attendees
+            },
+            old: {
+              name: this.oldName,
+              type: this.oldType,
+              date: this.oldDate,
+              attendees: this.oldAttendees
+            }
+          })
+        );
+
         e.preventDefault();
         // MDN says returnValue is unused, but still required by Chrome.
         // https://developer.mozilla.org/en-US/docs/Web/Events/beforeunload
@@ -351,20 +370,23 @@ export default {
 
           // TODO(mdempsky): Remove after figuring out Safari issue.
           if (this.dirty()) {
-            console.log("Oops, still dirty after save!", JSON.stringify({
-              new: {
-                name: this.name,
-                type: this.type,
-                date: this.date,
-                attendees: this.attendees,
-              },
-              old: {
-                name: this.oldName,
-                type: this.oldType,
-                date: this.oldDate,
-                attendees: this.oldAttendees,
-              },
-            }));
+            console.log(
+              "Oops, still dirty after save!",
+              JSON.stringify({
+                new: {
+                  name: this.name,
+                  type: this.type,
+                  date: this.date,
+                  attendees: this.attendees
+                },
+                old: {
+                  name: this.oldName,
+                  type: this.oldType,
+                  date: this.oldDate,
+                  attendees: this.oldAttendees
+                }
+              })
+            );
           }
 
           if (parsed.redirect) {
