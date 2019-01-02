@@ -10,7 +10,7 @@
 
     <div class="main">
       <form action id="eventForm" v-on:change="changed('change', -1)">
-        <fieldset :disabled="disabled">
+        <fieldset :disabled="loading">
           <label for="eventName" id="nameLabel">
             <b>{{connections ? "Connector" : "Event"}} name</b>
             <br>
@@ -99,7 +99,7 @@ export default {
   },
   data() {
     return {
-      disabled: Number(this.id) != 0,
+      loading: false,
       saving: false,
 
       name: "",
@@ -133,6 +133,7 @@ export default {
 
     // If we're editing an existing event, fetch the data.
     if (Number(this.id) != 0) {
+      this.loading = true;
       $.ajax({
         url: "/event/get/" + this.id,
         method: "GET",
@@ -149,7 +150,7 @@ export default {
           this.oldDate = this.date;
           this.oldAttendees = [...this.attendees];
 
-          this.disabled = false;
+          this.loading = false;
           this.changed("load", -1);
         },
         error: () => {
