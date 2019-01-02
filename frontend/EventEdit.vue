@@ -168,8 +168,16 @@ export default {
       }
     });
   },
-  mounted() {
-    this.updateAwesomeplete();
+
+  updated() {
+    this.$nextTick(() => {
+      for (let row of $("#attendee-rows > input.attendee-input")) {
+        new Awesomplete(row, {
+          list: this.allActivists,
+          sort: false
+        });
+      }
+    });
   },
 
   methods: {
@@ -217,16 +225,6 @@ export default {
     addRows(n) {
       for (let i = 0; i < n; i++) {
         this.attendees.push("");
-      }
-      this.updateAwesomeplete();
-    },
-
-    updateAwesomeplete() {
-      for (let row of $("#attendee-rows > input.attendee-input")) {
-        new Awesomplete(row, {
-          list: this.allActivists,
-          sort: false
-        });
       }
     },
 
