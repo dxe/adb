@@ -175,6 +175,9 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/user/list", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserListHandler))
 	router.Handle("/user/save", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserSaveHandler))
 	router.Handle("/user/delete", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserDeleteHandler))
+  // Authed Admin API for managing Users Roles
+  router.Handle("/users-roles/add", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UsersRolesAddHandler))
+  router.Handle("/users-roles/remove", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UsersRolesRemoveHandler))
 
 	// Pprof debug routes
 	router.HandleFunc("/debug/pprof/", pprof.Index)
@@ -1091,6 +1094,64 @@ func (c MainController) newPowerWallboard(w http.ResponseWriter, r *http.Request
 		"status":        "success",
 		"Power": 		 power,
 	})
+}
+
+func (c MainController) UsersRolesAddHandler(w http.ResponseWriter, r *http.Request) {
+  var userRoleData struct {
+    UserID  int     `json:"user_id"`
+    Role    string  `json:"role"`
+  }
+
+  err := json.NewDecoder(r.Body).Decode(&userRoleData)
+  if err != nil {
+    sendErrorMessage(w, err)
+    return
+  }
+
+  userRole := model.UserRole{
+    UserID: userRoleData.UserID,
+    Role:   userRoleData.Role,
+  }
+
+  userId, err := model.CreateUserRole(c.db, userRole)
+  if err != nil {
+    sendErrorMessage(w, err)
+    return
+  }
+
+  writeJSON(w, map[string]interface{}{
+    "status":   "success",
+    "user_id":  userId,
+  })
+}
+
+func (c MainController) UsersRolesRemoveHandler(w http.ResponseWriter, r *http.Request) {
+  var userRoleData struct {
+    UserID  int     `json:"user_id"`
+    Role    string  `json:"role"`
+  }
+
+  err := json.NewDecoder(r.Body).Decode(&userRoleData)
+  if err != nil {
+    sendErrorMessage(w, err)
+    return
+  }
+
+  userRole := model.UserRole{
+    UserID: userRoleData.UserID,
+    Role:   userRoleData.Role,
+  }
+
+  userId, err := model.RemoveUserRole(c.db, userRole)
+  if err != nil {
+    sendErrorMessage(w, err)
+    return
+  }
+
+  writeJSON(w, map[string]interface{}{
+    "status":   "success",
+    "user_id":  userId,
+  })
 }
 
 func main() {
