@@ -366,3 +366,55 @@ func RemoveUser(db *sqlx.DB, userID int) (int, error) {
 
 	return userID, nil
 }
+
+func CreateUserRole(db *sqlx.DB, userRole UserRole) (int, error) {
+  if userRole.UserID == 0 {
+    return 0, errors.New("Invalid User ID")
+  }
+
+  if userRole.Role == "" {
+    return userRole.UserID, errors.New("Role cannot be empty")
+  }
+
+  _, err := db.Exec(`
+INSERT INTO users_roles (user_id, role)
+VALUES (?, ?)
+`, userRole.UserID, userRole.Role)
+
+  if err != nil {
+    return userRole.UserID, errors.Wrapf(err, "Could not add User Role for User %d", userRole.UserID)
+  }
+
+  return userRole.UserID, nil
+}
+
+func RemoveUserRole(db *sqlx.DB, userRole UserRole) (int, error) {
+  if (userRole.UserID == 0) {
+    return 0, errors.New("Invalid User ID")
+  }
+
+  tx, err := db.Beginx()
+
+  if err != nil {
+    return userRole.UserID, errors.Wrapf(err, "Could not start transaction for User %d", userRole.UserID)
+  }
+
+  query := `
+DELETE FROM users_roles
+WHERE user_id = ? AND role = ?
+`
+
+  _, err = tx.Exec(query, userRole.UserID, userRole.Role)
+
+  if err != nil {
+    tx.Rollback()
+    return userRole.UserID, errors.Wrapf(err, "Failed to delete User %d", userRole.UserID)
+  }
+
+  if err := tx.Commit(); err != nil {
+    tx.Rollback()
+    return userRole.UserID, errors.Wrapf(err, "Failed to commit delete transaction. Transaction rolled back for User %d", userRole.UserID)
+  }
+
+  return userRole.UserID, nil
+}
