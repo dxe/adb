@@ -202,7 +202,13 @@ export default {
         this.currentUser.roles = [];
       }
 
-      var existingRoleIndex = this.currentUser.roles.indexOf(role);
+      var existingRoleIndex = - 1;
+      for (var i = 0; i < this.currentUser.roles.length; i++) {
+        if (this.currentUser.roles[i] === role) {
+          existingRoleIndex = i;
+          break;
+        }
+      }
 
       $.ajax({
         url: existingRoleIndex === - 1 ? "/users-roles/add" : "/users-roles/remove",
@@ -233,13 +239,13 @@ export default {
             // as well as the main user list instance.
 
             this.currentUser.roles = [role].concat(this.currentUser.roles);
-            user.roles = [role].concat(user.roles);
+            user.roles = this.currentUser.roles;
           } else {
             // We removed a role so we neeed to remove from the current
             // modal user as well as the main user list instance.
 
             this.currentUser.roles.splice(existingRoleIndex, 1);
-            user.roles.splice(existingRoleIndex, 1);
+            user.roles = this.currentUser.roles;
           }
 
           // Update the Vue list instance of this user.
