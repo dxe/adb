@@ -119,10 +119,10 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.HandleFunc("/login", main.LoginHandler)
 
 	// Error pages
-	router.Handle("/403", alice.New(main.authMiddleware).ThenFunc(main.ForbiddenHandler))
+	router.Handle("/403", alice.New(main.authAttendanceMiddleware).ThenFunc(main.ForbiddenHandler))
 
 	// Authed pages
-	router.Handle("/", alice.New(main.authMiddleware).ThenFunc(main.UpdateEventHandler))
+	router.Handle("/", alice.New(main.authAttendanceMiddleware).ThenFunc(main.UpdateEventHandler))
 	router.Handle("/update_event/{event_id:[0-9]+}", alice.New(main.authAttendanceMiddleware).ThenFunc(main.UpdateEventHandler))
 	router.Handle("/new_connection", alice.New(main.authOrganizerMiddleware).ThenFunc(main.UpdateConnectionHandler))
 	router.Handle("/update_connection/{event_id:[0-9]+}", alice.New(main.authOrganizerMiddleware).ThenFunc(main.UpdateConnectionHandler))
@@ -200,7 +200,7 @@ type MainController struct {
 	db *sqlx.DB
 }
 
-func (c MainController) authAttendanceMiddleware(h http.Handler) http.Handler {
+func (c MainController) authRoleMiddleware(h http.Handler, allowedRoles []string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, authed := getAuthedADBUser(c.db, r)
 		if !authed {
@@ -217,76 +217,26 @@ func (c MainController) authAttendanceMiddleware(h http.Handler) http.Handler {
 			return
 		}
 
-		allowedRoles := []string{"attendance", "organizer", "admin"}
-		fmt.Println(user)
 		if !userIsAllowed(allowedRoles, user) {
-			fmt.Println("NOT ALLOWED!")
 			http.Redirect(w, r.WithContext(setUserContext(r, user)), "/403", http.StatusFound)
 			return
 		}
-		fmt.Println("Allowing Access")
+
 		// Request is authed at this point.
 		h.ServeHTTP(w, r.WithContext(setUserContext(r, user)))
 	})
+}
+
+func (c MainController) authAttendanceMiddleware(h http.Handler) http.Handler {
+	return c.authRoleMiddleware(h, []string{"admin", "organizer", "attendance"})
 }
 
 func (c MainController) authOrganizerMiddleware(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, authed := getAuthedADBUser(c.db, r)
-		if !authed {
-			// Delete the cookie if it doesn't auth.
-			c := &http.Cookie{
-				Name:     "auth-session",
-				Path:     "/",
-				MaxAge:   -1,
-				HttpOnly: true,
-			}
-			http.SetCookie(w, c)
-
-			http.Redirect(w, r, "/login", http.StatusFound)
-			return
-		}
-
-		allowedRoles := []string{"organizer", "admin"}
-		fmt.Println(user)
-		if !userIsAllowed(allowedRoles, user) {
-			fmt.Println("NOT ALLOWED!")
-			http.Redirect(w, r.WithContext(setUserContext(r, user)), "/403", http.StatusFound)
-			return
-		}
-		fmt.Println("Allowing Access")
-		// Request is authed at this point.
-		h.ServeHTTP(w, r.WithContext(setUserContext(r, user)))
-	})
+	return c.authRoleMiddleware(h, []string{"admin", "organizer"})
 }
 
 func (c MainController) authAdminMiddleware(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, authed := getAuthedADBUser(c.db, r)
-		if !authed {
-			// Delete the cookie if it doesn't auth.
-			c := &http.Cookie{
-				Name:     "auth-session",
-				Path:     "/",
-				MaxAge:   -1,
-				HttpOnly: true,
-			}
-			http.SetCookie(w, c)
-
-			http.Redirect(w, r, "/login", http.StatusFound)
-			return
-		}
-
-		allowedRoles := []string{"admin"}
-
-		if !userIsAllowed(allowedRoles, user) {
-			http.Redirect(w, r.WithContext(setUserContext(r, user)), "/403", http.StatusFound)
-			return
-		}
-
-		// Request is authed at this point.
-		h.ServeHTTP(w, r.WithContext(setUserContext(r, user)))
-	})
+	return c.authRoleMiddleware(h, []string{"admin"})
 }
 
 func userIsAllowed(roles []string, user model.ADBUser) bool {
@@ -326,148 +276,35 @@ func getUserMainRole(user model.ADBUser) string {
 	return mainRole
 }
 
-func (c MainController) authMiddleware(h http.Handler) http.Handler {
+func (c MainController) apiRoleMiddleware(h http.Handler, allowedRoles []string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, authed := getAuthedADBUser(c.db, r)
-		if !authed {
-			// Delete the cookie if it doesn't auth.
-			c := &http.Cookie{
-				Name:     "auth-session",
-				Path:     "/",
-				MaxAge:   -1,
-				HttpOnly: true,
-			}
-			http.SetCookie(w, c)
-
-			http.Redirect(w, r, "/login", http.StatusFound)
-			return
-		}
-
-		// Request is authed at this point.
-		h.ServeHTTP(w, r.WithContext(setUserContext(r, user)))
-	})
-}
-
-/*
-func (c MainController) authAdminMiddleware(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, authed := getAuthedADBUser(c.db, r)
-		if !authed {
-			// Delete the cookie if it doesn't auth.
-			c := &http.Cookie{
-				Name:     "auth-session",
-				Path:     "/",
-				MaxAge:   -1,
-				HttpOnly: true,
-			}
-			http.SetCookie(w, c)
-
-			http.Redirect(w, r, "/login", http.StatusFound)
-			return
-		}
-
-		if !user.Admin {
-			http.Redirect(w, r.WithContext(setUserContext(r, user)), "/403", http.StatusFound)
-			return
-		}
-
-		// Request is authed at this point.
-		h.ServeHTTP(w, r.WithContext(setUserContext(r, user)))
-	})
-}
-*/
-
-func (c MainController) apiAuthMiddleware(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, authed := getAuthedADBUser(c.db, r)
 		if !authed {
 			http.Error(w, http.StatusText(400), 400)
 			return
 		}
+
+		if !userIsAllowed(allowedRoles, user) {
+			http.Error(w, http.StatusText(403), 403)
+			return
+		}
+
 		// Request is authed at this point.
 		h.ServeHTTP(w, r)
 	})
 }
 
 func (c MainController) apiAttendanceAuthMiddleware(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, authed := getAuthedADBUser(c.db, r)
-		if !authed {
-			http.Error(w, http.StatusText(400), 400)
-			return
-		}
-
-		allowedRoles := []string{"attendance", "organizer", "admin"}
-
-		if !userIsAllowed(allowedRoles, user) {
-			http.Error(w, http.StatusText(403), 403)
-			return
-		}
-
-		// Request is authed at this point.
-		h.ServeHTTP(w, r)
-	})
+	return c.apiRoleMiddleware(h, []string{"admin", "organizer", "attendance"})
 }
 
 func (c MainController) apiOrganizerAuthMiddleware(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, authed := getAuthedADBUser(c.db, r)
-		if !authed {
-			http.Error(w, http.StatusText(400), 400)
-			return
-		}
-
-		allowedRoles := []string{"organizer", "admin"}
-
-		if !userIsAllowed(allowedRoles, user) {
-			http.Error(w, http.StatusText(403), 403)
-			return
-		}
-
-		// Request is authed at this point.
-		h.ServeHTTP(w, r)
-	})
+	return c.apiRoleMiddleware(h, []string{"admin", "organizer"})
 }
 
 func (c MainController) apiAdminAuthMiddleware(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, authed := getAuthedADBUser(c.db, r)
-		if !authed {
-			http.Error(w, http.StatusText(400), 400)
-			return
-		}
-
-		allowedRoles := []string{"admin"}
-
-		if !userIsAllowed(allowedRoles, user) {
-			http.Error(w, http.StatusText(403), 403)
-			return
-		}
-
-		// Request is authed at this point.
-		h.ServeHTTP(w, r)
-	})
+	return c.apiRoleMiddleware(h, []string{"admin"})
 }
-
-/*
-func (c MainController) apiAdminAuthMiddleware(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, authed := getAuthedADBUser(c.db, r)
-		if !authed {
-			http.Error(w, http.StatusText(400), 400)
-			return
-		}
-
-		if !user.Admin {
-			http.Error(w, http.StatusText(403), 403)
-			return
-		}
-
-		// Request is authed at this point.
-		h.ServeHTTP(w, r)
-	})
-}
-*/
 
 func setUserContext(r *http.Request, user model.ADBUser) context.Context {
 	return context.WithValue(r.Context(), "UserContext", user)
