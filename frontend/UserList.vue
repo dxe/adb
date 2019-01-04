@@ -9,6 +9,7 @@
           <th>Email</th>
           <th>Admin</th>
           <th>Disabled</th>
+          <th>Roles</th>
         </tr>
       </thead>
       <tbody id="user-list-body">
@@ -17,6 +18,7 @@
           <td>{{user.email}}</td>
           <td>{{user.admin}}</td>
           <td>{{user.disabled}}</td>
+          <td>{{user.roles.join(', ')}}</td>
         </tr>
       </tbody>
     </table>
@@ -38,6 +40,23 @@
               <p><label for="email">Email: </label><input class="form-control" type="text" v-model.trim="currentUser.email" id="email" /></p>
               <p><label for="admin">Admin: </label><input class="form-control" type="checkbox" v-model="currentUser.admin" id="admin" /></p>
               <p><label for="disabled">Disabled: </label><input class="form-control" type="checkbox" v-model="currentUser.disabled" id="disabled" /></p>
+            </form>
+
+            <p style="margin-top: 20px;"><h3 class="text-center">Roles</h3></p>
+            <form action="" id="editUserRolesForm" v-if="currentUser.id">
+              
+              <p>
+                <label for="admin_cb">Admin</label>
+                <input class="form-control" type="checkbox" id="admin_cb" value="admin" @click="updateUserRoleModal('admin')" v-model="currentUser.roles">
+              </p>
+              <p>
+                <label for="org_cb">Organizer</label>
+                <input class="form-control" type="checkbox" id="org_cb" value="organizer" @click="updateUserRoleModal('organizer')" v-model="currentUser.roles">
+              </p>
+              <p>
+                <label for="att_cb">Attendance</label>
+                <input class="form-control" type="checkbox" id="att_cb" value="attendance" @click="updateUserRoleModal('attendance')" v-model="currentUser.roles">
+              </p>
             </form>
           </div>
           <div class="modal-footer">
@@ -77,7 +96,7 @@ export default {
       // Make shallow copy of selected activist to prevent persisting unsaved
       // edits at the view layer when closing modal
       this.currentUser = $.extend({}, user);
-      
+
       // Track current user index, or default to first in list
       this.userIndex = index === 0 ? 0 : index || -1;
       
@@ -113,7 +132,7 @@ export default {
           }
           
           flashMessage(this.currentUser.email + " saved");
-          
+
           if (this.userIndex === -1) {
             // We're getting a new user, insert them at the top.
             this.users = [parsed.user].concat(this.users);
@@ -172,6 +191,68 @@ export default {
         limit: 40
       }
     },
+    updateUserRoleModal: function (role) {
+      if (!role) {
+        return;
+      }
+
+      this.disableConfirmButton = true;
+
+      if (!this.currentUser.roles || !this.currentUser.roles.length) {
+        this.currentUser.roles = [];
+      }
+
+      var existingRoleIndex = this.currentUser.roles.indexOf(role);
+
+      $.ajax({
+        url: existingRoleIndex === - 1 ? "/users-roles/add" : "/users-roles/remove",
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({
+          user_id: this.currentUser.id,
+          role: role
+        }),
+        success: (data) => {
+          this.disableConfirmButton = false;
+
+          var parsed = JSON.parse(data);
+
+          if (parsed.status === "error") {
+            flashMessage("Error: ", parsed.message, true);
+            return;
+          }
+
+          flashMessage((existingRoleIndex === - 1 ? "Added" : "Removed") + " the " + role + " role for current user");
+
+          // Get a copy of the Vue list instance of this user.
+          var user = this.users[this.userIndex];
+
+          if (existingRoleIndex === - 1) {
+            // We've added a new role to this user so we want
+            // to add it to thier roles in the current modal user object
+            // as well as the main user list instance.
+
+            this.currentUser.roles = [role].concat(this.currentUser.roles);
+            user.roles = [role].concat(user.roles);
+          } else {
+            // We removed a role so we neeed to remove from the current
+            // modal user as well as the main user list instance.
+
+            this.currentUser.roles.splice(existingRoleIndex, 1);
+            user.roles.splice(existingRoleIndex, 1);
+          }
+
+          // Update the Vue list instance of this user.
+          Vue.set(this.users, this.userIndex, user);
+        },
+        error: (err) => {
+          this.disableConfirmButton = false;
+
+          console.warn(err.responseText);
+          flashMessage("Server error: ", err.responseText, true);
+        }
+      })
+    }
   },
   data() {
     return {
