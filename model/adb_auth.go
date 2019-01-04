@@ -61,8 +61,8 @@ type GetUsersRolesOptions struct {
 var DevTestUser = ADBUser{
 	ID:       1,
 	Email:    "test@test.com",
-	Admin:    true,
 	Disabled: false,
+  Roles: []UserRole{{UserID: 1, Role: "admin"}},
 }
 
 type UserRole struct {

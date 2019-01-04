@@ -123,25 +123,25 @@ func router() (*mux.Router, *sqlx.DB) {
 
 	// Authed pages
 	router.Handle("/", alice.New(main.authMiddleware).ThenFunc(main.UpdateEventHandler))
-	router.Handle("/update_event/{event_id:[0-9]+}", alice.New(main.authMiddleware).ThenFunc(main.UpdateEventHandler))
-	router.Handle("/new_connection", alice.New(main.authMiddleware).ThenFunc(main.UpdateConnectionHandler))
-	router.Handle("/update_connection/{event_id:[0-9]+}", alice.New(main.authMiddleware).ThenFunc(main.UpdateConnectionHandler))
-	router.Handle("/update_event/{event_id:[0-9]+}", alice.New(main.authMiddleware).ThenFunc(main.UpdateEventHandler))
-	router.Handle("/list_events", alice.New(main.authMiddleware).ThenFunc(main.ListEventsHandler))
-	router.Handle("/list_connections", alice.New(main.authMiddleware).ThenFunc(main.ListConnectionsHandler))
-	router.Handle("/list_activists", alice.New(main.authMiddleware).ThenFunc(main.ListActivistsHandler))
-	router.Handle("/activist_pool", alice.New(main.authMiddleware).ThenFunc(main.ListActivistsPoolHandler))
-	router.Handle("/activist_recruitment", alice.New(main.authMiddleware).ThenFunc(main.ListActivistsRecruitmentHandler))
-	router.Handle("/activist_actionteam", alice.New(main.authMiddleware).ThenFunc(main.ListActivistsActionTeamHandler))
-	router.Handle("/activist_development", alice.New(main.authMiddleware).ThenFunc(main.ListActivistsDevelopmentHandler))
-	router.Handle("/organizer_prospects", alice.New(main.authMiddleware).ThenFunc(main.ListOrganizerProspectsHandler))
-	router.Handle("/chapter_member_prospects", alice.New(main.authMiddleware).ThenFunc(main.ListChapterMemberProspectsHandler))
-	router.Handle("/chapter_member_development", alice.New(main.authMiddleware).ThenFunc(main.ListChapterMemberDevelopmentHandler))
-	router.Handle("/circle_member_prospects", alice.New(main.authMiddleware).ThenFunc(main.ListCircleMemberProspectsHandler))
-	router.Handle("/leaderboard", alice.New(main.authMiddleware).ThenFunc(main.LeaderboardHandler))
-	router.Handle("/power", alice.New(main.authMiddleware).ThenFunc(main.PowerHandler)) // TODO: rename
-	router.Handle("/list_working_groups", alice.New(main.authMiddleware).ThenFunc(main.ListWorkingGroupsHandler))
-	router.Handle("/list_circles", alice.New(main.authMiddleware).ThenFunc(main.ListCirclesHandler))
+	router.Handle("/update_event/{event_id:[0-9]+}", alice.New(main.authAttendanceMiddleware).ThenFunc(main.UpdateEventHandler))
+	router.Handle("/new_connection", alice.New(main.authOrganizerMiddleware).ThenFunc(main.UpdateConnectionHandler))
+	router.Handle("/update_connection/{event_id:[0-9]+}", alice.New(main.authOrganizerMiddleware).ThenFunc(main.UpdateConnectionHandler))
+	router.Handle("/update_event/{event_id:[0-9]+}", alice.New(main.authAttendanceMiddleware).ThenFunc(main.UpdateEventHandler))
+	router.Handle("/list_events", alice.New(main.authAttendanceMiddleware).ThenFunc(main.ListEventsHandler))
+	router.Handle("/list_connections", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListConnectionsHandler))
+	router.Handle("/list_activists", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListActivistsHandler))
+	router.Handle("/activist_pool", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListActivistsPoolHandler))
+	router.Handle("/activist_recruitment", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListActivistsRecruitmentHandler))
+	router.Handle("/activist_actionteam", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListActivistsActionTeamHandler))
+	router.Handle("/activist_development", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListActivistsDevelopmentHandler))
+	router.Handle("/organizer_prospects", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListOrganizerProspectsHandler))
+	router.Handle("/chapter_member_prospects", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListChapterMemberProspectsHandler))
+	router.Handle("/chapter_member_development", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListChapterMemberDevelopmentHandler))
+	router.Handle("/circle_member_prospects", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListCircleMemberProspectsHandler))
+	router.Handle("/leaderboard", alice.New(main.authOrganizerMiddleware).ThenFunc(main.LeaderboardHandler))
+	router.Handle("/power", alice.New(main.authOrganizerMiddleware).ThenFunc(main.PowerHandler)) // TODO: rename
+	router.Handle("/list_working_groups", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListWorkingGroupsHandler))
+	router.Handle("/list_circles", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListCirclesHandler))
 
 	// Authed Admin pages
 	router.Handle("/admin/users", alice.New(main.authAdminMiddleware).ThenFunc(main.ListUsersHandler))
@@ -153,23 +153,23 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.HandleFunc(config.Route2, main.ActivistListHandler) // used for connections google sheet
 
 	// Authed API
-	router.Handle("/activist_names/get", alice.New(main.apiAuthMiddleware).ThenFunc(main.AutocompleteActivistsHandler))
-	router.Handle("/event/get/{event_id:[0-9]+}", alice.New(main.apiAuthMiddleware).ThenFunc(main.EventGetHandler))
-	router.Handle("/event/save", alice.New(main.apiAuthMiddleware).ThenFunc(main.EventSaveHandler))
-	router.Handle("/connection/save", alice.New(main.apiAuthMiddleware).ThenFunc(main.ConnectionSaveHandler))
-	router.Handle("/event/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.EventListHandler))
-	router.Handle("/event/delete", alice.New(main.apiAuthMiddleware).ThenFunc(main.EventDeleteHandler))
-	router.Handle("/activist/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistListHandler))
-	router.Handle("/activist/list_range", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistInfiniteScrollHandler))
-	router.Handle("/activist/save", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistSaveHandler))
-	router.Handle("/activist/hide", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistHideHandler))
-	router.Handle("/activist/merge", alice.New(main.apiAuthMiddleware).ThenFunc(main.ActivistMergeHandler))
-	router.Handle("/working_group/save", alice.New(main.apiAuthMiddleware).ThenFunc(main.WorkingGroupSaveHandler))
-	router.Handle("/working_group/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.WorkingGroupListHandler))
-	router.Handle("/working_group/delete", alice.New(main.apiAuthMiddleware).ThenFunc(main.WorkingGroupDeleteHandler))
-	router.Handle("/circle/save", alice.New(main.apiAuthMiddleware).ThenFunc(main.CircleGroupSaveHandler))
-	router.Handle("/circle/list", alice.New(main.apiAuthMiddleware).ThenFunc(main.CircleGroupListHandler))
-	router.Handle("/circle/delete", alice.New(main.apiAuthMiddleware).ThenFunc(main.CircleGroupDeleteHandler))
+	router.Handle("/activist_names/get", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteActivistsHandler))
+	router.Handle("/event/get/{event_id:[0-9]+}", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.EventGetHandler))
+	router.Handle("/event/save", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.EventSaveHandler))
+	router.Handle("/connection/save", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.ConnectionSaveHandler))
+	router.Handle("/event/list", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.EventListHandler))
+	router.Handle("/event/delete", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.EventDeleteHandler))
+	router.Handle("/activist/list", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.ActivistListHandler))
+	router.Handle("/activist/list_range", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.ActivistInfiniteScrollHandler))
+	router.Handle("/activist/save", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.ActivistSaveHandler))
+	router.Handle("/activist/hide", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.ActivistHideHandler))
+	router.Handle("/activist/merge", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.ActivistMergeHandler))
+	router.Handle("/working_group/save", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.WorkingGroupSaveHandler))
+	router.Handle("/working_group/list", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.WorkingGroupListHandler))
+	router.Handle("/working_group/delete", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.WorkingGroupDeleteHandler))
+	router.Handle("/circle/save", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.CircleGroupSaveHandler))
+	router.Handle("/circle/list", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.CircleGroupListHandler))
+	router.Handle("/circle/delete", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.CircleGroupDeleteHandler))
 
 	// Authed Admin API
 	router.Handle("/user/list", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserListHandler))
@@ -200,6 +200,141 @@ type MainController struct {
 	db *sqlx.DB
 }
 
+func (c MainController) authAttendanceMiddleware(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, authed := getAuthedADBUser(c.db, r)
+		if !authed {
+			// Delete the cookie if it doesn't auth.
+			c := &http.Cookie{
+				Name:     "auth-session",
+				Path:     "/",
+				MaxAge:   -1,
+				HttpOnly: true,
+			}
+			http.SetCookie(w, c)
+
+			http.Redirect(w, r, "/login", http.StatusFound)
+			return
+		}
+
+		allowedRoles := []string{"attendance", "organizer", "admin"}
+		fmt.Println(user)
+		if !userIsAllowed(allowedRoles, user) {
+			fmt.Println("NOT ALLOWED!")
+			http.Redirect(w, r.WithContext(setUserContext(r, user)), "/403", http.StatusFound)
+			return
+		}
+		fmt.Println("Allowing Access")
+		// Request is authed at this point.
+		h.ServeHTTP(w, r.WithContext(setUserContext(r, user)))
+	})
+}
+
+func (c MainController) authOrganizerMiddleware(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, authed := getAuthedADBUser(c.db, r)
+		if !authed {
+			// Delete the cookie if it doesn't auth.
+			c := &http.Cookie{
+				Name:     "auth-session",
+				Path:     "/",
+				MaxAge:   -1,
+				HttpOnly: true,
+			}
+			http.SetCookie(w, c)
+
+			http.Redirect(w, r, "/login", http.StatusFound)
+			return
+		}
+
+		allowedRoles := []string{"organizer", "admin"}
+		fmt.Println(user)
+		if !userIsAllowed(allowedRoles, user) {
+			fmt.Println("NOT ALLOWED!")
+			http.Redirect(w, r.WithContext(setUserContext(r, user)), "/403", http.StatusFound)
+			return
+		}
+		fmt.Println("Allowing Access")
+		// Request is authed at this point.
+		h.ServeHTTP(w, r.WithContext(setUserContext(r, user)))
+	})
+}
+
+func (c MainController) authAdminMiddleware(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, authed := getAuthedADBUser(c.db, r)
+		if !authed {
+			// Delete the cookie if it doesn't auth.
+			c := &http.Cookie{
+				Name:     "auth-session",
+				Path:     "/",
+				MaxAge:   -1,
+				HttpOnly: true,
+			}
+			http.SetCookie(w, c)
+
+			http.Redirect(w, r, "/login", http.StatusFound)
+			return
+		}
+
+		allowedRoles := []string{"admin"}
+
+		if !userIsAllowed(allowedRoles, user) {
+			http.Redirect(w, r.WithContext(setUserContext(r, user)), "/403", http.StatusFound)
+			return
+		}
+
+		// Request is authed at this point.
+		h.ServeHTTP(w, r.WithContext(setUserContext(r, user)))
+	})
+}
+
+func userIsAllowed(roles []string, user model.ADBUser) bool {
+	if len(roles) == 0 {
+		return false
+	}
+
+	if len(user.Roles) == 0 {
+		return false
+	}
+
+	var allowed = false
+
+	for i := 0; i < len(roles); i++ {
+		for _, r := range user.Roles {
+			if r.Role == roles[i] {
+				allowed = true
+			}
+		}
+	}
+
+	return allowed
+}
+
+func getUserMainRole(user model.ADBUser) string {
+	if len(user.Roles) == 0 {
+		return ""
+	}
+
+	var mainRole string
+	for _, r := range user.Roles {
+		if r.Role == "admin" {
+			mainRole = "admin"
+			break
+		}
+
+		if r.Role == "organizer" {
+			mainRole = "organizer"
+		}
+
+		if r.Role == "attendance" && mainRole != "organizer" {
+			mainRole = "attendance"
+		}
+	}
+
+	return mainRole
+}
+
 func (c MainController) authMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, authed := getAuthedADBUser(c.db, r)
@@ -222,6 +357,7 @@ func (c MainController) authMiddleware(h http.Handler) http.Handler {
 	})
 }
 
+/*
 func (c MainController) authAdminMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, authed := getAuthedADBUser(c.db, r)
@@ -248,6 +384,7 @@ func (c MainController) authAdminMiddleware(h http.Handler) http.Handler {
 		h.ServeHTTP(w, r.WithContext(setUserContext(r, user)))
 	})
 }
+*/
 
 func (c MainController) apiAuthMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -261,6 +398,67 @@ func (c MainController) apiAuthMiddleware(h http.Handler) http.Handler {
 	})
 }
 
+func (c MainController) apiAttendanceAuthMiddleware(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, authed := getAuthedADBUser(c.db, r)
+		if !authed {
+			http.Error(w, http.StatusText(400), 400)
+			return
+		}
+
+		allowedRoles := []string{"attendance", "organizer", "admin"}
+
+		if !userIsAllowed(allowedRoles, user) {
+			http.Error(w, http.StatusText(403), 403)
+			return
+		}
+
+		// Request is authed at this point.
+		h.ServeHTTP(w, r)
+	})
+}
+
+func (c MainController) apiOrganizerAuthMiddleware(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, authed := getAuthedADBUser(c.db, r)
+		if !authed {
+			http.Error(w, http.StatusText(400), 400)
+			return
+		}
+
+		allowedRoles := []string{"organizer", "admin"}
+
+		if !userIsAllowed(allowedRoles, user) {
+			http.Error(w, http.StatusText(403), 403)
+			return
+		}
+
+		// Request is authed at this point.
+		h.ServeHTTP(w, r)
+	})
+}
+
+func (c MainController) apiAdminAuthMiddleware(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, authed := getAuthedADBUser(c.db, r)
+		if !authed {
+			http.Error(w, http.StatusText(400), 400)
+			return
+		}
+
+		allowedRoles := []string{"admin"}
+
+		if !userIsAllowed(allowedRoles, user) {
+			http.Error(w, http.StatusText(403), 403)
+			return
+		}
+
+		// Request is authed at this point.
+		h.ServeHTTP(w, r)
+	})
+}
+
+/*
 func (c MainController) apiAdminAuthMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, authed := getAuthedADBUser(c.db, r)
@@ -278,6 +476,7 @@ func (c MainController) apiAdminAuthMiddleware(h http.Handler) http.Handler {
 		h.ServeHTTP(w, r)
 	})
 }
+*/
 
 func setUserContext(r *http.Request, user model.ADBUser) context.Context {
 	return context.WithValue(r.Context(), "UserContext", user)
@@ -335,15 +534,15 @@ func (c MainController) LoginHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c MainController) ForbiddenHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "403", PageData{PageName: "403 - Forbidden", IsAdmin: getUserFromContext(r.Context()).Admin})
+	renderPage(w, "403", PageData{PageName: "403 - Forbidden", MainRole: getUserMainRole(getUserFromContext(r.Context()))})
 }
 
 func (c MainController) ListEventsHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "event_list", PageData{PageName: "EventList", IsAdmin: getUserFromContext(r.Context()).Admin})
+	renderPage(w, "event_list", PageData{PageName: "EventList", MainRole: getUserMainRole(getUserFromContext(r.Context()))})
 }
 
 func (c MainController) ListConnectionsHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "connection_list", PageData{PageName: "ConnectionsList", IsAdmin: getUserFromContext(r.Context()).Admin})
+	renderPage(w, "connection_list", PageData{PageName: "ConnectionsList", MainRole: getUserMainRole(getUserFromContext(r.Context()))})
 }
 
 type ActivistListData struct {
@@ -354,7 +553,7 @@ type ActivistListData struct {
 func (c MainController) ListActivistsHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, "activist_list", PageData{
 		PageName: "ActivistList",
-		IsAdmin:  getUserFromContext(r.Context()).Admin,
+		MainRole: getUserMainRole(getUserFromContext(r.Context())),
 		Data: ActivistListData{
 			Title: "All Activists",
 			View:  "all_activists",
@@ -365,7 +564,7 @@ func (c MainController) ListActivistsHandler(w http.ResponseWriter, r *http.Requ
 func (c MainController) ListActivistsPoolHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, "activist_list", PageData{
 		PageName: "ActivistPool",
-		IsAdmin:  getUserFromContext(r.Context()).Admin,
+		MainRole: getUserMainRole(getUserFromContext(r.Context())),
 		Data: ActivistListData{
 			Title: "Recruitment Connections",
 			View:  "activist_pool",
@@ -376,7 +575,7 @@ func (c MainController) ListActivistsPoolHandler(w http.ResponseWriter, r *http.
 func (c MainController) ListActivistsRecruitmentHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, "activist_list", PageData{
 		PageName: "ActivistRecruitment",
-		IsAdmin:  getUserFromContext(r.Context()).Admin,
+		MainRole: getUserMainRole(getUserFromContext(r.Context())),
 		Data: ActivistListData{
 			Title: "Activist Recruitment",
 			View:  "activist_recruitment",
@@ -387,7 +586,7 @@ func (c MainController) ListActivistsRecruitmentHandler(w http.ResponseWriter, r
 func (c MainController) ListActivistsActionTeamHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, "activist_list", PageData{
 		PageName: "ActivistActionTeam",
-		IsAdmin:  getUserFromContext(r.Context()).Admin,
+		MainRole: getUserMainRole(getUserFromContext(r.Context())),
 		Data: ActivistListData{
 			Title: "Action Team",
 			View:  "action_team",
@@ -398,7 +597,7 @@ func (c MainController) ListActivistsActionTeamHandler(w http.ResponseWriter, r 
 func (c MainController) ListActivistsDevelopmentHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, "activist_list", PageData{
 		PageName: "OrganizerDevelopment",
-		IsAdmin:  getUserFromContext(r.Context()).Admin,
+		MainRole: getUserMainRole(getUserFromContext(r.Context())),
 		Data: ActivistListData{
 			Title: "Organizer Development",
 			View:  "development",
@@ -409,7 +608,7 @@ func (c MainController) ListActivistsDevelopmentHandler(w http.ResponseWriter, r
 func (c MainController) ListChapterMemberDevelopmentHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, "activist_list", PageData{
 		PageName: "ChapterMemberDevelopment",
-		IsAdmin:  getUserFromContext(r.Context()).Admin,
+		MainRole: getUserMainRole(getUserFromContext(r.Context())),
 		Data: ActivistListData{
 			Title: "Chapter Members",
 			View:  "chapter_member_development",
@@ -420,7 +619,7 @@ func (c MainController) ListChapterMemberDevelopmentHandler(w http.ResponseWrite
 func (c MainController) ListOrganizerProspectsHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, "activist_list", PageData{
 		PageName: "OrganizerProspects",
-		IsAdmin:  getUserFromContext(r.Context()).Admin,
+		MainRole: getUserMainRole(getUserFromContext(r.Context())),
 		Data: ActivistListData{
 			Title: "Organizer Prospects",
 			View:  "organizer_prospects",
@@ -431,7 +630,7 @@ func (c MainController) ListOrganizerProspectsHandler(w http.ResponseWriter, r *
 func (c MainController) ListChapterMemberProspectsHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, "activist_list", PageData{
 		PageName: "ChapterMemberProspects",
-		IsAdmin:  getUserFromContext(r.Context()).Admin,
+		MainRole: getUserMainRole(getUserFromContext(r.Context())),
 		Data: ActivistListData{
 			Title: "Chapter Member Prospects",
 			View:  "chapter_member_prospects",
@@ -442,7 +641,7 @@ func (c MainController) ListChapterMemberProspectsHandler(w http.ResponseWriter,
 func (c MainController) ListCircleMemberProspectsHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, "activist_list", PageData{
 		PageName: "CircleMemberProspects",
-		IsAdmin:  getUserFromContext(r.Context()).Admin,
+		MainRole: getUserMainRole(getUserFromContext(r.Context())),
 		Data: ActivistListData{
 			Title: "Circle Member Prospects",
 			View:  "circle_member_prospects",
@@ -451,17 +650,17 @@ func (c MainController) ListCircleMemberProspectsHandler(w http.ResponseWriter, 
 }
 
 func (c MainController) ListWorkingGroupsHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "working_group_list", PageData{PageName: "WorkingGroupList", IsAdmin: getUserFromContext(r.Context()).Admin})
+	renderPage(w, "working_group_list", PageData{PageName: "WorkingGroupList", MainRole: getUserMainRole(getUserFromContext(r.Context()))})
 }
 
 func (c MainController) ListCirclesHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "circles_list", PageData{PageName: "CirclesList", IsAdmin: getUserFromContext(r.Context()).Admin})
+	renderPage(w, "circles_list", PageData{PageName: "CirclesList", MainRole: getUserMainRole(getUserFromContext(r.Context()))})
 }
 
 func (c MainController) LeaderboardHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, "activist_list", PageData{
 		PageName: "Leaderboard",
-		IsAdmin:  getUserFromContext(r.Context()).Admin,
+		MainRole: getUserMainRole(getUserFromContext(r.Context())),
 		Data: ActivistListData{
 			Title: "Leaderboard",
 			View:  "leaderboard",
@@ -470,7 +669,7 @@ func (c MainController) LeaderboardHandler(w http.ResponseWriter, r *http.Reques
 }
 
 func (c MainController) ListUsersHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "user_list", PageData{PageName: "UserList", IsAdmin: getUserFromContext(r.Context()).Admin})
+	renderPage(w, "user_list", PageData{PageName: "UserList", MainRole: getUserMainRole(getUserFromContext(r.Context()))})
 }
 
 var templates = template.Must(template.New("").Funcs(
@@ -486,7 +685,7 @@ var templates = template.Must(template.New("").Funcs(
 type PageData struct {
 	PageName string
 	Data     interface{}
-	IsAdmin  bool
+	MainRole string
 	// Filled in by renderPage.
 	StaticResourcesHash string
 }
@@ -545,7 +744,7 @@ func (c MainController) UpdateEventHandler(w http.ResponseWriter, r *http.Reques
 		Data: map[string]interface{}{
 			"Event": event,
 		},
-		IsAdmin: getUserFromContext(r.Context()).Admin,
+		MainRole: getUserMainRole(getUserFromContext(r.Context())),
 	})
 }
 
@@ -568,7 +767,7 @@ func (c MainController) UpdateConnectionHandler(w http.ResponseWriter, r *http.R
 		Data: map[string]interface{}{
 			"Event": event,
 		},
-		IsAdmin: getUserFromContext(r.Context()).Admin,
+		MainRole: getUserMainRole(getUserFromContext(r.Context())),
 	})
 }
 
@@ -1007,7 +1206,7 @@ func (c MainController) PowerHandler(w http.ResponseWriter, r *http.Request) {
 			"PowerHist": powerHist,
 			"PowerMTD":  powerMTD,
 		},
-		IsAdmin: getUserFromContext(r.Context()).Admin,
+		MainRole: getUserMainRole(getUserFromContext(r.Context())),
 	})
 }
 
