@@ -104,6 +104,11 @@ export default {
       this.$modal.show(modalName);
     },
     hideModal: function () {
+
+      // Make sure we update the main user list instance of
+      // this current user to match the roles.
+      this.users[this.userIndex].roles = this.currentUser.roles;
+
       if (this.currentModalName) {
         this.$modal.hide(this.currentModalName);
       }
@@ -192,6 +197,10 @@ export default {
       }
     },
     updateUserRoleModal: function (role) {
+      if (!!this.disableConfirmButton) {
+        return;
+      }
+
       if (!role) {
         return;
       }
@@ -230,26 +239,11 @@ export default {
 
           flashMessage((existingRoleIndex === - 1 ? "Added" : "Removed") + " the " + role + " role for current user");
 
-          // Get a copy of the Vue list instance of this user.
-          var user = this.users[this.userIndex];
-
-          if (existingRoleIndex === - 1) {
-            // We've added a new role to this user so we want
-            // to add it to thier roles in the current modal user object
-            // as well as the main user list instance.
-
-            this.currentUser.roles = [role].concat(this.currentUser.roles);
-            user.roles = this.currentUser.roles;
-          } else {
-            // We removed a role so we neeed to remove from the current
-            // modal user as well as the main user list instance.
-
-            this.currentUser.roles.splice(existingRoleIndex, 1);
-            user.roles = this.currentUser.roles;
-          }
-
-          // Update the Vue list instance of this user.
-          Vue.set(this.users, this.userIndex, user);
+          // NOTE: There is no need to manage the updated roles list here
+          // since we're using Vue's built-in v-model with the currentUser.roles array.
+          // Vue will track & manage this for us based on the checkbox clicks (selections).
+          // We just need to ensure the main user list instance of this current user is
+          // updated when we close the current model. See `hideModel` method of this Vue component.
         },
         error: (err) => {
           this.disableConfirmButton = false;
