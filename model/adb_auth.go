@@ -148,14 +148,37 @@ func GetUsers(db *sqlx.DB, options GetUserOptions) ([]ADBUser, error) {
 		return users, nil
 	}
 
-	userIDToIndex := map[int]int{}
-	for i, user := range users {
-		userIDToIndex[user.ID] = i
-	}
+	/*
+		userIDToIndex := map[int]int{}
+		for i, user := range users {
+			userIDToIndex[user.ID] = i
+		}
+	  fmt.Println(userIDToIndex);
 
+		for _, r := range usersRoles {
+	    fmt.Println(r.UserID)
+			a := userIDToIndex[r.UserID]
+	    fmt.Println(a)
+	    fmt.Println(r)
+			users[a].Roles = append(users[a].Roles, r)
+		}
+	*/
+
+	// NOTE: This is a O(N2) operation at best.
+	// Encountered weird behavior with using userIDToIndex
+	// to determine the roles for each user.
+	// Example:
+	// When userIDToIndex = [7:0]
+	// userIDToIndex[6] would evaluate to 0. However, it should
+	// NOT find any index where UserID is 6.
+	// TODO: Find a better way to get Roles for each user
+	// in this data set.
 	for _, r := range usersRoles {
-		i := userIDToIndex[r.UserID]
-		users[i].Roles = append(users[i].Roles, r)
+		for i, user := range users {
+			if r.UserID == user.ID {
+				users[i].Roles = append(users[i].Roles, r)
+			}
+		}
 	}
 
 	return users, nil
@@ -368,53 +391,53 @@ func RemoveUser(db *sqlx.DB, userID int) (int, error) {
 }
 
 func CreateUserRole(db *sqlx.DB, userRole UserRole) (int, error) {
-  if userRole.UserID == 0 {
-    return 0, errors.New("Invalid User ID")
-  }
+	if userRole.UserID == 0 {
+		return 0, errors.New("Invalid User ID")
+	}
 
-  if userRole.Role == "" {
-    return userRole.UserID, errors.New("Role cannot be empty")
-  }
+	if userRole.Role == "" {
+		return userRole.UserID, errors.New("Role cannot be empty")
+	}
 
-  _, err := db.Exec(`
+	_, err := db.Exec(`
 INSERT INTO users_roles (user_id, role)
 VALUES (?, ?)
 `, userRole.UserID, userRole.Role)
 
-  if err != nil {
-    return userRole.UserID, errors.Wrapf(err, "Could not add User Role for User %d", userRole.UserID)
-  }
+	if err != nil {
+		return userRole.UserID, errors.Wrapf(err, "Could not add User Role for User %d", userRole.UserID)
+	}
 
-  return userRole.UserID, nil
+	return userRole.UserID, nil
 }
 
 func RemoveUserRole(db *sqlx.DB, userRole UserRole) (int, error) {
-  if (userRole.UserID == 0) {
-    return 0, errors.New("Invalid User ID")
-  }
+	if userRole.UserID == 0 {
+		return 0, errors.New("Invalid User ID")
+	}
 
-  tx, err := db.Beginx()
+	tx, err := db.Beginx()
 
-  if err != nil {
-    return userRole.UserID, errors.Wrapf(err, "Could not start transaction for User %d", userRole.UserID)
-  }
+	if err != nil {
+		return userRole.UserID, errors.Wrapf(err, "Could not start transaction for User %d", userRole.UserID)
+	}
 
-  query := `
+	query := `
 DELETE FROM users_roles
 WHERE user_id = ? AND role = ?
 `
 
-  _, err = tx.Exec(query, userRole.UserID, userRole.Role)
+	_, err = tx.Exec(query, userRole.UserID, userRole.Role)
 
-  if err != nil {
-    tx.Rollback()
-    return userRole.UserID, errors.Wrapf(err, "Failed to delete User %d", userRole.UserID)
-  }
+	if err != nil {
+		tx.Rollback()
+		return userRole.UserID, errors.Wrapf(err, "Failed to delete User %d", userRole.UserID)
+	}
 
-  if err := tx.Commit(); err != nil {
-    tx.Rollback()
-    return userRole.UserID, errors.Wrapf(err, "Failed to commit delete transaction. Transaction rolled back for User %d", userRole.UserID)
-  }
+	if err := tx.Commit(); err != nil {
+		tx.Rollback()
+		return userRole.UserID, errors.Wrapf(err, "Failed to commit delete transaction. Transaction rolled back for User %d", userRole.UserID)
+	}
 
-  return userRole.UserID, nil
+	return userRole.UserID, nil
 }
