@@ -18,7 +18,7 @@
           <td>{{user.email}}</td>
           <td>{{user.admin}}</td>
           <td>{{user.disabled}}</td>
-          <td>{{user.roles.join(', ')}}</td>
+          <td>{{user.roles && user.roles.length ? user.roles.join(', ') : ''}}</td>
         </tr>
       </tbody>
     </table>
