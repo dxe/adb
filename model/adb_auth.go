@@ -62,7 +62,7 @@ var DevTestUser = ADBUser{
 	ID:       1,
 	Email:    "test@test.com",
 	Disabled: false,
-  Roles: []UserRole{{UserID: 1, Role: "admin"}},
+	Roles:    []UserRole{{UserID: 1, Role: "admin"}},
 }
 
 type UserRole struct {
@@ -148,36 +148,16 @@ func GetUsers(db *sqlx.DB, options GetUserOptions) ([]ADBUser, error) {
 		return users, nil
 	}
 
-	/*
-		userIDToIndex := map[int]int{}
-		for i, user := range users {
-			userIDToIndex[user.ID] = i
-		}
-	  fmt.Println(userIDToIndex);
+	userIDToIndex := map[int]int{}
+	for i, user := range users {
+		userIDToIndex[user.ID] = i
+	}
 
-		for _, r := range usersRoles {
-	    fmt.Println(r.UserID)
-			a := userIDToIndex[r.UserID]
-	    fmt.Println(a)
-	    fmt.Println(r)
-			users[a].Roles = append(users[a].Roles, r)
-		}
-	*/
-
-	// NOTE: This is a O(N2) operation at best.
-	// Encountered weird behavior with using userIDToIndex
-	// to determine the roles for each user.
-	// Example:
-	// When userIDToIndex = [7:0]
-	// userIDToIndex[6] would evaluate to 0. However, it should
-	// NOT find any index where UserID is 6.
-	// TODO: Find a better way to get Roles for each user
-	// in this data set.
 	for _, r := range usersRoles {
-		for i, user := range users {
-			if r.UserID == user.ID {
-				users[i].Roles = append(users[i].Roles, r)
-			}
+		a, ok := userIDToIndex[r.UserID]
+
+		if ok {
+			users[a].Roles = append(users[a].Roles, r)
 		}
 	}
 

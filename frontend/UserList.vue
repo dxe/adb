@@ -18,7 +18,7 @@
           <td>{{user.email}}</td>
           <td>{{user.admin}}</td>
           <td>{{user.disabled}}</td>
-          <td>{{user.roles && user.roles.length ? user.roles.join(', ') : ''}}</td>
+          <td>{{ (user.roles || []).join(', ')}}</td>
         </tr>
       </tbody>
     </table>
@@ -197,7 +197,7 @@ export default {
       }
     },
     updateUserRoleModal: function (role) {
-      if (!!this.disableConfirmButton) {
+      if (this.disableConfirmButton) {
         return;
       }
 
@@ -207,20 +207,14 @@ export default {
 
       this.disableConfirmButton = true;
 
-      if (!this.currentUser.roles || !this.currentUser.roles.length) {
+      if (!this.currentUser.roles) {
         this.currentUser.roles = [];
       }
 
-      var existingRoleIndex = - 1;
-      for (var i = 0; i < this.currentUser.roles.length; i++) {
-        if (this.currentUser.roles[i] === role) {
-          existingRoleIndex = i;
-          break;
-        }
-      }
+      const existingRole = this.currentUser.roles.includes(role);
 
       $.ajax({
-        url: existingRoleIndex === - 1 ? "/users-roles/add" : "/users-roles/remove",
+        url: existingRole ? "/users-roles/remove" : "/users-roles/add",
         method: "POST",
         contentType: "application/json",
         data: JSON.stringify({
@@ -237,7 +231,7 @@ export default {
             return;
           }
 
-          flashMessage((existingRoleIndex === - 1 ? "Added" : "Removed") + " the " + role + " role for current user");
+          flashMessage((existingRole ? "Removed" : "Added") + " the " + role + " role for " + this.currentUser.email);
 
           // NOTE: There is no need to manage the updated roles list here
           // since we're using Vue's built-in v-model with the currentUser.roles array.

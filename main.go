@@ -290,25 +290,16 @@ func (c MainController) authAdminMiddleware(h http.Handler) http.Handler {
 }
 
 func userIsAllowed(roles []string, user model.ADBUser) bool {
-	if len(roles) == 0 {
-		return false
-	}
-
-	if len(user.Roles) == 0 {
-		return false
-	}
-
-	var allowed = false
 
 	for i := 0; i < len(roles); i++ {
 		for _, r := range user.Roles {
 			if r.Role == roles[i] {
-				allowed = true
+				return true
 			}
 		}
 	}
 
-	return allowed
+	return false
 }
 
 func getUserMainRole(user model.ADBUser) string {
@@ -530,19 +521,19 @@ func (c MainController) TokenSignInHandler(w http.ResponseWriter, r *http.Reques
 }
 
 func (c MainController) LoginHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "login", PageData{PageName: "Login"})
+	renderPage(w, r, "login", PageData{PageName: "Login"})
 }
 
 func (c MainController) ForbiddenHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "403", PageData{PageName: "403 - Forbidden", MainRole: getUserMainRole(getUserFromContext(r.Context()))})
+	renderPage(w, r, "403", PageData{PageName: "403 - Forbidden"})
 }
 
 func (c MainController) ListEventsHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "event_list", PageData{PageName: "EventList", MainRole: getUserMainRole(getUserFromContext(r.Context()))})
+	renderPage(w, r, "event_list", PageData{PageName: "EventList"})
 }
 
 func (c MainController) ListConnectionsHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "connection_list", PageData{PageName: "ConnectionsList", MainRole: getUserMainRole(getUserFromContext(r.Context()))})
+	renderPage(w, r, "connection_list", PageData{PageName: "ConnectionsList"})
 }
 
 type ActivistListData struct {
@@ -551,9 +542,8 @@ type ActivistListData struct {
 }
 
 func (c MainController) ListActivistsHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "activist_list", PageData{
+	renderPage(w, r, "activist_list", PageData{
 		PageName: "ActivistList",
-		MainRole: getUserMainRole(getUserFromContext(r.Context())),
 		Data: ActivistListData{
 			Title: "All Activists",
 			View:  "all_activists",
@@ -562,9 +552,8 @@ func (c MainController) ListActivistsHandler(w http.ResponseWriter, r *http.Requ
 }
 
 func (c MainController) ListActivistsPoolHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "activist_list", PageData{
+	renderPage(w, r, "activist_list", PageData{
 		PageName: "ActivistPool",
-		MainRole: getUserMainRole(getUserFromContext(r.Context())),
 		Data: ActivistListData{
 			Title: "Recruitment Connections",
 			View:  "activist_pool",
@@ -573,9 +562,8 @@ func (c MainController) ListActivistsPoolHandler(w http.ResponseWriter, r *http.
 }
 
 func (c MainController) ListActivistsRecruitmentHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "activist_list", PageData{
+	renderPage(w, r, "activist_list", PageData{
 		PageName: "ActivistRecruitment",
-		MainRole: getUserMainRole(getUserFromContext(r.Context())),
 		Data: ActivistListData{
 			Title: "Activist Recruitment",
 			View:  "activist_recruitment",
@@ -584,9 +572,8 @@ func (c MainController) ListActivistsRecruitmentHandler(w http.ResponseWriter, r
 }
 
 func (c MainController) ListActivistsActionTeamHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "activist_list", PageData{
+	renderPage(w, r, "activist_list", PageData{
 		PageName: "ActivistActionTeam",
-		MainRole: getUserMainRole(getUserFromContext(r.Context())),
 		Data: ActivistListData{
 			Title: "Action Team",
 			View:  "action_team",
@@ -595,9 +582,8 @@ func (c MainController) ListActivistsActionTeamHandler(w http.ResponseWriter, r 
 }
 
 func (c MainController) ListActivistsDevelopmentHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "activist_list", PageData{
+	renderPage(w, r, "activist_list", PageData{
 		PageName: "OrganizerDevelopment",
-		MainRole: getUserMainRole(getUserFromContext(r.Context())),
 		Data: ActivistListData{
 			Title: "Organizer Development",
 			View:  "development",
@@ -606,9 +592,8 @@ func (c MainController) ListActivistsDevelopmentHandler(w http.ResponseWriter, r
 }
 
 func (c MainController) ListChapterMemberDevelopmentHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "activist_list", PageData{
+	renderPage(w, r, "activist_list", PageData{
 		PageName: "ChapterMemberDevelopment",
-		MainRole: getUserMainRole(getUserFromContext(r.Context())),
 		Data: ActivistListData{
 			Title: "Chapter Members",
 			View:  "chapter_member_development",
@@ -617,9 +602,8 @@ func (c MainController) ListChapterMemberDevelopmentHandler(w http.ResponseWrite
 }
 
 func (c MainController) ListOrganizerProspectsHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "activist_list", PageData{
+	renderPage(w, r, "activist_list", PageData{
 		PageName: "OrganizerProspects",
-		MainRole: getUserMainRole(getUserFromContext(r.Context())),
 		Data: ActivistListData{
 			Title: "Organizer Prospects",
 			View:  "organizer_prospects",
@@ -628,9 +612,8 @@ func (c MainController) ListOrganizerProspectsHandler(w http.ResponseWriter, r *
 }
 
 func (c MainController) ListChapterMemberProspectsHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "activist_list", PageData{
+	renderPage(w, r, "activist_list", PageData{
 		PageName: "ChapterMemberProspects",
-		MainRole: getUserMainRole(getUserFromContext(r.Context())),
 		Data: ActivistListData{
 			Title: "Chapter Member Prospects",
 			View:  "chapter_member_prospects",
@@ -639,9 +622,8 @@ func (c MainController) ListChapterMemberProspectsHandler(w http.ResponseWriter,
 }
 
 func (c MainController) ListCircleMemberProspectsHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "activist_list", PageData{
+	renderPage(w, r, "activist_list", PageData{
 		PageName: "CircleMemberProspects",
-		MainRole: getUserMainRole(getUserFromContext(r.Context())),
 		Data: ActivistListData{
 			Title: "Circle Member Prospects",
 			View:  "circle_member_prospects",
@@ -650,17 +632,16 @@ func (c MainController) ListCircleMemberProspectsHandler(w http.ResponseWriter, 
 }
 
 func (c MainController) ListWorkingGroupsHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "working_group_list", PageData{PageName: "WorkingGroupList", MainRole: getUserMainRole(getUserFromContext(r.Context()))})
+	renderPage(w, r, "working_group_list", PageData{PageName: "WorkingGroupList"})
 }
 
 func (c MainController) ListCirclesHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "circles_list", PageData{PageName: "CirclesList", MainRole: getUserMainRole(getUserFromContext(r.Context()))})
+	renderPage(w, r, "circles_list", PageData{PageName: "CirclesList"})
 }
 
 func (c MainController) LeaderboardHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "activist_list", PageData{
+	renderPage(w, r, "activist_list", PageData{
 		PageName: "Leaderboard",
-		MainRole: getUserMainRole(getUserFromContext(r.Context())),
 		Data: ActivistListData{
 			Title: "Leaderboard",
 			View:  "leaderboard",
@@ -669,7 +650,7 @@ func (c MainController) LeaderboardHandler(w http.ResponseWriter, r *http.Reques
 }
 
 func (c MainController) ListUsersHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, "user_list", PageData{PageName: "UserList", MainRole: getUserMainRole(getUserFromContext(r.Context()))})
+	renderPage(w, r, "user_list", PageData{PageName: "UserList"})
 }
 
 var templates = template.Must(template.New("").Funcs(
@@ -692,8 +673,9 @@ type PageData struct {
 
 // Render a page. All templates that load a header expect a PageData
 // object.
-func renderPage(w io.Writer, name string, pageData PageData) {
+func renderPage(w io.Writer, r *http.Request, name string, pageData PageData) {
 	pageData.StaticResourcesHash = config.StaticResourcesHash()
+	pageData.MainRole = getUserMainRole(getUserFromContext(r.Context()))
 	renderTemplate(w, name, pageData)
 }
 
@@ -739,12 +721,11 @@ func (c MainController) UpdateEventHandler(w http.ResponseWriter, r *http.Reques
 		}
 	}
 
-	renderPage(w, "event_new", PageData{
+	renderPage(w, r, "event_new", PageData{
 		PageName: "NewEvent",
 		Data: map[string]interface{}{
 			"Event": event,
 		},
-		MainRole: getUserMainRole(getUserFromContext(r.Context())),
 	})
 }
 
@@ -762,12 +743,11 @@ func (c MainController) UpdateConnectionHandler(w http.ResponseWriter, r *http.R
 		}
 	}
 
-	renderPage(w, "connection_new", PageData{
+	renderPage(w, r, "connection_new", PageData{
 		PageName: "NewConnection",
 		Data: map[string]interface{}{
 			"Event": event,
 		},
-		MainRole: getUserMainRole(getUserFromContext(r.Context())),
 	})
 }
 
@@ -1199,14 +1179,13 @@ func (c MainController) PowerHandler(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	renderPage(w, "power", PageData{
+	renderPage(w, r, "power", PageData{
 		PageName: "Power",
 		Data: map[string]interface{}{
 			"Power":     power,
 			"PowerHist": powerHist,
 			"PowerMTD":  powerMTD,
 		},
-		MainRole: getUserMainRole(getUserFromContext(r.Context())),
 	})
 }
 
