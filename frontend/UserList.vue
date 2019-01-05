@@ -7,7 +7,6 @@
         <tr>
           <th></th>
           <th>Email</th>
-          <th>Admin</th>
           <th>Disabled</th>
           <th>Roles</th>
         </tr>
@@ -16,7 +15,6 @@
         <tr v-for="(user, index) in users">
           <td><button class="btn btn-default glyphicon glyphicon-pencil" @click="showModal('edit-user-modal', user, index)"></button></td>
           <td>{{user.email}}</td>
-          <td>{{user.admin}}</td>
           <td>{{user.disabled}}</td>
           <td>{{ (user.roles || []).join(', ')}}</td>
         </tr>
@@ -38,7 +36,6 @@
           <div class="modal-body">
             <form action="" id="editUserForm">
               <p><label for="email">Email: </label><input class="form-control" type="text" v-model.trim="currentUser.email" id="email" /></p>
-              <p><label for="admin">Admin: </label><input class="form-control" type="checkbox" v-model="currentUser.admin" id="admin" /></p>
               <p><label for="disabled">Disabled: </label><input class="form-control" type="checkbox" v-model="currentUser.disabled" id="disabled" /></p>
             </form>
 
