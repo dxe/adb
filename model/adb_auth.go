@@ -6,7 +6,6 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"encoding/json"
-	"fmt"
 	"io"
 )
 
@@ -21,13 +20,6 @@ SELECT
 FROM adb_users
 `
 
-const selectUsersRolesBaseQuery string = `
-SELECT
-  ur.user_id,
-  ur.role
-FROM users_roles ur
-`
-
 /** Type Definitions */
 
 type ADBUser struct {
@@ -35,15 +27,13 @@ type ADBUser struct {
 	Email    string `db:"email"`
 	Admin    bool   `db:"admin"`
 	Disabled bool   `db:"disabled"`
-	Roles    []UserRole
 }
 
 type UserJSON struct {
-	ID       int      `json:"id"`
-	Email    string   `json:"email"`
-	Admin    bool     `json:"admin"`
-	Disabled bool     `json:"disabled"`
-	Roles    []string `json:"roles"`
+	ID       int    `json:"id"`
+	Email    string `json:"email"`
+	Admin    bool   `json:"admin"`
+	Disabled bool   `json:"disabled"`
 }
 
 type GetUserOptions struct {
@@ -53,26 +43,11 @@ type GetUserOptions struct {
 	Disabled bool
 }
 
-type GetUsersRolesOptions struct {
-	Users []ADBUser
-	Roles []string
-}
-
 var DevTestUser = ADBUser{
 	ID:       1,
 	Email:    "test@test.com",
+	Admin:    true,
 	Disabled: false,
-	Roles:    []UserRole{{UserID: 1, Role: "admin"}},
-}
-
-type UserRole struct {
-	UserID int    `db:"user_id"`
-	Role   string `db:"role"`
-}
-
-type UserRoleJSON struct {
-	UserID int    `json:"user_id"`
-	Role   string `json:"role"`
 }
 
 /** Functions and Methods */
@@ -124,44 +99,7 @@ func getUsersJSON(db *sqlx.DB, options GetUserOptions) ([]UserJSON, error) {
 }
 
 func GetUsers(db *sqlx.DB, options GetUserOptions) ([]ADBUser, error) {
-	users, err := getUsers(db, options)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if len(users) == 0 {
-		return users, nil
-	}
-
-	usersRolesOptions := GetUsersRolesOptions{
-		Users: users,
-	}
-
-	usersRoles, err := getUsersRoles(db, usersRolesOptions)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if len(usersRoles) == 0 {
-		return users, nil
-	}
-
-	userIDToIndex := map[int]int{}
-	for i, user := range users {
-		userIDToIndex[user.ID] = i
-	}
-
-	for _, r := range usersRoles {
-		a, ok := userIDToIndex[r.UserID]
-
-		if ok {
-			users[a].Roles = append(users[a].Roles, r)
-		}
-	}
-
-	return users, nil
+	return getUsers(db, options)
 }
 
 func getUsers(db *sqlx.DB, options GetUserOptions) ([]ADBUser, error) {
@@ -184,60 +122,16 @@ func getUsers(db *sqlx.DB, options GetUserOptions) ([]ADBUser, error) {
 	return users, nil
 }
 
-func getUsersRoles(db *sqlx.DB, options GetUsersRolesOptions) ([]UserRole, error) {
-	query := selectUsersRolesBaseQuery
-	/*
-	  var queryArgs []interface{}
-	  var whereClause []string
-
-	  if len(options.Users) != 0 {
-	    var userIds = []int{4, 6, 7}
-	    //for _, user := range options.Users {
-	    //  userIds = append(userIds, strconv.Itoa(user.ID))
-	    //}
-	    whereClause = append(whereClause, "ur.user_id IN (?)")
-	    queryArgs = append(queryArgs, userIds)
-	  }
-
-	  if len(options.Roles) != 0 {
-	    whereClause = append(whereClause, "ur.role IN (?)")
-	    queryArgs = append(queryArgs, options.Roles)
-	  }
-
-	  if len(whereClause) != 0 {
-	    query += ` WHERE ` + strings.Join(whereClause, " AND ")
-	  }
-	*/
-	fmt.Println(query)
-	var userRoles []UserRole
-	err := db.Select(&userRoles, query)
-
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to select UserRoles")
-	}
-
-	if len(userRoles) == 0 {
-		return nil, nil
-	}
-
-	return userRoles, nil
-}
-
 func buildUserJSONArray(users []ADBUser) []UserJSON {
 	var usersJSON []UserJSON
 
 	for _, u := range users {
-		var roles []string
-		for _, userRole := range u.Roles {
-			roles = append(roles, userRole.Role)
-		}
 
 		usersJSON = append(usersJSON, UserJSON{
 			ID:       u.ID,
 			Email:    u.Email,
 			Admin:    u.Admin,
 			Disabled: u.Disabled,
-			Roles:    roles,
 		})
 	}
 
@@ -368,44 +262,4 @@ func RemoveUser(db *sqlx.DB, userID int) (int, error) {
 	}
 
 	return userID, nil
-}
-
-func CreateUserRole(db *sqlx.DB, userRole UserRole) (int, error) {
-	if userRole.UserID == 0 {
-		return 0, errors.New("Invalid User ID")
-	}
-
-	if userRole.Role == "" {
-		return userRole.UserID, errors.New("Role cannot be empty")
-	}
-
-	_, err := db.Exec(`
-INSERT INTO users_roles (user_id, role)
-VALUES (?, ?)
-`, userRole.UserID, userRole.Role)
-
-	if err != nil {
-		return userRole.UserID, errors.Wrapf(err, "Could not add User Role for User %d", userRole.UserID)
-	}
-
-	return userRole.UserID, nil
-}
-
-func RemoveUserRole(db *sqlx.DB, userRole UserRole) (int, error) {
-	if userRole.UserID == 0 {
-		return 0, errors.New("Invalid User ID")
-	}
-
-	query := `
-DELETE FROM users_roles
-WHERE user_id = ? AND role = ?
-`
-
-	_, err := db.Exec(query, userRole.UserID, userRole.Role)
-
-	if err != nil {
-		return userRole.UserID, errors.Wrapf(err, "Failed to delete User %d", userRole.UserID)
-	}
-
-	return userRole.UserID, nil
 }
