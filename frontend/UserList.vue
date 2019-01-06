@@ -39,22 +39,24 @@
               <p><label for="disabled">Disabled: </label><input class="form-control" type="checkbox" v-model="currentUser.disabled" id="disabled" /></p>
             </form>
 
-            <p style="margin-top: 20px;"><h3 class="text-center">Roles</h3></p>
-            <form action="" id="editUserRolesForm" v-if="currentUser.id">
+            <div v-if="currentUser.id">
+              <p style="margin-top: 20px;"><h3 class="text-center">Roles</h3></p>
+              <form action="" id="editUserRolesForm">
 
-              <p>
-                <label for="admin_cb">Admin</label>
-                <input class="form-control" type="checkbox" name="admin_cb" id="admin_cb" value="admin" @click="updateUserRoleModal('admin')" v-model="currentUserRoleSelections">
-              </p>
-              <p>
-                <label for="org_cb">Organizer</label>
-                <input class="form-control" type="checkbox" name="org_cb" id="org_cb" value="organizer" @click="updateUserRoleModal('organizer')" v-model="currentUserRoleSelections">
-              </p>
-              <p>
-                <label for="att_cb">Attendance</label>
-                <input class="form-control" type="checkbox" name="att_cb" id="att_cb" value="attendance" @click="updateUserRoleModal('attendance')" v-model="currentUserRoleSelections">
-              </p>
-            </form>
+                <p>
+                  <label for="admin_cb">Admin</label>
+                  <input class="form-control" type="checkbox" name="admin_cb" id="admin_cb" value="admin" @click="updateUserRoleModal('admin')" v-model="currentUserRoleSelections">
+                </p>
+                <p>
+                  <label for="org_cb">Organizer</label>
+                  <input class="form-control" type="checkbox" name="org_cb" id="org_cb" value="organizer" @click="updateUserRoleModal('organizer')" v-model="currentUserRoleSelections">
+                </p>
+                <p>
+                  <label for="att_cb">Attendance</label>
+                  <input class="form-control" type="checkbox" name="att_cb" id="att_cb" value="attendance" @click="updateUserRoleModal('attendance')" v-model="currentUserRoleSelections">
+                </p>
+              </form>
+            </div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" @click="hideModal">Close</button>
@@ -104,7 +106,10 @@ export default {
 
       // Make sure we update the main user list instance of
       // this current user to match the roles.
-      this.users[this.userIndex].roles = this.currentUser.roles;
+      // Only when we're not creating a new User.
+      if (this.userIndex !== -1) {
+        this.users[this.userIndex].roles = this.currentUser.roles;
+      }
 
       if (this.currentModalName) {
         this.$modal.hide(this.currentModalName);
