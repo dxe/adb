@@ -44,15 +44,15 @@
 
               <p>
                 <label for="admin_cb">Admin</label>
-                <input class="form-control" type="checkbox" name="admin_cb" id="admin_cb" value="admin" @click="updateUserRoleModal('admin')" v-model="currentUser.roles">
+                <input class="form-control" type="checkbox" name="admin_cb" id="admin_cb" value="admin" @click="updateUserRoleModal('admin')" v-model="currentUserRoleSelections">
               </p>
               <p>
                 <label for="org_cb">Organizer</label>
-                <input class="form-control" type="checkbox" name="org_cb" id="org_cb" value="organizer" @click="updateUserRoleModal('organizer')" v-model="currentUser.roles">
+                <input class="form-control" type="checkbox" name="org_cb" id="org_cb" value="organizer" @click="updateUserRoleModal('organizer')" v-model="currentUserRoleSelections">
               </p>
               <p>
                 <label for="att_cb">Attendance</label>
-                <input class="form-control" type="checkbox" name="att_cb" id="att_cb" value="attendance" @click="updateUserRoleModal('attendance')" v-model="currentUser.roles">
+                <input class="form-control" type="checkbox" name="att_cb" id="att_cb" value="attendance" @click="updateUserRoleModal('attendance')" v-model="currentUserRoleSelections">
               </p>
             </form>
           </div>
@@ -112,6 +112,7 @@ export default {
       this.currentModalName = '';
       this.userIndex = -1;
       this.currentUser = {};
+      this.currentUserRoleSelections = [];
     },
     confirmEditUserModal: function () {
       // Disable the save button when the user clicks it so they don't
@@ -160,6 +161,10 @@ export default {
       $(document.body).addClass('noscroll');
       this.disableConfirmButton = false;
 
+      // Track current user roles selections separate from currentUser.roles,
+      // so we can compare selections when deciding if we need to remove or add a role
+      // as we're making selections in the modal edit window.
+      this.currentUserRoleSelections = $.extend([], this.currentUser.roles);
     },
     modalClosed: function () {
       // Allow body to scroll after modal is closed.
@@ -191,7 +196,9 @@ export default {
         email: "",
         order: AscOrder,
         limit: 40
-      }
+      };
+
+      this.currentUserRoleSelections = [];
     },
     updateUserRoleModal: function (role) {
       if (this.disableConfirmButton) {
@@ -202,15 +209,15 @@ export default {
         return;
       }
 
-      this.disableConfirmButton = true;
-
       if (!this.currentUser.roles) {
         this.currentUser.roles = [];
       }
 
-      // If the specified Role is no longer in the Current User's role list,
+      this.disableConfirmButton = true;
+
+      // If the specified Role already exists in the Current User's role list,
       // then we assume the role should be removed.
-      const existingRole = !this.currentUser.roles.includes(role);
+      const existingRole = this.currentUser.roles.includes(role);
 
       $.ajax({
         url: existingRole ? "/users-roles/remove" : "/users-roles/add",
@@ -226,23 +233,21 @@ export default {
           var parsed = JSON.parse(data);
 
           if (parsed.status === "error") {
-            flashMessage("Error: ", parsed.message, true);
+            this.currentUserRoleSelections = $.extend([], this.currentUser.roles);
+            flashMessage("And error occurred while updating this User's Role. Reverting Role Selections back to original", parsed.message, true);
             return;
           }
 
           flashMessage((existingRole ? "Removed" : "Added") + " the " + role + " role for " + this.currentUser.email);
 
-          // NOTE: There is no need to manage the updated roles list here
-          // since we're using Vue's built-in v-model with the currentUser.roles array.
-          // Vue will track & manage this for us based on the checkbox clicks (selections).
-          // We just need to ensure the main user list instance of this current user is
-          // updated when we close the current model. See `hideModel` method of this Vue component.
+          // Sync the currentUser.roles with the current modal selections.
+          this.currentUser.roles = this.currentUserRoleSelections;
         },
         error: (err) => {
           this.disableConfirmButton = false;
-
+          this.currentUserRoleSelections = $.extend([], this.currentUser.roles);
           console.warn(err.responseText);
-          flashMessage("Server error: ", err.responseText, true);
+          flashMessage("Server error. Reverting Role Selections back to original: ", err.responseText, true);
         }
       })
     }
@@ -258,7 +263,8 @@ export default {
         email: "",
         order: AscOrder,
         limit: 40
-      }
+      },
+      currentUserRoleSelections: []
     };
   },
   created() {
