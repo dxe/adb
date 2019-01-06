@@ -28,6 +28,7 @@ func WipeDatabase(db *sqlx.DB) {
 	db.MustExec(`DROP TABLE IF EXISTS working_group_members`)
 	db.MustExec(`DROP TABLE IF EXISTS circles`)
 	db.MustExec(`DROP TABLE IF EXISTS circle_members`)
+	db.MustExec(`DROP TABLE IF EXISTS users_roles`)
 
 	db.MustExec(`
 CREATE TABLE activists (
@@ -168,6 +169,18 @@ CREATE TABLE circle_members (
   UNIQUE (circle_id, activist_id),
   INDEX (activist_id)
 )
+`)
+
+	db.MustExec(`
+CREATE TABLE users_roles (
+  user_id INT NOT NULL,
+  role VARCHAR(45) NOT NULL,
+  PRIMARY KEY (user_id, role),
+  CONSTRAINT user_id
+    FOREIGN KEY (user_id)
+    REFERENCES adb_users (id)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION);
 `)
 
 }

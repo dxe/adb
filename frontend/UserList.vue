@@ -7,16 +7,16 @@
         <tr>
           <th></th>
           <th>Email</th>
-          <th>Admin</th>
           <th>Disabled</th>
+          <th>Roles</th>
         </tr>
       </thead>
       <tbody id="user-list-body">
         <tr v-for="(user, index) in users">
           <td><button class="btn btn-default glyphicon glyphicon-pencil" @click="showModal('edit-user-modal', user, index)"></button></td>
           <td>{{user.email}}</td>
-          <td>{{user.admin}}</td>
           <td>{{user.disabled}}</td>
+          <td>{{ (user.roles || []).join(', ')}}</td>
         </tr>
       </tbody>
     </table>
@@ -36,8 +36,24 @@
           <div class="modal-body">
             <form action="" id="editUserForm">
               <p><label for="email">Email: </label><input class="form-control" type="text" v-model.trim="currentUser.email" id="email" /></p>
-              <p><label for="admin">Admin: </label><input class="form-control" type="checkbox" v-model="currentUser.admin" id="admin" /></p>
               <p><label for="disabled">Disabled: </label><input class="form-control" type="checkbox" v-model="currentUser.disabled" id="disabled" /></p>
+            </form>
+
+            <p style="margin-top: 20px;"><h3 class="text-center">Roles</h3></p>
+            <form action="" id="editUserRolesForm" v-if="currentUser.id">
+
+              <p>
+                <label for="admin_cb">Admin</label>
+                <input class="form-control" type="checkbox" name="admin_cb" id="admin_cb" value="admin" @click="updateUserRoleModal('admin')" v-model="currentUser.roles">
+              </p>
+              <p>
+                <label for="org_cb">Organizer</label>
+                <input class="form-control" type="checkbox" name="org_cb" id="org_cb" value="organizer" @click="updateUserRoleModal('organizer')" v-model="currentUser.roles">
+              </p>
+              <p>
+                <label for="att_cb">Attendance</label>
+                <input class="form-control" type="checkbox" name="att_cb" id="att_cb" value="attendance" @click="updateUserRoleModal('attendance')" v-model="currentUser.roles">
+              </p>
             </form>
           </div>
           <div class="modal-footer">
@@ -77,7 +93,7 @@ export default {
       // Make shallow copy of selected activist to prevent persisting unsaved
       // edits at the view layer when closing modal
       this.currentUser = $.extend({}, user);
-      
+
       // Track current user index, or default to first in list
       this.userIndex = index === 0 ? 0 : index || -1;
       
@@ -85,6 +101,11 @@ export default {
       this.$modal.show(modalName);
     },
     hideModal: function () {
+
+      // Make sure we update the main user list instance of
+      // this current user to match the roles.
+      this.users[this.userIndex].roles = this.currentUser.roles;
+
       if (this.currentModalName) {
         this.$modal.hide(this.currentModalName);
       }
@@ -113,7 +134,7 @@ export default {
           }
           
           flashMessage(this.currentUser.email + " saved");
-          
+
           if (this.userIndex === -1) {
             // We're getting a new user, insert them at the top.
             this.users = [parsed.user].concat(this.users);
@@ -172,6 +193,59 @@ export default {
         limit: 40
       }
     },
+    updateUserRoleModal: function (role) {
+      if (this.disableConfirmButton) {
+        return;
+      }
+
+      if (!role) {
+        return;
+      }
+
+      this.disableConfirmButton = true;
+
+      if (!this.currentUser.roles) {
+        this.currentUser.roles = [];
+      }
+
+      // If the specified Role is no longer in the Current User's role list,
+      // then we assume the role should be removed.
+      const existingRole = !this.currentUser.roles.includes(role);
+
+      $.ajax({
+        url: existingRole ? "/users-roles/remove" : "/users-roles/add",
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({
+          user_id: this.currentUser.id,
+          role: role
+        }),
+        success: (data) => {
+          this.disableConfirmButton = false;
+
+          var parsed = JSON.parse(data);
+
+          if (parsed.status === "error") {
+            flashMessage("Error: ", parsed.message, true);
+            return;
+          }
+
+          flashMessage((existingRole ? "Removed" : "Added") + " the " + role + " role for " + this.currentUser.email);
+
+          // NOTE: There is no need to manage the updated roles list here
+          // since we're using Vue's built-in v-model with the currentUser.roles array.
+          // Vue will track & manage this for us based on the checkbox clicks (selections).
+          // We just need to ensure the main user list instance of this current user is
+          // updated when we close the current model. See `hideModel` method of this Vue component.
+        },
+        error: (err) => {
+          this.disableConfirmButton = false;
+
+          console.warn(err.responseText);
+          flashMessage("Server error: ", err.responseText, true);
+        }
+      })
+    }
   },
   data() {
     return {
