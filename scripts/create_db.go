@@ -90,6 +90,10 @@ INSERT INTO adb_users (id, email, admin, disabled) VALUES
   (4, 'samer@directactioneverywhere.com', 1, 0),
   (5, 'jake@directactioneverywhere.com', 1, 0),
   (6, '%s', 1, 0);
+
+INSERT INTO users_roles (user_id, role)
+SELECT id, 'admin' FROM adb_users WHERE id IN(1, 2, 3, 4, 5, 6);
+
 `, createEventsDevDB(), devEmail)
 	if !noFakeData {
 		// Insert sample data
