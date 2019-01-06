@@ -88,8 +88,13 @@
 </template>
 
 <script>
-import * as Awesomplete from "external/awesomplete";
+import * as Awesomplete from "awesomplete";
 import { flashMessage, setFlashMessageSuccessCookie } from "flash_message";
+
+// Like Awesomplete.FILTER_CONTAINS, but internal whitespace matches anything.
+function nameFilter(text, input) {
+  return RegExp(Awesomplete.$.regExpEscape(input.trim()).replace(/ +/g, ".*"), "i").test(text);
+}
 
 export default {
   props: {
@@ -193,8 +198,10 @@ export default {
     this.$nextTick(() => {
       for (let row of $("#attendee-rows > input.attendee-input")) {
         new Awesomplete(row, {
+          filter: nameFilter,
           list: this.allActivists,
-          sort: false
+          sort: false,
+          tabSelect: true
         });
       }
     });
@@ -267,9 +274,17 @@ export default {
         }
       }
 
-      // If event came from selecting an autocomplete suggestion, then move focus to the next input.
+      // If event came from selecting an autocomplete suggestion,
+      // then move focus to the next input.
       if (x == "select") {
-        inputs.get(y + 1).focus();
+        // If the user selected an option with "tab", then the browser
+        // is going to advance the focus automatically. If we set focus
+        // to y+1 now, then the tab event will instead set focus to y+2.
+        // By waiting until next tick, the tab event (if any) has already
+        // been processed, and we're guaranteed to assign focus to y+1.
+        this.$nextTick(() => {
+          inputs.get(y + 1).focus();
+        });
 
         // Awesomplete fires after modifying the input element's value,
         // but before Vue has updated the attendees array. Go ahead and
