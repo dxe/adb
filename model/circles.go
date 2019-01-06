@@ -31,16 +31,16 @@ func init() {
 /** User-defined Types */
 
 type CircleGroup struct {
-	ID         int    `db:"id"`
-	Name       string `db:"name"`
-	Type       int    `db:"type"`
-	GroupEmail string `db:"group_email"`
-	Members    []CircleGroupMember
-	Visible bool `db:"visible"`
-	Description string `db:"description"`
-	MeetingTime string `db:"meeting_time"`
+	ID              int    `db:"id"`
+	Name            string `db:"name"`
+	Type            int    `db:"type"`
+	GroupEmail      string `db:"group_email"`
+	Members         []CircleGroupMember
+	Visible         bool   `db:"visible"`
+	Description     string `db:"description"`
+	MeetingTime     string `db:"meeting_time"`
 	MeetingLocation string `db:"meeting_location"`
-	Coords string `db:"coords"`
+	Coords          string `db:"coords"`
 }
 
 type CircleGroupQueryOptions struct {
@@ -57,16 +57,16 @@ type CircleGroupMember struct {
 }
 
 type CircleGroupJSON struct {
-	ID      int                      `json:"id"`
-	Name    string                   `json:"name"`
-	Type    string                   `json:"type"`
-	Email   string                   `json:"email"`
-	Members []CircleGroupMemberJSON `json:"members"`
-	Visible 		bool 		`json:"visible"`
-	Description 	string 		`json:"description"`
-	MeetingTime 	string 		`json:"meeting_time"`
-	MeetingLocation string 		`json:"meeting_location"`
-	Coords 			string 		`json:"coords"`
+	ID              int                     `json:"id"`
+	Name            string                  `json:"name"`
+	Type            string                  `json:"type"`
+	Email           string                  `json:"email"`
+	Members         []CircleGroupMemberJSON `json:"members"`
+	Visible         bool                    `json:"visible"`
+	Description     string                  `json:"description"`
+	MeetingTime     string                  `json:"meeting_time"`
+	MeetingLocation string                  `json:"meeting_location"`
+	Coords          string                  `json:"coords"`
 }
 
 type CircleGroupMemberJSON struct {
@@ -74,11 +74,11 @@ type CircleGroupMemberJSON struct {
 	Email                  string `json:"email"`
 	PointPerson            bool   `json:"point_person"`
 	NonMemberOnMailingList bool   `json:"non_member_on_mailing_list"`
-	Visible 		bool 		`json:"visible"`
-	Description 	string 		`json:"description"`
-	MeetingTime 	string 		`json:"meeting_time"`
-	MeetingLocation string 		`json:"meeting_location"`
-	Coords 			string 		`json:"coords"`
+	Visible                bool   `json:"visible"`
+	Description            string `json:"description"`
+	MeetingTime            string `json:"meeting_time"`
+	MeetingLocation        string `json:"meeting_location"`
+	Coords                 string `json:"coords"`
 }
 
 /** Functions and Methods */
@@ -200,7 +200,7 @@ func CleanCircleGroupData(db *sqlx.DB, body io.Reader) (CircleGroup, error) {
 
 	if circleGroupJSON.Type == "" {
 		circleGroupJSON.Type = "circle"
-	//	return CircleGroup{}, errors.New("Circle type can't be empty")
+		//	return CircleGroup{}, errors.New("Circle type can't be empty")
 	}
 
 	wgType, ok := CircleGroupTypeStringToInt[circleGroupJSON.Type]
@@ -228,16 +228,16 @@ func CleanCircleGroupData(db *sqlx.DB, body io.Reader) (CircleGroup, error) {
 	}
 
 	return CircleGroup{
-		ID:         circleGroupJSON.ID,
-		Name:       strings.TrimSpace(circleGroupJSON.Name),
-		Type:       wgType,
-		GroupEmail: strings.TrimSpace(circleGroupJSON.Email),
-		Members:    members,
-		Visible:	circleGroupJSON.Visible,
-		Description: circleGroupJSON.Description,
-		MeetingTime: circleGroupJSON.MeetingTime,
+		ID:              circleGroupJSON.ID,
+		Name:            strings.TrimSpace(circleGroupJSON.Name),
+		Type:            wgType,
+		GroupEmail:      strings.TrimSpace(circleGroupJSON.Email),
+		Members:         members,
+		Visible:         circleGroupJSON.Visible,
+		Description:     circleGroupJSON.Description,
+		MeetingTime:     circleGroupJSON.MeetingTime,
 		MeetingLocation: circleGroupJSON.MeetingLocation,
-		Coords: circleGroupJSON.Coords,
+		Coords:          circleGroupJSON.Coords,
 	}, nil
 }
 
@@ -332,16 +332,16 @@ func getCircleGroupsJSON(db *sqlx.DB, options CircleGroupQueryOptions) ([]Circle
 			})
 		}
 		cirsJSON = append(cirsJSON, CircleGroupJSON{
-			ID:      cir.ID,
-			Name:    cir.Name,
-			Type:    CircleGroupTypes[cir.Type],
-			Email:   cir.GroupEmail,
-			Members: cirMembers,
-			Visible: cir.Visible,
-			Description: cir.Description,
-			MeetingTime: cir.MeetingTime,
+			ID:              cir.ID,
+			Name:            cir.Name,
+			Type:            CircleGroupTypes[cir.Type],
+			Email:           cir.GroupEmail,
+			Members:         cirMembers,
+			Visible:         cir.Visible,
+			Description:     cir.Description,
+			MeetingTime:     cir.MeetingTime,
 			MeetingLocation: cir.MeetingLocation,
-			Coords: cir.Coords,
+			Coords:          cir.Coords,
 		})
 	}
 

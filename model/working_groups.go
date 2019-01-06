@@ -33,16 +33,16 @@ func init() {
 /** User-defined Types */
 
 type WorkingGroup struct {
-	ID         int    `db:"id"`
-	Name       string `db:"name"`
-	Type       int    `db:"type"`
-	GroupEmail string `db:"group_email"`
-	Members    []WorkingGroupMember
-	Visible bool `db:"visible"`
-	Description string `db:"description"`
-	MeetingTime string `db:"meeting_time"`
+	ID              int    `db:"id"`
+	Name            string `db:"name"`
+	Type            int    `db:"type"`
+	GroupEmail      string `db:"group_email"`
+	Members         []WorkingGroupMember
+	Visible         bool   `db:"visible"`
+	Description     string `db:"description"`
+	MeetingTime     string `db:"meeting_time"`
 	MeetingLocation string `db:"meeting_location"`
-	Coords string `db:"coords"`
+	Coords          string `db:"coords"`
 }
 
 type WorkingGroupQueryOptions struct {
@@ -59,16 +59,16 @@ type WorkingGroupMember struct {
 }
 
 type WorkingGroupJSON struct {
-	ID      int                      `json:"id"`
-	Name    string                   `json:"name"`
-	Type    string                   `json:"type"`
-	Email   string                   `json:"email"`
-	Members []WorkingGroupMemberJSON `json:"members"`
-	Visible 		bool 		`json:"visible"`
-	Description 	string 		`json:"description"`
-	MeetingTime 	string 		`json:"meeting_time"`
-	MeetingLocation string 		`json:"meeting_location"`
-	Coords 			string 		`json:"coords"`
+	ID              int                      `json:"id"`
+	Name            string                   `json:"name"`
+	Type            string                   `json:"type"`
+	Email           string                   `json:"email"`
+	Members         []WorkingGroupMemberJSON `json:"members"`
+	Visible         bool                     `json:"visible"`
+	Description     string                   `json:"description"`
+	MeetingTime     string                   `json:"meeting_time"`
+	MeetingLocation string                   `json:"meeting_location"`
+	Coords          string                   `json:"coords"`
 }
 
 type WorkingGroupMemberJSON struct {
@@ -224,16 +224,16 @@ func CleanWorkingGroupData(db *sqlx.DB, body io.Reader) (WorkingGroup, error) {
 	}
 
 	return WorkingGroup{
-		ID:         workingGroupJSON.ID,
-		Name:       strings.TrimSpace(workingGroupJSON.Name),
-		Type:       wgType,
-		GroupEmail: strings.TrimSpace(workingGroupJSON.Email),
-		Members:    members,
-		Visible:	workingGroupJSON.Visible,
-		Description: workingGroupJSON.Description,
-		MeetingTime: workingGroupJSON.MeetingTime,
+		ID:              workingGroupJSON.ID,
+		Name:            strings.TrimSpace(workingGroupJSON.Name),
+		Type:            wgType,
+		GroupEmail:      strings.TrimSpace(workingGroupJSON.Email),
+		Members:         members,
+		Visible:         workingGroupJSON.Visible,
+		Description:     workingGroupJSON.Description,
+		MeetingTime:     workingGroupJSON.MeetingTime,
 		MeetingLocation: workingGroupJSON.MeetingLocation,
-		Coords: workingGroupJSON.Coords,
+		Coords:          workingGroupJSON.Coords,
 	}, nil
 }
 
@@ -328,16 +328,16 @@ func getWorkingGroupsJSON(db *sqlx.DB, options WorkingGroupQueryOptions) ([]Work
 			})
 		}
 		wgsJSON = append(wgsJSON, WorkingGroupJSON{
-			ID:      wg.ID,
-			Name:    wg.Name,
-			Type:    WorkingGroupTypes[wg.Type],
-			Email:   wg.GroupEmail,
-			Members: wgMembers,
-			Visible: wg.Visible,
-			Description: wg.Description,
-			MeetingTime: wg.MeetingTime,
+			ID:              wg.ID,
+			Name:            wg.Name,
+			Type:            WorkingGroupTypes[wg.Type],
+			Email:           wg.GroupEmail,
+			Members:         wgMembers,
+			Visible:         wg.Visible,
+			Description:     wg.Description,
+			MeetingTime:     wg.MeetingTime,
 			MeetingLocation: wg.MeetingLocation,
-			Coords: wg.Coords,
+			Coords:          wg.Coords,
 		})
 	}
 
