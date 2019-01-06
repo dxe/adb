@@ -1,8 +1,5 @@
 <template>
   <div class="body-wrapper event-new-content">
-    <!-- TODO(mdempsky): Is this okay? Should this go somewhere else? -->
-    <link rel="stylesheet" href="/static/external/awesomplete/awesomplete.css">
-
     <div class="title">
       <h1>{{connections ? "Maintenance Connection" : "Event"}}</h1>
     </div>
@@ -450,6 +447,16 @@ export default {
 </script>
 
 <style>
+@import url("~awesomplete/awesomplete.css");
+
+.awesomplete {
+  display: block;
+}
+
+.awesomplete mark {
+  padding: 0;
+}
+
 .attendee-input[data-warning="duplicate"] {
   border: 2px solid red;
 }
