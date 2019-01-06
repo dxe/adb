@@ -96,7 +96,7 @@ export default {
 
       // Track current user index, or default to first in list
       this.userIndex = index === 0 ? 0 : index || -1;
-      
+
       this.currentModalName = modalName;
       this.$modal.show(modalName);
     },
@@ -133,7 +133,7 @@ export default {
             flashMessage("Error: " + parsed.message, true);
             return;
           }
-          
+
           flashMessage(this.currentUser.email + " saved");
 
           if (this.userIndex === -1) {
