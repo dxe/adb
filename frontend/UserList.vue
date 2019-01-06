@@ -96,7 +96,7 @@ export default {
 
       // Track current user index, or default to first in list
       this.userIndex = index === 0 ? 0 : index || -1;
-      
+
       this.currentModalName = modalName;
       this.$modal.show(modalName);
     },
@@ -132,7 +132,7 @@ export default {
             flashMessage("Error: " + parsed.message, true);
             return;
           }
-          
+
           flashMessage(this.currentUser.email + " saved");
 
           if (this.userIndex === -1) {
@@ -210,7 +210,7 @@ export default {
 
       // If the specified Role is no longer in the Current User's role list,
       // then we assume the role should be removed.
-      const existingRole = !this.currentUser.roles.includes(role);
+      const existingRole = this.currentUser.roles.includes(role);
 
       $.ajax({
         url: existingRole ? "/users-roles/remove" : "/users-roles/add",
