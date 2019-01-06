@@ -22,13 +22,13 @@ func WipeDatabase(db *sqlx.DB) {
 	db.MustExec(`DROP TABLE IF EXISTS activists`)
 	db.MustExec(`DROP TABLE IF EXISTS events`)
 	db.MustExec(`DROP TABLE IF EXISTS event_attendance`)
+	db.MustExec(`DROP TABLE IF EXISTS users_roles`)
 	db.MustExec(`DROP TABLE IF EXISTS adb_users`)
 	db.MustExec(`DROP TABLE IF EXISTS merged_activist_attendance`)
 	db.MustExec(`DROP TABLE IF EXISTS working_groups`)
 	db.MustExec(`DROP TABLE IF EXISTS working_group_members`)
 	db.MustExec(`DROP TABLE IF EXISTS circles`)
 	db.MustExec(`DROP TABLE IF EXISTS circle_members`)
-	db.MustExec(`DROP TABLE IF EXISTS users_roles`)
 
 	db.MustExec(`
 CREATE TABLE activists (
