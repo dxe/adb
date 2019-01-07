@@ -1,0 +1,2 @@
+ALTER TABLE adb_users
+ADD COLUMN `name` VARCHAR(150) NOT NULL DEFAULT '' AFTER `email`;

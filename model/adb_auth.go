@@ -33,7 +33,7 @@ FROM users_roles ur
 type ADBUser struct {
 	ID       int    `db:"id"`
 	Email    string `db:"email"`
-  Name     string `db:"name"`
+	Name     string `db:"name"`
 	Admin    bool   `db:"admin"`
 	Disabled bool   `db:"disabled"`
 	Roles    []UserRole
@@ -42,7 +42,7 @@ type ADBUser struct {
 type UserJSON struct {
 	ID       int      `json:"id"`
 	Email    string   `json:"email"`
-  Name     string   `json:"name"`
+	Name     string   `json:"name"`
 	Admin    bool     `json:"admin"`
 	Disabled bool     `json:"disabled"`
 	Roles    []string `json:"roles"`
@@ -51,7 +51,7 @@ type UserJSON struct {
 type GetUserOptions struct {
 	ID       int
 	Email    string
-  Name     string
+	Name     string
 	Admin    bool
 	Disabled bool
 }
@@ -64,7 +64,7 @@ type GetUsersRolesOptions struct {
 var DevTestUser = ADBUser{
 	ID:       1,
 	Email:    "test@test.com",
-  Name:     "Test User",
+	Name:     "Test User",
 	Disabled: false,
 	Roles:    []UserRole{{UserID: 1, Role: "admin"}},
 }
@@ -256,7 +256,7 @@ func buildUserJSONArray(users []ADBUser) []UserJSON {
 		usersJSON = append(usersJSON, UserJSON{
 			ID:       u.ID,
 			Email:    u.Email,
-      Name:     u.Name,
+			Name:     u.Name,
 			Admin:    u.Admin,
 			Disabled: u.Disabled,
 			Roles:    roles,
@@ -277,7 +277,7 @@ func CleanUserData(body io.Reader) (ADBUser, error) {
 	user := ADBUser{
 		ID:       userJSON.ID,
 		Email:    userJSON.Email,
-    Name:     userJSON.Name,
+		Name:     userJSON.Name,
 		Admin:    userJSON.Admin,
 		Disabled: userJSON.Disabled,
 	}
