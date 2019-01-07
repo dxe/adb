@@ -6,7 +6,9 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"encoding/json"
+
 	"fmt"
+
 	"io"
 )
 
@@ -123,6 +125,8 @@ FROM adb_users
 			adbUser.Roles = append(adbUser.Roles, r)
 		}
 	}
+
+	fmt.Println("[User access]", adbUser.Name, "-", adbUser.Email)
 
 	return *adbUser, nil
 }
