@@ -18,8 +18,8 @@
           <td>{{user.email}}</td>
           <td>{{user.name}}</td>
           <td>{{ (user.roles || []).join(', ')}}</td>
-          <!-- only disabled value if true to improve page readability -->
-          <td><span v-if="user.disabled">{{user.disabled}}</span></td>
+          <!-- only disabled  if true to improve page readability -->
+          <td><span v-if="user.disabled">Disabled</span></td>
         </tr>
       </tbody>
     </table>
