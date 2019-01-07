@@ -78,7 +78,9 @@
             <!---<li class="{{if (eq .PageName "Power")}}active{{end}}"><a href="/power">MPI</a></li>--->
 	          <li class="{{if (ne .MainRole "admin")}}hide{{end}} {{if (eq .PageName "UserList")}}active{{end}}"><a href="/admin/users">Users</a></li>
           </ul>
-          
+          <ul class="nav navbar-nav pull-right">
+            <li class="{{if or (eq .PageName "Login") (eq .PageName "Logout")}}hide{{end}} pull-right small"><a href="/logout">Logout</a></li>
+          </ul>
         </div><!--/.nav-collapse -->
       </div>
     </nav>

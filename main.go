@@ -118,6 +118,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router := mux.NewRouter()
 	// Unauthed pages
 	router.HandleFunc("/login", main.LoginHandler)
+	router.HandleFunc("/logout", main.LogoutHandler)
 
 	// Error pages
 	router.HandleFunc("/403", main.ForbiddenHandler)
@@ -368,6 +369,34 @@ func (c MainController) TokenSignInHandler(w http.ResponseWriter, r *http.Reques
 
 func (c MainController) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, r, "login", PageData{PageName: "Login"})
+}
+
+func (c MainController) LogoutHandler(w http.ResponseWriter, r *http.Request) {
+	/*
+	  authSession, _ := sessionStore.Get(r, "auth-session")
+
+	  authSession.Options = &sessions.Options{
+	    Path: "/",
+	    MaxAge: -1,
+	    HttpOnly: true,
+	  }
+
+	  authSession.Values["authed"] = false
+	  authSession.Values["adbuserid"] = nil
+
+	  sessionStore.Save(r, w, authSession)
+	*/
+
+	cookie := &http.Cookie{
+		Name:   "auth-session",
+		Value:  "",
+		Path:   "/",
+		MaxAge: -1,
+	}
+
+	http.SetCookie(w, cookie)
+	//http.Redirect(w, r, "/login", 302)
+	renderPage(w, r, "logout", PageData{PageName: "Logout"})
 }
 
 func (c MainController) ForbiddenHandler(w http.ResponseWriter, r *http.Request) {
