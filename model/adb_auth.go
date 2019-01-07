@@ -16,6 +16,7 @@ const selectUserBaseQuery string = `
 SELECT
   id,
   email,
+  name,
   admin,
   disabled
 FROM adb_users
@@ -33,6 +34,7 @@ FROM users_roles ur
 type ADBUser struct {
 	ID       int    `db:"id"`
 	Email    string `db:"email"`
+	Name     string `db:"name"`
 	Admin    bool   `db:"admin"`
 	Disabled bool   `db:"disabled"`
 	Roles    []UserRole
@@ -41,6 +43,7 @@ type ADBUser struct {
 type UserJSON struct {
 	ID       int      `json:"id"`
 	Email    string   `json:"email"`
+	Name     string   `json:"name"`
 	Admin    bool     `json:"admin"`
 	Disabled bool     `json:"disabled"`
 	Roles    []string `json:"roles"`
@@ -49,6 +52,7 @@ type UserJSON struct {
 type GetUserOptions struct {
 	ID       int
 	Email    string
+	Name     string
 	Admin    bool
 	Disabled bool
 }
@@ -61,6 +65,7 @@ type GetUsersRolesOptions struct {
 var DevTestUser = ADBUser{
 	ID:       1,
 	Email:    "test@test.com",
+	Name:     "Test User",
 	Disabled: false,
 	Roles:    []UserRole{{UserID: 1, Role: "admin"}},
 }
@@ -82,6 +87,7 @@ func GetADBUser(db *sqlx.DB, id int, email string) (ADBUser, error) {
 SELECT
   id,
   email,
+  name,
   admin,
   disabled
 FROM adb_users
@@ -251,6 +257,7 @@ func buildUserJSONArray(users []ADBUser) []UserJSON {
 		usersJSON = append(usersJSON, UserJSON{
 			ID:       u.ID,
 			Email:    u.Email,
+			Name:     u.Name,
 			Admin:    u.Admin,
 			Disabled: u.Disabled,
 			Roles:    roles,
@@ -271,6 +278,7 @@ func CleanUserData(body io.Reader) (ADBUser, error) {
 	user := ADBUser{
 		ID:       userJSON.ID,
 		Email:    userJSON.Email,
+		Name:     userJSON.Name,
 		Admin:    userJSON.Admin,
 		Disabled: userJSON.Disabled,
 	}
@@ -307,10 +315,12 @@ func CreateUser(db *sqlx.DB, user ADBUser) (int, error) {
 	result, err := db.NamedExec(`
 INSERT INTO adb_users (
   email,
+  name,
   admin,
   disabled
 ) VALUES (
   :email,
+  :name,
   :admin,
   :disabled
 )`, user)
@@ -339,6 +349,7 @@ func UpdateUser(db *sqlx.DB, user ADBUser) (int, error) {
 	_, err := db.NamedExec(`UPDATE adb_users
 SET
   email = :email,
+  name  = :name,
   admin = :admin,
   disabled = :disabled
 WHERE

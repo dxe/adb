@@ -83,13 +83,13 @@ INSERT INTO events VALUES
 INSERT INTO event_attendance (activist_id, event_id) VALUES
   (1, 1), (1, 2), (2, 2), (3,3), (4,6), (5,5), (5,1), (5,6);
 
-INSERT INTO adb_users (id, email, admin, disabled) VALUES
-  (1, 'nosefrog@gmail.com', 1, 0),
-  (2, 'cwbailey20042@gmail.com', 1, 0),
-  (3, 'jakehobbs@gmail.com', 1, 0),
-  (4, 'samer@directactioneverywhere.com', 1, 0),
-  (5, 'jake@directactioneverywhere.com', 1, 0),
-  (6, '%s', 1, 0);
+INSERT INTO adb_users (id, email, name, admin, disabled) VALUES
+  (1, 'nosefrog@gmail.com', 'Samer Masterson', 1, 0),
+  (2, 'cwbailey20042@gmail.com', 'Cameron Bailey', 1, 0),
+  (3, 'jakehobbs@gmail.com', 'Jake Hobbs', 1, 0),
+  (4, 'samer@directactioneverywhere.com', 'The Real Samer', 1, 0),
+  (5, 'jake@directactioneverywhere.com', 'The Real Jake Hobbs', 1, 0),
+  (6, '%s', 'Dev User', 1, 0);
 
 INSERT INTO users_roles (user_id, role)
 SELECT id, 'admin' FROM adb_users WHERE id IN(1, 2, 3, 4, 5, 6);
