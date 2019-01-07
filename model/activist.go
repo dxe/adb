@@ -603,8 +603,6 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 		}
 	}
 
-	query += " GROUP BY a.id "
-
 	havingClause := []string{}
 	if options.LastEventDateFrom != "" {
 		havingClause = append(havingClause, "last_event >= ?")
