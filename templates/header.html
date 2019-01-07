@@ -70,27 +70,19 @@
               <ul class="dropdown-menu">
                 <li class="{{if (eq .PageName "ActivistList")}}active{{end}}"><a href="/list_activists">All Activists</a></li>
                 <li class="{{if (eq .PageName "Leaderboard")}}active{{end}}"><a href="/leaderboard">Leaderboard</a></li>
-                <!---<li class="{{if (eq .PageName "ActivistRecruitment")}}active{{end}}"><a href="/activist_recruitment">Recruitment</a></li>-->
-                <!--<li class="{{if (eq .PageName "ActivistActionTeam")}}active{{end}}"><a href="/activist_actionteam">Action Team</a></li>-->
               </ul>
             </li>
 
 	          <li class="{{if (ne .MainRole "admin")}}hide{{end}} {{if (eq .PageName "UserList")}}active{{end}}"><a href="/admin/users">Users</a></li>
 
-
-
-
-
             <li style="position:fixed; right: 20px;" class="{{if or (eq .PageName "Login") (eq .PageName "Logout")}}hide{{end}} dropdown navbar-right"><a class="dropdown-toggle" data-toggle="dropdown" href="#"><span class="glyphicon glyphicon-user"></span><span class="caret"></span></a>
               <ul class="dropdown-menu">
-                <div style="padding-left: 5px;">
+                <div style="padding-left: 5px; padding-right: 5px;">
                   <b>Current user:</b> <br /> {{ .UserName }} <br /> {{ .UserEmail }}<br /><br />
                   <a href="/logout" class="logout-link">Logout</a>
                 </div>
               </ul>
             </li>
-
-
 
           </ul>
 
