@@ -1,7 +1,7 @@
 <template>
 
   <div id="app" class="main">
-    <button class="btn btn-default" @click="showModal('edit-user-modal')">Add New User</button>
+    <button class="btn btn-default" @click="showModal('edit-user-modal')"><span class="glyphicon glyphicon-plus"></span>&nbsp;&nbsp;Add New User</button>
     <table id="user-list" class="adb-table table table-hover table-striped tablesorter">
       <thead>
         <tr>

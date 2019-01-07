@@ -312,6 +312,10 @@ func CreateUser(db *sqlx.DB, user ADBUser) (int, error) {
 		return 0, errors.New("User Email cannot be empty")
 	}
 
+	if user.Name == "" {
+		return 0, errors.New("User Name cannot be empty")
+	}
+
 	result, err := db.NamedExec(`
 INSERT INTO adb_users (
   email,
@@ -344,6 +348,10 @@ func UpdateUser(db *sqlx.DB, user ADBUser) (int, error) {
 
 	if user.Email == "" {
 		return 0, errors.New("User Email cannot be empty")
+	}
+
+	if user.Name == "" {
+		return 0, errors.New("User Name cannot be empty")
 	}
 
 	_, err := db.NamedExec(`UPDATE adb_users
