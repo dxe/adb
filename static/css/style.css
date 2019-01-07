@@ -32,6 +32,16 @@ a.edit-link:hover {
     display:none;
 }
 
+a.logout-link:link, a.logout-link:visited {
+    color: black;
+}
+
+a.logout-link:hover, a.logout-link:active {
+    color: darkgrey;
+    text-decoration:none;
+}
+
+
 /* body wrappers */
 .body-wrapper {
         max-width: 430px;
@@ -179,4 +189,5 @@ a.edit-link:hover {
 .htDimmed input[type=checkbox] {
     filter: invert(20%);
 }
+
 

@@ -278,6 +278,25 @@ func getUserMainRole(user model.ADBUser) string {
 	return mainRole
 }
 
+func getUserName(user model.ADBUser) string {
+
+	var userName string
+
+	userName = user.Name
+
+	return userName
+}
+
+func getUserEmail(user model.ADBUser) string {
+
+	var userEmail string
+
+	userEmail = user.Email
+
+	return userEmail
+}
+
+
 func (c MainController) apiRoleMiddleware(h http.Handler, allowedRoles []string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, authed := getAuthedADBUser(c.db, r)
@@ -526,6 +545,8 @@ type PageData struct {
 	PageName string
 	Data     interface{}
 	MainRole string
+	UserName string
+	UserEmail string
 	// Filled in by renderPage.
 	StaticResourcesHash string
 }
@@ -535,6 +556,8 @@ type PageData struct {
 func renderPage(w io.Writer, r *http.Request, name string, pageData PageData) {
 	pageData.StaticResourcesHash = config.StaticResourcesHash()
 	pageData.MainRole = getUserMainRole(getUserFromContext(r.Context()))
+	pageData.UserName = getUserName(getUserFromContext(r.Context()))
+	pageData.UserEmail = getUserEmail(getUserFromContext(r.Context()))
 	renderTemplate(w, name, pageData)
 }
 
