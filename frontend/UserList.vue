@@ -7,16 +7,17 @@
         <tr>
           <th></th>
           <th>Email</th>
-          <th>Disabled</th>
           <th>Roles</th>
+          <th>Disabled</th>
         </tr>
       </thead>
       <tbody id="user-list-body">
         <tr v-for="(user, index) in users">
           <td><button class="btn btn-default glyphicon glyphicon-pencil" @click="showModal('edit-user-modal', user, index)"></button></td>
           <td>{{user.email}}</td>
-          <td>{{user.disabled}}</td>
           <td>{{ (user.roles || []).join(', ')}}</td>
+          <!-- only disabled value if true to improve page readability -->
+          <td><span v-if="user.disabled">{{user.disabled}}</span></td>
         </tr>
       </tbody>
     </table>
