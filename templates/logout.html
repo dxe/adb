@@ -1,0 +1,20 @@
+{{template "header.html" .}}
+<meta name="google-signin-client_id" content="975059814880-lfffftbpt7fdl14cevtve8sjvh015udc.apps.googleusercontent.com">
+<script src="https://apis.google.com/js/platform.js?onload=onLoad" async defer></script>
+
+<div class="body-wrapper login-content">
+  <script>
+    function onLoad() {
+      gapi.load('auth2', function () {
+        gapi.auth2.init().then(function () {
+          var auth2 = gapi.auth2.getAuthInstance();
+          auth2.signOut().then(function () {
+            window.location = '/';
+          });
+        });
+      });
+    }
+  </script>
+</div>
+
+{{template "footer.html" .}}
