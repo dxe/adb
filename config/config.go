@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"os"
 	"strconv"
+	"time"
 )
 
 var (
@@ -93,7 +94,7 @@ func DBTestDataSource() string {
 	return DBUser + ":" + DBPassword + "@/adb_test_db?parseTime=true"
 }
 
-var staticResourcesHash string = strconv.Itoa(rand.Int())
+var staticResourcesHash = strconv.FormatInt(rand.NewSource(time.Now().UnixNano()).Int63(), 10)
 
 // Append static resources that we want to "bust" with every restart
 // with this hash. This is a hacky solution to because it's too eager
