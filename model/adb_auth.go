@@ -230,7 +230,6 @@ func getUsersRoles(db *sqlx.DB, options GetUsersRolesOptions) ([]UserRole, error
 	    query += ` WHERE ` + strings.Join(whereClause, " AND ")
 	  }
 	*/
-	fmt.Println(query)
 	var userRoles []UserRole
 	err := db.Select(&userRoles, query)
 
