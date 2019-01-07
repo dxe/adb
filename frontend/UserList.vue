@@ -122,6 +122,9 @@ export default {
       this.userIndex = -1;
       this.currentUser = {};
       this.currentUserRoleSelections = [];
+
+      // Sort user list by email
+      this.sortUserListByEmail();
     },
     confirmEditUserModal: function () {
       // Disable the save button when the user clicks it so they don't
@@ -189,6 +192,26 @@ export default {
       }
       this.reset();
       this.pagingParameters.order = order;
+    },
+    sortUserListByEmail: function () {
+      if (!this.users) {
+        return;
+      }
+
+      this.users.sort(function (a, b) {
+        var emailA = a.email.toLowerCase();
+        var emailB = b.email.toLowerCase();
+
+        if (emailA < emailB) {
+          return - 1;
+        }
+
+        if (emailA > emailB) {
+          return 1;
+        }
+
+        return 0;
+      });
     },
     setUsers: function (users) {
       console.log('inside setUsers: ', users);
