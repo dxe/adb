@@ -39,7 +39,7 @@
           <div class="modal-body">
             <form action="" id="editUserForm">
               <p><label for="email">Email: </label><input class="form-control" type="text" v-model.trim="currentUser.email" id="email" /></p>
-              <p><label for="email">Name: </label><input class="form-control" type="text" v-model.trim="currentUser.name" id="name" /></p>
+              <p><label for="name">Name: </label><input class="form-control" type="text" v-model.trim="currentUser.name" id="name" /></p>
               <p><label for="disabled">Disabled: </label><input class="form-control" type="checkbox" v-model="currentUser.disabled" id="disabled" /></p>
             </form>
 

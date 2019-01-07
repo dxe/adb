@@ -16,6 +16,7 @@ const selectUserBaseQuery string = `
 SELECT
   id,
   email,
+  name,
   admin,
   disabled
 FROM adb_users
