@@ -2,4 +2,4 @@
 
 cd /opt/adb
 . ./adb-config/env
-exec setuidgid adb ./adb -prod > /tmp/adb.log
+exec setuidgid adb ./adb -prod 2>&1
