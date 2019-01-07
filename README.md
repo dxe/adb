@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/dxe/adb.svg?branch=master)](https://travis-ci.org/dxe/adb)
+
 # adb
 Activist Database Project
 
