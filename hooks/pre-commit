@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# Adapted from https://golang.org/misc/git/pre-commit
+# Keep in sync with "make fmt".
+
+gofiles=$(gofmt -l $(find . -name "*.go"))
+webfiles=$(npx prettier -l frontend/*.{js,vue})
+[ -z "$gofiles" -a -z "$webfiles" ] && exit 0
+
+echo >&2 "Misformatted files:"
+for fn in $gofiles $webfiles; do
+  echo >&2 "  $fn"
+done
+echo >&2
+echo >&2 "Please run: make fmt"
+
+exit 1
+

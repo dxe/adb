@@ -1,4 +1,4 @@
-.PHONY: run_all run watch test clean prod_build deps dev_db
+.PHONY: run_all run watch test clean prod_build deps dev_db fmt
 
 # Runs the application.
 run_all:
@@ -41,6 +41,7 @@ clean:
 
 # Set git hooks
 set_git_hooks:
+	if [ ! -h .git/hooks/pre-commit ] ; then ln -s ../../hooks/pre-commit .git/hooks/pre-commit ; fi
 	if [ ! -h .git/hooks/pre-push ] ; then ln -s ../../hooks/pre-push .git/hooks/pre-push ; fi
 
 # Build the project for production.
@@ -50,6 +51,7 @@ prod_build: clean set_git_hooks
 	env GOOS=linux GOARCH=amd64 go build
 
 # Reformat source files.
+# Keep in sync with hooks/pre-commit.
 fmt:
-	go fmt ./...
+	gofmt -w `find . -name '*.go'`
 	npx prettier --write frontend/*.{js,vue}
