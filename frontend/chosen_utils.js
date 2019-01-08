@@ -3,15 +3,17 @@ import 'chosen-js'; // Attaches to jQuery when it's imported.
 
 // From chosen-js
 function chosenBrowserIsSupported() {
-  if ("Microsoft Internet Explorer" === window.navigator.appName) {
+  if ('Microsoft Internet Explorer' === window.navigator.appName) {
     return document.documentMode >= 8;
   }
-  if (/iP(od|hone)/i.test(window.navigator.userAgent) ||
-      /IEMobile/i.test(window.navigator.userAgent) ||
-      /Windows Phone/i.test(window.navigator.userAgent) ||
-      /BlackBerry/i.test(window.navigator.userAgent) ||
-      /BB10/i.test(window.navigator.userAgent) ||
-      /Android.*Mobile/i.test(window.navigator.userAgent)) {
+  if (
+    /iP(od|hone)/i.test(window.navigator.userAgent) ||
+    /IEMobile/i.test(window.navigator.userAgent) ||
+    /Windows Phone/i.test(window.navigator.userAgent) ||
+    /BlackBerry/i.test(window.navigator.userAgent) ||
+    /BB10/i.test(window.navigator.userAgent) ||
+    /Android.*Mobile/i.test(window.navigator.userAgent)
+  ) {
     return false;
   }
   return true;
@@ -28,16 +30,16 @@ export function initActivistSelect(selector, ignoreActivistName) {
   }
 
   $.ajax({
-    url: "/activist_names/get",
-    method: "GET",
-    dataType: "json",
+    url: '/activist_names/get',
+    method: 'GET',
+    dataType: 'json',
     success: function(data) {
       var activistNames = data.activist_names;
 
       // The first item needs to be empty so that the selector
       // defaults to not being filled in. Otherwise, it defaults to
       // the first item in the list.
-      activistNames.unshift("");
+      activistNames.unshift('');
 
       for (var i = 0; i < activistNames.length; i++) {
         if (activistNames[i] == ignoreActivistName) {
@@ -53,7 +55,7 @@ export function initActivistSelect(selector, ignoreActivistName) {
       });
     },
     error: function() {
-      flashMessage("Error: could not load activist names", true);
+      flashMessage('Error: could not load activist names', true);
     },
   });
 }

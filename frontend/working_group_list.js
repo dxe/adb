@@ -3,9 +3,9 @@ import Vue from 'vue';
 
 export function initializeApp() {
   var vm = new Vue({
-    el: "#app",
+    el: '#app',
     render: function(h) {
       return h(WorkingGroupList);
-    }
+    },
   });
 }

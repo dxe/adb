@@ -1,9 +1,24 @@
 <template>
   <div id="app" class="main">
-    <button class="btn btn-default" @click="showModal('edit-working-group-modal')"><span class="glyphicon glyphicon-plus"></span>&nbsp;&nbsp;Add New Working Group</button>
+    <button class="btn btn-default" @click="showModal('edit-working-group-modal')">
+      <span class="glyphicon glyphicon-plus"></span>&nbsp;&nbsp;Add New Working Group
+    </button>
     &nbsp;&nbsp;&nbsp;&nbsp;
-    <button id="showMem" class="btn btn-default" onclick="$('.wgMembers').show(); $('#showMem').hide(); $('#hideMem').show();"><span class="glyphicon glyphicon-eye-open"></span>&nbsp;&nbsp;Show members</button>
-    <button id="hideMem" class="btn btn-default" onclick="$('.wgMembers').hide(); $('#showMem').show(); $('#hideMem').hide();" style="display: none;"><span class="glyphicon glyphicon-eye-close"></span>&nbsp;&nbsp;Hide members</button>
+    <button
+      id="showMem"
+      class="btn btn-default"
+      onclick="$('.wgMembers').show(); $('#showMem').hide(); $('#hideMem').show();"
+    >
+      <span class="glyphicon glyphicon-eye-open"></span>&nbsp;&nbsp;Show members
+    </button>
+    <button
+      id="hideMem"
+      class="btn btn-default"
+      onclick="$('.wgMembers').hide(); $('#showMem').show(); $('#hideMem').hide();"
+      style="display: none;"
+    >
+      <span class="glyphicon glyphicon-eye-close"></span>&nbsp;&nbsp;Hide members
+    </button>
 
     <table id="working-group-list" class="adb-table table table-hover table-striped">
       <thead>
@@ -21,39 +36,51 @@
       </thead>
       <tbody id="working-group-list-body">
         <tr v-for="(workingGroup, index) in workingGroups">
-          <td><button class="btn btn-default glyphicon glyphicon-pencil" @click="showModal('edit-working-group-modal', workingGroup, index)"></button></td>
+          <td>
+            <button
+              class="btn btn-default glyphicon glyphicon-pencil"
+              @click="showModal('edit-working-group-modal', workingGroup, index)"
+            ></button>
+          </td>
           <td>
             <dropdown>
-              <button data-role="trigger" class="btn btn-default dropdown-toggle glyphicon glyphicon-option-horizontal" type="button">
-              </button>
+              <button
+                data-role="trigger"
+                class="btn btn-default dropdown-toggle glyphicon glyphicon-option-horizontal"
+                type="button"
+              ></button>
               <template slot="dropdown">
-                <li><a @click="showModal('delete-working-group-modal', workingGroup, index)">Delete Working Group</a></li>
+                <li>
+                  <a @click="showModal('delete-working-group-modal', workingGroup, index)"
+                    >Delete Working Group</a
+                  >
+                </li>
               </template>
             </dropdown>
           </td>
-          <td>{{workingGroup.name}}</td>
-          <td>{{workingGroup.email}}</td>
-          <td>{{displayWorkingGroupType(workingGroup.type)}}</td>
-          <td>{{numberOfWorkingGroupMembers(workingGroup)}}</td>
+          <td>{{ workingGroup.name }}</td>
+          <td>{{ workingGroup.email }}</td>
+          <td>{{ displayWorkingGroupType(workingGroup.type) }}</td>
+          <td>{{ numberOfWorkingGroupMembers(workingGroup) }}</td>
           <td>
             <!-- There should only ever be one point person -->
             <template v-for="member in workingGroup.members">
               <template v-if="member.point_person">
-                <p>{{member.name}}</p>
+                <p>{{ member.name }}</p>
               </template>
             </template>
           </td>
           <td>
             <ul class="wgMembers" v-for="member in workingGroup.members">
               <template v-if="!member.point_person && !member.non_member_on_mailing_list">
-                <li>{{member.name}}</li>
+                <li>{{ member.name }}</li>
               </template>
             </ul>
           </td>
           <td>
             <ul class="wgMembers" v-for="member in workingGroup.members">
               <template v-if="member.non_member_on_mailing_list">
-                <li>{{member.name}}</li>
+                <li>{{ member.name }}</li>
               </template>
             </ul>
           </td>
@@ -62,35 +89,43 @@
       </tbody>
     </table>
     <modal
-       name="delete-working-group-modal"
-       height="auto"
-       classes="no-background-color no-top"
-       @opened="modalOpened"
-       @closed="modalClosed"
-       >
+      name="delete-working-group-modal"
+      height="auto"
+      classes="no-background-color no-top"
+      @opened="modalOpened"
+      @closed="modalClosed"
+    >
       <div class="modal-dialog">
         <div class="modal-content">
-          <div class="modal-header">
-            <h2 class="modal-title">Delete working group</h2>
-          </div>
+          <div class="modal-header"><h2 class="modal-title">Delete working group</h2></div>
           <div class="modal-body">
-            <p>Are you sure you want to delete the working group {{currentWorkingGroup.name}}?</p>
-            <p>Before you delete a working group, you need to remove all members of that working group.</p>
+            <p>Are you sure you want to delete the working group {{ currentWorkingGroup.name }}?</p>
+            <p>
+              Before you delete a working group, you need to remove all members of that working
+              group.
+            </p>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" @click="hideModal">Close</button>
-            <button type="button" v-bind:disabled="disableConfirmButton" class="btn btn-danger" @click="confirmDeleteWorkingGroupModal">Delete working group</button>
+            <button
+              type="button"
+              v-bind:disabled="disableConfirmButton"
+              class="btn btn-danger"
+              @click="confirmDeleteWorkingGroupModal"
+            >
+              Delete working group
+            </button>
           </div>
         </div>
       </div>
     </modal>
     <modal
-       name="edit-working-group-modal"
-       height="auto"
-       classes="no-background-color no-top"
-       @opened="modalOpened"
-       @closed="modalClosed"
-       >
+      name="edit-working-group-modal"
+      height="auto"
+      classes="no-background-color no-top"
+      @opened="modalOpened"
+      @closed="modalClosed"
+    >
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
@@ -99,8 +134,25 @@
           </div>
           <div class="modal-body">
             <form action="" id="editWorkingGroupForm">
-              <p><label for="name">Name: </label><input class="form-control" type="text" v-model.trim="currentWorkingGroup.name" id="name" v-focus  /></p>
-              <p><label for="email">Email: </label><input class="form-control" type="text" v-model.trim="currentWorkingGroup.email" id="email" /></p>
+              <p>
+                <label for="name">Name: </label
+                ><input
+                  class="form-control"
+                  type="text"
+                  v-model.trim="currentWorkingGroup.name"
+                  id="name"
+                  v-focus
+                />
+              </p>
+              <p>
+                <label for="email">Email: </label
+                ><input
+                  class="form-control"
+                  type="text"
+                  v-model.trim="currentWorkingGroup.email"
+                  id="email"
+                />
+              </p>
               <p>
                 <label for="type">Type: </label>
                 <select id="type" class="form-control" v-model="currentWorkingGroup.type">
@@ -108,70 +160,133 @@
                   <option value="committee">Committee</option>
                 </select>
               </p>
-              
-              <p v-if="currentWorkingGroup.type === 'working_group'"><label for="description">Description: </label><input class="form-control" type="text" v-model.trim="currentWorkingGroup.description" id="description" /></p>
 
-              <p><label for="meeting_time">Meeting Day & Time: </label><input class="form-control" type="text" v-model.trim="currentWorkingGroup.meeting_time" id="meeting_time" /></p>
-              <p><label for="meeting_location">Meeting Location: </label><input class="form-control" type="text" v-model.trim="currentWorkingGroup.meeting_location" id="meeting_location" /></p>
+              <p v-if="currentWorkingGroup.type === 'working_group'">
+                <label for="description">Description: </label
+                ><input
+                  class="form-control"
+                  type="text"
+                  v-model.trim="currentWorkingGroup.description"
+                  id="description"
+                />
+              </p>
 
-              <p v-if="currentWorkingGroup.type === 'working_group'"><label for="visible">Visible on application: </label><input class="form-control" type="checkbox" v-model.trim="currentWorkingGroup.visible" id="visible" /></p>
+              <p>
+                <label for="meeting_time">Meeting Day & Time: </label
+                ><input
+                  class="form-control"
+                  type="text"
+                  v-model.trim="currentWorkingGroup.meeting_time"
+                  id="meeting_time"
+                />
+              </p>
+              <p>
+                <label for="meeting_location">Meeting Location: </label
+                ><input
+                  class="form-control"
+                  type="text"
+                  v-model.trim="currentWorkingGroup.meeting_location"
+                  id="meeting_location"
+                />
+              </p>
+
+              <p v-if="currentWorkingGroup.type === 'working_group'">
+                <label for="visible">Visible on application: </label
+                ><input
+                  class="form-control"
+                  type="checkbox"
+                  v-model.trim="currentWorkingGroup.visible"
+                  id="visible"
+                />
+              </p>
 
               <hr />
 
               <!-- <p><label for="coords">Coordinates: </label><input class="form-control" type="text" v-model.trim="currentWorkingGroup.coords" id="coords" /></p> -->
-              <p>
-                <label for="point-person">Point person: </label>
-              </p>
-                <div class="select-row" v-for="(member, index) in currentWorkingGroup.members">
-                  <template v-if="member.point_person">
-                    <basic-select
-                       :options="activistOptions"
-                       :selected-option="memberOption(member)"
-                       :extra-data="{index: index, pointPerson: true}"
-                       inheritStyle="min-width: 500px"
-                       @select="onMemberSelect">
-                    </basic-select>
-                    <button type="button" class="select-row-btn btn btn-sm btn-danger" @click="removeMember(index)"> - </button>
-                  </template>
-                </div>
-                <button v-if="showAddPointPerson" type="button" class="btn btn-sm" @click="addPointPerson">Add point person</button>
-              <p>
-                <label for="members">Members: </label>
-              </p>
-                <div class="select-row" v-for="(member, index) in currentWorkingGroup.members">
-                  <template v-if="!member.point_person && !member.non_member_on_mailing_list">
-                    <basic-select
-                       :options="activistOptions"
-                       :selected-option="memberOption(member)"
-                       :extra-data="{index: index}"
-                       inheritStyle="min-width: 500px"
-                       @select="onMemberSelect">
-                    </basic-select>
-                    <button type="button" class="select-row-btn btn btn-sm btn-danger" @click="removeMember(index)"> - </button>
-                  </template>
-                </div>
-                <button type="button" class="btn btn-sm" @click="addMember">Add member</button>
-              <p>
-                <label for="non-members">Non-members on the mailing list: </label>
-              </p>
-                <div class="select-row" v-for="(member, index) in currentWorkingGroup.members">
-                  <template v-if="member.non_member_on_mailing_list">
-                    <basic-select
-                       :options="activistOptions"
-                       :selected-option="memberOption(member)"
-                       :extra-data="{index: index, nonMemberOnMailingList: true}"
-                       inheritStyle="min-width: 500px"
-                       @select="onMemberSelect">
-                    </basic-select>
-                    <button type="button" class="select-row-btn btn btn-sm btn-danger" @click="removeMember(index)"> - </button>
-                  </template>
-                </div>
-                <button type="button" class="btn btn-sm" @click="addNonMember">Add non-member to mailing list</button>
+              <p><label for="point-person">Point person: </label></p>
+              <div class="select-row" v-for="(member, index) in currentWorkingGroup.members">
+                <template v-if="member.point_person">
+                  <basic-select
+                    :options="activistOptions"
+                    :selected-option="memberOption(member)"
+                    :extra-data="{ index: index, pointPerson: true }"
+                    inheritStyle="min-width: 500px"
+                    @select="onMemberSelect"
+                  >
+                  </basic-select>
+                  <button
+                    type="button"
+                    class="select-row-btn btn btn-sm btn-danger"
+                    @click="removeMember(index)"
+                  >
+                    -
+                  </button>
+                </template>
+              </div>
+              <button
+                v-if="showAddPointPerson"
+                type="button"
+                class="btn btn-sm"
+                @click="addPointPerson"
+              >
+                Add point person
+              </button>
+              <p><label for="members">Members: </label></p>
+              <div class="select-row" v-for="(member, index) in currentWorkingGroup.members">
+                <template v-if="!member.point_person && !member.non_member_on_mailing_list">
+                  <basic-select
+                    :options="activistOptions"
+                    :selected-option="memberOption(member)"
+                    :extra-data="{ index: index }"
+                    inheritStyle="min-width: 500px"
+                    @select="onMemberSelect"
+                  >
+                  </basic-select>
+                  <button
+                    type="button"
+                    class="select-row-btn btn btn-sm btn-danger"
+                    @click="removeMember(index)"
+                  >
+                    -
+                  </button>
+                </template>
+              </div>
+              <button type="button" class="btn btn-sm" @click="addMember">Add member</button>
+              <p><label for="non-members">Non-members on the mailing list: </label></p>
+              <div class="select-row" v-for="(member, index) in currentWorkingGroup.members">
+                <template v-if="member.non_member_on_mailing_list">
+                  <basic-select
+                    :options="activistOptions"
+                    :selected-option="memberOption(member)"
+                    :extra-data="{ index: index, nonMemberOnMailingList: true }"
+                    inheritStyle="min-width: 500px"
+                    @select="onMemberSelect"
+                  >
+                  </basic-select>
+                  <button
+                    type="button"
+                    class="select-row-btn btn btn-sm btn-danger"
+                    @click="removeMember(index)"
+                  >
+                    -
+                  </button>
+                </template>
+              </div>
+              <button type="button" class="btn btn-sm" @click="addNonMember">
+                Add non-member to mailing list
+              </button>
             </form>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" @click="hideModal">Close</button>
-            <button type="button" v-bind:disabled="disableConfirmButton" class="btn btn-success" @click="confirmEditWorkingGroupModal">Save changes</button>
+            <button
+              type="button"
+              v-bind:disabled="disableConfirmButton"
+              class="btn btn-success"
+              @click="confirmEditWorkingGroupModal"
+            >
+              Save changes
+            </button>
           </div>
         </div>
       </div>
@@ -182,10 +297,10 @@
 <script>
 import vmodal from 'vue-js-modal';
 import Vue from 'vue';
-import {flashMessage} from 'flash_message';
-import {Dropdown} from 'uiv';
-import {initActivistSelect} from 'chosen_utils';
-import {focus} from 'directives/focus';
+import { flashMessage } from 'flash_message';
+import { Dropdown } from 'uiv';
+import { initActivistSelect } from 'chosen_utils';
+import { focus } from 'directives/focus';
 import BasicSelect from 'external/search-select/BasicSelect.vue';
 
 Vue.use(vmodal);
@@ -226,7 +341,7 @@ export default {
         var memberNameMap = {};
         for (var i = 0; i < members.length; i++) {
           if (members[i].name in memberNameMap) {
-            flashMessage("Error: Cannot have duplicate members: " + members[i].name, true);
+            flashMessage('Error: Cannot have duplicate members: ' + members[i].name, true);
             return;
           }
           memberNameMap[members[i].name] = true;
@@ -237,20 +352,20 @@ export default {
       this.disableConfirmButton = true;
 
       $.ajax({
-        url: "/working_group/save",
-        method: "POST",
-        contentType: "application/json",
+        url: '/working_group/save',
+        method: 'POST',
+        contentType: 'application/json',
         data: JSON.stringify(this.currentWorkingGroup),
         success: (data) => {
           this.disableConfirmButton = false;
 
           var parsed = JSON.parse(data);
-          if (parsed.status === "error") {
-            flashMessage("Error: " + parsed.message, true);
+          if (parsed.status === 'error') {
+            flashMessage('Error: ' + parsed.message, true);
             return;
           }
           // status === "success"
-          flashMessage(this.currentWorkingGroup.name + " saved");
+          flashMessage(this.currentWorkingGroup.name + ' saved');
 
           if (this.workingGroupIndex === -1) {
             // New working group, insert at the top
@@ -265,7 +380,7 @@ export default {
         error: (err) => {
           this.disableConfirmButton = false;
           console.warn(err.responseText);
-          flashMessage("Server error: " + err.responseText, true);
+          flashMessage('Server error: ' + err.responseText, true);
         },
       });
     },
@@ -273,9 +388,9 @@ export default {
       this.disableConfirmButton = true;
 
       $.ajax({
-        url: "/working_group/delete",
-        method: "POST",
-        contentType: "application/json",
+        url: '/working_group/delete',
+        method: 'POST',
+        contentType: 'application/json',
         data: JSON.stringify({
           working_group_id: this.currentWorkingGroup.id,
         }),
@@ -283,19 +398,19 @@ export default {
           this.disableConfirmButton = false;
 
           var parsed = JSON.parse(data);
-          if (parsed.status === "error") {
-            flashMessage("Error: " + parsed.message, true);
+          if (parsed.status === 'error') {
+            flashMessage('Error: ' + parsed.message, true);
             return;
           }
           // status === "success"
-          flashMessage(this.currentWorkingGroup.name + " deleted");
+          flashMessage(this.currentWorkingGroup.name + ' deleted');
           this.workingGroups.splice(this.workingGroupIndex, this.workingGroupIndex + 1);
           this.hideModal();
         },
         error: (err) => {
           this.disableConfirmButton = false;
           console.warn(err.responseText);
-          flashMessage("Server error: " + err.responseText, true);
+          flashMessage('Server error: ' + err.responseText, true);
         },
       });
     },
@@ -308,36 +423,36 @@ export default {
     },
     displayWorkingGroupType: function(type) {
       switch (type) {
-        case "committee":
-          return "Committee";
-        case "working_group":
-          return "Working Group";
+        case 'committee':
+          return 'Committee';
+        case 'working_group':
+          return 'Working Group';
       }
-      return "";
+      return '';
     },
     addMember: function() {
       if (this.currentWorkingGroup.members === undefined) {
         Vue.set(this.currentWorkingGroup, 'members', []);
       }
-      this.currentWorkingGroup.members.push({name: ''});
+      this.currentWorkingGroup.members.push({ name: '' });
     },
     addPointPerson: function() {
       if (this.currentWorkingGroup.members === undefined) {
         Vue.set(this.currentWorkingGroup, 'members', []);
       }
-      this.currentWorkingGroup.members.push({name: '', point_person: true});
+      this.currentWorkingGroup.members.push({ name: '', point_person: true });
     },
     addNonMember: function() {
       if (this.currentWorkingGroup.members === undefined) {
         Vue.set(this.currentWorkingGroup, 'members', []);
       }
-      this.currentWorkingGroup.members.push({name: '', non_member_on_mailing_list: true});
+      this.currentWorkingGroup.members.push({ name: '', non_member_on_mailing_list: true });
     },
     removeMember: function(index) {
       this.currentWorkingGroup.members.splice(index, 1);
     },
     memberOption: function(member) {
-      return {text: member.name};
+      return { text: member.name };
     },
     onMemberSelect: function(selected, extraData) {
       var index = extraData.index;
@@ -370,7 +485,7 @@ export default {
       disableConfirmButton: false,
       currentModalName: '',
       activistOptions: [],
-    }
+    };
   },
   computed: {
     showAddPointPerson: function() {
@@ -395,12 +510,12 @@ export default {
   created() {
     // Get working groups
     $.ajax({
-      url: "/working_group/list",
-      method: "POST",
+      url: '/working_group/list',
+      method: 'POST',
       success: (data) => {
         var parsed = JSON.parse(data);
-        if (parsed.status === "error") {
-          flashMessage("Error: " + parsed.message, true);
+        if (parsed.status === 'error') {
+          flashMessage('Error: ' + parsed.message, true);
           return;
         }
         // status === "success"
@@ -408,27 +523,27 @@ export default {
       },
       error: (err) => {
         console.warn(err.responseText);
-        flashMessage("Server error: " + err.responseText, true);
+        flashMessage('Server error: ' + err.responseText, true);
       },
     });
 
     // Get activists for members dropdown.
     $.ajax({
-      url: "/activist_names/get",
-      method: "GET",
+      url: '/activist_names/get',
+      method: 'GET',
       success: (data) => {
         var parsed = JSON.parse(data);
 
         // Convert activist_names to a format usable by basic-select.
         var options = [];
         for (var i = 0; i < parsed.activist_names.length; i++) {
-          options.push({text: parsed.activist_names[i]});
+          options.push({ text: parsed.activist_names[i] });
         }
         this.activistOptions = options;
       },
       error: (err) => {
         console.warn(err.responseText);
-        flashMessage("Server error: " + err.responseText, true);
+        flashMessage('Server error: ' + err.responseText, true);
       },
     });
   },
@@ -439,20 +554,19 @@ export default {
   directives: {
     focus,
   },
-}
+};
 </script>
 
-
 <style>
-  .select-row {
-    margin: 5px 0;
-  }
+.select-row {
+  margin: 5px 0;
+}
 
-  .select-row-btn {
-    margin: 0 5px;
-  }
+.select-row-btn {
+  margin: 0 5px;
+}
 
-  .wgMembers {
-    display: none;
-  }
+.wgMembers {
+  display: none;
+}
 </style>

@@ -1,9 +1,9 @@
-import Vue from "vue";
-import EventList from "EventList.vue";
+import Vue from 'vue';
+import EventList from 'EventList.vue';
 
 new Vue({
-  el: "#app",
+  el: '#app',
   components: {
     EventList,
-  }
+  },
 });

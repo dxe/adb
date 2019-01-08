@@ -1,25 +1,20 @@
 <template>
   <div class="body-wrapper event-new-content">
     <div class="title">
-      <h1>{{connections ? "Maintenance Connection" : "Event"}}</h1>
+      <h1>{{ connections ? 'Maintenance Connection' : 'Event' }}</h1>
     </div>
-    <br>
+    <br />
 
     <div class="main">
       <form action id="eventForm" v-on:change="changed('change', -1)">
         <fieldset :disabled="loading">
           <label for="eventName" id="nameLabel">
-            <b>{{connections ? "Connector" : "Event"}} name</b>
-            <br>
+            <b>{{ connections ? 'Connector' : 'Event' }} name</b> <br />
           </label>
-          <input id="eventName" class="form-control" v-model="name">
-          <br>
+          <input id="eventName" class="form-control" v-model="name" /> <br />
 
           <template v-if="!connections">
-            <label for="eventType">
-              <b>Event type</b>
-              <br>
-            </label>
+            <label for="eventType"> <b>Event type</b> <br /> </label>
             <select id="eventType" class="form-control" v-model="type">
               <option disabled selected value>-- select an option --</option>
               <option value="Working Group">Working Group</option>
@@ -29,24 +24,24 @@
               <option value="Key Event">Key Event</option>
               <option value="Sanctuary">Sanctuary (Rescue/Work Day)</option>
             </select>
-            <br>
+            <br />
           </template>
 
           <label for="eventDate">
-            <b>{{connections ? "Connection" : "Event"}} date</b>
+            <b>{{ connections ? 'Connection' : 'Event' }} date</b>
             <button
               class="btn btn-xs btn-primary"
               style="margin: 0px 10px"
               v-on:click.prevent="setDateToToday"
-            >today</button>
-            <br>
+            >
+              today
+            </button>
+            <br />
           </label>
-          <input id="eventDate" class="form-control" type="date" v-model="date">
-          <br>
+          <input id="eventDate" class="form-control" type="date" v-model="date" /> <br />
 
           <label for="attendee1" id="attendeeLabel">
-            <b>{{connections ? "Connectees" : "Attendees"}}</b>
-            <br>
+            <b>{{ connections ? 'Connectees' : 'Attendees' }}</b> <br />
           </label>
           <div id="attendee-rows">
             <input
@@ -56,19 +51,16 @@
               v-model="attendees[index]"
               v-on:input="changed('input', index)"
               v-on:awesomplete-selectcomplete="changed('select', index)"
-            >
+            />
           </div>
 
-          <br>
+          <br />
 
-          <label for="attendeeTotal">
-            <b>Total attendance:</b>
-          </label>
-          <span id="attendeeTotal">{{attendeeCount}}</span>
-          <br>
+          <label for="attendeeTotal"> <b>Total attendance:</b> </label>
+          <span id="attendeeTotal">{{ attendeeCount }}</span> <br />
         </fieldset>
       </form>
-      <br>
+      <br />
       <center>
         <button
           class="btn btn-success btn-lg"
@@ -76,58 +68,58 @@
           v-on:click="save"
           :disabled="saving"
         >
-          <span>Save {{connections ? "connection" : "event"}}</span>
+          <span>Save {{ connections ? 'connection' : 'event' }}</span>
         </button>
       </center>
-      <br>
+      <br />
     </div>
   </div>
 </template>
 
 <script>
-import * as Awesomplete from "awesomplete";
-import { flashMessage, setFlashMessageSuccessCookie } from "flash_message";
+import * as Awesomplete from 'awesomplete';
+import { flashMessage, setFlashMessageSuccessCookie } from 'flash_message';
 
 // Like Awesomplete.FILTER_CONTAINS, but internal whitespace matches anything.
 function nameFilter(text, input) {
-  return RegExp(Awesomplete.$.regExpEscape(input.trim()).replace(/ +/g, ".*"), "i").test(text);
+  return RegExp(Awesomplete.$.regExpEscape(input.trim()).replace(/ +/g, '.*'), 'i').test(text);
 }
 
 export default {
   props: {
     connections: Boolean,
     // TODO(mdempsky): Change id to Number.
-    id: String
+    id: String,
   },
   data() {
     return {
       loading: false,
       saving: false,
 
-      name: "",
-      date: "",
-      type: "",
+      name: '',
+      date: '',
+      type: '',
       attendees: [],
 
-      oldName: "",
-      oldDate: "",
-      oldType: "",
+      oldName: '',
+      oldDate: '',
+      oldType: '',
       oldAttendees: [],
 
       allActivists: [],
-      allActivistsSet: new Set()
+      allActivistsSet: new Set(),
     };
   },
   computed: {
     attendeeCount() {
       let result = 0;
       for (let attendee of this.attendees) {
-        if (attendee.trim() != "") {
+        if (attendee.trim() != '') {
           result++;
         }
       }
       return result;
-    }
+    },
   },
 
   created() {
@@ -137,14 +129,14 @@ export default {
     if (Number(this.id) != 0) {
       this.loading = true;
       $.ajax({
-        url: "/event/get/" + this.id,
-        method: "GET",
-        dataType: "json",
-        success: data => {
+        url: '/event/get/' + this.id,
+        method: 'GET',
+        dataType: 'json',
+        success: (data) => {
           const event = data.event;
-          this.name = event.event_name || "";
-          this.type = event.event_type || "";
-          this.date = event.event_date || "";
+          this.name = event.event_name || '';
+          this.type = event.event_type || '';
+          this.date = event.event_date || '';
           this.attendees = event.attendees || [];
 
           this.oldName = this.name;
@@ -153,52 +145,52 @@ export default {
           this.oldAttendees = [...this.attendees];
 
           this.loading = false;
-          this.changed("load", -1);
+          this.changed('load', -1);
         },
         error: () => {
-          flashMessage("Error: could not load event", true);
-        }
+          flashMessage('Error: could not load event', true);
+        },
       });
     }
 
     // TODO(mdempsky): Unregister event listener when destroyed.
-    window.addEventListener("beforeunload", e => {
+    window.addEventListener('beforeunload', (e) => {
       if (this.dirty()) {
         // TODO(mdempsky): Remove after figuring out Safari issue.
         console.log(
-          "Event data looks dirty",
+          'Event data looks dirty',
           JSON.stringify({
             new: {
               name: this.name,
               type: this.type,
               date: this.date,
-              attendees: this.attendees
+              attendees: this.attendees,
             },
             old: {
               name: this.oldName,
               type: this.oldType,
               date: this.oldDate,
-              attendees: this.oldAttendees
-            }
-          })
+              attendees: this.oldAttendees,
+            },
+          }),
         );
 
         e.preventDefault();
         // MDN says returnValue is unused, but still required by Chrome.
         // https://developer.mozilla.org/en-US/docs/Web/Events/beforeunload
-        e.returnValue = "";
+        e.returnValue = '';
       }
     });
   },
 
   updated() {
     this.$nextTick(() => {
-      for (let row of $("#attendee-rows > input.attendee-input")) {
+      for (let row of $('#attendee-rows > input.attendee-input')) {
         new Awesomplete(row, {
           filter: nameFilter,
           list: this.allActivists,
           sort: false,
-          tabSelect: true
+          tabSelect: true,
         });
       }
     });
@@ -222,14 +214,14 @@ export default {
       var newSet = new Set();
       for (let attendee of this.attendees) {
         attendee = attendee.trim();
-        if (attendee != "") {
+        if (attendee != '') {
           newSet.add(attendee);
         }
       }
       var oldSet = new Set();
       for (let attendee of this.oldAttendees) {
         attendee = attendee.trim();
-        if (attendee != "") {
+        if (attendee != '') {
           oldSet.add(attendee);
         }
       }
@@ -248,17 +240,17 @@ export default {
 
     addRows(n) {
       for (let i = 0; i < n; i++) {
-        this.attendees.push("");
+        this.attendees.push('');
       }
     },
 
     changed(x, y) {
-      const inputs = $("#attendee-rows input.attendee-input");
+      const inputs = $('#attendee-rows input.attendee-input');
 
       // Add more rows if there are less than 5,
       // or if the last row isn't empty.
       let more = 5 - this.attendees.length;
-      if (more <= 0 && this.attendees[this.attendees.length - 1].trim() != "") {
+      if (more <= 0 && this.attendees[this.attendees.length - 1].trim() != '') {
         more = 1;
       }
       if (more >= 1) {
@@ -273,7 +265,7 @@ export default {
 
       // If event came from selecting an autocomplete suggestion,
       // then move focus to the next input.
-      if (x == "select") {
+      if (x == 'select') {
         // If the user selected an option with "tab", then the browser
         // is going to advance the focus automatically. If we set focus
         // to y+1 now, then the tab event will instead set focus to y+2.
@@ -296,12 +288,12 @@ export default {
       for (let i = 0; i < this.attendees.length; i++) {
         const name = this.attendees[i].trim();
 
-        let warning = "";
-        if (name != "") {
+        let warning = '';
+        if (name != '') {
           if (!this.allActivistsSet.has(name)) {
-            warning = "unknown";
+            warning = 'unknown';
           } else if (seen.has(name)) {
-            warning = "duplicate";
+            warning = 'duplicate';
           } else {
             seen.add(name);
           }
@@ -316,17 +308,17 @@ export default {
     save() {
       const name = this.name.trim();
       const date = this.date;
-      const type = this.connections ? "Connection" : this.type;
-      if (name === "") {
-        flashMessage("Error: Please enter event name!", true);
+      const type = this.connections ? 'Connection' : this.type;
+      if (name === '') {
+        flashMessage('Error: Please enter event name!', true);
         return;
       }
-      if (date === "") {
-        flashMessage("Error: Please enter date!", true);
+      if (date === '') {
+        flashMessage('Error: Please enter date!', true);
         return;
       }
-      if (type === "") {
-        flashMessage("Error: Must choose event type.", true);
+      if (type === '') {
+        flashMessage('Error: Must choose event type.', true);
         return;
       }
 
@@ -334,14 +326,14 @@ export default {
       let attendeesSet = new Set();
       for (let attendee of this.attendees) {
         attendee = attendee.trim();
-        if (attendee != "" && !attendeesSet.has(attendee)) {
+        if (attendee != '' && !attendeesSet.has(attendee)) {
           attendees.push(attendee);
           attendeesSet.add(attendee);
         }
       }
 
       if (attendees.length === 0) {
-        flashMessage("Error: must enter attendees", true);
+        flashMessage('Error: must enter attendees', true);
         return;
       }
 
@@ -356,22 +348,22 @@ export default {
 
       this.saving = true;
       $.ajax({
-        url: this.connections ? "/connection/save" : "/event/save",
-        method: "POST",
-        contentType: "application/json",
+        url: this.connections ? '/connection/save' : '/event/save',
+        method: 'POST',
+        contentType: 'application/json',
         data: JSON.stringify({
           event_id: Number(this.id),
           event_name: name,
           event_date: date,
           event_type: type,
           added_attendees: addedActivists,
-          deleted_attendees: deletedActivists
+          deleted_attendees: deletedActivists,
         }),
-        success: data => {
+        success: (data) => {
           this.saving = false;
           let parsed = JSON.parse(data);
-          if (parsed.status === "error") {
-            flashMessage("Error: " + parsed.message, true);
+          if (parsed.status === 'error') {
+            flashMessage('Error: ' + parsed.message, true);
             return;
           }
 
@@ -383,30 +375,30 @@ export default {
           // TODO(mdempsky): Remove after figuring out Safari issue.
           if (this.dirty()) {
             console.log(
-              "Oops, still dirty after save!",
+              'Oops, still dirty after save!',
               JSON.stringify({
                 new: {
                   name: this.name,
                   type: this.type,
                   date: this.date,
-                  attendees: this.attendees
+                  attendees: this.attendees,
                 },
                 old: {
                   name: this.oldName,
                   type: this.oldType,
                   date: this.oldDate,
-                  attendees: this.oldAttendees
-                }
-              })
+                  attendees: this.oldAttendees,
+                },
+              }),
             );
           }
 
           if (parsed.redirect) {
             // TODO(mdempsky): Implement as history rewrite.
-            setFlashMessageSuccessCookie("Saved!");
+            setFlashMessageSuccessCookie('Saved!');
             window.location = parsed.redirect;
           } else {
-            flashMessage("Saved!", false);
+            flashMessage('Saved!', false);
           }
 
           // Saving the event may have created new activists,
@@ -415,18 +407,18 @@ export default {
         },
         error: () => {
           this.saving = false;
-          flashMessage("Error, did not save data", true);
-        }
+          flashMessage('Error, did not save data', true);
+        },
       });
     },
 
     // TODO(mdempsky): Move into utility file.
     updateAutocompleteNames() {
       $.ajax({
-        url: "/activist_names/get",
-        method: "GET",
-        dataType: "json",
-        success: data => {
+        url: '/activist_names/get',
+        method: 'GET',
+        dataType: 'json',
+        success: (data) => {
           var activistNames = data.activist_names;
           // Clear current activist name array and set before re-adding
           this.allActivists.length = 0;
@@ -435,19 +427,19 @@ export default {
             this.allActivists.push(name);
             this.allActivistsSet.add(name);
           }
-          this.changed("autocomplete", -1);
+          this.changed('autocomplete', -1);
         },
         error: () => {
-          flashMessage("Error: could not load activist names", true);
-        }
+          flashMessage('Error: could not load activist names', true);
+        },
       });
-    }
-  }
+    },
+  },
 };
 </script>
 
 <style>
-@import url("~awesomplete/awesomplete.css");
+@import url('~awesomplete/awesomplete.css');
 
 .awesomplete {
   display: block;
@@ -457,11 +449,11 @@ export default {
   padding: 0;
 }
 
-.attendee-input[data-warning="duplicate"] {
+.attendee-input[data-warning='duplicate'] {
   border: 2px solid red;
 }
 
-.attendee-input[data-warning="unknown"] {
+.attendee-input[data-warning='unknown'] {
   border: 2px solid yellow;
 }
 </style>

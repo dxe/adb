@@ -1,7 +1,8 @@
 <template>
-
   <div id="app" class="main">
-    <button class="btn btn-default" @click="showModal('edit-user-modal')"><span class="glyphicon glyphicon-plus"></span>&nbsp;&nbsp;Add New User</button>
+    <button class="btn btn-default" @click="showModal('edit-user-modal')">
+      <span class="glyphicon glyphicon-plus"></span>&nbsp;&nbsp;Add New User
+    </button>
     <table id="user-list" class="adb-table table table-hover table-striped tablesorter">
       <thead>
         <tr>
@@ -14,22 +15,27 @@
       </thead>
       <tbody id="user-list-body">
         <tr v-for="(user, index) in users">
-          <td><button class="btn btn-default glyphicon glyphicon-pencil" @click="showModal('edit-user-modal', user, index)"></button></td>
-          <td>{{user.email}}</td>
-          <td>{{user.name}}</td>
-          <td>{{ (user.roles || []).join(', ')}}</td>
+          <td>
+            <button
+              class="btn btn-default glyphicon glyphicon-pencil"
+              @click="showModal('edit-user-modal', user, index)"
+            ></button>
+          </td>
+          <td>{{ user.email }}</td>
+          <td>{{ user.name }}</td>
+          <td>{{ (user.roles || []).join(', ') }}</td>
           <!-- only disabled  if true to improve page readability -->
           <td><span v-if="user.disabled">Disabled</span></td>
         </tr>
       </tbody>
     </table>
     <modal
-       name="edit-user-modal"
-       :height="830"
-       classes="no-background-color"
-       @opened="modalOpened"
-       @closed="modalClosed"
-       >
+      name="edit-user-modal"
+      :height="830"
+      classes="no-background-color"
+      @opened="modalOpened"
+      @closed="modalClosed"
+    >
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
@@ -38,48 +44,101 @@
           </div>
           <div class="modal-body">
             <form action="" id="editUserForm">
-              <p><label for="email">Email: </label><input class="form-control" type="text" v-model.trim="currentUser.email" id="email" /></p>
-              <p><label for="name">Name: </label><input class="form-control" type="text" v-model.trim="currentUser.name" id="name" /></p>
-              <p><label for="disabled">Disabled: </label><input class="form-control" type="checkbox" v-model="currentUser.disabled" id="disabled" /></p>
+              <p>
+                <label for="email">Email: </label
+                ><input
+                  class="form-control"
+                  type="text"
+                  v-model.trim="currentUser.email"
+                  id="email"
+                />
+              </p>
+              <p>
+                <label for="name">Name: </label
+                ><input
+                  class="form-control"
+                  type="text"
+                  v-model.trim="currentUser.name"
+                  id="name"
+                />
+              </p>
+              <p>
+                <label for="disabled">Disabled: </label
+                ><input
+                  class="form-control"
+                  type="checkbox"
+                  v-model="currentUser.disabled"
+                  id="disabled"
+                />
+              </p>
             </form>
 
             <div v-if="currentUser.id">
               <p style="margin-top: 20px;"></p>
               <h3 class="text-center">Roles</h3>
               <form action="" id="editUserRolesForm">
-
                 <p>
                   <label for="admin_cb">Admin</label>
-                  <input class="form-control" type="checkbox" name="admin_cb" id="admin_cb" value="admin" @click="updateUserRoleModal('admin')" v-model="currentUserRoleSelections">
+                  <input
+                    class="form-control"
+                    type="checkbox"
+                    name="admin_cb"
+                    id="admin_cb"
+                    value="admin"
+                    @click="updateUserRoleModal('admin')"
+                    v-model="currentUserRoleSelections"
+                  />
                 </p>
                 <p>
                   <label for="org_cb">Organizer</label>
-                  <input class="form-control" type="checkbox" name="org_cb" id="org_cb" value="organizer" @click="updateUserRoleModal('organizer')" v-model="currentUserRoleSelections">
+                  <input
+                    class="form-control"
+                    type="checkbox"
+                    name="org_cb"
+                    id="org_cb"
+                    value="organizer"
+                    @click="updateUserRoleModal('organizer')"
+                    v-model="currentUserRoleSelections"
+                  />
                 </p>
                 <p>
                   <label for="att_cb">Attendance</label>
-                  <input class="form-control" type="checkbox" name="att_cb" id="att_cb" value="attendance" @click="updateUserRoleModal('attendance')" v-model="currentUserRoleSelections">
+                  <input
+                    class="form-control"
+                    type="checkbox"
+                    name="att_cb"
+                    id="att_cb"
+                    value="attendance"
+                    @click="updateUserRoleModal('attendance')"
+                    v-model="currentUserRoleSelections"
+                  />
                 </p>
               </form>
             </div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" @click="hideModal">Close</button>
-            <button type="button" v-bind:disabled="disableConfirmButton" class="btn btn-success" @click="confirmEditUserModal">Save changes</button>
+            <button
+              type="button"
+              v-bind:disabled="disableConfirmButton"
+              class="btn btn-success"
+              @click="confirmEditUserModal"
+            >
+              Save changes
+            </button>
           </div>
         </div>
       </div>
     </modal>
   </div>
-
 </template>
 
 <script>
 // Library from here: https://github.com/euvl/vue-js-modal
 import vmodal from 'vue-js-modal';
 import Vue from 'vue';
-import {flashMessage} from 'flash_message';
-import {Dropdown} from 'uiv';
+import { flashMessage } from 'flash_message';
+import { Dropdown } from 'uiv';
 
 Vue.use(vmodal);
 
@@ -91,7 +150,7 @@ const AscOrder = 1;
 export default {
   name: 'user-list',
   methods: {
-    showModal: function (modalName, user, index) {
+    showModal: function(modalName, user, index) {
       // Check to see if there's a modal open, and close it if so.
       if (this.currentModalName) {
         this.hideModal();
@@ -107,8 +166,7 @@ export default {
       this.currentModalName = modalName;
       this.$modal.show(modalName);
     },
-    hideModal: function () {
-
+    hideModal: function() {
       // Make sure we update the main user list instance of
       // this current user to match the roles.
       // Only when we're not creating a new User.
@@ -127,27 +185,27 @@ export default {
       // Sort user list by email
       this.sortUserListByEmail();
     },
-    confirmEditUserModal: function () {
+    confirmEditUserModal: function() {
       // Disable the save button when the user clicks it so they don't
       // try to save twice. Re-enable it when we get any response back
       // from the server (even an error).
       this.disableConfirmButton = true;
 
       $.ajax({
-        url: "/user/save",
-        method: "POST",
-        contentType: "application/json",
+        url: '/user/save',
+        method: 'POST',
+        contentType: 'application/json',
         data: JSON.stringify(this.currentUser),
         success: (data) => {
           this.disableConfirmButton = false;
 
           var parsed = JSON.parse(data);
-          if (parsed.status === "error") {
-            flashMessage("Error: " + parsed.message, true);
+          if (parsed.status === 'error') {
+            flashMessage('Error: ' + parsed.message, true);
             return;
           }
 
-          flashMessage(this.currentUser.email + " saved");
+          flashMessage(this.currentUser.email + ' saved');
 
           if (this.userIndex === -1) {
             // We're getting a new user, insert them at the top.
@@ -164,11 +222,11 @@ export default {
           this.disableConfirmButton = false;
 
           console.warn(err.responseText);
-          flashMessage("Server error: " + err.responseText, true);
+          flashMessage('Server error: ' + err.responseText, true);
         },
       });
     },
-    modalOpened: function () {
+    modalOpened: function() {
       // Add noscroll to body tag so it doesn't scroll while the modal
       // is shown.
       $(document.body).addClass('noscroll');
@@ -179,32 +237,31 @@ export default {
       // as we're making selections in the modal edit window.
       this.currentUserRoleSelections = $.extend([], this.currentUser.roles);
     },
-    modalClosed: function () {
+    modalClosed: function() {
       // Allow body to scroll after modal is closed.
       $(document.body).removeClass('noscroll');
     },
-    sortByEmail: function () {
+    sortByEmail: function() {
       var order = this.pagingParameters.order;
       if (order === AscOrder) {
         order = DescOrder;
-      }
-      else {
+      } else {
         order = AscOrder;
       }
       this.reset();
       this.pagingParameters.order = order;
     },
-    sortUserListByEmail: function () {
+    sortUserListByEmail: function() {
       if (!this.users) {
         return;
       }
 
-      this.users.sort(function (a, b) {
+      this.users.sort(function(a, b) {
         var emailA = a.email.toLowerCase();
         var emailB = b.email.toLowerCase();
 
         if (emailA < emailB) {
-          return - 1;
+          return -1;
         }
 
         if (emailA > emailB) {
@@ -214,11 +271,11 @@ export default {
         return 0;
       });
     },
-    setUsers: function (users) {
+    setUsers: function(users) {
       console.log('inside setUsers: ', users);
       this.users = users;
     },
-    reset: function () {
+    reset: function() {
       // reset data properties back to original values
       this.currentUser = {};
       this.users = [];
@@ -226,14 +283,14 @@ export default {
       this.disableConfirmButton = false;
       this.currentModalName = '';
       this.pagingParameters = {
-        email: "",
+        email: '',
         order: AscOrder,
-        limit: 40
+        limit: 40,
       };
 
       this.currentUserRoleSelections = [];
     },
-    updateUserRoleModal: function (role) {
+    updateUserRoleModal: function(role) {
       if (this.disableConfirmButton) {
         return;
       }
@@ -253,25 +310,35 @@ export default {
       const existingRole = this.currentUser.roles.includes(role);
 
       $.ajax({
-        url: existingRole ? "/users-roles/remove" : "/users-roles/add",
-        method: "POST",
-        contentType: "application/json",
+        url: existingRole ? '/users-roles/remove' : '/users-roles/add',
+        method: 'POST',
+        contentType: 'application/json',
         data: JSON.stringify({
           user_id: this.currentUser.id,
-          role: role
+          role: role,
         }),
         success: (data) => {
           this.disableConfirmButton = false;
 
           var parsed = JSON.parse(data);
 
-          if (parsed.status === "error") {
+          if (parsed.status === 'error') {
             this.currentUserRoleSelections = $.extend([], this.currentUser.roles);
-            flashMessage("And error occurred while updating this User's Role. Reverting Role Selections back to original", parsed.message, true);
+            flashMessage(
+              "And error occurred while updating this User's Role. Reverting Role Selections back to original",
+              parsed.message,
+              true,
+            );
             return;
           }
 
-          flashMessage((existingRole ? "Removed" : "Added") + " the " + role + " role for " + this.currentUser.email);
+          flashMessage(
+            (existingRole ? 'Removed' : 'Added') +
+              ' the ' +
+              role +
+              ' role for ' +
+              this.currentUser.email,
+          );
 
           // Sync the currentUser.roles with the current modal selections.
           this.currentUser.roles = this.currentUserRoleSelections;
@@ -280,10 +347,14 @@ export default {
           this.disableConfirmButton = false;
           this.currentUserRoleSelections = $.extend([], this.currentUser.roles);
           console.warn(err.responseText);
-          flashMessage("Server error. Reverting Role Selections back to original: ", err.responseText, true);
-        }
-      })
-    }
+          flashMessage(
+            'Server error. Reverting Role Selections back to original: ',
+            err.responseText,
+            true,
+          );
+        },
+      });
+    },
   },
   data() {
     return {
@@ -293,35 +364,35 @@ export default {
       disableConfirmButton: false,
       currentModalName: '',
       pagingParameters: {
-        email: "",
+        email: '',
         order: AscOrder,
-        limit: 40
+        limit: 40,
       },
-      currentUserRoleSelections: []
+      currentUserRoleSelections: [],
     };
   },
   created() {
     $.ajax({
-      url: "/user/list",
-      success: function (data) {
+      url: '/user/list',
+      success: function(data) {
         var parsed = JSON.parse(data);
-        if (parsed.status === "error") {
-          flashMessage("Error: " + parsed.message, true);
+        if (parsed.status === 'error') {
+          flashMessage('Error: ' + parsed.message, true);
           return;
         }
         // status === "success"
         this.setUsers(parsed);
       }.bind(this),
-      error: function () {
-        flashMessage("Error connecting to server.", true);
+      error: function() {
+        flashMessage('Error connecting to server.', true);
       },
     });
   },
   components: {
-    Dropdown
+    Dropdown,
   },
   directives: {
-    focus
+    focus,
   },
-}
+};
 </script>

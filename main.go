@@ -296,7 +296,6 @@ func getUserEmail(user model.ADBUser) string {
 	return userEmail
 }
 
-
 func (c MainController) apiRoleMiddleware(h http.Handler, allowedRoles []string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, authed := getAuthedADBUser(c.db, r)
@@ -542,10 +541,10 @@ var templates = template.Must(template.New("").Funcs(
 	}).ParseGlob("templates/*.html"))
 
 type PageData struct {
-	PageName string
-	Data     interface{}
-	MainRole string
-	UserName string
+	PageName  string
+	Data      interface{}
+	MainRole  string
+	UserName  string
 	UserEmail string
 	// Filled in by renderPage.
 	StaticResourcesHash string
