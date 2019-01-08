@@ -65,19 +65,17 @@ func normalizeEmail(s string) string {
 	return strings.ToLower(strings.TrimSpace(s))
 }
 
-func getInsertAndRemoveEmails(wgMembers []model.WorkingGroupMember, listEmails []string) (insertEmails, removeEmails []string) {
+// getInsertAndRemoveEmails returns the list of emails that need to be
+// inserted and/or removed to transform current into target.
+func getInsertAndRemoveEmails(target, current []string) (insertEmails, removeEmails []string) {
 	wgMembersEmailMap := map[string]bool{}
-	for _, a := range wgMembers {
-		// Don't track empty emails.
-		e := normalizeEmail(a.ActivistEmail)
-		if e != "" {
-			wgMembersEmailMap[e] = true
-		} else {
-			fmt.Printf("Activist has no email, will not be synced to mailing list: %s\n", a.ActivistName)
-		}
+	for _, e := range target {
+		normalized := normalizeEmail(e)
+		wgMembersEmailMap[normalized] = true
 	}
+
 	listEmailMap := map[string]bool{}
-	for _, e := range listEmails {
+	for _, e := range current {
 		normalized := normalizeEmail(e)
 		listEmailMap[normalized] = true
 	}
@@ -100,43 +98,82 @@ func getInsertAndRemoveEmails(wgMembers []model.WorkingGroupMember, listEmails [
 	return insertEmails, removeEmails
 }
 
-func syncMailingLists(db *sqlx.DB, adminService *admin.Service) error {
+func syncMailingList(adminService *admin.Service, groupEmail string, memberEmails []string) []error {
+	listEmails, err := listMembers(adminService, groupEmail)
+	if err != nil {
+		// Don't continue processing if we can't get
+		// the members list.
+		return []error{err}
+	}
+
+	insertEmails, removeEmails := getInsertAndRemoveEmails(memberEmails, listEmails)
+
+	var errs []error
+	for _, e := range insertEmails {
+		err := insertMember(adminService, groupEmail, e)
+		if err != nil {
+			errs = append(errs, err)
+			// Continue processing.
+		}
+	}
+	for _, e := range removeEmails {
+		err := removeMember(adminService, groupEmail, e)
+		if err != nil {
+			errs = append(errs, err)
+			// Continue processing.
+		}
+	}
+
+	return errs
+}
+
+func syncWorkingGroupMailingLists(db *sqlx.DB, adminService *admin.Service) error {
 	wgs, err := model.GetWorkingGroups(db, model.WorkingGroupQueryOptions{})
 	if err != nil {
 		return err
 	}
 	var errs []error
 	for _, wg := range wgs {
-		listEmails, err := listMembers(adminService, wg.GroupEmail)
-		if err != nil {
-			errs = append(errs, err)
-			// Don't continue processing if we can't get
-			// the members list.
-			continue
-		}
-
-		insertEmails, removeEmails := getInsertAndRemoveEmails(wg.Members, listEmails)
-
-		for _, e := range insertEmails {
-			err = insertMember(adminService, wg.GroupEmail, e)
-			if err != nil {
-				errs = append(errs, err)
-				// Fallthrough and try to insert other
-				// members if there's a failure.
+		var memberEmails []string
+		for _, m := range wg.Members {
+			email := normalizeEmail(m.ActivistEmail)
+			if email == "" {
+				fmt.Printf("Activist has no email, will not be synced to mailing list: %s\n", m.ActivistName)
+				continue
 			}
+			memberEmails = append(memberEmails, email)
 		}
-		for _, e := range removeEmails {
-			err = removeMember(adminService, wg.GroupEmail, e)
-			if err != nil {
-				errs = append(errs, err)
-				// Fallthrough and try to delete other
-				// members if there's a failure.
-			}
-		}
+		errs = append(errs, syncMailingList(adminService, wg.GroupEmail, memberEmails)...)
+	}
+	if len(errs) != 0 {
+		return errors.Errorf("Received errors during syncWorkingGroupMailingLists: %+v", errs)
+	}
+	return nil
+}
+
+func syncCircleHostMailingList(db *sqlx.DB, adminService *admin.Service) error {
+	// Sync circlehosts@directactioneverywhere.com to contain all
+	// circle hosts.
+
+	circles, err := model.GetCircleGroups(db, model.CircleGroupQueryOptions{})
+	if err != nil {
+		return err
 	}
 
+	// The circle host's email is used as the circle's group email.
+	var emails []string
+	for _, c := range circles {
+		email := normalizeEmail(c.GroupEmail)
+		if email == "" {
+			fmt.Printf("Circle has no email, will not be synced to mailing list: %s", c.Name)
+			continue
+		}
+		emails = append(emails, email)
+	}
+
+	errs := syncMailingList(adminService, "circlehosts@directactioneverywhere.com", emails)
 	if len(errs) != 0 {
-		return errors.Errorf("Received errors during syncMailingLists: %+v", errs)
+		return errors.Errorf("Received errors during syncCirclehostMailingList: %+v", errs)
 	}
 	return nil
 }
@@ -148,7 +185,12 @@ func syncMailingListsWrapper(db *sqlx.DB, adminService *admin.Service) {
 		}
 	}()
 
-	err := syncMailingLists(db, adminService)
+	err := syncWorkingGroupMailingLists(db, adminService)
+	if err != nil {
+		panic(err)
+	}
+
+	err = syncCircleHostMailingList(db, adminService)
 	if err != nil {
 		panic(err)
 	}

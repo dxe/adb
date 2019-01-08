@@ -3,27 +3,26 @@ package mailinglist_sync
 import (
 	"testing"
 
-	"github.com/dxe/adb/model"
 	"github.com/stretchr/testify/require"
 )
 
 func TestGetInsertAndRemoveEmails(t *testing.T) {
 	// Should not add/remove activists if the list is empty.
-	i0, r0 := getInsertAndRemoveEmails([]model.WorkingGroupMember{{
-		ActivistEmail: "hello@hello.com",
-	}}, []string{"hello@hello.com"})
+	i0, r0 := getInsertAndRemoveEmails([]string{
+		"hello@hello.com",
+	}, []string{
+		"hello@hello.com",
+	})
 
 	require.Equal(t, len(i0), 0)
 	require.Equal(t, len(r0), 0)
 
 	// Test that emails are added/removed correctly.
-	i1, r1 := getInsertAndRemoveEmails([]model.WorkingGroupMember{{
-		ActivistEmail: "hello@hello.com",
-	}, {
-		ActivistEmail: "goodbye@goodbye.com",
-	}, {
-		ActivistEmail: "heyo@hey.com",
-	}}, []string{
+	i1, r1 := getInsertAndRemoveEmails([]string{
+		"hello@hello.com",
+		"goodbye@goodbye.com",
+		"heyo@hey.com",
+	}, []string{
 		"hello@hello.com",
 		"anotherone@yo.com",
 	})
