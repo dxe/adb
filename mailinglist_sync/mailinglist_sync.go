@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"strings"
 	"time"
 
@@ -107,6 +108,9 @@ func syncMailingList(adminService *admin.Service, groupEmail string, memberEmail
 	}
 
 	insertEmails, removeEmails := getInsertAndRemoveEmails(memberEmails, listEmails)
+	if len(insertEmails) != 0 || len(removeEmails) != 0 {
+		log.Printf("Syncing %v: +%q, -%q", groupEmail, insertEmails, removeEmails)
+	}
 
 	var errs []error
 	for _, e := range insertEmails {
