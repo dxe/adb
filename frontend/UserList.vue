@@ -44,7 +44,8 @@
             </form>
 
             <div v-if="currentUser.id">
-              <p style="margin-top: 20px;"><h3 class="text-center">Roles</h3></p>
+              <p style="margin-top: 20px;"></p>
+              <h3 class="text-center">Roles</h3>
               <form action="" id="editUserRolesForm">
 
                 <p>

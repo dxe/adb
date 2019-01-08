@@ -74,7 +74,6 @@
         </div>
       </div>
     </modal>
-    </modal>
     <modal
        name="edit-circle-modal"
        height="auto"
@@ -113,6 +112,7 @@
               
               <p>
                 <label for="point-person">Host: </label>
+              </p>
                 <div class="select-row" v-for="(member, index) in currentCircleGroup.members">
                   <template v-if="member.point_person">
                     <basic-select
@@ -126,9 +126,9 @@
                   </template>
                 </div>
                 <button v-if="showAddPointPerson" type="button" class="btn btn-sm" @click="addPointPerson">Add point person</button>
-              </p>
               <p>
                 <label for="members">Members: </label>
+              </p>
                 <div class="select-row" v-for="(member, index) in currentCircleGroup.members">
                   <template v-if="!member.point_person && !member.non_member_on_mailing_list">
                     <basic-select
@@ -142,7 +142,6 @@
                   </template>
                 </div>
                 <button type="button" class="btn btn-sm" @click="addMember">Add member</button>
-              </p>
             </form>
           </div>
           <div class="modal-footer">

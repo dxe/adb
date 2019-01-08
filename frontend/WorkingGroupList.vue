@@ -84,7 +84,6 @@
         </div>
       </div>
     </modal>
-    </modal>
     <modal
        name="edit-working-group-modal"
        height="auto"
@@ -122,6 +121,7 @@
               <!-- <p><label for="coords">Coordinates: </label><input class="form-control" type="text" v-model.trim="currentWorkingGroup.coords" id="coords" /></p> -->
               <p>
                 <label for="point-person">Point person: </label>
+              </p>
                 <div class="select-row" v-for="(member, index) in currentWorkingGroup.members">
                   <template v-if="member.point_person">
                     <basic-select
@@ -135,9 +135,9 @@
                   </template>
                 </div>
                 <button v-if="showAddPointPerson" type="button" class="btn btn-sm" @click="addPointPerson">Add point person</button>
-              </p>
               <p>
                 <label for="members">Members: </label>
+              </p>
                 <div class="select-row" v-for="(member, index) in currentWorkingGroup.members">
                   <template v-if="!member.point_person && !member.non_member_on_mailing_list">
                     <basic-select
@@ -151,9 +151,9 @@
                   </template>
                 </div>
                 <button type="button" class="btn btn-sm" @click="addMember">Add member</button>
-              </p>
               <p>
                 <label for="non-members">Non-members on the mailing list: </label>
+              </p>
                 <div class="select-row" v-for="(member, index) in currentWorkingGroup.members">
                   <template v-if="member.non_member_on_mailing_list">
                     <basic-select
@@ -167,7 +167,6 @@
                   </template>
                 </div>
                 <button type="button" class="btn btn-sm" @click="addNonMember">Add non-member to mailing list</button>
-              </p>
             </form>
           </div>
           <div class="modal-footer">
