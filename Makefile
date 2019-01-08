@@ -48,3 +48,8 @@ prod_build: clean set_git_hooks
 	./scripts/pull_adb_config.sh
 	npm run build
 	env GOOS=linux GOARCH=amd64 go build
+
+# Reformat source files.
+fmt:
+	go fmt ./...
+	npx prettier --write frontend/*.{js,vue}
