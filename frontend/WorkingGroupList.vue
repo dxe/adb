@@ -308,7 +308,7 @@ Vue.use(vmodal);
 export default {
   name: 'working-group-list',
   methods: {
-    showModal: function(modalName, workingGroup, index) {
+    showModal(modalName, workingGroup, index) {
       // Check to see if there's a modal open, and close it if so.
       if (this.currentModalName) {
         this.hideModal();
@@ -325,7 +325,7 @@ export default {
       this.currentModalName = modalName;
       this.$modal.show(modalName);
     },
-    hideModal: function() {
+    hideModal() {
       if (this.currentModalName) {
         this.$modal.hide(this.currentModalName);
       }
@@ -333,7 +333,7 @@ export default {
       this.workingGroupIndex = -1;
       this.currentWorkingGroup = {};
     },
-    confirmEditWorkingGroupModal: function() {
+    confirmEditWorkingGroupModal() {
       // First, check for duplicate activists because that's the most
       // likely error.
       if (this.currentWorkingGroup.members) {
@@ -384,7 +384,7 @@ export default {
         },
       });
     },
-    confirmDeleteWorkingGroupModal: function() {
+    confirmDeleteWorkingGroupModal() {
       this.disableConfirmButton = true;
 
       $.ajax({
@@ -414,14 +414,14 @@ export default {
         },
       });
     },
-    modalOpened: function() {
+    modalOpened() {
       $(document.body).addClass('noscroll');
       this.disableConfirmButton = false;
     },
-    modalClosed: function() {
+    modalClosed() {
       $(document.body).removeClass('noscroll');
     },
-    displayWorkingGroupType: function(type) {
+    displayWorkingGroupType(type) {
       switch (type) {
         case 'committee':
           return 'Committee';
@@ -430,31 +430,31 @@ export default {
       }
       return '';
     },
-    addMember: function() {
+    addMember() {
       if (this.currentWorkingGroup.members === undefined) {
         Vue.set(this.currentWorkingGroup, 'members', []);
       }
       this.currentWorkingGroup.members.push({ name: '' });
     },
-    addPointPerson: function() {
+    addPointPerson() {
       if (this.currentWorkingGroup.members === undefined) {
         Vue.set(this.currentWorkingGroup, 'members', []);
       }
       this.currentWorkingGroup.members.push({ name: '', point_person: true });
     },
-    addNonMember: function() {
+    addNonMember() {
       if (this.currentWorkingGroup.members === undefined) {
         Vue.set(this.currentWorkingGroup, 'members', []);
       }
       this.currentWorkingGroup.members.push({ name: '', non_member_on_mailing_list: true });
     },
-    removeMember: function(index) {
+    removeMember(index) {
       this.currentWorkingGroup.members.splice(index, 1);
     },
-    memberOption: function(member) {
+    memberOption(member) {
       return { text: member.name };
     },
-    onMemberSelect: function(selected, extraData) {
+    onMemberSelect(selected, extraData) {
       var index = extraData.index;
       Vue.set(this.currentWorkingGroup.members, index, {
         name: selected.text,
@@ -462,7 +462,7 @@ export default {
         non_member_on_mailing_list: !!extraData.nonMemberOnMailingList,
       });
     },
-    numberOfWorkingGroupMembers: function(workingGroup) {
+    numberOfWorkingGroupMembers(workingGroup) {
       if (!workingGroup.members) {
         return 0;
       }
@@ -488,7 +488,7 @@ export default {
     };
   },
   computed: {
-    showAddPointPerson: function() {
+    showAddPointPerson() {
       if (!this.currentWorkingGroup) {
         return false; // doesn't matter
       }

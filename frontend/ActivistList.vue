@@ -896,7 +896,7 @@ export default {
     // "activist_recruitment", or "action_team"
     view: {
       type: String,
-      validator: function(value) {
+      validator(value) {
         var validViews = [
           'all_activists',
           'leaderboard',
@@ -910,11 +910,11 @@ export default {
     },
   },
   methods: {
-    showOptionsModal: function(row) {
+    showOptionsModal(row) {
       var activist = this.activists[row];
       this.showModal('activist-options-modal', activist, row);
     },
-    showModal: function(modalName, activist, index) {
+    showModal(modalName, activist, index) {
       // Check to see if there's a modal open, and close it if so.
       if (this.currentModalName) {
         this.hideModal();
@@ -935,7 +935,7 @@ export default {
         this.$modal.show(modalName);
       });
     },
-    hideModal: function() {
+    hideModal() {
       if (this.currentModalName) {
         this.$modal.hide(this.currentModalName);
       }
@@ -943,7 +943,7 @@ export default {
       this.activistIndex = -1;
       this.currentActivist = {};
     },
-    modalOpened: function() {
+    modalOpened() {
       // Add noscroll to body tag so it doesn't scroll while the modal
       // is shown.
       $(document.body).addClass('noscroll');
@@ -965,11 +965,11 @@ export default {
         interval = setInterval(fn, 50);
       }
     },
-    modalClosed: function() {
+    modalClosed() {
       // Allow body to scroll after modal is closed.
       $(document.body).removeClass('noscroll');
     },
-    removeActivist: function(id) {
+    removeActivist(id) {
       var activistIndex;
       for (var i = 0; i < this.allActivists.length; i++) {
         if (this.allActivists[i].id === id) {
@@ -983,7 +983,7 @@ export default {
         .slice(0, activistIndex)
         .concat(this.allActivists.slice(activistIndex + 1));
     },
-    confirmMergeActivistModal: function() {
+    confirmMergeActivistModal() {
       var targetActivistName = $('#merge-target-activist').val();
       if (!targetActivistName) {
         flashMessage('Must choose an activist to merge into', true);
@@ -1024,7 +1024,7 @@ export default {
         },
       });
     },
-    confirmHideActivistModal: function() {
+    confirmHideActivistModal() {
       this.disableConfirmButton = true;
       var currentActivistID = this.currentActivist.id;
 
@@ -1056,7 +1056,7 @@ export default {
         },
       });
     },
-    loadActivists: function() {
+    loadActivists() {
       $.ajax({
         url: '/activist/list',
         method: 'POST',
@@ -1144,7 +1144,7 @@ export default {
         },
       });
     },
-    afterChangeCallback: function(changes, source) {
+    afterChangeCallback(changes, source) {
       if (
         source !== 'edit' &&
         source !== 'CopyPaste.paste' &&
@@ -1183,7 +1183,7 @@ export default {
         })(change);
       }
     },
-    setHOTHeight: function() {
+    setHOTHeight() {
       var hotContainer = document.getElementById('hot-table-container');
       if (!hotContainer) {
         this.height = 500;
@@ -1192,7 +1192,7 @@ export default {
       var y = hotContainer.getBoundingClientRect().y;
       this.height = window.innerHeight - y;
     },
-    listActivistsParameters: function() {
+    listActivistsParameters() {
       var order_field = 'last_event';
       return {
         order: DescOrder,
@@ -1204,7 +1204,7 @@ export default {
         last_event_date_from: this.lastEventDateFrom,
       };
     },
-    toggleShowOptions: function(optionsType) {
+    toggleShowOptions(optionsType) {
       if (this.showOptions === optionsType) {
         this.showOptions = '';
       } else {
@@ -1214,14 +1214,14 @@ export default {
         this.setHOTHeight(); // Resize the spreadsheet.
       });
     },
-    refreshHOTData: function() {
+    refreshHOTData() {
       var table = this.$refs.hot.table;
       var newSettings = {
         data: rewriteSettings(this.activists),
       };
       table.updateSettings(newSettings);
     },
-    sortColumn: function(col) {
+    sortColumn(col) {
       var field = col.data.data;
       if (!field) {
         // Don't sort columsn with no data field (e.g. the first
@@ -1248,7 +1248,7 @@ export default {
 
       this.refreshHOTData();
     },
-    afterOnCellMouseDownCallback: function(event, coords, td) {
+    afterOnCellMouseDownCallback(event, coords, td) {
       // If the row is -1, then the user clicked on a column header.
       if (coords.row === -1) {
         // To find the column this maps to, we iterate through all the enabled columns.
@@ -1274,7 +1274,7 @@ export default {
       this.search = e.target.value;
     }, 500),
   },
-  data: function() {
+  data() {
     if (this.view === ('all_activists' || 'leaderboard')) {
       var initDateFrom = initialDateFromValue();
       var initDateTo = initialDateToValue();
@@ -1300,7 +1300,7 @@ export default {
     };
   },
   computed: {
-    hotSettings: function() {
+    hotSettings() {
       const columns = [];
       const columnHeaders = [];
       for (var i = 0; i < this.columns.length; i++) {
@@ -1330,7 +1330,7 @@ export default {
         //fixedColumnsLeft: 2, // this causes too much havoc
       };
     },
-    activists: function() {
+    activists() {
       if (this.search.length < 3) {
         return this.allActivists;
       }
@@ -1349,13 +1349,13 @@ export default {
     },
   },
   watch: {
-    lastEventDateFrom: function() {
+    lastEventDateFrom() {
       this.loadActivists();
     },
-    lastEventDateTo: function() {
+    lastEventDateTo() {
       this.loadActivists();
     },
-    filterActionTeam: function() {
+    filterActionTeam() {
       this.loadActivists();
     },
   },

@@ -278,7 +278,7 @@ Vue.use(vmodal);
 export default {
   name: 'circle-list',
   methods: {
-    showModal: function(modalName, circleGroup, index) {
+    showModal(modalName, circleGroup, index) {
       // Check to see if there's a modal open, and close it if so.
       if (this.currentModalName) {
         this.hideModal();
@@ -295,7 +295,7 @@ export default {
       this.currentModalName = modalName;
       this.$modal.show(modalName);
     },
-    hideModal: function() {
+    hideModal() {
       if (this.currentModalName) {
         this.$modal.hide(this.currentModalName);
       }
@@ -303,7 +303,7 @@ export default {
       this.circleGroupIndex = -1;
       this.currentCircleGroup = {};
     },
-    confirmEditCircleGroupModal: function() {
+    confirmEditCircleGroupModal() {
       // First, check for duplicate activists because that's the most
       // likely error.
       if (this.currentCircleGroup.members) {
@@ -354,7 +354,7 @@ export default {
         },
       });
     },
-    confirmDeleteCircleGroupModal: function() {
+    confirmDeleteCircleGroupModal() {
       this.disableConfirmButton = true;
 
       $.ajax({
@@ -384,45 +384,45 @@ export default {
         },
       });
     },
-    modalOpened: function() {
+    modalOpened() {
       $(document.body).addClass('noscroll');
       this.disableConfirmButton = false;
     },
-    modalClosed: function() {
+    modalClosed() {
       $(document.body).removeClass('noscroll');
     },
-    displaycircleGroupType: function(type) {
+    displaycircleGroupType(type) {
       switch (type) {
         case 'circle':
           return 'Circle';
       }
       return '';
     },
-    addMember: function() {
+    addMember() {
       if (this.currentCircleGroup.members === undefined) {
         Vue.set(this.currentCircleGroup, 'members', []);
       }
       this.currentCircleGroup.members.push({ name: '' });
     },
-    addPointPerson: function() {
+    addPointPerson() {
       if (this.currentCircleGroup.members === undefined) {
         Vue.set(this.currentCircleGroup, 'members', []);
       }
       this.currentCircleGroup.members.push({ name: '', point_person: true });
     },
-    addNonMember: function() {
+    addNonMember() {
       if (this.currentCircleGroup.members === undefined) {
         Vue.set(this.currentCircleGroup, 'members', []);
       }
       this.currentCircleGroup.members.push({ name: '', non_member_on_mailing_list: true });
     },
-    removeMember: function(index) {
+    removeMember(index) {
       this.currentCircleGroup.members.splice(index, 1);
     },
-    memberOption: function(member) {
+    memberOption(member) {
       return { text: member.name };
     },
-    onMemberSelect: function(selected, extraData) {
+    onMemberSelect(selected, extraData) {
       var index = extraData.index;
       Vue.set(this.currentCircleGroup.members, index, {
         name: selected.text,
@@ -430,7 +430,7 @@ export default {
         non_member_on_mailing_list: !!extraData.nonMemberOnMailingList,
       });
     },
-    numberOfCircleGroupMembers: function(circleGroup) {
+    numberOfCircleGroupMembers(circleGroup) {
       if (!circleGroup.members) {
         return 0;
       }
@@ -456,7 +456,7 @@ export default {
     };
   },
   computed: {
-    showAddPointPerson: function() {
+    showAddPointPerson() {
       if (!this.currentCircleGroup) {
         return false; // doesn't matter
       }

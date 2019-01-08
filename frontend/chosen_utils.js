@@ -33,7 +33,7 @@ export function initActivistSelect(selector, ignoreActivistName) {
     url: '/activist_names/get',
     method: 'GET',
     dataType: 'json',
-    success: function(data) {
+    success: () => {
       var activistNames = data.activist_names;
 
       // The first item needs to be empty so that the selector
@@ -54,7 +54,7 @@ export function initActivistSelect(selector, ignoreActivistName) {
         inherit_select_classes: true,
       });
     },
-    error: function() {
+    error: () => {
       flashMessage('Error: could not load activist names', true);
     },
   });

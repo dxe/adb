@@ -150,7 +150,7 @@ const AscOrder = 1;
 export default {
   name: 'user-list',
   methods: {
-    showModal: function(modalName, user, index) {
+    showModal(modalName, user, index) {
       // Check to see if there's a modal open, and close it if so.
       if (this.currentModalName) {
         this.hideModal();
@@ -166,7 +166,7 @@ export default {
       this.currentModalName = modalName;
       this.$modal.show(modalName);
     },
-    hideModal: function() {
+    hideModal() {
       // Make sure we update the main user list instance of
       // this current user to match the roles.
       // Only when we're not creating a new User.
@@ -185,7 +185,7 @@ export default {
       // Sort user list by email
       this.sortUserListByEmail();
     },
-    confirmEditUserModal: function() {
+    confirmEditUserModal() {
       // Disable the save button when the user clicks it so they don't
       // try to save twice. Re-enable it when we get any response back
       // from the server (even an error).
@@ -226,7 +226,7 @@ export default {
         },
       });
     },
-    modalOpened: function() {
+    modalOpened() {
       // Add noscroll to body tag so it doesn't scroll while the modal
       // is shown.
       $(document.body).addClass('noscroll');
@@ -237,11 +237,11 @@ export default {
       // as we're making selections in the modal edit window.
       this.currentUserRoleSelections = $.extend([], this.currentUser.roles);
     },
-    modalClosed: function() {
+    modalClosed() {
       // Allow body to scroll after modal is closed.
       $(document.body).removeClass('noscroll');
     },
-    sortByEmail: function() {
+    sortByEmail() {
       var order = this.pagingParameters.order;
       if (order === AscOrder) {
         order = DescOrder;
@@ -251,7 +251,7 @@ export default {
       this.reset();
       this.pagingParameters.order = order;
     },
-    sortUserListByEmail: function() {
+    sortUserListByEmail() {
       if (!this.users) {
         return;
       }
@@ -271,11 +271,11 @@ export default {
         return 0;
       });
     },
-    setUsers: function(users) {
+    setUsers(users) {
       console.log('inside setUsers: ', users);
       this.users = users;
     },
-    reset: function() {
+    reset() {
       // reset data properties back to original values
       this.currentUser = {};
       this.users = [];
@@ -290,7 +290,7 @@ export default {
 
       this.currentUserRoleSelections = [];
     },
-    updateUserRoleModal: function(role) {
+    updateUserRoleModal(role) {
       if (this.disableConfirmButton) {
         return;
       }
@@ -374,7 +374,7 @@ export default {
   created() {
     $.ajax({
       url: '/user/list',
-      success: function(data) {
+      success: () => {
         var parsed = JSON.parse(data);
         if (parsed.status === 'error') {
           flashMessage('Error: ' + parsed.message, true);
@@ -382,8 +382,8 @@ export default {
         }
         // status === "success"
         this.setUsers(parsed);
-      }.bind(this),
-      error: function() {
+      },
+      error: () => {
         flashMessage('Error connecting to server.', true);
       },
     });

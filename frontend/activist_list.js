@@ -4,7 +4,7 @@ import Vue from 'vue';
 export function initializeApp(view) {
   var vm = new Vue({
     el: '#app',
-    render: function(h) {
+    render(h) {
       return h(ActivistList, {
         props: {
           view: view,
