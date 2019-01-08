@@ -113,15 +113,15 @@ func syncMailingList(adminService *admin.Service, groupEmail string, memberEmail
 	}
 
 	var errs []error
-	for _, e := range insertEmails {
-		err := insertMember(adminService, groupEmail, e)
+	for _, e := range removeEmails {
+		err := removeMember(adminService, groupEmail, e)
 		if err != nil {
 			errs = append(errs, err)
 			// Continue processing.
 		}
 	}
-	for _, e := range removeEmails {
-		err := removeMember(adminService, groupEmail, e)
+	for _, e := range insertEmails {
+		err := insertMember(adminService, groupEmail, e)
 		if err != nil {
 			errs = append(errs, err)
 			// Continue processing.
