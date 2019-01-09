@@ -373,7 +373,7 @@ export default {
   created() {
     $.ajax({
       url: '/user/list',
-      success: () => {
+      success: (data) => {
         var parsed = JSON.parse(data);
         if (parsed.status === 'error') {
           flashMessage('Error: ' + parsed.message, true);

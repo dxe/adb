@@ -34,7 +34,7 @@ export function initActivistSelect(selector, ignoreActivistName) {
     url: '/activist_names/get',
     method: 'GET',
     dataType: 'json',
-    success: () => {
+    success: (data) => {
       var activistNames = data.activist_names;
 
       // The first item needs to be empty so that the selector
