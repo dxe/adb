@@ -202,7 +202,7 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import vmodal from 'vue-js-modal';
 import HotTable from './external/vue-handsontable-official/HotTable.vue';
 import { rewriteSettings } from './external/vue-handsontable-official/helpers';
@@ -1189,7 +1189,7 @@ export default {
         this.height = 500;
         return;
       }
-      var y = hotContainer.getBoundingClientRect().y;
+      var y = (hotContainer.getBoundingClientRect() as DOMRect).y;
       this.height = window.innerHeight - y;
     },
     listActivistsParameters() {

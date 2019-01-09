@@ -76,7 +76,7 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import * as Awesomplete from 'awesomplete';
 import { flashMessage, setFlashMessageSuccessCookie } from './flash_message';
 
@@ -279,7 +279,7 @@ export default {
         // but before Vue has updated the attendees array. Go ahead and
         // synchronize them now.
         // TODO(mdempsky): Figure out how to handle this properly.
-        this.attendees[y] = inputs.get(y).value;
+        this.attendees[y] = (inputs.get(y) as HTMLInputElement).value;
       }
 
       // Update attendee warnings.

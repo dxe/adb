@@ -1,6 +1,6 @@
 import { getCookie, deleteCookie } from './cookie';
 
-export function flashMessage(content, isError) {
+export function flashMessage(content, isError?) {
   var flash = $('#flash');
   if (isError) {
     flash[0].className = 'alert alert-danger';

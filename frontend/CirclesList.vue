@@ -264,7 +264,7 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import vmodal from 'vue-js-modal';
 import Vue from 'vue';
 import { flashMessage } from './flash_message';

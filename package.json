@@ -26,13 +26,15 @@
     "vue-js-modal": "^1.1.1"
   },
   "devDependencies": {
-    "@babel/core": "^7.0.0",
-    "@babel/preset-env": "^7.2.3",
+    "@types/chosen-js": "^1.8.0",
+    "@types/jquery": "^3.3.29",
     "babel-loader": "^8.0.0",
     "css-loader": "^2.0.0",
     "file-loader": "^3.0.0",
     "prettier": "^1.15.3",
     "style-loader": "^0.23.0",
+    "ts-loader": "^5.3.3",
+    "typescript": "^3.2.2",
     "vue-loader": "^15.0.0",
     "vue-template-compiler": "^2.2.1",
     "webpack": "^4.0.0",

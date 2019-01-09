@@ -35,12 +35,12 @@ module.exports = {
         loader: 'vue-loader',
       },
       {
-        test: /\.js$/,
-        loader: 'babel-loader',
-        include: [
-          path.resolve('frontend'),
-          path.resolve('node_modules/vue-js-modal'),
-        ],
+        test: /\.[jt]sx?$/,
+        loader: 'ts-loader',
+        exclude: /node_modules/,
+        options: {
+          appendTsSuffixTo: [/\.vue$/],
+        },
       },
       {
         test: /\.(png|jpg|gif|svg)$/,
@@ -60,6 +60,7 @@ module.exports = {
     ]
   },
   resolve: {
+    extensions: ['.js', '.ts'],
     alias: {
       'vue$': 'vue/dist/vue.esm.js'
     },

@@ -5,7 +5,7 @@ import { flashMessage } from './flash_message';
 // From chosen-js
 function chosenBrowserIsSupported() {
   if ('Microsoft Internet Explorer' === window.navigator.appName) {
-    return document.documentMode >= 8;
+    return (document as any).documentMode >= 8;
   }
   if (
     /iP(od|hone)/i.test(window.navigator.userAgent) ||
@@ -20,7 +20,7 @@ function chosenBrowserIsSupported() {
   return true;
 }
 
-export function initActivistSelect(selector, ignoreActivistName) {
+export function initActivistSelect(selector, ignoreActivistName?) {
   var $selector = $(selector);
 
   // Chosen-js isn't supported on mobile browsers. We need to add the

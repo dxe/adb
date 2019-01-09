@@ -148,7 +148,7 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import { flashMessage } from './flash_message';
 import { initActivistSelect } from './chosen_utils';
 
