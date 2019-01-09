@@ -71,6 +71,14 @@ CREATE TABLE activists (
   cm_approval_email VARCHAR(20),
   cm_warning_email VARCHAR(20),
   cir_first_email VARCHAR(20),
+  prospect_senior_organizer tinyint(1),
+  so_auth varchar(20),
+  so_core varchar(20),
+  so_agreement tinyint(1),
+  so_training varchar(20),
+  so_quiz varchar(20),
+  so_connector varchar(100),
+  so_onboarding tinyint(1),
   UNIQUE (name)
 )
 `)

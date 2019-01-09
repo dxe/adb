@@ -278,7 +278,7 @@ function getDefaultColumns(view: string): Column[] {
         data: 'dev_manager',
         colWidths: 100,
       },
-      enabled: view === 'organizer_prospects',
+      enabled: view === 'organizer_prospects' || view === 'senior_organizer_prospects',
     },
     {
       header: 'Points',
@@ -404,7 +404,8 @@ function getDefaultColumns(view: string): Column[] {
         view === 'organizer_prospects' ||
         view === 'chapter_member_prospects' ||
         view === 'chapter_member_development' ||
-        view === 'circle_member_prospects',
+        view === 'circle_member_prospects' ||
+        view === 'senior_organizer_prospects',
     },
     {
       header: 'Applied',
@@ -420,28 +421,10 @@ function getDefaultColumns(view: string): Column[] {
       enabled:
         view === 'circle_member_prospects' ||
         view === 'chapter_member_prospects' ||
-        view == 'organizer_prospects',
+        view === 'organizer_prospects' ||
+        view === 'senior_organizer_prospects',
     },
-    {
-      header: 'Prosp. Organizer',
-      longHeader: 'Prospective Organizer',
-      data: {
-        type: 'checkbox',
-        data: 'prospect_organizer',
-        colWidths: 100,
-      },
-      enabled: view === 'organizer_prospects',
-    },
-    {
-      header: 'Prosp. Ch. Member',
-      longHeader: 'Prospective Chapter Member',
-      data: {
-        type: 'checkbox',
-        data: 'prospect_chapter_member',
-        colWidths: 110,
-      },
-      enabled: view === 'chapter_member_prospects',
-    },
+
     {
       header: 'Prosp. Cir. Member',
       longHeader: 'Prospective Circle Member',
@@ -452,6 +435,40 @@ function getDefaultColumns(view: string): Column[] {
       },
       enabled: view === 'circle_member_prospects',
     },
+
+    {
+      header: 'Prosp. Ch. Member',
+      longHeader: 'Prospective Chapter Member',
+      data: {
+        type: 'checkbox',
+        data: 'prospect_chapter_member',
+        colWidths: 110,
+      },
+      enabled: view === 'chapter_member_prospects',
+    },
+
+    {
+      header: 'Prosp. Organizer',
+      longHeader: 'Prospective Organizer',
+      data: {
+        type: 'checkbox',
+        data: 'prospect_organizer',
+        colWidths: 100,
+      },
+      enabled: view === 'organizer_prospects',
+    },
+
+    {
+      header: 'Prosp. Sen. Org.',
+      longHeader: 'Prospective Senior Organizer',
+      data: {
+        type: 'checkbox',
+        data: 'prospect_senior_organizer',
+        colWidths: 100,
+      },
+      enabled: view === 'senior_organizer_prospects',
+    },
+
     {
       header: 'Interest',
       longHeader: 'Interest',
@@ -551,7 +568,8 @@ function getDefaultColumns(view: string): Column[] {
         view === 'leaderboard' ||
         view === 'development' ||
         view === 'chapter_member_prospects' ||
-        view === 'chapter_member_development',
+        view === 'chapter_member_development' ||
+        view === 'senior_organizer_development',
     },
     {
       header: 'Connector',
@@ -560,7 +578,11 @@ function getDefaultColumns(view: string): Column[] {
         data: 'connector',
         colWidths: 125,
       },
-      enabled: view === 'activist_pool' || view === 'action_team' || view === 'development',
+      enabled:
+        view === 'activist_pool' ||
+        view === 'action_team' ||
+        view === 'development' ||
+        view === 'senior_organizer_development',
     },
     {
       header: 'Last Maint. Conn.',
@@ -763,6 +785,84 @@ function getDefaultColumns(view: string): Column[] {
         colWidths: 100,
       },
       enabled: view === 'organizer_prospects',
+    },
+
+    {
+      header: 'Point Auth.',
+      longHeader: 'Senior Organizer: Point Auth',
+      data: {
+        type: 'date',
+        data: 'so_auth',
+        dateFormat: 'YYYY-MM-DD',
+        correctFormat: true,
+        colWidths: 100,
+      },
+      enabled: view === 'senior_organizer_prospects',
+    },
+    {
+      header: 'Sent to Core',
+      longHeader: 'Senior Organizer: Application Sent to Core',
+      data: {
+        type: 'date',
+        data: 'so_core',
+        dateFormat: 'YYYY-MM-DD',
+        correctFormat: true,
+        colWidths: 100,
+      },
+      enabled: view === 'senior_organizer_prospects',
+    },
+    {
+      header: 'Agreement',
+      longHeader: 'Senior Organizer: Signed Agreement',
+      data: {
+        type: 'checkbox',
+        data: 'so_agreement',
+        colWidths: 70,
+      },
+      enabled: view === 'senior_organizer_prospects',
+    },
+    {
+      header: 'Training',
+      longHeader: 'Senior Organizer: Completed Training',
+      data: {
+        type: 'date',
+        data: 'so_training',
+        dateFormat: 'YYYY-MM-DD',
+        correctFormat: true,
+        colWidths: 100,
+      },
+      enabled: view === 'senior_organizer_prospects',
+    },
+    {
+      header: 'Quiz',
+      longHeader: 'Senior Organizer: Passed Quiz',
+      data: {
+        type: 'date',
+        data: 'so_quiz',
+        dateFormat: 'YYYY-MM-DD',
+        correctFormat: true,
+        colWidths: 100,
+      },
+      enabled: view === 'senior_organizer_prospects',
+    },
+    {
+      header: 'Connectees',
+      longHeader: 'Senior Organizer: Connectees (2+)',
+      data: {
+        data: 'so_connector',
+        colWidths: 120,
+      },
+      enabled: view === 'senior_organizer_prospects' || view === 'senior_organizer_development',
+    },
+    {
+      header: 'Onboarding',
+      longHeader: 'Senior Organizer: Completed Onboarding Logistics',
+      data: {
+        type: 'checkbox',
+        data: 'so_onboarding',
+        colWidths: 70,
+      },
+      enabled: view === 'senior_organizer_prospects',
     },
   ];
 }
@@ -1112,46 +1212,54 @@ export default Vue.extend({
             this.view === 'organizer_prospects' ||
             this.view === 'chapter_member_prospects' ||
             this.view === 'circle_member_prospects' ||
-            this.view === 'chapter_member_development'
+            this.view === 'chapter_member_development' ||
+            this.view === 'senior_organizer_prospects' ||
+            this.view === 'senior_organizer_development'
           ) {
             var activistListFiltered;
             activistListFiltered = activistList.filter((el: Activist) => {
               if (this.view === 'activist_pool') {
                 return el.activist_level == 'Supporter';
-              } else if (this.view === 'action_team') {
-                var selectedActionTeam = $('#filterActionTeam :selected').text();
+              }
+              // else if (this.view === 'action_team') {
+              //   var selectedActionTeam = $('#filterActionTeam :selected').text();
 
-                if (
-                  selectedActionTeam != 'All' &&
-                  selectedActionTeam != '' &&
-                  selectedActionTeam != null
-                ) {
-                  return (
-                    (el.activist_level == 'Action Team' ||
-                      el.activist_level == 'Organizer' ||
-                      el.activist_level == 'Senior Organizer') &&
-                    (el.action_team_focus == selectedActionTeam ||
-                      el.action_team_focus_secondary
-                        .toLowerCase()
-                        .indexOf(selectedActionTeam.toLowerCase()) != -1)
-                  );
-                } else {
-                  return (
-                    el.activist_level == 'Action Team' ||
-                    el.activist_level == 'Organizer' ||
-                    el.activist_level == 'Senior Organizer'
-                  );
-                }
-              } else if (this.view === 'leaderboard') {
+              //   if (
+              //     selectedActionTeam != 'All' &&
+              //     selectedActionTeam != '' &&
+              //     selectedActionTeam != null
+              //   ) {
+              //     return (
+              //       (el.activist_level == 'Action Team' ||
+              //         el.activist_level == 'Organizer' ||
+              //         el.activist_level == 'Senior Organizer') &&
+              //       (el.action_team_focus == selectedActionTeam ||
+              //         el.action_team_focus_secondary
+              //           .toLowerCase()
+              //           .indexOf(selectedActionTeam.toLowerCase()) != -1)
+              //     );
+              //   } else {
+              //     return (
+              //       el.activist_level == 'Action Team' ||
+              //       el.activist_level == 'Organizer' ||
+              //       el.activist_level == 'Senior Organizer'
+              //     );
+              //   }
+              // }
+              else if (this.view === 'leaderboard') {
                 return el.active == 1;
               } else if (this.view === 'development') {
-                return el.activist_level == 'Organizer' || el.activist_level == 'Senior Organizer';
+                return el.activist_level == 'Organizer';
               } else if (this.view === 'organizer_prospects') {
                 return el.prospect_organizer == 1;
               } else if (this.view === 'chapter_member_prospects') {
                 return el.prospect_chapter_member == 1;
               } else if (this.view === 'circle_member_prospects') {
                 return el.prospect_circle_member == 1;
+              } else if (this.view === 'senior_organizer_prospects') {
+                return el.prospect_senior_organizer == 1;
+              } else if (this.view === 'senior_organizer_development') {
+                return el.activist_level == 'Senior Organizer';
               } else if (this.view === 'chapter_member_development') {
                 return (
                   el.activist_level == 'Chapter Member' ||

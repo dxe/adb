@@ -260,32 +260,32 @@ type ActivistMembershipData struct {
 }
 
 type ActivistConnectionData struct {
-	Connector             string         `db:"connector"`
-	ContactedDate         string         `db:"contacted_date"`
-	Training0             sql.NullString `db:"training0"`
-	Training1             sql.NullString `db:"training1"`
-	Training2             sql.NullString `db:"training2"`
-	Training3             sql.NullString `db:"training3"`
-	Training4             sql.NullString `db:"training4"`
-	Training5             sql.NullString `db:"training5"`
-	Training6             sql.NullString `db:"training6"`
-	ApplicationDate       mysql.NullTime `db:"dev_application_date"`
-	DevManager            string         `db:"dev_manager"`
-	DevInterest           string         `db:"dev_interest"`
-	DevAuth               sql.NullString `db:"dev_auth"`
-	DevEmailSent          sql.NullString `db:"dev_email_sent"`
-	DevVetted             bool           `db:"dev_vetted"`
-	DevInterview          sql.NullString `db:"dev_interview"`
-	DevOnboarding         bool           `db:"dev_onboarding"`
+	Connector       string         `db:"connector"`
+	ContactedDate   string         `db:"contacted_date"`
+	Training0       sql.NullString `db:"training0"`
+	Training1       sql.NullString `db:"training1"`
+	Training2       sql.NullString `db:"training2"`
+	Training3       sql.NullString `db:"training3"`
+	Training4       sql.NullString `db:"training4"`
+	Training5       sql.NullString `db:"training5"`
+	Training6       sql.NullString `db:"training6"`
+	ApplicationDate mysql.NullTime `db:"dev_application_date"`
+	DevManager      string         `db:"dev_manager"`
+	DevInterest     string         `db:"dev_interest"`
+	DevAuth         sql.NullString `db:"dev_auth"`
+	DevEmailSent    sql.NullString `db:"dev_email_sent"`
+	DevVetted       bool           `db:"dev_vetted"`
+	DevInterview    sql.NullString `db:"dev_interview"`
+	DevOnboarding   bool           `db:"dev_onboarding"`
 
-	ProspectSeniorOrganizer bool		`db:"prospect_senior_organizer"`
-	SOAuth 			sql.NullString		`db:"so_auth"`
-	SOCore 			sql.NullString		`db:"so_core"`
-	SOAgreement 	bool				`db:"so_agreement"`
-	SOTraining  	sql.NullString		`db:"so_training"`
-	SOQuiz  		sql.NullString		`db:"so_quiz"`
-	SOConnector 	string 				`db:"so_connector"`
-	SOOnboarding 	bool 				`db:"so_onboarding"`
+	ProspectSeniorOrganizer bool           `db:"prospect_senior_organizer"`
+	SOAuth                  sql.NullString `db:"so_auth"`
+	SOCore                  sql.NullString `db:"so_core"`
+	SOAgreement             bool           `db:"so_agreement"`
+	SOTraining              sql.NullString `db:"so_training"`
+	SOQuiz                  sql.NullString `db:"so_quiz"`
+	SOConnector             string         `db:"so_connector"`
+	SOOnboarding            bool           `db:"so_onboarding"`
 
 	CMFirstEmail          sql.NullString `db:"cm_first_email"`
 	CMApprovalEmail       sql.NullString `db:"cm_approval_email"`
@@ -331,32 +331,32 @@ type ActivistJSON struct {
 	Circles       string `json:"circles_list"`
 	WgOrCirMember bool   `json:"wg_or_cir_member"`
 
-	Connector             string `json:"connector"`
-	ContactedDate         string `json:"contacted_date"`
-	Training0             string `json:"training0"`
-	Training1             string `json:"training1"`
-	Training2             string `json:"training2"`
-	Training3             string `json:"training3"`
-	Training4             string `json:"training4"`
-	Training5             string `json:"training5"`
-	Training6             string `json:"training6"`
-	ApplicationDate       string `json:"dev_application_date"`
-	DevManager            string `json:"dev_manager"`
-	DevInterest           string `json:"dev_interest"`
-	DevAuth               string `json:"dev_auth"`
-	DevEmailSent          string `json:"dev_email_sent"`
-	DevVetted             bool   `json:"dev_vetted"`
-	DevInterview          string `json:"dev_interview"`
-	DevOnboarding         bool   `json:"dev_onboarding"`
+	Connector       string `json:"connector"`
+	ContactedDate   string `json:"contacted_date"`
+	Training0       string `json:"training0"`
+	Training1       string `json:"training1"`
+	Training2       string `json:"training2"`
+	Training3       string `json:"training3"`
+	Training4       string `json:"training4"`
+	Training5       string `json:"training5"`
+	Training6       string `json:"training6"`
+	ApplicationDate string `json:"dev_application_date"`
+	DevManager      string `json:"dev_manager"`
+	DevInterest     string `json:"dev_interest"`
+	DevAuth         string `json:"dev_auth"`
+	DevEmailSent    string `json:"dev_email_sent"`
+	DevVetted       bool   `json:"dev_vetted"`
+	DevInterview    string `json:"dev_interview"`
+	DevOnboarding   bool   `json:"dev_onboarding"`
 
-	ProspectSeniorOrganizer bool		`json:"prospect_senior_organizer"`
-	SOAuth 			string		`json:"so_auth"`
-	SOCore 			string		`json:"so_core"`
-	SOAgreement 	bool				`json:"so_agreement"`
-	SOTraining  	string		`json:"so_training"`
-	SOQuiz  		string		`json:"so_quiz"`
-	SOConnector 	string 				`json:"so_connector"`
-	SOOnboarding 	bool 				`json:"so_onboarding"`
+	ProspectSeniorOrganizer bool   `json:"prospect_senior_organizer"`
+	SOAuth                  string `json:"so_auth"`
+	SOCore                  string `json:"so_core"`
+	SOAgreement             bool   `json:"so_agreement"`
+	SOTraining              string `json:"so_training"`
+	SOQuiz                  string `json:"so_quiz"`
+	SOConnector             string `json:"so_connector"`
+	SOOnboarding            bool   `json:"so_onboarding"`
 
 	CMFirstEmail          string `json:"cm_first_email"`
 	CMApprovalEmail       string `json:"cm_approval_email"`
@@ -555,32 +555,32 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			WgOrCirMember: a.WgOrCirMember,
 			Source:        a.Source,
 
-			Connector:             a.Connector,
-			ContactedDate:         a.ContactedDate,
-			Training0:             training0,
-			Training1:             training1,
-			Training2:             training2,
-			Training3:             training3,
-			Training4:             training4,
-			Training5:             training5,
-			Training6:             training6,
-			ApplicationDate:       applicationDate,
-			DevManager:            a.DevManager,
-			DevInterest:           a.DevInterest,
-			DevAuth:               dev_auth,
-			DevEmailSent:          dev_email_sent,
-			DevVetted:             a.DevVetted,
-			DevInterview:          dev_interview,
-			DevOnboarding:         a.DevOnboarding,
+			Connector:       a.Connector,
+			ContactedDate:   a.ContactedDate,
+			Training0:       training0,
+			Training1:       training1,
+			Training2:       training2,
+			Training3:       training3,
+			Training4:       training4,
+			Training5:       training5,
+			Training6:       training6,
+			ApplicationDate: applicationDate,
+			DevManager:      a.DevManager,
+			DevInterest:     a.DevInterest,
+			DevAuth:         dev_auth,
+			DevEmailSent:    dev_email_sent,
+			DevVetted:       a.DevVetted,
+			DevInterview:    dev_interview,
+			DevOnboarding:   a.DevOnboarding,
 
 			ProspectSeniorOrganizer: a.ProspectSeniorOrganizer,
-			SOAuth: so_auth,
-			SOCore: so_core,
-			SOAgreement: a.SOAgreement,
-			SOTraining: so_training,
-			SOQuiz: so_quiz,
-			SOConnector: a.SOConnector,
-			SOOnboarding: a.SOOnboarding,
+			SOAuth:                  so_auth,
+			SOCore:                  so_core,
+			SOAgreement:             a.SOAgreement,
+			SOTraining:              so_training,
+			SOQuiz:                  so_quiz,
+			SOConnector:             a.SOConnector,
+			SOOnboarding:            a.SOOnboarding,
 
 			CMFirstEmail:          cm_first_email,
 			CMApprovalEmail:       cm_approval_email,
@@ -1297,31 +1297,31 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			Source:        strings.TrimSpace(activistJSON.Source),
 		},
 		ActivistConnectionData: ActivistConnectionData{
-			Connector:             strings.TrimSpace(activistJSON.Connector),
-			ContactedDate:         strings.TrimSpace(activistJSON.ContactedDate),
-			Training0:             sql.NullString{String: strings.TrimSpace(activistJSON.Training0), Valid: validTraining0},
-			Training1:             sql.NullString{String: strings.TrimSpace(activistJSON.Training1), Valid: validTraining1},
-			Training2:             sql.NullString{String: strings.TrimSpace(activistJSON.Training2), Valid: validTraining2},
-			Training3:             sql.NullString{String: strings.TrimSpace(activistJSON.Training3), Valid: validTraining3},
-			Training4:             sql.NullString{String: strings.TrimSpace(activistJSON.Training4), Valid: validTraining4},
-			Training5:             sql.NullString{String: strings.TrimSpace(activistJSON.Training5), Valid: validTraining5},
-			Training6:             sql.NullString{String: strings.TrimSpace(activistJSON.Training6), Valid: validTraining6},
-			DevManager:            strings.TrimSpace(activistJSON.DevManager),
-			DevInterest:           strings.TrimSpace(activistJSON.DevInterest),
-			DevAuth:               sql.NullString{String: strings.TrimSpace(activistJSON.DevAuth), Valid: validDevAuth},
-			DevEmailSent:          sql.NullString{String: strings.TrimSpace(activistJSON.DevEmailSent), Valid: validDevEmailSent},
-			DevVetted:             activistJSON.DevVetted,
-			DevInterview:          sql.NullString{String: strings.TrimSpace(activistJSON.DevInterview), Valid: validDevInterview},
-			DevOnboarding:         activistJSON.DevOnboarding,
+			Connector:     strings.TrimSpace(activistJSON.Connector),
+			ContactedDate: strings.TrimSpace(activistJSON.ContactedDate),
+			Training0:     sql.NullString{String: strings.TrimSpace(activistJSON.Training0), Valid: validTraining0},
+			Training1:     sql.NullString{String: strings.TrimSpace(activistJSON.Training1), Valid: validTraining1},
+			Training2:     sql.NullString{String: strings.TrimSpace(activistJSON.Training2), Valid: validTraining2},
+			Training3:     sql.NullString{String: strings.TrimSpace(activistJSON.Training3), Valid: validTraining3},
+			Training4:     sql.NullString{String: strings.TrimSpace(activistJSON.Training4), Valid: validTraining4},
+			Training5:     sql.NullString{String: strings.TrimSpace(activistJSON.Training5), Valid: validTraining5},
+			Training6:     sql.NullString{String: strings.TrimSpace(activistJSON.Training6), Valid: validTraining6},
+			DevManager:    strings.TrimSpace(activistJSON.DevManager),
+			DevInterest:   strings.TrimSpace(activistJSON.DevInterest),
+			DevAuth:       sql.NullString{String: strings.TrimSpace(activistJSON.DevAuth), Valid: validDevAuth},
+			DevEmailSent:  sql.NullString{String: strings.TrimSpace(activistJSON.DevEmailSent), Valid: validDevEmailSent},
+			DevVetted:     activistJSON.DevVetted,
+			DevInterview:  sql.NullString{String: strings.TrimSpace(activistJSON.DevInterview), Valid: validDevInterview},
+			DevOnboarding: activistJSON.DevOnboarding,
 
-			ProspectSeniorOrganizer: 	activistJSON.ProspectSeniorOrganizer,
-			SOAuth:						sql.NullString{String: strings.TrimSpace(activistJSON.SOAuth), Valid: validSOAuth},
-			SOCore: 						sql.NullString{String: strings.TrimSpace(activistJSON.SOCore), Valid: validSOCore},
-			SOAgreement: 				activistJSON.SOAgreement,
-			SOTraining: 					sql.NullString{String: strings.TrimSpace(activistJSON.SOTraining), Valid: validSOTraining},
-			SOQuiz: 						sql.NullString{String: strings.TrimSpace(activistJSON.SOQuiz), Valid: validSOQuiz},
-			SOConnector: 				strings.TrimSpace(activistJSON.SOConnector),
-			SOOnboarding: 				activistJSON.SOOnboarding,
+			ProspectSeniorOrganizer: activistJSON.ProspectSeniorOrganizer,
+			SOAuth:                  sql.NullString{String: strings.TrimSpace(activistJSON.SOAuth), Valid: validSOAuth},
+			SOCore:                  sql.NullString{String: strings.TrimSpace(activistJSON.SOCore), Valid: validSOCore},
+			SOAgreement:             activistJSON.SOAgreement,
+			SOTraining:              sql.NullString{String: strings.TrimSpace(activistJSON.SOTraining), Valid: validSOTraining},
+			SOQuiz:                  sql.NullString{String: strings.TrimSpace(activistJSON.SOQuiz), Valid: validSOQuiz},
+			SOConnector:             strings.TrimSpace(activistJSON.SOConnector),
+			SOOnboarding:            activistJSON.SOOnboarding,
 
 			CMFirstEmail:          sql.NullString{String: strings.TrimSpace(activistJSON.CMFirstEmail), Valid: validCMFirstEmail},
 			CMApprovalEmail:       sql.NullString{String: strings.TrimSpace(activistJSON.CMApprovalEmail), Valid: validCMApprovalEmail},

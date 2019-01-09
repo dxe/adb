@@ -137,6 +137,8 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/activist_actionteam", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListActivistsActionTeamHandler))
 	router.Handle("/activist_development", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListActivistsDevelopmentHandler))
 	router.Handle("/organizer_prospects", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListOrganizerProspectsHandler))
+	router.Handle("/senior_organizer_prospects", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListSeniorOrganizerProspectsHandler))
+	router.Handle("/senior_organizer_development", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListSeniorOrganizerDevelopmentHandler))
 	router.Handle("/chapter_member_prospects", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListChapterMemberProspectsHandler))
 	router.Handle("/chapter_member_development", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListChapterMemberDevelopmentHandler))
 	router.Handle("/circle_member_prospects", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListCircleMemberProspectsHandler))
@@ -484,6 +486,26 @@ func (c MainController) ListOrganizerProspectsHandler(w http.ResponseWriter, r *
 		Data: ActivistListData{
 			Title: "Organizer Prospects",
 			View:  "organizer_prospects",
+		},
+	})
+}
+
+func (c MainController) ListSeniorOrganizerProspectsHandler(w http.ResponseWriter, r *http.Request) {
+	renderPage(w, r, "activist_list", PageData{
+		PageName: "SeniorOrganizerProspects",
+		Data: ActivistListData{
+			Title: "Senior Organizer Prospects",
+			View:  "senior_organizer_prospects",
+		},
+	})
+}
+
+func (c MainController) ListSeniorOrganizerDevelopmentHandler(w http.ResponseWriter, r *http.Request) {
+	renderPage(w, r, "activist_list", PageData{
+		PageName: "SeniorOrganizerDevelopment",
+		Data: ActivistListData{
+			Title: "Senior Organizer Development",
+			View:  "senior_organizer_development",
 		},
 	})
 }
