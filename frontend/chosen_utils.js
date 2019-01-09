@@ -1,5 +1,6 @@
 import 'bootstrap-chosen/bootstrap-chosen.css';
 import 'chosen-js'; // Attaches to jQuery when it's imported.
+import { flashMessage } from './flash_message';
 
 // From chosen-js
 function chosenBrowserIsSupported() {

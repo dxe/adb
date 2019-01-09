@@ -791,7 +791,7 @@ function setPreviousSortData(field, ascending) {
 //   "senior_organizer" : 0
 // };
 
-window.showOptionsModal = function(row) {
+window['showOptionsModal'] = function(row) {
   EventBus.$emit('activist-show-options-modal', row);
 };
 
@@ -1016,7 +1016,7 @@ export default {
 
           this.hideModal();
         },
-        error: () => {
+        error: (err) => {
           this.disableConfirmButton = false;
 
           console.warn(err.responseText);
@@ -1048,7 +1048,7 @@ export default {
 
           this.hideModal();
         },
-        error: () => {
+        error: (err) => {
           this.disableConfirmButton = false;
 
           console.warn(err.responseText);
@@ -1138,9 +1138,9 @@ export default {
             this.allActivists = activistList;
           }
         },
-        error: () => {
+        error: (err) => {
           console.warn(err.responseText);
-          flasMessage('Server error: ' + err.responseText, true);
+          flashMessage('Server error: ' + err.responseText, true);
         },
       });
     },

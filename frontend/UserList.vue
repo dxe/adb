@@ -325,8 +325,8 @@ export default {
           if (parsed.status === 'error') {
             this.currentUserRoleSelections = $.extend([], this.currentUser.roles);
             flashMessage(
-              "And error occurred while updating this User's Role. Reverting Role Selections back to original",
-              parsed.message,
+              "And error occurred while updating this User's Role. Reverting Role Selections back to original: " +
+                parsed.message,
               true,
             );
             return;
@@ -348,8 +348,7 @@ export default {
           this.currentUserRoleSelections = $.extend([], this.currentUser.roles);
           console.warn(err.responseText);
           flashMessage(
-            'Server error. Reverting Role Selections back to original: ',
-            err.responseText,
+            'Server error. Reverting Role Selections back to original: ' + err.responseText,
             true,
           );
         },
