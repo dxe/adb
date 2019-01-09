@@ -777,7 +777,7 @@ function getDefaultColumns(view: string): Column[] {
       enabled: view === 'organizer_prospects',
     },
     {
-      header: 'Completed Onboarding Logistics',
+      header: 'Onboarding',
       longHeader: 'Organizer: Date of Onboarding Logistics Completion',
       data: {
         type: 'checkbox',
