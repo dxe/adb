@@ -74,11 +74,11 @@ CREATE TABLE activists (
   prospect_senior_organizer tinyint(1),
   so_auth varchar(20),
   so_core varchar(20),
-  so_agreement tinyint(1),
+  so_agreement tinyint(1) NOT NULL DEFAULT '0',
   so_training varchar(20),
   so_quiz varchar(20),
   so_connector varchar(100),
-  so_onboarding tinyint(1),
+  so_onboarding tinyint(1) NOT NULL DEFAULT '0',
   UNIQUE (name)
 )
 `)
