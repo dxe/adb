@@ -77,7 +77,7 @@ CREATE TABLE activists (
   so_agreement tinyint(1) NOT NULL DEFAULT '0',
   so_training varchar(20),
   so_quiz varchar(20),
-  so_connector varchar(100),
+  so_connector varchar(100) NOT NULL DEFAULT '',
   so_onboarding tinyint(1) NOT NULL DEFAULT '0',
   UNIQUE (name)
 )
