@@ -315,7 +315,7 @@ export default {
         let nameA = a.name.toLowerCase();
         let nameB = b.name.toLowerCase();
 
-        return nameA < nameB ? - 1 : nameA > nameB ? 1 : 0;
+        return nameA < nameB ? -1 : nameA > nameB ? 1 : 0;
       });
     },
     confirmEditCircleGroupModal() {
