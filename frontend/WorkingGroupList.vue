@@ -332,6 +332,21 @@ export default {
       this.currentModalName = '';
       this.workingGroupIndex = -1;
       this.currentWorkingGroup = {};
+
+      // Sort working group list
+      this.sortListByName();
+    },
+    sortListByName() {
+      if (!this.workingGroups) {
+        return;
+      }
+
+      this.workingGroups.sort((a, b) => {
+        let nameA = a.name.toLowerCase();
+        let nameB = b.name.toLowerCase();
+
+        return nameA < nameB ? - 1 : nameA > nameB ? 1 : 0;
+      });
     },
     confirmEditWorkingGroupModal() {
       // First, check for duplicate activists because that's the most

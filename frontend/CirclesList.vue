@@ -302,6 +302,21 @@ export default {
       this.currentModalName = '';
       this.circleGroupIndex = -1;
       this.currentCircleGroup = {};
+
+      // Sort cirlce group list
+      this.sortListByName();
+    },
+    sortListByName() {
+      if (!this.circleGroups) {
+        return;
+      }
+
+      this.circleGroups.sort((a, b) => {
+        let nameA = a.name.toLowerCase();
+        let nameB = b.name.toLowerCase();
+
+        return nameA < nameB ? - 1 : nameA > nameB ? 1 : 0;
+      });
     },
     confirmEditCircleGroupModal() {
       // First, check for duplicate activists because that's the most
