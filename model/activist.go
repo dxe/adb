@@ -65,6 +65,16 @@ SELECT
   dev_vetted,
   dev_interview,
   dev_onboarding,
+
+  prospect_senior_organizer,
+  so_auth,
+  so_core,
+  so_agreement,
+  so_training,
+  so_quiz,
+  so_connector,
+  so_onboarding,
+
   cm_first_email,
   cm_approval_email,
   cm_warning_email,
@@ -267,6 +277,16 @@ type ActivistConnectionData struct {
 	DevVetted             bool           `db:"dev_vetted"`
 	DevInterview          sql.NullString `db:"dev_interview"`
 	DevOnboarding         bool           `db:"dev_onboarding"`
+
+	ProspectSeniorOrganizer bool		`db:"prospect_senior_organizer"`
+	SOAuth 			sql.NullString		`db:"so_auth"`
+	SOCore 			sql.NullString		`db:"so_core"`
+	SOAgreement 	bool				`db:"so_agreement"`
+	SOTraining  	sql.NullString		`db:"so_training"`
+	SOQuiz  		sql.NullString		`db:"so_quiz"`
+	SOConnector 	string 				`db:"so_connector"`
+	SOOnboarding 	bool 				`db:"so_onboarding"`
+
 	CMFirstEmail          sql.NullString `db:"cm_first_email"`
 	CMApprovalEmail       sql.NullString `db:"cm_approval_email"`
 	CMWarningEmail        sql.NullString `db:"cm_warning_email"`
@@ -328,6 +348,16 @@ type ActivistJSON struct {
 	DevVetted             bool   `json:"dev_vetted"`
 	DevInterview          string `json:"dev_interview"`
 	DevOnboarding         bool   `json:"dev_onboarding"`
+
+	ProspectSeniorOrganizer bool		`json:"prospect_senior_organizer"`
+	SOAuth 			string		`json:"so_auth"`
+	SOCore 			string		`json:"so_core"`
+	SOAgreement 	bool				`json:"so_agreement"`
+	SOTraining  	string		`json:"so_training"`
+	SOQuiz  		string		`json:"so_quiz"`
+	SOConnector 	string 				`json:"so_connector"`
+	SOOnboarding 	bool 				`json:"so_onboarding"`
+
 	CMFirstEmail          string `json:"cm_first_email"`
 	CMApprovalEmail       string `json:"cm_approval_email"`
 	CMWarningEmail        string `json:"cm_warning_email"`
@@ -484,6 +514,23 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			cir_first_email = a.ActivistConnectionData.CirFirstEmail.String
 		}
 
+		so_auth := ""
+		if a.ActivistConnectionData.SOAuth.Valid {
+			so_auth = a.ActivistConnectionData.SOAuth.String
+		}
+		so_core := ""
+		if a.ActivistConnectionData.SOCore.Valid {
+			so_core = a.ActivistConnectionData.SOCore.String
+		}
+		so_training := ""
+		if a.ActivistConnectionData.SOTraining.Valid {
+			so_training = a.ActivistConnectionData.SOTraining.String
+		}
+		so_quiz := ""
+		if a.ActivistConnectionData.SOQuiz.Valid {
+			so_quiz = a.ActivistConnectionData.SOQuiz.String
+		}
+
 		activistsJSON = append(activistsJSON, ActivistJSON{
 			Email:    a.Email,
 			Facebook: a.Facebook,
@@ -525,6 +572,16 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			DevVetted:             a.DevVetted,
 			DevInterview:          dev_interview,
 			DevOnboarding:         a.DevOnboarding,
+
+			ProspectSeniorOrganizer: a.ProspectSeniorOrganizer,
+			SOAuth: so_auth,
+			SOCore: so_core,
+			SOAgreement: a.SOAgreement,
+			SOTraining: so_training,
+			SOQuiz: so_quiz,
+			SOConnector: a.SOConnector,
+			SOOnboarding: a.SOOnboarding,
+
 			CMFirstEmail:          cm_first_email,
 			CMApprovalEmail:       cm_approval_email,
 			CMWarningEmail:        cm_warning_email,
@@ -796,6 +853,14 @@ INSERT INTO activists (
   dev_vetted,
   dev_interview,
   dev_onboarding,
+  prospect_senior_organizer,
+  so_auth,
+  so_core,
+  so_agreement,
+  so_training,
+  so_quiz,
+  so_connector,
+  so_onboarding,
   cm_first_email,
   cm_approval_email,
   cm_warning_email,
@@ -835,6 +900,14 @@ INSERT INTO activists (
   :dev_vetted,
   :dev_interview,
   :dev_onboarding,
+  :prospect_senior_organizer,
+  :so_auth,
+  :so_core,
+  :so_agreement,
+  :so_training,
+  :so_quiz,
+  :so_connector,
+  :so_onboarding,
   :cm_first_email,
   :cm_approval_email,
   :cm_warning_email,
@@ -894,6 +967,14 @@ SET
   dev_vetted = :dev_vetted,
   dev_interview = :dev_interview,
   dev_onboarding = :dev_onboarding,
+  prospect_senior_organizer = :prospect_senior_organizer,
+  so_auth = :so_auth,
+  so_core = :so_core,
+  so_agreement = :so_agreement,
+  so_training = :so_training,
+  so_quiz = :so_quiz,
+  so_connector = :so_connector,
+  so_onboarding = :so_onboarding,
   cm_first_email = :cm_first_email,
   cm_approval_email = :cm_approval_email,
   cm_warning_email = :cm_warning_email,
@@ -1181,6 +1262,26 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 		// Not specified so insert null value into database
 		validCirFirstEmail = false
 	}
+	validSOAuth := true
+	if activistJSON.SOAuth == "" {
+		// Not specified so insert null value into database
+		validSOAuth = false
+	}
+	validSOCore := true
+	if activistJSON.SOCore == "" {
+		// Not specified so insert null value into database
+		validSOCore = false
+	}
+	validSOTraining := true
+	if activistJSON.SOTraining == "" {
+		// Not specified so insert null value into database
+		validSOTraining = false
+	}
+	validSOQuiz := true
+	if activistJSON.SOQuiz == "" {
+		// Not specified so insert null value into database
+		validSOQuiz = false
+	}
 
 	activistExtra := ActivistExtra{
 		Activist: Activist{
@@ -1212,6 +1313,16 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			DevVetted:             activistJSON.DevVetted,
 			DevInterview:          sql.NullString{String: strings.TrimSpace(activistJSON.DevInterview), Valid: validDevInterview},
 			DevOnboarding:         activistJSON.DevOnboarding,
+
+			ProspectSeniorOrganizer: 	activistJSON.ProspectSeniorOrganizer,
+			SOAuth:						sql.NullString{String: strings.TrimSpace(activistJSON.SOAuth), Valid: validSOAuth},
+			SOCore: 						sql.NullString{String: strings.TrimSpace(activistJSON.SOCore), Valid: validSOCore},
+			SOAgreement: 				activistJSON.SOAgreement,
+			SOTraining: 					sql.NullString{String: strings.TrimSpace(activistJSON.SOTraining), Valid: validSOTraining},
+			SOQuiz: 						sql.NullString{String: strings.TrimSpace(activistJSON.SOQuiz), Valid: validSOQuiz},
+			SOConnector: 				strings.TrimSpace(activistJSON.SOConnector),
+			SOOnboarding: 				activistJSON.SOOnboarding,
+
 			CMFirstEmail:          sql.NullString{String: strings.TrimSpace(activistJSON.CMFirstEmail), Valid: validCMFirstEmail},
 			CMApprovalEmail:       sql.NullString{String: strings.TrimSpace(activistJSON.CMApprovalEmail), Valid: validCMApprovalEmail},
 			CMWarningEmail:        sql.NullString{String: strings.TrimSpace(activistJSON.CMWarningEmail), Valid: validCMWarningEmail},
