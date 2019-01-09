@@ -77,7 +77,7 @@
 </template>
 
 <script lang="ts">
-import Vue from 'vue';
+import { Vue, Component, Prop } from 'vue-property-decorator';
 import * as Awesomplete from 'awesomplete';
 import { flashMessage, setFlashMessageSuccessCookie } from './flash_message';
 
@@ -86,42 +86,38 @@ function nameFilter(text: string, input: string) {
   return RegExp(Awesomplete.$.regExpEscape(input.trim()).replace(/ +/g, '.*'), 'i').test(text);
 }
 
-export default Vue.extend({
-  props: {
-    connections: Boolean,
-    // TODO(mdempsky): Change id to Number.
-    id: String,
-  },
-  data() {
-    return {
-      loading: false,
-      saving: false,
+@Component
+export default class EventEdit extends Vue {
+  @Prop() connections!: boolean;
 
-      name: '',
-      date: '',
-      type: '',
-      attendees: [] as string[],
+  // TODO(mdempsky): Change id to Number.
+  @Prop() id!: string;
 
-      oldName: '',
-      oldDate: '',
-      oldType: '',
-      oldAttendees: [] as string[],
+  loading = false;
+  saving = false;
 
-      allActivists: [] as string[],
-      allActivistsSet: new Set<string>(),
-    };
-  },
-  computed: {
-    attendeeCount() {
-      let result = 0;
-      for (let attendee of this.attendees) {
-        if (attendee.trim() != '') {
-          result++;
-        }
+  name = '';
+  date = '';
+  type = '';
+  attendees: string[] = [];
+
+  oldName = '';
+  oldDate = '';
+  oldType = '';
+  oldAttendees: string[] = [];
+
+  allActivists: string[] = [];
+  allActivistsSet = new Set<string>();
+
+  get attendeeCount() {
+    let result = 0;
+    for (let attendee of this.attendees) {
+      if (attendee.trim() != '') {
+        result++;
       }
-      return result;
-    },
-  },
+    }
+    return result;
+  }
 
   created() {
     this.updateAutocompleteNames();
@@ -182,7 +178,7 @@ export default Vue.extend({
         e.returnValue = '';
       }
     });
-  },
+  }
 
   updated() {
     this.$nextTick(() => {
@@ -196,248 +192,246 @@ export default Vue.extend({
         } as Awesomplete.Options);
       }
     });
-  },
+  }
 
-  methods: {
-    setDateToToday() {
-      const today = new Date();
-      this.date = today.toISOString().slice(0, 10);
-    },
+  setDateToToday() {
+    const today = new Date();
+    this.date = today.toISOString().slice(0, 10);
+  }
 
-    dirty() {
-      if (
-        this.name.trim() != this.oldName ||
-        (!this.connections && this.type != this.oldType) || // Connections are always "Connection"
-        this.date != this.oldDate
-      ) {
+  dirty() {
+    if (
+      this.name.trim() != this.oldName ||
+      (!this.connections && this.type != this.oldType) || // Connections are always "Connection"
+      this.date != this.oldDate
+    ) {
+      return true;
+    }
+
+    var newSet = new Set<string>();
+    for (let attendee of this.attendees) {
+      attendee = attendee.trim();
+      if (attendee != '') {
+        newSet.add(attendee);
+      }
+    }
+    var oldSet = new Set<string>();
+    for (let attendee of this.oldAttendees) {
+      attendee = attendee.trim();
+      if (attendee != '') {
+        oldSet.add(attendee);
+      }
+    }
+
+    if (oldSet.size != newSet.size) {
+      return true;
+    }
+    for (let attendee of oldSet) {
+      if (!newSet.has(attendee)) {
         return true;
       }
+    }
 
-      var newSet = new Set<string>();
-      for (let attendee of this.attendees) {
-        attendee = attendee.trim();
-        if (attendee != '') {
-          newSet.add(attendee);
-        }
+    return false;
+  }
+
+  addRows(n: number) {
+    for (let i = 0; i < n; i++) {
+      this.attendees.push('');
+    }
+  }
+
+  changed(x: string, y: number) {
+    const inputs = $('#attendee-rows input.attendee-input');
+
+    // Add more rows if there are less than 5,
+    // or if the last row isn't empty.
+    let more = 5 - this.attendees.length;
+    if (more <= 0 && this.attendees[this.attendees.length - 1].trim() != '') {
+      more = 1;
+    }
+    if (more >= 1) {
+      this.addRows(more);
+
+      // Restore focus to where it was before.
+      // TODO(mdempsky): Why is this?
+      if (y >= 0) {
+        inputs.get(y).focus();
       }
-      var oldSet = new Set<string>();
-      for (let attendee of this.oldAttendees) {
-        attendee = attendee.trim();
-        if (attendee != '') {
-          oldSet.add(attendee);
-        }
-      }
+    }
 
-      if (oldSet.size != newSet.size) {
-        return true;
-      }
-      for (let attendee of oldSet) {
-        if (!newSet.has(attendee)) {
-          return true;
-        }
-      }
-
-      return false;
-    },
-
-    addRows(n: number) {
-      for (let i = 0; i < n; i++) {
-        this.attendees.push('');
-      }
-    },
-
-    changed(x: string, y: number) {
-      const inputs = $('#attendee-rows input.attendee-input');
-
-      // Add more rows if there are less than 5,
-      // or if the last row isn't empty.
-      let more = 5 - this.attendees.length;
-      if (more <= 0 && this.attendees[this.attendees.length - 1].trim() != '') {
-        more = 1;
-      }
-      if (more >= 1) {
-        this.addRows(more);
-
-        // Restore focus to where it was before.
-        // TODO(mdempsky): Why is this?
-        if (y >= 0) {
-          inputs.get(y).focus();
-        }
-      }
-
-      // If event came from selecting an autocomplete suggestion,
-      // then move focus to the next input.
-      if (x == 'select') {
-        // If the user selected an option with "tab", then the browser
-        // is going to advance the focus automatically. If we set focus
-        // to y+1 now, then the tab event will instead set focus to y+2.
-        // By waiting until next tick, the tab event (if any) has already
-        // been processed, and we're guaranteed to assign focus to y+1.
-        this.$nextTick(() => {
-          inputs.get(y + 1).focus();
-        });
-
-        // Awesomplete fires after modifying the input element's value,
-        // but before Vue has updated the attendees array. Go ahead and
-        // synchronize them now.
-        // TODO(mdempsky): Figure out how to handle this properly.
-        this.attendees[y] = (inputs.get(y) as HTMLInputElement).value;
-      }
-
-      // Update attendee warnings.
-      // TODO(mdempsky): Let vue handle this.
-      let seen = new Set();
-      for (let i = 0; i < this.attendees.length; i++) {
-        const name = this.attendees[i].trim();
-
-        let warning = '';
-        if (name != '') {
-          if (!this.allActivistsSet.has(name)) {
-            warning = 'unknown';
-          } else if (seen.has(name)) {
-            warning = 'duplicate';
-          } else {
-            seen.add(name);
-          }
-        }
-
-        if (i < inputs.length) {
-          inputs.get(i).dataset.warning = warning;
-        }
-      }
-    },
-
-    save() {
-      const name = this.name.trim();
-      const date = this.date;
-      const type = this.connections ? 'Connection' : this.type;
-      if (name === '') {
-        flashMessage('Error: Please enter event name!', true);
-        return;
-      }
-      if (date === '') {
-        flashMessage('Error: Please enter date!', true);
-        return;
-      }
-      if (type === '') {
-        flashMessage('Error: Must choose event type.', true);
-        return;
-      }
-
-      let attendees: string[] = [];
-      let attendeesSet = new Set();
-      for (let attendee of this.attendees) {
-        attendee = attendee.trim();
-        if (attendee != '' && !attendeesSet.has(attendee)) {
-          attendees.push(attendee);
-          attendeesSet.add(attendee);
-        }
-      }
-
-      if (attendees.length === 0) {
-        flashMessage('Error: must enter attendees', true);
-        return;
-      }
-
-      // TODO(mdempsky): Fix API backend so we don't have to compute diffs manually.
-      const oldAttendeesSet = new Set(this.oldAttendees);
-      let addedActivists = attendees.filter(function(activist) {
-        return !oldAttendeesSet.has(activist);
-      });
-      let deletedActivists = this.oldAttendees.filter(function(activist) {
-        return !attendeesSet.has(activist);
+    // If event came from selecting an autocomplete suggestion,
+    // then move focus to the next input.
+    if (x == 'select') {
+      // If the user selected an option with "tab", then the browser
+      // is going to advance the focus automatically. If we set focus
+      // to y+1 now, then the tab event will instead set focus to y+2.
+      // By waiting until next tick, the tab event (if any) has already
+      // been processed, and we're guaranteed to assign focus to y+1.
+      this.$nextTick(() => {
+        inputs.get(y + 1).focus();
       });
 
-      this.saving = true;
-      $.ajax({
-        url: this.connections ? '/connection/save' : '/event/save',
-        method: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({
-          event_id: Number(this.id),
-          event_name: name,
-          event_date: date,
-          event_type: type,
-          added_attendees: addedActivists,
-          deleted_attendees: deletedActivists,
-        }),
-        success: (data) => {
-          this.saving = false;
-          let parsed = JSON.parse(data);
-          if (parsed.status === 'error') {
-            flashMessage('Error: ' + parsed.message, true);
-            return;
-          }
+      // Awesomplete fires after modifying the input element's value,
+      // but before Vue has updated the attendees array. Go ahead and
+      // synchronize them now.
+      // TODO(mdempsky): Figure out how to handle this properly.
+      this.attendees[y] = (inputs.get(y) as HTMLInputElement).value;
+    }
 
-          this.oldName = name;
-          this.oldType = type;
-          this.oldDate = date;
-          this.oldAttendees = attendees;
+    // Update attendee warnings.
+    // TODO(mdempsky): Let vue handle this.
+    let seen = new Set();
+    for (let i = 0; i < this.attendees.length; i++) {
+      const name = this.attendees[i].trim();
 
-          // TODO(mdempsky): Remove after figuring out Safari issue.
-          if (this.dirty()) {
-            console.log(
-              'Oops, still dirty after save!',
-              JSON.stringify({
-                new: {
-                  name: this.name,
-                  type: this.type,
-                  date: this.date,
-                  attendees: this.attendees,
-                },
-                old: {
-                  name: this.oldName,
-                  type: this.oldType,
-                  date: this.oldDate,
-                  attendees: this.oldAttendees,
-                },
-              }),
-            );
-          }
+      let warning = '';
+      if (name != '') {
+        if (!this.allActivistsSet.has(name)) {
+          warning = 'unknown';
+        } else if (seen.has(name)) {
+          warning = 'duplicate';
+        } else {
+          seen.add(name);
+        }
+      }
 
-          if (parsed.redirect) {
-            // TODO(mdempsky): Implement as history rewrite.
-            setFlashMessageSuccessCookie('Saved!');
-            window.location = parsed.redirect;
-          } else {
-            flashMessage('Saved!', false);
-          }
+      if (i < inputs.length) {
+        inputs.get(i).dataset.warning = warning;
+      }
+    }
+  }
 
-          // Saving the event may have created new activists,
-          // which affects styling.
-          this.updateAutocompleteNames();
-        },
-        error: () => {
-          this.saving = false;
-          flashMessage('Error, did not save data', true);
-        },
-      });
-    },
+  save() {
+    const name = this.name.trim();
+    const date = this.date;
+    const type = this.connections ? 'Connection' : this.type;
+    if (name === '') {
+      flashMessage('Error: Please enter event name!', true);
+      return;
+    }
+    if (date === '') {
+      flashMessage('Error: Please enter date!', true);
+      return;
+    }
+    if (type === '') {
+      flashMessage('Error: Must choose event type.', true);
+      return;
+    }
 
-    // TODO(mdempsky): Move into utility file.
-    updateAutocompleteNames() {
-      $.ajax({
-        url: '/activist_names/get',
-        method: 'GET',
-        dataType: 'json',
-        success: (data) => {
-          var activistNames = data.activist_names;
-          // Clear current activist name array and set before re-adding
-          this.allActivists.length = 0;
-          this.allActivistsSet.clear();
-          for (let name of data.activist_names) {
-            this.allActivists.push(name);
-            this.allActivistsSet.add(name);
-          }
-          this.changed('autocomplete', -1);
-        },
-        error: () => {
-          flashMessage('Error: could not load activist names', true);
-        },
-      });
-    },
-  },
-});
+    let attendees: string[] = [];
+    let attendeesSet = new Set();
+    for (let attendee of this.attendees) {
+      attendee = attendee.trim();
+      if (attendee != '' && !attendeesSet.has(attendee)) {
+        attendees.push(attendee);
+        attendeesSet.add(attendee);
+      }
+    }
+
+    if (attendees.length === 0) {
+      flashMessage('Error: must enter attendees', true);
+      return;
+    }
+
+    // TODO(mdempsky): Fix API backend so we don't have to compute diffs manually.
+    const oldAttendeesSet = new Set(this.oldAttendees);
+    let addedActivists = attendees.filter(function(activist) {
+      return !oldAttendeesSet.has(activist);
+    });
+    let deletedActivists = this.oldAttendees.filter(function(activist) {
+      return !attendeesSet.has(activist);
+    });
+
+    this.saving = true;
+    $.ajax({
+      url: this.connections ? '/connection/save' : '/event/save',
+      method: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify({
+        event_id: Number(this.id),
+        event_name: name,
+        event_date: date,
+        event_type: type,
+        added_attendees: addedActivists,
+        deleted_attendees: deletedActivists,
+      }),
+      success: (data) => {
+        this.saving = false;
+        let parsed = JSON.parse(data);
+        if (parsed.status === 'error') {
+          flashMessage('Error: ' + parsed.message, true);
+          return;
+        }
+
+        this.oldName = name;
+        this.oldType = type;
+        this.oldDate = date;
+        this.oldAttendees = attendees;
+
+        // TODO(mdempsky): Remove after figuring out Safari issue.
+        if (this.dirty()) {
+          console.log(
+            'Oops, still dirty after save!',
+            JSON.stringify({
+              new: {
+                name: this.name,
+                type: this.type,
+                date: this.date,
+                attendees: this.attendees,
+              },
+              old: {
+                name: this.oldName,
+                type: this.oldType,
+                date: this.oldDate,
+                attendees: this.oldAttendees,
+              },
+            }),
+          );
+        }
+
+        if (parsed.redirect) {
+          // TODO(mdempsky): Implement as history rewrite.
+          setFlashMessageSuccessCookie('Saved!');
+          window.location = parsed.redirect;
+        } else {
+          flashMessage('Saved!', false);
+        }
+
+        // Saving the event may have created new activists,
+        // which affects styling.
+        this.updateAutocompleteNames();
+      },
+      error: () => {
+        this.saving = false;
+        flashMessage('Error, did not save data', true);
+      },
+    });
+  }
+
+  // TODO(mdempsky): Move into utility file.
+  updateAutocompleteNames() {
+    $.ajax({
+      url: '/activist_names/get',
+      method: 'GET',
+      dataType: 'json',
+      success: (data) => {
+        var activistNames = data.activist_names;
+        // Clear current activist name array and set before re-adding
+        this.allActivists.length = 0;
+        this.allActivistsSet.clear();
+        for (let name of data.activist_names) {
+          this.allActivists.push(name);
+          this.allActivistsSet.add(name);
+        }
+        this.changed('autocomplete', -1);
+      },
+      error: () => {
+        flashMessage('Error: could not load activist names', true);
+      },
+    });
+  }
+}
 </script>
 
 <style>

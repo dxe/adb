@@ -149,7 +149,7 @@
 </template>
 
 <script lang="ts">
-import Vue from 'vue';
+import { Vue, Component, Prop } from 'vue-property-decorator';
 import { flashMessage } from './flash_message';
 import { initActivistSelect } from './chosen_utils';
 
@@ -167,45 +167,96 @@ interface Event {
   showAttendees: boolean;
 }
 
-export default Vue.extend({
-  props: {
-    connections: Boolean,
-  },
-  data() {
+@Component
+export default class EventList extends Vue {
+  @Prop() connections!: boolean;
+
+  search = {
+    name: '',
+    start: '',
+    end: '',
+    type: 'noConnections',
+  };
+
+  loading = false;
+  events: Event[] = [];
+
+  created() {
     // Default search from the 1st of last month to today.
     const today = new Date();
     const start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
 
-    return {
-      search: {
-        name: '',
-        start: start.toISOString().slice(0, 10),
-        end: today.toISOString().slice(0, 10),
-        type: 'noConnections',
-      },
+    this.search.start = start.toISOString().slice(0, 10);
+    this.search.end = today.toISOString().slice(0, 10);
+  }
 
-      loading: false,
-      events: [] as Event[],
-    };
-  },
   mounted() {
     initActivistSelect('#event-activist');
     this.eventListRequest();
-  },
-  methods: {
-    eventListRequest() {
-      // Always show the loading screen when the button is clicked.
-      this.loading = true;
+  }
 
+  eventListRequest() {
+    // Always show the loading screen when the button is clicked.
+    this.loading = true;
+
+    $.ajax({
+      url: '/event/list',
+      method: 'POST',
+      data: {
+        event_name: this.search.name,
+        event_activist: $('#event-activist').val(),
+        event_date_start: this.search.start,
+        event_date_end: this.search.end,
+        event_type: this.connections ? 'Connection' : this.search.type,
+      },
+      success: (data) => {
+        let parsed = JSON.parse(data);
+        if (parsed.status === 'error') {
+          flashMessage('Error: ' + parsed.message, true);
+          return;
+        }
+        // status === "success"
+
+        // The data must be a list of events b/c it was successful.
+        let events = parsed as Event[];
+
+        // Process event JSON to make presentable.
+        for (let event of events) {
+          event.showAttendees = this.connections; // Show by default on connections list.
+          if (event.attendees == null) {
+            event.attendees = [];
+          }
+          event.emailLink =
+            'https://mail.google.com/mail/?view=cm&fs=1&bcc=' +
+            (event.attendee_emails || []).join(',');
+        }
+
+        if (events.length == 0) {
+          flashMessage('No events from server', true);
+        }
+
+        this.loading = false;
+        this.events = events;
+      },
+      error: () => {
+        flashMessage('Error connecting to server.', true);
+      },
+    });
+  }
+
+  confirmDeleteEvent(event: Event) {
+    let confirmed = confirm(
+      'Are you sure you want to delete the event "' +
+        event.event_name +
+        '"?\n\nPress OK to delete this event.',
+    );
+
+    if (confirmed) {
       $.ajax({
-        url: '/event/list',
+        url: '/event/delete',
         method: 'POST',
         data: {
-          event_name: this.search.name,
-          event_activist: $('#event-activist').val(),
-          event_date_start: this.search.start,
-          event_date_end: this.search.end,
-          event_type: this.connections ? 'Connection' : this.search.type,
+          event_id: event.event_id,
         },
         success: (data) => {
           let parsed = JSON.parse(data);
@@ -215,80 +266,30 @@ export default Vue.extend({
           }
           // status === "success"
 
-          // The data must be a list of events b/c it was successful.
-          let events = parsed as Event[];
-
-          // Process event JSON to make presentable.
-          for (let event of events) {
-            event.showAttendees = this.connections; // Show by default on connections list.
-            if (event.attendees == null) {
-              event.attendees = [];
-            }
-            event.emailLink =
-              'https://mail.google.com/mail/?view=cm&fs=1&bcc=' +
-              (event.attendee_emails || []).join(',');
-          }
-
-          if (events.length == 0) {
-            flashMessage('No events from server', true);
-          }
-
-          this.loading = false;
-          this.events = events;
+          flashMessage('Deleted event ' + event.event_name);
+          this.eventListRequest();
         },
         error: () => {
           flashMessage('Error connecting to server.', true);
         },
       });
-    },
+    }
+  }
 
-    confirmDeleteEvent(event: Event) {
-      let confirmed = confirm(
-        'Are you sure you want to delete the event "' +
-          event.event_name +
-          '"?\n\nPress OK to delete this event.',
-      );
+  showAllAttendees() {
+    for (let event of this.events) {
+      event.showAttendees = true;
+    }
+  }
 
-      if (confirmed) {
-        $.ajax({
-          url: '/event/delete',
-          method: 'POST',
-          data: {
-            event_id: event.event_id,
-          },
-          success: (data) => {
-            let parsed = JSON.parse(data);
-            if (parsed.status === 'error') {
-              flashMessage('Error: ' + parsed.message, true);
-              return;
-            }
-            // status === "success"
+  hideAllAttendees() {
+    for (let event of this.events) {
+      event.showAttendees = false;
+    }
+  }
 
-            flashMessage('Deleted event ' + event.event_name);
-            this.eventListRequest();
-          },
-          error: () => {
-            flashMessage('Error connecting to server.', true);
-          },
-        });
-      }
-    },
-
-    showAllAttendees() {
-      for (let event of this.events) {
-        event.showAttendees = true;
-      }
-    },
-
-    hideAllAttendees() {
-      for (let event of this.events) {
-        event.showAttendees = false;
-      }
-    },
-
-    toggleAttendees(event: Event) {
-      event.showAttendees = !event.showAttendees;
-    },
-  },
-});
+  toggleAttendees(event: Event) {
+    event.showAttendees = !event.showAttendees;
+  }
+}
 </script>

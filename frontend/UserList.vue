@@ -136,7 +136,7 @@
 <script lang="ts">
 // Library from here: https://github.com/euvl/vue-js-modal
 import vmodal from 'vue-js-modal';
-import Vue from 'vue';
+import { Vue, Component } from 'vue-property-decorator';
 import { flashMessage } from './flash_message';
 import { Dropdown } from 'uiv';
 
@@ -154,229 +154,241 @@ interface User {
   roles: string[];
 }
 
-export default Vue.extend({
-  name: 'user-list',
-  methods: {
-    showModal(modalName: string, user: User, index: number) {
-      // Check to see if there's a modal open, and close it if so.
-      if (this.currentModalName) {
+@Component({
+  components: {
+    Dropdown,
+  },
+  directives: {
+    focus,
+  },
+})
+export default class UserList extends Vue {
+  showModal(modalName: string, user: User, index: number) {
+    // Check to see if there's a modal open, and close it if so.
+    if (this.currentModalName) {
+      this.hideModal();
+    }
+
+    // Make shallow copy of selected activist to prevent persisting unsaved
+    // edits at the view layer when closing modal
+    this.currentUser = { ...user };
+
+    // Track current user index, or default to first in list
+    this.userIndex = index === 0 ? 0 : index || -1;
+
+    this.currentModalName = modalName;
+    this.$modal.show(modalName);
+  }
+
+  hideModal() {
+    // Make sure we update the main user list instance of
+    // this current user to match the roles.
+    // Only when we're not creating a new User.
+    if (this.userIndex !== -1) {
+      this.users[this.userIndex].roles = this.currentUser.roles;
+    }
+
+    if (this.currentModalName) {
+      this.$modal.hide(this.currentModalName);
+    }
+    this.currentModalName = '';
+    this.userIndex = -1;
+    this.currentUser = {} as User;
+    this.currentUserRoleSelections = [];
+
+    // Sort user list by email
+    this.sortUserListByEmail();
+  }
+
+  confirmEditUserModal() {
+    // Disable the save button when the user clicks it so they don't
+    // try to save twice. Re-enable it when we get any response back
+    // from the server (even an error).
+    this.disableConfirmButton = true;
+
+    $.ajax({
+      url: '/user/save',
+      method: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify(this.currentUser),
+      success: (data) => {
+        this.disableConfirmButton = false;
+
+        var parsed = JSON.parse(data);
+        if (parsed.status === 'error') {
+          flashMessage('Error: ' + parsed.message, true);
+          return;
+        }
+
+        flashMessage(this.currentUser.email + ' saved');
+
+        if (this.userIndex === -1) {
+          // We're getting a new user, insert them at the top.
+          this.users = [parsed.user].concat(this.users);
+        } else {
+          // We edited an existing user, replace their row in
+          // `users`.
+          Vue.set(this.users, this.userIndex, parsed.user);
+        }
+
         this.hideModal();
+      },
+      error: (err) => {
+        this.disableConfirmButton = false;
+
+        console.warn(err.responseText);
+        flashMessage('Server error: ' + err.responseText, true);
+      },
+    });
+  }
+
+  modalOpened() {
+    // Add noscroll to body tag so it doesn't scroll while the modal
+    // is shown.
+    $(document.body).addClass('noscroll');
+    this.disableConfirmButton = false;
+
+    // Track current user roles selections separate from currentUser.roles,
+    // so we can compare selections when deciding if we need to remove or add a role
+    // as we're making selections in the modal edit window.
+    this.currentUserRoleSelections = $.extend([], this.currentUser.roles);
+  }
+
+  modalClosed() {
+    // Allow body to scroll after modal is closed.
+    $(document.body).removeClass('noscroll');
+  }
+
+  sortByEmail() {
+    var order = this.pagingParameters.order;
+    if (order === AscOrder) {
+      order = DescOrder;
+    } else {
+      order = AscOrder;
+    }
+    this.reset();
+    this.pagingParameters.order = order;
+  }
+
+  sortUserListByEmail() {
+    if (!this.users) {
+      return;
+    }
+
+    this.users.sort(function(a, b) {
+      var emailA = a.email.toLowerCase();
+      var emailB = b.email.toLowerCase();
+
+      if (emailA < emailB) {
+        return -1;
       }
 
-      // Make shallow copy of selected activist to prevent persisting unsaved
-      // edits at the view layer when closing modal
-      this.currentUser = { ...user };
-
-      // Track current user index, or default to first in list
-      this.userIndex = index === 0 ? 0 : index || -1;
-
-      this.currentModalName = modalName;
-      this.$modal.show(modalName);
-    },
-    hideModal() {
-      // Make sure we update the main user list instance of
-      // this current user to match the roles.
-      // Only when we're not creating a new User.
-      if (this.userIndex !== -1) {
-        this.users[this.userIndex].roles = this.currentUser.roles;
+      if (emailA > emailB) {
+        return 1;
       }
 
-      if (this.currentModalName) {
-        this.$modal.hide(this.currentModalName);
-      }
-      this.currentModalName = '';
-      this.userIndex = -1;
-      this.currentUser = {} as User;
-      this.currentUserRoleSelections = [];
+      return 0;
+    });
+  }
 
-      // Sort user list by email
-      this.sortUserListByEmail();
-    },
-    confirmEditUserModal() {
-      // Disable the save button when the user clicks it so they don't
-      // try to save twice. Re-enable it when we get any response back
-      // from the server (even an error).
-      this.disableConfirmButton = true;
+  setUsers(users: User[]) {
+    console.log('inside setUsers: ', users);
+    this.users = users;
+  }
 
-      $.ajax({
-        url: '/user/save',
-        method: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify(this.currentUser),
-        success: (data) => {
-          this.disableConfirmButton = false;
+  reset() {
+    // reset data properties back to original values
+    this.currentUser = {} as User;
+    this.users = [];
+    this.userIndex = -1;
+    this.disableConfirmButton = false;
+    this.currentModalName = '';
+    this.pagingParameters = {
+      email: '',
+      order: AscOrder,
+      limit: 40,
+    };
 
-          var parsed = JSON.parse(data);
-          if (parsed.status === 'error') {
-            flashMessage('Error: ' + parsed.message, true);
-            return;
-          }
+    this.currentUserRoleSelections = [];
+  }
 
-          flashMessage(this.currentUser.email + ' saved');
+  updateUserRoleModal(role: string) {
+    if (this.disableConfirmButton) {
+      return;
+    }
 
-          if (this.userIndex === -1) {
-            // We're getting a new user, insert them at the top.
-            this.users = [parsed.user].concat(this.users);
-          } else {
-            // We edited an existing user, replace their row in
-            // `users`.
-            Vue.set(this.users, this.userIndex, parsed.user);
-          }
+    if (!role) {
+      return;
+    }
 
-          this.hideModal();
-        },
-        error: (err) => {
-          this.disableConfirmButton = false;
+    if (!this.currentUser.roles) {
+      this.currentUser.roles = [];
+    }
 
-          console.warn(err.responseText);
-          flashMessage('Server error: ' + err.responseText, true);
-        },
-      });
-    },
-    modalOpened() {
-      // Add noscroll to body tag so it doesn't scroll while the modal
-      // is shown.
-      $(document.body).addClass('noscroll');
-      this.disableConfirmButton = false;
+    this.disableConfirmButton = true;
 
-      // Track current user roles selections separate from currentUser.roles,
-      // so we can compare selections when deciding if we need to remove or add a role
-      // as we're making selections in the modal edit window.
-      this.currentUserRoleSelections = $.extend([], this.currentUser.roles);
-    },
-    modalClosed() {
-      // Allow body to scroll after modal is closed.
-      $(document.body).removeClass('noscroll');
-    },
-    sortByEmail() {
-      var order = this.pagingParameters.order;
-      if (order === AscOrder) {
-        order = DescOrder;
-      } else {
-        order = AscOrder;
-      }
-      this.reset();
-      this.pagingParameters.order = order;
-    },
-    sortUserListByEmail() {
-      if (!this.users) {
-        return;
-      }
+    // If the specified Role already exists in the Current User's role list,
+    // then we assume the role should be removed.
+    const existingRole = this.currentUser.roles.indexOf(role) >= 0;
 
-      this.users.sort(function(a, b) {
-        var emailA = a.email.toLowerCase();
-        var emailB = b.email.toLowerCase();
+    $.ajax({
+      url: existingRole ? '/users-roles/remove' : '/users-roles/add',
+      method: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify({
+        user_id: this.currentUser.id,
+        role: role,
+      }),
+      success: (data) => {
+        this.disableConfirmButton = false;
 
-        if (emailA < emailB) {
-          return -1;
-        }
+        var parsed = JSON.parse(data);
 
-        if (emailA > emailB) {
-          return 1;
-        }
-
-        return 0;
-      });
-    },
-    setUsers(users: User[]) {
-      console.log('inside setUsers: ', users);
-      this.users = users;
-    },
-    reset() {
-      // reset data properties back to original values
-      this.currentUser = {} as User;
-      this.users = [];
-      this.userIndex = -1;
-      this.disableConfirmButton = false;
-      this.currentModalName = '';
-      this.pagingParameters = {
-        email: '',
-        order: AscOrder,
-        limit: 40,
-      };
-
-      this.currentUserRoleSelections = [];
-    },
-    updateUserRoleModal(role: string) {
-      if (this.disableConfirmButton) {
-        return;
-      }
-
-      if (!role) {
-        return;
-      }
-
-      if (!this.currentUser.roles) {
-        this.currentUser.roles = [];
-      }
-
-      this.disableConfirmButton = true;
-
-      // If the specified Role already exists in the Current User's role list,
-      // then we assume the role should be removed.
-      const existingRole = this.currentUser.roles.indexOf(role) >= 0;
-
-      $.ajax({
-        url: existingRole ? '/users-roles/remove' : '/users-roles/add',
-        method: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({
-          user_id: this.currentUser.id,
-          role: role,
-        }),
-        success: (data) => {
-          this.disableConfirmButton = false;
-
-          var parsed = JSON.parse(data);
-
-          if (parsed.status === 'error') {
-            this.currentUserRoleSelections = $.extend([], this.currentUser.roles);
-            flashMessage(
-              "And error occurred while updating this User's Role. Reverting Role Selections back to original: " +
-                parsed.message,
-              true,
-            );
-            return;
-          }
-
-          flashMessage(
-            (existingRole ? 'Removed' : 'Added') +
-              ' the ' +
-              role +
-              ' role for ' +
-              this.currentUser.email,
-          );
-
-          // Sync the currentUser.roles with the current modal selections.
-          this.currentUser.roles = this.currentUserRoleSelections;
-        },
-        error: (err) => {
-          this.disableConfirmButton = false;
+        if (parsed.status === 'error') {
           this.currentUserRoleSelections = $.extend([], this.currentUser.roles);
-          console.warn(err.responseText);
           flashMessage(
-            'Server error. Reverting Role Selections back to original: ' + err.responseText,
+            "And error occurred while updating this User's Role. Reverting Role Selections back to original: " +
+              parsed.message,
             true,
           );
-        },
-      });
-    },
-  },
-  data() {
-    return {
-      currentUser: {} as User,
-      users: [] as User[],
-      userIndex: -1,
-      disableConfirmButton: false,
-      currentModalName: '',
-      pagingParameters: {
-        email: '',
-        order: AscOrder,
-        limit: 40,
+          return;
+        }
+
+        flashMessage(
+          (existingRole ? 'Removed' : 'Added') +
+            ' the ' +
+            role +
+            ' role for ' +
+            this.currentUser.email,
+        );
+
+        // Sync the currentUser.roles with the current modal selections.
+        this.currentUser.roles = this.currentUserRoleSelections;
       },
-      currentUserRoleSelections: [] as string[],
-    };
-  },
+      error: (err) => {
+        this.disableConfirmButton = false;
+        this.currentUserRoleSelections = $.extend([], this.currentUser.roles);
+        console.warn(err.responseText);
+        flashMessage(
+          'Server error. Reverting Role Selections back to original: ' + err.responseText,
+          true,
+        );
+      },
+    });
+  }
+
+  currentUser = {} as User;
+  users: User[] = [];
+  userIndex = -1;
+  disableConfirmButton = false;
+  currentModalName = '';
+  pagingParameters = {
+    email: '',
+    order: AscOrder,
+    limit: 40,
+  };
+  currentUserRoleSelections: string[] = [];
+
   created() {
     $.ajax({
       url: '/user/list',
@@ -393,12 +405,6 @@ export default Vue.extend({
         flashMessage('Error connecting to server.', true);
       },
     });
-  },
-  components: {
-    Dropdown,
-  },
-  directives: {
-    focus,
-  },
-});
+  }
+}
 </script>

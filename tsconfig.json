@@ -9,6 +9,7 @@
     "strict": true,
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
     "types": ["jquery"],
   },
   "include": [

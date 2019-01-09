@@ -206,7 +206,7 @@
 import vmodal from 'vue-js-modal';
 import HotTable from './external/vue-handsontable-official/HotTable.vue';
 import { rewriteSettings } from './external/vue-handsontable-official/helpers';
-import Vue from 'vue';
+import { Vue, Component, Prop, Watch } from 'vue-property-decorator';
 import { focus } from './directives/focus';
 import { flashMessage } from './flash_message';
 import { EventBus } from './EventBus';
@@ -919,15 +919,21 @@ function generateDateSortFn(field: string, ascending: boolean) {
   };
 }
 
-export default Vue.extend({
-  name: 'activist-list',
-  props: {
-    // `view` is the default view to show. It can be one of:
-    // "all_activists", "leaderboard", "activist_pool",
-    // "activist_recruitment", or "action_team"
-    view: {
-      type: String,
-      /*validator(value) {
+@Component({
+  components: {
+    HotTable,
+  },
+  directives: {
+    focus,
+  },
+})
+export default class ActivistList extends Vue {
+  // `view` is the default view to show. It can be one of:
+  // "all_activists", "leaderboard", "activist_pool",
+  // "activist_recruitment", or "action_team"
+  @Prop() view!: string;
+  // TODO(mdempsky): Re-enable validation?
+  /*validator(value) {
         var validViews = [
           'all_activists',
           'leaderboard',
@@ -938,463 +944,465 @@ export default Vue.extend({
         ];
         return validViews.indexOf(value) !== -1;
       },*/
-    },
-  },
-  methods: {
-    showOptionsModal(row: number) {
-      var activist = this.activists[row];
-      this.showModal('activist-options-modal', activist, row);
-    },
-    showModal(modalName: string, activist: Activist, index: number) {
-      // Check to see if there's a modal open, and close it if so.
-      if (this.currentModalName) {
+
+  showOptionsModal(row: number) {
+    var activist = this.activists[row];
+    this.showModal('activist-options-modal', activist, row);
+  }
+
+  showModal(modalName: string, activist: Activist, index: number) {
+    // Check to see if there's a modal open, and close it if so.
+    if (this.currentModalName) {
+      this.hideModal();
+    }
+
+    // Show the modal in the next tick so that this code runs after
+    // vue has hidden the previous modal.
+    Vue.nextTick(() => {
+      this.currentActivist = activist;
+
+      if (index != undefined) {
+        this.activistIndex = index; // needed for updating activist
+      } else {
+        this.activistIndex = -1;
+      }
+
+      this.currentModalName = modalName;
+      this.$modal.show(modalName);
+    });
+  }
+
+  hideModal() {
+    if (this.currentModalName) {
+      this.$modal.hide(this.currentModalName);
+    }
+    this.currentModalName = '';
+    this.activistIndex = -1;
+    this.currentActivist = {} as Activist;
+  }
+
+  modalOpened() {
+    // Add noscroll to body tag so it doesn't scroll while the modal
+    // is shown.
+    $(document.body).addClass('noscroll');
+    this.disableConfirmButton = false;
+
+    if (this.currentModalName == 'merge-activist-modal') {
+      // For some reason, even though this function is supposed to
+      // fire after the modal is visible on the dom, the modal isn't
+      // there. Vue.nextTick doesn't work for some reason, so we're
+      // just going to keep calling setTimeout until the modal shows
+      // up.
+      var interval: number;
+      var fn = () => {
+        if ($('#merge-target-activist')[0]) {
+          clearInterval(interval);
+          initActivistSelect('#merge-target-activist', this.currentActivist.name);
+        }
+      };
+      interval = setInterval(fn, 50);
+    }
+  }
+
+  modalClosed() {
+    // Allow body to scroll after modal is closed.
+    $(document.body).removeClass('noscroll');
+  }
+
+  removeActivist(id: number) {
+    var activistIndex;
+    for (var i = 0; i < this.allActivists.length; i++) {
+      if (this.allActivists[i].id === id) {
+        activistIndex = i;
+      }
+    }
+    if (!activistIndex) {
+      throw new Error("Couldn't find activist index for activist with id: " + id);
+    }
+    this.allActivists = this.allActivists
+      .slice(0, activistIndex)
+      .concat(this.allActivists.slice(activistIndex + 1));
+  }
+
+  confirmMergeActivistModal() {
+    var targetActivistName = $('#merge-target-activist').val();
+    if (!targetActivistName) {
+      flashMessage('Must choose an activist to merge into', true);
+      return;
+    }
+
+    this.disableConfirmButton = true;
+    var currentActivistID = this.currentActivist.id;
+
+    $.ajax({
+      url: '/activist/merge',
+      method: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify({
+        current_activist_id: currentActivistID,
+        target_activist_name: targetActivistName,
+      }),
+      success: (data) => {
+        this.disableConfirmButton = false;
+
+        var parsed = JSON.parse(data);
+        if (parsed.status === 'error') {
+          flashMessage('Error: ' + parsed.message, true);
+          return;
+        }
+        flashMessage(this.currentActivist.name + ' was merged into ' + targetActivistName);
+
+        // Remove activist from list.
+        this.removeActivist(currentActivistID);
+
         this.hideModal();
-      }
+      },
+      error: (err) => {
+        this.disableConfirmButton = false;
 
-      // Show the modal in the next tick so that this code runs after
-      // vue has hidden the previous modal.
-      Vue.nextTick(() => {
-        this.currentActivist = activist;
+        console.warn(err.responseText);
+        flashMessage('Server error: ' + err.responseText, true);
+      },
+    });
+  }
 
-        if (index != undefined) {
-          this.activistIndex = index; // needed for updating activist
-        } else {
-          this.activistIndex = -1;
+  confirmHideActivistModal() {
+    this.disableConfirmButton = true;
+    var currentActivistID = this.currentActivist.id;
+
+    $.ajax({
+      url: '/activist/hide',
+      method: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify({ id: currentActivistID }),
+      success: (data) => {
+        this.disableConfirmButton = false;
+
+        var parsed = JSON.parse(data);
+        if (parsed.status === 'error') {
+          flashMessage('Error: ' + parsed.message, true);
+          return;
+        }
+        flashMessage(this.currentActivist.name + ' was hidden');
+
+        // Remove activist from list.
+        this.removeActivist(currentActivistID);
+
+        this.hideModal();
+      },
+      error: (err) => {
+        this.disableConfirmButton = false;
+
+        console.warn(err.responseText);
+        flashMessage('Server error: ' + err.responseText, true);
+      },
+    });
+  }
+
+  @Watch('lastEventDateFrom')
+  @Watch('lastEventDateTo')
+  @Watch('filterActionTeam')
+  loadActivists() {
+    $.ajax({
+      url: '/activist/list',
+      method: 'POST',
+      data: JSON.stringify(this.listActivistsParameters()),
+      success: (data) => {
+        var parsed = JSON.parse(data);
+        if (parsed.status === 'error') {
+          flashMessage('Error: ' + parsed.message, true);
+          return;
         }
 
-        this.currentModalName = modalName;
-        this.$modal.show(modalName);
-      });
-    },
-    hideModal() {
-      if (this.currentModalName) {
-        this.$modal.hide(this.currentModalName);
-      }
-      this.currentModalName = '';
-      this.activistIndex = -1;
-      this.currentActivist = {} as Activist;
-    },
-    modalOpened() {
-      // Add noscroll to body tag so it doesn't scroll while the modal
-      // is shown.
-      $(document.body).addClass('noscroll');
-      this.disableConfirmButton = false;
+        // status === "success"
+        var activistList = parsed.activist_list;
 
-      if (this.currentModalName == 'merge-activist-modal') {
-        // For some reason, even though this function is supposed to
-        // fire after the modal is visible on the dom, the modal isn't
-        // there. Vue.nextTick doesn't work for some reason, so we're
-        // just going to keep calling setTimeout until the modal shows
-        // up.
-        var interval: number;
-        var fn = () => {
-          if ($('#merge-target-activist')[0]) {
-            clearInterval(interval);
-            initActivistSelect('#merge-target-activist', this.currentActivist.name);
-          }
-        };
-        interval = setInterval(fn, 50);
-      }
-    },
-    modalClosed() {
-      // Allow body to scroll after modal is closed.
-      $(document.body).removeClass('noscroll');
-    },
-    removeActivist(id: number) {
-      var activistIndex;
-      for (var i = 0; i < this.allActivists.length; i++) {
-        if (this.allActivists[i].id === id) {
-          activistIndex = i;
-        }
-      }
-      if (!activistIndex) {
-        throw new Error("Couldn't find activist index for activist with id: " + id);
-      }
-      this.allActivists = this.allActivists
-        .slice(0, activistIndex)
-        .concat(this.allActivists.slice(activistIndex + 1));
-    },
-    confirmMergeActivistModal() {
-      var targetActivistName = $('#merge-target-activist').val();
-      if (!targetActivistName) {
-        flashMessage('Must choose an activist to merge into', true);
-        return;
-      }
+        // filtering
+        if (
+          this.view === 'activist_pool' ||
+          this.view === 'activist_recruitment' ||
+          this.view === 'action_team' ||
+          this.view === 'leaderboard' ||
+          this.view === 'development' ||
+          this.view === 'organizer_prospects' ||
+          this.view === 'chapter_member_prospects' ||
+          this.view === 'circle_member_prospects' ||
+          this.view === 'chapter_member_development'
+        ) {
+          var activistListFiltered;
+          activistListFiltered = activistList.filter((el: Activist) => {
+            if (this.view === 'activist_pool') {
+              return el.activist_level == 'Supporter';
+            } else if (this.view === 'action_team') {
+              var selectedActionTeam = $('#filterActionTeam :selected').text();
 
-      this.disableConfirmButton = true;
-      var currentActivistID = this.currentActivist.id;
-
-      $.ajax({
-        url: '/activist/merge',
-        method: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({
-          current_activist_id: currentActivistID,
-          target_activist_name: targetActivistName,
-        }),
-        success: (data) => {
-          this.disableConfirmButton = false;
-
-          var parsed = JSON.parse(data);
-          if (parsed.status === 'error') {
-            flashMessage('Error: ' + parsed.message, true);
-            return;
-          }
-          flashMessage(this.currentActivist.name + ' was merged into ' + targetActivistName);
-
-          // Remove activist from list.
-          this.removeActivist(currentActivistID);
-
-          this.hideModal();
-        },
-        error: (err) => {
-          this.disableConfirmButton = false;
-
-          console.warn(err.responseText);
-          flashMessage('Server error: ' + err.responseText, true);
-        },
-      });
-    },
-    confirmHideActivistModal() {
-      this.disableConfirmButton = true;
-      var currentActivistID = this.currentActivist.id;
-
-      $.ajax({
-        url: '/activist/hide',
-        method: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({ id: currentActivistID }),
-        success: (data) => {
-          this.disableConfirmButton = false;
-
-          var parsed = JSON.parse(data);
-          if (parsed.status === 'error') {
-            flashMessage('Error: ' + parsed.message, true);
-            return;
-          }
-          flashMessage(this.currentActivist.name + ' was hidden');
-
-          // Remove activist from list.
-          this.removeActivist(currentActivistID);
-
-          this.hideModal();
-        },
-        error: (err) => {
-          this.disableConfirmButton = false;
-
-          console.warn(err.responseText);
-          flashMessage('Server error: ' + err.responseText, true);
-        },
-      });
-    },
-    loadActivists() {
-      $.ajax({
-        url: '/activist/list',
-        method: 'POST',
-        data: JSON.stringify(this.listActivistsParameters()),
-        success: (data) => {
-          var parsed = JSON.parse(data);
-          if (parsed.status === 'error') {
-            flashMessage('Error: ' + parsed.message, true);
-            return;
-          }
-
-          // status === "success"
-          var activistList = parsed.activist_list;
-
-          // filtering
-          if (
-            this.view === 'activist_pool' ||
-            this.view === 'activist_recruitment' ||
-            this.view === 'action_team' ||
-            this.view === 'leaderboard' ||
-            this.view === 'development' ||
-            this.view === 'organizer_prospects' ||
-            this.view === 'chapter_member_prospects' ||
-            this.view === 'circle_member_prospects' ||
-            this.view === 'chapter_member_development'
-          ) {
-            var activistListFiltered;
-            activistListFiltered = activistList.filter((el: Activist) => {
-              if (this.view === 'activist_pool') {
-                return el.activist_level == 'Supporter';
-              } else if (this.view === 'action_team') {
-                var selectedActionTeam = $('#filterActionTeam :selected').text();
-
-                if (
-                  selectedActionTeam != 'All' &&
-                  selectedActionTeam != '' &&
-                  selectedActionTeam != null
-                ) {
-                  return (
-                    (el.activist_level == 'Action Team' ||
-                      el.activist_level == 'Organizer' ||
-                      el.activist_level == 'Senior Organizer') &&
-                    (el.action_team_focus == selectedActionTeam ||
-                      el.action_team_focus_secondary
-                        .toLowerCase()
-                        .indexOf(selectedActionTeam.toLowerCase()) != -1)
-                  );
-                } else {
-                  return (
-                    el.activist_level == 'Action Team' ||
-                    el.activist_level == 'Organizer' ||
-                    el.activist_level == 'Senior Organizer'
-                  );
-                }
-              } else if (this.view === 'leaderboard') {
-                return el.active == 1;
-              } else if (this.view === 'development') {
-                return el.activist_level == 'Organizer' || el.activist_level == 'Senior Organizer';
-              } else if (this.view === 'organizer_prospects') {
-                return el.prospect_organizer == 1;
-              } else if (this.view === 'chapter_member_prospects') {
-                return el.prospect_chapter_member == 1;
-              } else if (this.view === 'circle_member_prospects') {
-                return el.prospect_circle_member == 1;
-              } else if (this.view === 'chapter_member_development') {
+              if (
+                selectedActionTeam != 'All' &&
+                selectedActionTeam != '' &&
+                selectedActionTeam != null
+              ) {
                 return (
-                  el.activist_level == 'Chapter Member' ||
+                  (el.activist_level == 'Action Team' ||
+                    el.activist_level == 'Organizer' ||
+                    el.activist_level == 'Senior Organizer') &&
+                  (el.action_team_focus == selectedActionTeam ||
+                    el.action_team_focus_secondary
+                      .toLowerCase()
+                      .indexOf(selectedActionTeam.toLowerCase()) != -1)
+                );
+              } else {
+                return (
+                  el.activist_level == 'Action Team' ||
                   el.activist_level == 'Organizer' ||
                   el.activist_level == 'Senior Organizer'
                 );
-              } else {
-                return true; // unreachable
               }
-            });
-            activistList = activistListFiltered;
-          }
-
-          if (activistList !== null) {
-            this.allActivists = activistList;
-          }
-        },
-        error: (err) => {
-          console.warn(err.responseText);
-          flashMessage('Server error: ' + err.responseText, true);
-        },
-      });
-    },
-    afterChangeCallback(changes: any[], source: string) {
-      if (
-        source !== 'edit' &&
-        source !== 'CopyPaste.paste' &&
-        source !== 'UndoRedo.undo' &&
-        source !== 'UndoRedo.redo'
-      ) {
-        return;
-      }
-      for (var i = 0; i < changes.length; i++) {
-        var change = changes[i];
-        var columnIndex = change[0];
-        var columnName = change[1];
-        var previousData = change[2];
-        var newData = change[3];
-
-        var activist = this.activists[columnIndex];
-        (function(change) {
-          // TODO: use change?
-          $.ajax({
-            url: '/activist/save',
-            method: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify(activist),
-            success: (data) => {
-              var parsed = JSON.parse(data);
-              if (parsed.status === 'error') {
-                flashMessage('Error: ' + parsed.message, true);
-                return;
-              }
-            },
-            error: (err) => {
-              console.warn(err.responseText);
-              flashMessage('Server error: ' + err.responseText, true);
-            },
-          });
-        })(change);
-      }
-    },
-    setHOTHeight() {
-      var hotContainer = document.getElementById('hot-table-container');
-      if (!hotContainer) {
-        this.height = 500;
-        return;
-      }
-      var y = (hotContainer.getBoundingClientRect() as DOMRect).y;
-      this.height = window.innerHeight - y;
-    },
-    listActivistsParameters() {
-      var order_field = 'last_event';
-      return {
-        order: DescOrder,
-        order_field:
-          this.view === 'leaderboard' || this.view === 'action_team'
-            ? 'total_points'
-            : 'last_event',
-        last_event_date_to: this.lastEventDateTo,
-        last_event_date_from: this.lastEventDateFrom,
-      };
-    },
-    toggleShowOptions(optionsType: string) {
-      if (this.showOptions === optionsType) {
-        this.showOptions = '';
-      } else {
-        this.showOptions = optionsType;
-      }
-      Vue.nextTick(() => {
-        this.setHOTHeight(); // Resize the spreadsheet.
-      });
-    },
-    refreshHOTData() {
-      var table = this.hotTable;
-      var newSettings = {
-        data: rewriteSettings(this.activists),
-      };
-      table.updateSettings(newSettings, false);
-    },
-    sortColumn(col: Column) {
-      var field = col.data.data;
-      if (!field) {
-        // Don't sort columsn with no data field (e.g. the first
-        // column).
-        return;
-      }
-
-      var type = col.data.type;
-      var sortFunction;
-      var ascending = shouldSortByAscending(field, type === 'date');
-      if (type === 'date') {
-        sortFunction = generateDateSortFn(field, ascending);
-      } else if (type === 'numeric') {
-        sortFunction = generateGenericSortFn(field, ascending);
-      } else if (type === 'checkbox') {
-        sortFunction = generateBooleanSortFn(field, ascending);
-      } else {
-        sortFunction = generateStringSortFn(field, ascending);
-      }
-
-      this.allActivists.sort(sortFunction);
-
-      setPreviousSortData(field, ascending);
-
-      this.refreshHOTData();
-    },
-    afterOnCellMouseDownCallback(event: any, coords: any, td: any) {
-      // If the row is -1, then the user clicked on a column header.
-      if (coords.row === -1) {
-        // To find the column this maps to, we iterate through all the enabled columns.
-        var visibleColIndex = coords.col;
-        var foundCol;
-        for (var i = 0; i < this.columns.length; i++) {
-          var col = this.columns[i];
-          if (col.enabled) {
-            if (visibleColIndex === 0) {
-              foundCol = col;
-              break;
+            } else if (this.view === 'leaderboard') {
+              return el.active == 1;
+            } else if (this.view === 'development') {
+              return el.activist_level == 'Organizer' || el.activist_level == 'Senior Organizer';
+            } else if (this.view === 'organizer_prospects') {
+              return el.prospect_organizer == 1;
+            } else if (this.view === 'chapter_member_prospects') {
+              return el.prospect_chapter_member == 1;
+            } else if (this.view === 'circle_member_prospects') {
+              return el.prospect_circle_member == 1;
+            } else if (this.view === 'chapter_member_development') {
+              return (
+                el.activist_level == 'Chapter Member' ||
+                el.activist_level == 'Organizer' ||
+                el.activist_level == 'Senior Organizer'
+              );
+            } else {
+              return true; // unreachable
             }
-            visibleColIndex--;
-          }
+          });
+          activistList = activistListFiltered;
         }
-        if (!foundCol) {
-          throw new Error('Could not find column at index ' + coords.col);
+
+        if (activistList !== null) {
+          this.allActivists = activistList;
         }
-        this.sortColumn(foundCol);
-      }
-    },
-    // TODO(mdempsky): Remove "this: any".
-    debounceSearchInput: debounce(function(this: any, e: Event) {
-      this.search = (e.target as HTMLInputElement).value;
-    }, 500),
-  },
-  data() {
-    if (this.view === ('all_activists' || 'leaderboard')) {
-      var initDateFrom = initialDateFromValue();
-      var initDateTo = initialDateToValue();
+      },
+      error: (err) => {
+        console.warn(err.responseText);
+        flashMessage('Server error: ' + err.responseText, true);
+      },
+    });
+  }
+
+  afterChangeCallback(changes: any[], source: string) {
+    if (
+      source !== 'edit' &&
+      source !== 'CopyPaste.paste' &&
+      source !== 'UndoRedo.undo' &&
+      source !== 'UndoRedo.redo'
+    ) {
+      return;
+    }
+    for (var i = 0; i < changes.length; i++) {
+      var change = changes[i];
+      var columnIndex = change[0];
+      var columnName = change[1];
+      var previousData = change[2];
+      var newData = change[3];
+
+      var activist = this.activists[columnIndex];
+      (function(change) {
+        // TODO: use change?
+        $.ajax({
+          url: '/activist/save',
+          method: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify(activist),
+          success: (data) => {
+            var parsed = JSON.parse(data);
+            if (parsed.status === 'error') {
+              flashMessage('Error: ' + parsed.message, true);
+              return;
+            }
+          },
+          error: (err) => {
+            console.warn(err.responseText);
+            flashMessage('Server error: ' + err.responseText, true);
+          },
+        });
+      })(change);
+    }
+  }
+
+  setHOTHeight() {
+    var hotContainer = document.getElementById('hot-table-container');
+    if (!hotContainer) {
+      this.height = 500;
+      return;
+    }
+    var y = (hotContainer.getBoundingClientRect() as DOMRect).y;
+    this.height = window.innerHeight - y;
+  }
+
+  listActivistsParameters() {
+    var order_field = 'last_event';
+    return {
+      order: DescOrder,
+      order_field:
+        this.view === 'leaderboard' || this.view === 'action_team' ? 'total_points' : 'last_event',
+      last_event_date_to: this.lastEventDateTo,
+      last_event_date_from: this.lastEventDateFrom,
+    };
+  }
+
+  toggleShowOptions(optionsType: string) {
+    if (this.showOptions === optionsType) {
+      this.showOptions = '';
     } else {
-      var initDateFrom = '';
-      var initDateTo = '';
+      this.showOptions = optionsType;
+    }
+    Vue.nextTick(() => {
+      this.setHOTHeight(); // Resize the spreadsheet.
+    });
+  }
+
+  refreshHOTData() {
+    var table = this.hotTable;
+    var newSettings = {
+      data: rewriteSettings(this.activists),
+    };
+    table.updateSettings(newSettings, false);
+  }
+
+  sortColumn(col: Column) {
+    var field = col.data.data;
+    if (!field) {
+      // Don't sort columsn with no data field (e.g. the first
+      // column).
+      return;
     }
 
-    return {
-      root: 'activists-root',
-      currentModalName: '',
-      activistIndex: -1,
-      currentActivist: {} as Activist,
-      disableConfirmButton: false,
-      allActivists: [] as Activist[],
-      height: 500,
-      columns: getDefaultColumns(this.view),
-      lastEventDateFrom: initDateFrom,
-      lastEventDateTo: initDateTo,
-      filterActionTeam: 'All',
-      showOptions: '',
-      search: '',
-    };
-  },
-  computed: {
-    hotSettings(): object {
-      const columns: Handsontable.GridSettings[] = [];
-      const columnHeaders: string[] = [];
+    var type = col.data.type;
+    var sortFunction;
+    var ascending = shouldSortByAscending(field, type === 'date');
+    if (type === 'date') {
+      sortFunction = generateDateSortFn(field, ascending);
+    } else if (type === 'numeric') {
+      sortFunction = generateGenericSortFn(field, ascending);
+    } else if (type === 'checkbox') {
+      sortFunction = generateBooleanSortFn(field, ascending);
+    } else {
+      sortFunction = generateStringSortFn(field, ascending);
+    }
+
+    this.allActivists.sort(sortFunction);
+
+    setPreviousSortData(field, ascending);
+
+    this.refreshHOTData();
+  }
+
+  afterOnCellMouseDownCallback(event: any, coords: any, td: any) {
+    // If the row is -1, then the user clicked on a column header.
+    if (coords.row === -1) {
+      // To find the column this maps to, we iterate through all the enabled columns.
+      var visibleColIndex = coords.col;
+      var foundCol;
       for (var i = 0; i < this.columns.length; i++) {
         var col = this.columns[i];
-        if (!col.enabled) {
-          continue;
+        if (col.enabled) {
+          if (visibleColIndex === 0) {
+            foundCol = col;
+            break;
+          }
+          visibleColIndex--;
         }
-        columns.push(this.columns[i].data);
-        columnHeaders.push(this.columns[i].header);
       }
-      return {
-        columns: columns,
-        colHeaders: columnHeaders,
-        rowHeaders: this.view === 'leaderboard',
-        disableVisualSelection: false,
-        multiSelect: true,
-        fillHandle: false,
-        afterChange: this.afterChangeCallback.bind(this),
-        afterOnCellMouseDown: this.afterOnCellMouseDownCallback.bind(this),
-        undo: true,
-        manualColumnResize: true,
-        autoColumnSize: false,
-        colWidths: 200,
-        viewportRowRenderingOffset: 100,
-        viewportColumnRenderingOffset: 20,
-        wordWrap: false,
-        //fixedColumnsLeft: 2, // this causes too much havoc
-      };
-    },
-    hotTable(): Handsontable {
-      return (this.$refs.hot as any).table as Handsontable;
-    },
-    activists(): Activist[] {
-      if (this.search.length < 3) {
-        return this.allActivists;
+      if (!foundCol) {
+        throw new Error('Could not find column at index ' + coords.col);
       }
+      this.sortColumn(foundCol);
+    }
+  }
 
-      // This search implementation is slow when we have lots of data.
-      // Make it faster when that becomes an issue.
-      var searchNormalized = this.search.trim().toLowerCase();
-      var activists: Activist[] = [];
-      for (var i = 0; i < this.allActivists.length; i++) {
-        var activist = this.allActivists[i];
-        if (activist.name.toLowerCase().includes(searchNormalized)) {
-          activists.push(activist);
-        }
+  debounceSearchInput(e: Event) {
+    this.search = (e.target as HTMLInputElement).value;
+  }
+
+  root = 'activists-root';
+  currentModalName = '';
+  activistIndex = -1;
+  currentActivist = {} as Activist;
+  disableConfirmButton = false;
+  allActivists: Activist[] = [];
+  height = 500;
+  columns: Column[] = [];
+  lastEventDateFrom = '';
+  lastEventDateTo = '';
+  filterActionTeam = 'All';
+  showOptions = '';
+  search = '';
+
+  get hotSettings(): object {
+    const columns: Handsontable.GridSettings[] = [];
+    const columnHeaders: string[] = [];
+    for (var i = 0; i < this.columns.length; i++) {
+      var col = this.columns[i];
+      if (!col.enabled) {
+        continue;
       }
-      return activists;
-    },
-  },
-  watch: {
-    lastEventDateFrom() {
-      this.loadActivists();
-    },
-    lastEventDateTo() {
-      this.loadActivists();
-    },
-    filterActionTeam() {
-      this.loadActivists();
-    },
-  },
+      columns.push(this.columns[i].data);
+      columnHeaders.push(this.columns[i].header);
+    }
+    return {
+      columns: columns,
+      colHeaders: columnHeaders,
+      rowHeaders: this.view === 'leaderboard',
+      disableVisualSelection: false,
+      multiSelect: true,
+      fillHandle: false,
+      afterChange: this.afterChangeCallback.bind(this),
+      afterOnCellMouseDown: this.afterOnCellMouseDownCallback.bind(this),
+      undo: true,
+      manualColumnResize: true,
+      autoColumnSize: false,
+      colWidths: 200,
+      viewportRowRenderingOffset: 100,
+      viewportColumnRenderingOffset: 20,
+      wordWrap: false,
+      //fixedColumnsLeft: 2, // this causes too much havoc
+    };
+  }
+
+  get hotTable(): Handsontable {
+    return (this.$refs.hot as any).table as Handsontable;
+  }
+
+  get activists(): Activist[] {
+    if (this.search.length < 3) {
+      return this.allActivists;
+    }
+
+    // This search implementation is slow when we have lots of data.
+    // Make it faster when that becomes an issue.
+    var searchNormalized = this.search.trim().toLowerCase();
+    var activists: Activist[] = [];
+    for (var i = 0; i < this.allActivists.length; i++) {
+      var activist = this.allActivists[i];
+      if (activist.name.toLowerCase().includes(searchNormalized)) {
+        activists.push(activist);
+      }
+    }
+    return activists;
+  }
+
   created() {
+    // TODO(mdempsky): Change debounce into a decorator.
+    this.debounceSearchInput = debounce(this.debounceSearchInput, 500);
+
+    if (this.view === ('all_activists' || 'leaderboard')) {
+      this.lastEventDateFrom = initialDateFromValue();
+      this.lastEventDateTo = initialDateToValue();
+    }
+    this.columns = getDefaultColumns(this.view);
+
     this.loadActivists();
     EventBus.$on('activist-show-options-modal', (row: number) => {
       this.showOptionsModal(row);
@@ -1402,21 +1410,17 @@ export default Vue.extend({
     window.addEventListener('resize', () => {
       this.setHOTHeight();
     });
-  },
+  }
+
   mounted() {
     this.setHOTHeight();
-  },
+  }
+
   updated() {
     var rowCount = this.hotTable.countRows();
     $('#rowCount').html(String(rowCount));
-  },
-  components: {
-    HotTable,
-  },
-  directives: {
-    focus,
-  },
-});
+  }
+}
 </script>
 
 <style>
