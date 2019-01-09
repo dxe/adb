@@ -1,4 +1,4 @@
-import ActivistList from 'ActivistList.vue';
+import ActivistList from './ActivistList.vue';
 import Vue from 'vue';
 
 export function initializeApp(view) {

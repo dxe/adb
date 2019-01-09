@@ -1,4 +1,4 @@
-import CirclesList from 'CirclesList.vue';
+import CirclesList from './CirclesList.vue';
 import Vue from 'vue';
 
 export function initializeApp() {

@@ -1,5 +1,5 @@
 import Vue from 'vue';
-import EventList from 'EventList.vue';
+import EventList from './EventList.vue';
 
 new Vue({
   el: '#app',

@@ -137,7 +137,7 @@
 // Library from here: https://github.com/euvl/vue-js-modal
 import vmodal from 'vue-js-modal';
 import Vue from 'vue';
-import { flashMessage } from 'flash_message';
+import { flashMessage } from './flash_message';
 import { Dropdown } from 'uiv';
 
 Vue.use(vmodal);

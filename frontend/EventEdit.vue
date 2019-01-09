@@ -78,7 +78,7 @@
 
 <script>
 import * as Awesomplete from 'awesomplete';
-import { flashMessage, setFlashMessageSuccessCookie } from 'flash_message';
+import { flashMessage, setFlashMessageSuccessCookie } from './flash_message';
 
 // Like Awesomplete.FILTER_CONTAINS, but internal whitespace matches anything.
 function nameFilter(text, input) {

@@ -8,13 +8,13 @@ module.exports = {
   // List of bundles to create. If you want to add a new page, you'll
   // need to also add it here.
   entry: {
-    activist_list: 'activist_list',
-    event_list: 'event_list',
-    event_new: 'event_new',
-    flash_message: 'flash_message',
-    working_group_list: 'working_group_list',
-    circles_list: 'circles_list',
-    user_list: 'user_list',
+    activist_list: './frontend/activist_list',
+    event_list: './frontend/event_list',
+    event_new: './frontend/event_new',
+    flash_message: './frontend/flash_message',
+    working_group_list: './frontend/working_group_list',
+    circles_list: './frontend/circles_list',
+    user_list: './frontend/user_list',
   },
 
   output: {
@@ -63,7 +63,6 @@ module.exports = {
     alias: {
       'vue$': 'vue/dist/vue.esm.js'
     },
-    modules: ['frontend', 'node_modules'],
   },
   devServer: {
     historyApiFallback: true,

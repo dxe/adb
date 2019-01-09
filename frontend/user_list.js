@@ -1,4 +1,4 @@
-﻿import UserList from 'UserList.vue';
+﻿import UserList from './UserList.vue';
 import Vue from 'vue';
 
 export function initializeApp() {

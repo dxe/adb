@@ -1,4 +1,4 @@
-import { getCookie, deleteCookie } from 'cookie';
+import { getCookie, deleteCookie } from './cookie';
 
 export function flashMessage(content, isError) {
   var flash = $('#flash');

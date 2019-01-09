@@ -149,8 +149,8 @@
 </template>
 
 <script>
-import { flashMessage } from 'flash_message';
-import { initActivistSelect } from 'chosen_utils';
+import { flashMessage } from './flash_message';
+import { initActivistSelect } from './chosen_utils';
 
 export default {
   props: {

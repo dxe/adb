@@ -1,4 +1,4 @@
-import WorkingGroupList from 'WorkingGroupList.vue';
+import WorkingGroupList from './WorkingGroupList.vue';
 import Vue from 'vue';
 
 export function initializeApp() {

@@ -204,13 +204,13 @@
 
 <script>
 import vmodal from 'vue-js-modal';
-import HotTable from 'external/vue-handsontable-official/HotTable.vue';
-import { rewriteSettings } from 'external/vue-handsontable-official/helpers';
+import HotTable from './external/vue-handsontable-official/HotTable.vue';
+import { rewriteSettings } from './external/vue-handsontable-official/helpers';
 import Vue from 'vue';
-import { focus } from 'directives/focus';
-import { flashMessage } from 'flash_message';
-import { EventBus } from 'EventBus';
-import { initActivistSelect } from 'chosen_utils';
+import { focus } from './directives/focus';
+import { flashMessage } from './flash_message';
+import { EventBus } from './EventBus';
+import { initActivistSelect } from './chosen_utils';
 import debounce from 'debounce';
 
 Vue.use(vmodal);

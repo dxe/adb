@@ -267,11 +267,11 @@
 <script>
 import vmodal from 'vue-js-modal';
 import Vue from 'vue';
-import { flashMessage } from 'flash_message';
+import { flashMessage } from './flash_message';
 import { Dropdown } from 'uiv';
-import { initActivistSelect } from 'chosen_utils';
-import { focus } from 'directives/focus';
-import BasicSelect from 'external/search-select/BasicSelect.vue';
+import { initActivistSelect } from './chosen_utils';
+import { focus } from './directives/focus';
+import BasicSelect from './external/search-select/BasicSelect.vue';
 
 Vue.use(vmodal);
 
