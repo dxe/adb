@@ -1,5 +1,5 @@
 export const focus = {
-  inserted(el) {
+  inserted(el: HTMLElement) {
     el.focus()
   },
 }

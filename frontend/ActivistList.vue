@@ -215,7 +215,30 @@ import debounce from 'debounce';
 
 Vue.use(vmodal);
 
-function getDefaultColumns(view) {
+interface Activist {
+  id: number;
+  name: string;
+  activist_level: string;
+  active: number;
+  prospect_organizer: number;
+  prospect_chapter_member: number;
+  prospect_circle_member: number;
+  action_team_focus: string;
+  action_team_focus_secondary: string;
+
+  // To appease our clunky sorting functions.
+  // TODO(mdempsky): Remove.
+  [key: string]: any;
+}
+
+interface Column {
+  header: string;
+  longHeader?: string;
+  data: Handsontable.GridSettings;
+  enabled: boolean;
+}
+
+function getDefaultColumns(view: string): Column[] {
   return [
     {
       header: '',
@@ -750,8 +773,8 @@ const DescOrder = 2;
 const AscOrder = 1;
 
 var previousSortData = {
-  field: null,
-  ascending: null,
+  field: '',
+  ascending: false,
 };
 
 // Uses previousSortData to determine whether the next sort should be
@@ -759,7 +782,7 @@ var previousSortData = {
 //
 // If sortByDate is true, then the default is to sort by descending.
 // Otherwise, the default is to sort by ascending.
-function shouldSortByAscending(field, sortByDate) {
+function shouldSortByAscending(field: string, sortByDate: boolean) {
   if (field == previousSortData.field) {
     return !previousSortData.ascending;
   }
@@ -771,7 +794,7 @@ function shouldSortByAscending(field, sortByDate) {
 }
 
 // Call this after every sort.
-function setPreviousSortData(field, ascending) {
+function setPreviousSortData(field: string, ascending: boolean) {
   previousSortData.field = field;
   previousSortData.ascending = ascending;
 }
@@ -791,11 +814,19 @@ function setPreviousSortData(field, ascending) {
 //   "senior_organizer" : 0
 // };
 
-window['showOptionsModal'] = function(row) {
+(window as any).showOptionsModal = function(row: number) {
   EventBus.$emit('activist-show-options-modal', row);
 };
 
-function optionsButtonRenderer(instance, td, row, col, prop, value, cellProperties) {
+function optionsButtonRenderer(
+  instance: any,
+  td: HTMLElement,
+  row: number,
+  col: number,
+  prop: any,
+  value: any,
+  cellProperties: any,
+) {
   td.innerHTML =
     '<button ' +
     'data-role="trigger" ' +
@@ -835,8 +866,8 @@ function initialDateToValue() {
   return d.toISOString().slice(0, 10);
 }
 
-function generateBooleanSortFn(field, ascending) {
-  return function(a, b) {
+function generateBooleanSortFn(field: string, ascending: boolean) {
+  return function(a: Activist, b: Activist) {
     var order = a[field] === b[field] ? 0 : Number(a[field]) - Number(b[field]);
     if (ascending) {
       return order;
@@ -845,8 +876,8 @@ function generateBooleanSortFn(field, ascending) {
   };
 }
 
-function generateStringSortFn(field, ascending) {
-  return function(a, b) {
+function generateStringSortFn(field: string, ascending: boolean) {
+  return function(a: Activist, b: Activist) {
     var order = a[field].toLowerCase() < b[field].toLowerCase() ? -1 : 1;
     if (ascending) {
       return order;
@@ -855,8 +886,8 @@ function generateStringSortFn(field, ascending) {
   };
 }
 
-function generateGenericSortFn(field, ascending) {
-  return function(a, b) {
+function generateGenericSortFn(field: string, ascending: boolean) {
+  return function(a: Activist, b: Activist) {
     var order = a[field] < b[field] ? -1 : 1;
     if (ascending) {
       return order;
@@ -865,8 +896,8 @@ function generateGenericSortFn(field, ascending) {
   };
 }
 
-function generateDateSortFn(field, ascending) {
-  return function(a, b) {
+function generateDateSortFn(field: string, ascending: boolean) {
+  return function(a: Activist, b: Activist) {
     // Always sort empty values to the bottom, no matter the
     // order.
     if (!a[field]) {
@@ -888,7 +919,7 @@ function generateDateSortFn(field, ascending) {
   };
 }
 
-export default {
+export default Vue.extend({
   name: 'activist-list',
   props: {
     // `view` is the default view to show. It can be one of:
@@ -896,7 +927,7 @@ export default {
     // "activist_recruitment", or "action_team"
     view: {
       type: String,
-      validator(value) {
+      /*validator(value) {
         var validViews = [
           'all_activists',
           'leaderboard',
@@ -906,15 +937,15 @@ export default {
           'development',
         ];
         return validViews.indexOf(value) !== -1;
-      },
+      },*/
     },
   },
   methods: {
-    showOptionsModal(row) {
+    showOptionsModal(row: number) {
       var activist = this.activists[row];
       this.showModal('activist-options-modal', activist, row);
     },
-    showModal(modalName, activist, index) {
+    showModal(modalName: string, activist: Activist, index: number) {
       // Check to see if there's a modal open, and close it if so.
       if (this.currentModalName) {
         this.hideModal();
@@ -941,7 +972,7 @@ export default {
       }
       this.currentModalName = '';
       this.activistIndex = -1;
-      this.currentActivist = {};
+      this.currentActivist = {} as Activist;
     },
     modalOpened() {
       // Add noscroll to body tag so it doesn't scroll while the modal
@@ -955,7 +986,7 @@ export default {
         // there. Vue.nextTick doesn't work for some reason, so we're
         // just going to keep calling setTimeout until the modal shows
         // up.
-        var interval;
+        var interval: number;
         var fn = () => {
           if ($('#merge-target-activist')[0]) {
             clearInterval(interval);
@@ -969,7 +1000,7 @@ export default {
       // Allow body to scroll after modal is closed.
       $(document.body).removeClass('noscroll');
     },
-    removeActivist(id) {
+    removeActivist(id: number) {
       var activistIndex;
       for (var i = 0; i < this.allActivists.length; i++) {
         if (this.allActivists[i].id === id) {
@@ -1084,7 +1115,7 @@ export default {
             this.view === 'chapter_member_development'
           ) {
             var activistListFiltered;
-            activistListFiltered = activistList.filter((el) => {
+            activistListFiltered = activistList.filter((el: Activist) => {
               if (this.view === 'activist_pool') {
                 return el.activist_level == 'Supporter';
               } else if (this.view === 'action_team') {
@@ -1144,7 +1175,7 @@ export default {
         },
       });
     },
-    afterChangeCallback(changes, source) {
+    afterChangeCallback(changes: any[], source: string) {
       if (
         source !== 'edit' &&
         source !== 'CopyPaste.paste' &&
@@ -1204,7 +1235,7 @@ export default {
         last_event_date_from: this.lastEventDateFrom,
       };
     },
-    toggleShowOptions(optionsType) {
+    toggleShowOptions(optionsType: string) {
       if (this.showOptions === optionsType) {
         this.showOptions = '';
       } else {
@@ -1215,13 +1246,13 @@ export default {
       });
     },
     refreshHOTData() {
-      var table = this.$refs.hot.table;
+      var table = this.hotTable;
       var newSettings = {
         data: rewriteSettings(this.activists),
       };
-      table.updateSettings(newSettings);
+      table.updateSettings(newSettings, false);
     },
-    sortColumn(col) {
+    sortColumn(col: Column) {
       var field = col.data.data;
       if (!field) {
         // Don't sort columsn with no data field (e.g. the first
@@ -1248,7 +1279,7 @@ export default {
 
       this.refreshHOTData();
     },
-    afterOnCellMouseDownCallback(event, coords, td) {
+    afterOnCellMouseDownCallback(event: any, coords: any, td: any) {
       // If the row is -1, then the user clicked on a column header.
       if (coords.row === -1) {
         // To find the column this maps to, we iterate through all the enabled columns.
@@ -1270,8 +1301,9 @@ export default {
         this.sortColumn(foundCol);
       }
     },
-    debounceSearchInput: debounce(function(e) {
-      this.search = e.target.value;
+    // TODO(mdempsky): Remove "this: any".
+    debounceSearchInput: debounce(function(this: any, e: Event) {
+      this.search = (e.target as HTMLInputElement).value;
     }, 500),
   },
   data() {
@@ -1287,9 +1319,9 @@ export default {
       root: 'activists-root',
       currentModalName: '',
       activistIndex: -1,
-      currentActivist: {},
+      currentActivist: {} as Activist,
       disableConfirmButton: false,
-      allActivists: [],
+      allActivists: [] as Activist[],
       height: 500,
       columns: getDefaultColumns(this.view),
       lastEventDateFrom: initDateFrom,
@@ -1300,9 +1332,9 @@ export default {
     };
   },
   computed: {
-    hotSettings() {
-      const columns = [];
-      const columnHeaders = [];
+    hotSettings(): object {
+      const columns: Handsontable.GridSettings[] = [];
+      const columnHeaders: string[] = [];
       for (var i = 0; i < this.columns.length; i++) {
         var col = this.columns[i];
         if (!col.enabled) {
@@ -1330,7 +1362,10 @@ export default {
         //fixedColumnsLeft: 2, // this causes too much havoc
       };
     },
-    activists() {
+    hotTable(): Handsontable {
+      return (this.$refs.hot as any).table as Handsontable;
+    },
+    activists(): Activist[] {
       if (this.search.length < 3) {
         return this.allActivists;
       }
@@ -1338,7 +1373,7 @@ export default {
       // This search implementation is slow when we have lots of data.
       // Make it faster when that becomes an issue.
       var searchNormalized = this.search.trim().toLowerCase();
-      var activists = [];
+      var activists: Activist[] = [];
       for (var i = 0; i < this.allActivists.length; i++) {
         var activist = this.allActivists[i];
         if (activist.name.toLowerCase().includes(searchNormalized)) {
@@ -1361,7 +1396,7 @@ export default {
   },
   created() {
     this.loadActivists();
-    EventBus.$on('activist-show-options-modal', (row) => {
+    EventBus.$on('activist-show-options-modal', (row: number) => {
       this.showOptionsModal(row);
     });
     window.addEventListener('resize', () => {
@@ -1372,8 +1407,8 @@ export default {
     this.setHOTHeight();
   },
   updated() {
-    var rowCount = this.$refs.hot.table.countRows();
-    $('#rowCount').html(rowCount);
+    var rowCount = this.hotTable.countRows();
+    $('#rowCount').html(String(rowCount));
   },
   components: {
     HotTable,
@@ -1381,7 +1416,7 @@ export default {
   directives: {
     focus,
   },
-};
+});
 </script>
 
 <style>

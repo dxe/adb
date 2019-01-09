@@ -40,6 +40,7 @@ module.exports = {
         exclude: /node_modules/,
         options: {
           appendTsSuffixTo: [/\.vue$/],
+          reportFiles: ['!frontend/external/**/*.ts'],
         },
       },
       {

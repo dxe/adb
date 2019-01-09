@@ -305,16 +305,28 @@ import BasicSelect from './external/search-select/BasicSelect.vue';
 
 Vue.use(vmodal);
 
-export default {
+interface Activist {
+  name: string;
+  point_person?: boolean;
+  non_member_on_mailing_list?: boolean;
+}
+
+interface WorkingGroup {
+  id: number;
+  name: string;
+  members: Activist[];
+}
+
+export default Vue.extend({
   name: 'working-group-list',
   methods: {
-    showModal(modalName, workingGroup, index) {
+    showModal(modalName: string, workingGroup: WorkingGroup, index: number) {
       // Check to see if there's a modal open, and close it if so.
       if (this.currentModalName) {
         this.hideModal();
       }
 
-      this.currentWorkingGroup = $.extend(true, {}, workingGroup);
+      this.currentWorkingGroup = { ...workingGroup };
 
       if (index != undefined) {
         this.workingGroupIndex = index;
@@ -331,7 +343,7 @@ export default {
       }
       this.currentModalName = '';
       this.workingGroupIndex = -1;
-      this.currentWorkingGroup = {};
+      this.currentWorkingGroup = {} as WorkingGroup;
 
       // Sort working group list
       this.sortListByName();
@@ -353,13 +365,13 @@ export default {
       // likely error.
       if (this.currentWorkingGroup.members) {
         var members = this.currentWorkingGroup.members;
-        var memberNameMap = {};
+        var memberNameMap = new Set<string>();
         for (var i = 0; i < members.length; i++) {
           if (members[i].name in memberNameMap) {
             flashMessage('Error: Cannot have duplicate members: ' + members[i].name, true);
             return;
           }
-          memberNameMap[members[i].name] = true;
+          memberNameMap.add(members[i].name);
         }
       }
 
@@ -436,7 +448,7 @@ export default {
     modalClosed() {
       $(document.body).removeClass('noscroll');
     },
-    displayWorkingGroupType(type) {
+    displayWorkingGroupType(type: string) {
       switch (type) {
         case 'committee':
           return 'Committee';
@@ -463,13 +475,13 @@ export default {
       }
       this.currentWorkingGroup.members.push({ name: '', non_member_on_mailing_list: true });
     },
-    removeMember(index) {
+    removeMember(index: number) {
       this.currentWorkingGroup.members.splice(index, 1);
     },
-    memberOption(member) {
+    memberOption(member: Activist) {
       return { text: member.name };
     },
-    onMemberSelect(selected, extraData) {
+    onMemberSelect(selected: any, extraData: any) {
       var index = extraData.index;
       Vue.set(this.currentWorkingGroup.members, index, {
         name: selected.text,
@@ -477,7 +489,7 @@ export default {
         non_member_on_mailing_list: !!extraData.nonMemberOnMailingList,
       });
     },
-    numberOfWorkingGroupMembers(workingGroup) {
+    numberOfWorkingGroupMembers(workingGroup: WorkingGroup) {
       if (!workingGroup.members) {
         return 0;
       }
@@ -494,8 +506,8 @@ export default {
   },
   data() {
     return {
-      currentWorkingGroup: {},
-      workingGroups: [],
+      currentWorkingGroup: {} as WorkingGroup,
+      workingGroups: [] as WorkingGroup[],
       workingGroupIndex: -1,
       disableConfirmButton: false,
       currentModalName: '',
@@ -550,11 +562,7 @@ export default {
         var parsed = JSON.parse(data);
 
         // Convert activist_names to a format usable by basic-select.
-        var options = [];
-        for (var i = 0; i < parsed.activist_names.length; i++) {
-          options.push({ text: parsed.activist_names[i] });
-        }
-        this.activistOptions = options;
+        this.activistOptions = parsed.activist_names.map((name: string) => ({ text: name }));
       },
       error: (err) => {
         console.warn(err.responseText);
@@ -569,7 +577,7 @@ export default {
   directives: {
     focus,
   },
-};
+});
 </script>
 
 <style>

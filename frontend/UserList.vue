@@ -147,10 +147,17 @@ Vue.use(vmodal);
 const DescOrder = 2;
 const AscOrder = 1;
 
-export default {
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  roles: string[];
+}
+
+export default Vue.extend({
   name: 'user-list',
   methods: {
-    showModal(modalName, user, index) {
+    showModal(modalName: string, user: User, index: number) {
       // Check to see if there's a modal open, and close it if so.
       if (this.currentModalName) {
         this.hideModal();
@@ -158,7 +165,7 @@ export default {
 
       // Make shallow copy of selected activist to prevent persisting unsaved
       // edits at the view layer when closing modal
-      this.currentUser = $.extend({}, user);
+      this.currentUser = { ...user };
 
       // Track current user index, or default to first in list
       this.userIndex = index === 0 ? 0 : index || -1;
@@ -179,7 +186,7 @@ export default {
       }
       this.currentModalName = '';
       this.userIndex = -1;
-      this.currentUser = {};
+      this.currentUser = {} as User;
       this.currentUserRoleSelections = [];
 
       // Sort user list by email
@@ -271,13 +278,13 @@ export default {
         return 0;
       });
     },
-    setUsers(users) {
+    setUsers(users: User[]) {
       console.log('inside setUsers: ', users);
       this.users = users;
     },
     reset() {
       // reset data properties back to original values
-      this.currentUser = {};
+      this.currentUser = {} as User;
       this.users = [];
       this.userIndex = -1;
       this.disableConfirmButton = false;
@@ -290,7 +297,7 @@ export default {
 
       this.currentUserRoleSelections = [];
     },
-    updateUserRoleModal(role) {
+    updateUserRoleModal(role: string) {
       if (this.disableConfirmButton) {
         return;
       }
@@ -307,7 +314,7 @@ export default {
 
       // If the specified Role already exists in the Current User's role list,
       // then we assume the role should be removed.
-      const existingRole = this.currentUser.roles.includes(role);
+      const existingRole = this.currentUser.roles.indexOf(role) >= 0;
 
       $.ajax({
         url: existingRole ? '/users-roles/remove' : '/users-roles/add',
@@ -357,8 +364,8 @@ export default {
   },
   data() {
     return {
-      currentUser: {},
-      users: [],
+      currentUser: {} as User,
+      users: [] as User[],
       userIndex: -1,
       disableConfirmButton: false,
       currentModalName: '',
@@ -367,7 +374,7 @@ export default {
         order: AscOrder,
         limit: 40,
       },
-      currentUserRoleSelections: [],
+      currentUserRoleSelections: [] as string[],
     };
   },
   created() {
@@ -393,5 +400,5 @@ export default {
   directives: {
     focus,
   },
-};
+});
 </script>

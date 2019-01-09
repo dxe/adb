@@ -77,15 +77,16 @@
 </template>
 
 <script lang="ts">
+import Vue from 'vue';
 import * as Awesomplete from 'awesomplete';
 import { flashMessage, setFlashMessageSuccessCookie } from './flash_message';
 
 // Like Awesomplete.FILTER_CONTAINS, but internal whitespace matches anything.
-function nameFilter(text, input) {
+function nameFilter(text: string, input: string) {
   return RegExp(Awesomplete.$.regExpEscape(input.trim()).replace(/ +/g, '.*'), 'i').test(text);
 }
 
-export default {
+export default Vue.extend({
   props: {
     connections: Boolean,
     // TODO(mdempsky): Change id to Number.
@@ -99,15 +100,15 @@ export default {
       name: '',
       date: '',
       type: '',
-      attendees: [],
+      attendees: [] as string[],
 
       oldName: '',
       oldDate: '',
       oldType: '',
-      oldAttendees: [],
+      oldAttendees: [] as string[],
 
-      allActivists: [],
-      allActivistsSet: new Set(),
+      allActivists: [] as string[],
+      allActivistsSet: new Set<string>(),
     };
   },
   computed: {
@@ -190,14 +191,15 @@ export default {
           filter: nameFilter,
           list: this.allActivists,
           sort: false,
+          // TODO(mdempsky): Update @types/awesomplete to know about tabSelect.
           tabSelect: true,
-        });
+        } as Awesomplete.Options);
       }
     });
   },
 
   methods: {
-    setDateToToday(event) {
+    setDateToToday() {
       const today = new Date();
       this.date = today.toISOString().slice(0, 10);
     },
@@ -211,14 +213,14 @@ export default {
         return true;
       }
 
-      var newSet = new Set();
+      var newSet = new Set<string>();
       for (let attendee of this.attendees) {
         attendee = attendee.trim();
         if (attendee != '') {
           newSet.add(attendee);
         }
       }
-      var oldSet = new Set();
+      var oldSet = new Set<string>();
       for (let attendee of this.oldAttendees) {
         attendee = attendee.trim();
         if (attendee != '') {
@@ -238,13 +240,13 @@ export default {
       return false;
     },
 
-    addRows(n) {
+    addRows(n: number) {
       for (let i = 0; i < n; i++) {
         this.attendees.push('');
       }
     },
 
-    changed(x, y) {
+    changed(x: string, y: number) {
       const inputs = $('#attendee-rows input.attendee-input');
 
       // Add more rows if there are less than 5,
@@ -322,7 +324,7 @@ export default {
         return;
       }
 
-      let attendees = [];
+      let attendees: string[] = [];
       let attendeesSet = new Set();
       for (let attendee of this.attendees) {
         attendee = attendee.trim();
@@ -435,7 +437,7 @@ export default {
       });
     },
   },
-};
+});
 </script>
 
 <style>

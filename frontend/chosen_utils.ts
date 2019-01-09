@@ -20,7 +20,7 @@ function chosenBrowserIsSupported() {
   return true;
 }
 
-export function initActivistSelect(selector, ignoreActivistName?) {
+export function initActivistSelect(selector: string, ignoreActivistName?: string) {
   var $selector = $(selector);
 
   // Chosen-js isn't supported on mobile browsers. We need to add the
@@ -35,7 +35,7 @@ export function initActivistSelect(selector, ignoreActivistName?) {
     method: 'GET',
     dataType: 'json',
     success: (data) => {
-      var activistNames = data.activist_names;
+      var activistNames = data.activist_names as string[];
 
       // The first item needs to be empty so that the selector
       // defaults to not being filled in. Otherwise, it defaults to
@@ -47,7 +47,7 @@ export function initActivistSelect(selector, ignoreActivistName?) {
           continue;
         }
 
-        $selector[0].options.add(new Option(activistNames[i]));
+        ($selector[0] as HTMLSelectElement).options.add(new Option(activistNames[i]));
       }
 
       $selector.chosen({

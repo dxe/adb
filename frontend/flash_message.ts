@@ -1,6 +1,6 @@
 import { getCookie, deleteCookie } from './cookie';
 
-export function flashMessage(content, isError?) {
+export function flashMessage(content: string, isError?: boolean) {
   var flash = $('#flash');
   if (isError) {
     flash[0].className = 'alert alert-danger';
@@ -41,10 +41,10 @@ export function initializeFlashMessage() {
   }
 }
 
-export function setFlashMessageSuccessCookie(content) {
+export function setFlashMessageSuccessCookie(content: string) {
   document.cookie = 'flash_message_success=' + encodeURIComponent(content) + ';path=/';
 }
 
-export function setFlashMessageErrorCookie(content) {
+export function setFlashMessageErrorCookie(content: string) {
   document.cookie = 'flash_message_error=' + encodeURIComponent(content) + ';path=/';
 }

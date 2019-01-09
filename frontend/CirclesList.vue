@@ -275,16 +275,28 @@ import BasicSelect from './external/search-select/BasicSelect.vue';
 
 Vue.use(vmodal);
 
-export default {
+interface Activist {
+  name: string;
+  point_person?: boolean;
+  non_member_on_mailing_list?: boolean;
+}
+
+interface Circle {
+  id: number;
+  name: string;
+  members: Activist[];
+}
+
+export default Vue.extend({
   name: 'circle-list',
   methods: {
-    showModal(modalName, circleGroup, index) {
+    showModal(modalName: string, circleGroup: Circle, index: number) {
       // Check to see if there's a modal open, and close it if so.
       if (this.currentModalName) {
         this.hideModal();
       }
 
-      this.currentCircleGroup = $.extend(true, {}, circleGroup);
+      this.currentCircleGroup = { ...circleGroup };
 
       if (index != undefined) {
         this.circleGroupIndex = index;
@@ -301,7 +313,7 @@ export default {
       }
       this.currentModalName = '';
       this.circleGroupIndex = -1;
-      this.currentCircleGroup = {};
+      this.currentCircleGroup = {} as Circle;
 
       // Sort cirlce group list
       this.sortListByName();
@@ -323,13 +335,13 @@ export default {
       // likely error.
       if (this.currentCircleGroup.members) {
         var members = this.currentCircleGroup.members;
-        var memberNameMap = {};
+        var memberNameMap = new Set<string>();
         for (var i = 0; i < members.length; i++) {
           if (members[i].name in memberNameMap) {
             flashMessage('Error: Cannot have duplicate members: ' + members[i].name, true);
             return;
           }
-          memberNameMap[members[i].name] = true;
+          memberNameMap.add(members[i].name);
         }
       }
 
@@ -406,7 +418,7 @@ export default {
     modalClosed() {
       $(document.body).removeClass('noscroll');
     },
-    displaycircleGroupType(type) {
+    displaycircleGroupType(type: string) {
       switch (type) {
         case 'circle':
           return 'Circle';
@@ -431,13 +443,13 @@ export default {
       }
       this.currentCircleGroup.members.push({ name: '', non_member_on_mailing_list: true });
     },
-    removeMember(index) {
+    removeMember(index: number) {
       this.currentCircleGroup.members.splice(index, 1);
     },
-    memberOption(member) {
+    memberOption(member: Circle) {
       return { text: member.name };
     },
-    onMemberSelect(selected, extraData) {
+    onMemberSelect(selected: any, extraData: any) {
       var index = extraData.index;
       Vue.set(this.currentCircleGroup.members, index, {
         name: selected.text,
@@ -445,7 +457,7 @@ export default {
         non_member_on_mailing_list: !!extraData.nonMemberOnMailingList,
       });
     },
-    numberOfCircleGroupMembers(circleGroup) {
+    numberOfCircleGroupMembers(circleGroup: Circle) {
       if (!circleGroup.members) {
         return 0;
       }
@@ -462,8 +474,8 @@ export default {
   },
   data() {
     return {
-      currentCircleGroup: {},
-      circleGroups: [],
+      currentCircleGroup: {} as Circle,
+      circleGroups: [] as Circle[],
       circleGroupIndex: -1,
       disableConfirmButton: false,
       currentModalName: '',
@@ -518,11 +530,7 @@ export default {
         var parsed = JSON.parse(data);
 
         // Convert activist_names to a format usable by basic-select.
-        var options = [];
-        for (var i = 0; i < parsed.activist_names.length; i++) {
-          options.push({ text: parsed.activist_names[i] });
-        }
-        this.activistOptions = options;
+        this.activistOptions = parsed.activist_names.map((name: string) => ({ text: name }));
       },
       error: (err) => {
         console.warn(err.responseText);
@@ -537,7 +545,7 @@ export default {
   directives: {
     focus,
   },
-};
+});
 </script>
 
 <style>

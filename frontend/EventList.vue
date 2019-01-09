@@ -149,10 +149,25 @@
 </template>
 
 <script lang="ts">
+import Vue from 'vue';
 import { flashMessage } from './flash_message';
 import { initActivistSelect } from './chosen_utils';
 
-export default {
+interface Event {
+  // Supplied by server.
+  event_id: number;
+  event_name: string;
+  event_date: string;
+  event_type: string;
+  attendees: string[];
+  attendee_emails: string[];
+
+  // Populated locally.
+  emailLink: string;
+  showAttendees: boolean;
+}
+
+export default Vue.extend({
   props: {
     connections: Boolean,
   },
@@ -170,7 +185,7 @@ export default {
       },
 
       loading: false,
-      events: [],
+      events: [] as Event[],
     };
   },
   mounted() {
@@ -201,9 +216,10 @@ export default {
           // status === "success"
 
           // The data must be a list of events b/c it was successful.
+          let events = parsed as Event[];
 
           // Process event JSON to make presentable.
-          for (let event of parsed) {
+          for (let event of events) {
             event.showAttendees = this.connections; // Show by default on connections list.
             if (event.attendees == null) {
               event.attendees = [];
@@ -213,12 +229,12 @@ export default {
               (event.attendee_emails || []).join(',');
           }
 
-          if (parsed.length == 0) {
+          if (events.length == 0) {
             flashMessage('No events from server', true);
           }
 
           this.loading = false;
-          this.events = parsed;
+          this.events = events;
         },
         error: () => {
           flashMessage('Error connecting to server.', true);
@@ -226,7 +242,7 @@ export default {
       });
     },
 
-    confirmDeleteEvent(event) {
+    confirmDeleteEvent(event: Event) {
       let confirmed = confirm(
         'Are you sure you want to delete the event "' +
           event.event_name +
@@ -270,9 +286,9 @@ export default {
       }
     },
 
-    toggleAttendees(event) {
+    toggleAttendees(event: Event) {
       event.showAttendees = !event.showAttendees;
     },
   },
-};
+});
 </script>

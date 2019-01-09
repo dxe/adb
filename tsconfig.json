@@ -2,19 +2,19 @@
 {
   "compilerOptions": {
     "outDir": "./built",
-    // this aligns with Vue's browser support
     "target": "es6",
     "lib": ["es6", "dom", "dom.iterable"],
     "module": "es2015",
     "moduleResolution": "node",
-
-    // TODO(mdempsky): Tighten.
-    // "strict": true,
+    "strict": true,
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
     "types": ["jquery"],
   },
   "include": [
     "./frontend/*",
+  ],
+  "exclude": [
+    "./frontend/external/**/*",
   ],
 }
