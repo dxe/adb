@@ -200,8 +200,17 @@ export default Vue.extend({
 
   methods: {
     setDateToToday() {
-      const today = new Date();
-      this.date = today.toISOString().slice(0, 10);
+      // Calculate today's date in the local time zone.
+      // TODO(mdempsky): Find a cleaner way to do this.
+      var d = new Date();
+      var year = '' + d.getFullYear();
+      var rawMonth = d.getMonth() + 1;
+      var month = rawMonth > 9 ? '' + rawMonth : '0' + rawMonth;
+      var rawDate = d.getDate();
+      var date = rawDate > 9 ? '' + rawDate : '0' + rawDate;
+      var validDateString = year + '-' + month + '-' + date;
+
+      this.date = validDateString;
     },
 
     dirty() {
