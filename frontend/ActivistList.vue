@@ -21,7 +21,11 @@
         ><span v-if="showOptions === 'columns'">-</span> Columns
       </button>
 
-      <span>&nbsp;&nbsp;&nbsp;&nbsp;<b>Total rows: </b></span><span id="rowCount">0</span>
+      <span>&nbsp;&nbsp;&nbsp;&nbsp;<b>Total rows: </b></span>
+
+      <span v-if="!loading" id="rowCount">0</span>
+
+      <span v-if="loading"><i>Loading...</i></span>
 
       <div v-if="showOptions === 'filters'">
         <div v-if="view == 'all_activists' || view == 'activist_pool'">
@@ -1188,12 +1192,15 @@ export default Vue.extend({
       });
     },
     loadActivists() {
+      this.loading = true;
+
       $.ajax({
         url: '/activist/list',
         method: 'POST',
         data: JSON.stringify(this.listActivistsParameters()),
         success: (data) => {
           var parsed = JSON.parse(data);
+
           if (parsed.status === 'error') {
             flashMessage('Error: ' + parsed.message, true);
             return;
@@ -1275,6 +1282,7 @@ export default Vue.extend({
 
           if (activistList !== null) {
             this.allActivists = activistList;
+            this.loading = false;
           }
         },
         error: (err) => {
@@ -1437,6 +1445,7 @@ export default Vue.extend({
       filterActionTeam: 'All',
       showOptions: '',
       search: '',
+      loading: false,
     };
   },
   computed: {
@@ -1513,11 +1522,14 @@ export default Vue.extend({
   },
   mounted() {
     this.setHOTHeight();
-    console.log('Loading complete!');
   },
   updated() {
     var rowCount = this.hotTable.countRows();
-    $('#rowCount').html(String(rowCount));
+    if (rowCount == 0) {
+      $('#rowCount').html(String('No data'));
+    } else {
+      $('#rowCount').html(String(rowCount));
+    }
   },
   components: {
     HotTable,
