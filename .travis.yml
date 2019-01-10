@@ -9,7 +9,7 @@ before_install:
   - gimme stable
 
 install:
-  - npm install
+  - npm ci
   - go get -d -t -v github.com/dxe/adb/...
 
 before_script:
