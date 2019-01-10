@@ -1513,6 +1513,7 @@ export default Vue.extend({
   },
   mounted() {
     this.setHOTHeight();
+    console.log('Loading complete!');
   },
   updated() {
     var rowCount = this.hotTable.countRows();
