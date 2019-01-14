@@ -42,6 +42,49 @@ FROM (
 	return power, nil
 }
 
+func GetTotalChapterMembers(db *sqlx.DB) (string, error) {
+	query := `
+select sum(amount) as members FROM
+(
+select now() as Date, a.activist_level, count(a.id) AS Amount, IF(
+    (a.id IN (
+      SELECT activist_id FROM (
+        SELECT
+          ea.activist_id AS activist_id,
+          max((CASE
+                WHEN ((e.event_type = 'protest') OR (e.event_type = 'key event') OR (e.event_type = 'outreach') OR (e.event_type = 'sanctuary'))
+                THEN '1' ELSE '0'
+          END)) AS is_protest,
+          max((CASE
+                WHEN (e.event_type = 'community') THEN '1' ELSE '0'
+          END)) AS is_community
+        FROM
+          event_attendance ea
+        JOIN events e ON ea.event_id = e.id
+        JOIN activists a ON ea.activist_id = a.id
+        WHERE (
+          (e.date BETWEEN (now() - INTERVAL 30 DAY) AND now())
+          AND (a.hidden <> 1)
+        )
+        GROUP BY ea.activist_id
+        HAVING (
+          (is_protest = '1')
+          AND (is_community = '1')
+        )
+      ) temp_mpi)
+    ), 1, 0) AS mpi
+from activists a
+group by mpi, activist_level
+having mpi = 1 and activist_level in ('chapter member','organizer','senior organizer')
+    ) temp
+`
+	var members string
+	if err := db.Get(&members, query); err != nil {
+		return "error", err
+	}
+	return members, nil
+}
+
 func GetPowerMTD(db *sqlx.DB) (int, error) {
 	current_time := time.Now().Local()
 	current_time_string := current_time.Format("2006-01")

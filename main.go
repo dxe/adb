@@ -153,8 +153,9 @@ func router() (*mux.Router, *sqlx.DB) {
 	// Unauthed API
 	router.HandleFunc("/tokensignin", main.TokenSignInHandler)
 	router.HandleFunc(config.Route0, main.TransposedEventsDataJsonHandler)
-	router.HandleFunc("/wallboard_mpi", main.newPowerWallboard) // new endpoint for arc tv to get mpi
-	router.HandleFunc(config.Route2, main.ActivistListHandler)  // used for connections google sheet
+	router.HandleFunc("/wallboard_mpi", main.newPowerWallboard)                    // new endpoint for arc tv to get mpi
+	router.HandleFunc("/wallboard_chaptermembers", main.newChapterMemberWallboard) // new endpoint for arc tv to get chapter members
+	router.HandleFunc(config.Route2, main.ActivistListHandler)                     // used for connections google sheet
 
 	// Authed API
 	router.Handle("/activist_names/get", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteActivistsHandler))
@@ -1174,6 +1175,18 @@ func (c MainController) newPowerWallboard(w http.ResponseWriter, r *http.Request
 	writeJSON(w, map[string]interface{}{
 		"status": "success",
 		"Power":  power,
+	})
+}
+
+func (c MainController) newChapterMemberWallboard(w http.ResponseWriter, r *http.Request) {
+	members, err := model.GetTotalChapterMembers(c.db)
+	if err != nil {
+		panic(err)
+	}
+
+	writeJSON(w, map[string]interface{}{
+		"status":  "success",
+		"Members": members,
 	})
 }
 
