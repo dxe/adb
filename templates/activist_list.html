@@ -1,15 +1,8 @@
 {{template "header.html" .}}
 
-<div class="body-wrapper-extra-wide activist-list-content">
-  <div class="title">
-    <h1>{{ .Data.Title }}</h1>
-    <br />
-  </div>
-  <div id="app">
-    <activist-list view="{{ .Data.View }}"></activist-list>
-  </div>
+<div id="app">
+  <activist-list title="{{ .Data.Title }}" view="{{ .Data.View }}"></activist-list>
 </div>
 <script src="/dist/adb.js?{{ .StaticResourcesHash }}"></script>
 
-</body>
-<html>
+{{template "footer.html" .}}

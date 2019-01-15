@@ -1,5 +1,5 @@
 <template>
-  <div id="app" class="main">
+  <adb-page title="Working Groups" class="working-group-list-content">
     <button class="btn btn-default" @click="showModal('edit-working-group-modal')">
       <span class="glyphicon glyphicon-plus"></span>&nbsp;&nbsp;Add New Working Group
     </button>
@@ -291,12 +291,13 @@
         </div>
       </div>
     </modal>
-  </div>
+  </adb-page>
 </template>
 
 <script lang="ts">
 import vmodal from 'vue-js-modal';
 import Vue from 'vue';
+import AdbPage from './AdbPage.vue';
 import { flashMessage } from './flash_message';
 import { Dropdown } from 'uiv';
 import { initActivistSelect } from './chosen_utils';
@@ -571,6 +572,7 @@ export default Vue.extend({
     });
   },
   components: {
+    AdbPage,
     Dropdown,
     BasicSelect,
   },

@@ -1,83 +1,81 @@
 <template>
-  <div class="body-wrapper event-new-content">
-    <div class="title">
-      <h1>{{ connections ? 'Maintenance Connection' : 'Event' }}</h1>
-    </div>
-    <br />
+  <adb-page
+    :title="connections ? 'Maintenance Connection' : 'Event'"
+    narrow
+    class="event-new-content"
+  >
+    <form action id="eventForm" v-on:change="changed('change', -1)">
+      <fieldset :disabled="loading">
+        <label for="eventName" id="nameLabel">
+          <b>{{ connections ? 'Connector' : 'Event' }} name</b> <br />
+        </label>
+        <input id="eventName" class="form-control" v-model="name" /> <br />
 
-    <div class="main">
-      <form action id="eventForm" v-on:change="changed('change', -1)">
-        <fieldset :disabled="loading">
-          <label for="eventName" id="nameLabel">
-            <b>{{ connections ? 'Connector' : 'Event' }} name</b> <br />
-          </label>
-          <input id="eventName" class="form-control" v-model="name" /> <br />
-
-          <template v-if="!connections">
-            <label for="eventType"> <b>Event type</b> <br /> </label>
-            <select id="eventType" class="form-control" v-model="type">
-              <option disabled selected value>-- select an option --</option>
-              <option value="Working Group">Working Group</option>
-              <option value="Protest">Protest</option>
-              <option value="Community">Community</option>
-              <option value="Outreach">Outreach</option>
-              <option value="Key Event">Key Event</option>
-              <option value="Sanctuary">Sanctuary (Rescue/Work Day)</option>
-            </select>
-            <br />
-          </template>
-
-          <label for="eventDate">
-            <b>{{ connections ? 'Connection' : 'Event' }} date</b>
-            <button
-              class="btn btn-xs btn-primary"
-              style="margin: 0px 10px"
-              v-on:click.prevent="setDateToToday"
-            >
-              today
-            </button>
-            <br />
-          </label>
-          <input id="eventDate" class="form-control" type="date" v-model="date" /> <br />
-
-          <label for="attendee1" id="attendeeLabel">
-            <b>{{ connections ? 'Connectees' : 'Attendees' }}</b> <br />
-          </label>
-          <div id="attendee-rows">
-            <input
-              class="attendee-input form-control"
-              v-for="(attendee, index) in attendees"
-              :key="index"
-              v-model="attendees[index]"
-              v-on:input="changed('input', index)"
-              v-on:awesomplete-selectcomplete="changed('select', index)"
-            />
-          </div>
-
+        <template v-if="!connections">
+          <label for="eventType"> <b>Event type</b> <br /> </label>
+          <select id="eventType" class="form-control" v-model="type">
+            <option disabled selected value>-- select an option --</option>
+            <option value="Working Group">Working Group</option>
+            <option value="Protest">Protest</option>
+            <option value="Community">Community</option>
+            <option value="Outreach">Outreach</option>
+            <option value="Key Event">Key Event</option>
+            <option value="Sanctuary">Sanctuary (Rescue/Work Day)</option>
+          </select>
           <br />
+        </template>
 
-          <label for="attendeeTotal"> <b>Total attendance:</b> </label>
-          <span id="attendeeTotal">{{ attendeeCount }}</span> <br />
-        </fieldset>
-      </form>
-      <br />
-      <center>
-        <button
-          class="btn btn-success btn-lg"
-          id="submit-button"
-          v-on:click="save"
-          :disabled="saving"
-        >
-          <span>Save {{ connections ? 'connection' : 'event' }}</span>
-        </button>
-      </center>
-      <br />
-    </div>
-  </div>
+        <label for="eventDate">
+          <b>{{ connections ? 'Connection' : 'Event' }} date</b>
+          <button
+            class="btn btn-xs btn-primary"
+            style="margin: 0px 10px"
+            v-on:click.prevent="setDateToToday"
+          >
+            today
+          </button>
+          <br />
+        </label>
+        <input id="eventDate" class="form-control" type="date" v-model="date" /> <br />
+
+        <label for="attendee1" id="attendeeLabel">
+          <b>{{ connections ? 'Connectees' : 'Attendees' }}</b> <br />
+        </label>
+        <div id="attendee-rows">
+          <input
+            class="attendee-input form-control"
+            v-for="(attendee, index) in attendees"
+            :key="index"
+            v-model="attendees[index]"
+            v-on:input="changed('input', index)"
+            v-on:awesomplete-selectcomplete="changed('select', index)"
+          />
+        </div>
+
+        <br />
+
+        <label for="attendeeTotal"> <b>Total attendance:</b> </label>
+        <span id="attendeeTotal">{{ attendeeCount }}</span> <br />
+      </fieldset>
+    </form>
+    <br />
+    <center>
+      <button
+        class="btn btn-success btn-lg"
+        id="submit-button"
+        v-on:click="save"
+        :disabled="saving"
+      >
+        <span>Save {{ connections ? 'connection' : 'event' }}</span>
+      </button>
+    </center>
+    <br />
+  </adb-page>
 </template>
 
 <script lang="ts">
 import Vue from 'vue';
+import AdbPage from './AdbPage.vue';
 import * as Awesomplete from 'awesomplete';
 import { flashMessage, setFlashMessageSuccessCookie } from './flash_message';
 
@@ -87,6 +85,9 @@ function nameFilter(text: string, input: string) {
 }
 
 export default Vue.extend({
+  components: {
+    AdbPage,
+  },
   props: {
     connections: Boolean,
     // TODO(mdempsky): Change id to Number.

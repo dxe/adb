@@ -1,155 +1,145 @@
 <template>
-  <div class="body-wrapper-wide event-list-content">
-    <div class="title">
-      <h1>{{ connections ? 'All Maintenance Connections' : 'Events' }}</h1>
-      <br />
-    </div>
-    <div>
-      <form class="form-inline" v-on:submit.prevent="eventListRequest">
-        <label for="event-name">{{ connections ? 'Connector' : 'Event Name' }}:</label>
-        <input
-          id="event-name"
-          class="form-control filter-margin"
-          style="width: 100%"
-          v-model="search.name"
-        />
+  <adb-page
+    :title="connections ? 'All Maintenance Connections' : 'Events'"
+    wide
+    class="event-list-content"
+  >
+    <form class="form-inline" v-on:submit.prevent="eventListRequest">
+      <label for="event-name">{{ connections ? 'Connector' : 'Event Name' }}:</label>
+      <input
+        id="event-name"
+        class="form-control filter-margin"
+        style="width: 100%"
+        v-model="search.name"
+      />
 
-        <label for="event-activist">{{ connections ? 'Connectee' : 'Activist' }}:</label>
-        <select id="event-activist" class="filter-margin" style="width: 100%"></select>
+      <label for="event-activist">{{ connections ? 'Connectee' : 'Activist' }}:</label>
+      <select id="event-activist" class="filter-margin" style="width: 100%"></select>
 
-        <label for="event-date-start">From:</label>
-        <input
-          id="event-date-start"
-          class="form-control filter-margin"
-          type="date"
-          v-model="search.start"
-        />
+      <label for="event-date-start">From:</label>
+      <input
+        id="event-date-start"
+        class="form-control filter-margin"
+        type="date"
+        v-model="search.start"
+      />
 
-        <label for="event-date-end">To:</label>
-        <input
-          id="event-date-end"
-          class="form-control filter-margin"
-          type="date"
-          v-model="search.end"
-        />
+      <label for="event-date-end">To:</label>
+      <input
+        id="event-date-end"
+        class="form-control filter-margin"
+        type="date"
+        v-model="search.end"
+      />
 
-        <template v-if="!connections">
-          <label for="event-type">Type:</label>
-          <select id="event-type" class="form-control filter-margin" v-model="search.type">
-            <option value="noConnections">All</option>
-            <option value="Working Group">Working Group</option>
-            <option value="Community">Community</option>
-            <option value="Protest">Protest</option>
-            <option value="Outreach">Outreach</option>
-            <option value="Sanctuary">Sanctuary</option>
-            <option value="Key Event">Key Event</option>
-          </select>
-        </template>
+      <template v-if="!connections">
+        <label for="event-type">Type:</label>
+        <select id="event-type" class="form-control filter-margin" v-model="search.type">
+          <option value="noConnections">All</option>
+          <option value="Working Group">Working Group</option>
+          <option value="Community">Community</option>
+          <option value="Protest">Protest</option>
+          <option value="Outreach">Outreach</option>
+          <option value="Sanctuary">Sanctuary</option>
+          <option value="Key Event">Key Event</option>
+        </select>
+      </template>
 
-        <button type="submit" id="event-date-filter" class="btn btn-primary filter-margin">
-          Filter
-        </button>
-      </form>
-      <br />
-    </div>
-    <div class="main">
-      <table class="adb-table table table-hover table-striped">
-        <thead>
-          <tr>
-            <th class="col-xs-1"></th>
-            <th class="col-xs-2">Date</th>
-            <th class="col-xs-2">{{ connections ? 'Connector' : 'Name' }}</th>
-            <th class="col-xs-2">Type</th>
-            <th class="col-xs-1">Total {{ connections ? 'Connectees' : 'Attendance' }}</th>
-            <th class="col-xs-4">
-              Attendees
-              <span style="display: inline-block">
-                (
-                <button
-                  title="Show all attendees"
-                  class="btn btn-link"
-                  v-on:click="showAllAttendees"
-                >
-                  +
-                </button>
-                /
-                <button
-                  title="Hide all attendees"
-                  class="btn btn-link"
-                  v-on:click="hideAllAttendees"
-                >
-                  -
-                </button>
-                )
-              </span>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="loading">
-            <td></td>
-            <td><i>Loading...</i></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-          </tr>
+      <button type="submit" id="event-date-filter" class="btn btn-primary filter-margin">
+        Filter
+      </button>
+    </form>
+    <br />
 
-          <tr v-if="!loading && events.length == 0">
-            <td></td>
-            <td><i>No data</i></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-          </tr>
-
-          <tr v-for="event in events" :key="event.event_id">
-            <td>
-              <a
-                class="edit-link"
-                :href="(connections ? '/update_connection/' : '/update_event/') + event.event_id"
-              >
-                <button class="btn btn-default glyphicon glyphicon-pencil"></button>
-              </a>
-              <br />
-              <br />
-              <div class="dropdown">
-                <button
-                  class="btn btn-default dropdown-toggle glyphicon glyphicon-option-horizontal"
-                  data-toggle="dropdown"
-                ></button>
-                <ul class="dropdown-menu">
-                  <li><a v-on:click.stop="confirmDeleteEvent(event)">Delete event</a></li>
-                </ul>
-              </div>
-            </td>
-            <td nowrap>{{ event.event_date }}</td>
-            <td class="event-name">
-              <b>{{ event.event_name }}</b>
-            </td>
-            <td nowrap>{{ event.event_type }}</td>
-            <td nowrap>{{ event.attendees.length }}</td>
-            <td>
-              <button class="show-attendees btn btn-link" v-on:click="toggleAttendees(event)">
-                <span v-if="event.showAttendees">-</span> <span v-else>+</span> Attendees
+    <table class="adb-table table table-hover table-striped">
+      <thead>
+        <tr>
+          <th class="col-xs-1"></th>
+          <th class="col-xs-2">Date</th>
+          <th class="col-xs-2">{{ connections ? 'Connector' : 'Name' }}</th>
+          <th class="col-xs-2">Type</th>
+          <th class="col-xs-1">Total {{ connections ? 'Connectees' : 'Attendance' }}</th>
+          <th class="col-xs-4">
+            Attendees
+            <span style="display: inline-block">
+              (
+              <button title="Show all attendees" class="btn btn-link" v-on:click="showAllAttendees">
+                +
               </button>
-              <a target="_blank" class="btn btn-link" :href="event.emailLink">
-                <span class="glyphicon glyphicon-envelope"></span>
-              </a>
-              <ul class="attendee-list" v-show="event.showAttendees">
-                <li v-for="attendee in event.attendees" :key="attendee">{{ attendee }}</li>
+              /
+              <button title="Hide all attendees" class="btn btn-link" v-on:click="hideAllAttendees">
+                -
+              </button>
+              )
+            </span>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-if="loading">
+          <td></td>
+          <td><i>Loading...</i></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+        </tr>
+
+        <tr v-if="!loading && events.length == 0">
+          <td></td>
+          <td><i>No data</i></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+        </tr>
+
+        <tr v-for="event in events" :key="event.event_id">
+          <td>
+            <a
+              class="edit-link"
+              :href="(connections ? '/update_connection/' : '/update_event/') + event.event_id"
+            >
+              <button class="btn btn-default glyphicon glyphicon-pencil"></button>
+            </a>
+            <br />
+            <br />
+            <div class="dropdown">
+              <button
+                class="btn btn-default dropdown-toggle glyphicon glyphicon-option-horizontal"
+                data-toggle="dropdown"
+              ></button>
+              <ul class="dropdown-menu">
+                <li><a v-on:click.stop="confirmDeleteEvent(event)">Delete event</a></li>
               </ul>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
+            </div>
+          </td>
+          <td nowrap>{{ event.event_date }}</td>
+          <td class="event-name">
+            <b>{{ event.event_name }}</b>
+          </td>
+          <td nowrap>{{ event.event_type }}</td>
+          <td nowrap>{{ event.attendees.length }}</td>
+          <td>
+            <button class="show-attendees btn btn-link" v-on:click="toggleAttendees(event)">
+              <span v-if="event.showAttendees">-</span> <span v-else>+</span> Attendees
+            </button>
+            <a target="_blank" class="btn btn-link" :href="event.emailLink">
+              <span class="glyphicon glyphicon-envelope"></span>
+            </a>
+            <ul class="attendee-list" v-show="event.showAttendees">
+              <li v-for="attendee in event.attendees" :key="attendee">{{ attendee }}</li>
+            </ul>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </adb-page>
 </template>
 
 <script lang="ts">
 import Vue from 'vue';
+import AdbPage from './AdbPage.vue';
 import { flashMessage } from './flash_message';
 import { initActivistSelect } from './chosen_utils';
 
@@ -168,6 +158,9 @@ interface Event {
 }
 
 export default Vue.extend({
+  components: {
+    AdbPage,
+  },
   props: {
     connections: Boolean,
   },

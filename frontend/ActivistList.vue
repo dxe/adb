@@ -1,5 +1,5 @@
 <template>
-  <div id="app" class="main">
+  <adb-page :title="title" wide class="activist-list-content">
     <div class="activist-list-filters form-inline">
       <input
         v-on:input="debounceSearchInput"
@@ -203,14 +203,15 @@
         </div>
       </div>
     </modal> -->
-  </div>
+  </adb-page>
 </template>
 
 <script lang="ts">
+import Vue from 'vue';
 import vmodal from 'vue-js-modal';
 import HotTable from './external/vue-handsontable-official/HotTable.vue';
 import { rewriteSettings } from './external/vue-handsontable-official/helpers';
-import Vue from 'vue';
+import AdbPage from './AdbPage.vue';
 import { focus } from './directives/focus';
 import { flashMessage } from './flash_message';
 import { EventBus } from './EventBus';
@@ -1026,6 +1027,7 @@ function generateDateSortFn(field: string, ascending: boolean) {
 export default Vue.extend({
   name: 'activist-list',
   props: {
+    title: String,
     // `view` is the default view to show. It can be one of:
     // "all_activists", "leaderboard", "activist_pool",
     // "activist_recruitment", or "action_team"
@@ -1532,6 +1534,7 @@ export default Vue.extend({
     }
   },
   components: {
+    AdbPage,
     HotTable,
   },
   directives: {

@@ -1,5 +1,5 @@
 <template>
-  <div id="app" class="main">
+  <adb-page title="Users" class="activist-list-content">
     <button class="btn btn-default" @click="showModal('edit-user-modal')">
       <span class="glyphicon glyphicon-plus"></span>&nbsp;&nbsp;Add New User
     </button>
@@ -130,13 +130,14 @@
         </div>
       </div>
     </modal>
-  </div>
+  </adb-page>
 </template>
 
 <script lang="ts">
 // Library from here: https://github.com/euvl/vue-js-modal
 import vmodal from 'vue-js-modal';
 import Vue from 'vue';
+import AdbPage from './AdbPage.vue';
 import { flashMessage } from './flash_message';
 import { Dropdown } from 'uiv';
 
@@ -395,6 +396,7 @@ export default Vue.extend({
     });
   },
   components: {
+    AdbPage,
     Dropdown,
   },
   directives: {
