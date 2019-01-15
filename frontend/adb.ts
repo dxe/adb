@@ -9,7 +9,7 @@ import WorkingGroupList from './WorkingGroupList.vue';
 new Vue({
   el: '#app',
   components: {
-    ActivistList, // TODO: Add view prop to template.
+    ActivistList,
     CirclesList,
     EventEdit,
     EventList,
