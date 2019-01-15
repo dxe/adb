@@ -1,7 +1,6 @@
 <template>
   <adb-page
     :title="connections ? 'All Maintenance Connections' : 'Events'"
-    wide
     class="event-list-content"
   >
     <form class="form-inline" v-on:submit.prevent="eventListRequest">
