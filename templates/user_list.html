@@ -5,9 +5,10 @@
     <h1>Users</h1>
     <br />
   </div>
-  <div id="app"></div>
-  <script src="/dist/user_list.js?{{ .StaticResourcesHash }}"></script>
-  <script>user_list.initializeApp()</script>
+  <div id="app">
+    <user-list></user-list>
+  </div>
 </div>
+<script src="/dist/adb.js?{{ .StaticResourcesHash }}"></script>
 
 {{template "footer.html" .}}

@@ -5,9 +5,10 @@
     <h1>Working Groups</h1>
     <br />
   </div>
-  <div id="app"></div>
-  <script src="/dist/working_group_list.js?{{ .StaticResourcesHash }}"></script>
-  <script>working_group_list.initializeApp()</script>
+  <div id="app">
+    <working-group-list></working-group-list>
+  </div>
 </div>
+<script src="/dist/adb.js?{{ .StaticResourcesHash }}"></script>
 
 {{template "footer.html" .}}

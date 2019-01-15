@@ -5,10 +5,11 @@
     <h1>{{ .Data.Title }}</h1>
     <br />
   </div>
-  <div id="app" class="main"></div>
-  <script src="/dist/activist_list.js?{{ .StaticResourcesHash }}"></script>
-  <script>activist_list.initializeApp({{ .Data.View }})</script>
+  <div id="app">
+    <activist-list view="{{ .Data.View }}"></activist-list>
+  </div>
 </div>
+<script src="/dist/adb.js?{{ .StaticResourcesHash }}"></script>
 
 </body>
 <html>

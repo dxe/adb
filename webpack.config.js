@@ -8,13 +8,8 @@ module.exports = {
   // List of bundles to create. If you want to add a new page, you'll
   // need to also add it here.
   entry: {
-    activist_list: './frontend/activist_list',
-    event_list: './frontend/event_list',
-    event_new: './frontend/event_new',
+    adb: './frontend/adb',
     flash_message: './frontend/flash_message',
-    working_group_list: './frontend/working_group_list',
-    circles_list: './frontend/circles_list',
-    user_list: './frontend/user_list',
   },
 
   output: {
