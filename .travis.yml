@@ -1,6 +1,9 @@
 language: generic
 dist: xenial
 
+env:
+  - GOFLAGS=-mod=readonly
+
 services:
   - mysql
 
@@ -10,7 +13,7 @@ before_install:
 
 install:
   - npm ci
-  - go get -d -t -v github.com/dxe/adb/...
+  - go mod download
 
 before_script:
   - mysql -u root -e "CREATE USER adb_user@localhost IDENTIFIED BY 'adbpassword';"
@@ -19,7 +22,6 @@ before_script:
   - mysql -u root -e "CREATE DATABASE adb_test_db CHARACTER SET utf8 COLLATE utf8_general_ci;"
 
 script:
-  - npm run build
-  - go build github.com/dxe/adb
-  - go test github.com/dxe/adb/...
   - ./hooks/pre-commit
+  - go test github.com/dxe/adb/...
+  - npm run build
