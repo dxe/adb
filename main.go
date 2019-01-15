@@ -143,7 +143,6 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/chapter_member_development", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListChapterMemberDevelopmentHandler))
 	router.Handle("/circle_member_prospects", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListCircleMemberProspectsHandler))
 	router.Handle("/leaderboard", alice.New(main.authOrganizerMiddleware).ThenFunc(main.LeaderboardHandler))
-	router.Handle("/power", alice.New(main.authOrganizerMiddleware).ThenFunc(main.PowerHandler)) // TODO: rename
 	router.Handle("/list_working_groups", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListWorkingGroupsHandler))
 	router.Handle("/list_circles", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListCirclesHandler))
 
@@ -1064,32 +1063,6 @@ func (c MainController) ActivistListHandler(w http.ResponseWriter, r *http.Reque
 	writeJSON(w, map[string]interface{}{
 		"status":        "success",
 		"activist_list": activists,
-	})
-}
-
-func (c MainController) PowerHandler(w http.ResponseWriter, r *http.Request) {
-	power, err := model.GetPower(c.db)
-	if err != nil {
-		panic(err)
-	}
-
-	powerHist, err := model.GetPowerHistArray(c.db)
-	if err != nil {
-		panic(err)
-	}
-
-	powerMTD, err := model.GetPowerMTD(c.db)
-	if err != nil {
-		panic(err)
-	}
-
-	renderPage(w, r, "power", PageData{
-		PageName: "Power",
-		Data: map[string]interface{}{
-			"Power":     power,
-			"PowerHist": powerHist,
-			"PowerMTD":  powerMTD,
-		},
 	})
 }
 
