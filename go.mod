@@ -12,7 +12,7 @@ require (
 	github.com/stretchr/testify v1.3.0
 	github.com/urfave/negroni v1.0.0
 	golang.org/x/crypto v0.0.0-20190103213133-ff983b9c42bc // indirect
-	golang.org/x/net v0.0.0-20190110200230-915654e7eabc
+	golang.org/x/net v0.0.0-20190110200230-915654e7eabc // indirect
 	golang.org/x/oauth2 v0.0.0-20190111185915-36a7019397c4
 	google.golang.org/api v0.1.0
 	gopkg.in/square/go-jose.v2 v2.2.2 // indirect

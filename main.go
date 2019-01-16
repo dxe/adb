@@ -1,20 +1,16 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
 	"log"
 	"net/http"
+	"net/http/pprof"
 	"strconv"
 	"time"
-
-	"github.com/pkg/errors"
-
-	"golang.org/x/net/context"
-
-	"net/http/pprof"
 
 	oidc "github.com/coreos/go-oidc"
 	"github.com/dxe/adb/config"
@@ -24,6 +20,7 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/jmoiron/sqlx"
 	"github.com/justinas/alice"
+	"github.com/pkg/errors"
 	"github.com/urfave/negroni"
 )
 
