@@ -343,24 +343,22 @@ func getUserFromContext(ctx context.Context) model.ADBUser {
 	return userctx.(model.ADBUser)
 }
 
+var verifier = func() *oidc.IDTokenVerifier {
+	provider, err := oidc.NewProvider(context.Background(), "https://accounts.google.com")
+	if err != nil {
+		log.Fatal(err)
+	}
+	return provider.Verifier(&oidc.Config{
+		ClientID: "975059814880-lfffftbpt7fdl14cevtve8sjvh015udc.apps.googleusercontent.com",
+	})
+}()
+
 func (c MainController) TokenSignInHandler(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		panic(err)
 	}
 
-	unverifiedIdToken := r.PostFormValue("idtoken")
-
-	tokenCtx := context.Background()
-
-	provider, err := oidc.NewProvider(tokenCtx, "https://accounts.google.com")
-	if err != nil {
-		panic(err)
-	}
-	verifier := provider.Verifier(&oidc.Config{
-		ClientID: "975059814880-lfffftbpt7fdl14cevtve8sjvh015udc.apps.googleusercontent.com",
-	})
-
-	idToken, err := verifier.Verify(tokenCtx, unverifiedIdToken)
+	idToken, err := verifier.Verify(r.Context(), r.PostFormValue("idtoken"))
 	if err != nil {
 		panic(err)
 	}
