@@ -17,6 +17,8 @@ import (
 const Duration60Days = 60 * 24 * time.Hour
 const Duration90Days = 90 * 24 * time.Hour
 
+const ACTIVIST_LEVEL_CHAPTER_MEMBER = "Chapter Member"
+
 const selectActivistBaseQuery string = `
 SELECT
   email,
@@ -627,6 +629,33 @@ func getActivists(db *sqlx.DB, name string) ([]Activist, error) {
 	var activists []Activist
 	if err := db.Select(&activists, query, queryArgs...); err != nil {
 		return nil, errors.Wrapf(err, "failed to get activists for %s", name)
+	}
+
+	return activists, nil
+}
+
+func GetChapterMembers(db *sqlx.DB) ([]Activist, error) {
+	return getActivistsByLevel(db, ACTIVIST_LEVEL_CHAPTER_MEMBER)
+}
+
+func getActivistsByLevel(db *sqlx.DB, level string) ([]Activist, error) {
+	query := `
+SELECT
+  id,
+  name,
+  email,
+  activist_level
+FROM activists
+WHERE activist_level = ?
+`
+
+	var queryArgs []interface{}
+	queryArgs = append(queryArgs, level)
+
+	var activists []Activist
+	err := db.Select(&activists, query, queryArgs...)
+	if err != nil {
+		return []Activist{}, errors.Wrapf(err, "getActivistsByLevel: Failed retrieving activists for level %s", level)
 	}
 
 	return activists, nil
