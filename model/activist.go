@@ -4,14 +4,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"io"
+	"strings"
 	"time"
 
-	"strings"
-
 	"github.com/go-sql-driver/mysql"
-	"github.com/pkg/errors"
-
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
 )
 
 /** Constant and Variable Definitions */

@@ -7,9 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
-
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
 )
 
 /** Constant and Global Variable Definitions */

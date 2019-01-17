@@ -1,15 +1,12 @@
 package model
 
 import (
-	"github.com/pkg/errors"
+	"encoding/json"
+	"fmt"
+	"io"
 
 	"github.com/jmoiron/sqlx"
-
-	"encoding/json"
-
-	"fmt"
-
-	"io"
+	"github.com/pkg/errors"
 )
 
 /** Constant and Variable Definitions */
