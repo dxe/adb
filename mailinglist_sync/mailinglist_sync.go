@@ -182,6 +182,35 @@ func syncCircleHostMailingList(db *sqlx.DB, adminService *admin.Service) error {
 	return nil
 }
 
+func syncChapterMemberMailingList(db *sqlx.DB, adminService *admin.Service) error {
+	// Sync chaptermembers@directactioneverywhere.com to contain all
+	// activists that are considered a Chapter Member; i.e. Activists that
+	// that have activist_level of "Chapter Member".
+
+	members, err := model.GetChapterMembers(db)
+	if err != nil {
+		return err
+	}
+
+	var emails []string
+	for _, m := range members {
+		email := normalizeEmail(m.Email)
+		if email == "" {
+			fmt.Printf("Activist has no email, will not be synced to mailing list: %s", m.Name)
+			continue
+		}
+
+		emails = append(emails, email)
+	}
+
+	errs := syncMailingList(adminService, "chaptermembers@directactioneverywhere.com", emails)
+	if len(errs) != 0 {
+		return errors.Errorf("Received errors during syncChapterMemberMailingList: %+v", errs)
+	}
+
+	return nil
+}
+
 func syncMailingListsWrapper(db *sqlx.DB, adminService *admin.Service) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -195,6 +224,11 @@ func syncMailingListsWrapper(db *sqlx.DB, adminService *admin.Service) {
 	}
 
 	err = syncCircleHostMailingList(db, adminService)
+	if err != nil {
+		panic(err)
+	}
+
+	err = syncChapterMemberMailingList(db, adminService)
 	if err != nil {
 		panic(err)
 	}
