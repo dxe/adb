@@ -635,10 +635,6 @@ func getActivists(db *sqlx.DB, name string) ([]Activist, error) {
 }
 
 func GetChapterMembers(db *sqlx.DB) ([]Activist, error) {
-	return getActivistsByLevel(db, ACTIVIST_LEVEL_CHAPTER_MEMBER)
-}
-
-func getActivistsByLevel(db *sqlx.DB, level string) ([]Activist, error) {
 	query := `
 SELECT
   id,
@@ -646,16 +642,13 @@ SELECT
   email,
   activist_level
 FROM activists
-WHERE activist_level = ?
+WHERE activist_level IN('Organizer', 'Senior Organizer', 'Chapter Member')
 `
 
-	var queryArgs []interface{}
-	queryArgs = append(queryArgs, level)
-
 	var activists []Activist
-	err := db.Select(&activists, query, queryArgs...)
+	err := db.Select(&activists, query)
 	if err != nil {
-		return []Activist{}, errors.Wrapf(err, "getActivistsByLevel: Failed retrieving activists for level %s", level)
+		return []Activist{}, errors.Wrapf(err, "GetChapterMembers: Failed retrieving activists for levels Organizer, Senior Organizer, and Chapter Member")
 	}
 
 	return activists, nil
