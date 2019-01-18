@@ -642,7 +642,7 @@ SELECT
   email,
   activist_level
 FROM activists
-WHERE activist_level IN('Organizer', 'Senior Organizer', 'Chapter Member')
+WHERE hidden = 0 AND activist_level IN('Organizer', 'Senior Organizer', 'Chapter Member')
 `
 
 	var activists []Activist
