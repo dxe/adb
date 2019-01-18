@@ -639,8 +639,7 @@ func GetChapterMembers(db *sqlx.DB) ([]Activist, error) {
 SELECT
   id,
   name,
-  email,
-  activist_level
+  email
 FROM activists
 WHERE hidden = 0 AND activist_level IN('Organizer', 'Senior Organizer', 'Chapter Member')
 `
