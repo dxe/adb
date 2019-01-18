@@ -115,14 +115,14 @@ func syncMailingList(adminService *admin.Service, groupEmail string, memberEmail
 	for _, e := range removeEmails {
 		err := removeMember(adminService, groupEmail, e)
 		if err != nil {
-			log.Printf("Failed to remove %v from group %v", e, groupEmail)
+			log.Printf("Failed to remove %v from group %v: %v", e, groupEmail, err)
 			// Continue processing.
 		}
 	}
 	for _, e := range insertEmails {
 		err := insertMember(adminService, groupEmail, e)
 		if err != nil {
-			log.Printf("Failed to add %v to group %v", e, groupEmail)
+			log.Printf("Failed to add %v to group %v: %v", e, groupEmail, err)
 			// Continue processing.
 		}
 	}
@@ -131,7 +131,7 @@ func syncMailingList(adminService *admin.Service, groupEmail string, memberEmail
 func syncWorkingGroupMailingLists(db *sqlx.DB, adminService *admin.Service) {
 	wgs, err := model.GetWorkingGroups(db, model.WorkingGroupQueryOptions{})
 	if err != nil {
-		log.Println("Failed to query working groups")
+		log.Printf("Failed to query working groups: %v", err)
 		return
 	}
 
@@ -155,7 +155,7 @@ func syncCircleHostMailingList(db *sqlx.DB, adminService *admin.Service) {
 
 	circles, err := model.GetCircleGroups(db, model.CircleGroupQueryOptions{})
 	if err != nil {
-		log.Println("Failed to query circles")
+		log.Printf("Failed to query circles: %v", err)
 		return
 	}
 
@@ -180,7 +180,7 @@ func syncChapterMemberMailingList(db *sqlx.DB, adminService *admin.Service) {
 
 	members, err := model.GetChapterMembers(db)
 	if err != nil {
-		log.Println("Failed to query chapters")
+		log.Printf("Failed to query chapters: %v", err)
 		return
 	}
 
