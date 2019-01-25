@@ -243,6 +243,16 @@ interface Column {
   enabled: boolean;
 }
 
+function emailValidator(value: any, callback: Function) {
+  setTimeout(function() {
+    if (/.+@.+/.test(value)) {
+      callback(true);
+    } else {
+      callback(false);
+    }
+  }, 250);
+}
+
 function getDefaultColumns(view: string): Column[] {
   return [
     {
@@ -302,6 +312,8 @@ function getDefaultColumns(view: string): Column[] {
       data: {
         data: 'email',
         colWidths: 150,
+        validator: emailValidator,
+        allowInvalid: false,
       },
       enabled:
         view === 'all_activists' ||
