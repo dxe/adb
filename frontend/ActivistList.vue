@@ -243,7 +243,13 @@ interface Column {
   enabled: boolean;
 }
 
-function emailValidator(value: any, callback: Function) {
+function emailValidator(value: string, callback: Function) {
+  // Create a delay between the validation, and the
+  // resulting state of the Column. i.e. When the user
+  // clicks away from the column (or hits enter) the row
+  // will be saved if valid, or the focus will be sent back
+  // to the invalid column; the timeout here makes for a smoother
+  // UI transition whichever the result of the validation.
   setTimeout(function() {
     if (/.+@.+/.test(value)) {
       callback(true);
