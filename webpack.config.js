@@ -3,8 +3,6 @@ var webpack = require('webpack')
 var VueLoaderPlugin = require('vue-loader/lib/plugin')
 
 module.exports = {
-  mode: 'development',
-
   // List of bundles to create. If you want to add a new page, you'll
   // need to also add it here.
   entry: {
@@ -68,9 +66,4 @@ module.exports = {
   performance: {
     hints: false
   },
-  devtool: '#source-map'
-}
-
-if (process.env.NODE_ENV === 'production') {
-  module.exports.mode = 'production';
 }

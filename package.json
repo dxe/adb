@@ -5,9 +5,9 @@
   "author": "test",
   "private": true,
   "scripts": {
-    "watch": "webpack --watch",
-    "dev-build": "webpack --progress --hide-modules",
-    "build": "NODE_ENV=production webpack --progress --hide-modules"
+    "watch": "webpack --watch --mode=development",
+    "dev-build": "webpack --progress --hide-modules --mode=development",
+    "build": "webpack --progress --hide-modules --mode=production"
   },
   "prettier": {
     "arrowParens": "always",
