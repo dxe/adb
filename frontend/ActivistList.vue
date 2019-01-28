@@ -328,7 +328,7 @@ function getDefaultColumns(view: string): Column[] {
             return cb(true);
           }
 
-          emailValidator(email, (isValid) => {
+          emailValidator(email, (isValid: boolean) => {
             // Show invalid email error message
             if (!isValid) {
               flashMessage('Email field is invalid. Please provide a valid email address.', true);
