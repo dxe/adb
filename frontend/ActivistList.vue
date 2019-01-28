@@ -251,7 +251,11 @@ function emailValidator(value: string, callback: Function) {
   // to the invalid column; the timeout here makes for a smoother
   // UI transition whichever the result of the validation.
   setTimeout(function() {
-    if (/.+@.+/.test(value)) {
+    if (
+      /^([0-9a-zA-Z]([-.\w]*[0-9a-zA-Z])*@(([0-9a-zA-Z])+([-\w]*[0-9a-zA-Z])*\.)+[a-zA-Z]{2,9})$/.test(
+        value,
+      )
+    ) {
       callback(true);
     } else {
       callback(false);
@@ -318,7 +322,21 @@ function getDefaultColumns(view: string): Column[] {
       data: {
         data: 'email',
         colWidths: 150,
-        validator: emailValidator,
+        validator: (email: string, cb: Function) => {
+          // Allow saving empty email
+          if (!email) {
+            return cb(true);
+          }
+
+          emailValidator(email, (isValid) => {
+            // Show invalid email error message
+            if (!isValid) {
+              flashMessage('Email field is invalid. Please provide a valid email address.', true);
+            }
+
+            return cb(isValid);
+          });
+        },
         allowInvalid: false,
       },
       enabled:
