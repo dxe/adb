@@ -232,6 +232,9 @@ interface Activist {
   action_team_focus_secondary: string;
   circle_interest: number;
   circles_list: string;
+  total_events: number;
+  source: string;
+  interest_date: string;
 
   // To appease our clunky sorting functions.
   // TODO(mdempsky): Remove.
@@ -348,7 +351,8 @@ function getDefaultColumns(view: string): Column[] {
         view === 'chapter_member_prospects' ||
         view === 'chapter_member_development' ||
         view === 'circle_member_prospects' ||
-        view === 'circle_members',
+        view === 'circle_members' ||
+        view === 'community_prospects',
     },
     {
       header: 'Phone',
@@ -357,7 +361,7 @@ function getDefaultColumns(view: string): Column[] {
         data: 'phone',
         colWidths: 100,
       },
-      enabled: false,
+      enabled: view === 'community_prospects',
     },
     {
       header: 'Location',
@@ -471,6 +475,30 @@ function getDefaultColumns(view: string): Column[] {
     },
 
     {
+      header: 'Source',
+      longHeader: 'Source',
+      data: {
+        data: 'source',
+        colWidths: 100,
+      },
+      enabled: view === 'community_prospects',
+    },
+
+    {
+      header: 'Interest Date',
+      longHeader: 'Date Interest Form Submitted',
+      data: {
+        type: 'date',
+        data: 'interest_date',
+        dateFormat: 'YYYY-MM-DD',
+        correctFormat: true,
+        colWidths: 100,
+        readOnly: true,
+      },
+      enabled: view === 'circle_member_prospects' || view === 'community_prospects',
+    },
+
+    {
       header: 'Circle Interest',
       longHeader: 'Circle Interest',
       data: {
@@ -527,13 +555,16 @@ function getDefaultColumns(view: string): Column[] {
     },
 
     {
-      header: 'Interest',
-      longHeader: 'Interest',
+      header: 'Interests',
+      longHeader: 'Interests',
       data: {
         data: 'dev_interest',
         colWidths: 100,
       },
-      enabled: view === 'organizer_prospects' || view === 'circle_member_prospects',
+      enabled:
+        view === 'organizer_prospects' ||
+        view === 'circle_member_prospects' ||
+        view === 'community_prospects',
     },
     {
       header: 'Working Groups',
@@ -575,7 +606,10 @@ function getDefaultColumns(view: string): Column[] {
         colWidths: 200,
       },
       enabled:
-        view === 'activist_pool' || view === 'activist_recruitment' || view === 'leaderboard',
+        view === 'activist_pool' ||
+        view === 'activist_recruitment' ||
+        view === 'leaderboard' ||
+        view === 'community_prospects',
     },
     {
       header: 'Last Event',
@@ -585,7 +619,8 @@ function getDefaultColumns(view: string): Column[] {
         readOnly: true,
         colWidths: 200,
       },
-      enabled: view === 'activist_recruitment' || view === 'leaderboard',
+      enabled:
+        view === 'activist_recruitment' || view === 'leaderboard' || view === 'community_prospects',
     },
     {
       header: 'Total Events',
@@ -596,7 +631,7 @@ function getDefaultColumns(view: string): Column[] {
         readOnly: true,
         colWidths: 90,
       },
-      enabled: view === 'leaderboard',
+      enabled: view === 'leaderboard' || view === 'community_prospects',
     },
     // {
     //   header: "Active",
@@ -1328,6 +1363,13 @@ export default Vue.extend({
               // }
               else if (this.view === 'leaderboard') {
                 return el.active == 1;
+              } else if (this.view === 'community_prospects') {
+                return (
+                  el.total_events < 5 &&
+                  el.source.includes('Form') &&
+                  !el.source.includes('Circle Interest') &&
+                  !el.source.includes('Application')
+                );
               } else if (this.view === 'development') {
                 return el.activist_level == 'Organizer';
               } else if (this.view === 'organizer_prospects') {

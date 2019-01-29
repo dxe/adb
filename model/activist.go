@@ -89,6 +89,7 @@ SELECT
   referral_apply,
   referral_outlet,
   circle_interest,
+  interest_date,
 
   -- Do the first/last event subqueries here b/c the performance is
   -- better than when you join on events and event_attendance multiple times.
@@ -306,6 +307,7 @@ type ActivistConnectionData struct {
 	ReferralApply         string         `db:"referral_apply"`
 	ReferralOutlet        string         `db:"referral_outlet"`
 	CircleInterest        bool           `db:"circle_interest"`
+	InterestDate          sql.NullString `db:"interest_date"`
 }
 
 type ActivistExtra struct {
@@ -381,6 +383,7 @@ type ActivistJSON struct {
 	ReferralApply         string `json:"referral_apply"`
 	ReferralOutlet        string `json:"referral_outlet"`
 	CircleInterest        bool   `json:"circle_interest"`
+	InterestDate          string `json:"interest_date"`
 }
 
 type GetActivistOptions struct {
@@ -542,6 +545,10 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 		if a.ActivistConnectionData.SOQuiz.Valid {
 			so_quiz = a.ActivistConnectionData.SOQuiz.String
 		}
+		interest_date := ""
+		if a.ActivistConnectionData.InterestDate.Valid {
+			interest_date = a.ActivistConnectionData.InterestDate.String
+		}
 
 		activistsJSON = append(activistsJSON, ActivistJSON{
 			Email:    a.Email,
@@ -609,6 +616,7 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			ReferralApply:         a.ReferralApply,
 			ReferralOutlet:        a.ReferralOutlet,
 			CircleInterest:        a.CircleInterest,
+			InterestDate:          interest_date,
 		})
 	}
 
@@ -910,7 +918,8 @@ INSERT INTO activists (
   referral_friends,
   referral_apply,
   referral_outlet,
-  circle_interest
+  circle_interest,
+  interest_date
 
 ) VALUES (
 
@@ -961,7 +970,8 @@ INSERT INTO activists (
   :referral_friends,
   :referral_apply,
   :referral_outlet,
-  :circle_interest
+  :circle_interest,
+  :interest_date
 
 )`, activist)
 	if err != nil {
@@ -1031,7 +1041,8 @@ SET
   referral_friends = :referral_friends,
   referral_apply = :referral_apply,
   referral_outlet = :referral_outlet,
-  circle_interest = :circle_interest
+  circle_interest = :circle_interest,
+  interest_date = :interest_date
 
 WHERE
   id = :id`, activist)
@@ -1329,6 +1340,11 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 		// Not specified so insert null value into database
 		validSOQuiz = false
 	}
+	validInterestDate := true
+	if activistJSON.InterestDate == "" {
+		// Not specified so insert null value into database
+		validInterestDate = false
+	}
 
 	activistExtra := ActivistExtra{
 		Activist: Activist{
@@ -1384,6 +1400,7 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			ReferralApply:         strings.TrimSpace(activistJSON.ReferralApply),
 			ReferralOutlet:        strings.TrimSpace(activistJSON.ReferralOutlet),
 			CircleInterest:        activistJSON.CircleInterest,
+			InterestDate:          sql.NullString{String: strings.TrimSpace(activistJSON.InterestDate), Valid: validInterestDate},
 		},
 	}
 

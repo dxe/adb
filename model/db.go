@@ -83,6 +83,7 @@ CREATE TABLE activists (
   referral_apply varchar(100) NOT NULL DEFAULT '',
   referral_outlet varchar(100) NOT NULL DEFAULT '',
   circle_interest tinyint(1) NOT NULL DEFAULT '0',
+  interest_date VARCHAR(20),
   UNIQUE (name)
 )
 `)
