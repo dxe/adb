@@ -230,6 +230,8 @@ interface Activist {
   circle_agreement: number;
   action_team_focus: string;
   action_team_focus_secondary: string;
+  circle_interest: number;
+  circles_list: string;
 
   // To appease our clunky sorting functions.
   // TODO(mdempsky): Remove.
@@ -345,7 +347,8 @@ function getDefaultColumns(view: string): Column[] {
         view === 'activist_recruitment' ||
         view === 'chapter_member_prospects' ||
         view === 'chapter_member_development' ||
-        view === 'circle_member_prospects',
+        view === 'circle_member_prospects' ||
+        view === 'circle_members',
     },
     {
       header: 'Phone',
@@ -446,7 +449,8 @@ function getDefaultColumns(view: string): Column[] {
         view === 'chapter_member_prospects' ||
         view === 'chapter_member_development' ||
         view === 'circle_member_prospects' ||
-        view === 'senior_organizer_prospects',
+        view === 'senior_organizer_prospects' ||
+        view === 'circle_members',
     },
     {
       header: 'Applied',
@@ -484,8 +488,9 @@ function getDefaultColumns(view: string): Column[] {
         type: 'checkbox',
         data: 'circle_agreement',
         colWidths: 105,
+        readOnly: true,
       },
-      enabled: view === 'circle_member_prospects',
+      enabled: view === 'circle_member_prospects' || view === 'circle_members',
     },
 
     {
@@ -548,7 +553,7 @@ function getDefaultColumns(view: string): Column[] {
         readOnly: true,
         colWidths: 200,
       },
-      enabled: view === 'action_team',
+      enabled: view === 'circle_members',
     },
     {
       header: 'WG or Cir. Member',
@@ -1289,24 +1294,13 @@ export default Vue.extend({
           var activistList = parsed.activist_list;
 
           // filtering
-          if (
-            this.view === 'activist_pool' ||
-            this.view === 'activist_recruitment' ||
-            this.view === 'action_team' ||
-            this.view === 'leaderboard' ||
-            this.view === 'development' ||
-            this.view === 'organizer_prospects' ||
-            this.view === 'chapter_member_prospects' ||
-            this.view === 'circle_member_prospects' ||
-            this.view === 'chapter_member_development' ||
-            this.view === 'senior_organizer_prospects' ||
-            this.view === 'senior_organizer_development'
-          ) {
+          if (this.view != 'all_activists') {
             var activistListFiltered;
             activistListFiltered = activistList.filter((el: Activist) => {
               if (this.view === 'activist_pool') {
                 return el.activist_level == 'Supporter';
               }
+              //// ACTION TEAM IS DEFUNCT, BUT WOULD LIKE TO KEEP THIS CODE AROUND FOR SIMILAR THINGS IN THE FUTURE:
               // else if (this.view === 'action_team') {
               //   var selectedActionTeam = $('#filterActionTeam :selected').text();
 
@@ -1337,13 +1331,25 @@ export default Vue.extend({
               } else if (this.view === 'development') {
                 return el.activist_level == 'Organizer';
               } else if (this.view === 'organizer_prospects') {
-                return el.prospect_organizer == 1;
+                return (
+                  el.prospect_organizer == 1 &&
+                  (el.activist_level == 'Supporter' ||
+                    el.activist_level == 'Circle Member' ||
+                    el.activist_level == 'Chapter Member')
+                );
               } else if (this.view === 'chapter_member_prospects') {
-                return el.prospect_chapter_member == 1;
+                return (
+                  el.prospect_chapter_member == 1 &&
+                  (el.activist_level == 'Supporter' || el.activist_level == 'Circle Member')
+                );
               } else if (this.view === 'circle_member_prospects') {
-                return el.circle_agreement == 1;
+                return (
+                  (el.circle_agreement == 1 || el.circle_interest == 1) && el.circles_list == ''
+                );
+              } else if (this.view === 'circle_members') {
+                return el.activist_level == 'Circle Member' || el.circles_list != '';
               } else if (this.view === 'senior_organizer_prospects') {
-                return el.prospect_senior_organizer == 1;
+                return el.prospect_senior_organizer == 1 && el.activist_level != 'Senior Organizer';
               } else if (this.view === 'senior_organizer_development') {
                 return el.activist_level == 'Senior Organizer';
               } else if (this.view === 'chapter_member_development') {

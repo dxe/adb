@@ -139,6 +139,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/chapter_member_prospects", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListChapterMemberProspectsHandler))
 	router.Handle("/chapter_member_development", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListChapterMemberDevelopmentHandler))
 	router.Handle("/circle_member_prospects", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListCircleMemberProspectsHandler))
+	router.Handle("/circle_members", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListCircleMembersHandler))
 	router.Handle("/leaderboard", alice.New(main.authOrganizerMiddleware).ThenFunc(main.LeaderboardHandler))
 	router.Handle("/list_working_groups", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListWorkingGroupsHandler))
 	router.Handle("/list_circles", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListCirclesHandler))
@@ -521,6 +522,16 @@ func (c MainController) ListCircleMemberProspectsHandler(w http.ResponseWriter, 
 		Data: ActivistListData{
 			Title: "Circle Member Prospects",
 			View:  "circle_member_prospects",
+		},
+	})
+}
+
+func (c MainController) ListCircleMembersHandler(w http.ResponseWriter, r *http.Request) {
+	renderPage(w, r, "activist_list", PageData{
+		PageName: "CircleMembers",
+		Data: ActivistListData{
+			Title: "Circle Members",
+			View:  "circle_members",
 		},
 	})
 }
