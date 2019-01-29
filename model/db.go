@@ -58,7 +58,7 @@ CREATE TABLE activists (
   training6 VARCHAR(20),
   prospect_organizer TINYINT(1) NOT NULL DEFAULT '0',
   prospect_chapter_member TINYINT NOT NULL DEFAULT '0',
-  prospect_circle_member TINYINT NOT NULL DEFAULT '0',
+  circle_agreement TINYINT NOT NULL DEFAULT '0',
   dev_manager VARCHAR(100) NOT NULL DEFAULT '',
   dev_interest VARCHAR(200) NOT NULL DEFAULT '',
   dev_auth VARCHAR(20),
@@ -79,6 +79,10 @@ CREATE TABLE activists (
   so_quiz varchar(20),
   so_connector varchar(100) NOT NULL DEFAULT '',
   so_onboarding tinyint(1) NOT NULL DEFAULT '0',
+  referral_friends varchar(100) NOT NULL DEFAULT '',
+  referral_apply varchar(100) NOT NULL DEFAULT '',
+  referral_outlet varchar(100) NOT NULL DEFAULT '',
+  circle_interest tinyint(1) NOT NULL DEFAULT '0',
   UNIQUE (name)
 )
 `)

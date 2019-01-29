@@ -227,7 +227,7 @@ interface Activist {
   active: number;
   prospect_organizer: number;
   prospect_chapter_member: number;
-  prospect_circle_member: number;
+  circle_agreement: number;
   action_team_focus: string;
   action_team_focus_secondary: string;
 
@@ -467,11 +467,22 @@ function getDefaultColumns(view: string): Column[] {
     },
 
     {
-      header: 'Prosp. Cir. Member',
-      longHeader: 'Prospective Circle Member',
+      header: 'Circle Interest',
+      longHeader: 'Circle Interest',
       data: {
         type: 'checkbox',
-        data: 'prospect_circle_member',
+        data: 'circle_interest',
+        colWidths: 105,
+      },
+      enabled: view === 'circle_member_prospects',
+    },
+
+    {
+      header: 'Circle Agreement',
+      longHeader: 'Circle Agreement',
+      data: {
+        type: 'checkbox',
+        data: 'circle_agreement',
         colWidths: 105,
       },
       enabled: view === 'circle_member_prospects',
@@ -905,6 +916,36 @@ function getDefaultColumns(view: string): Column[] {
       },
       enabled: view === 'senior_organizer_prospects',
     },
+
+    {
+      header: 'Close Ties',
+      longHeader: 'Referral: Close Ties',
+      data: {
+        data: 'referral_friends',
+        colWidths: 100,
+      },
+      enabled: false,
+    },
+
+    {
+      header: 'Referral',
+      longHeader: 'Referral: Encouraged to Apply',
+      data: {
+        data: 'referral_apply',
+        colWidths: 100,
+      },
+      enabled: false,
+    },
+
+    {
+      header: 'Referral Outlet',
+      longHeader: 'Referral: How did you hear about us?',
+      data: {
+        data: 'referral_outlet',
+        colWidths: 100,
+      },
+      enabled: false,
+    },
   ];
 }
 
@@ -1300,7 +1341,7 @@ export default Vue.extend({
               } else if (this.view === 'chapter_member_prospects') {
                 return el.prospect_chapter_member == 1;
               } else if (this.view === 'circle_member_prospects') {
-                return el.prospect_circle_member == 1;
+                return el.circle_agreement == 1;
               } else if (this.view === 'senior_organizer_prospects') {
                 return el.prospect_senior_organizer == 1;
               } else if (this.view === 'senior_organizer_development') {

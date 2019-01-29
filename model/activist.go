@@ -81,10 +81,14 @@ SELECT
   cir_first_email,
   prospect_organizer,
   prospect_chapter_member,
-  prospect_circle_member,
+  circle_agreement,
   escalation,
   interested,
   meeting_date,
+  referral_friends,
+  referral_apply,
+  referral_outlet,
+  circle_interest,
 
   -- Do the first/last event subqueries here b/c the performance is
   -- better than when you join on events and event_attendance multiple times.
@@ -293,11 +297,15 @@ type ActivistConnectionData struct {
 	CirFirstEmail         sql.NullString `db:"cir_first_email"`
 	ProspectOrganizer     bool           `db:"prospect_organizer"`
 	ProspectChapterMember bool           `db:"prospect_chapter_member"`
-	ProspectCircleMember  bool           `db:"prospect_circle_member"`
+	CircleAgreement       bool           `db:"circle_agreement"`
 	LastConnection        sql.NullString `db:"last_connection"`
 	Escalation            string         `db:"escalation"`
 	Interested            string         `db:"interested"`
 	MeetingDate           string         `db:"meeting_date"`
+	ReferralFriends       string         `db:"referral_friends"`
+	ReferralApply         string         `db:"referral_apply"`
+	ReferralOutlet        string         `db:"referral_outlet"`
+	CircleInterest        bool           `db:"circle_interest"`
 }
 
 type ActivistExtra struct {
@@ -364,11 +372,15 @@ type ActivistJSON struct {
 	CirFirstEmail         string `json:"cir_first_email"`
 	ProspectOrganizer     bool   `json:"prospect_organizer"`
 	ProspectChapterMember bool   `json:"prospect_chapter_member"`
-	ProspectCircleMember  bool   `json:"prospect_circle_member"`
+	CircleAgreement       bool   `json:"circle_agreement"`
 	LastConnection        string `json:"last_connection"`
 	Escalation            string `json:"escalation"`
 	Interested            string `json:"interested"`
 	MeetingDate           string `json:"meeting_date"`
+	ReferralFriends       string `json:"referral_friends"`
+	ReferralApply         string `json:"referral_apply"`
+	ReferralOutlet        string `json:"referral_outlet"`
+	CircleInterest        bool   `json:"circle_interest"`
 }
 
 type GetActivistOptions struct {
@@ -588,11 +600,15 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			CirFirstEmail:         cir_first_email,
 			ProspectOrganizer:     a.ProspectOrganizer,
 			ProspectChapterMember: a.ProspectChapterMember,
-			ProspectCircleMember:  a.ProspectCircleMember,
+			CircleAgreement:       a.CircleAgreement,
 			LastConnection:        last_connection,
 			Escalation:            a.Escalation,
 			Interested:            a.Interested,
 			MeetingDate:           a.MeetingDate,
+			ReferralFriends:       a.ReferralFriends,
+			ReferralApply:         a.ReferralApply,
+			ReferralOutlet:        a.ReferralOutlet,
+			CircleInterest:        a.CircleInterest,
 		})
 	}
 
@@ -886,11 +902,15 @@ INSERT INTO activists (
   cir_first_email,
   prospect_organizer,
   prospect_chapter_member,
-  prospect_circle_member,
+  circle_agreement,
   last_connection,
   escalation,
   interested,
-  meeting_date
+  meeting_date,
+  referral_friends,
+  referral_apply,
+  referral_outlet,
+  circle_interest
 
 ) VALUES (
 
@@ -933,11 +953,15 @@ INSERT INTO activists (
   :cir_first_email,
   :prospect_organizer,
   :prospect_chapter_member,
-  :prospect_circle_member,
+  :circle_agreement,
   :last_connection,
   :escalation,
   :interested,
-  :meeting_date
+  :meeting_date,
+  :referral_friends,
+  :referral_apply,
+  :referral_outlet,
+  :circle_interest
 
 )`, activist)
 	if err != nil {
@@ -1000,10 +1024,14 @@ SET
   cir_first_email = :cir_first_email,
   prospect_organizer = :prospect_organizer,
   prospect_chapter_member = :prospect_chapter_member,
-  prospect_circle_member = :prospect_circle_member,
+  circle_agreement = :circle_agreement,
   escalation = :escalation,
   interested = :interested,
-  meeting_date = :meeting_date
+  meeting_date = :meeting_date, 
+  referral_friends = :referral_friends,
+  referral_apply = :referral_apply,
+  referral_outlet = :referral_outlet,
+  circle_interest = :circle_interest
 
 WHERE
   id = :id`, activist)
@@ -1348,10 +1376,14 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			CirFirstEmail:         sql.NullString{String: strings.TrimSpace(activistJSON.CirFirstEmail), Valid: validCirFirstEmail},
 			ProspectOrganizer:     activistJSON.ProspectOrganizer,
 			ProspectChapterMember: activistJSON.ProspectChapterMember,
-			ProspectCircleMember:  activistJSON.ProspectCircleMember,
+			CircleAgreement:       activistJSON.CircleAgreement,
 			Escalation:            strings.TrimSpace(activistJSON.Escalation),
 			Interested:            strings.TrimSpace(activistJSON.Interested),
 			MeetingDate:           strings.TrimSpace(activistJSON.MeetingDate),
+			ReferralFriends:       strings.TrimSpace(activistJSON.ReferralFriends),
+			ReferralApply:         strings.TrimSpace(activistJSON.ReferralApply),
+			ReferralOutlet:        strings.TrimSpace(activistJSON.ReferralOutlet),
+			CircleInterest:        activistJSON.CircleInterest,
 		},
 	}
 
