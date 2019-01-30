@@ -989,7 +989,7 @@ function getDefaultColumns(view: string): Column[] {
         data: 'referral_apply',
         colWidths: 100,
       },
-      enabled: false,
+      enabled: view === 'community_prospects',
     },
 
     {
