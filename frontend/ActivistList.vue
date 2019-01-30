@@ -456,23 +456,6 @@ function getDefaultColumns(view: string): Column[] {
         view === 'senior_organizer_prospects' ||
         view === 'circle_members',
     },
-    {
-      header: 'Applied',
-      longHeader: 'Application Date',
-      data: {
-        type: 'date',
-        data: 'dev_application_date',
-        dateFormat: 'YYYY-MM-DD',
-        correctFormat: true,
-        colWidths: 100,
-        readOnly: true,
-      },
-      enabled:
-        view === 'circle_member_prospects' ||
-        view === 'chapter_member_prospects' ||
-        view === 'organizer_prospects' ||
-        view === 'senior_organizer_prospects',
-    },
 
     {
       header: 'Source',
@@ -504,9 +487,40 @@ function getDefaultColumns(view: string): Column[] {
       data: {
         type: 'checkbox',
         data: 'circle_interest',
-        colWidths: 105,
+        colWidths: 80,
       },
       enabled: view === 'circle_member_prospects',
+    },
+
+    {
+      header: 'First Email (Visit)',
+      longHeader: 'Circle Visitor: Date First Email Sent',
+      data: {
+        type: 'date',
+        data: 'cir_first_email_visit',
+        dateFormat: 'YYYY-MM-DD',
+        correctFormat: true,
+        colWidths: 100,
+      },
+      enabled: view === 'circle_member_prospects',
+    },
+
+    {
+      header: 'Applied',
+      longHeader: 'Application Date',
+      data: {
+        type: 'date',
+        data: 'dev_application_date',
+        dateFormat: 'YYYY-MM-DD',
+        correctFormat: true,
+        colWidths: 100,
+        readOnly: true,
+      },
+      enabled:
+        view === 'circle_member_prospects' ||
+        view === 'chapter_member_prospects' ||
+        view === 'organizer_prospects' ||
+        view === 'senior_organizer_prospects',
     },
 
     {
@@ -552,6 +566,19 @@ function getDefaultColumns(view: string): Column[] {
         colWidths: 100,
       },
       enabled: view === 'senior_organizer_prospects',
+    },
+
+    {
+      header: 'First Email (Member)',
+      longHeader: 'Circle Membership: Date First Email Sent',
+      data: {
+        type: 'date',
+        data: 'cir_first_email',
+        dateFormat: 'YYYY-MM-DD',
+        correctFormat: true,
+        colWidths: 100,
+      },
+      enabled: view === 'circle_member_prospects',
     },
 
     {
@@ -808,18 +835,6 @@ function getDefaultColumns(view: string): Column[] {
         colWidths: 100,
       },
       enabled: view === 'chapter_member_development',
-    },
-    {
-      header: 'First Email',
-      longHeader: 'Circle Membership: Date First Email Sent',
-      data: {
-        type: 'date',
-        data: 'cir_first_email',
-        dateFormat: 'YYYY-MM-DD',
-        correctFormat: true,
-        colWidths: 100,
-      },
-      enabled: view === 'circle_member_prospects',
     },
 
     {

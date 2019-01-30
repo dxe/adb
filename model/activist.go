@@ -79,6 +79,7 @@ SELECT
   cm_approval_email,
   cm_warning_email,
   cir_first_email,
+  cir_first_email_visit,
   prospect_organizer,
   prospect_chapter_member,
   circle_agreement,
@@ -296,6 +297,7 @@ type ActivistConnectionData struct {
 	CMApprovalEmail       sql.NullString `db:"cm_approval_email"`
 	CMWarningEmail        sql.NullString `db:"cm_warning_email"`
 	CirFirstEmail         sql.NullString `db:"cir_first_email"`
+	CirFirstEmailVisit    sql.NullString `db:"cir_first_email_visit"`
 	ProspectOrganizer     bool           `db:"prospect_organizer"`
 	ProspectChapterMember bool           `db:"prospect_chapter_member"`
 	CircleAgreement       bool           `db:"circle_agreement"`
@@ -372,6 +374,7 @@ type ActivistJSON struct {
 	CMApprovalEmail       string `json:"cm_approval_email"`
 	CMWarningEmail        string `json:"cm_warning_email"`
 	CirFirstEmail         string `json:"cir_first_email"`
+	CirFirstEmailVisit    string `json:"cir_first_email_visit"`
 	ProspectOrganizer     bool   `json:"prospect_organizer"`
 	ProspectChapterMember bool   `json:"prospect_chapter_member"`
 	CircleAgreement       bool   `json:"circle_agreement"`
@@ -528,6 +531,10 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 		if a.ActivistConnectionData.CirFirstEmail.Valid {
 			cir_first_email = a.ActivistConnectionData.CirFirstEmail.String
 		}
+		cir_first_email_visit := ""
+		if a.ActivistConnectionData.CirFirstEmailVisit.Valid {
+			cir_first_email_visit = a.ActivistConnectionData.CirFirstEmailVisit.String
+		}
 
 		so_auth := ""
 		if a.ActivistConnectionData.SOAuth.Valid {
@@ -605,6 +612,7 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			CMApprovalEmail:       cm_approval_email,
 			CMWarningEmail:        cm_warning_email,
 			CirFirstEmail:         cir_first_email,
+			CirFirstEmailVisit:    cir_first_email_visit,
 			ProspectOrganizer:     a.ProspectOrganizer,
 			ProspectChapterMember: a.ProspectChapterMember,
 			CircleAgreement:       a.CircleAgreement,
@@ -908,6 +916,7 @@ INSERT INTO activists (
   cm_approval_email,
   cm_warning_email,
   cir_first_email,
+  cir_first_email_visit,
   prospect_organizer,
   prospect_chapter_member,
   circle_agreement,
@@ -960,6 +969,7 @@ INSERT INTO activists (
   :cm_approval_email,
   :cm_warning_email,
   :cir_first_email,
+  :cir_first_email_visit,
   :prospect_organizer,
   :prospect_chapter_member,
   :circle_agreement,
@@ -1032,6 +1042,7 @@ SET
   cm_approval_email = :cm_approval_email,
   cm_warning_email = :cm_warning_email,
   cir_first_email = :cir_first_email,
+  cir_first_email_visit = :cir_first_email_visit,
   prospect_organizer = :prospect_organizer,
   prospect_chapter_member = :prospect_chapter_member,
   circle_agreement = :circle_agreement,
@@ -1320,6 +1331,11 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 		// Not specified so insert null value into database
 		validCirFirstEmail = false
 	}
+	validCirFirstEmailVisit := true
+	if activistJSON.CirFirstEmailVisit == "" {
+		// Not specified so insert null value into database
+		validCirFirstEmailVisit = false
+	}
 	validSOAuth := true
 	if activistJSON.SOAuth == "" {
 		// Not specified so insert null value into database
@@ -1390,6 +1406,7 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			CMApprovalEmail:       sql.NullString{String: strings.TrimSpace(activistJSON.CMApprovalEmail), Valid: validCMApprovalEmail},
 			CMWarningEmail:        sql.NullString{String: strings.TrimSpace(activistJSON.CMWarningEmail), Valid: validCMWarningEmail},
 			CirFirstEmail:         sql.NullString{String: strings.TrimSpace(activistJSON.CirFirstEmail), Valid: validCirFirstEmail},
+			CirFirstEmailVisit:    sql.NullString{String: strings.TrimSpace(activistJSON.CirFirstEmailVisit), Valid: validCirFirstEmailVisit},
 			ProspectOrganizer:     activistJSON.ProspectOrganizer,
 			ProspectChapterMember: activistJSON.ProspectChapterMember,
 			CircleAgreement:       activistJSON.CircleAgreement,
