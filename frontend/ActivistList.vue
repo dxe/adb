@@ -1402,7 +1402,7 @@ export default Vue.extend({
                 return (
                   (el.circle_agreement == 1 || el.circle_interest == 1) &&
                   el.circles_list == '' &&
-                  activist_level != 'Circle Member'
+                  el.activist_level != 'Circle Member'
                 );
               } else if (this.view === 'circle_members') {
                 return el.activist_level == 'Circle Member' || el.circles_list != '';
