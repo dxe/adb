@@ -530,7 +530,6 @@ function getDefaultColumns(view: string): Column[] {
         type: 'checkbox',
         data: 'circle_agreement',
         colWidths: 105,
-        readOnly: true,
       },
       enabled: view === 'circle_member_prospects' || view === 'circle_members',
     },
@@ -1401,7 +1400,9 @@ export default Vue.extend({
                 );
               } else if (this.view === 'circle_member_prospects') {
                 return (
-                  (el.circle_agreement == 1 || el.circle_interest == 1) && el.circles_list == ''
+                  (el.circle_agreement == 1 || el.circle_interest == 1) &&
+                  el.circles_list == '' &&
+                  activist_level != 'Circle Member'
                 );
               } else if (this.view === 'circle_members') {
                 return el.activist_level == 'Circle Member' || el.circles_list != '';
