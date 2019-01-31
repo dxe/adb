@@ -645,8 +645,7 @@ function getDefaultColumns(view: string): Column[] {
         readOnly: true,
         colWidths: 200,
       },
-      enabled:
-        view === 'activist_recruitment' || view === 'leaderboard' || view === 'community_prospects',
+      enabled: view === 'activist_recruitment' || view === 'leaderboard',
     },
     {
       header: 'Total Events',
