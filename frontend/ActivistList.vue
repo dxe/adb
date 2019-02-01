@@ -90,8 +90,8 @@
                 >
               </li>
               <li>
-                <a @click="showModal('hide-activist-modal', currentActivist, activistIndex)"
-                  >Hide Activist</a
+                <!--<a @click="showModal('hide-activist-modal', currentActivist, activistIndex)"
+                  >Hide Activist</a-->
                 >
               </li>
             </ul>
