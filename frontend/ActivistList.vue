@@ -157,7 +157,7 @@
           <div class="modal-body">
             <p>Are you sure you want to hide {{ currentActivist.name }}?</p>
             <p>
-              Hiding an activist hides them from <strong>all pages</strong> but does not delete any
+              Hiding an activist hides them from the activist list page but does not delete any
               event data associated with them. If this activist is a duplicate of another activist,
               you should merge them instead.
             </p>
@@ -645,12 +645,7 @@ function getDefaultColumns(view: string): Column[] {
         readOnly: true,
         colWidths: 200,
       },
-<<<<<<< HEAD
-      enabled:
-        view === 'activist_recruitment' || view === 'leaderboard',
-=======
       enabled: view === 'activist_recruitment' || view === 'leaderboard',
->>>>>>> 85e4817e6af1b852d76a3abe5f3d0c1643e1c065
     },
     {
       header: 'Total Events',
