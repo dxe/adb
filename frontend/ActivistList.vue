@@ -1378,13 +1378,12 @@ export default Vue.extend({
                 return el.active == 1;
               } else if (this.view === 'community_prospects') {
                 return (
-                  el.total_events < 5 &&
                   el.source.includes('Form') &&
                   !el.source.includes('Circle Interest') &&
                   !el.source.includes('Application')
                 );
               } else if (this.view === 'development') {
-                return el.activist_level == 'Organizer';
+                return el.activist_level == 'Organizer' || el.activist_level == 'Senior Organizer';
               } else if (this.view === 'organizer_prospects') {
                 return (
                   el.prospect_organizer == 1 &&
