@@ -230,6 +230,62 @@ LEFT JOIN (
   ON points.activist_id = a.id
 `
 
+const updateActivistExtraBaseQuery string = `UPDATE activists
+SET
+
+  email = :email,
+  facebook = :facebook,
+  location = :location,
+  name = :name,
+  phone = :phone,
+
+  activist_level = :activist_level,
+  source = :source,
+
+  connector = :connector,
+  contacted_date = :contacted_date,
+  training0 = :training0,
+  training1 = :training1,
+  training2 = :training2,
+  training3 = :training3,
+  training4 = :training4,
+  training5 = :training5,
+  training6 = :training6,
+  dev_manager = :dev_manager,
+  dev_interest = :dev_interest,
+  dev_auth = :dev_auth,
+  dev_email_sent = :dev_email_sent,
+  dev_vetted = :dev_vetted,
+  dev_interview = :dev_interview,
+  dev_onboarding = :dev_onboarding,
+  prospect_senior_organizer = :prospect_senior_organizer,
+  so_auth = :so_auth,
+  so_core = :so_core,
+  so_agreement = :so_agreement,
+  so_training = :so_training,
+  so_quiz = :so_quiz,
+  so_connector = :so_connector,
+  so_onboarding = :so_onboarding,
+  cm_first_email = :cm_first_email,
+  cm_approval_email = :cm_approval_email,
+  cm_warning_email = :cm_warning_email,
+  cir_first_email = :cir_first_email,
+  cir_first_email_visit = :cir_first_email_visit,
+  prospect_organizer = :prospect_organizer,
+  prospect_chapter_member = :prospect_chapter_member,
+  circle_agreement = :circle_agreement,
+  escalation = :escalation,
+  interested = :interested,
+  meeting_date = :meeting_date, 
+  referral_friends = :referral_friends,
+  referral_apply = :referral_apply,
+  referral_outlet = :referral_outlet,
+  circle_interest = :circle_interest,
+  interest_date = :interest_date
+
+WHERE
+  id = :id`
+
 const DescOrder int = 2
 const AscOrder int = 1
 
@@ -1120,6 +1176,13 @@ func MergeActivist(db *sqlx.DB, originalActivistID, targetActivistID int) error 
 		return err
 	}
 
+	// Merge Activist data details
+	err = updateMergedActivistDataDetails(tx, originalActivistID, targetActivistID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
 	if err := tx.Commit(); err != nil {
 		tx.Rollback()
 		return errors.Wrapf(err,
@@ -1217,6 +1280,127 @@ func insertMergedActivistAttendance(tx *sqlx.Tx, originalActivistID int, targetA
 
 	return errors.Wrapf(err, "could not insert merged_activist_attendance for originalActivistID: %d, targetActivistID: %d",
 		originalActivistID, targetActivistID)
+}
+
+func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) ActivistExtra {
+	levels := map[string]int{
+		"Supporter":        0,
+		"Circle Member":    1,
+		"Chapter Member":   2,
+		"Organizer":        3,
+		"Senior Organizer": 4,
+	}
+
+	// Check boolean values
+
+	target.ProspectOrganizer = boolMerge(original.ProspectOrganizer, target.ProspectOrganizer)
+	target.ProspectChapterMember = boolMerge(original.ProspectChapterMember, target.ProspectChapterMember)
+	target.CircleAgreement = boolMerge(original.CircleAgreement, target.CircleAgreement)
+	target.DevVetted = boolMerge(original.DevVetted, target.DevVetted)
+	target.DevOnboarding = boolMerge(original.DevOnboarding, target.DevOnboarding)
+	target.ProspectSeniorOrganizer = boolMerge(original.ProspectSeniorOrganizer, target.ProspectSeniorOrganizer)
+	target.SOAgreement = boolMerge(original.SOAgreement, target.SOAgreement)
+	target.SOOnboarding = boolMerge(original.SOOnboarding, target.SOOnboarding)
+	target.CircleInterest = boolMerge(original.CircleInterest, target.CircleInterest)
+
+	// Check string fields for empty values
+
+	target.Email = stringMerge(original.Email, target.Email)
+	target.Phone = stringMerge(original.Phone, target.Phone)
+	target.Location = stringMergeSqlNullString(original.Location, target.Location)
+	target.Facebook = stringMerge(original.Facebook, target.Facebook)
+	target.Connector = stringMerge(original.Connector, target.Connector)
+	target.Source = stringMerge(original.Source, target.Source)
+	target.Training0 = stringMergeSqlNullString(original.Training0, target.Training0)
+	target.Training1 = stringMergeSqlNullString(original.Training1, target.Training1)
+	target.Training2 = stringMergeSqlNullString(original.Training2, target.Training2)
+	target.Training3 = stringMergeSqlNullString(original.Training3, target.Training3)
+	target.Training4 = stringMergeSqlNullString(original.Training4, target.Training4)
+	target.Training5 = stringMergeSqlNullString(original.Training5, target.Training5)
+	target.Training6 = stringMergeSqlNullString(original.Training6, target.Training6)
+	target.DevManager = stringMerge(original.DevManager, target.DevManager)
+	target.DevInterest = stringMerge(original.DevInterest, target.DevInterest)
+	target.DevAuth = stringMergeSqlNullString(original.DevAuth, target.DevAuth)
+	target.DevEmailSent = stringMergeSqlNullString(original.DevEmailSent, target.DevEmailSent)
+	target.DevInterview = stringMergeSqlNullString(original.DevInterview, target.DevInterview)
+	//target.ApplicationDate = stringMergeSqlNullTime(original.ApplicationDate, target.ApplicationDate)
+	target.CMFirstEmail = stringMergeSqlNullString(original.CMFirstEmail, target.CMFirstEmail)
+	target.CMApprovalEmail = stringMergeSqlNullString(original.CMApprovalEmail, target.CMApprovalEmail)
+	target.CMWarningEmail = stringMergeSqlNullString(original.CMWarningEmail, target.CMWarningEmail)
+	target.CirFirstEmail = stringMergeSqlNullString(original.CirFirstEmail, target.CirFirstEmail)
+	target.SOAuth = stringMergeSqlNullString(original.SOAuth, target.SOAuth)
+	target.SOCore = stringMergeSqlNullString(original.SOCore, target.SOCore)
+	target.SOTraining = stringMergeSqlNullString(original.SOTraining, target.SOTraining)
+	target.SOQuiz = stringMergeSqlNullString(original.SOQuiz, target.SOQuiz)
+	target.SOConnector = stringMerge(original.SOConnector, target.SOConnector)
+	target.ReferralFriends = stringMerge(original.ReferralFriends, target.ReferralFriends)
+	target.ReferralApply = stringMerge(original.ReferralApply, target.ReferralApply)
+	target.ReferralOutlet = stringMerge(original.ReferralOutlet, target.ReferralOutlet)
+	//target.InterestDate = stringMerge(original.InterestDate, target.InterestDate)
+	target.CirFirstEmailVisit = stringMergeSqlNullString(original.CirFirstEmailVisit, target.CirFirstEmailVisit)
+
+	// Check Activist Levels
+	if len(original.ActivistLevel) != 0 && len(target.ActivistLevel) != 0 {
+		if levels[original.ActivistLevel] > levels[target.ActivistLevel] {
+			target.ActivistLevel = original.ActivistLevel
+		}
+	} else {
+		if len(original.ActivistLevel) != 0 {
+			target.ActivistLevel = original.ActivistLevel
+		}
+	}
+
+	return target
+}
+
+func boolMerge(original bool, target bool) bool {
+	return target || original
+}
+
+func stringMerge(original string, target string) string {
+	if len(target) == 0 && len(original) != 0 {
+		return original
+	}
+
+	return target
+}
+
+func stringMergeSqlNullString(original sql.NullString, target sql.NullString) sql.NullString {
+	if !target.Valid && original.Valid {
+		return original
+	}
+
+	return target
+}
+
+func updateMergedActivistDataDetails(tx *sqlx.Tx, originalActivistID int, targetActivistID int) error {
+	// Merge details of original activist into target activist
+	// Favor booleans that are set to TRUE, and pull in missing data from original activist to target; when both
+	// activists have data for the same field, we should use the target activist's data.
+
+	query := selectActivistExtraBaseQuery + " WHERE id = ?"
+
+	var originalActivist = new(ActivistExtra)
+	err := tx.Get(originalActivist, query, originalActivistID)
+	if err != nil || originalActivist == nil {
+		return errors.Wrapf(err, "failed to get activist with id %d", originalActivistID)
+	}
+
+	var targetActivist = new(ActivistExtra)
+	err = tx.Get(targetActivist, query, targetActivistID)
+	if err != nil || (targetActivist == nil) {
+		return errors.Wrapf(err, "failed to get activist with id %d", targetActivistID)
+	}
+
+	mergedActivist := getMergeActivistWinner(*originalActivist, *targetActivist)
+
+	_, err = tx.NamedExec(updateActivistExtraBaseQuery, mergedActivist)
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to update activist with id %d", targetActivistID)
+	}
+
+	return nil
 }
 
 func GetAutocompleteNames(db *sqlx.DB) []string {

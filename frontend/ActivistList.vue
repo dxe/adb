@@ -235,6 +235,7 @@ interface Activist {
   total_events: number;
   source: string;
   interest_date: string;
+  facebook: string;
 
   // To appease our clunky sorting functions.
   // TODO(mdempsky): Remove.
@@ -1279,9 +1280,18 @@ export default Vue.extend({
           flashMessage(this.currentActivist.name + ' was merged into ' + targetActivistName);
 
           // Remove activist from list.
-          this.removeActivist(currentActivistID);
+          //this.removeActivist(currentActivistID);
 
-          this.hideModal();
+          //this.hideModal();
+
+          // Force view to refresh in order to pick
+          // up changes to target activist data.
+          // TOOD: Handle this better. Perhaps return updated
+          // activist from backend call.
+          // This is necessary because it doesn't appear that
+          // the Vue.js component is handling data refreshing
+          // properly; e.g. the "facebook" field is not updated.
+          location.reload();
         },
         error: (err) => {
           this.disableConfirmButton = false;
