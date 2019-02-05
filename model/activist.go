@@ -1244,6 +1244,51 @@ ORDER BY MAX(e.date) DESC`)
 	return ret
 }
 
+type ActivistBasicInfoJSON struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	Phone string `json:"phone"`
+}
+
+type ActivistBasicInfo struct {
+	Name  string `db:"name"`
+	Email string `db:"email"`
+	Phone string `db:"phone"`
+}
+
+func (activist *ActivistBasicInfo) ToJSON() ActivistBasicInfoJSON {
+	return ActivistBasicInfoJSON{
+		Name:  activist.Name,
+		Email: activist.Email,
+		Phone: activist.Phone,
+	}
+}
+
+func GetActivistListBasicJSON(db *sqlx.DB) []ActivistBasicInfoJSON {
+	activists := []ActivistBasicInfo{}
+
+	// Order the activists by the last even they've been to.
+	err := db.Select(&activists, `
+SELECT a.name, a.email, a.phone FROM activists a
+LEFT OUTER JOIN event_attendance ea ON a.id = ea.activist_id
+LEFT OUTER JOIN events e ON e.id = ea.event_id
+WHERE a.hidden = 0
+GROUP BY a.name
+ORDER BY MAX(e.date) DESC`)
+	if err != nil {
+		// TODO: return error
+		panic(err)
+	}
+
+	activistsJSON := make([]ActivistBasicInfoJSON, 0, len(activists))
+
+	for _, activist := range activists {
+		activistsJSON = append(activistsJSON, activist.ToJSON())
+	}
+
+	return activistsJSON
+}
+
 func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 	var activistJSON ActivistJSON
 	err := json.NewDecoder(body).Decode(&activistJSON)
