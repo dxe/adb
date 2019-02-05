@@ -399,9 +399,10 @@ type GetActivistOptions struct {
 }
 
 var validOrderFields = map[string]struct{}{
-	"a.name":       struct{}{},
-	"last_event":   struct{}{},
-	"total_points": struct{}{},
+	"a.name":        struct{}{},
+	"last_event":    struct{}{},
+	"total_points":  struct{}{},
+	"interest_date": struct{}{},
 }
 
 type ActivistRangeOptionsJSON struct {

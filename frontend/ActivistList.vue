@@ -1482,12 +1482,18 @@ export default Vue.extend({
     },
     listActivistsParameters() {
       var order_field = 'last_event';
+
+      if (this.view === 'leaderboard') {
+        order_field = 'total_points';
+      } else if (this.view === 'community_prospects') {
+        order_field = 'interest_date';
+      } else {
+        order_field = 'last_event';
+      }
+
       return {
         order: DescOrder,
-        order_field:
-          this.view === 'leaderboard' || this.view === 'action_team'
-            ? 'total_points'
-            : 'last_event',
+        order_field: order_field,
         last_event_date_to: this.lastEventDateTo,
         last_event_date_from: this.lastEventDateFrom,
       };
