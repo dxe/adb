@@ -1398,12 +1398,10 @@ export default Vue.extend({
                 );
               } else if (this.view === 'circle_member_prospects') {
                 return (
-                  (el.circle_agreement == 1 || el.circle_interest == 1) &&
-                  el.circles_list == '' &&
-                  el.activist_level != 'Circle Member'
+                  (el.circle_agreement == 1 || el.circle_interest == 1) && el.circles_list == ''
                 );
               } else if (this.view === 'circle_members') {
-                return el.activist_level == 'Circle Member' || el.circles_list != '';
+                return el.circles_list != '';
               } else if (this.view === 'senior_organizer_prospects') {
                 return el.prospect_senior_organizer == 1 && el.activist_level != 'Senior Organizer';
               } else if (this.view === 'senior_organizer_development') {
