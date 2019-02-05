@@ -493,7 +493,7 @@ function getDefaultColumns(view: string): Column[] {
     },
 
     {
-      header: 'First Email (Visit)',
+      header: 'First Contact (Visit)',
       longHeader: 'Circle Visitor: Date First Email Sent',
       data: {
         type: 'date',
@@ -572,7 +572,7 @@ function getDefaultColumns(view: string): Column[] {
       longHeader: 'Circle Membership: Date First Email Sent',
       data: {
         type: 'date',
-        data: 'cir_first_email',
+        data: 'cir_first_contact',
         dateFormat: 'YYYY-MM-DD',
         correctFormat: true,
         colWidths: 100,
