@@ -42,14 +42,27 @@
           <b>{{ connections ? 'Connectees' : 'Attendees' }}</b> <br />
         </label>
         <div id="attendee-rows">
-          <input
-            class="attendee-input form-control"
-            v-for="(attendee, index) in attendees"
-            :key="index"
-            v-model="attendees[index]"
-            v-on:input="changed('input', index)"
-            v-on:awesomplete-selectcomplete="changed('select', index)"
-          />
+          <div class="row-container form-group row" v-for="(attendee, index) in attendees">
+            <div class="col-sm-11">
+              <input
+                class="attendee-input form-control"
+                :key="index"
+                v-model="attendees[index]"
+                v-on:input="changed('input', index)"
+                v-on:awesomplete-selectcomplete="changed('select', index)"
+              />
+            </div>
+            <span
+              v-if="1 == 1"
+              style="color: green; padding-top: 7px;"
+              class="glyphicon glyphicon-check col-form-label col-sm-1"
+            ></span>
+            <span
+              v-if="1 == 2"
+              style="color: red; padding-top: 7px;"
+              class="glyphicon glyphicon-asterisk col-form-label col-sm-1"
+            ></span>
+          </div>
         </div>
 
         <br />
@@ -187,7 +200,9 @@ export default Vue.extend({
 
   updated() {
     this.$nextTick(() => {
-      for (let row of $('#attendee-rows > input.attendee-input')) {
+      for (let row of $(
+        '#attendee-rows > div.row-container > div.col-sm-10 > input.attendee-input',
+      )) {
         new Awesomplete(row, {
           filter: nameFilter,
           list: this.allActivists,
