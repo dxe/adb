@@ -89,11 +89,6 @@
                   >Merge Activist</a
                 >
               </li>
-              <li>
-                <!--<a @click="showModal('hide-activist-modal', currentActivist, activistIndex)"
-                  >Hide Activist</a-->
-                >
-              </li>
             </ul>
           </div>
         </div>
