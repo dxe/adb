@@ -446,16 +446,15 @@ export default Vue.extend({
         method: 'GET',
         dataType: 'json',
         success: (data) => {
-          var activistNames = data.activists;
+          var activistData = data.activists;
+          console.log(activistData);
           // Clear current activist name array and set before re-adding
           this.allActivists.length = 0;
           this.allActivistsSet.clear();
-          for (let name of data.activists) {
-            this.allActivists.push(name.name);
-            this.allActivistsSet.add(name.name);
+          for (let activist of activistData) {
+            this.allActivists.push(activist.name);
+            this.allActivistsSet.add(activist.name);
           }
-          console.log('allActivists: ' + this.allActivists);
-          console.log('allActivistsSet: ' + this.allActivistsSet);
           this.changed('autocomplete', -1);
         },
         error: () => {
