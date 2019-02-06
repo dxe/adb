@@ -201,7 +201,7 @@ export default Vue.extend({
   updated() {
     this.$nextTick(() => {
       for (let row of $(
-        '#attendee-rows > div.row-container > div.col-sm-10 > input.attendee-input',
+        '#attendee-rows > div.row-container > div.col-sm-11 > input.attendee-input',
       )) {
         new Awesomplete(row, {
           filter: nameFilter,
@@ -442,18 +442,20 @@ export default Vue.extend({
     // TODO(mdempsky): Move into utility file.
     updateAutocompleteNames() {
       $.ajax({
-        url: '/activist_names/get',
+        url: '/activist/list_basic',
         method: 'GET',
         dataType: 'json',
         success: (data) => {
-          var activistNames = data.activist_names;
+          var activistNames = data.activists;
           // Clear current activist name array and set before re-adding
           this.allActivists.length = 0;
           this.allActivistsSet.clear();
-          for (let name of data.activist_names) {
-            this.allActivists.push(name);
-            this.allActivistsSet.add(name);
+          for (let name of data.activists) {
+            this.allActivists.push(name.name);
+            this.allActivistsSet.add(name.name);
           }
+          console.log('allActivists: ' + this.allActivists);
+          console.log('allActivistsSet: ' + this.allActivistsSet);
           this.changed('autocomplete', -1);
         },
         error: () => {
