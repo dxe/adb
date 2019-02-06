@@ -251,6 +251,7 @@ SET
   training4 = :training4,
   training5 = :training5,
   training6 = :training6,
+  dev_application_date = :dev_application_date,
   dev_manager = :dev_manager,
   dev_interest = :dev_interest,
   dev_auth = :dev_auth,
@@ -1324,7 +1325,7 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 	target.DevAuth = stringMergeSqlNullString(original.DevAuth, target.DevAuth)
 	target.DevEmailSent = stringMergeSqlNullString(original.DevEmailSent, target.DevEmailSent)
 	target.DevInterview = stringMergeSqlNullString(original.DevInterview, target.DevInterview)
-	//target.ApplicationDate = stringMergeSqlNullTime(original.ApplicationDate, target.ApplicationDate)
+	target.ApplicationDate = stringMergeSqlNullTime(original.ApplicationDate, target.ApplicationDate)
 	target.CMFirstEmail = stringMergeSqlNullString(original.CMFirstEmail, target.CMFirstEmail)
 	target.CMApprovalEmail = stringMergeSqlNullString(original.CMApprovalEmail, target.CMApprovalEmail)
 	target.CMWarningEmail = stringMergeSqlNullString(original.CMWarningEmail, target.CMWarningEmail)
@@ -1337,7 +1338,7 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 	target.ReferralFriends = stringMerge(original.ReferralFriends, target.ReferralFriends)
 	target.ReferralApply = stringMerge(original.ReferralApply, target.ReferralApply)
 	target.ReferralOutlet = stringMerge(original.ReferralOutlet, target.ReferralOutlet)
-	//target.InterestDate = stringMerge(original.InterestDate, target.InterestDate)
+	target.InterestDate = stringMergeSqlNullString(original.InterestDate, target.InterestDate)
 	target.CirFirstEmailVisit = stringMergeSqlNullString(original.CirFirstEmailVisit, target.CirFirstEmailVisit)
 
 	// Check Activist Levels
@@ -1367,6 +1368,14 @@ func stringMerge(original string, target string) string {
 }
 
 func stringMergeSqlNullString(original sql.NullString, target sql.NullString) sql.NullString {
+	if !target.Valid && original.Valid {
+		return original
+	}
+
+	return target
+}
+
+func stringMergeSqlNullTime(original mysql.NullTime, target mysql.NullTime) mysql.NullTime {
 	if !target.Valid && original.Valid {
 		return original
 	}
