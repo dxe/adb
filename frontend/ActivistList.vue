@@ -11,7 +11,7 @@
       <button
         class="btn-link"
         @click="toggleShowOptions('filters')"
-        v-if="view == 'all_activists' || view == 'activist_pool'"
+        v-if="view == 'all_activists' || view == 'activist_pool' || view == 'community_prospects'"
       >
         <span v-if="showOptions !== 'filters'">+</span
         ><span v-if="showOptions === 'filters'">-</span> Filters
@@ -36,17 +36,17 @@
           <label>Last Event To:</label>
           <input v-model="lastEventDateTo" class="form-control filter-margin" type="date" />
         </div>
-        <!--         <div v-if="view === 'action_team'">
-          <label>Action Team:</label>
-          <select id="filterActionTeam" v-model="filterActionTeam" class="form-control filter-margin">
+        <div v-if="view === 'community_prospects'">
+          <label>Interest:</label>
+          <select id="filterInterest" v-model="filterInterest" class="form-control filter-margin">
             <option>All</option>
-            <option>Communications</option>
+            <option>Sanctuary</option>
             <option>Community</option>
-            <option>Development</option>
-            <option>Direct Action</option>
-            <option>Finance</option>
+            <option>Outreach</option>
+            <option>Protest</option>
+            <option>Trainings</option>
           </select>
-        </div> -->
+        </div>
       </div>
 
       <div v-if="showOptions === 'columns'">
@@ -223,8 +223,7 @@ interface Activist {
   prospect_organizer: number;
   prospect_chapter_member: number;
   circle_agreement: number;
-  action_team_focus: string;
-  action_team_focus_secondary: string;
+  dev_interest: string;
   circle_interest: number;
   circles_list: string;
   total_events: number;
@@ -1348,40 +1347,31 @@ export default Vue.extend({
               if (this.view === 'activist_pool') {
                 return el.activist_level == 'Supporter';
               }
-              //// ACTION TEAM IS DEFUNCT, BUT WOULD LIKE TO KEEP THIS CODE AROUND FOR SIMILAR THINGS IN THE FUTURE:
-              // else if (this.view === 'action_team') {
-              //   var selectedActionTeam = $('#filterActionTeam :selected').text();
 
-              //   if (
-              //     selectedActionTeam != 'All' &&
-              //     selectedActionTeam != '' &&
-              //     selectedActionTeam != null
-              //   ) {
-              //     return (
-              //       (el.activist_level == 'Action Team' ||
-              //         el.activist_level == 'Organizer' ||
-              //         el.activist_level == 'Senior Organizer') &&
-              //       (el.action_team_focus == selectedActionTeam ||
-              //         el.action_team_focus_secondary
-              //           .toLowerCase()
-              //           .indexOf(selectedActionTeam.toLowerCase()) != -1)
-              //     );
-              //   } else {
-              //     return (
-              //       el.activist_level == 'Action Team' ||
-              //       el.activist_level == 'Organizer' ||
-              //       el.activist_level == 'Senior Organizer'
-              //     );
-              //   }
-              // }
-              else if (this.view === 'leaderboard') {
+              // filtering for community prospects
+              else if (this.view === 'community_prospects') {
+                var selectedInterest = $('#filterInterest :selected').text();
+
+                if (
+                  selectedInterest != 'All' &&
+                  selectedInterest != '' &&
+                  selectedInterest != null
+                ) {
+                  return (
+                    el.source.includes('Form') &&
+                    !el.source.includes('Circle Interest') &&
+                    !el.source.includes('Application') &&
+                    el.dev_interest.toLowerCase().indexOf(selectedInterest.toLowerCase()) != -1
+                  );
+                } else {
+                  return (
+                    el.source.includes('Form') &&
+                    !el.source.includes('Circle Interest') &&
+                    !el.source.includes('Application')
+                  );
+                }
+              } else if (this.view === 'leaderboard') {
                 return el.active == 1;
-              } else if (this.view === 'community_prospects') {
-                return (
-                  el.source.includes('Form') &&
-                  !el.source.includes('Circle Interest') &&
-                  !el.source.includes('Application')
-                );
               } else if (this.view === 'development') {
                 return el.activist_level == 'Organizer' || el.activist_level == 'Senior Organizer';
               } else if (this.view === 'organizer_prospects') {
@@ -1585,7 +1575,8 @@ export default Vue.extend({
       columns: getDefaultColumns(this.view),
       lastEventDateFrom: initDateFrom,
       lastEventDateTo: initDateTo,
-      filterActionTeam: 'All',
+      filterInterest: 'All',
+      filterSource: '',
       showOptions: '',
       search: '',
       loading: false,
@@ -1657,7 +1648,7 @@ export default Vue.extend({
     lastEventDateTo() {
       this.loadActivists();
     },
-    filterActionTeam() {
+    filterInterest() {
       this.loadActivists();
     },
   },
