@@ -546,7 +546,7 @@ function getDefaultColumns(view: string): Column[] {
         data: 'prospect_senior_organizer',
         colWidths: 100,
       },
-      enabled: view === 'senior_organizer_prospects',
+      enabled: view === 'senior_organizer_prospects' || view === 'development',
     },
 
     {
@@ -582,7 +582,7 @@ function getDefaultColumns(view: string): Column[] {
         readOnly: true,
         colWidths: 200,
       },
-      enabled: view === 'action_team',
+      enabled: view === 'action_team' || view === 'organizer_prospects' || view === 'development',
     },
     {
       header: 'Circles',
@@ -592,7 +592,8 @@ function getDefaultColumns(view: string): Column[] {
         readOnly: true,
         colWidths: 200,
       },
-      enabled: view === 'circle_members',
+      enabled:
+        view === 'circle_members' || view === 'organizer_prospects' || view === 'development',
     },
     {
       header: 'WG or Cir. Member',
@@ -603,7 +604,10 @@ function getDefaultColumns(view: string): Column[] {
         data: 'wg_or_cir_member',
         colWidths: 100,
       },
-      enabled: view === 'chapter_member_prospects' || view === 'chapter_member_development',
+      enabled:
+        view === 'chapter_member_prospects' ||
+        view === 'chapter_member_development' ||
+        view === 'organizer_prospects',
     },
     {
       header: 'First Event',
@@ -668,7 +672,9 @@ function getDefaultColumns(view: string): Column[] {
         view === 'development' ||
         view === 'chapter_member_prospects' ||
         view === 'chapter_member_development' ||
-        view === 'senior_organizer_development',
+        view === 'organizer_prospects' ||
+        view === 'senior_organizer_development' ||
+        view === 'development',
     },
     {
       header: 'Connector',
@@ -706,7 +712,10 @@ function getDefaultColumns(view: string): Column[] {
         correctFormat: true,
         colWidths: 100,
       },
-      enabled: view === 'action_team' || view === 'chapter_member_prospects',
+      enabled:
+        view === 'action_team' ||
+        view === 'chapter_member_prospects' ||
+        view === 'organizer_prospects',
     },
     {
       header: 'Consent&A-O',
@@ -718,7 +727,7 @@ function getDefaultColumns(view: string): Column[] {
         correctFormat: true,
         colWidths: 100,
       },
-      enabled: view === 'development',
+      enabled: view === 'development' || view === 'organizer_prospects',
     },
     {
       header: 'Nuts&Bolts',
@@ -730,11 +739,11 @@ function getDefaultColumns(view: string): Column[] {
         correctFormat: true,
         colWidths: 100,
       },
-      enabled: view === 'development',
+      enabled: view === 'development' || view === 'organizer_prospects',
     },
     {
-      header: 'Exp. Cmnty',
-      longHeader: 'Date Attended Training: Expanding Our Community',
+      header: 'Talk About AR',
+      longHeader: 'Date Attended Training: How To Talk About Animal Rights',
       data: {
         type: 'date',
         data: 'training3',
@@ -742,7 +751,7 @@ function getDefaultColumns(view: string): Column[] {
         correctFormat: true,
         colWidths: 100,
       },
-      enabled: view === 'development',
+      enabled: view === 'development' || view === 'organizer_prospects',
     },
     {
       header: 'Healthy Cmnty',
@@ -754,7 +763,7 @@ function getDefaultColumns(view: string): Column[] {
         correctFormat: true,
         colWidths: 100,
       },
-      enabled: view === 'development',
+      enabled: view === 'development' || view === 'organizer_prospects',
     },
     {
       header: 'Emergent Ldshp',
@@ -766,7 +775,7 @@ function getDefaultColumns(view: string): Column[] {
         correctFormat: true,
         colWidths: 100,
       },
-      enabled: view === 'development',
+      enabled: view === 'development' || view === 'organizer_prospects',
     },
     {
       header: 'Histry&Vision',
@@ -778,7 +787,7 @@ function getDefaultColumns(view: string): Column[] {
         correctFormat: true,
         colWidths: 100,
       },
-      enabled: view === 'development',
+      enabled: view === 'development' || view === 'organizer_prospects',
     },
     {
       header: 'First Email',
@@ -1594,6 +1603,13 @@ export default Vue.extend({
         columns.push(this.columns[i].data);
         columnHeaders.push(this.columns[i].header);
       }
+
+      if (this.view === 'development' || this.view === 'organizer_prospects') {
+        var fixedCol = 2;
+      } else {
+        var fixedCol = 0;
+      }
+
       return {
         columns: columns,
         colHeaders: columnHeaders,
@@ -1610,7 +1626,7 @@ export default Vue.extend({
         viewportRowRenderingOffset: 100,
         viewportColumnRenderingOffset: 20,
         wordWrap: false,
-        //fixedColumnsLeft: 2, // this causes too much havoc
+        fixedColumnsLeft: fixedCol, // this causes havoc
       };
     },
     hotTable(): Handsontable {
