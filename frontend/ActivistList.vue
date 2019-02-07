@@ -489,19 +489,6 @@ function getDefaultColumns(view: string): Column[] {
     },
 
     {
-      header: 'First Contact (Visit)',
-      longHeader: 'Circle Visitor: Date First Email Sent',
-      data: {
-        type: 'date',
-        data: 'cir_first_email_visit',
-        dateFormat: 'YYYY-MM-DD',
-        correctFormat: true,
-        colWidths: 100,
-      },
-      enabled: view === 'circle_member_prospects',
-    },
-
-    {
       header: 'Applied',
       longHeader: 'Application Date',
       data: {
@@ -513,7 +500,6 @@ function getDefaultColumns(view: string): Column[] {
         readOnly: true,
       },
       enabled:
-        view === 'circle_member_prospects' ||
         view === 'chapter_member_prospects' ||
         view === 'organizer_prospects' ||
         view === 'senior_organizer_prospects',
@@ -564,8 +550,8 @@ function getDefaultColumns(view: string): Column[] {
     },
 
     {
-      header: 'First Contact (Member)',
-      longHeader: 'Circle Membership: Date First Email Sent',
+      header: 'Contacted',
+      longHeader: 'Circle Membership: Date Contacted',
       data: {
         type: 'date',
         data: 'cir_first_email',
@@ -1402,9 +1388,7 @@ export default Vue.extend({
                   (el.activist_level == 'Supporter' || el.activist_level == 'Circle Member')
                 );
               } else if (this.view === 'circle_member_prospects') {
-                return (
-                  (el.circle_agreement == 1 || el.circle_interest == 1) && el.circles_list == ''
-                );
+                return el.circle_interest == 1 && el.circles_list == '';
               } else if (this.view === 'circle_members') {
                 return el.circles_list != '';
               } else if (this.view === 'senior_organizer_prospects') {
