@@ -297,6 +297,11 @@ export default Vue.extend({
         }
       }
 
+      for (let i = 0; i < this.attendees.length; i++) {
+        this.showIndicatorForAttendee[JSON.stringify(this.attendees[i])] = true;
+        this.$forceUpdate();
+      }
+
       // If event came from selecting an autocomplete suggestion,
       // then move focus to the next input.
       if (x == 'select') {
