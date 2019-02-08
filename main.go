@@ -163,7 +163,6 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/event/list", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.EventListHandler))
 	router.Handle("/event/delete", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.EventDeleteHandler))
 	router.Handle("/activist/list", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.ActivistListHandler))
-	router.Handle("/activist/list_basic", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.ActivistListBasicHandler))
 	router.Handle("/activist/list_range", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.ActivistInfiniteScrollHandler))
 	router.Handle("/activist/save", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.ActivistSaveHandler))
 	router.Handle("/activist/hide", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.ActivistHideHandler))
@@ -1082,17 +1081,6 @@ func (c MainController) ActivistListHandler(w http.ResponseWriter, r *http.Reque
 		"status":        "success",
 		"activist_list": activists,
 	})
-}
-
-func (c MainController) ActivistListBasicHandler(w http.ResponseWriter, r *http.Request) {
-	activists := model.GetActivistListBasicJSON(c.db)
-
-	out := map[string]interface{}{
-		"status":    "success",
-		"activists": activists,
-	}
-
-	writeJSON(w, out)
 }
 
 func (c MainController) UserListHandler(w http.ResponseWriter, r *http.Request) {
