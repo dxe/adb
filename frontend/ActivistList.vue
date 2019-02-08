@@ -356,7 +356,7 @@ function getDefaultColumns(view: string): Column[] {
         data: 'phone',
         colWidths: 100,
       },
-      enabled: view === 'community_prospects',
+      enabled: view === 'community_prospects' || view === 'all_activists',
     },
     {
       header: 'Location',
