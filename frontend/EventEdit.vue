@@ -123,8 +123,8 @@ export default Vue.extend({
 
       allActivists: [] as string[],
       allActivistsSet: new Set<string>(),
-      allActivistsFull: [] as object[],
-      showIndicatorForAttendee: {} as object,
+      allActivistsFull: [] as any[],
+      showIndicatorForAttendee: {} as any,
     };
   },
   computed: {
@@ -154,6 +154,12 @@ export default Vue.extend({
           this.type = event.event_type || '';
           this.date = event.event_date || '';
           this.attendees = event.attendees || [];
+
+          // ensure we show the indicators for each attendee
+          for (let i = 0; i < this.attendees.length; i++) {
+            this.showIndicatorForAttendee[JSON.stringify(this.attendees[i])] = true;
+            this.$forceUpdate();
+          }
 
           this.oldName = this.name;
           this.oldType = this.type;
