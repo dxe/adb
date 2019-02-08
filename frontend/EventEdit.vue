@@ -43,7 +43,7 @@
         </label>
         <div id="attendee-rows">
           <div class="row-container form-group row" v-for="(attendee, index) in attendees">
-            <div class="col-sm-11">
+            <div class="col-xs-11">
               <input
                 class="attendee-input form-control"
                 :key="index"
@@ -54,13 +54,13 @@
             </div>
             <span
               v-if="attendee && shouldShowIndicator(attendee) && hasEmailAndPhone(attendee)"
-              style="color: green; padding-top: 7px;"
-              class="glyphicon glyphicon-check col-form-label col-sm-1"
+              class="glyphicon glyphicon-check col-form-label col-xs-1 indicator-padding green"
+              title="Contact info found"
             ></span>
             <span
               v-if="attendee && shouldShowIndicator(attendee) && !hasEmailAndPhone(attendee)"
-              style="color: red; padding-top: 7px;"
-              class="glyphicon glyphicon-asterisk col-form-label col-sm-1"
+              class="glyphicon glyphicon-asterisk col-form-label col-xs-1 indicator-padding red"
+              title="Missing email or phone number"
             ></span>
           </div>
         </div>
@@ -208,7 +208,7 @@ export default Vue.extend({
   updated() {
     this.$nextTick(() => {
       for (let row of $(
-        '#attendee-rows > div.row-container > div.col-sm-11 > input.attendee-input',
+        '#attendee-rows > div.row-container > div.col-xs-11 > input.attendee-input',
       )) {
         new Awesomplete(row, {
           filter: nameFilter,
