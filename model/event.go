@@ -16,13 +16,14 @@ import (
 const EventDateLayout string = "2006-01-02"
 
 var EventTypes map[string]bool = map[string]bool{
-	"Working Group": true,
-	"Community":     true,
-	"Protest":       true,
-	"Outreach":      true,
-	"Key Event":     true,
-	"Sanctuary":     true,
-	"Connection":    true,
+	"Action":                 true,
+	"Circle":                 true,
+	"Community":              true,
+	"Frontline Surveillance": true,
+	"Meeting":                true,
+	"Outreach":               true,
+	"Sanctuary":              true,
+	"Training":               true,
 }
 
 /** Type Definitions */

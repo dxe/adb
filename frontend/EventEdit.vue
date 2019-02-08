@@ -15,12 +15,14 @@
           <label for="eventType"> <b>Event type</b> <br /> </label>
           <select id="eventType" class="form-control" v-model="type">
             <option disabled selected value>-- select an option --</option>
-            <option value="Working Group">Working Group</option>
-            <option value="Protest">Protest</option>
+            <option value="Action">Action</option>
+            <option value="Circle">Circle</option>
             <option value="Community">Community</option>
-            <option value="Outreach">Outreach</option>
-            <option value="Key Event">Key Event</option>
-            <option value="Sanctuary">Sanctuary (Rescue/Work Day)</option>
+            <option value="Frontline Surveillance">Frontline Surveillance</option>
+            <option value="Meeting">Meeting</option>
+            <option value="Meeting">Outreach</option>
+            <option value="Sanctuary">Sanctuary</option>
+            <option value="Meeting">Training</option>
           </select>
           <br />
         </template>

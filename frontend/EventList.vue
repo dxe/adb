@@ -35,12 +35,14 @@
         <label for="event-type">Type:</label>
         <select id="event-type" class="form-control filter-margin" v-model="search.type">
           <option value="noConnections">All</option>
-          <option value="Working Group">Working Group</option>
+          <option value="Action">Action</option>
+          <option value="Circle">Circle</option>
           <option value="Community">Community</option>
-          <option value="Protest">Protest</option>
-          <option value="Outreach">Outreach</option>
+          <option value="Frontline Surveillance">Frontline Surveillance</option>
+          <option value="Meeting">Meeting</option>
+          <option value="Meeting">Outreach</option>
           <option value="Sanctuary">Sanctuary</option>
-          <option value="Key Event">Key Event</option>
+          <option value="Meeting">Training</option>
         </select>
       </template>
 
