@@ -144,34 +144,6 @@ SELECT
   IFNULL((Community + Outreach + WorkingGroup + Sanctuary + Protest + KeyEvent), 0) as total_points,
   IF(@last_event >= (now() - interval 30 day), 1, 0) as active,
 
-  -- Calculate MPI
-  IF(
-    (a.id IN (
-      SELECT activist_id FROM (
-        SELECT
-          ea.activist_id AS activist_id,
-          max((CASE
-                WHEN ((e.event_type = 'protest') OR (e.event_type = 'key event') OR (e.event_type = 'outreach') OR (e.event_type = 'sanctuary'))
-                THEN '1' ELSE '0'
-          END)) AS is_protest,
-          max((CASE
-                WHEN (e.event_type = 'community') THEN '1' ELSE '0'
-          END)) AS is_community
-        FROM
-          event_attendance ea
-        JOIN events e ON ea.event_id = e.id
-        JOIN activists a ON ea.activist_id = a.id
-        WHERE (
-          (e.date BETWEEN (now() - INTERVAL 30 DAY) AND now())
-          AND (a.hidden <> 1)
-        )
-        GROUP BY ea.activist_id
-        HAVING (
-          (is_protest = '1')
-          AND (is_community = '1')
-        )
-      ) temp_mpi)
-    ), 1, 0) AS mpi,
   IFNULL(
     (SELECT
       GROUP_CONCAT(DISTINCT wg.name SEPARATOR ', ')
@@ -198,7 +170,9 @@ SELECT
   	),"") AS last_connection,
 
   	IF((CONCAT( (IFNULL((SELECT GROUP_CONCAT(DISTINCT wg.name SEPARATOR ', ') FROM working_groups wg JOIN working_group_members wgm ON wg.id = wgm.working_group_id WHERE   wgm.activist_id = a.id and wgm.non_member_on_mailing_list = 0), '')), (IFNULL( (SELECT   GROUP_CONCAT(DISTINCT circles.name SEPARATOR ', ') FROM circles JOIN circle_members ON circles.id = circle_members.circle_id WHERE   circle_members.activist_id = a.id), '')))) <> "","1","0")
-  	as wg_or_cir_member
+  	as wg_or_cir_member,
+
+    mpi
 
 FROM activists a
 
@@ -282,7 +256,8 @@ SET
   referral_apply = :referral_apply,
   referral_outlet = :referral_outlet,
   circle_interest = :circle_interest,
-  interest_date = :interest_date
+  interest_date = :interest_date,
+  mpi = :mpi
 
 WHERE
   id = :id`
@@ -310,7 +285,6 @@ type ActivistEventData struct {
 	TotalEvents    int            `db:"total_events"`
 	TotalPoints    int            `db:"total_points"`
 	Active         bool           `db:"active"`
-	MPI            bool           `db:"mpi"`
 	Status         string
 }
 
@@ -367,6 +341,7 @@ type ActivistConnectionData struct {
 	ReferralOutlet        string         `db:"referral_outlet"`
 	CircleInterest        bool           `db:"circle_interest"`
 	InterestDate          sql.NullString `db:"interest_date"`
+	MPI                   bool           `db:"mpi"`
 }
 
 type ActivistExtra struct {
@@ -391,7 +366,6 @@ type ActivistJSON struct {
 	TotalEvents    int    `json:"total_events"`
 	TotalPoints    int    `json:"total_points"`
 	Active         bool   `json:"active"`
-	MPI            bool   `json:"mpi"`
 	Status         string `json:"status"`
 
 	ActivistLevel string `json:"activist_level"`
@@ -444,6 +418,7 @@ type ActivistJSON struct {
 	ReferralOutlet        string `json:"referral_outlet"`
 	CircleInterest        bool   `json:"circle_interest"`
 	InterestDate          string `json:"interest_date"`
+	MPI                   bool   `json:"mpi"`
 }
 
 type GetActivistOptions struct {
@@ -631,7 +606,6 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			TotalEvents:    a.TotalEvents,
 			TotalPoints:    a.TotalPoints,
 			Active:         a.Active,
-			MPI:            a.MPI,
 
 			ActivistLevel: a.ActivistLevel,
 			WorkingGroups: a.WorkingGroups,
@@ -683,6 +657,7 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			ReferralOutlet:        a.ReferralOutlet,
 			CircleInterest:        a.CircleInterest,
 			InterestDate:          interest_date,
+			MPI:                   a.MPI,
 		})
 	}
 
@@ -986,7 +961,8 @@ INSERT INTO activists (
   referral_apply,
   referral_outlet,
   circle_interest,
-  interest_date
+  interest_date,
+  mpi
 
 ) VALUES (
 
@@ -1039,7 +1015,8 @@ INSERT INTO activists (
   :referral_apply,
   :referral_outlet,
   :circle_interest,
-  :interest_date
+  :interest_date,
+  :mpi
 
 )`, activist)
 	if err != nil {
@@ -1111,7 +1088,8 @@ SET
   referral_apply = :referral_apply,
   referral_outlet = :referral_outlet,
   circle_interest = :circle_interest,
-  interest_date = :interest_date
+  interest_date = :interest_date,
+  mpi = :mpi
 
 WHERE
   id = :id`, activist)
@@ -1304,6 +1282,7 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 	target.SOAgreement = boolMerge(original.SOAgreement, target.SOAgreement)
 	target.SOOnboarding = boolMerge(original.SOOnboarding, target.SOOnboarding)
 	target.CircleInterest = boolMerge(original.CircleInterest, target.CircleInterest)
+	target.MPI = boolMerge(original.MPI, target.MPI)
 
 	// Check string fields for empty values
 
@@ -1657,6 +1636,7 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			ReferralOutlet:        strings.TrimSpace(activistJSON.ReferralOutlet),
 			CircleInterest:        activistJSON.CircleInterest,
 			InterestDate:          sql.NullString{String: strings.TrimSpace(activistJSON.InterestDate), Valid: validInterestDate},
+			MPI:                   activistJSON.MPI,
 		},
 	}
 

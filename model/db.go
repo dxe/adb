@@ -85,6 +85,7 @@ CREATE TABLE activists (
   circle_interest tinyint(1) NOT NULL DEFAULT '0',
   interest_date VARCHAR(20),
   cir_first_email_visit varchar(20),
+  mpi tinyint(1) NOT NULL DEFAULT '0',
   UNIQUE (name)
 )
 `)
