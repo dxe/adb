@@ -157,6 +157,12 @@ export default Vue.extend({
           this.date = event.event_date || '';
           this.attendees = event.attendees || [];
 
+          // ensure we show the indicators for each attendee
+          for (let i = 0; i < this.attendees.length; i++) {
+            this.showIndicatorForAttendee[JSON.stringify(this.attendees[i])] = true;
+          }
+          this.$forceUpdate();
+
           this.oldName = this.name;
           this.oldType = this.type;
           this.oldDate = this.date;
@@ -203,7 +209,9 @@ export default Vue.extend({
 
   updated() {
     this.$nextTick(() => {
-      for (let row of $('#attendee-rows > input.attendee-input')) {
+      for (let row of $(
+        '#attendee-rows > div.row-container > div.col-xs-11 > input.attendee-input',
+      )) {
         new Awesomplete(row, {
           filter: nameFilter,
           list: this.allActivists,
@@ -290,6 +298,11 @@ export default Vue.extend({
           inputs.get(y).focus();
         }
       }
+
+      for (let i = 0; i < this.attendees.length; i++) {
+        this.showIndicatorForAttendee[JSON.stringify(this.attendees[i])] = true;
+      }
+      this.$forceUpdate();
 
       // If event came from selecting an autocomplete suggestion,
       // then move focus to the next input.
@@ -449,7 +462,7 @@ export default Vue.extend({
     // TODO(mdempsky): Move into utility file.
     updateAutocompleteNames() {
       $.ajax({
-        url: '/activist_names/get',
+        url: '/activist/list_basic',
         method: 'GET',
         dataType: 'json',
         success: (data) => {
