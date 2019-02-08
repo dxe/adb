@@ -24,6 +24,7 @@ var EventTypes map[string]bool = map[string]bool{
 	"Outreach":               true,
 	"Sanctuary":              true,
 	"Training":               true,
+	"Connection":             true,
 }
 
 /** Type Definitions */
