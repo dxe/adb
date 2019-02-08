@@ -329,12 +329,7 @@ export default Vue.extend({
         if (i < inputs.length) {
           inputs.get(i).dataset.warning = warning;
 
-          if (
-            name &&
-            (x === 'select' || x === 'tab') &&
-            warning !== 'duplicate' &&
-            warning !== 'unknown'
-          ) {
+          if (name && (x === 'select' || x === 'tab') && warning !== 'duplicate') {
             // keep track of activists actually added to event after a selection.
             this.showIndicatorForAttendee[JSON.stringify(name)] = true;
             this.$forceUpdate();
@@ -472,6 +467,44 @@ export default Vue.extend({
           flashMessage('Error: could not load activist names', true);
         },
       });
+    },
+    shouldShowIndicator(name: string) {
+      if (!name) {
+        return;
+      }
+
+      name = JSON.stringify(name);
+
+      if (this.showIndicatorForAttendee[name]) {
+        return true;
+      }
+
+      return;
+    },
+    hasEmailAndPhone(name: string) {
+      if (!name) {
+        return;
+      }
+
+      if (!this.allActivistsFull) {
+        return;
+      }
+
+      if (!this.allActivistsSet.has(name)) {
+        return;
+      }
+
+      for (let i = 0; i < this.allActivistsFull.length; i++) {
+        if (
+          this.allActivistsFull[i].name === name &&
+          this.allActivistsFull[i].email &&
+          this.allActivistsFull[i].phone
+        ) {
+          return true;
+        }
+      }
+
+      return;
     },
   },
 });
