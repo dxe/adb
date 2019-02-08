@@ -42,7 +42,6 @@
           <b>{{ connections ? 'Connectees' : 'Attendees' }}</b> <br />
         </label>
         <div id="attendee-rows">
-
           <div class="row-container form-group row" v-for="(attendee, index) in attendees">
             <div class="col-xs-11">
               <input

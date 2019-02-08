@@ -190,4 +190,15 @@ a.logout-link:hover, a.logout-link:active {
     filter: invert(20%);
 }
 
+.indicator-padding {
+    padding-top: 7px;
+}
+
+.red {
+    color: red;
+}
+
+.green {
+    color: green;
+}
 
