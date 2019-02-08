@@ -3,7 +3,7 @@
     :title="connections ? 'All Maintenance Connections' : 'Events'"
     class="event-list-content"
   >
-    <form class="form-inline" v-on:submit.prevent="eventListRequest">
+    <form class="form-inline hidden-xs" v-on:submit.prevent="eventListRequest">
       <label for="event-name">{{ connections ? 'Connector' : 'Event Name' }}:</label>
       <input
         id="event-name"
@@ -56,9 +56,9 @@
           <th class="col-xs-1"></th>
           <th class="col-xs-2">Date</th>
           <th class="col-xs-2">{{ connections ? 'Connector' : 'Name' }}</th>
-          <th class="col-xs-2">Type</th>
-          <th class="col-xs-1">Total {{ connections ? 'Connectees' : 'Attendance' }}</th>
-          <th class="col-xs-4">
+          <th class="col-xs-2 hidden-xs">Type</th>
+          <th class="col-xs-1 hidden-xs">Total {{ connections ? 'Connectees' : 'Attendance' }}</th>
+          <th class="col-xs-4 hidden-xs">
             Attendees
             <span style="display: inline-block">
               (
@@ -79,18 +79,18 @@
           <td></td>
           <td><i>Loading...</i></td>
           <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
+          <td hidden-xs></td>
+          <td hidden-xs></td>
+          <td hidden-xs></td>
         </tr>
 
         <tr v-if="!loading && events.length == 0">
           <td></td>
           <td><i>No data</i></td>
           <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
+          <td class="hidden-xs"></td>
+          <td class="hidden-xs"></td>
+          <td class="hidden-xs"></td>
         </tr>
 
         <tr v-for="event in events" :key="event.event_id">
@@ -117,9 +117,9 @@
           <td class="event-name">
             <b>{{ event.event_name }}</b>
           </td>
-          <td nowrap>{{ event.event_type }}</td>
-          <td nowrap>{{ event.attendees.length }}</td>
-          <td>
+          <td nowrap class="hidden-xs">{{ event.event_type }}</td>
+          <td nowrap class="hidden-xs">{{ event.attendees.length }}</td>
+          <td class="hidden-xs">
             <button class="show-attendees btn btn-link" v-on:click="toggleAttendees(event)">
               <span v-if="event.showAttendees">-</span> <span v-else>+</span> Attendees
             </button>

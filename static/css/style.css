@@ -10,6 +10,9 @@ body {
     body {
          padding-top: 30px;
     }
+    .body-wrapper {
+        padding: 25px 15px 25px 15px !important;
+    }
 }
 
 a {
@@ -105,7 +108,7 @@ a.logout-link:hover, a.logout-link:active {
 
 /* event_list */
 .event-list-content {
-        min-width: 600px;
+        /*min-width: 600px;*/
 }
 .attendee-list {
     padding-left: 15px;

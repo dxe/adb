@@ -43,7 +43,7 @@
         </label>
         <div id="attendee-rows">
           <div class="row-container form-group row" v-for="(attendee, index) in attendees">
-            <div class="col-xs-11">
+            <div class="col-xs-10 col-sm-11">
               <input
                 class="attendee-input form-control"
                 :key="index"
@@ -210,7 +210,7 @@ export default Vue.extend({
   updated() {
     this.$nextTick(() => {
       for (let row of $(
-        '#attendee-rows > div.row-container > div.col-xs-11 > input.attendee-input',
+        '#attendee-rows > div.row-container > div.col-xs-10 > input.attendee-input',
       )) {
         new Awesomplete(row, {
           filter: nameFilter,

@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
     <title>Activist Database</title>
     <link rel="icon" type="image/png"
@@ -31,7 +31,7 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <span class="navbar-brand" href="#" style="color: white; font-weight: bold;">Activist Database</a>
+          <span class="navbar-brand" href="#" style="color: white; font-weight: bold;">ADB</a>
         </div>
         <div id="navbar" class="collapse navbar-collapse">
           <ul class="nav navbar-nav">
@@ -48,20 +48,20 @@
                 <!-- <li class="{{if (eq .PageName "ActivistPool")}}active{{end}}"><a href="/activist_pool">Recruitment Connections</a></li> -->
               </ul>
             </li>
-            <li class="{{if and (ne .MainRole "admin") (ne .MainRole "organizer")}}hide{{end}} dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#">Circles <span class="caret"></span></a>
+            <li class="{{if and (ne .MainRole "admin") (ne .MainRole "organizer")}}hide{{end}} dropdown hidden-xs"><a class="dropdown-toggle" data-toggle="dropdown" href="#">Circles <span class="caret"></span></a>
               <ul class="dropdown-menu">
                 <li class="{{if (eq .PageName "CircleMemberProspects")}}active{{end}}"><a href="/circle_member_prospects">Circle Member Prospects</a></li>
                 <li class="{{if (eq .PageName "CircleMembers")}}active{{end}}"><a href="/circle_members">Circle Members</a></li>
                 <li class="{{if (eq .PageName "CirclesList")}}active{{end}}"><a href="/list_circles">Circles</a></li>
               </ul>
             </li>
-            <li class="{{if and (ne .MainRole "admin") (ne .MainRole "organizer")}}hide{{end}} dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#">Chapter Members <span class="caret"></span></a>
+            <li class="{{if and (ne .MainRole "admin") (ne .MainRole "organizer")}}hide{{end}} dropdown hidden-xs"><a class="dropdown-toggle" data-toggle="dropdown" href="#">Chapter Members <span class="caret"></span></a>
               <ul class="dropdown-menu">
                 <li class="{{if (eq .PageName "ChapterMemberProspects")}}active{{end}}"><a href="/chapter_member_prospects">Chapter Member Prospects</a></li>
                 <li class="{{if (eq .PageName "ChapterMemberDevelopment")}}active{{end}}"><a href="/chapter_member_development">Chapter Members</a></li>
               </ul>
             </li>
-            <li class="{{if and (ne .MainRole "admin") (ne .MainRole "organizer")}}hide{{end}} dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#">Organizers <span class="caret"></span></a>
+            <li class="{{if and (ne .MainRole "admin") (ne .MainRole "organizer")}}hide{{end}} dropdown hidden-xs"><a class="dropdown-toggle" data-toggle="dropdown" href="#">Organizers <span class="caret"></span></a>
               <ul class="dropdown-menu">
                 <li class="{{if (eq .PageName "OrganizerProspects")}}active{{end}}"><a href="/organizer_prospects">Organizer Prospects</a></li>
                 <li class="{{if (eq .PageName "OrganizerDevelopment")}}active{{end}}"><a href="/activist_development">Organizer Development</a></li>
@@ -70,17 +70,18 @@
                 <li class="{{if (eq .PageName "WorkingGroupList")}}active{{end}}"><a href="/list_working_groups">Working Groups</a></li>
               </ul>
             </li>
-            <li class="{{if and (ne .MainRole "admin") (ne .MainRole "organizer")}}hide{{end}} dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#">All <span class="caret"></span></a>
+            <li class="{{if and (ne .MainRole "admin") (ne .MainRole "organizer")}}hide{{end}} dropdown hidden-xs"><a class="dropdown-toggle" data-toggle="dropdown" href="#">All <span class="caret"></span></a>
               <ul class="dropdown-menu">
                 <li class="{{if (eq .PageName "ActivistList")}}active{{end}}"><a href="/list_activists">All Activists</a></li>
                 <li class="{{if (eq .PageName "CommunityProspects")}}active{{end}}"><a href="/community_prospects">Community Prospects</a></li>
                 <li class="{{if (eq .PageName "Leaderboard")}}active{{end}}"><a href="/leaderboard">Leaderboard</a></li>
+                <li class="{{if (ne .MainRole "admin")}}hide{{end}} {{if (eq .PageName "UserList")}}active{{end}}"><a href="/admin/users">Users</a></li>
               </ul>
             </li>
 
-	          <li class="{{if (ne .MainRole "admin")}}hide{{end}} {{if (eq .PageName "UserList")}}active{{end}}"><a href="/admin/users">Users</a></li>
+            <li class="{{if and (ne .MainRole "admin") (ne .MainRole "organizer") (ne .MainRole "attendance")}}hide{{end}} hidden-sm hidden-md hidden-lg hidden-xl"><a href="/logout">Logout</a></li>
 
-            <li style="position:fixed; right: 20px;" class="{{if or (eq .PageName "Login") (eq .PageName "Logout")}}hide{{end}} dropdown navbar-right"><a class="dropdown-toggle" data-toggle="dropdown" href="#"><span class="glyphicon glyphicon-user"></span><span class="caret"></span></a>
+            <li style="position:fixed; right: 20px;" class="{{if or (eq .PageName "Login") (eq .PageName "Logout")}}hide{{end}} dropdown navbar-right hidden-xs hidden-sm"><a class="dropdown-toggle" data-toggle="dropdown" href="#"><span class="glyphicon glyphicon-user"></span><span class="caret"></span></a>
               <ul class="dropdown-menu">
                 <div style="padding-left: 5px; padding-right: 5px;">
                   <b>Current user:</b> <br /> {{ .UserName }} <br /> {{ .UserEmail }}<br /><br />
@@ -94,7 +95,3 @@
         </div><!--/.nav-collapse -->
       </div>
     </nav>
-
-
-
-
