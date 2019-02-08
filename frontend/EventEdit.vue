@@ -125,6 +125,8 @@ export default Vue.extend({
 
       allActivists: [] as string[],
       allActivistsSet: new Set<string>(),
+      allActivistsFull: {} as { [name: string]: any },
+      showIndicatorForAttendee: {} as any,
     };
   },
   computed: {
@@ -453,14 +455,16 @@ export default Vue.extend({
         dataType: 'json',
         success: (data) => {
           var activistData = data.activists;
-          this.allActivistsFull = activistData;
           // Clear current activist name array and set before re-adding
           this.allActivists.length = 0;
           this.allActivistsSet.clear();
-          for (let name of data.activist_names) {
-            this.allActivists.push(name);
-            this.allActivistsSet.add(name);
+          this.allActivistsFull = {};
+          for (let activist of activistData) {
+            this.allActivistsFull[activist.name] = activist;
+            this.allActivists.push(activist.name);
+            this.allActivistsSet.add(activist.name);
           }
+
           this.changed('autocomplete', -1);
         },
         error: () => {
@@ -490,21 +494,9 @@ export default Vue.extend({
         return;
       }
 
-      if (!this.allActivistsSet.has(name)) {
-        return;
-      }
+      let activistFull = this.allActivistsFull[name];
 
-      for (let i = 0; i < this.allActivistsFull.length; i++) {
-        if (this.allActivistsFull[i].name === name) {
-          if (this.allActivistsFull[i].email && this.allActivistsFull[i].phone) {
-            return true;
-          } else {
-            return;
-          }
-        }
-      }
-
-      return;
+      return activistFull && activistFull.email && activistFull.phone;
     },
   },
 });
