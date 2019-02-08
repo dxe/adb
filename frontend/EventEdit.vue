@@ -495,12 +495,12 @@ export default Vue.extend({
       }
 
       for (let i = 0; i < this.allActivistsFull.length; i++) {
-        if (
-          this.allActivistsFull[i].name === name &&
-          this.allActivistsFull[i].email &&
-          this.allActivistsFull[i].phone
-        ) {
-          return true;
+        if (this.allActivistsFull[i].name === name) {
+          if (this.allActivistsFull[i].email && this.allActivistsFull[i].phone) {
+            return true;
+          } else {
+            return;
+          }
         }
       }
 
