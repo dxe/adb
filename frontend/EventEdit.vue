@@ -42,14 +42,27 @@
           <b>{{ connections ? 'Connectees' : 'Attendees' }}</b> <br />
         </label>
         <div id="attendee-rows">
-          <input
-            class="attendee-input form-control"
-            v-for="(attendee, index) in attendees"
-            :key="index"
-            v-model="attendees[index]"
-            v-on:input="changed('input', index)"
-            v-on:awesomplete-selectcomplete="changed('select', index)"
-          />
+          <div class="row-container form-group row" v-for="(attendee, index) in attendees">
+            <div class="col-xs-11">
+              <input
+                class="attendee-input form-control"
+                :key="index"
+                v-model="attendees[index]"
+                v-on:input="changed('input', index)"
+                v-on:awesomplete-selectcomplete="changed('select', index)"
+              />
+            </div>
+            <span
+              v-if="attendee && shouldShowIndicator(attendee) && hasEmailAndPhone(attendee)"
+              class="glyphicon glyphicon-check col-form-label col-xs-1 indicator-padding green"
+              title="Contact info found"
+            ></span>
+            <span
+              v-if="attendee && shouldShowIndicator(attendee) && !hasEmailAndPhone(attendee)"
+              class="glyphicon glyphicon-asterisk col-form-label col-xs-1 indicator-padding red"
+              title="Missing email or phone number"
+            ></span>
+          </div>
         </div>
 
         <br />
@@ -110,6 +123,8 @@ export default Vue.extend({
 
       allActivists: [] as string[],
       allActivistsSet: new Set<string>(),
+      allActivistsFull: [] as any[],
+      showIndicatorForAttendee: {} as any,
     };
   },
   computed: {
@@ -123,7 +138,6 @@ export default Vue.extend({
       return result;
     },
   },
-
   created() {
     this.updateAutocompleteNames();
 
@@ -140,6 +154,12 @@ export default Vue.extend({
           this.type = event.event_type || '';
           this.date = event.event_date || '';
           this.attendees = event.attendees || [];
+
+          // ensure we show the indicators for each attendee
+          for (let i = 0; i < this.attendees.length; i++) {
+            this.showIndicatorForAttendee[JSON.stringify(this.attendees[i])] = true;
+            this.$forceUpdate();
+          }
 
           this.oldName = this.name;
           this.oldType = this.type;
@@ -187,7 +207,9 @@ export default Vue.extend({
 
   updated() {
     this.$nextTick(() => {
-      for (let row of $('#attendee-rows > input.attendee-input')) {
+      for (let row of $(
+        '#attendee-rows > div.row-container > div.col-xs-11 > input.attendee-input',
+      )) {
         new Awesomplete(row, {
           filter: nameFilter,
           list: this.allActivists,
@@ -275,6 +297,11 @@ export default Vue.extend({
         }
       }
 
+      for (let i = 0; i < this.attendees.length; i++) {
+        this.showIndicatorForAttendee[JSON.stringify(this.attendees[i])] = true;
+        this.$forceUpdate();
+      }
+
       // If event came from selecting an autocomplete suggestion,
       // then move focus to the next input.
       if (x == 'select') {
@@ -313,6 +340,12 @@ export default Vue.extend({
 
         if (i < inputs.length) {
           inputs.get(i).dataset.warning = warning;
+
+          if (name && x === 'select' && warning !== 'duplicate') {
+            // keep track of activists actually added to event after a selection.
+            this.showIndicatorForAttendee[JSON.stringify(name)] = true;
+            this.$forceUpdate();
+          }
         }
       }
     },
@@ -427,17 +460,19 @@ export default Vue.extend({
     // TODO(mdempsky): Move into utility file.
     updateAutocompleteNames() {
       $.ajax({
-        url: '/activist_names/get',
+        url: '/activist/list_basic',
         method: 'GET',
         dataType: 'json',
         success: (data) => {
-          var activistNames = data.activist_names;
+          var activistData = data.activists;
+          this.allActivistsFull = activistData;
+          console.log(activistData);
           // Clear current activist name array and set before re-adding
           this.allActivists.length = 0;
           this.allActivistsSet.clear();
-          for (let name of data.activist_names) {
-            this.allActivists.push(name);
-            this.allActivistsSet.add(name);
+          for (let activist of activistData) {
+            this.allActivists.push(activist.name);
+            this.allActivistsSet.add(activist.name);
           }
           this.changed('autocomplete', -1);
         },
@@ -445,6 +480,40 @@ export default Vue.extend({
           flashMessage('Error: could not load activist names', true);
         },
       });
+    },
+    shouldShowIndicator(name: string) {
+      if (!name) {
+        return;
+      }
+
+      name = JSON.stringify(name);
+
+      if (this.showIndicatorForAttendee[name]) {
+        return true;
+      }
+
+      return;
+    },
+    hasEmailAndPhone(name: string) {
+      if (!name) {
+        return;
+      }
+
+      if (!this.allActivistsFull) {
+        return;
+      }
+
+      for (let i = 0; i < this.allActivistsFull.length; i++) {
+        if (
+          this.allActivistsFull[i].name === name &&
+          this.allActivistsFull[i].email &&
+          this.allActivistsFull[i].phone
+        ) {
+          return true;
+        }
+      }
+
+      return;
     },
   },
 });
