@@ -336,7 +336,7 @@ export default Vue.extend({
         if (i < inputs.length) {
           inputs.get(i).dataset.warning = warning;
 
-          if (name && x === 'select' && warning !== 'duplicate' && warning !== 'unknown') {
+          if (name && x === 'select' && warning !== 'duplicate') {
             // keep track of activists actually added to event after a selection.
             this.showIndicatorForAttendee[JSON.stringify(name)] = true;
             this.$forceUpdate();
