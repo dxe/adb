@@ -53,12 +53,12 @@
               />
             </div>
             <span
-              v-if="1 == 1"
+              v-if="attendee && shouldShowIndicator(attendee) && hasEmailAndPhone(attendee)"
               style="color: green; padding-top: 7px;"
               class="glyphicon glyphicon-check col-form-label col-sm-1"
             ></span>
             <span
-              v-if="1 == 2"
+              v-if="attendee && shouldShowIndicator(attendee) && !hasEmailAndPhone(attendee)"
               style="color: red; padding-top: 7px;"
               class="glyphicon glyphicon-asterisk col-form-label col-sm-1"
             ></span>
@@ -123,6 +123,8 @@ export default Vue.extend({
 
       allActivists: [] as string[],
       allActivistsSet: new Set<string>(),
+      allActivistsFull: [] as object[],
+      showIndicatorForAttendee: {} as object,
     };
   },
   computed: {
@@ -136,7 +138,6 @@ export default Vue.extend({
       return result;
     },
   },
-
   created() {
     this.updateAutocompleteNames();
 
@@ -328,6 +329,12 @@ export default Vue.extend({
 
         if (i < inputs.length) {
           inputs.get(i).dataset.warning = warning;
+
+          if (name && x === 'select' && warning !== 'duplicate' && warning !== 'unknown') {
+            // keep track of activists actually added to event after a selection.
+            this.showIndicatorForAttendee[JSON.stringify(name)] = true;
+            this.$forceUpdate();
+          }
         }
       }
     },
@@ -447,6 +454,7 @@ export default Vue.extend({
         dataType: 'json',
         success: (data) => {
           var activistData = data.activists;
+          this.allActivistsFull = activistData;
           console.log(activistData);
           // Clear current activist name array and set before re-adding
           this.allActivists.length = 0;
@@ -461,6 +469,40 @@ export default Vue.extend({
           flashMessage('Error: could not load activist names', true);
         },
       });
+    },
+    shouldShowIndicator(name: string) {
+      if (!name) {
+        return;
+      }
+
+      name = JSON.stringify(name);
+
+      if (this.showIndicatorForAttendee[name]) {
+        return true;
+      }
+
+      return;
+    },
+    hasEmailAndPhone(name: string) {
+      if (!name) {
+        return;
+      }
+
+      if (!this.allActivistsFull) {
+        return;
+      }
+
+      for (let i = 0; i < this.allActivistsFull.length; i++) {
+        if (
+          this.allActivistsFull[i].name === name &&
+          this.allActivistsFull[i].email &&
+          this.allActivistsFull[i].phone
+        ) {
+          return true;
+        }
+      }
+
+      return;
     },
   },
 });
