@@ -42,14 +42,29 @@
           <b>{{ connections ? 'Connectees' : 'Attendees' }}</b> <br />
         </label>
         <div id="attendee-rows">
-          <input
-            class="attendee-input form-control"
-            v-for="(attendee, index) in attendees"
-            :key="index"
-            v-model="attendees[index]"
-            v-on:input="changed('input', index)"
-            v-on:awesomplete-selectcomplete="changed('select', index)"
-          />
+
+          <div class="row-container form-group row" v-for="(attendee, index) in attendees">
+            <div class="col-xs-11">
+              <input
+                class="attendee-input form-control"
+                :key="index"
+                v-model="attendees[index]"
+                v-on:input="changed('input', index)"
+                v-on:keyup.9="changed('tab', index)"
+                v-on:awesomplete-selectcomplete="changed('select', index)"
+              />
+            </div>
+            <span
+              v-if="attendee && shouldShowIndicator(attendee) && hasEmailAndPhone(attendee)"
+              class="glyphicon glyphicon-check col-form-label col-xs-1 indicator-padding green"
+              title="Contact info found"
+            ></span>
+            <span
+              v-if="attendee && shouldShowIndicator(attendee) && !hasEmailAndPhone(attendee)"
+              class="glyphicon glyphicon-asterisk col-form-label col-xs-1 indicator-padding red"
+              title="Missing email or phone number"
+            ></span>
+          </div>
         </div>
 
         <br />
@@ -313,6 +328,17 @@ export default Vue.extend({
 
         if (i < inputs.length) {
           inputs.get(i).dataset.warning = warning;
+
+          if (
+            name &&
+            (x === 'select' || x === 'tab') &&
+            warning !== 'duplicate' &&
+            warning !== 'unknown'
+          ) {
+            // keep track of activists actually added to event after a selection.
+            this.showIndicatorForAttendee[JSON.stringify(name)] = true;
+            this.$forceUpdate();
+          }
         }
       }
     },
@@ -431,7 +457,8 @@ export default Vue.extend({
         method: 'GET',
         dataType: 'json',
         success: (data) => {
-          var activistNames = data.activist_names;
+          var activistData = data.activists;
+          this.allActivistsFull = activistData;
           // Clear current activist name array and set before re-adding
           this.allActivists.length = 0;
           this.allActivistsSet.clear();
