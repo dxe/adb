@@ -1181,7 +1181,7 @@ func (c MainController) newPowerWallboard(w http.ResponseWriter, r *http.Request
 }
 
 func (c MainController) newChapterMemberWallboard(w http.ResponseWriter, r *http.Request) {
-	members, err := model.GetTotalChapterMembers(c.db)
+	members, err := model.GetActiveChapterMembers(c.db)
 	if err != nil {
 		panic(err)
 	}

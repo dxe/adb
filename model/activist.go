@@ -141,7 +141,7 @@ SELECT
     WHERE
       ea.activist_id = a.id) as total_events,
 
-  IFNULL((Community + Outreach + WorkingGroup + Sanctuary + Protest + KeyEvent), 0) as total_points,
+  IFNULL(totalPoints, 0) as total_points,
   IF(@last_event >= (now() - interval 30 day), 1, 0) as active,
 
   IFNULL(
@@ -177,29 +177,13 @@ SELECT
 FROM activists a
 
 LEFT JOIN (
-  SELECT activist_id,
-  IFNULL(SUM(Community),0) AS Community,
-  IFNULL(SUM(Outreach),0) AS Outreach,
-  IFNULL(SUM(WorkingGroup),0) AS WorkingGroup,
-  IFNULL(SUM(Sanctuary),0) AS Sanctuary,
-  IFNULL(SUM(Protest),0) AS Protest,
-  IFNULL(SUM(KeyEvent),0) AS KeyEvent
-  FROM (
-    SELECT
-      activist_id,
-      (CASE WHEN event_type = 'Community' THEN count(e.id) END) AS Community,
-      (CASE WHEN event_type = 'Outreach' THEN count(e.id)*2 END) AS Outreach,
-      (CASE WHEN event_type = 'Working Group' THEN count(e.id) END) AS WorkingGroup,
-      (CASE WHEN event_type = 'Sanctuary' THEN count(e.id)*2 END) AS Sanctuary,
-      (CASE WHEN event_type = 'Protest' THEN count(e.id)*2 END) AS Protest,
-      (CASE WHEN event_type = 'Key Event' THEN count(e.id)*3 END) AS KeyEvent
+  SELECT
+      activist_id, count(ea.event_id) as totalPoints
       FROM event_attendance ea
       JOIN events e ON e.id = ea.event_id
       WHERE
         e.date BETWEEN (NOW() - INTERVAL 30 DAY) AND NOW()
-      GROUP BY activist_id, e.event_type
-  ) inner_points
-  GROUP BY activist_id
+      GROUP BY activist_id
 ) points
   ON points.activist_id = a.id
 `
