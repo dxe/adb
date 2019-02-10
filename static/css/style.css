@@ -205,3 +205,6 @@ a.logout-link:hover, a.logout-link:active {
     color: green;
 }
 
+.form-group {
+    margin-bottom: 7px;
+}

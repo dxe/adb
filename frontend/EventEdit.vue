@@ -285,7 +285,7 @@ export default Vue.extend({
     changed(x: string, y: number) {
       const inputs = $('#attendee-rows input.attendee-input');
 
-      // Add more rows if there are less than 5,
+      // Add more rows if there are less than 3,
       // or if the last row isn't empty.
       let more = 5 - this.attendees.length;
       if (more <= 0 && this.attendees[this.attendees.length - 1].trim() != '') {
