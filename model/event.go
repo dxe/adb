@@ -146,6 +146,10 @@ ON (e.id = ea.event_id AND ea.activist_id = a.id)
 	}
 	if options.EventType == "noConnections" {
 		whereClause = append(whereClause, "e.event_type <> 'Connection'")
+	} else if options.EventType == "mpiDA" {
+		whereClause = append(whereClause, "e.event_type = 'Outreach' or e.event_type = 'Action' or e.event_type = 'Sanctuary' or e.event_type = 'Frontline Surveillance'")
+	} else if options.EventType == "mpiCOM" {
+		whereClause = append(whereClause, "e.event_type = 'Community' or e.event_type = 'Training' or e.event_type = 'Circle'")
 	} else if options.EventType != "" {
 		whereClause = append(whereClause, "e.event_type = ?")
 		queryArgs = append(queryArgs, options.EventType)

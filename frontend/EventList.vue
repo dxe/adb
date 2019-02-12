@@ -40,9 +40,11 @@
           <option value="Community">Community</option>
           <option value="Frontline Surveillance">Frontline Surveillance</option>
           <option value="Meeting">Meeting</option>
-          <option value="Meeting">Outreach</option>
+          <option value="Outreach">Outreach</option>
           <option value="Sanctuary">Sanctuary</option>
-          <option value="Meeting">Training</option>
+          <option value="Training">Training</option>
+          <option value="mpiDA">MPI: Direct Action</option>
+          <option value="mpiCOM">MPI: Community</option>
         </select>
       </template>
 
