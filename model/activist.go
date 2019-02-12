@@ -49,7 +49,6 @@ SELECT
   source,
 
   connector,
-  contacted_date,
   training0,
   training1,
   training2,
@@ -79,13 +78,9 @@ SELECT
   cm_approval_email,
   cm_warning_email,
   cir_first_email,
-  cir_first_email_visit,
   prospect_organizer,
   prospect_chapter_member,
   circle_agreement,
-  escalation,
-  interested,
-  meeting_date,
   referral_friends,
   referral_apply,
   referral_outlet,
@@ -201,7 +196,6 @@ SET
   source = :source,
 
   connector = :connector,
-  contacted_date = :contacted_date,
   training0 = :training0,
   training1 = :training1,
   training2 = :training2,
@@ -229,13 +223,9 @@ SET
   cm_approval_email = :cm_approval_email,
   cm_warning_email = :cm_warning_email,
   cir_first_email = :cir_first_email,
-  cir_first_email_visit = :cir_first_email_visit,
   prospect_organizer = :prospect_organizer,
   prospect_chapter_member = :prospect_chapter_member,
   circle_agreement = :circle_agreement,
-  escalation = :escalation,
-  interested = :interested,
-  meeting_date = :meeting_date, 
   referral_friends = :referral_friends,
   referral_apply = :referral_apply,
   referral_outlet = :referral_outlet,
@@ -282,7 +272,6 @@ type ActivistMembershipData struct {
 
 type ActivistConnectionData struct {
 	Connector       string         `db:"connector"`
-	ContactedDate   string         `db:"contacted_date"`
 	Training0       sql.NullString `db:"training0"`
 	Training1       sql.NullString `db:"training1"`
 	Training2       sql.NullString `db:"training2"`
@@ -312,14 +301,10 @@ type ActivistConnectionData struct {
 	CMApprovalEmail       sql.NullString `db:"cm_approval_email"`
 	CMWarningEmail        sql.NullString `db:"cm_warning_email"`
 	CirFirstEmail         sql.NullString `db:"cir_first_email"`
-	CirFirstEmailVisit    sql.NullString `db:"cir_first_email_visit"`
 	ProspectOrganizer     bool           `db:"prospect_organizer"`
 	ProspectChapterMember bool           `db:"prospect_chapter_member"`
 	CircleAgreement       bool           `db:"circle_agreement"`
 	LastConnection        sql.NullString `db:"last_connection"`
-	Escalation            string         `db:"escalation"`
-	Interested            string         `db:"interested"`
-	MeetingDate           string         `db:"meeting_date"`
 	ReferralFriends       string         `db:"referral_friends"`
 	ReferralApply         string         `db:"referral_apply"`
 	ReferralOutlet        string         `db:"referral_outlet"`
@@ -359,7 +344,6 @@ type ActivistJSON struct {
 	WgOrCirMember bool   `json:"wg_or_cir_member"`
 
 	Connector       string `json:"connector"`
-	ContactedDate   string `json:"contacted_date"`
 	Training0       string `json:"training0"`
 	Training1       string `json:"training1"`
 	Training2       string `json:"training2"`
@@ -389,14 +373,10 @@ type ActivistJSON struct {
 	CMApprovalEmail       string `json:"cm_approval_email"`
 	CMWarningEmail        string `json:"cm_warning_email"`
 	CirFirstEmail         string `json:"cir_first_email"`
-	CirFirstEmailVisit    string `json:"cir_first_email_visit"`
 	ProspectOrganizer     bool   `json:"prospect_organizer"`
 	ProspectChapterMember bool   `json:"prospect_chapter_member"`
 	CircleAgreement       bool   `json:"circle_agreement"`
 	LastConnection        string `json:"last_connection"`
-	Escalation            string `json:"escalation"`
-	Interested            string `json:"interested"`
-	MeetingDate           string `json:"meeting_date"`
 	ReferralFriends       string `json:"referral_friends"`
 	ReferralApply         string `json:"referral_apply"`
 	ReferralOutlet        string `json:"referral_outlet"`
@@ -548,11 +528,6 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 		if a.ActivistConnectionData.CirFirstEmail.Valid {
 			cir_first_email = a.ActivistConnectionData.CirFirstEmail.String
 		}
-		cir_first_email_visit := ""
-		if a.ActivistConnectionData.CirFirstEmailVisit.Valid {
-			cir_first_email_visit = a.ActivistConnectionData.CirFirstEmailVisit.String
-		}
-
 		so_auth := ""
 		if a.ActivistConnectionData.SOAuth.Valid {
 			so_auth = a.ActivistConnectionData.SOAuth.String
@@ -598,7 +573,6 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			Source:        a.Source,
 
 			Connector:       a.Connector,
-			ContactedDate:   a.ContactedDate,
 			Training0:       training0,
 			Training1:       training1,
 			Training2:       training2,
@@ -628,14 +602,10 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			CMApprovalEmail:       cm_approval_email,
 			CMWarningEmail:        cm_warning_email,
 			CirFirstEmail:         cir_first_email,
-			CirFirstEmailVisit:    cir_first_email_visit,
 			ProspectOrganizer:     a.ProspectOrganizer,
 			ProspectChapterMember: a.ProspectChapterMember,
 			CircleAgreement:       a.CircleAgreement,
 			LastConnection:        last_connection,
-			Escalation:            a.Escalation,
-			Interested:            a.Interested,
-			MeetingDate:           a.MeetingDate,
 			ReferralFriends:       a.ReferralFriends,
 			ReferralApply:         a.ReferralApply,
 			ReferralOutlet:        a.ReferralOutlet,
@@ -906,7 +876,6 @@ INSERT INTO activists (
   source,
 
   connector,
-  contacted_date,
   training0,
   training1,
   training2,
@@ -933,14 +902,10 @@ INSERT INTO activists (
   cm_approval_email,
   cm_warning_email,
   cir_first_email,
-  cir_first_email_visit,
   prospect_organizer,
   prospect_chapter_member,
   circle_agreement,
   last_connection,
-  escalation,
-  interested,
-  meeting_date,
   referral_friends,
   referral_apply,
   referral_outlet,
@@ -960,7 +925,6 @@ INSERT INTO activists (
   :source,
 
   :connector,
-  :contacted_date,
   :training0,
   :training1,
   :training2,
@@ -987,14 +951,10 @@ INSERT INTO activists (
   :cm_approval_email,
   :cm_warning_email,
   :cir_first_email,
-  :cir_first_email_visit,
   :prospect_organizer,
   :prospect_chapter_member,
   :circle_agreement,
   :last_connection,
-  :escalation,
-  :interested,
-  :meeting_date,
   :referral_friends,
   :referral_apply,
   :referral_outlet,
@@ -1034,7 +994,6 @@ SET
   source = :source,
 
   connector = :connector,
-  contacted_date = :contacted_date,
   training0 = :training0,
   training1 = :training1,
   training2 = :training2,
@@ -1061,13 +1020,9 @@ SET
   cm_approval_email = :cm_approval_email,
   cm_warning_email = :cm_warning_email,
   cir_first_email = :cir_first_email,
-  cir_first_email_visit = :cir_first_email_visit,
   prospect_organizer = :prospect_organizer,
   prospect_chapter_member = :prospect_chapter_member,
   circle_agreement = :circle_agreement,
-  escalation = :escalation,
-  interested = :interested,
-  meeting_date = :meeting_date, 
   referral_friends = :referral_friends,
   referral_apply = :referral_apply,
   referral_outlet = :referral_outlet,
@@ -1302,7 +1257,6 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 	target.ReferralApply = stringMerge(original.ReferralApply, target.ReferralApply)
 	target.ReferralOutlet = stringMerge(original.ReferralOutlet, target.ReferralOutlet)
 	target.InterestDate = stringMergeSqlNullString(original.InterestDate, target.InterestDate)
-	target.CirFirstEmailVisit = stringMergeSqlNullString(original.CirFirstEmailVisit, target.CirFirstEmailVisit)
 
 	// Check Activist Levels
 	if len(original.ActivistLevel) != 0 && len(target.ActivistLevel) != 0 {
@@ -1533,11 +1487,6 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 		// Not specified so insert null value into database
 		validCirFirstEmail = false
 	}
-	validCirFirstEmailVisit := true
-	if activistJSON.CirFirstEmailVisit == "" {
-		// Not specified so insert null value into database
-		validCirFirstEmailVisit = false
-	}
 	validSOAuth := true
 	if activistJSON.SOAuth == "" {
 		// Not specified so insert null value into database
@@ -1579,7 +1528,6 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 		},
 		ActivistConnectionData: ActivistConnectionData{
 			Connector:     strings.TrimSpace(activistJSON.Connector),
-			ContactedDate: strings.TrimSpace(activistJSON.ContactedDate),
 			Training0:     sql.NullString{String: strings.TrimSpace(activistJSON.Training0), Valid: validTraining0},
 			Training1:     sql.NullString{String: strings.TrimSpace(activistJSON.Training1), Valid: validTraining1},
 			Training2:     sql.NullString{String: strings.TrimSpace(activistJSON.Training2), Valid: validTraining2},
@@ -1608,13 +1556,9 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			CMApprovalEmail:       sql.NullString{String: strings.TrimSpace(activistJSON.CMApprovalEmail), Valid: validCMApprovalEmail},
 			CMWarningEmail:        sql.NullString{String: strings.TrimSpace(activistJSON.CMWarningEmail), Valid: validCMWarningEmail},
 			CirFirstEmail:         sql.NullString{String: strings.TrimSpace(activistJSON.CirFirstEmail), Valid: validCirFirstEmail},
-			CirFirstEmailVisit:    sql.NullString{String: strings.TrimSpace(activistJSON.CirFirstEmailVisit), Valid: validCirFirstEmailVisit},
 			ProspectOrganizer:     activistJSON.ProspectOrganizer,
 			ProspectChapterMember: activistJSON.ProspectChapterMember,
 			CircleAgreement:       activistJSON.CircleAgreement,
-			Escalation:            strings.TrimSpace(activistJSON.Escalation),
-			Interested:            strings.TrimSpace(activistJSON.Interested),
-			MeetingDate:           strings.TrimSpace(activistJSON.MeetingDate),
 			ReferralFriends:       strings.TrimSpace(activistJSON.ReferralFriends),
 			ReferralApply:         strings.TrimSpace(activistJSON.ReferralApply),
 			ReferralOutlet:        strings.TrimSpace(activistJSON.ReferralOutlet),
