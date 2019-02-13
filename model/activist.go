@@ -44,6 +44,7 @@ SELECT
   location,
   a.name,
   phone,
+  dob,
 
   activist_level,
   source,
@@ -87,11 +88,7 @@ SELECT
   circle_interest,
   interest_date,
 
-  -- Do the first/last event subqueries here b/c the performance is
-  -- better than when you join on events and event_attendance multiple times.
-  -- Set the @first_event and @last_event variables so we can use them
-  -- within the query.
-  @first_event := (
+          @first_event := (
       SELECT min(e.date) AS min_date
       FROM event_attendance ea
       JOIN activists inner_a ON inner_a.id = ea.activist_id
@@ -107,9 +104,15 @@ SELECT
     WHERE inner_a.id = a.id
   ) AS last_event,
 
-  -- For first_event_name and last_event_name, we just want to pick
-  -- any event with the correct date.
-  IFNULL(
+  @last_circle := (
+    SELECT max(e.date) AS max_date
+    FROM event_attendance ea
+    JOIN activists inner_a ON inner_a.id = ea.activist_id
+    JOIN events e ON e.id = ea.event_id
+    WHERE inner_a.id = a.id and e.event_type = 'Circle'
+  ) AS last_circle,
+
+      IFNULL(
     concat(@first_event, ' ', (
       SELECT name
       FROM events e
@@ -167,7 +170,8 @@ SELECT
   	IF((CONCAT( (IFNULL((SELECT GROUP_CONCAT(DISTINCT wg.name SEPARATOR ', ') FROM working_groups wg JOIN working_group_members wgm ON wg.id = wgm.working_group_id WHERE   wgm.activist_id = a.id and wgm.non_member_on_mailing_list = 0), '')), (IFNULL( (SELECT   GROUP_CONCAT(DISTINCT circles.name SEPARATOR ', ') FROM circles JOIN circle_members ON circles.id = circle_members.circle_id WHERE   circle_members.activist_id = a.id), '')))) <> "","1","0")
   	as wg_or_cir_member,
 
-    mpi
+    mpi,
+    notes
 
 FROM activists a
 
@@ -191,6 +195,7 @@ SET
   location = :location,
   name = :name,
   phone = :phone,
+  dob = :dob,
 
   activist_level = :activist_level,
   source = :source,
@@ -231,7 +236,8 @@ SET
   referral_outlet = :referral_outlet,
   circle_interest = :circle_interest,
   interest_date = :interest_date,
-  mpi = :mpi
+  mpi = :mpi,
+  notes = :notes
 
 WHERE
   id = :id`
@@ -249,11 +255,13 @@ type Activist struct {
 	Location sql.NullString `db:"location"`
 	Name     string         `db:"name"`
 	Phone    string         `db:"phone"`
+	Birthday sql.NullString `db:"dob"`
 }
 
 type ActivistEventData struct {
 	FirstEvent     mysql.NullTime `db:"first_event"`
 	LastEvent      mysql.NullTime `db:"last_event"`
+	LastCircle     mysql.NullTime `db:"last_circle"`
 	FirstEventName string         `db:"first_event_name"`
 	LastEventName  string         `db:"last_event_name"`
 	TotalEvents    int            `db:"total_events"`
@@ -311,6 +319,7 @@ type ActivistConnectionData struct {
 	CircleInterest        bool           `db:"circle_interest"`
 	InterestDate          sql.NullString `db:"interest_date"`
 	MPI                   bool           `db:"mpi"`
+	Notes                 sql.NullString `db:"notes"`
 }
 
 type ActivistExtra struct {
@@ -327,9 +336,11 @@ type ActivistJSON struct {
 	Location string `json:"location"`
 	Name     string `json:"name"`
 	Phone    string `json:"phone"`
+	Birthday string `json:"dob"`
 
 	FirstEvent     string `json:"first_event"`
 	LastEvent      string `json:"last_event"`
+	LastCircle     string `json:"last_circle"`
 	FirstEventName string `json:"first_event_name"`
 	LastEventName  string `json:"last_event_name"`
 	TotalEvents    int    `json:"total_events"`
@@ -383,6 +394,7 @@ type ActivistJSON struct {
 	CircleInterest        bool   `json:"circle_interest"`
 	InterestDate          string `json:"interest_date"`
 	MPI                   bool   `json:"mpi"`
+	Notes                 string `json:"notes"`
 }
 
 type GetActivistOptions struct {
@@ -460,6 +472,10 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 		if a.ActivistEventData.LastEvent.Valid {
 			lastEvent = a.ActivistEventData.LastEvent.Time.Format(EventDateLayout)
 		}
+		lastCircle := ""
+		if a.ActivistEventData.LastCircle.Valid {
+			lastCircle = a.ActivistEventData.LastCircle.Time.Format(EventDateLayout)
+		}
 		applicationDate := ""
 		if a.ActivistConnectionData.ApplicationDate.Valid {
 			applicationDate = a.ActivistConnectionData.ApplicationDate.Time.Format(EventDateLayout)
@@ -467,6 +483,10 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 		location := ""
 		if a.Activist.Location.Valid {
 			location = a.Activist.Location.String
+		}
+		dob := ""
+		if a.Activist.Birthday.Valid {
+			dob = a.Activist.Birthday.String
 		}
 		training0 := ""
 		if a.ActivistConnectionData.Training0.Valid {
@@ -548,6 +568,10 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 		if a.ActivistConnectionData.InterestDate.Valid {
 			interest_date = a.ActivistConnectionData.InterestDate.String
 		}
+		notes := ""
+		if a.ActivistConnectionData.Notes.Valid {
+			notes = a.ActivistConnectionData.Notes.String
+		}
 
 		activistsJSON = append(activistsJSON, ActivistJSON{
 			Email:    a.Email,
@@ -556,9 +580,11 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			Location: location,
 			Name:     a.Name,
 			Phone:    a.Phone,
+			Birthday: dob,
 
 			FirstEvent:     firstEvent,
 			LastEvent:      lastEvent,
+			LastCircle:     lastCircle,
 			FirstEventName: a.FirstEventName,
 			LastEventName:  a.LastEventName,
 			Status:         a.Status,
@@ -612,6 +638,7 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			CircleInterest:        a.CircleInterest,
 			InterestDate:          interest_date,
 			MPI:                   a.MPI,
+			Notes:                 notes,
 		})
 	}
 
@@ -871,6 +898,7 @@ INSERT INTO activists (
   location,
   name,
   phone,
+  dob,
 
   activist_level,
   source,
@@ -911,7 +939,8 @@ INSERT INTO activists (
   referral_outlet,
   circle_interest,
   interest_date,
-  mpi
+  mpi,
+  notes
 
 ) VALUES (
 
@@ -920,6 +949,7 @@ INSERT INTO activists (
   :location,
   :name,
   :phone,
+  :dob,
 
   :activist_level,
   :source,
@@ -960,7 +990,8 @@ INSERT INTO activists (
   :referral_outlet,
   :circle_interest,
   :interest_date,
-  :mpi
+  :mpi,
+  :notes
 
 )`, activist)
 	if err != nil {
@@ -989,6 +1020,7 @@ SET
   location = :location,
   name = :name,
   phone = :phone,
+  dob = :dob,
 
   activist_level = :activist_level,
   source = :source,
@@ -1028,7 +1060,8 @@ SET
   referral_outlet = :referral_outlet,
   circle_interest = :circle_interest,
   interest_date = :interest_date,
-  mpi = :mpi
+  mpi = :mpi,
+  notes = :notes
 
 WHERE
   id = :id`, activist)
@@ -1227,6 +1260,7 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 
 	target.Email = stringMerge(original.Email, target.Email)
 	target.Phone = stringMerge(original.Phone, target.Phone)
+	target.Birthday = stringMergeSqlNullString(original.Birthday, target.Birthday)
 	target.Location = stringMergeSqlNullString(original.Location, target.Location)
 	target.Facebook = stringMerge(original.Facebook, target.Facebook)
 	target.Connector = stringMerge(original.Connector, target.Connector)
@@ -1257,6 +1291,7 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 	target.ReferralApply = stringMerge(original.ReferralApply, target.ReferralApply)
 	target.ReferralOutlet = stringMerge(original.ReferralOutlet, target.ReferralOutlet)
 	target.InterestDate = stringMergeSqlNullString(original.InterestDate, target.InterestDate)
+	target.Notes = stringMergeSqlNullString(original.Notes, target.Notes)
 
 	// Check Activist Levels
 	if len(original.ActivistLevel) != 0 && len(target.ActivistLevel) != 0 {
@@ -1417,6 +1452,11 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 		// No location specified so insert null value into database
 		validLoc = false
 	}
+	validBirthday := true
+	if activistJSON.Birthday == "" {
+		// No location specified so insert null value into database
+		validBirthday = false
+	}
 	validTraining0 := true
 	if activistJSON.Training0 == "" {
 		// Not specified so insert null value into database
@@ -1512,6 +1552,11 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 		// Not specified so insert null value into database
 		validInterestDate = false
 	}
+	validNotes := true
+	if activistJSON.Notes == "" {
+		// Not specified so insert null value into database
+		validNotes = false
+	}
 
 	activistExtra := ActivistExtra{
 		Activist: Activist{
@@ -1521,6 +1566,7 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			Location: sql.NullString{String: strings.TrimSpace(activistJSON.Location), Valid: validLoc},
 			Name:     strings.TrimSpace(activistJSON.Name),
 			Phone:    strings.TrimSpace(activistJSON.Phone),
+			Birthday: sql.NullString{String: strings.TrimSpace(activistJSON.Birthday), Valid: validBirthday},
 		},
 		ActivistMembershipData: ActivistMembershipData{
 			ActivistLevel: strings.TrimSpace(activistJSON.ActivistLevel),
@@ -1565,6 +1611,7 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			CircleInterest:        activistJSON.CircleInterest,
 			InterestDate:          sql.NullString{String: strings.TrimSpace(activistJSON.InterestDate), Valid: validInterestDate},
 			MPI:                   activistJSON.MPI,
+			Notes:                 sql.NullString{String: strings.TrimSpace(activistJSON.Notes), Valid: validNotes},
 		},
 	}
 

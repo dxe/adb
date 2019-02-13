@@ -41,10 +41,6 @@ CREATE TABLE activists (
   activist_level VARCHAR(40) NOT NULL DEFAULT 'Supporter',
   hidden TINYINT(1) NOT NULL DEFAULT '0',
   connector VARCHAR(100) NOT NULL DEFAULT '',
-  contacted_date VARCHAR(20) NOT NULL DEFAULT '',
-  interested VARCHAR(5) NOT NULL DEFAULT '',
-  meeting_date VARCHAR(20) NOT NULL DEFAULT '',
-  escalation VARCHAR(5) NOT NULL DEFAULT '',
   source VARCHAR(255) NOT NULL DEFAULT '',
   date_organizer DATE,
   date_senior_organizer DATE,
@@ -84,8 +80,8 @@ CREATE TABLE activists (
   referral_outlet varchar(100) NOT NULL DEFAULT '',
   circle_interest tinyint(1) NOT NULL DEFAULT '0',
   interest_date VARCHAR(20),
-  cir_first_email_visit varchar(20),
   mpi tinyint(1) NOT NULL DEFAULT '0',
+  notes TEXT,
   UNIQUE (name)
 )
 `)

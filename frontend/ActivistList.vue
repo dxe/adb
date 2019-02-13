@@ -297,6 +297,18 @@ function getDefaultColumns(view: string): Column[] {
       enabled: true,
     },
     {
+      header: 'Notes',
+      longHeader: 'Notes',
+      data: {
+        data: 'notes',
+        colWidths: 100,
+      },
+      enabled:
+        view === 'organizer_prospects' ||
+        view === 'development' ||
+        view === 'circle_member_prospects',
+    },
+    {
       header: 'Managing',
       longHeader: 'Managing',
       data: {
@@ -357,6 +369,18 @@ function getDefaultColumns(view: string): Column[] {
         colWidths: 100,
       },
       enabled: view === 'community_prospects' || view === 'all_activists',
+    },
+    {
+      header: 'Birthday',
+      longHeader: 'Birthday',
+      data: {
+        data: 'dob',
+        colWidths: 100,
+        type: 'date',
+        dateFormat: 'YYYY-MM-DD',
+        correctFormat: true,
+      },
+      enabled: view === 'all_activists',
     },
     {
       header: 'Location',
@@ -631,6 +655,19 @@ function getDefaultColumns(view: string): Column[] {
         colWidths: 200,
       },
       enabled: view === 'activist_recruitment' || view === 'leaderboard',
+    },
+    {
+      header: 'Last Circle',
+      longHeader: 'Last Circle Attended',
+      data: {
+        data: 'last_circle',
+        type: 'date',
+        dateFormat: 'YYYY-MM-DD',
+        correctFormat: true,
+        readOnly: true,
+        colWidths: 100,
+      },
+      enabled: view === 'circle_members',
     },
     {
       header: 'Total Events',
@@ -1596,7 +1633,7 @@ export default Vue.extend({
       }
 
       if (this.view === 'development' || this.view === 'organizer_prospects') {
-        var fixedCol = 2;
+        var fixedCol = 3;
       } else {
         var fixedCol = 0;
       }
