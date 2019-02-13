@@ -1377,71 +1377,19 @@ export default Vue.extend({
           // status === "success"
           var activistList = parsed.activist_list;
 
-          // filtering
-          if (this.view != 'all_activists') {
-            var activistListFiltered;
-            activistListFiltered = activistList.filter((el: Activist) => {
-              if (this.view === 'activist_pool') {
-                return el.activist_level == 'Supporter';
-              }
+          // frontend filtering
 
-              // filtering for community prospects
-              else if (this.view === 'community_prospects') {
-                var selectedInterest = $('#filterInterest :selected').text();
+          if (this.view === 'community_prospects') {
+            var selectedInterest = $('#filterInterest :selected').text();
 
-                if (
-                  selectedInterest != 'All' &&
-                  selectedInterest != '' &&
-                  selectedInterest != null
-                ) {
-                  return (
-                    el.source.includes('Form') &&
-                    !el.source.includes('Circle Interest') &&
-                    !el.source.includes('Application') &&
-                    el.dev_interest.toLowerCase().indexOf(selectedInterest.toLowerCase()) != -1
-                  );
-                } else {
-                  return (
-                    el.source.includes('Form') &&
-                    !el.source.includes('Circle Interest') &&
-                    !el.source.includes('Application')
-                  );
-                }
-              } else if (this.view === 'leaderboard') {
-                return el.active == 1;
-              } else if (this.view === 'development') {
-                return el.activist_level == 'Organizer' || el.activist_level == 'Senior Organizer';
-              } else if (this.view === 'organizer_prospects') {
-                return (
-                  el.prospect_organizer == 1 &&
-                  (el.activist_level == 'Supporter' ||
-                    el.activist_level == 'Circle Member' ||
-                    el.activist_level == 'Chapter Member')
-                );
-              } else if (this.view === 'chapter_member_prospects') {
-                return (
-                  el.prospect_chapter_member == 1 &&
-                  (el.activist_level == 'Supporter' || el.activist_level == 'Circle Member')
-                );
-              } else if (this.view === 'circle_member_prospects') {
-                return el.circle_interest == 1 && el.circles_list == '';
-              } else if (this.view === 'circle_members') {
-                return el.circles_list != '';
-              } else if (this.view === 'senior_organizer_prospects') {
-                return el.prospect_senior_organizer == 1 && el.activist_level != 'Senior Organizer';
-              } else if (this.view === 'senior_organizer_development') {
-                return el.activist_level == 'Senior Organizer';
-              } else if (this.view === 'chapter_member_development') {
-                return (
-                  el.activist_level == 'Chapter Member' ||
-                  el.activist_level == 'Organizer' ||
-                  el.activist_level == 'Senior Organizer'
-                );
-              } else {
-                return true; // unreachable
-              }
-            });
-            activistList = activistListFiltered;
+            // only need to filer if an interest is selected
+            if (selectedInterest != 'All' && selectedInterest != '' && selectedInterest != null) {
+              var activistListFiltered;
+              activistListFiltered = activistList.filter((el: Activist) => {
+                return el.dev_interest.toLowerCase().indexOf(selectedInterest.toLowerCase()) != -1;
+              });
+              activistList = activistListFiltered;
+            }
           }
 
           if (activistList !== null) {
@@ -1519,6 +1467,7 @@ export default Vue.extend({
         order_field: order_field,
         last_event_date_to: this.lastEventDateTo,
         last_event_date_from: this.lastEventDateFrom,
+        filter: this.view, // this passes view to the backend, where filtering will now take place
       };
     },
     toggleShowOptions(optionsType: string) {
@@ -1613,7 +1562,6 @@ export default Vue.extend({
       lastEventDateFrom: initDateFrom,
       lastEventDateTo: initDateTo,
       filterInterest: 'All',
-      filterSource: '',
       showOptions: '',
       search: '',
       loading: false,

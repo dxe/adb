@@ -10,6 +10,8 @@ import (
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
+
+	"fmt"
 )
 
 /** Constant and Variable Definitions */
@@ -404,6 +406,7 @@ type GetActivistOptions struct {
 	OrderField        string `json:"order_field"`
 	LastEventDateFrom string `json:"last_event_date_from"`
 	LastEventDateTo   string `json:"last_event_date_to"`
+	Filter            string `json:"filter"`
 }
 
 var validOrderFields = map[string]struct{}{
@@ -716,12 +719,39 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 		query += " WHERE a.id = ? "
 		queryArgs = append(queryArgs, options.ID)
 	} else {
-		// Only check filter by hidden if the activistID isn't
-		// supplied.
+		whereClause := []string{}
+
 		if options.Hidden == true {
-			query += " WHERE a.hidden = true "
+			whereClause = append(whereClause, "a.hidden = true")
 		} else {
-			query += " WHERE a.hidden = false "
+			whereClause = append(whereClause, "a.hidden = false")
+		}
+
+		// WHERE clause filters based on view
+		if options.Filter == "development" {
+			whereClause = append(whereClause, "a.activist_level like '%organizer'")
+		}
+		if options.Filter == "chapter_member_prospects" {
+			whereClause = append(whereClause, "prospect_chapter_member = true AND a.activist_level <> 'chapter member' and a.activist_level not like '%organizer'")
+		}
+		if options.Filter == "organizer_prospects" {
+			whereClause = append(whereClause, "prospect_organizer = true AND a.activist_level not like '%organizer'")
+		}
+		if options.Filter == "senior_organizer_prospects" {
+			whereClause = append(whereClause, "prospect_senior_organizer = true AND a.activist_level <> 'senior organizer'")
+		}
+		if options.Filter == "senior_organizer_development" {
+			whereClause = append(whereClause, "a.activist_level = 'senior organizer'")
+		}
+		if options.Filter == "chapter_member_development" {
+			whereClause = append(whereClause, "(a.activist_level like '%organizer' OR a.activist_level = 'chapter member')")
+		}
+		if options.Filter == "community_prospects" {
+			whereClause = append(whereClause, "source like '%form%' and source <> 'circle interest form' and source not like '%application%'")
+		}
+
+		if len(whereClause) != 0 {
+			query += " WHERE " + strings.Join(whereClause, " AND ")
 		}
 	}
 
@@ -734,10 +764,22 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 		havingClause = append(havingClause, "last_event <= ?")
 		queryArgs = append(queryArgs, options.LastEventDateTo)
 	}
+	// HAVING clause filters based on view
+	if options.Filter == "leaderboard" {
+		havingClause = append(havingClause, "active = 1")
+	}
+	if options.Filter == "circle_member_prospects" {
+		havingClause = append(havingClause, "circles_list = '' AND circle_interest = 1")
+	}
+	if options.Filter == "circle_members" {
+		havingClause = append(havingClause, "circles_list <> ''")
+	}
 
 	if len(havingClause) != 0 {
 		query += " HAVING " + strings.Join(havingClause, " AND ")
 	}
+
+	fmt.Printf("%s\n", query)
 
 	orderField := options.OrderField
 	// Default to a.name if orderField isn't specified
