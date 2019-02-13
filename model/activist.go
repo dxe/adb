@@ -749,6 +749,15 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 		if options.Filter == "community_prospects" {
 			whereClause = append(whereClause, "source like '%form%' and source <> 'circle interest form' and source not like '%application%'")
 		}
+		if options.Filter == "circle_members" {
+			whereClause = append(whereClause, "id in (select distinct activist_id from circle_members)")
+		}
+		if options.Filter == "circle_member_prospects" {
+			whereClause = append(whereClause, "circle_interest = 1 AND id in (select distinct activist_id from circle_members)")
+		}
+		if options.Filter == "leaderboard" {
+			whereClause = append(whereClause, "id in (select distinct activist_id  from event_attendance ea  where ea.event_id in (select id from events e where e.date >= (now() - interval 30 day)))")
+		}
 
 		if len(whereClause) != 0 {
 			query += " WHERE " + strings.Join(whereClause, " AND ")
@@ -763,16 +772,6 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 	if options.LastEventDateTo != "" {
 		havingClause = append(havingClause, "last_event <= ?")
 		queryArgs = append(queryArgs, options.LastEventDateTo)
-	}
-	// HAVING clause filters based on view
-	if options.Filter == "leaderboard" {
-		havingClause = append(havingClause, "active = 1")
-	}
-	if options.Filter == "circle_member_prospects" {
-		havingClause = append(havingClause, "circles_list = '' AND circle_interest = 1")
-	}
-	if options.Filter == "circle_members" {
-		havingClause = append(havingClause, "circles_list <> ''")
 	}
 
 	if len(havingClause) != 0 {
