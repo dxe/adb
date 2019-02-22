@@ -117,7 +117,13 @@
               </ul>
             </div>
           </td>
-          <td nowrap>{{ event.event_date }}</td>
+          <td nowrap>
+            {{ event.event_date }}
+            <span class="hidden-sm hidden-md hidden-lg hidden-xl">
+              <br /><br />
+              Attendance: {{ event.attendees.length }}
+            </span>
+          </td>
           <td class="event-name">
             <b>{{ event.event_name }}</b>
           </td>
