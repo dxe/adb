@@ -380,7 +380,7 @@ func GetWorkingGroup(db *sqlx.DB, options WorkingGroupQueryOptions) (WorkingGrou
 
 func getWorkingGroups(db *sqlx.DB, options WorkingGroupQueryOptions) ([]WorkingGroup, error) {
 	query := `
-SELECT w.id, w.name, w.type, w.group_email, w.visible, w.description, w.meeting_time, w.meeting_location, w.coords FROM working_groups w
+SELECT w.id, w.name, w.type, lower(w.group_email) as group_email, w.visible, w.description, w.meeting_time, w.meeting_location, w.coords FROM working_groups w
 `
 
 	var queryArgs []interface{}

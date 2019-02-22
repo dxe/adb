@@ -40,7 +40,7 @@ FROM activists
 const selectActivistExtraBaseQuery string = `
 SELECT
 
-  email,
+  lower(email) as email,
   facebook,
   a.id,
   location,

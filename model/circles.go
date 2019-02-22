@@ -384,7 +384,7 @@ func GetCircleGroup(db *sqlx.DB, options CircleGroupQueryOptions) (CircleGroup, 
 
 func getCircleGroups(db *sqlx.DB, options CircleGroupQueryOptions) ([]CircleGroup, error) {
 	query := `
-SELECT w.id, w.name, w.type, w.group_email, w.visible, w.description, w.meeting_time, w.meeting_location, w.coords FROM circles w
+SELECT w.id, w.name, w.type, lower(w.group_email) as group_email, w.visible, w.description, w.meeting_time, w.meeting_location, w.coords FROM circles w
 `
 
 	var queryArgs []interface{}
