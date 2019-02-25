@@ -825,6 +825,20 @@ function getDefaultColumns(view: string): Column[] {
       },
       enabled: view === 'development' || view === 'organizer_prospects',
     },
+
+    {
+      header: 'Quiz',
+      longHeader: 'Organizer: Quiz',
+      data: {
+        type: 'date',
+        data: 'dev_quiz',
+        dateFormat: 'YYYY-MM-DD',
+        correctFormat: true,
+        colWidths: 100,
+      },
+      enabled: view === 'organizer_prospects' || view === 'development',
+    },
+
     {
       header: 'First Email',
       longHeader: 'Chapter Membership: Date First Email Sent',
@@ -908,6 +922,7 @@ function getDefaultColumns(view: string): Column[] {
       },
       enabled: view === 'organizer_prospects',
     },
+
     {
       header: 'Onboarding',
       longHeader: 'Organizer: Date of Onboarding Logistics Completion',

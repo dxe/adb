@@ -60,6 +60,7 @@ SELECT
   training5,
   training6,
   dev_application_date,
+  dev_quiz,
   dev_manager,
   dev_interest,
   dev_auth,
@@ -211,6 +212,7 @@ SET
   training5 = :training5,
   training6 = :training6,
   dev_application_date = :dev_application_date,
+  dev_quiz = :dev_quiz,
   dev_manager = :dev_manager,
   dev_interest = :dev_interest,
   dev_auth = :dev_auth,
@@ -290,6 +292,7 @@ type ActivistConnectionData struct {
 	Training5       sql.NullString `db:"training5"`
 	Training6       sql.NullString `db:"training6"`
 	ApplicationDate mysql.NullTime `db:"dev_application_date"`
+	Quiz            sql.NullString `db:"dev_quiz"`
 	DevManager      string         `db:"dev_manager"`
 	DevInterest     string         `db:"dev_interest"`
 	DevAuth         sql.NullString `db:"dev_auth"`
@@ -365,6 +368,7 @@ type ActivistJSON struct {
 	Training5       string `json:"training5"`
 	Training6       string `json:"training6"`
 	ApplicationDate string `json:"dev_application_date"`
+	Quiz            string `json:"dev_quiz"`
 	DevManager      string `json:"dev_manager"`
 	DevInterest     string `json:"dev_interest"`
 	DevAuth         string `json:"dev_auth"`
@@ -483,6 +487,7 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 		if a.ActivistConnectionData.ApplicationDate.Valid {
 			applicationDate = a.ActivistConnectionData.ApplicationDate.Time.Format(EventDateLayout)
 		}
+
 		location := ""
 		if a.Activist.Location.Valid {
 			location = a.Activist.Location.String
@@ -518,6 +523,10 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 		training6 := ""
 		if a.ActivistConnectionData.Training6.Valid {
 			training6 = a.ActivistConnectionData.Training6.String
+		}
+		quiz := ""
+		if a.ActivistConnectionData.Quiz.Valid {
+			quiz = a.ActivistConnectionData.Quiz.String
 		}
 		dev_auth := ""
 		if a.ActivistConnectionData.DevAuth.Valid {
@@ -610,6 +619,7 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			Training5:       training5,
 			Training6:       training6,
 			ApplicationDate: applicationDate,
+			Quiz:            quiz,
 			DevManager:      a.DevManager,
 			DevInterest:     a.DevInterest,
 			DevAuth:         dev_auth,
@@ -959,6 +969,7 @@ INSERT INTO activists (
   dev_vetted,
   dev_interview,
   dev_onboarding,
+  dev_quiz,
   prospect_senior_organizer,
   so_auth,
   so_core,
@@ -1010,6 +1021,7 @@ INSERT INTO activists (
   :dev_vetted,
   :dev_interview,
   :dev_onboarding,
+  :dev_quiz,
   :prospect_senior_organizer,
   :so_auth,
   :so_core,
@@ -1081,6 +1093,7 @@ SET
   dev_vetted = :dev_vetted,
   dev_interview = :dev_interview,
   dev_onboarding = :dev_onboarding,
+  dev_quiz = :dev_quiz,
   prospect_senior_organizer = :prospect_senior_organizer,
   so_auth = :so_auth,
   so_core = :so_core,
@@ -1319,6 +1332,7 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 	target.DevEmailSent = stringMergeSqlNullString(original.DevEmailSent, target.DevEmailSent)
 	target.DevInterview = stringMergeSqlNullString(original.DevInterview, target.DevInterview)
 	target.ApplicationDate = stringMergeSqlNullTime(original.ApplicationDate, target.ApplicationDate)
+	target.Quiz = stringMergeSqlNullString(original.Quiz, target.Quiz)
 	target.CMFirstEmail = stringMergeSqlNullString(original.CMFirstEmail, target.CMFirstEmail)
 	target.CMApprovalEmail = stringMergeSqlNullString(original.CMApprovalEmail, target.CMApprovalEmail)
 	target.CMWarningEmail = stringMergeSqlNullString(original.CMWarningEmail, target.CMWarningEmail)
@@ -1588,6 +1602,11 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 		// Not specified so insert null value into database
 		validSOQuiz = false
 	}
+	validQuiz := true
+	if activistJSON.Quiz == "" {
+		// Not specified so insert null value into database
+		validQuiz = false
+	}
 	validInterestDate := true
 	if activistJSON.InterestDate == "" {
 		// Not specified so insert null value into database
@@ -1629,6 +1648,7 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			DevVetted:     activistJSON.DevVetted,
 			DevInterview:  sql.NullString{String: strings.TrimSpace(activistJSON.DevInterview), Valid: validDevInterview},
 			DevOnboarding: activistJSON.DevOnboarding,
+			Quiz:          sql.NullString{String: strings.TrimSpace(activistJSON.Quiz), Valid: validQuiz},
 
 			ProspectSeniorOrganizer: activistJSON.ProspectSeniorOrganizer,
 			SOAuth:                  sql.NullString{String: strings.TrimSpace(activistJSON.SOAuth), Valid: validSOAuth},
