@@ -6,6 +6,9 @@ body {
         background-color: #575756;
         background-image: url("https://ec2.dxe.io/power-wallboard/random.php");
         background-attachment: fixed;
+        background-repeat: no-repeat;
+        background-size: auto 100%;
+        background-position: center; 
 }
 
 .navbar {
