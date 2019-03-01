@@ -4,6 +4,12 @@ body {
         font-family: "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
         font-weight: medium;
         background-color: #575756;
+        background-image: url("https://ec2.dxe.io/power-wallboard/random.php");
+        background-attachment: fixed;
+}
+
+.navbar {
+    opacity: 0.9;
 }
 
 @media (max-width: 580px) {
@@ -52,6 +58,7 @@ a.logout-link:hover, a.logout-link:active {
         padding: 25px 40px 25px 40px; 
         margin: 0 auto;
         box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24),0 17px 50px 0 rgba(0,0,0,0.19);
+        opacity: 0.98;
 }
 
 .body-wrapper-wide {
@@ -60,6 +67,7 @@ a.logout-link:hover, a.logout-link:active {
         padding: 25px 40px 25px 40px; 
         margin: 0 auto;
         box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24),0 17px 50px 0 rgba(0,0,0,0.19);
+        opacity: 0.98;
 }
 
 .body-wrapper-extra-wide {
@@ -68,6 +76,7 @@ a.logout-link:hover, a.logout-link:active {
         padding: 25px 40px 25px 40px; 
         margin: 0 auto;
         box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24),0 17px 50px 0 rgba(0,0,0,0.19);
+        opacity: 0.98;
 }
 
 
