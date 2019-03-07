@@ -368,7 +368,10 @@ function getDefaultColumns(view: string): Column[] {
         data: 'phone',
         colWidths: 100,
       },
-      enabled: view === 'community_prospects' || view === 'all_activists',
+      enabled:
+        view === 'community_prospects' ||
+        view === 'all_activists' ||
+        view === 'chapter_member_prospects',
     },
     {
       header: 'Birthday',
@@ -458,7 +461,6 @@ function getDefaultColumns(view: string): Column[] {
       longHeader: 'Activist Level',
       data: {
         data: 'activist_level',
-        readOnly: false,
         colWidths: 140,
         type: 'dropdown',
         source: ['Supporter', 'Circle Member', 'Chapter Member', 'Organizer', 'Senior Organizer'],
@@ -864,14 +866,26 @@ function getDefaultColumns(view: string): Column[] {
       enabled: view === 'chapter_member_prospects',
     },
     {
-      header: 'Warning Email',
-      longHeader: 'Chapter Membership: Date Removal Warning Email Sent',
+      header: 'MPI Email',
+      longHeader: 'Chapter Membership: Date MPI Warning Email Sent',
       data: {
         type: 'date',
         data: 'cm_warning_email',
         dateFormat: 'YYYY-MM-DD',
         correctFormat: true,
         colWidths: 100,
+      },
+      enabled: view === 'chapter_member_development',
+    },
+
+    {
+      header: 'Vision Wall',
+      longHeader: 'Chapter Member: Added to Vision Wall',
+      data: {
+        data: 'vision_wall',
+        colWidths: 80,
+        type: 'dropdown',
+        source: ['', 'Yes', 'Declined'],
       },
       enabled: view === 'chapter_member_development',
     },

@@ -83,6 +83,7 @@ CREATE TABLE activists (
   interest_date VARCHAR(20),
   mpi tinyint(1) NOT NULL DEFAULT '0',
   notes TEXT,
+  vision_wall varchar(10) NOT NULL DEFAULT '',
   UNIQUE (name)
 )
 `)

@@ -10,8 +10,6 @@ import (
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
-
-	"fmt"
 )
 
 /** Constant and Variable Definitions */
@@ -174,7 +172,8 @@ SELECT
   	as wg_or_cir_member,
 
     mpi,
-    notes
+    notes,
+    vision_wall
 
 FROM activists a
 
@@ -242,6 +241,7 @@ SET
   interest_date = :interest_date,
   mpi = :mpi,
   notes = :notes
+  vision_wall = :vision_wall
 
 WHERE
   id = :id`
@@ -325,6 +325,7 @@ type ActivistConnectionData struct {
 	InterestDate          sql.NullString `db:"interest_date"`
 	MPI                   bool           `db:"mpi"`
 	Notes                 sql.NullString `db:"notes"`
+	VisionWall            string         `db:"vision_wall"`
 }
 
 type ActivistExtra struct {
@@ -401,6 +402,7 @@ type ActivistJSON struct {
 	InterestDate          string `json:"interest_date"`
 	MPI                   bool   `json:"mpi"`
 	Notes                 string `json:"notes"`
+	VisionWall            string `json:"vision_wall"`
 }
 
 type GetActivistOptions struct {
@@ -652,6 +654,7 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			InterestDate:          interest_date,
 			MPI:                   a.MPI,
 			Notes:                 notes,
+			VisionWall:            a.VisionWall,
 		})
 	}
 
@@ -787,8 +790,6 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 	if len(havingClause) != 0 {
 		query += " HAVING " + strings.Join(havingClause, " AND ")
 	}
-
-	fmt.Printf("%s\n", query)
 
 	orderField := options.OrderField
 	// Default to a.name if orderField isn't specified
@@ -992,7 +993,8 @@ INSERT INTO activists (
   circle_interest,
   interest_date,
   mpi,
-  notes
+  notes,
+  vision_wall
 
 ) VALUES (
 
@@ -1044,7 +1046,8 @@ INSERT INTO activists (
   :circle_interest,
   :interest_date,
   :mpi,
-  :notes
+  :notes,
+  :vision_wall
 
 )`, activist)
 	if err != nil {
@@ -1115,7 +1118,8 @@ SET
   circle_interest = :circle_interest,
   interest_date = :interest_date,
   mpi = :mpi,
-  notes = :notes
+  notes = :notes,
+  vision_wall = :vision_wall
 
 WHERE
   id = :id`, activist)
@@ -1347,6 +1351,7 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 	target.ReferralOutlet = stringMerge(original.ReferralOutlet, target.ReferralOutlet)
 	target.InterestDate = stringMergeSqlNullString(original.InterestDate, target.InterestDate)
 	target.Notes = stringMergeSqlNullString(original.Notes, target.Notes)
+	target.VisionWall = stringMerge(original.VisionWall, target.VisionWall)
 
 	// Check Activist Levels
 	if len(original.ActivistLevel) != 0 && len(target.ActivistLevel) != 0 {
@@ -1673,6 +1678,7 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			InterestDate:          sql.NullString{String: strings.TrimSpace(activistJSON.InterestDate), Valid: validInterestDate},
 			MPI:                   activistJSON.MPI,
 			Notes:                 sql.NullString{String: strings.TrimSpace(activistJSON.Notes), Valid: validNotes},
+			VisionWall:            strings.TrimSpace(activistJSON.VisionWall),
 		},
 	}
 
