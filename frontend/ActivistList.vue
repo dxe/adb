@@ -531,6 +531,20 @@ function getDefaultColumns(view: string): Column[] {
     },
 
     {
+      header: 'Application',
+      longHeader: 'Application Type',
+      data: {
+        data: 'dev_application_type',
+        colWidths: 80,
+        readOnly: true,
+      },
+      enabled:
+        view === 'chapter_member_prospects' ||
+        view === 'organizer_prospects' ||
+        view === 'senior_organizer_prospects',
+    },
+
+    {
       header: 'Circle Agreement',
       longHeader: 'Circle Agreement',
       data: {

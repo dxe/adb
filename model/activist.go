@@ -58,6 +58,7 @@ SELECT
   training5,
   training6,
   dev_application_date,
+  dev_application_type,
   dev_quiz,
   dev_manager,
   dev_interest,
@@ -211,6 +212,7 @@ SET
   training5 = :training5,
   training6 = :training6,
   dev_application_date = :dev_application_date,
+  dev_application_type = :dev_application_type,
   dev_quiz = :dev_quiz,
   dev_manager = :dev_manager,
   dev_interest = :dev_interest,
@@ -292,6 +294,7 @@ type ActivistConnectionData struct {
 	Training5       sql.NullString `db:"training5"`
 	Training6       sql.NullString `db:"training6"`
 	ApplicationDate mysql.NullTime `db:"dev_application_date"`
+	ApplicationType string         `db:"dev_application_type"`
 	Quiz            sql.NullString `db:"dev_quiz"`
 	DevManager      string         `db:"dev_manager"`
 	DevInterest     string         `db:"dev_interest"`
@@ -369,6 +372,7 @@ type ActivistJSON struct {
 	Training5       string `json:"training5"`
 	Training6       string `json:"training6"`
 	ApplicationDate string `json:"dev_application_date"`
+	ApplicationType string `json:"dev_application_type"`
 	Quiz            string `json:"dev_quiz"`
 	DevManager      string `json:"dev_manager"`
 	DevInterest     string `json:"dev_interest"`
@@ -621,6 +625,7 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			Training5:       training5,
 			Training6:       training6,
 			ApplicationDate: applicationDate,
+			ApplicationType: a.ApplicationType,
 			Quiz:            quiz,
 			DevManager:      a.DevManager,
 			DevInterest:     a.DevInterest,
@@ -1352,6 +1357,7 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 	target.InterestDate = stringMergeSqlNullString(original.InterestDate, target.InterestDate)
 	target.Notes = stringMergeSqlNullString(original.Notes, target.Notes)
 	target.VisionWall = stringMerge(original.VisionWall, target.VisionWall)
+	target.ApplicationType = stringMerge(original.ApplicationType, target.ApplicationType)
 
 	// Check Activist Levels
 	if len(original.ActivistLevel) != 0 && len(target.ActivistLevel) != 0 {
