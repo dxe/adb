@@ -1022,7 +1022,7 @@ function getDefaultColumns(view: string): Column[] {
     },
     {
       header: 'Connectees',
-      longHeader: 'Senior Organizer: Connectees (2+)',
+      longHeader: 'Senior Organizer: Connectees (3+)',
       data: {
         data: 'so_connector',
         colWidths: 120,
