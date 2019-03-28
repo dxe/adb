@@ -242,7 +242,7 @@ SET
   circle_interest = :circle_interest,
   interest_date = :interest_date,
   mpi = :mpi,
-  notes = :notes
+  notes = :notes,
   vision_wall = :vision_wall
 
 WHERE
