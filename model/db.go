@@ -63,7 +63,7 @@ CREATE TABLE activists (
   dev_interview VARCHAR(20),
   dev_onboarding TINYINT(1) NOT NULL DEFAULT '0',
   dev_application_date DATE,
-  dev_application_type VARCHAR(40) NOT NULL, DEFAULT '',
+  dev_application_type VARCHAR(40) NOT NULL DEFAULT '',
   dev_quiz VARCHAR(20),
   cm_first_email VARCHAR(20),
   cm_approval_email VARCHAR(20),
