@@ -135,6 +135,8 @@ func syncWorkingGroupMailingLists(db *sqlx.DB, adminService *admin.Service) {
 		return
 	}
 
+	var groupEmails []string
+
 	for _, wg := range wgs {
 		var memberEmails []string
 		for _, m := range wg.Members {
@@ -146,7 +148,13 @@ func syncWorkingGroupMailingLists(db *sqlx.DB, adminService *admin.Service) {
 			memberEmails = append(memberEmails, email)
 		}
 		syncMailingList(adminService, wg.GroupEmail, memberEmails)
+
+		groupEmails = append(groupEmails, wg.GroupEmail)
 	}
+
+	// manually adding almira since she is the owner of group to approve messages
+	groupEmails = append(groupEmails, "almira@directactioneverywhere.com")
+	syncMailingList(adminService, "all-working-groups@directactioneverywhere.com", groupEmails)
 }
 
 func syncCircleHostMailingList(db *sqlx.DB, adminService *admin.Service) {
