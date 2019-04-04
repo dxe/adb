@@ -36,8 +36,8 @@
         <select id="event-type" class="form-control filter-margin" v-model="search.type">
           <option value="noConnections">All</option>
           <option value="Action">Action</option>
-          <option value="Circle">Circle</option>
           <option value="Campaign Action">Campaign Action</option>
+          <option value="Circle">Circle</option>
           <option value="Community">Community</option>
           <option value="Frontline Surveillance">Frontline Surveillance</option>
           <option value="Meeting">Meeting</option>
