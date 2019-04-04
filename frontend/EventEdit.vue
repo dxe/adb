@@ -16,7 +16,7 @@
           <select id="eventType" class="form-control" v-model="type">
             <option disabled selected value>-- select an option --</option>
             <option value="Action">Action</option>
-            <option value="Action">Campaign Action</option>
+            <option value="Campaign Action">Campaign Action</option>
             <option value="Circle">Circle</option>
             <option value="Community">Community</option>
             <option value="Frontline Surveillance">Frontline Surveillance</option>
