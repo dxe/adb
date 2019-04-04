@@ -17,6 +17,7 @@ const EventDateLayout string = "2006-01-02"
 
 var EventTypes map[string]bool = map[string]bool{
 	"Action":                 true,
+	"Campaign Action":        true,
 	"Circle":                 true,
 	"Community":              true,
 	"Frontline Surveillance": true,
@@ -147,7 +148,7 @@ ON (e.id = ea.event_id AND ea.activist_id = a.id)
 	if options.EventType == "noConnections" {
 		whereClause = append(whereClause, "e.event_type <> 'Connection'")
 	} else if options.EventType == "mpiDA" {
-		whereClause = append(whereClause, "(e.event_type = 'Outreach' or e.event_type = 'Action' or e.event_type = 'Sanctuary' or e.event_type = 'Frontline Surveillance')")
+		whereClause = append(whereClause, "(e.event_type = 'Outreach' or e.event_type = 'Action' or e.event_type = 'Campaign Action' or e.event_type = 'Sanctuary' or e.event_type = 'Frontline Surveillance')")
 	} else if options.EventType == "mpiCOM" {
 		whereClause = append(whereClause, "(e.event_type = 'Community' or e.event_type = 'Training' or e.event_type = 'Circle')")
 	} else if options.EventType != "" {
