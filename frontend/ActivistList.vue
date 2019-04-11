@@ -507,7 +507,7 @@ function getDefaultColumns(view: string): Column[] {
       longHeader: 'Circle Interest',
       data: {
         type: 'dropdown',
-        source: [0, 1],
+        source: ['true', 'false'],
         data: 'circle_interest',
         colWidths: 80,
       },
@@ -561,7 +561,7 @@ function getDefaultColumns(view: string): Column[] {
       longHeader: 'Prospective Chapter Member',
       data: {
         type: 'dropdown',
-        source: [0, 1],
+        source: ['true', 'false'],
         data: 'prospect_chapter_member',
         colWidths: 110,
       },
@@ -573,7 +573,7 @@ function getDefaultColumns(view: string): Column[] {
       longHeader: 'Prospective Organizer',
       data: {
         type: 'dropdown',
-        source: [0, 1],
+        source: ['true', 'false'],
         data: 'prospect_organizer',
         colWidths: 100,
       },
@@ -585,7 +585,7 @@ function getDefaultColumns(view: string): Column[] {
       longHeader: 'Prospective Senior Organizer',
       data: {
         type: 'dropdown',
-        source: [0, 1],
+        source: ['true', 'false'],
         data: 'prospect_senior_organizer',
         colWidths: 100,
         readOnly: true,
