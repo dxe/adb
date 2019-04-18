@@ -16,7 +16,7 @@
         <span v-if="showOptions !== 'filters'">+</span
         ><span v-if="showOptions === 'filters'">-</span> Filters
       </button>
-      <button class="btn-link" @click="toggleShowOptions('columns')">
+      <button class="btn-link" id="colFilterBtn" @click="toggleShowOptions('columns')">
         <span v-if="showOptions !== 'columns'">+</span
         ><span v-if="showOptions === 'columns'">-</span> Columns
       </button>

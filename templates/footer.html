@@ -4,5 +4,22 @@
 	<br /><br />
 </center>
 
+<script>
+	if ($("#hot-table-container").length) {
+		$("body").css("overflow", "hidden");
+	}
+
+	$("#colFilterBtn").click(function() {
+  		if ($("#hot-table-container").length) {
+	  		if ($("body").css('overflow') == 'hidden') {
+				$("body").css("overflow", "auto");
+			} else {
+				window.scrollTo(0, 0);
+				$("body").css("overflow", "hidden");
+			}
+		}
+	});
+</script>
+
   </body>
 </html>
