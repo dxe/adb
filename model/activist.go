@@ -203,7 +203,7 @@ LEFT JOIN (
         event_attendance ea
     join events e on e.id = ea.event_id
     where
-        YEAR(e.date) = YEAR(now()) AND (MONTH(e.date) = MONTH(now()) or MONTH(e.date) = MONTH(DATE_SUB(now(), INTERVAL 1 MONTH)))
+        YEAR(e.date) = YEAR(now()) AND (MONTH(e.date) = MONTH(now()))
     group by ea.activist_id   
   ) currentMonth on currentMonth.activist_id = activists.id
 ) mpp_requirements on mpp_requirements.id = a.id
@@ -793,7 +793,7 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 			whereClause = append(whereClause, "circle_interest = 1 AND id not in (select distinct activist_id from circle_members)")
 		}
 		if options.Filter == "leaderboard" {
-			whereClause = append(whereClause, "id in (select distinct activist_id  from event_attendance ea  where ea.event_id in (select id from events e where e.date >= (now() - interval 30 day)))")
+			whereClause = append(whereClause, "a.id in (select distinct activist_id  from event_attendance ea  where ea.event_id in (select id from events e where e.date >= (now() - interval 30 day)))")
 		}
 
 		if len(whereClause) != 0 {

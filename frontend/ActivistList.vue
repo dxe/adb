@@ -724,7 +724,7 @@ function getDefaultColumns(view: string): Column[] {
 
     {
       header: 'MPP Req.',
-      longHeader: 'MPP Requirements',
+      longHeader: 'MPP Requirements This Month',
       data: {
         data: 'mpp_requirements',
         colWidths: 80,
