@@ -190,7 +190,7 @@ LEFT JOIN (
 LEFT JOIN (
 
   select
-    id,
+    id as activist_id_mpp,
       IF(is_protest = 1 and is_community = 1, 'Fulfilling requirements',IF(is_protest = 1 and is_community = 0, 'Missing Community event',IF(is_protest = 0 and is_community = 1, 'Missing DA event','Missing Community & DA events'))) as MPP_Requirements
   from activists
 
@@ -206,7 +206,7 @@ LEFT JOIN (
         YEAR(e.date) = YEAR(now()) AND (MONTH(e.date) = MONTH(now()))
     group by ea.activist_id   
   ) currentMonth on currentMonth.activist_id = activists.id
-) mpp_requirements on mpp_requirements.id = a.id
+) mpp_requirements on mpp_requirements.activist_id_mpp = a.id
 `
 
 const updateActivistExtraBaseQuery string = `UPDATE activists
@@ -790,7 +790,7 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 			whereClause = append(whereClause, "id in (select distinct activist_id from circle_members)")
 		}
 		if options.Filter == "circle_member_prospects" {
-			whereClause = append(whereClause, "circle_interest = 1 AND id not in (select distinct activist_id from circle_members)")
+			whereClause = append(whereClause, "circle_interest = 1 AND a.id not in (select distinct activist_id from circle_members)")
 		}
 		if options.Filter == "leaderboard" {
 			whereClause = append(whereClause, "a.id in (select distinct activist_id  from event_attendance ea  where ea.event_id in (select id from events e where e.date >= (now() - interval 30 day)))")
@@ -1159,7 +1159,7 @@ func HideActivist(db *sqlx.DB, activistID int) error {
 		return errors.New("HideActivist: activistID cannot be 0")
 	}
 	var activistCount int
-	err := db.Get(&activistCount, `SELECT count(*) FROM activists WHERE id = ?`, activistID)
+	err := db.Get(&activistCount, `SELECT count(*) FROM activists WHERE a.id = ?`, activistID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get activist count")
 	}
@@ -1167,7 +1167,7 @@ func HideActivist(db *sqlx.DB, activistID int) error {
 		return errors.Errorf("Activist with id %d does not exist", activistID)
 	}
 
-	_, err = db.Exec(`UPDATE activists SET hidden = true WHERE id = ?`, activistID)
+	_, err = db.Exec(`UPDATE activists SET hidden = true WHERE a.id = ?`, activistID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update activist %d", activistID)
 	}
@@ -1193,7 +1193,7 @@ func MergeActivist(db *sqlx.DB, originalActivistID, targetActivistID int) error 
 		return errors.Wrap(err, "could not create transaction")
 	}
 
-	_, err = tx.Exec(`UPDATE activists SET hidden = true, name = concat(name,' ', id) WHERE id = ?`, originalActivistID)
+	_, err = tx.Exec(`UPDATE activists SET hidden = true, name = concat(name,' ', id) WHERE a.id = ?`, originalActivistID)
 	if err != nil {
 		tx.Rollback()
 		return errors.Wrapf(err, "failed to hide original activist %d", originalActivistID)
@@ -1425,7 +1425,7 @@ func updateMergedActivistDataDetails(tx *sqlx.Tx, originalActivistID int, target
 	// Favor booleans that are set to TRUE, and pull in missing data from original activist to target; when both
 	// activists have data for the same field, we should use the target activist's data.
 
-	query := selectActivistExtraBaseQuery + " WHERE id = ?"
+	query := selectActivistExtraBaseQuery + " WHERE a.id = ?"
 
 	var originalActivist = new(ActivistExtra)
 	err := tx.Get(originalActivist, query, originalActivistID)
