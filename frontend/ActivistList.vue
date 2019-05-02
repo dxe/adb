@@ -306,7 +306,9 @@ function getDefaultColumns(view: string): Column[] {
       enabled:
         view === 'organizer_prospects' ||
         view === 'development' ||
-        view === 'circle_member_prospects',
+        view === 'circle_member_prospects' ||
+        view === 'chapter_member_development' ||
+        view === 'chapter_member_prospects',
     },
     {
       header: 'Managing',
@@ -565,7 +567,7 @@ function getDefaultColumns(view: string): Column[] {
         data: 'prospect_chapter_member',
         colWidths: 110,
       },
-      enabled: view === 'chapter_member_prospects',
+      enabled: false,
     },
 
     {
@@ -638,20 +640,6 @@ function getDefaultColumns(view: string): Column[] {
       },
       enabled:
         view === 'circle_members' || view === 'organizer_prospects' || view === 'development',
-    },
-    {
-      header: 'WG or Cir. Member',
-      longHeader: 'Working Group or Circle Member',
-      data: {
-        type: 'checkbox',
-        readOnly: true,
-        data: 'wg_or_cir_member',
-        colWidths: 100,
-      },
-      enabled:
-        view === 'chapter_member_prospects' ||
-        view === 'chapter_member_development' ||
-        view === 'organizer_prospects',
     },
     {
       header: 'First Event',
@@ -1637,7 +1625,10 @@ export default Vue.extend({
       return {
         columns: columns,
         colHeaders: columnHeaders,
-        rowHeaders: this.view === 'leaderboard',
+        rowHeaders:
+          this.view === 'leaderboard' ||
+          this.view === 'chapter_member_development' ||
+          this.view === 'chapter_member_prospects',
         disableVisualSelection: false,
         multiSelect: true,
         fillHandle: false,

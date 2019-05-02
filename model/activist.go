@@ -169,9 +169,6 @@ SELECT
     WHERE inner_a.id = a.id and e.event_type = "Connection"
   	),"") AS last_connection,
 
-  	IF((CONCAT( (IFNULL((SELECT GROUP_CONCAT(DISTINCT wg.name SEPARATOR ', ') FROM working_groups wg JOIN working_group_members wgm ON wg.id = wgm.working_group_id WHERE   wgm.activist_id = a.id and wgm.non_member_on_mailing_list = 0), '')), (IFNULL( (SELECT   GROUP_CONCAT(DISTINCT circles.name SEPARATOR ', ') FROM circles JOIN circle_members ON circles.id = circle_members.circle_id WHERE   circle_members.activist_id = a.id), '')))) <> "","1","0")
-  	as wg_or_cir_member,
-
     mpi,
     notes,
     vision_wall
@@ -281,7 +278,6 @@ type ActivistMembershipData struct {
 	Source        string `db:"source"`
 	WorkingGroups string `db:"working_group_list"`
 	Circles       string `db:"circles_list"`
-	WgOrCirMember bool   `db:"wg_or_cir_member"`
 }
 
 type ActivistConnectionData struct {
@@ -361,7 +357,6 @@ type ActivistJSON struct {
 	Source        string `json:"source"`
 	WorkingGroups string `json:"working_group_list"`
 	Circles       string `json:"circles_list"`
-	WgOrCirMember bool   `json:"wg_or_cir_member"`
 
 	Connector       string `json:"connector"`
 	Training0       string `json:"training0"`
@@ -613,7 +608,6 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			ActivistLevel: a.ActivistLevel,
 			WorkingGroups: a.WorkingGroups,
 			Circles:       a.Circles,
-			WgOrCirMember: a.WgOrCirMember,
 			Source:        a.Source,
 
 			Connector:       a.Connector,
