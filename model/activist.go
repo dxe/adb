@@ -171,7 +171,8 @@ SELECT
 
     mpi,
     notes,
-    vision_wall
+    vision_wall,
+    mpp_requirements
 
 FROM activists a
 
@@ -185,6 +186,27 @@ LEFT JOIN (
       GROUP BY activist_id
 ) points
   ON points.activist_id = a.id
+
+LEFT JOIN (
+
+  select
+    id,
+      IF(is_protest = 1 and is_community = 1, 'Fulfilling requirements',IF(is_protest = 1 and is_community = 0, 'Missing Community event',IF(is_protest = 0 and is_community = 1, 'Missing DA event','Missing Community & DA events'))) as MPP_Requirements
+  from activists
+
+  left join (
+    select
+        activist_id,
+        max((CASE WHEN ((e.event_type = 'action') OR (e.event_type = 'outreach') OR (e.event_type = 'frontline surveillance') OR (e.event_type = 'sanctuary')) THEN '1' ELSE '0' END)) AS is_protest,
+        max((CASE WHEN ((e.event_type = 'community') OR (e.event_type = 'training') OR (e.event_type = 'circle')) THEN '1' ELSE '0' END)) AS is_community  
+    from
+        event_attendance ea
+    join events e on e.id = ea.event_id
+    where
+        YEAR(e.date) = YEAR(now()) AND (MONTH(e.date) = MONTH(now()) or MONTH(e.date) = MONTH(DATE_SUB(now(), INTERVAL 1 MONTH)))
+    group by ea.activist_id   
+  ) currentMonth on currentMonth.activist_id = activists.id
+) mpp_requirements on mpp_requirements.id = a.id
 `
 
 const updateActivistExtraBaseQuery string = `UPDATE activists
@@ -325,6 +347,7 @@ type ActivistConnectionData struct {
 	MPI                   bool           `db:"mpi"`
 	Notes                 sql.NullString `db:"notes"`
 	VisionWall            string         `db:"vision_wall"`
+	MPPRequirements       string         `db:"mpp_requirements"`
 }
 
 type ActivistExtra struct {
@@ -402,6 +425,7 @@ type ActivistJSON struct {
 	MPI                   bool   `json:"mpi"`
 	Notes                 string `json:"notes"`
 	VisionWall            string `json:"vision_wall"`
+	MPPRequirements       string `json:"mpp_requirements"`
 }
 
 type GetActivistOptions struct {
@@ -654,6 +678,7 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			MPI:                   a.MPI,
 			Notes:                 notes,
 			VisionWall:            a.VisionWall,
+			MPPRequirements:       a.MPPRequirements,
 		})
 	}
 
@@ -1679,6 +1704,7 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			MPI:                   activistJSON.MPI,
 			Notes:                 sql.NullString{String: strings.TrimSpace(activistJSON.Notes), Valid: validNotes},
 			VisionWall:            strings.TrimSpace(activistJSON.VisionWall),
+			MPPRequirements:       strings.TrimSpace(activistJSON.MPPRequirements),
 		},
 	}
 

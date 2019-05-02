@@ -700,8 +700,8 @@ function getDefaultColumns(view: string): Column[] {
     //   enabled: (view === "action_team"),
     // },
     {
-      header: 'MPI',
-      longHeader: 'Movement Power Index Status',
+      header: 'MPP',
+      longHeader: 'Movement Power Pledge Status',
       data: {
         type: 'checkbox',
         data: 'mpi',
@@ -721,6 +721,18 @@ function getDefaultColumns(view: string): Column[] {
         view === 'senior_organizer_development' ||
         view === 'development',
     },
+
+    {
+      header: 'MPP Req.',
+      longHeader: 'MPP Requirements',
+      data: {
+        data: 'mpp_requirements',
+        colWidths: 80,
+        readOnly: true,
+      },
+      enabled: view === 'chapter_member_development',
+    },
+
     {
       header: 'Connector',
       longHeader: 'Connector Name',
