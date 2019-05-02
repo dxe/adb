@@ -172,7 +172,7 @@ SELECT
     mpi,
     notes,
     vision_wall,
-    if(mpi = 0,mpp_requirements,'') as mpp_requirements
+    mpp_requirements
 
 FROM activists a
 
