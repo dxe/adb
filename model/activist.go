@@ -197,7 +197,7 @@ LEFT JOIN (
   left join (
     select
         activist_id,
-        max((CASE WHEN ((e.event_type = 'action') OR (e.event_type = 'outreach') OR (e.event_type = 'frontline surveillance') OR (e.event_type = 'sanctuary')) THEN '1' ELSE '0' END)) AS is_protest,
+        max((CASE WHEN ((e.event_type = 'action') OR (e.event_type = 'outreach') OR (e.event_type = 'frontline surveillance') OR (e.event_type = 'sanctuary') OR (e.event_type = 'campaign action')) THEN '1' ELSE '0' END)) AS is_protest,
         max((CASE WHEN ((e.event_type = 'community') OR (e.event_type = 'training') OR (e.event_type = 'circle')) THEN '1' ELSE '0' END)) AS is_community  
     from
         event_attendance ea
