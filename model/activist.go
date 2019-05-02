@@ -1159,7 +1159,7 @@ func HideActivist(db *sqlx.DB, activistID int) error {
 		return errors.New("HideActivist: activistID cannot be 0")
 	}
 	var activistCount int
-	err := db.Get(&activistCount, `SELECT count(*) FROM activists WHERE a.id = ?`, activistID)
+	err := db.Get(&activistCount, `SELECT count(*) FROM activists WHERE id = ?`, activistID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get activist count")
 	}
@@ -1167,7 +1167,7 @@ func HideActivist(db *sqlx.DB, activistID int) error {
 		return errors.Errorf("Activist with id %d does not exist", activistID)
 	}
 
-	_, err = db.Exec(`UPDATE activists SET hidden = true WHERE a.id = ?`, activistID)
+	_, err = db.Exec(`UPDATE activists SET hidden = true WHERE id = ?`, activistID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update activist %d", activistID)
 	}
@@ -1193,7 +1193,7 @@ func MergeActivist(db *sqlx.DB, originalActivistID, targetActivistID int) error 
 		return errors.Wrap(err, "could not create transaction")
 	}
 
-	_, err = tx.Exec(`UPDATE activists SET hidden = true, name = concat(name,' ', id) WHERE a.id = ?`, originalActivistID)
+	_, err = tx.Exec(`UPDATE activists SET hidden = true, name = concat(name,' ', id) WHERE id = ?`, originalActivistID)
 	if err != nil {
 		tx.Rollback()
 		return errors.Wrapf(err, "failed to hide original activist %d", originalActivistID)
