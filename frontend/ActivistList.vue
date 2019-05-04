@@ -373,7 +373,8 @@ function getDefaultColumns(view: string): Column[] {
       enabled:
         view === 'community_prospects' ||
         view === 'all_activists' ||
-        view === 'chapter_member_prospects',
+        view === 'chapter_member_prospects' ||
+        view === 'chapter_member_development',
     },
     {
       header: 'Birthday',
