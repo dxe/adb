@@ -568,7 +568,7 @@ function getDefaultColumns(view: string): Column[] {
         data: 'prospect_chapter_member',
         colWidths: 110,
       },
-      enabled: false,
+      enabled: view === 'chapter_member_prospects',
     },
 
     {
@@ -701,8 +701,8 @@ function getDefaultColumns(view: string): Column[] {
     //   enabled: (view === "action_team"),
     // },
     {
-      header: 'MPP',
-      longHeader: 'Movement Power Pledge Status',
+      header: 'MPI',
+      longHeader: 'MPI Status',
       data: {
         type: 'checkbox',
         data: 'mpi',
@@ -724,8 +724,8 @@ function getDefaultColumns(view: string): Column[] {
     },
 
     {
-      header: 'MPP Req.',
-      longHeader: 'MPP Requirements This Month',
+      header: 'MPP Current Month',
+      longHeader: 'MPP Requirements in Current Month',
       data: {
         data: 'mpp_requirements',
         colWidths: 80,
