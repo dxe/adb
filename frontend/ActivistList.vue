@@ -1682,34 +1682,56 @@ export default Vue.extend({
       // This search implementation is slow when we have lots of data.
       // Make it faster when that becomes an issue.
 
-      if (this.search.length > 2) {
-        // search by name
-        var searchNormalized = this.search.trim().toLowerCase();
-        var activists: Activist[] = [];
-        for (var i = 0; i < this.allActivists.length; i++) {
-          var activist = this.allActivists[i];
-          if (activist.name.toLowerCase().includes(searchNormalized)) {
-            activists.push(activist);
-          }
-        }
-      } else if (this.searchLocation.length > 4) {
-        // search by loc
-        var searchNormalized = this.searchLocation.trim();
-        var zipcodeRange: any = zipcodeRadius(searchNormalized);
-        console.log('Searching zipcode range: ' + zipcodeRange);
-        var activists: Activist[] = [];
-        for (var i = 0; i < this.allActivists.length; i++) {
-          var activist = this.allActivists[i];
-          if (zipcodeRange.indexOf(activist.location) !== -1) {
-            activists.push(activist);
-          }
-        }
-      } else {
-        // return all
+      if (this.search.length < 3 && this.searchLocation.length < 5) {
+        // show all
         return this.allActivists;
-      }
+      } else {
+        // prepare for searching
+        var searchNameNormalized = this.search.trim().toLowerCase();
+        var searchLocNormalized = this.searchLocation.trim();
+        var zipcodeRange: any = zipcodeRadius(searchLocNormalized); // may need to only do this if length to prevent err
+        var activists: Activist[] = [];
+        var filterName = false;
+        var filterLoc = false;
 
-      return activists;
+        if (this.search.length >= 3) {
+          var filterName = true;
+        }
+
+        if (this.searchLocation.length >= 5) {
+          var filterLoc = true;
+        }
+
+        for (var i = 0; i < this.allActivists.length; i++) {
+          var activist = this.allActivists[i];
+
+          // if filterName & filterLoc true, filter by both
+          if (filterName && filterLoc) {
+            if (
+              activist.name.toLowerCase().includes(searchNameNormalized) &&
+              zipcodeRange.indexOf(activist.location) !== -1
+            ) {
+              activists.push(activist);
+            }
+          }
+
+          // else if filterName is true, filter by it
+          else if (filterName) {
+            if (activist.name.toLowerCase().includes(searchNameNormalized)) {
+              activists.push(activist);
+            }
+          }
+
+          // else filter by location only
+          else {
+            if (zipcodeRange.indexOf(activist.location) !== -1) {
+              activists.push(activist);
+            }
+          }
+        }
+
+        return activists;
+      }
     },
   },
   watch: {
