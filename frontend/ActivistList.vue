@@ -5,7 +5,14 @@
         v-on:input="debounceSearchInput"
         class="form-control filter-margin"
         type="text"
-        placeholder="Search"
+        placeholder="Search by Name"
+      />
+
+      <input
+        v-on:input="debounceSearchLocationInput"
+        class="form-control filter-margin"
+        type="text"
+        placeholder="Search by Zipcode (5 mi.)"
       />
 
       <button
@@ -212,6 +219,7 @@ import { flashMessage } from './flash_message';
 import { EventBus } from './EventBus';
 import { initActivistSelect } from './chosen_utils';
 import debounce from 'debounce';
+import zipcodes from 'zipcodes';
 
 Vue.use(vmodal);
 
@@ -261,6 +269,12 @@ function emailValidator(value: string, callback: Function) {
       callback(false);
     }
   }, 250);
+}
+
+function zipcodeRadius(zip: string) {
+  var miles = 5;
+  var rad = zipcodes.radius(zip, miles, false);
+  return rad;
 }
 
 function getDefaultColumns(view: string): Column[] {
@@ -395,7 +409,7 @@ function getDefaultColumns(view: string): Column[] {
         data: 'location',
         colWidths: 100,
       },
-      enabled: view === 'action_team',
+      enabled: view === 'all_activists',
     },
     {
       header: 'Facebook',
@@ -1589,6 +1603,9 @@ export default Vue.extend({
     debounceSearchInput: debounce(function(this: any, e: Event) {
       this.search = (e.target as HTMLInputElement).value;
     }, 500),
+    debounceSearchLocationInput: debounce(function(this: any, e: Event) {
+      this.searchLocation = (e.target as HTMLInputElement).value;
+    }, 500),
   },
   data() {
     if (this.view === ('all_activists' || 'leaderboard')) {
@@ -1613,6 +1630,7 @@ export default Vue.extend({
       filterInterest: 'All',
       showOptions: '',
       search: '',
+      searchLocation: '',
       loading: false,
     };
   },
@@ -1661,20 +1679,36 @@ export default Vue.extend({
       return (this.$refs.hot as any).table as Handsontable;
     },
     activists(): Activist[] {
-      if (this.search.length < 3) {
+      // This search implementation is slow when we have lots of data.
+      // Make it faster when that becomes an issue.
+
+      if (this.search.length > 2) {
+        // search by name
+        var searchNormalized = this.search.trim().toLowerCase();
+        var activists: Activist[] = [];
+        for (var i = 0; i < this.allActivists.length; i++) {
+          var activist = this.allActivists[i];
+          if (activist.name.toLowerCase().includes(searchNormalized)) {
+            activists.push(activist);
+          }
+        }
+      } else if (this.searchLocation.length > 4) {
+        // search by loc
+        var searchNormalized = this.searchLocation.trim();
+        var zipcodeRange: any = zipcodeRadius(searchNormalized);
+        console.log('Searching zipcode range: ' + zipcodeRange);
+        var activists: Activist[] = [];
+        for (var i = 0; i < this.allActivists.length; i++) {
+          var activist = this.allActivists[i];
+          if (zipcodeRange.indexOf(activist.location) !== -1) {
+            activists.push(activist);
+          }
+        }
+      } else {
+        // return all
         return this.allActivists;
       }
 
-      // This search implementation is slow when we have lots of data.
-      // Make it faster when that becomes an issue.
-      var searchNormalized = this.search.trim().toLowerCase();
-      var activists: Activist[] = [];
-      for (var i = 0; i < this.allActivists.length; i++) {
-        var activist = this.allActivists[i];
-        if (activist.name.toLowerCase().includes(searchNormalized)) {
-          activists.push(activist);
-        }
-      }
       return activists;
     },
   },
