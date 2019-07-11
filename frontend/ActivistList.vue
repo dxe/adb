@@ -625,7 +625,6 @@ function getDefaultColumns(view: string): Column[] {
         source: [true, false],
         data: 'prospect_senior_organizer',
         colWidths: 100,
-        readOnly: true,
       },
       enabled: view === 'senior_organizer_prospects' || view === 'development',
     },
