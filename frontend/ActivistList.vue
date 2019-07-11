@@ -5,14 +5,14 @@
         v-on:input="debounceSearchInput"
         class="form-control filter-margin"
         type="text"
-        placeholder="Search by Name"
+        placeholder="Search Name"
       />
 
       <input
         v-on:input="debounceSearchLocationInput"
         class="form-control filter-margin"
         type="text"
-        placeholder="Search by Zipcode (5 mi.)"
+        placeholder="Search Zipcode or City"
       />
 
       <button
@@ -271,10 +271,30 @@ function emailValidator(value: string, callback: Function) {
   }, 250);
 }
 
-function zipcodeRadius(zip: string) {
+function zipcodeRadius(zip: string[]) {
+  // radius to check
   var miles = 5;
-  var rad = zipcodes.radius(zip, miles, false);
-  return rad;
+
+  var allZipsInRadius: any[] = [];
+
+  for (var i = 0; i < zip.length; i++) {
+    var zipsInRadius = zipcodes.radius(zip[i], miles, false);
+    allZipsInRadius = allZipsInRadius.concat(zipsInRadius); // need to add arr to arr
+  }
+  return allZipsInRadius;
+}
+
+function lookupZipcodes(input: string) {
+  var hasNumber = /\d/;
+  if (hasNumber.test(input)) {
+    // probably a zip
+    return [input];
+  } else {
+    // try to lookup zipcodes for city name
+    var cityData = zipcodes.lookupByName(input, 'CA');
+    let zips = cityData.map((a) => a.zip);
+    return zips;
+  }
 }
 
 function getDefaultColumns(view: string): Column[] {
@@ -1682,14 +1702,13 @@ export default Vue.extend({
       // This search implementation is slow when we have lots of data.
       // Make it faster when that becomes an issue.
 
-      if (this.search.length < 3 && this.searchLocation.length < 5) {
+      if (this.search.length < 3 && this.searchLocation.length < 4) {
         // show all
         return this.allActivists;
       } else {
         // prepare for searching
         var searchNameNormalized = this.search.trim().toLowerCase();
         var searchLocNormalized = this.searchLocation.trim();
-        var zipcodeRange: any = zipcodeRadius(searchLocNormalized); // may need to only do this if length to prevent err
         var activists: Activist[] = [];
         var filterName = false;
         var filterLoc = false;
@@ -1698,8 +1717,10 @@ export default Vue.extend({
           var filterName = true;
         }
 
-        if (this.searchLocation.length >= 5) {
+        if (this.searchLocation.length >= 4) {
           var filterLoc = true;
+          var zipsToCheck = lookupZipcodes(searchLocNormalized);
+          var zipcodeRange: any = zipcodeRadius(zipsToCheck);
         }
 
         for (var i = 0; i < this.allActivists.length; i++) {
