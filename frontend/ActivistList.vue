@@ -594,19 +594,19 @@ function getDefaultColumns(view: string): Column[] {
     },
 
     {
-      header: 'Prosp. Ch. Member',
+      header: 'Prsp. Ch. Mem.',
       longHeader: 'Prospective Chapter Member',
       data: {
         type: 'dropdown',
         source: [true, false],
         data: 'prospect_chapter_member',
-        colWidths: 110,
+        colWidths: 60,
       },
       enabled: view === 'chapter_member_prospects',
     },
 
     {
-      header: 'Prosp. Organizer',
+      header: 'Prsp. Organizer',
       longHeader: 'Prospective Organizer',
       data: {
         type: 'dropdown',
@@ -618,7 +618,7 @@ function getDefaultColumns(view: string): Column[] {
     },
 
     {
-      header: 'Prosp. Sen. Org.',
+      header: 'Prsp. Sen. Org.',
       longHeader: 'Prospective Senior Organizer',
       data: {
         type: 'dropdown',
