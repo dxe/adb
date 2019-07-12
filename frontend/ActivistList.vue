@@ -8,18 +8,7 @@
         placeholder="Search Name"
       />
 
-      <input
-        v-on:input="debounceSearchLocationInput"
-        class="form-control filter-margin"
-        type="text"
-        placeholder="Search Zipcode or City"
-      />
-
-      <button
-        class="btn-link"
-        @click="toggleShowOptions('filters')"
-        v-if="view == 'all_activists' || view == 'activist_pool' || view == 'community_prospects'"
-      >
+      <button class="btn-link" @click="toggleShowOptions('filters')" v-if="view != 'none'">
         <span v-if="showOptions !== 'filters'">+</span
         ><span v-if="showOptions === 'filters'">-</span> Filters
       </button>
@@ -35,6 +24,34 @@
       <span v-if="loading"><i>Loading...</i></span>
 
       <div v-if="showOptions === 'filters'">
+        <div>
+          <label>Location:</label>
+
+          <input
+            v-on:input="debounceSearchLocationInput"
+            class="form-control filter-margin"
+            type="text"
+            placeholder="Zipcode or City"
+          />
+
+          <label>Radius:</label>
+          <select
+            id="filterRadius"
+            v-model="filterRadius"
+            class="form-control filter-margin"
+            v-on:input="debounceLocationRadiusInput"
+          >
+            <option value="1">1 mile</option>
+            <option value="2">2 miles</option>
+            <option value="3">3 miles</option>
+            <option value="4">4 miles</option>
+            <option value="5">5 miles</option>
+            <option value="10">10 miles</option>
+            <option value="25">25 miles</option>
+            <option value="50">50 miles</option>
+          </select>
+        </div>
+
         <div v-if="view == 'all_activists' || view == 'activist_pool'">
           <label>Last Event From:</label>
           <input v-model="lastEventDateFrom" class="form-control filter-margin" type="date" />
@@ -271,14 +288,13 @@ function emailValidator(value: string, callback: Function) {
   }, 250);
 }
 
-function zipcodeRadius(zip: string[]) {
+function zipcodeRadius(zip: string[], radius: any) {
   // radius to check
-  var miles = 5;
 
   var allZipsInRadius: any[] = [];
 
   for (var i = 0; i < zip.length; i++) {
-    var zipsInRadius = zipcodes.radius(zip[i], miles, false);
+    var zipsInRadius = zipcodes.radius(zip[i], radius, false);
     allZipsInRadius = allZipsInRadius.concat(zipsInRadius); // need to add arr to arr
   }
   return allZipsInRadius;
@@ -1625,6 +1641,9 @@ export default Vue.extend({
     debounceSearchLocationInput: debounce(function(this: any, e: Event) {
       this.searchLocation = (e.target as HTMLInputElement).value;
     }, 500),
+    debounceLocationRadiusInput: debounce(function(this: any, e: Event) {
+      this.filterRadius = (e.target as HTMLInputElement).value;
+    }, 500),
   },
   data() {
     if (this.view === ('all_activists' || 'leaderboard')) {
@@ -1647,6 +1666,7 @@ export default Vue.extend({
       lastEventDateFrom: initDateFrom,
       lastEventDateTo: initDateTo,
       filterInterest: 'All',
+      filterRadius: '5',
       showOptions: '',
       search: '',
       searchLocation: '',
@@ -1719,7 +1739,7 @@ export default Vue.extend({
         if (this.searchLocation.length >= 4) {
           var filterLoc = true;
           var zipsToCheck = lookupZipcodes(searchLocNormalized);
-          var zipcodeRange: any = zipcodeRadius(zipsToCheck);
+          var zipcodeRange: any = zipcodeRadius(zipsToCheck, this.filterRadius);
         }
 
         for (var i = 0; i < this.allActivists.length; i++) {
