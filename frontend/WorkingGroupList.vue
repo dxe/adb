@@ -207,7 +207,7 @@
               <div class="select-row" v-for="(member, index) in currentWorkingGroup.members">
                 <template v-if="member.point_person">
                   <basic-select
-                    :options="activistOptions"
+                    :options="organizerOptions"
                     :selected-option="memberOption(member)"
                     :extra-data="{ index: index, pointPerson: true }"
                     inheritStyle="min-width: 500px"
@@ -235,7 +235,7 @@
               <div class="select-row" v-for="(member, index) in currentWorkingGroup.members">
                 <template v-if="!member.point_person && !member.non_member_on_mailing_list">
                   <basic-select
-                    :options="activistOptions"
+                    :options="organizerOptions"
                     :selected-option="memberOption(member)"
                     :extra-data="{ index: index }"
                     inheritStyle="min-width: 500px"
@@ -513,6 +513,7 @@ export default Vue.extend({
       disableConfirmButton: false,
       currentModalName: '',
       activistOptions: [],
+      organizerOptions: [],
     };
   },
   computed: {
@@ -555,7 +556,7 @@ export default Vue.extend({
       },
     });
 
-    // Get activists for members dropdown.
+    // Get activists for non-members on mailing list dropdown.
     $.ajax({
       url: '/activist_names/get',
       method: 'GET',
@@ -564,6 +565,21 @@ export default Vue.extend({
 
         // Convert activist_names to a format usable by basic-select.
         this.activistOptions = parsed.activist_names.map((name: string) => ({ text: name }));
+      },
+      error: (err) => {
+        console.warn(err.responseText);
+        flashMessage('Server error: ' + err.responseText, true);
+      },
+    });
+    // Get organizers for members dropdown
+    $.ajax({
+      url: '/activist_names/get_organizers',
+      method: 'GET',
+      success: (data) => {
+        var parsed = JSON.parse(data);
+
+        // Convert activist_names to a format usable by basic-select.
+        this.organizerOptions = parsed.activist_names.map((name: string) => ({ text: name }));
       },
       error: (err) => {
         console.warn(err.responseText);

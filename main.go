@@ -157,6 +157,7 @@ func router() (*mux.Router, *sqlx.DB) {
 
 	// Authed API
 	router.Handle("/activist_names/get", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteActivistsHandler))
+	router.Handle("/activist_names/get_organizers", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteOrganizersHandler))
 	router.Handle("/event/get/{event_id:[0-9]+}", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.EventGetHandler))
 	router.Handle("/event/save", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.EventSaveHandler))
 	router.Handle("/connection/save", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.ConnectionSaveHandler))
@@ -688,6 +689,13 @@ func (c MainController) TransposedEventsDataJsonHandler(w http.ResponseWriter, r
 
 func (c MainController) AutocompleteActivistsHandler(w http.ResponseWriter, r *http.Request) {
 	names := model.GetAutocompleteNames(c.db)
+	writeJSON(w, map[string][]string{
+		"activist_names": names,
+	})
+}
+
+func (c MainController) AutocompleteOrganizersHandler(w http.ResponseWriter, r *http.Request) {
+	names := model.GetAutocompleteOrganizerNames(c.db)
 	writeJSON(w, map[string][]string{
 		"activist_names": names,
 	})

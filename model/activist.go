@@ -1477,6 +1477,31 @@ ORDER BY MAX(e.date) DESC`)
 	return ret
 }
 
+func GetAutocompleteOrganizerNames(db *sqlx.DB) []string {
+	type Name struct {
+		Name string `db:"name"`
+	}
+	names := []Name{}
+	// Order the activists by the last even they've been to.
+	err := db.Select(&names, `
+SELECT a.name FROM activists a
+LEFT OUTER JOIN event_attendance ea ON a.id = ea.activist_id
+LEFT OUTER JOIN events e ON e.id = ea.event_id
+WHERE a.hidden = 0 and a.activist_level like '%organizer'
+GROUP BY a.name
+ORDER BY MAX(e.date) DESC`)
+	if err != nil {
+		// TODO: return error
+		panic(err)
+	}
+
+	ret := []string{}
+	for _, n := range names {
+		ret = append(ret, n.Name)
+	}
+	return ret
+}
+
 type ActivistBasicInfoJSON struct {
 	Name  string `json:"name"`
 	Email string `json:"email"`
