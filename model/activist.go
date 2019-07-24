@@ -739,6 +739,25 @@ WHERE hidden = 0 AND activist_level IN('Organizer', 'Senior Organizer', 'Chapter
 	return activists, nil
 }
 
+func GetOrganizers(db *sqlx.DB) ([]Activist, error) {
+	query := `
+SELECT
+  id,
+  name,
+  email
+FROM activists
+WHERE hidden = 0 AND activist_level IN('Organizer', 'Senior Organizer')
+`
+
+	var activists []Activist
+	err := db.Select(&activists, query)
+	if err != nil {
+		return []Activist{}, errors.Wrapf(err, "GetOrganizers: Failed retrieving activists for levels Organizer and Senior Organizer")
+	}
+
+	return activists, nil
+}
+
 func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra, error) {
 	// Redundant options validation
 	var err error
