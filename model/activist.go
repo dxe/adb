@@ -48,6 +48,7 @@ SELECT
 
   activist_level,
   source,
+  hiatus,
 
   connector,
   training0,
@@ -221,6 +222,7 @@ SET
 
   activist_level = :activist_level,
   source = :source,
+  hiatus = :hiatus,
 
   connector = :connector,
   training0 = :training0,
@@ -298,6 +300,7 @@ type ActivistEventData struct {
 type ActivistMembershipData struct {
 	ActivistLevel string `db:"activist_level"`
 	Source        string `db:"source"`
+	Hiatus        bool   `db:"hiatus"`
 	WorkingGroups string `db:"working_group_list"`
 	Circles       string `db:"circles_list"`
 }
@@ -378,6 +381,7 @@ type ActivistJSON struct {
 
 	ActivistLevel string `json:"activist_level"`
 	Source        string `json:"source"`
+	Hiatus        bool   `json:"hiatus"`
 	WorkingGroups string `json:"working_group_list"`
 	Circles       string `json:"circles_list"`
 
@@ -633,6 +637,7 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			WorkingGroups: a.WorkingGroups,
 			Circles:       a.Circles,
 			Source:        a.Source,
+			Hiatus:        a.Hiatus,
 
 			Connector:       a.Connector,
 			Training0:       training0,
@@ -999,6 +1004,7 @@ INSERT INTO activists (
 
   activist_level,
   source,
+  hiatus,
 
   connector,
   training0,
@@ -1052,6 +1058,7 @@ INSERT INTO activists (
 
   :activist_level,
   :source,
+  :hiatus,
 
   :connector,
   :training0,
@@ -1125,6 +1132,7 @@ SET
 
   activist_level = :activist_level,
   source = :source,
+  hiatus = :hiatus,
 
   connector = :connector,
   training0 = :training0,
@@ -1340,10 +1348,11 @@ func insertMergedActivistAttendance(tx *sqlx.Tx, originalActivistID int, targetA
 func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) ActivistExtra {
 	levels := map[string]int{
 		"Supporter":        0,
-		"Circle Member":    1,
-		"Chapter Member":   2,
-		"Organizer":        3,
-		"Senior Organizer": 4,
+		"Non-Local":        1,
+		"Circle Member":    2,
+		"Chapter Member":   3,
+		"Organizer":        4,
+		"Senior Organizer": 5,
 	}
 
 	// Check boolean values
@@ -1358,6 +1367,7 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 	target.SOOnboarding = boolMerge(original.SOOnboarding, target.SOOnboarding)
 	target.CircleInterest = boolMerge(original.CircleInterest, target.CircleInterest)
 	target.MPI = boolMerge(original.MPI, target.MPI)
+	target.Hiatus = boolMerge(original.Hiatus, target.Hiatus)
 
 	// Check string fields for empty values
 
@@ -1497,6 +1507,7 @@ ORDER BY MAX(e.date) DESC`)
 }
 
 func GetAutocompleteOrganizerNames(db *sqlx.DB) []string {
+	// includes non-local activist level for ppl to be added to working groups
 	type Name struct {
 		Name string `db:"name"`
 	}
@@ -1506,7 +1517,7 @@ func GetAutocompleteOrganizerNames(db *sqlx.DB) []string {
 SELECT a.name FROM activists a
 LEFT OUTER JOIN event_attendance ea ON a.id = ea.activist_id
 LEFT OUTER JOIN events e ON e.id = ea.event_id
-WHERE a.hidden = 0 and a.activist_level like '%organizer'
+WHERE a.hidden = 0 and (a.activist_level like '%organizer' or a.activist_level = 'non-local')
 GROUP BY a.name
 ORDER BY MAX(e.date) DESC`)
 	if err != nil {
@@ -1707,6 +1718,7 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 		ActivistMembershipData: ActivistMembershipData{
 			ActivistLevel: strings.TrimSpace(activistJSON.ActivistLevel),
 			Source:        strings.TrimSpace(activistJSON.Source),
+			Hiatus:        activistJSON.Hiatus,
 		},
 		ActivistConnectionData: ActivistConnectionData{
 			Connector:     strings.TrimSpace(activistJSON.Connector),
@@ -1768,6 +1780,7 @@ var validActivistLevels = map[string]struct{}{
 	"Chapter Member":   struct{}{},
 	"Organizer":        struct{}{},
 	"Senior Organizer": struct{}{},
+	"Non-Local":        struct{}{},
 }
 
 func validateActivist(a ActivistExtra) error {

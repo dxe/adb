@@ -42,6 +42,7 @@ CREATE TABLE activists (
   hidden TINYINT(1) NOT NULL DEFAULT '0',
   connector VARCHAR(100) NOT NULL DEFAULT '',
   source VARCHAR(255) NOT NULL DEFAULT '',
+  hiatus TINYINT(1) NOT NULL DEFAULT '0',
   date_organizer DATE,
   date_senior_organizer DATE,
   dob TEXT,

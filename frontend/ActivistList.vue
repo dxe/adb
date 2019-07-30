@@ -516,7 +516,14 @@ function getDefaultColumns(view: string): Column[] {
         data: 'activist_level',
         colWidths: 140,
         type: 'dropdown',
-        source: ['Supporter', 'Circle Member', 'Chapter Member', 'Organizer', 'Senior Organizer'],
+        source: [
+          'Supporter',
+          'Circle Member',
+          'Chapter Member',
+          'Organizer',
+          'Senior Organizer',
+          'Non-Local',
+        ],
       },
       enabled:
         view === 'all_activists' ||
@@ -955,6 +962,17 @@ function getDefaultColumns(view: string): Column[] {
         colWidths: 80,
         type: 'dropdown',
         source: ['', 'Yes', 'Declined'],
+      },
+      enabled: view === 'chapter_member_development',
+    },
+
+    {
+      header: 'Hiatus',
+      longHeader: 'Hiatus',
+      data: {
+        type: 'checkbox',
+        data: 'hiatus',
+        colWidths: 50,
       },
       enabled: view === 'chapter_member_development',
     },
