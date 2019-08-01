@@ -142,6 +142,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/circle_member_prospects", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListCircleMemberProspectsHandler))
 	router.Handle("/circle_members", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListCircleMembersHandler))
 	router.Handle("/leaderboard", alice.New(main.authOrganizerMiddleware).ThenFunc(main.LeaderboardHandler))
+	router.Handle("/study", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListStudyHandler))
 	router.Handle("/list_working_groups", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListWorkingGroupsHandler))
 	router.Handle("/list_circles", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListCirclesHandler))
 
@@ -545,6 +546,16 @@ func (c MainController) ListCircleMembersHandler(w http.ResponseWriter, r *http.
 		Data: ActivistListData{
 			Title: "Circle Members",
 			View:  "circle_members",
+		},
+	})
+}
+
+func (c MainController) ListStudyHandler(w http.ResponseWriter, r *http.Request) {
+	renderPage(w, r, "activist_list", PageData{
+		PageName: "Study",
+		Data: ActivistListData{
+			Title: "Interpersonal Ties Study",
+			View:  "study",
 		},
 	})
 }

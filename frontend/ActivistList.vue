@@ -710,7 +710,8 @@ function getDefaultColumns(view: string): Column[] {
         view === 'activist_pool' ||
         view === 'activist_recruitment' ||
         view === 'leaderboard' ||
-        view === 'community_prospects',
+        view === 'community_prospects' ||
+        view === 'study',
     },
     {
       header: 'Last Event',
@@ -720,7 +721,7 @@ function getDefaultColumns(view: string): Column[] {
         readOnly: true,
         colWidths: 200,
       },
-      enabled: view === 'activist_recruitment' || view === 'leaderboard',
+      enabled: view === 'activist_recruitment' || view === 'leaderboard' || view === 'study',
     },
     {
       header: 'Last Circle',
@@ -744,8 +745,9 @@ function getDefaultColumns(view: string): Column[] {
         readOnly: true,
         colWidths: 90,
       },
-      enabled: view === 'leaderboard' || view === 'community_prospects',
+      enabled: view === 'leaderboard' || view === 'community_prospects' || view === 'study',
     },
+
     // {
     //   header: "Active",
     //   data: {
@@ -1141,6 +1143,53 @@ function getDefaultColumns(view: string): Column[] {
         colWidths: 100,
       },
       enabled: false,
+    },
+
+    {
+      header: 'Study Group',
+      longHeader: 'Interpersonal Ties Study: Group',
+      data: {
+        data: 'study_group',
+        colWidths: 190,
+        type: 'dropdown',
+        source: ['', '1: Directed Conversation', '2: Untrained Conversation', '3: No Conversation'],
+      },
+      enabled: view === 'study' || view === 'all_activists',
+    },
+
+    {
+      header: 'Activator',
+      longHeader: 'Interpersonal Ties Study: Activator',
+      data: {
+        data: 'study_activator',
+        colWidths: 100,
+      },
+      enabled: view === 'study',
+    },
+
+    {
+      header: 'Conversation',
+      longHeader: 'Interpersonal Ties Study: Conversation Date',
+      data: {
+        type: 'date',
+        data: 'study_conversation',
+        dateFormat: 'YYYY-MM-DD',
+        correctFormat: true,
+        colWidths: 100,
+      },
+      enabled: view === 'study',
+    },
+
+    {
+      header: 'Events Since Conversation',
+      longHeader: 'Interpersonal Ties Study: Total Events Since Conversation',
+      data: {
+        type: 'numeric',
+        data: 'study_events_since_conversation',
+        readOnly: true,
+        colWidths: 150,
+      },
+      enabled: view === 'study',
     },
   ];
 }

@@ -86,6 +86,9 @@ CREATE TABLE activists (
   mpi tinyint(1) NOT NULL DEFAULT '0',
   notes TEXT,
   vision_wall varchar(10) NOT NULL DEFAULT '',
+  study_group varchar(40) NOT NULL DEFAULT '',
+  study_activator varchar(40) NOT NULL DEFAULT '',
+  study_conversation varchar(20),
   UNIQUE (name)
 )
 `)

@@ -91,7 +91,7 @@ SELECT
   circle_interest,
   interest_date,
 
-          @first_event := (
+  @first_event := (
       SELECT min(e.date) AS min_date
       FROM event_attendance ea
       JOIN activists inner_a ON inner_a.id = ea.activist_id
@@ -115,7 +115,7 @@ SELECT
     WHERE inner_a.id = a.id and e.event_type = 'Circle'
   ) AS last_circle,
 
-      IFNULL(
+  IFNULL(
     concat(@first_event, ' ', (
       SELECT name
       FROM events e
@@ -141,6 +141,15 @@ SELECT
     FROM event_attendance ea
     WHERE
       ea.activist_id = a.id) as total_events,
+
+  (SELECT COUNT(DISTINCT ea.event_id)
+    FROM event_attendance ea
+    JOIN events e on e.id = ea.event_id
+    JOIN activists a on a.id = ea.activist_id
+    WHERE
+      ea.activist_id = a.id
+      and e.date > a.study_conversation)
+  as study_events_since_conversation,
 
   IFNULL(totalPoints, 0) as total_points,
   IF(@last_event >= (now() - interval 30 day), 1, 0) as active,
@@ -173,6 +182,9 @@ SELECT
     mpi,
     notes,
     vision_wall,
+    study_group,
+    study_activator,
+    study_conversation,
     mpp_requirements
 
 FROM activists a
@@ -264,7 +276,10 @@ SET
   interest_date = :interest_date,
   mpi = :mpi,
   notes = :notes,
-  vision_wall = :vision_wall
+  vision_wall = :vision_wall,
+  study_group = :study_group,
+  study_activator = :study_activator,
+  study_conversation = :study_conversation
 
 WHERE
   id = :id`
@@ -334,23 +349,27 @@ type ActivistConnectionData struct {
 	SOConnector             string         `db:"so_connector"`
 	SOOnboarding            bool           `db:"so_onboarding"`
 
-	CMFirstEmail          sql.NullString `db:"cm_first_email"`
-	CMApprovalEmail       sql.NullString `db:"cm_approval_email"`
-	CMWarningEmail        sql.NullString `db:"cm_warning_email"`
-	CirFirstEmail         sql.NullString `db:"cir_first_email"`
-	ProspectOrganizer     bool           `db:"prospect_organizer"`
-	ProspectChapterMember bool           `db:"prospect_chapter_member"`
-	CircleAgreement       bool           `db:"circle_agreement"`
-	LastConnection        sql.NullString `db:"last_connection"`
-	ReferralFriends       string         `db:"referral_friends"`
-	ReferralApply         string         `db:"referral_apply"`
-	ReferralOutlet        string         `db:"referral_outlet"`
-	CircleInterest        bool           `db:"circle_interest"`
-	InterestDate          sql.NullString `db:"interest_date"`
-	MPI                   bool           `db:"mpi"`
-	Notes                 sql.NullString `db:"notes"`
-	VisionWall            string         `db:"vision_wall"`
-	MPPRequirements       string         `db:"mpp_requirements"`
+	CMFirstEmail                 sql.NullString `db:"cm_first_email"`
+	CMApprovalEmail              sql.NullString `db:"cm_approval_email"`
+	CMWarningEmail               sql.NullString `db:"cm_warning_email"`
+	CirFirstEmail                sql.NullString `db:"cir_first_email"`
+	ProspectOrganizer            bool           `db:"prospect_organizer"`
+	ProspectChapterMember        bool           `db:"prospect_chapter_member"`
+	CircleAgreement              bool           `db:"circle_agreement"`
+	LastConnection               sql.NullString `db:"last_connection"`
+	ReferralFriends              string         `db:"referral_friends"`
+	ReferralApply                string         `db:"referral_apply"`
+	ReferralOutlet               string         `db:"referral_outlet"`
+	CircleInterest               bool           `db:"circle_interest"`
+	InterestDate                 sql.NullString `db:"interest_date"`
+	MPI                          bool           `db:"mpi"`
+	Notes                        sql.NullString `db:"notes"`
+	VisionWall                   string         `db:"vision_wall"`
+	StudyGroup                   string         `db:"study_group"`
+	StudyActivator               string         `db:"study_activator"`
+	StudyConversation            sql.NullString `db:"study_conversation"`
+	StudyEventsSinceConversation int            `db:"study_events_since_conversation"`
+	MPPRequirements              string         `db:"mpp_requirements"`
 }
 
 type ActivistExtra struct {
@@ -413,23 +432,27 @@ type ActivistJSON struct {
 	SOConnector             string `json:"so_connector"`
 	SOOnboarding            bool   `json:"so_onboarding"`
 
-	CMFirstEmail          string `json:"cm_first_email"`
-	CMApprovalEmail       string `json:"cm_approval_email"`
-	CMWarningEmail        string `json:"cm_warning_email"`
-	CirFirstEmail         string `json:"cir_first_email"`
-	ProspectOrganizer     bool   `json:"prospect_organizer"`
-	ProspectChapterMember bool   `json:"prospect_chapter_member"`
-	CircleAgreement       bool   `json:"circle_agreement"`
-	LastConnection        string `json:"last_connection"`
-	ReferralFriends       string `json:"referral_friends"`
-	ReferralApply         string `json:"referral_apply"`
-	ReferralOutlet        string `json:"referral_outlet"`
-	CircleInterest        bool   `json:"circle_interest"`
-	InterestDate          string `json:"interest_date"`
-	MPI                   bool   `json:"mpi"`
-	Notes                 string `json:"notes"`
-	VisionWall            string `json:"vision_wall"`
-	MPPRequirements       string `json:"mpp_requirements"`
+	CMFirstEmail                 string `json:"cm_first_email"`
+	CMApprovalEmail              string `json:"cm_approval_email"`
+	CMWarningEmail               string `json:"cm_warning_email"`
+	CirFirstEmail                string `json:"cir_first_email"`
+	ProspectOrganizer            bool   `json:"prospect_organizer"`
+	ProspectChapterMember        bool   `json:"prospect_chapter_member"`
+	CircleAgreement              bool   `json:"circle_agreement"`
+	LastConnection               string `json:"last_connection"`
+	ReferralFriends              string `json:"referral_friends"`
+	ReferralApply                string `json:"referral_apply"`
+	ReferralOutlet               string `json:"referral_outlet"`
+	CircleInterest               bool   `json:"circle_interest"`
+	InterestDate                 string `json:"interest_date"`
+	MPI                          bool   `json:"mpi"`
+	Notes                        string `json:"notes"`
+	VisionWall                   string `json:"vision_wall"`
+	StudyGroup                   string `json:"study_group"`
+	StudyActivator               string `json:"study_activator"`
+	StudyConversation            string `json:"study_conversation"`
+	StudyEventsSinceConversation int    `json:"study_events_since_conversation"`
+	MPPRequirements              string `json:"mpp_requirements"`
 }
 
 type GetActivistOptions struct {
@@ -613,6 +636,10 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 		if a.ActivistConnectionData.Notes.Valid {
 			notes = a.ActivistConnectionData.Notes.String
 		}
+		study_conversation := ""
+		if a.ActivistConnectionData.StudyConversation.Valid {
+			study_conversation = a.ActivistConnectionData.StudyConversation.String
+		}
 
 		activistsJSON = append(activistsJSON, ActivistJSON{
 			Email:    a.Email,
@@ -667,23 +694,27 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			SOConnector:             a.SOConnector,
 			SOOnboarding:            a.SOOnboarding,
 
-			CMFirstEmail:          cm_first_email,
-			CMApprovalEmail:       cm_approval_email,
-			CMWarningEmail:        cm_warning_email,
-			CirFirstEmail:         cir_first_email,
-			ProspectOrganizer:     a.ProspectOrganizer,
-			ProspectChapterMember: a.ProspectChapterMember,
-			CircleAgreement:       a.CircleAgreement,
-			LastConnection:        last_connection,
-			ReferralFriends:       a.ReferralFriends,
-			ReferralApply:         a.ReferralApply,
-			ReferralOutlet:        a.ReferralOutlet,
-			CircleInterest:        a.CircleInterest,
-			InterestDate:          interest_date,
-			MPI:                   a.MPI,
-			Notes:                 notes,
-			VisionWall:            a.VisionWall,
-			MPPRequirements:       a.MPPRequirements,
+			CMFirstEmail:                 cm_first_email,
+			CMApprovalEmail:              cm_approval_email,
+			CMWarningEmail:               cm_warning_email,
+			CirFirstEmail:                cir_first_email,
+			ProspectOrganizer:            a.ProspectOrganizer,
+			ProspectChapterMember:        a.ProspectChapterMember,
+			CircleAgreement:              a.CircleAgreement,
+			LastConnection:               last_connection,
+			ReferralFriends:              a.ReferralFriends,
+			ReferralApply:                a.ReferralApply,
+			ReferralOutlet:               a.ReferralOutlet,
+			CircleInterest:               a.CircleInterest,
+			InterestDate:                 interest_date,
+			MPI:                          a.MPI,
+			Notes:                        notes,
+			VisionWall:                   a.VisionWall,
+			StudyGroup:                   a.StudyGroup,
+			StudyActivator:               a.StudyActivator,
+			StudyConversation:            study_conversation,
+			StudyEventsSinceConversation: a.StudyEventsSinceConversation,
+			MPPRequirements:              a.MPPRequirements,
 		})
 	}
 
@@ -820,6 +851,9 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 		}
 		if options.Filter == "leaderboard" {
 			whereClause = append(whereClause, "a.id in (select distinct activist_id  from event_attendance ea  where ea.event_id in (select id from events e where e.date >= (now() - interval 30 day)))")
+		}
+		if options.Filter == "study" {
+			whereClause = append(whereClause, "a.study_group <> ''")
 		}
 
 		if len(whereClause) != 0 {
@@ -1045,7 +1079,10 @@ INSERT INTO activists (
   interest_date,
   mpi,
   notes,
-  vision_wall
+  vision_wall,
+  study_group,
+  study_activator,
+  study_conversation
 
 ) VALUES (
 
@@ -1099,7 +1136,10 @@ INSERT INTO activists (
   :interest_date,
   :mpi,
   :notes,
-  :vision_wall
+  :vision_wall,
+  :study_group,
+  :study_activator,
+  :study_conversation
 
 )`, activist)
 	if err != nil {
@@ -1172,7 +1212,10 @@ SET
   interest_date = :interest_date,
   mpi = :mpi,
   notes = :notes,
-  vision_wall = :vision_wall
+  vision_wall = :vision_wall,
+  study_group = :study_group,
+  study_activator = :study_activator,
+  study_conversation = :study_conversation
 
 WHERE
   id = :id`, activist)
@@ -1407,6 +1450,9 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 	target.InterestDate = stringMergeSqlNullString(original.InterestDate, target.InterestDate)
 	target.Notes = stringMergeSqlNullString(original.Notes, target.Notes)
 	target.VisionWall = stringMerge(original.VisionWall, target.VisionWall)
+	target.StudyGroup = stringMerge(original.StudyGroup, target.StudyGroup)
+	target.StudyActivator = stringMerge(original.StudyActivator, target.StudyActivator)
+	target.StudyConversation = stringMergeSqlNullString(original.StudyConversation, target.StudyConversation)
 	target.ApplicationType = stringMerge(original.ApplicationType, target.ApplicationType)
 
 	// Check Activist Levels
@@ -1704,6 +1750,11 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 		// Not specified so insert null value into database
 		validNotes = false
 	}
+	validStudyConversation := true
+	if activistJSON.StudyConversation == "" {
+		// Not specified so insert null value into database
+		validStudyConversation = false
+	}
 
 	activistExtra := ActivistExtra{
 		Activist: Activist{
@@ -1762,6 +1813,9 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			MPI:                   activistJSON.MPI,
 			Notes:                 sql.NullString{String: strings.TrimSpace(activistJSON.Notes), Valid: validNotes},
 			VisionWall:            strings.TrimSpace(activistJSON.VisionWall),
+			StudyGroup:            strings.TrimSpace(activistJSON.StudyGroup),
+			StudyActivator:        strings.TrimSpace(activistJSON.StudyActivator),
+			StudyConversation:     sql.NullString{String: strings.TrimSpace(activistJSON.StudyConversation), Valid: validStudyConversation},
 			MPPRequirements:       strings.TrimSpace(activistJSON.MPPRequirements),
 		},
 	}
