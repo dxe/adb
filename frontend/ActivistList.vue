@@ -1765,7 +1765,8 @@ export default Vue.extend({
         rowHeaders:
           this.view === 'leaderboard' ||
           this.view === 'chapter_member_development' ||
-          this.view === 'chapter_member_prospects',
+          this.view === 'chapter_member_prospects' ||
+          this.view === 'all_activists',
         disableVisualSelection: false,
         multiSelect: true,
         fillHandle: false,
