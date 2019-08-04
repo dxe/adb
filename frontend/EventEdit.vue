@@ -4,7 +4,7 @@
     narrow
     class="event-new-content"
   >
-    <form action id="eventForm" v-on:change="changed('change', -1)">
+    <form action id="eventForm" v-on:change="changed('change', -1)" autocomplete="off">
       <fieldset :disabled="loading">
         <label for="eventName" id="nameLabel">
           <b>{{ connections ? 'Connector' : 'Event' }} name</b> <br />
