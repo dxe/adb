@@ -49,6 +49,7 @@
             <div class="col-xs-10 col-sm-11">
               <input
                 class="attendee-input form-control"
+                name="attendee-input-field"
                 :key="index"
                 v-model="attendees[index]"
                 v-on:input="changed('input', index)"
