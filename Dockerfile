@@ -30,7 +30,7 @@ RUN apk add --no-cache ca-certificates
 WORKDIR /app
 COPY static static/
 COPY templates templates/
-COPY adb-config/client_secrets.json adb-config/client_secrets.json
+# COPY adb-config/client_secrets.json adb-config/client_secrets.json
 COPY --from=build-api /src/adb ./
 COPY --from=build-ui /src/dist dist/
 
