@@ -5,6 +5,7 @@ env:
   - GOFLAGS=-mod=readonly
 
 services:
+  - docker
   - mysql
 
 before_install:
@@ -24,4 +25,4 @@ before_script:
 script:
   - ./hooks/pre-commit
   - go test github.com/dxe/adb/...
-  - npm run build
+  - docker build -t .
