@@ -25,4 +25,4 @@ before_script:
 script:
   - ./hooks/pre-commit
   - go test github.com/dxe/adb/...
-  - docker build -t .
+  - docker build -t adb .
