@@ -2,8 +2,7 @@ language: generic
 dist: xenial
 
 env:
-  - GOFLAGS=-mod=readonly
-  - GOPROXY=https://proxy.golang.org
+  - GOFLAGS=-mod=readonly GOPROXY=https://proxy.golang.org
 
 services:
   - docker
