@@ -22,7 +22,7 @@ body {
          padding-top: 30px;
     }
     .body-wrapper {
-        padding: 15px 20px 25px 20px !important;
+        padding: 15px 20px 15px 20px !important;
     }
 }
 
@@ -60,7 +60,7 @@ a.logout-link:hover, a.logout-link:active {
 .body-wrapper {
         max-width: 430px;
         background-color: white;
-        padding: 15px 20px 25px 20px; 
+        padding: 15px 20px 15px 20px; 
         margin: 0 auto;
         box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24),0 17px 50px 0 rgba(0,0,0,0.19);
         opacity: 0.98;
@@ -69,7 +69,7 @@ a.logout-link:hover, a.logout-link:active {
 .body-wrapper-wide {
         max-width: 900px;
         background-color: white;
-        padding: 15px 20px 25px 20px; 
+        padding: 15px 20px 15px 20px; 
         margin: 0 auto;
         box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24),0 17px 50px 0 rgba(0,0,0,0.19);
         opacity: 0.98;
@@ -78,7 +78,7 @@ a.logout-link:hover, a.logout-link:active {
 .body-wrapper-extra-wide {
         max-width: 95%;
         background-color: white;
-        padding: 15px 20px 25px 20px; 
+        padding: 15px 20px 15px 20px; 
         margin: 0 auto;
         box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24),0 17px 50px 0 rgba(0,0,0,0.19);
         opacity: 0.98;
@@ -87,7 +87,7 @@ a.logout-link:hover, a.logout-link:active {
 
 @media (max-width: 610px) {
     .body-wrapper-wide {
-        padding: 15px 20px 25px 20px;
+        padding: 15px 20px 15px 20px;
     }
 }
 
