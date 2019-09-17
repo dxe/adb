@@ -103,6 +103,11 @@ a.logout-link:hover, a.logout-link:active {
 }
 .title h1 {
     font-weight: bold;
+    font-size: 2em;
+}
+
+.description {
+    font-size: 0.9em;
 }
 
 /* event_new */

@@ -2,8 +2,11 @@
   <div :class="wrapperClass">
     <div class="title">
       <h1>{{ title }}</h1>
-      <br />
     </div>
+
+    <div class="description">{{ description }}</div>
+
+    <br />
 
     <div class="main"><slot></slot></div>
   </div>
@@ -15,6 +18,7 @@ import Vue from 'vue';
 export default Vue.extend({
   props: {
     title: String,
+    description: String,
     wide: Boolean,
     narrow: Boolean,
   },

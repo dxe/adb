@@ -1,5 +1,5 @@
 <template>
-  <adb-page :title="title" wide class="activist-list-content">
+  <adb-page :title="title" :description="description" wide class="activist-list-content">
     <div class="activist-list-filters form-inline">
       <input
         v-on:input="debounceSearchInput"
@@ -1350,6 +1350,7 @@ export default Vue.extend({
   name: 'activist-list',
   props: {
     title: String,
+    description: String,
     // `view` is the default view to show. It can be one of:
     // "all_activists", "leaderboard", "activist_pool",
     // "activist_recruitment", or "action_team"

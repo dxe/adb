@@ -416,16 +416,18 @@ func (c MainController) ListConnectionsHandler(w http.ResponseWriter, r *http.Re
 }
 
 type ActivistListData struct {
-	Title string
-	View  string
+	Title       string
+	Description string
+	View        string
 }
 
 func (c MainController) ListActivistsHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, r, "activist_list", PageData{
 		PageName: "ActivistList",
 		Data: ActivistListData{
-			Title: "All Activists",
-			View:  "all_activists",
+			Title:       "All Activists",
+			Description: "Everyone who has attended an event within the filtered range",
+			View:        "all_activists",
 		},
 	})
 }
@@ -434,8 +436,9 @@ func (c MainController) ListCommunityProspectsHandler(w http.ResponseWriter, r *
 	renderPage(w, r, "activist_list", PageData{
 		PageName: "CommunityProspects",
 		Data: ActivistListData{
-			Title: "Community Prospects",
-			View:  "community_prospects",
+			Title:       "Community Prospects",
+			Description: "Everyone whose Level is Supporter or Circle Member, who has been to an event within the last 3 months, whose Source is a Form (or Fur Ban) other than the Circle Interest Form or Application",
+			View:        "community_prospects",
 		},
 	})
 }
@@ -444,8 +447,9 @@ func (c MainController) ListActivistsPoolHandler(w http.ResponseWriter, r *http.
 	renderPage(w, r, "activist_list", PageData{
 		PageName: "ActivistPool",
 		Data: ActivistListData{
-			Title: "Recruitment Connections",
-			View:  "activist_pool",
+			Title:       "Recruitment Connections",
+			Description: "Inactive page",
+			View:        "activist_pool",
 		},
 	})
 }
@@ -454,8 +458,9 @@ func (c MainController) ListActivistsRecruitmentHandler(w http.ResponseWriter, r
 	renderPage(w, r, "activist_list", PageData{
 		PageName: "ActivistRecruitment",
 		Data: ActivistListData{
-			Title: "Activist Recruitment",
-			View:  "activist_recruitment",
+			Title:       "Activist Recruitment",
+			Description: "Inactive page",
+			View:        "activist_recruitment",
 		},
 	})
 }
@@ -464,8 +469,9 @@ func (c MainController) ListActivistsActionTeamHandler(w http.ResponseWriter, r 
 	renderPage(w, r, "activist_list", PageData{
 		PageName: "ActivistActionTeam",
 		Data: ActivistListData{
-			Title: "Action Team",
-			View:  "action_team",
+			Title:       "Action Team",
+			Description: "Inactive page",
+			View:        "action_team",
 		},
 	})
 }
@@ -474,8 +480,9 @@ func (c MainController) ListActivistsDevelopmentHandler(w http.ResponseWriter, r
 	renderPage(w, r, "activist_list", PageData{
 		PageName: "OrganizerDevelopment",
 		Data: ActivistListData{
-			Title: "Organizer Development",
-			View:  "development",
+			Title:       "Organizer Development",
+			Description: "Everyone who is an Organizer (including Senior Organizers)",
+			View:        "development",
 		},
 	})
 }
@@ -484,8 +491,9 @@ func (c MainController) ListChapterMemberDevelopmentHandler(w http.ResponseWrite
 	renderPage(w, r, "activist_list", PageData{
 		PageName: "ChapterMemberDevelopment",
 		Data: ActivistListData{
-			Title: "Chapter Members",
-			View:  "chapter_member_development",
+			Title:       "Chapter Members",
+			Description: "Everyone who is a Chapter Member (including Organizers)",
+			View:        "chapter_member_development",
 		},
 	})
 }
@@ -494,8 +502,9 @@ func (c MainController) ListOrganizerProspectsHandler(w http.ResponseWriter, r *
 	renderPage(w, r, "activist_list", PageData{
 		PageName: "OrganizerProspects",
 		Data: ActivistListData{
-			Title: "Organizer Prospects",
-			View:  "organizer_prospects",
+			Title:       "Organizer Prospects",
+			Description: "Everyone who is a Prospective Organizer who is not an Organizer",
+			View:        "organizer_prospects",
 		},
 	})
 }
@@ -504,8 +513,9 @@ func (c MainController) ListSeniorOrganizerProspectsHandler(w http.ResponseWrite
 	renderPage(w, r, "activist_list", PageData{
 		PageName: "SeniorOrganizerProspects",
 		Data: ActivistListData{
-			Title: "Senior Organizer Prospects",
-			View:  "senior_organizer_prospects",
+			Title:       "Senior Organizer Prospects",
+			Description: "Everyone who is a Prospective Senior Organizer who is not a Senior Organizer",
+			View:        "senior_organizer_prospects",
 		},
 	})
 }
@@ -514,8 +524,9 @@ func (c MainController) ListSeniorOrganizerDevelopmentHandler(w http.ResponseWri
 	renderPage(w, r, "activist_list", PageData{
 		PageName: "SeniorOrganizerDevelopment",
 		Data: ActivistListData{
-			Title: "Senior Organizer Development",
-			View:  "senior_organizer_development",
+			Title:       "Senior Organizer Development",
+			Description: "Everyone who is a Senior Organizer",
+			View:        "senior_organizer_development",
 		},
 	})
 }
@@ -524,8 +535,9 @@ func (c MainController) ListChapterMemberProspectsHandler(w http.ResponseWriter,
 	renderPage(w, r, "activist_list", PageData{
 		PageName: "ChapterMemberProspects",
 		Data: ActivistListData{
-			Title: "Chapter Member Prospects",
-			View:  "chapter_member_prospects",
+			Title:       "Chapter Member Prospects",
+			Description: "Everyone who is a Chapter Member Prospect who is not a Chapter Member or Organizer",
+			View:        "chapter_member_prospects",
 		},
 	})
 }
@@ -534,8 +546,9 @@ func (c MainController) ListCircleMemberProspectsHandler(w http.ResponseWriter, 
 	renderPage(w, r, "activist_list", PageData{
 		PageName: "CircleMemberProspects",
 		Data: ActivistListData{
-			Title: "Circle Member Prospects",
-			View:  "circle_member_prospects",
+			Title:       "Circle Member Prospects",
+			Description: "Everyone interested in joining a circle who is not assigned to a circle",
+			View:        "circle_member_prospects",
 		},
 	})
 }
@@ -544,8 +557,9 @@ func (c MainController) ListCircleMembersHandler(w http.ResponseWriter, r *http.
 	renderPage(w, r, "activist_list", PageData{
 		PageName: "CircleMembers",
 		Data: ActivistListData{
-			Title: "Circle Members",
-			View:  "circle_members",
+			Title:       "Circle Members",
+			Description: "Everyone who is assigned to a circle",
+			View:        "circle_members",
 		},
 	})
 }
@@ -554,8 +568,20 @@ func (c MainController) ListStudyHandler(w http.ResponseWriter, r *http.Request)
 	renderPage(w, r, "activist_list", PageData{
 		PageName: "Study",
 		Data: ActivistListData{
-			Title: "Interpersonal Ties Study",
-			View:  "study",
+			Title:       "Interpersonal Ties Study",
+			Description: "Everyone who is assigned to a Study Group",
+			View:        "study",
+		},
+	})
+}
+
+func (c MainController) LeaderboardHandler(w http.ResponseWriter, r *http.Request) {
+	renderPage(w, r, "activist_list", PageData{
+		PageName: "Leaderboard",
+		Data: ActivistListData{
+			Title:       "Leaderboard",
+			Description: "Everyone who has attended an event in the last 30 days",
+			View:        "leaderboard",
 		},
 	})
 }
@@ -566,16 +592,6 @@ func (c MainController) ListWorkingGroupsHandler(w http.ResponseWriter, r *http.
 
 func (c MainController) ListCirclesHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, r, "circles_list", PageData{PageName: "CirclesList"})
-}
-
-func (c MainController) LeaderboardHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, r, "activist_list", PageData{
-		PageName: "Leaderboard",
-		Data: ActivistListData{
-			Title: "Leaderboard",
-			View:  "leaderboard",
-		},
-	})
 }
 
 func (c MainController) ListUsersHandler(w http.ResponseWriter, r *http.Request) {
