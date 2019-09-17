@@ -1,6 +1,6 @@
 module github.com/dxe/adb
 
-go 1.13
+go 1.11
 
 require (
 	github.com/coreos/go-oidc v2.0.0+incompatible
