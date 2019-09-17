@@ -1,9 +1,9 @@
 ## Build API backend.
 
-FROM golang AS build-api
+FROM golang:latest AS build-api
 WORKDIR /src
 COPY go.mod go.sum ./
-RUN go mod download
+RUN GOFLAGS=-mod=readonly GOPROXY=https://proxy.golang.org go mod download
 COPY main.go ./
 COPY config config/
 COPY mailinglist_sync mailinglist_sync/
@@ -13,7 +13,7 @@ RUN CGO_ENABLED=0 go build -o adb
 
 ## Build web UI frontend.   
 
-FROM node AS build-ui
+FROM node:latest AS build-ui
 WORKDIR /src
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -24,7 +24,7 @@ RUN npm run build
 
 ## Assemble composite server container.
 
-FROM alpine
+FROM alpine:latest
 RUN apk add --no-cache ca-certificates
 
 WORKDIR /app
