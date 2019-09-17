@@ -161,7 +161,7 @@
                 </select>
               </p>
 
-              <p v-if="currentWorkingGroup.type === 'working_group'">
+              <p>
                 <label for="description">Description: </label
                 ><input
                   class="form-control"
