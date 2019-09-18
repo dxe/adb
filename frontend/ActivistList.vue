@@ -920,8 +920,8 @@ function getDefaultColumns(view: string): Column[] {
     },
 
     {
-      header: 'First Email',
-      longHeader: 'Chapter Membership: Date First Email Sent',
+      header: 'First Text',
+      longHeader: 'Chapter Membership: Date First SMS Message Sent',
       data: {
         type: 'date',
         data: 'cm_first_email',
