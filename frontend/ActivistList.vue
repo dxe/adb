@@ -1191,6 +1191,20 @@ function getDefaultColumns(view: string): Column[] {
       },
       enabled: view === 'study',
     },
+
+    {
+      header: 'Survey',
+      longHeader: 'Stanford Survey Completion',
+      data: {
+        type: 'date',
+        data: 'survey_completion',
+        dateFormat: 'YYYY-MM-DD',
+        correctFormat: true,
+        colWidths: 100,
+        readOnly: true,
+      },
+      enabled: false,
+    },
   ];
 }
 

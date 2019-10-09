@@ -89,6 +89,7 @@ CREATE TABLE activists (
   study_group varchar(40) NOT NULL DEFAULT '',
   study_activator varchar(40) NOT NULL DEFAULT '',
   study_conversation varchar(20),
+  survey_completion VARCHAR(20),
   UNIQUE (name)
 )
 `)
