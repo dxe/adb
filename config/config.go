@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	DBUser, DBPassword, DBName string
+	DBUser, DBPassword, DBName, DBProtocol string
 
 	Port string
 
@@ -56,6 +56,7 @@ func init() {
 		DBUser = mustGetenv("DB_USER")
 		DBPassword = mustGetenv("DB_PASSWORD")
 		DBName = mustGetenv("DB_NAME")
+		DBProtocol = mustGetenv("DB_PROTOCOL")
 
 		Port = mustGetenv("PORT")
 
@@ -71,6 +72,7 @@ func init() {
 		DBUser = "adb_user"
 		DBPassword = "adbpassword"
 		DBName = "adb_db"
+		DBProtocol = ""
 
 		Port = "8080"
 
@@ -87,7 +89,7 @@ func init() {
 }
 
 func DBDataSource() string {
-	return DBUser + ":" + DBPassword + "@" + "unix(/var/run/mysqld/mysqld.sock)" + "/" + DBName + "?parseTime=true"
+	return DBUser + ":" + DBPassword + "@" + DBProtocol + "/" + DBName + "?parseTime=true"
 }
 
 func DBTestDataSource() string {
