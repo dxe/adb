@@ -87,7 +87,7 @@ func init() {
 }
 
 func DBDataSource() string {
-	return DBUser + ":" + DBPassword + "@/" + DBName + "?parseTime=true"
+	return DBUser + ":" + DBPassword + "@" + "unix(/var/run/mysqld/mysqld.sock)" + "/" + DBName + "?parseTime=true"
 }
 
 func DBTestDataSource() string {
