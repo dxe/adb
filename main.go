@@ -437,7 +437,7 @@ func (c MainController) ListCommunityProspectsHandler(w http.ResponseWriter, r *
 		PageName: "CommunityProspects",
 		Data: ActivistListData{
 			Title:       "Community Prospects",
-			Description: "Everyone whose Level is Supporter or Circle Member, who has been to an event within the last 3 months, whose Source is a Form (or Fur Ban) other than the Circle Interest Form or Application",
+			Description: "Everyone whose Level is Supporter or Circle Member, whose Source is a Form (or Fur Ban) other than the Circle Interest Form or Application that was submitted within the last 3 months",
 			View:        "community_prospects",
 		},
 	})
