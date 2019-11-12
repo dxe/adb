@@ -291,23 +291,23 @@ function emailValidator(value: string, callback: Function) {
 function zipcodeRadius(zip: string[], radius: any) {
   // radius to check
 
-  var allZipsInRadius: any[] = [];
+  let allZipsInRadius: any[] = [];
 
   for (var i = 0; i < zip.length; i++) {
-    var zipsInRadius = zipcodes.radius(zip[i], radius, false);
+    let zipsInRadius = zipcodes.radius(zip[i], radius, false);
     allZipsInRadius = allZipsInRadius.concat(zipsInRadius); // need to add arr to arr
   }
   return allZipsInRadius;
 }
 
 function lookupZipcodes(input: string) {
-  var hasNumber = /\d/;
+  let hasNumber = /\d/;
   if (hasNumber.test(input)) {
     // probably a zip
     return [input];
   } else {
     // try to lookup zipcodes for city name
-    var cityData = zipcodes.lookupByName(input, 'CA');
+    let cityData = zipcodes.lookupByName(input, 'CA');
     let zips = cityData.map((a) => a.zip);
     return zips;
   }
@@ -1820,9 +1820,9 @@ export default Vue.extend({
         }
 
         if (this.searchLocation.length >= 4) {
-          var filterLoc = true;
-          var zipsToCheck = lookupZipcodes(searchLocNormalized);
-          var zipcodeRange: any = zipcodeRadius(zipsToCheck, this.filterRadius);
+          let filterLoc = true;
+          let zipsToCheck = lookupZipcodes(searchLocNormalized);
+          let zipcodeRange: any = zipcodeRadius(zipsToCheck, this.filterRadius);
         }
 
         for (var i = 0; i < this.allActivists.length; i++) {
