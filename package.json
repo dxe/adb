@@ -16,6 +16,8 @@
     "trailingComma": "all"
   },
   "dependencies": {
+    "@sentry/browser": "^5.9.0",
+    "@sentry/integrations": "^5.8.0",
     "awesomplete": "^1.1.5",
     "bootstrap-chosen": "^1.4.2",
     "chosen-js": "^1.8.7",

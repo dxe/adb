@@ -16,6 +16,7 @@ import (
 	"github.com/dxe/adb/config"
 	"github.com/dxe/adb/mailinglist_sync"
 	"github.com/dxe/adb/model"
+	"github.com/getsentry/sentry-go"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/jmoiron/sqlx"
@@ -1286,6 +1287,10 @@ func (c MainController) UsersRolesRemoveHandler(w http.ResponseWriter, r *http.R
 }
 
 func main() {
+	sentry.Init(sentry.ClientOptions{
+		Dsn: "https://dc89e0cef6204791a1f199564aec911c@sentry.io/1820804",
+	})
+
 	n := negroni.New()
 
 	n.Use(negroni.NewRecovery())
