@@ -14,6 +14,15 @@
 
 <script lang="ts">
 import Vue from 'vue';
+import * as Sentry from '@sentry/browser';
+import * as Integrations from '@sentry/integrations';
+
+Sentry.init({
+  dsn: 'https://1bc5adff2f574d5390f085353326f0d5@sentry.io/1820807',
+  integrations: [new Integrations.Vue({ Vue, attachProps: true })],
+});
+
+Sentry.captureException(new Error('Something broke'));
 
 export default Vue.extend({
   props: {
