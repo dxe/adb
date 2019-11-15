@@ -22,8 +22,6 @@ Sentry.init({
   integrations: [new Integrations.Vue({ Vue, attachProps: true })],
 });
 
-Sentry.captureException(new Error('Something broke'));
-
 export default Vue.extend({
   props: {
     title: String,
