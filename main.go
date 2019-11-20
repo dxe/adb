@@ -1307,6 +1307,7 @@ func main() {
 	// Set up server
 	n.UseHandler(r)
 
+	fmt.Println("IsProd =", config.IsProd)
 	fmt.Println("Listening on localhost:" + config.Port)
 	log.Fatal(http.ListenAndServe(":"+config.Port, n))
 }
