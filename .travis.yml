@@ -12,7 +12,7 @@ before_install:
   - nvm use stable
   - node --version
   - npm --version
-  - gimme stable
+  - eval "$(gimme stable)"
   - go version
 
 install:
