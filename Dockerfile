@@ -30,7 +30,9 @@ RUN addgroup -S adb && adduser -S adb -G adb
 USER adb
 
 WORKDIR /app
-COPY run.sh static templates ./
+COPY run.sh ./
+COPY static static/
+COPY templates templates/
 COPY --from=build-api /src/adb ./
 COPY --from=build-ui /src/dist dist/
 
