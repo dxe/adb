@@ -26,12 +26,12 @@ RUN npm run build
 
 FROM alpine:latest
 RUN apk add --no-cache ca-certificates
+RUN addgroup -S adb && adduser -S adb -G adb
+USER adb
 
 WORKDIR /app
-COPY static static/
-COPY templates templates/
-# COPY adb-config/client_secrets.json adb-config/client_secrets.json
+COPY run.sh static templates ./
 COPY --from=build-api /src/adb ./
 COPY --from=build-ui /src/dist dist/
 
-ENTRYPOINT ["./adb"]
+ENTRYPOINT ["./run.sh"]
