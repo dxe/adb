@@ -1,5 +1,5 @@
 <template>
-  <adb-page :title="title" :description="description" wide class="activist-list-content">
+  <adb-page :title="title" :description="description" wide>
     <div class="activist-list-filters form-inline">
       <input
         v-on:input="debounceSearchInput"

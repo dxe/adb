@@ -126,9 +126,6 @@ a.logout-link:hover, a.logout-link:active {
 }
 
 /* event_list */
-.event-list-content {
-        /*min-width: 600px;*/
-}
 .attendee-list {
     padding-left: 15px;
     list-style-position: outside;
