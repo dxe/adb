@@ -1,8 +1,5 @@
 <template>
-  <adb-page
-    :title="connections ? 'All Maintenance Connections' : 'Events'"
-    class="event-list-content"
-  >
+  <adb-page :title="connections ? 'All Maintenance Connections' : 'Events'">
     <form class="form-inline hidden-xs" v-on:submit.prevent="eventListRequest">
       <label for="event-name">{{ connections ? 'Connector' : 'Event Name' }}:</label>
       <input
@@ -125,13 +122,13 @@
               Attendance: {{ event.attendees.length }}
             </span>
           </td>
-          <td class="event-name">
+          <td>
             <b>{{ event.event_name }}</b>
           </td>
           <td nowrap class="hidden-xs">{{ event.event_type }}</td>
           <td nowrap class="hidden-xs">{{ event.attendees.length }}</td>
           <td class="hidden-xs">
-            <button class="show-attendees btn btn-link" v-on:click="toggleAttendees(event)">
+            <button class="btn btn-link" v-on:click="toggleAttendees(event)">
               <span v-if="event.showAttendees">-</span> <span v-else>+</span> Attendees
             </button>
             <a target="_blank" class="btn btn-link" :href="event.emailLink">

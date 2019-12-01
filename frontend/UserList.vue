@@ -1,9 +1,9 @@
 <template>
-  <adb-page title="Users" class="activist-list-content">
+  <adb-page title="Users">
     <button class="btn btn-default" @click="showModal('edit-user-modal')">
       <span class="glyphicon glyphicon-plus"></span>&nbsp;&nbsp;Add New User
     </button>
-    <table id="user-list" class="adb-table table table-hover table-striped tablesorter">
+    <table id="user-list" class="adb-table table table-hover table-striped">
       <thead>
         <tr>
           <th></th>

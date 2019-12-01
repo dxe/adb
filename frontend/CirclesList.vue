@@ -1,5 +1,5 @@
 <template>
-  <adb-page title="Circles" class="body-circles-list-content">
+  <adb-page title="Circles">
     <button class="btn btn-default" @click="showModal('edit-circle-modal')">
       <span class="glyphicon glyphicon-plus"></span>&nbsp;&nbsp;Add New Circle
     </button>
