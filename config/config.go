@@ -9,32 +9,41 @@ import (
 )
 
 var (
-	DBUser, DBPassword, DBName, DBProtocol string
+	DBUser     = mustGetenv("DB_USER", "adb_user")
+	DBPassword = mustGetenv("DB_PASSWORD", "adbpassword")
+	DBName     = mustGetenv("DB_NAME", "adb_db")
+	DBProtocol = mustGetenv("DB_PROTOCOL", "")
 
-	Port string
+	Port = mustGetenv("PORT", "8080")
 
-	Route0, Route1, Route2 string
+	Route0 = mustGetenv("ROUTE_0", "/route0")
+	Route1 = mustGetenv("ROUTE_1", "/route1")
+	Route2 = mustGetenv("ROUTE_2", "/route2")
 
-	CookieSecret string
+	CookieSecret = mustGetenv("COOKIE_SECRET", "some-fake-secret")
 
 	// Path to Google API oauth client_secrets.json file, with
 	// access to the following scope:
 	// https://www.googleapis.com/auth/admin.directory.group
 	// And the "Admin" API enabled. More info:
 	//   https://developers.google.com/api-client-library/python/auth/service-accounts
-	SyncMailingListsConfigFile string
+	SyncMailingListsConfigFile = mustGetenv("SYNC_MAILING_LISTS_CONFIG_FILE", "")
 
 	// The email for the user that that the oauth account should
 	// take action as.
-	SyncMailingListsOauthSubject string
+	SyncMailingListsOauthSubject = mustGetenv("SYNC_MAILING_LISTS_OAUTH_SUBJECT", "")
 )
 
-func mustGetenv(envvar string) string {
-	val := os.Getenv(envvar)
-	if val == "" {
-		panic("Environmental variable " + envvar + " cannot be empty")
+func mustGetenv(key, fallback string) string {
+	val := os.Getenv(key)
+	if val != "" {
+		return val
 	}
-	return val
+	if !IsProd {
+		return fallback
+	}
+
+	panic("Environment variable " + key + " cannot be empty")
 }
 
 func isEC2() bool {
@@ -50,43 +59,6 @@ func isEC2() bool {
 // Always run as IsProd in EC2. This means you can't develop on EC2,
 // but we'll cross that bridge when we get there.
 var IsProd bool = isEC2()
-
-func init() {
-	if IsProd {
-		DBUser = mustGetenv("DB_USER")
-		DBPassword = mustGetenv("DB_PASSWORD")
-		DBName = mustGetenv("DB_NAME")
-		DBProtocol = mustGetenv("DB_PROTOCOL")
-
-		Port = mustGetenv("PORT")
-
-		Route0 = mustGetenv("ROUTE_0")
-		Route1 = mustGetenv("ROUTE_1")
-		Route2 = mustGetenv("ROUTE_2")
-
-		CookieSecret = mustGetenv("COOKIE_SECRET")
-
-		SyncMailingListsConfigFile = mustGetenv("SYNC_MAILING_LISTS_CONFIG_FILE")
-		SyncMailingListsOauthSubject = mustGetenv("SYNC_MAILING_LISTS_OAUTH_SUBJECT")
-	} else {
-		DBUser = "adb_user"
-		DBPassword = "adbpassword"
-		DBName = "adb_db"
-		DBProtocol = ""
-
-		Port = "8080"
-
-		Route0 = "/route0"
-		Route1 = "/route1"
-		Route2 = "/route2"
-
-		CookieSecret = "some-fake-secret"
-
-		// Empty during development.
-		SyncMailingListsConfigFile = ""
-		SyncMailingListsOauthSubject = ""
-	}
-}
 
 func DBDataSource() string {
 	return DBUser + ":" + DBPassword + "@" + DBProtocol + "/" + DBName + "?parseTime=true"
