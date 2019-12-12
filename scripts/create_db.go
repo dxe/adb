@@ -33,12 +33,12 @@ func createCurrentDateString(day int) string {
 func createEventsDevDB() string {
 	days := []int{15, 16, 17, 18, 19, 13}
 	eventFormatStrings := []string{
-		"(1, 'Event One', '%s', 'Working Group'),",
-		"(2, 'Event Two', '%s', 'Protest'),",
-		"(3, 'Event Three', '%s', 'Community'),",
-		"(4, 'Event Four', '%s', 'Outreach'),",
-		"(5, 'Event Five', '%s', 'Key Event'),",
-		"(6, 'Event Six', '%s', 'Key Event');"}
+		"(1, 'Event One', '%s', 'Working Group', '0'),",
+		"(2, 'Event Two', '%s', 'Protest', '0'),",
+		"(3, 'Event Three', '%s', 'Community', '0'),",
+		"(4, 'Event Four', '%s', 'Outreach', '0'),",
+		"(5, 'Event Five', '%s', 'Key Event', '0'),",
+		"(6, 'Event Six', '%s', 'Key Event', '0');"}
 
 	//assert
 	if len(days) != len(eventFormatStrings) {
@@ -64,7 +64,7 @@ INSERT INTO activists
   (1, 'Adam Kol', 'test@directactioneverywhere.com', '7035558484', 'Berkeley, United States', 'Supporter'),
   (2, 'Robin Houseman', 'testtest@gmail.com', '7035558484', 'United States', 'Supporter'),
   (3, 'aaa', 'test@comcast.net', '7035558484', 'Fairfield, United States', 'Supporter'),
-  (4, 'bbb', 'test@comcast.net', '7035558484', 'Fairfield, United States', 'Supporter'),
+  (4, 'bbb', '', '7035558484', 'Fairfield, United States', 'Supporter'),
   (5, 'ccc', 'test@comcast.net', '7035558484', 'Fairfield, United States', 'Supporter'),
   (100, 'ddd', 'test.test.test@gmail.com', '', 'United States', 'Supporter'),
   (101, 'eee', 'test.test.test@gmail.com', '', 'United States', 'Supporter'),

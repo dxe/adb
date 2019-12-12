@@ -32,6 +32,13 @@ var (
 	// The email for the user that that the oauth account should
 	// take action as.
 	SyncMailingListsOauthSubject = mustGetenv("SYNC_MAILING_LISTS_OAUTH_SUBJECT", "")
+
+	// For sending surveys
+	AWSAccessKey       = mustGetenv("AWS_ACCESS_KEY_ID", "")
+	AWSSecretKey       = mustGetenv("AWS_SECRET_KEY", "")
+	AWSSESEndpoint     = mustGetenv("AWS_SES_ENDPOINT", "")
+	SurveyMissingEmail = mustGetenv("SURVEY_MISSING_EMAIL", "")
+	SurveyFromEmail    = mustGetenv("SURVEY_FROM_EMAIL", "")
 )
 
 func mustGetenv(key, fallback string) string {
