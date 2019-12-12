@@ -378,17 +378,6 @@ func UpdateEventSurveyStatus(db *sqlx.DB, event Event) (eventID int, err error) 
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to update event")
 	}
-	// Error out if the event doesn't exist.
-	var eventCount int
-	err = tx.Get(&eventCount, `SELECT count(*) FROM events WHERE id = ?`, event.ID)
-	if err != nil {
-		tx.Rollback()
-		return 0, errors.Wrap(err, "failed to get event count")
-	}
-	if eventCount == 0 {
-		tx.Rollback()
-		return 0, errors.Errorf("Event with id %d does not exist", event.ID)
-	}
 
 	// Update the event
 	_, err = tx.NamedExec(`UPDATE events
