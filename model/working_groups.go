@@ -46,8 +46,7 @@ type WorkingGroup struct {
 }
 
 type WorkingGroupQueryOptions struct {
-	GroupID   int
-	GroupName string
+	GroupID int
 }
 
 type WorkingGroupMember struct {
@@ -298,16 +297,8 @@ func GetWorkingGroupJSON(db *sqlx.DB, workingGroupID int) (WorkingGroupJSON, err
 	return wgs[0], nil
 }
 
-func GetWorkingGroupsJSON(db *sqlx.DB, options WorkingGroupQueryOptions) ([]WorkingGroupJSON, error) {
-	if options.GroupID != 0 {
-		return nil, errors.New("Cannot include an ID in options")
-	}
-	if options.GroupName != "" {
-		errorMsg := "Cannot include name in query options when fetching multiple working groups"
-		return nil, errors.New(errorMsg)
-	}
-
-	return getWorkingGroupsJSON(db, options)
+func GetWorkingGroupsJSON(db *sqlx.DB) ([]WorkingGroupJSON, error) {
+	return getWorkingGroupsJSON(db, WorkingGroupQueryOptions{})
 }
 
 func getWorkingGroupsJSON(db *sqlx.DB, options WorkingGroupQueryOptions) ([]WorkingGroupJSON, error) {
@@ -348,10 +339,6 @@ func GetWorkingGroups(db *sqlx.DB, options WorkingGroupQueryOptions) ([]WorkingG
 	if options.GroupID != 0 {
 		return nil, errors.New("GetWorkingGroups: Cannot include an ID in options")
 	}
-	if options.GroupName != "" {
-		errorMsg := "GetWorkingGroups: Cannot include name in query options when fetching multiple working groups"
-		return nil, errors.New(errorMsg)
-	}
 
 	workingGroups, err := getWorkingGroups(db, options)
 	if err != nil {
@@ -361,8 +348,8 @@ func GetWorkingGroups(db *sqlx.DB, options WorkingGroupQueryOptions) ([]WorkingG
 }
 
 func GetWorkingGroup(db *sqlx.DB, options WorkingGroupQueryOptions) (WorkingGroup, error) {
-	if options.GroupID == 0 && options.GroupName == "" {
-		return WorkingGroup{}, errors.New("GetWorkingGroup: ID or Name required to fetch specific working group")
+	if options.GroupID == 0 {
+		return WorkingGroup{}, errors.New("GetWorkingGroup: ID required to fetch specific working group")
 	}
 
 	workingGroups, err := getWorkingGroups(db, options)
@@ -391,11 +378,6 @@ SELECT w.id, w.name, w.type, lower(w.group_email) as group_email, w.visible, w.d
 		queryArgs = append(queryArgs, options.GroupID)
 	}
 
-	if options.GroupName != "" {
-		whereClause = append(whereClause, "w.name = ?")
-		queryArgs = append(queryArgs, options.GroupName)
-	}
-
 	if len(whereClause) > 0 {
 		query += ` WHERE ` + strings.Join(whereClause, " AND ")
 	}
@@ -407,8 +389,9 @@ SELECT w.id, w.name, w.type, lower(w.group_email) as group_email, w.visible, w.d
 		return []WorkingGroup{}, errors.Wrapf(err, "getWorkingGroups: Failed retrieving working groups from WorkingGroups table")
 	}
 
+	// TODO(mdempsky): Use a JOIN instead of a second round-trip.
 	if err := fetchWorkingGroupMembers(db, workingGroups); err != nil {
-		return []WorkingGroup{}, errors.Wrapf(err, "Failed to fetch working group members for group %s", options.GroupName)
+		return []WorkingGroup{}, errors.Wrapf(err, "Failed to fetch working group members for query: %#v", options)
 	}
 
 	return workingGroups, nil

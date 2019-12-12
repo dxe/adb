@@ -44,8 +44,7 @@ type CircleGroup struct {
 }
 
 type CircleGroupQueryOptions struct {
-	GroupID   int
-	GroupName string
+	GroupID int
 }
 
 type CircleGroupMember struct {
@@ -302,16 +301,8 @@ func GetCircleGroupJSON(db *sqlx.DB, circleGroupID int) (CircleGroupJSON, error)
 	return cirs[0], nil
 }
 
-func GetCircleGroupsJSON(db *sqlx.DB, options CircleGroupQueryOptions) ([]CircleGroupJSON, error) {
-	if options.GroupID != 0 {
-		return nil, errors.New("Cannot include an ID in options")
-	}
-	if options.GroupName != "" {
-		errorMsg := "Cannot include name in query options when fetching multiple circles"
-		return nil, errors.New(errorMsg)
-	}
-
-	return getCircleGroupsJSON(db, options)
+func GetCircleGroupsJSON(db *sqlx.DB) ([]CircleGroupJSON, error) {
+	return getCircleGroupsJSON(db, CircleGroupQueryOptions{})
 }
 
 func getCircleGroupsJSON(db *sqlx.DB, options CircleGroupQueryOptions) ([]CircleGroupJSON, error) {
@@ -352,10 +343,6 @@ func GetCircleGroups(db *sqlx.DB, options CircleGroupQueryOptions) ([]CircleGrou
 	if options.GroupID != 0 {
 		return nil, errors.New("GetCircleGroups: Cannot include an ID in options")
 	}
-	if options.GroupName != "" {
-		errorMsg := "GetCircleGroups: Cannot include name in query options when fetching multiple working groups"
-		return nil, errors.New(errorMsg)
-	}
 
 	circleGroups, err := getCircleGroups(db, options)
 	if err != nil {
@@ -365,7 +352,7 @@ func GetCircleGroups(db *sqlx.DB, options CircleGroupQueryOptions) ([]CircleGrou
 }
 
 func GetCircleGroup(db *sqlx.DB, options CircleGroupQueryOptions) (CircleGroup, error) {
-	if options.GroupID == 0 && options.GroupName == "" {
+	if options.GroupID == 0 {
 		return CircleGroup{}, errors.New("GetCircleGroup: ID or Name required to fetch specific circle")
 	}
 
@@ -395,11 +382,6 @@ SELECT w.id, w.name, w.type, lower(w.group_email) as group_email, w.visible, w.d
 		queryArgs = append(queryArgs, options.GroupID)
 	}
 
-	if options.GroupName != "" {
-		whereClause = append(whereClause, "w.name = ?")
-		queryArgs = append(queryArgs, options.GroupName)
-	}
-
 	if len(whereClause) > 0 {
 		query += ` WHERE ` + strings.Join(whereClause, " AND ")
 	}
@@ -411,8 +393,9 @@ SELECT w.id, w.name, w.type, lower(w.group_email) as group_email, w.visible, w.d
 		return []CircleGroup{}, errors.Wrapf(err, "getCircleGroups: Failed retrieving working groups from circles table")
 	}
 
+	// TODO(mdempsky): Use a JOIN instead of a second round-trip.
 	if err := fetchCircleGroupMembers(db, circleGroups); err != nil {
-		return []CircleGroup{}, errors.Wrapf(err, "Failed to fetch working group members for group %s", options.GroupName)
+		return []CircleGroup{}, errors.Wrapf(err, "Failed to fetch working group members for query: %#v", options)
 	}
 
 	return circleGroups, nil
