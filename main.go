@@ -659,13 +659,10 @@ func sendErrorMessage(w io.Writer, err error) {
 
 func (c MainController) UpdateEventHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	var event model.Event
+	var eventID int
 	if eventIDStr, ok := vars["event_id"]; ok {
-		eventID, err := strconv.Atoi(eventIDStr)
-		if err != nil {
-			panic(err)
-		}
-		event, err = model.GetEvent(c.db, model.GetEventOptions{EventID: eventID})
+		var err error
+		eventID, err = strconv.Atoi(eventIDStr)
 		if err != nil {
 			panic(err)
 		}
@@ -674,20 +671,17 @@ func (c MainController) UpdateEventHandler(w http.ResponseWriter, r *http.Reques
 	renderPage(w, r, "event_new", PageData{
 		PageName: "NewEvent",
 		Data: map[string]interface{}{
-			"Event": event,
+			"EventID": eventID,
 		},
 	})
 }
 
 func (c MainController) UpdateConnectionHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	var event model.Event
+	var eventID int
 	if eventIDStr, ok := vars["event_id"]; ok {
-		eventID, err := strconv.Atoi(eventIDStr)
-		if err != nil {
-			panic(err)
-		}
-		event, err = model.GetEvent(c.db, model.GetEventOptions{EventID: eventID})
+		var err error
+		eventID, err = strconv.Atoi(eventIDStr)
 		if err != nil {
 			panic(err)
 		}
@@ -696,7 +690,7 @@ func (c MainController) UpdateConnectionHandler(w http.ResponseWriter, r *http.R
 	renderPage(w, r, "connection_new", PageData{
 		PageName: "NewConnection",
 		Data: map[string]interface{}{
-			"Event": event,
+			"EventID": eventID,
 		},
 	})
 }
