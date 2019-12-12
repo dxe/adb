@@ -1002,7 +1002,7 @@ func (c MainController) WorkingGroupSaveHandler(w http.ResponseWriter, r *http.R
 }
 
 func (c MainController) WorkingGroupListHandler(w http.ResponseWriter, r *http.Request) {
-	wgs, err := model.GetWorkingGroupsJSON(c.db, model.WorkingGroupQueryOptions{})
+	wgs, err := model.GetWorkingGroupsJSON(c.db)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
@@ -1067,7 +1067,7 @@ func (c MainController) CircleGroupSaveHandler(w http.ResponseWriter, r *http.Re
 }
 
 func (c MainController) CircleGroupListHandler(w http.ResponseWriter, r *http.Request) {
-	cirs, err := model.GetCircleGroupsJSON(c.db, model.CircleGroupQueryOptions{})
+	cirs, err := model.GetCircleGroupsJSON(c.db)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
@@ -1132,7 +1132,7 @@ func (c MainController) ActivistListBasicHandler(w http.ResponseWriter, r *http.
 }
 
 func (c MainController) UserListHandler(w http.ResponseWriter, r *http.Request) {
-	users, err := model.GetUsersJSON(c.db, model.GetUserOptions{})
+	users, err := model.GetUsersJSON(c.db)
 
 	if err != nil {
 		sendErrorMessage(w, err)

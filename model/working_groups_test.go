@@ -105,11 +105,7 @@ func TestCreateWorkingGroup_insertAndFetchWorkingGroupWithMembersByNameAndID(t *
 	require.NoError(t, err)
 	workingGroup.ID = id
 
-	fetchedGroup, err := GetWorkingGroup(db, WorkingGroupQueryOptions{GroupName: "The Citadel"})
-	require.NoError(t, err)
-	validateReturnedWorkingGroup(t, workingGroup, fetchedGroup)
-
-	fetchedGroup2, err := GetWorkingGroup(db, WorkingGroupQueryOptions{GroupName: "The Citadel", GroupID: id})
+	fetchedGroup2, err := GetWorkingGroup(db, WorkingGroupQueryOptions{GroupID: id})
 	require.NoError(t, err)
 	validateReturnedWorkingGroup(t, workingGroup, fetchedGroup2)
 }

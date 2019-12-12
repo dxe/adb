@@ -49,11 +49,7 @@ type UserJSON struct {
 }
 
 type GetUserOptions struct {
-	ID       int
-	Email    string
-	Name     string
-	Admin    bool
-	Disabled bool
+	ID int
 }
 
 type GetUsersRolesOptions struct {
@@ -128,12 +124,8 @@ FROM adb_users
 	return *adbUser, nil
 }
 
-func GetUsersJSON(db *sqlx.DB, options GetUserOptions) ([]UserJSON, error) {
-	if options.ID != 0 {
-		return nil, errors.New("GetUsersJSON: Cannot include ID in options")
-	}
-
-	return getUsersJSON(db, options)
+func GetUsersJSON(db *sqlx.DB) ([]UserJSON, error) {
+	return getUsersJSON(db, GetUserOptions{})
 }
 
 func getUsersJSON(db *sqlx.DB, options GetUserOptions) ([]UserJSON, error) {
