@@ -198,7 +198,6 @@ func StartSurveyMailer(db *sqlx.DB) {
 		log.Println("Starting survey mailer")
 		surveyMailerWrapper(db)
 		log.Println("Finished survey mailer")
-		// TODO(jake): change this to 60 min before deploying
 		time.Sleep(60 * time.Minute)
 	}
 }
