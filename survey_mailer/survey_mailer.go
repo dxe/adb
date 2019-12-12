@@ -168,11 +168,12 @@ func surveyMailerWrapper(db *sqlx.DB) {
 	}()
 
 	// Get current hour of day & current day of week
-	weekday := time.Now().Weekday()
-	hour := time.Now().Hour()
+	now := time.Now()
+	weekday := now.Weekday()
+	hour := now.Hour()
 	// Calculate date of yesterday & today
-	today := time.Now().Format("2006-01-02")
-	yesterday := time.Now().AddDate(0, 0, -1).Format("2006-01-02")
+	today := now.Format("2006-01-02")
+	yesterday := now.AddDate(0, 0, -1).Format("2006-01-02")
 
 	// send protest surveys from previous day daily at 9am
 	if hour == 9 {
