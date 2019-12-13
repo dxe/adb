@@ -29,10 +29,10 @@ func sendMissingEmail(eventName string, attendees []string, sendingErrors []stri
 	bodyHtml := ""
 
 	if len(attendees) > 0 {
-		bodyText += "The following people did not receive a survey for this protest due to not having a valid email address: "
+		bodyText += "The following people did not receive a survey for this event due to not having a valid email address: "
 		bodyText += strings.Join(attendees, ", ")
 		bodyText += ". "
-		bodyHtml += "<p>The following people did not receive a survey for this protest due to not having a valid email address: <br />"
+		bodyHtml += "<p>The following people did not receive a survey for this event due to not having a valid email address: <br />"
 		bodyHtml += strings.Join(attendees, "<br />")
 		bodyHtml += "</p>"
 	}
