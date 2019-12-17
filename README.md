@@ -32,6 +32,13 @@ CREATE DATABASE adb_test_db CHARACTER SET utf8 COLLATE utf8_general_ci;
 
 Then run `make dev_db`.
 
+### Environment variables required for surveys to be sent
+- AWS_ACCESS_KEY_ID
+- AWS_SECRET_KEY
+- AWS_SES_ENDPOINT (example: https://email.us-west-2.amazonaws.com)
+- SURVEY_FROM_EMAIL (address surveys should be sent from)
+- SURVEY_MISSING_EMAIL (address to alert is survey recipients are missing email address)
+
 ## JS
 
 This project uses webpack to compile our frontend files. Frontend

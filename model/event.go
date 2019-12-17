@@ -46,14 +46,16 @@ type EventJSON struct {
 
 /* TODO Restructure this Struct */
 type Event struct {
-	ID               int       `db:"id"`
-	EventName        string    `db:"name"`
-	EventDate        time.Time `db:"date"`
-	EventType        EventType `db:"event_type"`
-	Attendees        []string  // For retrieving all event attendees
-	AttendeeEmails   []string
-	AddedAttendees   []Activist // Used for Updating Events
-	DeletedAttendees []Activist // Used for Updating Events
+	ID                    int       `db:"id"`
+	EventName             string    `db:"name"`
+	EventDate             time.Time `db:"date"`
+	EventType             EventType `db:"event_type"`
+	SurveySent            int       `db:"survey_sent"` // Used for sending event surveys
+	Attendees             []string  // For retrieving all event attendees
+	AttendeeEmails        []string
+	AttendeeMissingEmails []string   // Used for sending event surveys
+	AddedAttendees        []Activist // Used for Updating Events
+	DeletedAttendees      []Activist // Used for Updating Events
 }
 
 func (event *Event) ToJSON() EventJSON {
@@ -77,6 +79,7 @@ type GetEventOptions struct {
 	EventType      string
 	EventNameQuery string
 	EventActivist  string
+	SurveySent     string
 }
 
 /** Functions and Methods */
@@ -116,7 +119,7 @@ func GetEvent(db *sqlx.DB, options GetEventOptions) (Event, error) {
 
 func getEvents(db *sqlx.DB, options GetEventOptions) ([]Event, error) {
 	var queryArgs []interface{}
-	query := `SELECT e.id, e.name, e.date, e.event_type FROM events e `
+	query := `SELECT e.id, e.name, e.date, e.event_type, e.survey_sent FROM events e `
 
 	// Items in whereClause are added to the query in order, separated by ' AND '.
 	var whereClause []string
@@ -145,6 +148,10 @@ ON (e.id = ea.event_id AND ea.activist_id = a.id)
 		whereClause = append(whereClause, "e.date <= ?")
 		queryArgs = append(queryArgs, options.DateTo)
 	}
+	if options.SurveySent != "" {
+		whereClause = append(whereClause, "e.survey_sent = ?")
+		queryArgs = append(queryArgs, options.SurveySent)
+	}
 	if options.EventType == "noConnections" {
 		whereClause = append(whereClause, "e.event_type <> 'Connection'")
 	} else if options.EventType == "mpiDA" {
@@ -152,7 +159,7 @@ ON (e.id = ea.event_id AND ea.activist_id = a.id)
 	} else if options.EventType == "mpiCOM" {
 		whereClause = append(whereClause, "(e.event_type = 'Community' or e.event_type = 'Training' or e.event_type = 'Circle')")
 	} else if options.EventType != "" {
-		whereClause = append(whereClause, "e.event_type = ?")
+		whereClause = append(whereClause, "e.event_type like ?")
 		queryArgs = append(queryArgs, options.EventType)
 	}
 	if options.EventNameQuery != "" {
@@ -355,6 +362,30 @@ WHERE
 		tx.Rollback()
 		return 0, errors.Wrap(err, "failed to insert event attendance")
 	}
+	if err := tx.Commit(); err != nil {
+		tx.Rollback()
+		return 0, errors.Wrap(err, "failed to commit update event")
+	}
+	return event.ID, nil
+}
+
+func UpdateEventSurveyStatus(db *sqlx.DB, event Event) (eventID int, err error) {
+	tx, err := db.Beginx()
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to update event")
+	}
+
+	// Update the event
+	_, err = tx.NamedExec(`UPDATE events
+SET
+  survey_sent = :survey_sent
+WHERE
+  id = :id`, event)
+	if err != nil {
+		tx.Rollback()
+		return 0, errors.Wrap(err, "failed to update event")
+	}
+
 	if err := tx.Commit(); err != nil {
 		tx.Rollback()
 		return 0, errors.Wrap(err, "failed to commit update event")

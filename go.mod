@@ -14,6 +14,7 @@ require (
 	github.com/justinas/alice v1.2.0
 	github.com/pkg/errors v0.8.1
 	github.com/pquerna/cachecontrol v0.0.0-20180517163645-1555304b9b35 // indirect
+	github.com/sourcegraph/go-ses v0.0.0-20160405160939-6bd8d17cf7c1
 	github.com/stretchr/testify v1.4.0
 	github.com/urfave/negroni v1.0.0
 	go.opencensus.io v0.22.2 // indirect

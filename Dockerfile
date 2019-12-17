@@ -7,6 +7,7 @@ RUN GOFLAGS=-mod=readonly GOPROXY=https://proxy.golang.org go mod download
 COPY main.go ./
 COPY config config/
 COPY mailinglist_sync mailinglist_sync/
+COPY survey_mailer survey_mailer/
 COPY model model/
 RUN CGO_ENABLED=0 go build -o adb
 

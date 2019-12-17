@@ -16,6 +16,7 @@ import (
 	"github.com/dxe/adb/config"
 	"github.com/dxe/adb/mailinglist_sync"
 	"github.com/dxe/adb/model"
+	"github.com/dxe/adb/survey_mailer"
 	"github.com/getsentry/sentry-go"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -1296,6 +1297,12 @@ func main() {
 	// the environment set up.
 	if config.SyncMailingListsConfigFile != "" {
 		go mailinglist_sync.StartMailingListsSync(db)
+	}
+
+	// Start running survey mailer in the background if we have
+	// the environment set up.
+	if config.SurveyMissingEmail != "" && config.SurveyFromEmail != "" && config.AWSAccessKey != "" && config.AWSSecretKey != "" && config.AWSSESEndpoint != "" {
+		go survey_mailer.StartSurveyMailer(db)
 	}
 
 	// Set up server
