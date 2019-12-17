@@ -56,7 +56,7 @@ func sendEmail(to string, subject string, bodyText string, bodyHtml string) erro
 	from := config.SurveyFromEmail
 	bodyHtml += `<br /><img src="https://adb.dxe.io/static/img/logo1.png" height="46" width="50">`
 	// EnvConfig uses the AWS credentials in the environment
-	// variables $AWS_ACCESS_KEY_ID nd $AWS_SECRET_KEY.
+	// variables $AWS_ACCESS_KEY_ID and $AWS_SECRET_KEY.
 	_, err := ses.EnvConfig.SendEmailHTML(from, to, subject, bodyText, bodyHtml)
 	if err != nil {
 		return err
