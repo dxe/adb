@@ -1,11 +1,11 @@
 package survey_mailer
 
 import (
+	"fmt"
+	"html"
 	"log"
 	"strings"
 	"time"
-	"html"
-	"fmt"
 
 	"github.com/dxe/adb/config"
 	"github.com/dxe/adb/model"
@@ -69,7 +69,7 @@ func bulkSendEmails(event model.Event, subject string, bodyText string, bodyHtml
 	var sendingErrors []string
 	for i, recipient := range event.Attendees {
 		receipientEmail := event.AttendeeEmails[i]
-		if (receipientEmail == "") {
+		if receipientEmail == "" {
 			missingEmails = append(missingEmails, recipient)
 			continue
 		}
