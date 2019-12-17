@@ -1,10 +1,11 @@
 package survey_mailer
 
 import (
-	"errors"
 	"log"
 	"strings"
 	"time"
+	"html"
+	"fmt"
 
 	"github.com/dxe/adb/config"
 	"github.com/dxe/adb/model"
@@ -32,7 +33,7 @@ func sendMissingEmail(eventName string, attendees []string, sendingErrors []stri
 		bodyText += "The following people did not receive a survey for this event due to not having a valid email address: "
 		bodyText += strings.Join(attendees, ", ")
 		bodyText += ". "
-		bodyHtml += "<p>The following people did not receive a survey for this event due to not having a valid email address: <br />"
+		bodyHtml += "<p><strong>The following people did not receive a survey for this event due to not having a valid email address:</strong><br />"
 		bodyHtml += strings.Join(attendees, "<br />")
 		bodyHtml += "</p>"
 	}
@@ -40,7 +41,7 @@ func sendMissingEmail(eventName string, attendees []string, sendingErrors []stri
 		bodyText += "The following addresses did not receive the email due to sending errors: "
 		bodyText += strings.Join(sendingErrors, ", ")
 		bodyText += ". "
-		bodyHtml += "<p>The following addresses did not receive the email due to sending errors <br />"
+		bodyHtml += "<p><strong>The following addresses did not receive the email due to sending errors:</strong><br />"
 		bodyHtml += strings.Join(sendingErrors, "<br />")
 		bodyHtml += "</p>"
 	}
@@ -58,22 +59,28 @@ func sendEmail(to string, subject string, bodyText string, bodyHtml string) erro
 	// variables $AWS_ACCESS_KEY_ID nd $AWS_SECRET_KEY.
 	_, err := ses.EnvConfig.SendEmailHTML(from, to, subject, bodyText, bodyHtml)
 	if err != nil {
-		return errors.New(to)
+		return err
 	}
 	return nil
 }
 
 func bulkSendEmails(event model.Event, subject string, bodyText string, bodyHtml string) {
+	var missingEmails []string
 	var sendingErrors []string
-	for _, recipient := range event.AttendeeEmails {
+	for i, recipient := range event.Attendees {
+		receipientEmail := event.AttendeeEmails[i]
+		if (receipientEmail == "") {
+			missingEmails = append(missingEmails, recipient)
+			continue
+		}
 		log.Println("Sending email to:", recipient)
 		// Send email
-		err := sendEmail(recipient, subject, bodyText, bodyHtml)
+		err := sendEmail(receipientEmail, subject, bodyText, bodyHtml)
 		if err != nil {
-			sendingErrors = append(sendingErrors, err.Error())
+			sendingErrors = append(sendingErrors, fmt.Sprintf("%v [%v] %v", recipient, event.AttendeeEmails[i], err))
 		}
 	}
-	sendMissingEmail(event.EventName, event.AttendeeMissingEmails, sendingErrors)
+	sendMissingEmail(event.EventName, missingEmails, sendingErrors)
 }
 
 func updateSurveyStatus(db *sqlx.DB, eventId int) {
@@ -116,7 +123,8 @@ func survey(db *sqlx.DB, surveyOptions SurveyOptions) {
 		}
 		// build body by replacing LINK_PARAM with the actual link param
 		bodyText := strings.Replace(surveyOptions.BodyText, "LINK_PARAM", linkParam, -1)
-		bodyHtml := strings.Replace(surveyOptions.BodyHtml, "LINK_PARAM", linkParam, -1)
+		// TODO: Look into better ways for escaping this to prevent XSS attacks
+		bodyHtml := strings.Replace(surveyOptions.BodyHtml, "LINK_PARAM", html.EscapeString(linkParam), -1)
 
 		log.Println("Sending", surveyOptions.SurveyType, "survey for event:", event.EventName)
 

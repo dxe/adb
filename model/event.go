@@ -226,11 +226,7 @@ WHERE
 	for _, a := range allAttendance {
 		i := eventIDToIndex[a.EventID]
 		events[i].Attendees = append(events[i].Attendees, a.ActivistName)
-		if a.ActivistEmail != "" {
-			events[i].AttendeeEmails = append(events[i].AttendeeEmails, a.ActivistEmail)
-		} else {
-			events[i].AttendeeMissingEmails = append(events[i].AttendeeMissingEmails, a.ActivistName)
-		}
+		events[i].AttendeeEmails = append(events[i].AttendeeEmails, a.ActivistEmail)
 	}
 
 	return events, nil
