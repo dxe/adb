@@ -26,9 +26,7 @@ RUN npm run build
 ## Assemble composite server container.
 
 FROM alpine:latest
-RUN apk add --no-cache tzdata ca-certificates
-RUN echo "US/Pacific-New" > /etc/timezone
-RUN dpkg-reconfigure -f noninteractive tzdata
+RUN apk add --no-cache ca-certificates
 RUN addgroup -S adb && adduser -S adb -G adb
 USER adb
 
