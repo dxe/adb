@@ -26,7 +26,7 @@ RUN npm run build
 ## Assemble composite server container.
 
 FROM alpine:latest
-RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache tzdata ca-certificates
 RUN addgroup -S adb && adduser -S adb -G adb
 USER adb
 
