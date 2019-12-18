@@ -118,11 +118,16 @@ func GetEvent(db *sqlx.DB, options GetEventOptions) (Event, error) {
 }
 
 func getEvents(db *sqlx.DB, options GetEventOptions) ([]Event, error) {
-	var queryArgs []interface{}
 	query := `SELECT e.id, e.name, e.date, e.event_type, e.survey_sent FROM events e `
 
 	// Items in whereClause are added to the query in order, separated by ' AND '.
 	var whereClause []string
+	var queryArgs []interface{}
+
+	where := func(clause string, args ...interface{}) {
+		whereClause = append(whereClause, clause)
+		queryArgs = append(queryArgs, args...)
+	}
 
 	if options.EventActivist != "" {
 		// If we're filtering with an activist name, we need
@@ -132,39 +137,32 @@ func getEvents(db *sqlx.DB, options GetEventOptions) ([]Event, error) {
 JOIN (event_attendance ea, activists a)
 ON (e.id = ea.event_id AND ea.activist_id = a.id)
 `
-		whereClause = append(whereClause, "a.name = ?")
-		queryArgs = append(queryArgs, options.EventActivist)
+		where("a.name = ?", options.EventActivist)
 	}
 
 	if options.EventID != 0 {
-		whereClause = append(whereClause, "e.id = ?")
-		queryArgs = append(queryArgs, options.EventID)
+		where("e.id = ?", options.EventID)
 	}
 	if options.DateFrom != "" {
-		whereClause = append(whereClause, "e.date >= ?")
-		queryArgs = append(queryArgs, options.DateFrom)
+		where("e.date >= ?", options.DateFrom)
 	}
 	if options.DateTo != "" {
-		whereClause = append(whereClause, "e.date <= ?")
-		queryArgs = append(queryArgs, options.DateTo)
+		where("e.date <= ?", options.DateTo)
 	}
 	if options.SurveySent != "" {
-		whereClause = append(whereClause, "e.survey_sent = ?")
-		queryArgs = append(queryArgs, options.SurveySent)
+		where("e.survey_sent = ?", options.SurveySent)
 	}
 	if options.EventType == "noConnections" {
-		whereClause = append(whereClause, "e.event_type <> 'Connection'")
+		where("e.event_type <> 'Connection'")
 	} else if options.EventType == "mpiDA" {
-		whereClause = append(whereClause, "(e.event_type = 'Outreach' or e.event_type = 'Action' or e.event_type = 'Campaign Action' or e.event_type = 'Sanctuary' or e.event_type = 'Frontline Surveillance')")
+		where("e.event_type in ('Outreach', 'Action', 'Campaign Action', 'Sanctuary', 'Frontline Surveillance')")
 	} else if options.EventType == "mpiCOM" {
-		whereClause = append(whereClause, "(e.event_type = 'Community' or e.event_type = 'Training' or e.event_type = 'Circle')")
+		where("e.event_type in ('Community', 'Training', 'Circle')")
 	} else if options.EventType != "" {
-		whereClause = append(whereClause, "e.event_type like ?")
-		queryArgs = append(queryArgs, options.EventType)
+		where("e.event_type like ?", options.EventType)
 	}
 	if options.EventNameQuery != "" {
-		whereClause = append(whereClause, "MATCH (e.name) AGAINST (?)")
-		queryArgs = append(queryArgs, options.EventNameQuery)
+		where("MATCH (e.name) AGAINST (?)", options.EventNameQuery)
 	}
 
 	// Add the where clauses to the query.
