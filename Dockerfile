@@ -30,6 +30,9 @@ RUN apk add --no-cache ca-certificates
 RUN addgroup -S adb && adduser -S adb -G adb
 USER adb
 
+RUN echo "US/Pacific-New" > /etc/timezone
+RUN dpkg-reconfigure -f noninteractive tzdata
+
 WORKDIR /app
 COPY run.sh ./
 COPY static static/
