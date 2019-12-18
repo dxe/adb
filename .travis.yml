@@ -28,4 +28,10 @@ before_script:
 script:
   - ./hooks/pre-commit
   - go test github.com/dxe/adb/...
-  - docker build -t adb .
+  - docker build -t mdempsky/adb .
+
+deploy:
+  provider: script
+  script: bash push-to-docker-hub.sh
+  on:
+    branch: master
