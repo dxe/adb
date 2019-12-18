@@ -27,11 +27,10 @@ RUN npm run build
 
 FROM alpine:latest
 RUN apk add --no-cache tzdata ca-certificates
-RUN addgroup -S adb && adduser -S adb -G adb
-USER adb
-
 RUN echo "US/Pacific-New" > /etc/timezone
 RUN dpkg-reconfigure -f noninteractive tzdata
+RUN addgroup -S adb && adduser -S adb -G adb
+USER adb
 
 WORKDIR /app
 COPY run.sh ./
