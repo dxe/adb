@@ -120,7 +120,7 @@ func (s *server) index(w http.ResponseWriter, r *http.Request) {
 		err = token.Claims(&claims)
 	}
 	if err != nil || !claims.EmailVerified {
-		http.Redirect(w, r, "/login", http.StatusFound)
+		http.Redirect(w, r, absURL("/login"), http.StatusFound)
 		return
 	}
 
@@ -184,10 +184,12 @@ func (s *server) auth(w http.ResponseWriter, r *http.Request) {
 		Value:  idToken,
 		MaxAge: 3600,
 	})
-	http.Redirect(w, r, "/", http.StatusFound)
+	http.Redirect(w, r, absURL("/"), http.StatusFound)
 }
 
-var indexTmpl = template.Must(template.New("index").Parse(`
+var indexTmpl = template.Must(template.New("index").Funcs(template.FuncMap{
+	"monthfmt": func(n int) string { return fmt.Sprintf("%d-%02d", n/100, n%100) },
+}).Parse(`
 <!doctype html>
 <html>
 <head>
@@ -240,7 +242,7 @@ td:nth-child(3) {
 <body>
 <div class="wrap">
 
-<p>Hello, <b>{{.Email}}</b>! (Not you? <a href="/login">Click here</a> to login as someone else.)</p>
+<p>Hello, <b>{{.Email}}</b>! (Not you? <a href="login">Click here</a> to login as someone else.)</p>
 
 <p>Below is a list of <b>{{.Count}}</b> events you've attended with DxE SF.</p>
 
@@ -257,7 +259,7 @@ a <b class="gray">gray</b> bar indicates you did not.</p>
 <tr class="month {{if and .Community .DirectAction}}mpi{{end}}">
   <td>{{if .Community}}🏙️{{end}}</td>
   <td>{{if .DirectAction}}📣{{end}}</td>
-  <td colspan=2>{{.Month}}</td>
+  <td colspan=2>{{monthfmt .Month}}</td>
 </tr>
 {{range .Events}}
 <tr>
@@ -284,7 +286,7 @@ var conf, verifier = func() (*oauth2.Config, *oidc.IDTokenVerifier) {
 		ClientID:     config.MembersClientID,
 		ClientSecret: config.MembersClientSecret,
 		Endpoint:     provider.Endpoint(),
-		RedirectURL:  "https://members.dxesf.org/auth",
+		RedirectURL:  absURL("/auth"),
 		Scopes:       []string{"email"},
 	}
 	verifier := provider.Verifier(&oidc.Config{
@@ -300,4 +302,11 @@ func nonce() (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(buf[:]), nil
+}
+
+func absURL(path string) string {
+	if config.IsProd {
+		return "https://members.dxesf.org" + path
+	}
+	return "http://localhost:8080/members" + path
 }
