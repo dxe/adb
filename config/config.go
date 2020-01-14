@@ -39,6 +39,10 @@ var (
 	AWSSESEndpoint     = mustGetenv("AWS_SES_ENDPOINT", "")
 	SurveyMissingEmail = mustGetenv("SURVEY_MISSING_EMAIL", "")
 	SurveyFromEmail    = mustGetenv("SURVEY_FROM_EMAIL", "")
+
+	// For members.dxesf.org
+	MembersClientID     = mustGetenv("MEMBERS_CLIENT_ID", "")
+	MembersClientSecret = mustGetenv("MEMBERS_CLIENT_SECRET", "")
 )
 
 func mustGetenv(key, fallback string) string {

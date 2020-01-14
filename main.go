@@ -15,6 +15,7 @@ import (
 	oidc "github.com/coreos/go-oidc"
 	"github.com/dxe/adb/config"
 	"github.com/dxe/adb/mailinglist_sync"
+	"github.com/dxe/adb/members"
 	"github.com/dxe/adb/model"
 	"github.com/dxe/adb/survey_mailer"
 	"github.com/getsentry/sentry-go"
@@ -115,6 +116,8 @@ func router() (*mux.Router, *sqlx.DB) {
 	main := MainController{db: db}
 
 	router := mux.NewRouter()
+	members.Route(router.PathPrefix("/members").Subrouter(), db)
+
 	// Unauthed pages
 	router.HandleFunc("/login", main.LoginHandler)
 	router.HandleFunc("/logout", main.LogoutHandler)
