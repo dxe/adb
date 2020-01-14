@@ -158,7 +158,19 @@ func (s *server) login(w http.ResponseWriter, r *http.Request) {
 		Value:  state,
 		MaxAge: 3600,
 	})
-	http.Redirect(w, r, conf.AuthCodeURL(state), http.StatusFound)
+
+	var opts []oauth2.AuthCodeOption
+	force := r.URL.Query()["force"] != nil
+	if force {
+		// If the user is currently only signed into one
+		// Google Account, we need to set
+		// prompt=select_account to force the account chooser
+		// dialog to appear. Otherwise, Google will just
+		// redirect back to us again immediately.
+		opts = append(opts, oauth2.SetAuthURLParam("prompt", "select_account"))
+	}
+
+	http.Redirect(w, r, conf.AuthCodeURL(state, opts...), http.StatusFound)
 }
 
 func (s *server) auth(w http.ResponseWriter, r *http.Request) {
@@ -242,7 +254,7 @@ td:nth-child(3) {
 <body>
 <div class="wrap">
 
-<p>Hello, <b>{{.Email}}</b>! (Not you? <a href="login">Click here</a> to login as someone else.)</p>
+<p>Hello, <b>{{.Email}}</b>! (Not you? <a href="login?force">Click here</a> to login as someone else.)</p>
 
 <p>Below is a list of <b>{{.Count}}</b> events you've attended with DxE SF.</p>
 
