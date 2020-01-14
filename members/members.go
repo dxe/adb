@@ -189,7 +189,9 @@ func (s *server) auth(w http.ResponseWriter, r *http.Request) {
 
 var indexTmpl = template.Must(template.New("index").Parse(`
 <!doctype html>
-
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro&display=swap" rel="stylesheet">
 
 <style>
@@ -226,11 +228,16 @@ td {
   padding: 0.375em;
 }
 
+td:nth-child(3) {
+  white-space: nowrap;
+}
+
 .green { background-color: #beb; }
 .gray { background-color: #ddd; }
-
 </style>
+</head>
 
+<body>
 <div class="wrap">
 
 <p>Hello, <b>{{.Email}}</b>! (Not you? <a href="/login">Click here</a> to login as someone else.)</p>
@@ -264,6 +271,8 @@ a <b class="gray">gray</b> bar indicates you did not.</p>
 </table>
 
 </div>
+</body>
+</html>
 `))
 
 var conf, verifier = func() (*oauth2.Config, *oidc.IDTokenVerifier) {
