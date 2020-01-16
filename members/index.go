@@ -258,7 +258,7 @@ table.profile td:nth-child(1), table.election, td:nth-child(1) {
 
 <table class="elections">
 <tr>
-  <td><a href="https://docs.dxesf.org/#34-movement-power-index">Eligible to Vote</a>:</td>
+  <td><a href="https://docs.dxesf.org/#33-organizers">Eligible to Vote</a>:</td>
   <td>{{if .EligibleVoter}}Yes{{else}}No{{end}}</td>
 </tr>
 <tr>
