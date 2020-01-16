@@ -14,6 +14,10 @@ func (s *server) index() {
 		return
 	}
 
+	// MySQL doesn't have a proper boolean data type, and it's
+	// json_object seems to have some arbitrary heuristics for
+	// deciding when to encode a boolean expression as 0/1 vs
+	// true/false.
 	var data struct {
 		Name          string
 		Email         string
@@ -23,18 +27,22 @@ func (s *server) index() {
 		Birthday      string
 		ActivistLevel string
 
+		EligibleVoter      bool
+		EligibleNomination int // boolean
+
 		WorkingGroups []string
 
 		Total      int
 		Attendance []struct {
-			Month        int
-			Community    int // sloppy boolean
-			DirectAction int // sloppy boolean
+			Month        int // YYYYMM
+			MPI          int // boolean
+			Community    int // boolean
+			DirectAction int // boolean
 			Events       []struct {
 				Date         string // "YYYY-MM-DD"
 				Name         string
-				Community    int // sloppy boolean
-				DirectAction int // sloppy boolean
+				Community    int // boolean
+				DirectAction int //  boolean
 			}
 		}
 	}
@@ -53,29 +61,38 @@ select json_object(
   'Facebook', x.facebook,
   'Birthday', x.dob,
   'ActivistLevel', x.activist_level,
+
+  'EligibleVoter', x.activist_level in ('Organizer', 'Senior Organizer') and sum(x.mpi and x.month >= 201911 and x.month <= 202001) >= 2,
+  'EligibleNomination', x.activist_level in ('Organizer', 'Senior Organizer') and x.date_organizer <= ('2020-02-16' - interval 6 month),
+
   'WorkingGroups', (
     select json_arrayagg(w.name)
     from working_groups w
     join working_group_members m on (w.id = m.working_group_id)
     where m.activist_id = x.id
   ),
+
   'Total', sum(x.subtotal),
-  'Attendance', if(sum(x.subtotal) = 0, null, json_arrayagg(x.months))
+  'Attendance', if(sum(x.subtotal) = 0, null,
+    json_arrayagg(json_object(
+      'Month', x.month,
+      'MPI', x.mpi,
+      'Community', x.community,
+      'DirectAction', x.direct_action,
+      'Events', x.events
+    )))
 )
 from (
-  select a.id, a.name, a.email, a.phone, a.location, a.facebook, a.activist_level, a.dob,
-    count(e.id) as subtotal,
-    json_object(
-      'Month', e.month,
-      'Community', max(e.community),
-      'DirectAction', max(e.direct_action),
-      'Events', json_arrayagg(json_object(
-        'Date', e.date,
-        'Name', e.name,
-        'Community', e.community,
-        'DirectAction', e.direct_action
-      ))
-    ) as months
+  select a.id, a.name, a.email, a.phone, a.location, a.facebook, a.activist_level, a.dob, a.date_organizer,
+    e.month, count(e.id) as subtotal,
+    max(e.community) as community, max(e.direct_action) as direct_action,
+    (max(e.direct_action) and (max(e.community) or (e.month >= 202001 and e.month <= 202002))) as mpi,
+    json_arrayagg(json_object(
+      'Date', e.date,
+      'Name', e.name,
+      'Community', e.community,
+      'DirectAction', e.direct_action
+    )) as events
   from activists a
   left join event_attendance ea on (a.id = ea.activist_id)
   left join (
@@ -196,7 +213,7 @@ table.attendance td:nth-child(3) {
   white-space: nowrap;
 }
 
-table.profile td:nth-child(1) {
+table.profile td:nth-child(1), table.election, td:nth-child(1) {
   font-weight: bold;
 }
 
@@ -226,6 +243,19 @@ table.profile td:nth-child(1) {
 <tr><td><a href="https://docs.google.com/document/d/1QnJXz8YuQeBL0cz4iK60mOvQfDN1vd7SBwvVhRFDHNc/preview">Activist Level</a>:</td><td>{{.ActivistLevel}}</td></tr>
 </table>
 
+<h2>Elections</h2>
+
+<table class="elections">
+<tr>
+  <td><a href="https://docs.dxesf.org/#34-movement-power-index">Eligible to Vote</a>:</td>
+  <td>{{if .EligibleVoter}}Yes{{else}}No{{end}}</td>
+</tr>
+<tr>
+  <td><a href="https://docs.dxesf.org/#43-nomination-procedure-time-of-elections">Eligible for Nomination:</a></td>
+  <td>{{if .EligibleNomination}}Yes{{else}}No{{end}}</td>
+</tr>
+</table>
+
 <h2>Working Groups</h2>
 
 {{if .WorkingGroups}}
@@ -250,7 +280,7 @@ a <b class="gray">gray</b> bar indicates you did not.</p>
 
 <table class="attendance">
 {{range .Attendance}}
-<tr class="month {{if and .DirectAction (or .Community (ge .Month 202001) (le .Month 202002))}}mpi{{end}}">
+<tr class="month {{if .MPI}}mpi{{end}}">
   <td>{{if .Community}}🏙️{{else if (ge .Month 202001) (le .Month 202002)}}🆓{{end}}</td>
   <td>{{if .DirectAction}}📣{{end}}</td>
   <td colspan=2>{{monthfmt .Month}}</td>
