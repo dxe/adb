@@ -263,7 +263,7 @@ table.profile td:nth-child(1), table.election, td:nth-child(1) {
 </tr>
 <tr>
   <td><a href="https://docs.dxesf.org/#43-nomination-procedure-time-of-elections">Eligible for Nomination:</a></td>
-  <td>{{if .EligibleNomination}}Yes{{else}}No{{end}}</td>
+  <td>{{if .EligibleNomination}}Yes (<a href="https://docs.google.com/forms/d/e/1FAIpQLSfTbrggcHNRsmiQhzeJcWezTPHivi59RhyLEIokm63hQTD49g/viewform">🗳 Self-Nomination Form</a>️){{else}}No{{end}}</td>
 </tr>
 </table>
 
