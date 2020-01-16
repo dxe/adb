@@ -154,6 +154,10 @@ body {
   margin-right: auto;
 }
 
+h1, h2 {
+  margin-top: 2em;
+}
+
 table {
   border-spacing: 0;
   font-variant-numeric: tabular-nums;
@@ -196,9 +200,13 @@ table.profile td:nth-child(1) {
 <body>
 <div class="wrap">
 
+<h1>Activist Record</h1>
+
 <p>Hello, <b>{{.Name}}</b>! (Not you? <a href="login?force">Click here</a> to login as someone else.)</p>
 
-<p>Basic profile:</p>
+<p>Questions or feedback about this page? Email <a href="mailto:tech@dxe.io">tech@dxe.io</a>.</p>
+
+<h2>Profile</h2>
 
 <table class="profile">
 <tr><td>Name:</td><td>{{.Name}}</td></tr>
@@ -210,20 +218,20 @@ table.profile td:nth-child(1) {
 <tr><td><a href="https://docs.google.com/document/d/1QnJXz8YuQeBL0cz4iK60mOvQfDN1vd7SBwvVhRFDHNc/preview">Activist Level</a>:</td><td>{{.ActivistLevel}}</td></tr>
 </table>
 
-<p>Below is a list of the <b>{{.Total}}</b> events you've attended with DxE SF.</p>
+<h2>Event Attendance</h2>
 
-<p>🏙️ indicates the event is a "community" event;<br>
+<p>Below are <b>{{.Total}}</b> events you've attended with DxE SF.</p>
+
+<p>🏙️ indicates a "community" event;<br>
 📣 indicates a "direct action" event.</p>
 
-<p>A <b class="green">green</b> bar indicates you met the MPI requirements for that month;<br>
+<p>A <b class="green">green</b> bar indicates you met MPI requirements that month;<br>
 a <b class="gray">gray</b> bar indicates you did not.</p>
-
-<p>Questions or feedback? Email <a href="mailto:tech@dxe.io">tech@dxe.io</a>.</p>
 
 <table class="attendance">
 {{range .Attendance}}
-<tr class="month {{if and .Community .DirectAction}}mpi{{end}}">
-  <td>{{if .Community}}🏙️{{end}}</td>
+<tr class="month {{if and .DirectAction (or .Community (ge .Month 202001) (le .Month 202002))}}mpi{{end}}">
+  <td>{{if .Community}}🏙️{{else if (ge .Month 202001) (le .Month 202002)}}🆓{{end}}</td>
   <td>{{if .DirectAction}}📣{{end}}</td>
   <td colspan=2>{{monthfmt .Month}}</td>
 </tr>
