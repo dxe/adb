@@ -23,6 +23,8 @@ func (s *server) index() {
 		Birthday      string
 		ActivistLevel string
 
+		WorkingGroups []string
+
 		Total      int
 		Attendance []struct {
 			Month        int
@@ -37,8 +39,9 @@ func (s *server) index() {
 		}
 	}
 
-	// This query would be more natural using a subquery, but
-	// because of the two-level aggregation, we'd actually need a
+	// This query would be more natural if attendance could be
+	// computed using a subquery like working groups, but because
+	// of the two-level aggregation, we'd actually need a
 	// sub-subquery; and subqueries can only access variables from
 	// the immediately outer context.
 	const q = `
@@ -50,13 +53,18 @@ select json_object(
   'Facebook', x.facebook,
   'Birthday', x.dob,
   'ActivistLevel', x.activist_level,
-
+  'WorkingGroups', (
+    select json_arrayagg(w.name)
+    from working_groups w
+    join working_group_members m on (w.id = m.working_group_id)
+    where m.activist_id = x.id
+  ),
   'Total', sum(x.subtotal),
   'Attendance', if(sum(x.subtotal) = 0, null, json_arrayagg(x.months))
 )
 from (
   select a.id, a.name, a.email, a.phone, a.location, a.facebook, a.activist_level, a.dob,
-    e.month, count(e.id) as subtotal,
+    count(e.id) as subtotal,
     json_object(
       'Month', e.month,
       'Community', max(e.community),
@@ -217,6 +225,18 @@ table.profile td:nth-child(1) {
 <tr><td>Birthday:</td><td>{{.Birthday}}</td></tr>
 <tr><td><a href="https://docs.google.com/document/d/1QnJXz8YuQeBL0cz4iK60mOvQfDN1vd7SBwvVhRFDHNc/preview">Activist Level</a>:</td><td>{{.ActivistLevel}}</td></tr>
 </table>
+
+<h2>Working Groups</h2>
+
+{{if .WorkingGroups}}
+<ul>
+{{range .WorkingGroups}}
+<li>{{.}}</li>
+{{end}}
+</ul>
+{{else}}
+<p>None.</p>
+{{end}}
 
 <h2>Event Attendance</h2>
 
