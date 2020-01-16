@@ -7,11 +7,22 @@ import (
 	"sort"
 )
 
+// TODO(mdempsky): Use adb_users instead?
+var adminEmails = map[string]bool{
+	"matthew@dempsky.org": true,
+}
+
 func (s *server) index() {
 	email, err := s.googleEmail()
 	if err != nil {
 		s.redirect(absURL("/login"))
 		return
+	}
+
+	if adminEmails[email] {
+		if q := s.r.URL.Query()["email"]; len(q) >= 1 && q[0] != "" {
+			email = q[0]
+		}
 	}
 
 	// MySQL doesn't have a proper boolean data type, and it's
