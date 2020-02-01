@@ -247,7 +247,6 @@ interface Activist {
   active: number;
   prospect_organizer: number;
   prospect_chapter_member: number;
-  circle_agreement: number;
   dev_interest: string;
   circle_interest: number;
   circles_list: string;
@@ -603,17 +602,6 @@ function getDefaultColumns(view: string): Column[] {
         view === 'chapter_member_prospects' ||
         view === 'organizer_prospects' ||
         view === 'senior_organizer_prospects',
-    },
-
-    {
-      header: 'Circle Agreement',
-      longHeader: 'Circle Agreement',
-      data: {
-        type: 'checkbox',
-        data: 'circle_agreement',
-        colWidths: 105,
-      },
-      enabled: view === 'circle_member_prospects' || view === 'circle_members',
     },
 
     {
@@ -980,142 +968,6 @@ function getDefaultColumns(view: string): Column[] {
     },
 
     {
-      header: 'Point Auth',
-      longHeader: 'Organizer: Date of Point Authorization',
-      data: {
-        type: 'date',
-        data: 'dev_auth',
-        dateFormat: 'YYYY-MM-DD',
-        correctFormat: true,
-        colWidths: 100,
-      },
-      enabled: view === 'organizer_prospects',
-    },
-    {
-      header: 'Sent Elig. Email',
-      longHeader: 'Organizer: Date Eligibility Email Sent',
-      data: {
-        type: 'date',
-        data: 'dev_email_sent',
-        dateFormat: 'YYYY-MM-DD',
-        correctFormat: true,
-        colWidths: 100,
-      },
-      enabled: view === 'organizer_prospects',
-    },
-    {
-      header: 'Vetting',
-      longHeader: 'Organizer: Vetting Completed',
-      data: {
-        type: 'checkbox',
-        data: 'dev_vetted',
-        colWidths: 50,
-      },
-      enabled: view === 'organizer_prospects',
-    },
-    {
-      header: 'Interview',
-      longHeader: 'Organizer: Date of Interview',
-      data: {
-        type: 'date',
-        data: 'dev_interview',
-        dateFormat: 'YYYY-MM-DD',
-        correctFormat: true,
-        colWidths: 100,
-      },
-      enabled: view === 'organizer_prospects',
-    },
-
-    {
-      header: 'Onboarding',
-      longHeader: 'Organizer: Date of Onboarding Logistics Completion',
-      data: {
-        type: 'checkbox',
-        data: 'dev_onboarding',
-        colWidths: 100,
-      },
-      enabled: view === 'organizer_prospects',
-    },
-
-    {
-      header: 'Point Auth.',
-      longHeader: 'Senior Organizer: Point Auth',
-      data: {
-        type: 'date',
-        data: 'so_auth',
-        dateFormat: 'YYYY-MM-DD',
-        correctFormat: true,
-        colWidths: 100,
-      },
-      enabled: view === 'senior_organizer_prospects',
-    },
-    {
-      header: 'Sent to Core',
-      longHeader: 'Senior Organizer: Application Sent to Core',
-      data: {
-        type: 'date',
-        data: 'so_core',
-        dateFormat: 'YYYY-MM-DD',
-        correctFormat: true,
-        colWidths: 100,
-      },
-      enabled: view === 'senior_organizer_prospects',
-    },
-    {
-      header: 'Agreement',
-      longHeader: 'Senior Organizer: Signed Agreement',
-      data: {
-        type: 'checkbox',
-        data: 'so_agreement',
-        colWidths: 70,
-      },
-      enabled: view === 'senior_organizer_prospects',
-    },
-    {
-      header: 'Training',
-      longHeader: 'Senior Organizer: Completed Training',
-      data: {
-        type: 'date',
-        data: 'so_training',
-        dateFormat: 'YYYY-MM-DD',
-        correctFormat: true,
-        colWidths: 100,
-      },
-      enabled: view === 'senior_organizer_prospects',
-    },
-    {
-      header: 'Quiz',
-      longHeader: 'Senior Organizer: Passed Quiz',
-      data: {
-        type: 'date',
-        data: 'so_quiz',
-        dateFormat: 'YYYY-MM-DD',
-        correctFormat: true,
-        colWidths: 100,
-      },
-      enabled: view === 'senior_organizer_prospects',
-    },
-    {
-      header: 'Connectees',
-      longHeader: 'Senior Organizer: Connectees (3+)',
-      data: {
-        data: 'so_connector',
-        colWidths: 120,
-      },
-      enabled: view === 'senior_organizer_prospects' || view === 'senior_organizer_development',
-    },
-    {
-      header: 'Onboarding',
-      longHeader: 'Senior Organizer: Completed Onboarding Logistics',
-      data: {
-        type: 'checkbox',
-        data: 'so_onboarding',
-        colWidths: 70,
-      },
-      enabled: view === 'senior_organizer_prospects',
-    },
-
-    {
       header: 'Close Ties',
       longHeader: 'Referral: Close Ties',
       data: {
@@ -1143,53 +995,6 @@ function getDefaultColumns(view: string): Column[] {
         colWidths: 100,
       },
       enabled: false,
-    },
-
-    {
-      header: 'Study Group',
-      longHeader: 'Interpersonal Ties Study: Group',
-      data: {
-        data: 'study_group',
-        colWidths: 190,
-        type: 'dropdown',
-        source: ['', '1: Directed Conversation', '2: Untrained Conversation', '3: No Conversation'],
-      },
-      enabled: view === 'study' || view === 'all_activists',
-    },
-
-    {
-      header: 'Activator',
-      longHeader: 'Interpersonal Ties Study: Activator',
-      data: {
-        data: 'study_activator',
-        colWidths: 100,
-      },
-      enabled: view === 'study',
-    },
-
-    {
-      header: 'Conversation',
-      longHeader: 'Interpersonal Ties Study: Conversation Date',
-      data: {
-        type: 'date',
-        data: 'study_conversation',
-        dateFormat: 'YYYY-MM-DD',
-        correctFormat: true,
-        colWidths: 100,
-      },
-      enabled: view === 'study',
-    },
-
-    {
-      header: 'Events Since Conversation',
-      longHeader: 'Interpersonal Ties Study: Total Events Since Conversation',
-      data: {
-        type: 'numeric',
-        data: 'study_events_since_conversation',
-        readOnly: true,
-        colWidths: 150,
-      },
-      enabled: view === 'study',
     },
 
     {

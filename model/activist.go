@@ -63,20 +63,8 @@ SELECT
   dev_quiz,
   dev_manager,
   dev_interest,
-  dev_auth,
-  dev_email_sent,
-  dev_vetted,
-  dev_interview,
-  dev_onboarding,
 
   prospect_senior_organizer,
-  so_auth,
-  so_core,
-  so_agreement,
-  so_training,
-  so_quiz,
-  so_connector,
-  so_onboarding,
 
   cm_first_email,
   cm_approval_email,
@@ -84,7 +72,6 @@ SELECT
   cir_first_email,
   prospect_organizer,
   prospect_chapter_member,
-  circle_agreement,
   referral_friends,
   referral_apply,
   referral_outlet,
@@ -143,15 +130,6 @@ SELECT
     WHERE
       ea.activist_id = a.id) as total_events,
 
-  (SELECT COUNT(DISTINCT ea.event_id)
-    FROM event_attendance ea
-    JOIN events e on e.id = ea.event_id
-    JOIN activists a on a.id = ea.activist_id
-    WHERE
-      ea.activist_id = a.id
-      and e.date > a.study_conversation)
-  as study_events_since_conversation,
-
   IFNULL(totalPoints, 0) as total_points,
   IF(@last_event >= (now() - interval 30 day), 1, 0) as active,
 
@@ -183,9 +161,6 @@ SELECT
     mpi,
     notes,
     vision_wall,
-    study_group,
-    study_activator,
-    study_conversation,
     mpp_requirements
 
 FROM activists a
@@ -250,26 +225,13 @@ SET
   dev_quiz = :dev_quiz,
   dev_manager = :dev_manager,
   dev_interest = :dev_interest,
-  dev_auth = :dev_auth,
-  dev_email_sent = :dev_email_sent,
-  dev_vetted = :dev_vetted,
-  dev_interview = :dev_interview,
-  dev_onboarding = :dev_onboarding,
   prospect_senior_organizer = :prospect_senior_organizer,
-  so_auth = :so_auth,
-  so_core = :so_core,
-  so_agreement = :so_agreement,
-  so_training = :so_training,
-  so_quiz = :so_quiz,
-  so_connector = :so_connector,
-  so_onboarding = :so_onboarding,
   cm_first_email = :cm_first_email,
   cm_approval_email = :cm_approval_email,
   cm_warning_email = :cm_warning_email,
   cir_first_email = :cir_first_email,
   prospect_organizer = :prospect_organizer,
   prospect_chapter_member = :prospect_chapter_member,
-  circle_agreement = :circle_agreement,
   referral_friends = :referral_friends,
   referral_apply = :referral_apply,
   referral_outlet = :referral_outlet,
@@ -279,9 +241,6 @@ SET
   mpi = :mpi,
   notes = :notes,
   vision_wall = :vision_wall,
-  study_group = :study_group,
-  study_activator = :study_activator,
-  study_conversation = :study_conversation
 
 WHERE
   id = :id`
@@ -336,43 +295,26 @@ type ActivistConnectionData struct {
 	Quiz            sql.NullString `db:"dev_quiz"`
 	DevManager      string         `db:"dev_manager"`
 	DevInterest     string         `db:"dev_interest"`
-	DevAuth         sql.NullString `db:"dev_auth"`
-	DevEmailSent    sql.NullString `db:"dev_email_sent"`
-	DevVetted       bool           `db:"dev_vetted"`
-	DevInterview    sql.NullString `db:"dev_interview"`
-	DevOnboarding   bool           `db:"dev_onboarding"`
 
-	ProspectSeniorOrganizer bool           `db:"prospect_senior_organizer"`
-	SOAuth                  sql.NullString `db:"so_auth"`
-	SOCore                  sql.NullString `db:"so_core"`
-	SOAgreement             bool           `db:"so_agreement"`
-	SOTraining              sql.NullString `db:"so_training"`
-	SOQuiz                  sql.NullString `db:"so_quiz"`
-	SOConnector             string         `db:"so_connector"`
-	SOOnboarding            bool           `db:"so_onboarding"`
+	ProspectSeniorOrganizer bool `db:"prospect_senior_organizer"`
 
-	CMFirstEmail                 sql.NullString `db:"cm_first_email"`
-	CMApprovalEmail              sql.NullString `db:"cm_approval_email"`
-	CMWarningEmail               sql.NullString `db:"cm_warning_email"`
-	CirFirstEmail                sql.NullString `db:"cir_first_email"`
-	ProspectOrganizer            bool           `db:"prospect_organizer"`
-	ProspectChapterMember        bool           `db:"prospect_chapter_member"`
-	CircleAgreement              bool           `db:"circle_agreement"`
-	LastConnection               sql.NullString `db:"last_connection"`
-	ReferralFriends              string         `db:"referral_friends"`
-	ReferralApply                string         `db:"referral_apply"`
-	ReferralOutlet               string         `db:"referral_outlet"`
-	CircleInterest               bool           `db:"circle_interest"`
-	InterestDate                 sql.NullString `db:"interest_date"`
-	SurveyCompletion             sql.NullString `db:"survey_completion"`
-	MPI                          bool           `db:"mpi"`
-	Notes                        sql.NullString `db:"notes"`
-	VisionWall                   string         `db:"vision_wall"`
-	StudyGroup                   string         `db:"study_group"`
-	StudyActivator               string         `db:"study_activator"`
-	StudyConversation            sql.NullString `db:"study_conversation"`
-	StudyEventsSinceConversation int            `db:"study_events_since_conversation"`
-	MPPRequirements              string         `db:"mpp_requirements"`
+	CMFirstEmail          sql.NullString `db:"cm_first_email"`
+	CMApprovalEmail       sql.NullString `db:"cm_approval_email"`
+	CMWarningEmail        sql.NullString `db:"cm_warning_email"`
+	CirFirstEmail         sql.NullString `db:"cir_first_email"`
+	ProspectOrganizer     bool           `db:"prospect_organizer"`
+	ProspectChapterMember bool           `db:"prospect_chapter_member"`
+	LastConnection        sql.NullString `db:"last_connection"`
+	ReferralFriends       string         `db:"referral_friends"`
+	ReferralApply         string         `db:"referral_apply"`
+	ReferralOutlet        string         `db:"referral_outlet"`
+	CircleInterest        bool           `db:"circle_interest"`
+	InterestDate          sql.NullString `db:"interest_date"`
+	SurveyCompletion      sql.NullString `db:"survey_completion"`
+	MPI                   bool           `db:"mpi"`
+	Notes                 sql.NullString `db:"notes"`
+	VisionWall            string         `db:"vision_wall"`
+	MPPRequirements       string         `db:"mpp_requirements"`
 }
 
 type ActivistExtra struct {
@@ -420,43 +362,26 @@ type ActivistJSON struct {
 	Quiz            string `json:"dev_quiz"`
 	DevManager      string `json:"dev_manager"`
 	DevInterest     string `json:"dev_interest"`
-	DevAuth         string `json:"dev_auth"`
-	DevEmailSent    string `json:"dev_email_sent"`
-	DevVetted       bool   `json:"dev_vetted"`
-	DevInterview    string `json:"dev_interview"`
-	DevOnboarding   bool   `json:"dev_onboarding"`
 
-	ProspectSeniorOrganizer bool   `json:"prospect_senior_organizer"`
-	SOAuth                  string `json:"so_auth"`
-	SOCore                  string `json:"so_core"`
-	SOAgreement             bool   `json:"so_agreement"`
-	SOTraining              string `json:"so_training"`
-	SOQuiz                  string `json:"so_quiz"`
-	SOConnector             string `json:"so_connector"`
-	SOOnboarding            bool   `json:"so_onboarding"`
+	ProspectSeniorOrganizer bool `json:"prospect_senior_organizer"`
 
-	CMFirstEmail                 string `json:"cm_first_email"`
-	CMApprovalEmail              string `json:"cm_approval_email"`
-	CMWarningEmail               string `json:"cm_warning_email"`
-	CirFirstEmail                string `json:"cir_first_email"`
-	ProspectOrganizer            bool   `json:"prospect_organizer"`
-	ProspectChapterMember        bool   `json:"prospect_chapter_member"`
-	CircleAgreement              bool   `json:"circle_agreement"`
-	LastConnection               string `json:"last_connection"`
-	ReferralFriends              string `json:"referral_friends"`
-	ReferralApply                string `json:"referral_apply"`
-	ReferralOutlet               string `json:"referral_outlet"`
-	CircleInterest               bool   `json:"circle_interest"`
-	InterestDate                 string `json:"interest_date"`
-	SurveyCompletion             string `json:"survey_completion"`
-	MPI                          bool   `json:"mpi"`
-	Notes                        string `json:"notes"`
-	VisionWall                   string `json:"vision_wall"`
-	StudyGroup                   string `json:"study_group"`
-	StudyActivator               string `json:"study_activator"`
-	StudyConversation            string `json:"study_conversation"`
-	StudyEventsSinceConversation int    `json:"study_events_since_conversation"`
-	MPPRequirements              string `json:"mpp_requirements"`
+	CMFirstEmail          string `json:"cm_first_email"`
+	CMApprovalEmail       string `json:"cm_approval_email"`
+	CMWarningEmail        string `json:"cm_warning_email"`
+	CirFirstEmail         string `json:"cir_first_email"`
+	ProspectOrganizer     bool   `json:"prospect_organizer"`
+	ProspectChapterMember bool   `json:"prospect_chapter_member"`
+	LastConnection        string `json:"last_connection"`
+	ReferralFriends       string `json:"referral_friends"`
+	ReferralApply         string `json:"referral_apply"`
+	ReferralOutlet        string `json:"referral_outlet"`
+	CircleInterest        bool   `json:"circle_interest"`
+	InterestDate          string `json:"interest_date"`
+	SurveyCompletion      string `json:"survey_completion"`
+	MPI                   bool   `json:"mpi"`
+	Notes                 string `json:"notes"`
+	VisionWall            string `json:"vision_wall"`
+	MPPRequirements       string `json:"mpp_requirements"`
 }
 
 type GetActivistOptions struct {
@@ -584,18 +509,6 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 		if a.ActivistConnectionData.Quiz.Valid {
 			quiz = a.ActivistConnectionData.Quiz.String
 		}
-		dev_auth := ""
-		if a.ActivistConnectionData.DevAuth.Valid {
-			dev_auth = a.ActivistConnectionData.DevAuth.String
-		}
-		dev_email_sent := ""
-		if a.ActivistConnectionData.DevEmailSent.Valid {
-			dev_email_sent = a.ActivistConnectionData.DevEmailSent.String
-		}
-		dev_interview := ""
-		if a.ActivistConnectionData.DevInterview.Valid {
-			dev_interview = a.ActivistConnectionData.DevInterview.String
-		}
 		last_connection := ""
 		if a.ActivistConnectionData.LastConnection.Valid {
 			last_connection = a.ActivistConnectionData.LastConnection.String
@@ -616,22 +529,6 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 		if a.ActivistConnectionData.CirFirstEmail.Valid {
 			cir_first_email = a.ActivistConnectionData.CirFirstEmail.String
 		}
-		so_auth := ""
-		if a.ActivistConnectionData.SOAuth.Valid {
-			so_auth = a.ActivistConnectionData.SOAuth.String
-		}
-		so_core := ""
-		if a.ActivistConnectionData.SOCore.Valid {
-			so_core = a.ActivistConnectionData.SOCore.String
-		}
-		so_training := ""
-		if a.ActivistConnectionData.SOTraining.Valid {
-			so_training = a.ActivistConnectionData.SOTraining.String
-		}
-		so_quiz := ""
-		if a.ActivistConnectionData.SOQuiz.Valid {
-			so_quiz = a.ActivistConnectionData.SOQuiz.String
-		}
 		interest_date := ""
 		if a.ActivistConnectionData.InterestDate.Valid {
 			interest_date = a.ActivistConnectionData.InterestDate.String
@@ -643,10 +540,6 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 		notes := ""
 		if a.ActivistConnectionData.Notes.Valid {
 			notes = a.ActivistConnectionData.Notes.String
-		}
-		study_conversation := ""
-		if a.ActivistConnectionData.StudyConversation.Valid {
-			study_conversation = a.ActivistConnectionData.StudyConversation.String
 		}
 
 		activistsJSON = append(activistsJSON, ActivistJSON{
@@ -687,43 +580,26 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			Quiz:            quiz,
 			DevManager:      a.DevManager,
 			DevInterest:     a.DevInterest,
-			DevAuth:         dev_auth,
-			DevEmailSent:    dev_email_sent,
-			DevVetted:       a.DevVetted,
-			DevInterview:    dev_interview,
-			DevOnboarding:   a.DevOnboarding,
 
 			ProspectSeniorOrganizer: a.ProspectSeniorOrganizer,
-			SOAuth:                  so_auth,
-			SOCore:                  so_core,
-			SOAgreement:             a.SOAgreement,
-			SOTraining:              so_training,
-			SOQuiz:                  so_quiz,
-			SOConnector:             a.SOConnector,
-			SOOnboarding:            a.SOOnboarding,
 
-			CMFirstEmail:                 cm_first_email,
-			CMApprovalEmail:              cm_approval_email,
-			CMWarningEmail:               cm_warning_email,
-			CirFirstEmail:                cir_first_email,
-			ProspectOrganizer:            a.ProspectOrganizer,
-			ProspectChapterMember:        a.ProspectChapterMember,
-			CircleAgreement:              a.CircleAgreement,
-			LastConnection:               last_connection,
-			ReferralFriends:              a.ReferralFriends,
-			ReferralApply:                a.ReferralApply,
-			ReferralOutlet:               a.ReferralOutlet,
-			CircleInterest:               a.CircleInterest,
-			InterestDate:                 interest_date,
-			SurveyCompletion:             survey_completion,
-			MPI:                          a.MPI,
-			Notes:                        notes,
-			VisionWall:                   a.VisionWall,
-			StudyGroup:                   a.StudyGroup,
-			StudyActivator:               a.StudyActivator,
-			StudyConversation:            study_conversation,
-			StudyEventsSinceConversation: a.StudyEventsSinceConversation,
-			MPPRequirements:              a.MPPRequirements,
+			CMFirstEmail:          cm_first_email,
+			CMApprovalEmail:       cm_approval_email,
+			CMWarningEmail:        cm_warning_email,
+			CirFirstEmail:         cir_first_email,
+			ProspectOrganizer:     a.ProspectOrganizer,
+			ProspectChapterMember: a.ProspectChapterMember,
+			LastConnection:        last_connection,
+			ReferralFriends:       a.ReferralFriends,
+			ReferralApply:         a.ReferralApply,
+			ReferralOutlet:        a.ReferralOutlet,
+			CircleInterest:        a.CircleInterest,
+			InterestDate:          interest_date,
+			SurveyCompletion:      survey_completion,
+			MPI:                   a.MPI,
+			Notes:                 notes,
+			VisionWall:            a.VisionWall,
+			MPPRequirements:       a.MPPRequirements,
 		})
 	}
 
@@ -860,9 +736,6 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 		}
 		if options.Filter == "leaderboard" {
 			whereClause = append(whereClause, "a.id in (select distinct activist_id  from event_attendance ea  where ea.event_id in (select id from events e where e.date >= (now() - interval 30 day)))")
-		}
-		if options.Filter == "study" {
-			whereClause = append(whereClause, "a.study_group <> ''")
 		}
 
 		if len(whereClause) != 0 {
@@ -1059,27 +932,14 @@ INSERT INTO activists (
   training6,
   dev_manager,
   dev_interest,
-  dev_auth,
-  dev_email_sent,
-  dev_vetted,
-  dev_interview,
-  dev_onboarding,
   dev_quiz,
   prospect_senior_organizer,
-  so_auth,
-  so_core,
-  so_agreement,
-  so_training,
-  so_quiz,
-  so_connector,
-  so_onboarding,
   cm_first_email,
   cm_approval_email,
   cm_warning_email,
   cir_first_email,
   prospect_organizer,
   prospect_chapter_member,
-  circle_agreement,
   last_connection,
   referral_friends,
   referral_apply,
@@ -1089,10 +949,7 @@ INSERT INTO activists (
   survey_completion,
   mpi,
   notes,
-  vision_wall,
-  study_group,
-  study_activator,
-  study_conversation
+  vision_wall
 
 ) VALUES (
 
@@ -1117,27 +974,14 @@ INSERT INTO activists (
   :training6,
   :dev_manager,
   :dev_interest,
-  :dev_auth,
-  :dev_email_sent,
-  :dev_vetted,
-  :dev_interview,
-  :dev_onboarding,
   :dev_quiz,
   :prospect_senior_organizer,
-  :so_auth,
-  :so_core,
-  :so_agreement,
-  :so_training,
-  :so_quiz,
-  :so_connector,
-  :so_onboarding,
   :cm_first_email,
   :cm_approval_email,
   :cm_warning_email,
   :cir_first_email,
   :prospect_organizer,
   :prospect_chapter_member,
-  :circle_agreement,
   :last_connection,
   :referral_friends,
   :referral_apply,
@@ -1148,9 +992,6 @@ INSERT INTO activists (
   :mpi,
   :notes,
   :vision_wall,
-  :study_group,
-  :study_activator,
-  :study_conversation
 
 )`, activist)
 	if err != nil {
@@ -1195,27 +1036,14 @@ SET
   training6 = :training6,
   dev_manager = :dev_manager,
   dev_interest = :dev_interest,
-  dev_auth = :dev_auth,
-  dev_email_sent = :dev_email_sent,
-  dev_vetted = :dev_vetted,
-  dev_interview = :dev_interview,
-  dev_onboarding = :dev_onboarding,
   dev_quiz = :dev_quiz,
   prospect_senior_organizer = :prospect_senior_organizer,
-  so_auth = :so_auth,
-  so_core = :so_core,
-  so_agreement = :so_agreement,
-  so_training = :so_training,
-  so_quiz = :so_quiz,
-  so_connector = :so_connector,
-  so_onboarding = :so_onboarding,
   cm_first_email = :cm_first_email,
   cm_approval_email = :cm_approval_email,
   cm_warning_email = :cm_warning_email,
   cir_first_email = :cir_first_email,
   prospect_organizer = :prospect_organizer,
   prospect_chapter_member = :prospect_chapter_member,
-  circle_agreement = :circle_agreement,
   referral_friends = :referral_friends,
   referral_apply = :referral_apply,
   referral_outlet = :referral_outlet,
@@ -1224,11 +1052,8 @@ SET
   survey_completion = :survey_completion,
   mpi = :mpi,
   notes = :notes,
-  vision_wall = :vision_wall,
-  study_group = :study_group,
-  study_activator = :study_activator,
-  study_conversation = :study_conversation
-
+  vision_wall = :vision_wall
+  
 WHERE
   id = :id`, activist)
 
@@ -1414,12 +1239,7 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 
 	target.ProspectOrganizer = boolMerge(original.ProspectOrganizer, target.ProspectOrganizer)
 	target.ProspectChapterMember = boolMerge(original.ProspectChapterMember, target.ProspectChapterMember)
-	target.CircleAgreement = boolMerge(original.CircleAgreement, target.CircleAgreement)
-	target.DevVetted = boolMerge(original.DevVetted, target.DevVetted)
-	target.DevOnboarding = boolMerge(original.DevOnboarding, target.DevOnboarding)
 	target.ProspectSeniorOrganizer = boolMerge(original.ProspectSeniorOrganizer, target.ProspectSeniorOrganizer)
-	target.SOAgreement = boolMerge(original.SOAgreement, target.SOAgreement)
-	target.SOOnboarding = boolMerge(original.SOOnboarding, target.SOOnboarding)
 	target.CircleInterest = boolMerge(original.CircleInterest, target.CircleInterest)
 	target.MPI = boolMerge(original.MPI, target.MPI)
 	target.Hiatus = boolMerge(original.Hiatus, target.Hiatus)
@@ -1442,20 +1262,12 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 	target.Training6 = stringMergeSqlNullString(original.Training6, target.Training6)
 	target.DevManager = stringMerge(original.DevManager, target.DevManager)
 	target.DevInterest = stringMerge(original.DevInterest, target.DevInterest)
-	target.DevAuth = stringMergeSqlNullString(original.DevAuth, target.DevAuth)
-	target.DevEmailSent = stringMergeSqlNullString(original.DevEmailSent, target.DevEmailSent)
-	target.DevInterview = stringMergeSqlNullString(original.DevInterview, target.DevInterview)
 	target.ApplicationDate = stringMergeSqlNullTime(original.ApplicationDate, target.ApplicationDate)
 	target.Quiz = stringMergeSqlNullString(original.Quiz, target.Quiz)
 	target.CMFirstEmail = stringMergeSqlNullString(original.CMFirstEmail, target.CMFirstEmail)
 	target.CMApprovalEmail = stringMergeSqlNullString(original.CMApprovalEmail, target.CMApprovalEmail)
 	target.CMWarningEmail = stringMergeSqlNullString(original.CMWarningEmail, target.CMWarningEmail)
 	target.CirFirstEmail = stringMergeSqlNullString(original.CirFirstEmail, target.CirFirstEmail)
-	target.SOAuth = stringMergeSqlNullString(original.SOAuth, target.SOAuth)
-	target.SOCore = stringMergeSqlNullString(original.SOCore, target.SOCore)
-	target.SOTraining = stringMergeSqlNullString(original.SOTraining, target.SOTraining)
-	target.SOQuiz = stringMergeSqlNullString(original.SOQuiz, target.SOQuiz)
-	target.SOConnector = stringMerge(original.SOConnector, target.SOConnector)
 	target.ReferralFriends = stringMerge(original.ReferralFriends, target.ReferralFriends)
 	target.ReferralApply = stringMerge(original.ReferralApply, target.ReferralApply)
 	target.ReferralOutlet = stringMerge(original.ReferralOutlet, target.ReferralOutlet)
@@ -1463,9 +1275,6 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 	target.SurveyCompletion = stringMergeSqlNullString(original.SurveyCompletion, target.SurveyCompletion)
 	target.Notes = stringMergeSqlNullString(original.Notes, target.Notes)
 	target.VisionWall = stringMerge(original.VisionWall, target.VisionWall)
-	target.StudyGroup = stringMerge(original.StudyGroup, target.StudyGroup)
-	target.StudyActivator = stringMerge(original.StudyActivator, target.StudyActivator)
-	target.StudyConversation = stringMergeSqlNullString(original.StudyConversation, target.StudyConversation)
 	target.ApplicationType = stringMerge(original.ApplicationType, target.ApplicationType)
 
 	// Check Activist Levels
@@ -1693,21 +1502,6 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 		// Not specified so insert null value into database
 		validTraining6 = false
 	}
-	validDevAuth := true
-	if activistJSON.DevAuth == "" {
-		// Not specified so insert null value into database
-		validDevAuth = false
-	}
-	validDevEmailSent := true
-	if activistJSON.DevEmailSent == "" {
-		// Not specified so insert null value into database
-		validDevEmailSent = false
-	}
-	validDevInterview := true
-	if activistJSON.DevInterview == "" {
-		// Not specified so insert null value into database
-		validDevInterview = false
-	}
 	validCMFirstEmail := true
 	if activistJSON.CMFirstEmail == "" {
 		// Not specified so insert null value into database
@@ -1727,26 +1521,6 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 	if activistJSON.CirFirstEmail == "" {
 		// Not specified so insert null value into database
 		validCirFirstEmail = false
-	}
-	validSOAuth := true
-	if activistJSON.SOAuth == "" {
-		// Not specified so insert null value into database
-		validSOAuth = false
-	}
-	validSOCore := true
-	if activistJSON.SOCore == "" {
-		// Not specified so insert null value into database
-		validSOCore = false
-	}
-	validSOTraining := true
-	if activistJSON.SOTraining == "" {
-		// Not specified so insert null value into database
-		validSOTraining = false
-	}
-	validSOQuiz := true
-	if activistJSON.SOQuiz == "" {
-		// Not specified so insert null value into database
-		validSOQuiz = false
 	}
 	validQuiz := true
 	if activistJSON.Quiz == "" {
@@ -1768,11 +1542,6 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 		// Not specified so insert null value into database
 		validNotes = false
 	}
-	validStudyConversation := true
-	if activistJSON.StudyConversation == "" {
-		// Not specified so insert null value into database
-		validStudyConversation = false
-	}
 
 	activistExtra := ActivistExtra{
 		Activist: Activist{
@@ -1790,31 +1559,19 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			Hiatus:        activistJSON.Hiatus,
 		},
 		ActivistConnectionData: ActivistConnectionData{
-			Connector:     strings.TrimSpace(activistJSON.Connector),
-			Training0:     sql.NullString{String: strings.TrimSpace(activistJSON.Training0), Valid: validTraining0},
-			Training1:     sql.NullString{String: strings.TrimSpace(activistJSON.Training1), Valid: validTraining1},
-			Training2:     sql.NullString{String: strings.TrimSpace(activistJSON.Training2), Valid: validTraining2},
-			Training3:     sql.NullString{String: strings.TrimSpace(activistJSON.Training3), Valid: validTraining3},
-			Training4:     sql.NullString{String: strings.TrimSpace(activistJSON.Training4), Valid: validTraining4},
-			Training5:     sql.NullString{String: strings.TrimSpace(activistJSON.Training5), Valid: validTraining5},
-			Training6:     sql.NullString{String: strings.TrimSpace(activistJSON.Training6), Valid: validTraining6},
-			DevManager:    strings.TrimSpace(activistJSON.DevManager),
-			DevInterest:   strings.TrimSpace(activistJSON.DevInterest),
-			DevAuth:       sql.NullString{String: strings.TrimSpace(activistJSON.DevAuth), Valid: validDevAuth},
-			DevEmailSent:  sql.NullString{String: strings.TrimSpace(activistJSON.DevEmailSent), Valid: validDevEmailSent},
-			DevVetted:     activistJSON.DevVetted,
-			DevInterview:  sql.NullString{String: strings.TrimSpace(activistJSON.DevInterview), Valid: validDevInterview},
-			DevOnboarding: activistJSON.DevOnboarding,
-			Quiz:          sql.NullString{String: strings.TrimSpace(activistJSON.Quiz), Valid: validQuiz},
+			Connector:   strings.TrimSpace(activistJSON.Connector),
+			Training0:   sql.NullString{String: strings.TrimSpace(activistJSON.Training0), Valid: validTraining0},
+			Training1:   sql.NullString{String: strings.TrimSpace(activistJSON.Training1), Valid: validTraining1},
+			Training2:   sql.NullString{String: strings.TrimSpace(activistJSON.Training2), Valid: validTraining2},
+			Training3:   sql.NullString{String: strings.TrimSpace(activistJSON.Training3), Valid: validTraining3},
+			Training4:   sql.NullString{String: strings.TrimSpace(activistJSON.Training4), Valid: validTraining4},
+			Training5:   sql.NullString{String: strings.TrimSpace(activistJSON.Training5), Valid: validTraining5},
+			Training6:   sql.NullString{String: strings.TrimSpace(activistJSON.Training6), Valid: validTraining6},
+			DevManager:  strings.TrimSpace(activistJSON.DevManager),
+			DevInterest: strings.TrimSpace(activistJSON.DevInterest),
+			Quiz:        sql.NullString{String: strings.TrimSpace(activistJSON.Quiz), Valid: validQuiz},
 
 			ProspectSeniorOrganizer: activistJSON.ProspectSeniorOrganizer,
-			SOAuth:                  sql.NullString{String: strings.TrimSpace(activistJSON.SOAuth), Valid: validSOAuth},
-			SOCore:                  sql.NullString{String: strings.TrimSpace(activistJSON.SOCore), Valid: validSOCore},
-			SOAgreement:             activistJSON.SOAgreement,
-			SOTraining:              sql.NullString{String: strings.TrimSpace(activistJSON.SOTraining), Valid: validSOTraining},
-			SOQuiz:                  sql.NullString{String: strings.TrimSpace(activistJSON.SOQuiz), Valid: validSOQuiz},
-			SOConnector:             strings.TrimSpace(activistJSON.SOConnector),
-			SOOnboarding:            activistJSON.SOOnboarding,
 
 			CMFirstEmail:          sql.NullString{String: strings.TrimSpace(activistJSON.CMFirstEmail), Valid: validCMFirstEmail},
 			CMApprovalEmail:       sql.NullString{String: strings.TrimSpace(activistJSON.CMApprovalEmail), Valid: validCMApprovalEmail},
@@ -1822,7 +1579,6 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			CirFirstEmail:         sql.NullString{String: strings.TrimSpace(activistJSON.CirFirstEmail), Valid: validCirFirstEmail},
 			ProspectOrganizer:     activistJSON.ProspectOrganizer,
 			ProspectChapterMember: activistJSON.ProspectChapterMember,
-			CircleAgreement:       activistJSON.CircleAgreement,
 			ReferralFriends:       strings.TrimSpace(activistJSON.ReferralFriends),
 			ReferralApply:         strings.TrimSpace(activistJSON.ReferralApply),
 			ReferralOutlet:        strings.TrimSpace(activistJSON.ReferralOutlet),
@@ -1832,9 +1588,6 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			MPI:                   activistJSON.MPI,
 			Notes:                 sql.NullString{String: strings.TrimSpace(activistJSON.Notes), Valid: validNotes},
 			VisionWall:            strings.TrimSpace(activistJSON.VisionWall),
-			StudyGroup:            strings.TrimSpace(activistJSON.StudyGroup),
-			StudyActivator:        strings.TrimSpace(activistJSON.StudyActivator),
-			StudyConversation:     sql.NullString{String: strings.TrimSpace(activistJSON.StudyConversation), Valid: validStudyConversation},
 			MPPRequirements:       strings.TrimSpace(activistJSON.MPPRequirements),
 		},
 	}
