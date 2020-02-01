@@ -3,7 +3,6 @@ package model
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"io"
 	"strings"
 	"time"
@@ -1326,8 +1325,6 @@ func updateMergedActivistDataDetails(tx *sqlx.Tx, originalActivistID int, target
 	// activists have data for the same field, we should use the target activist's data.
 
 	query := selectActivistExtraBaseQuery + " WHERE a.id = ?"
-
-	fmt.Printf(query)
 
 	var originalActivist = new(ActivistExtra)
 	err := tx.Get(originalActivist, query, originalActivistID)
