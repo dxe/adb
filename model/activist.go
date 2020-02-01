@@ -3,6 +3,7 @@ package model
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"io"
 	"strings"
 	"time"
@@ -240,7 +241,7 @@ SET
   survey_completion = :survey_completion,
   mpi = :mpi,
   notes = :notes,
-  vision_wall = :vision_wall,
+  vision_wall = :vision_wall
 
 WHERE
   id = :id`
@@ -1326,16 +1327,18 @@ func updateMergedActivistDataDetails(tx *sqlx.Tx, originalActivistID int, target
 
 	query := selectActivistExtraBaseQuery + " WHERE a.id = ?"
 
+	fmt.Printf(query)
+
 	var originalActivist = new(ActivistExtra)
 	err := tx.Get(originalActivist, query, originalActivistID)
 	if err != nil || originalActivist == nil {
-		return errors.Wrapf(err, "failed to get activist with id %d", originalActivistID)
+		return errors.Wrapf(err, "failed to get original activist with id %d", originalActivistID)
 	}
 
 	var targetActivist = new(ActivistExtra)
 	err = tx.Get(targetActivist, query, targetActivistID)
-	if err != nil || (targetActivist == nil) {
-		return errors.Wrapf(err, "failed to get activist with id %d", targetActivistID)
+	if err != nil || targetActivist == nil {
+		return errors.Wrapf(err, "failed to get target activist with id %d", targetActivistID)
 	}
 
 	mergedActivist := getMergeActivistWinner(*originalActivist, *targetActivist)
