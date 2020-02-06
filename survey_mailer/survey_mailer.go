@@ -169,7 +169,7 @@ func surveyMailerWrapper(db *sqlx.DB) {
 		LinkParam:      "name",
 	})
 
-	// only send meetup surveys on sunday
+	// only send meetup & popup surveys on sunday
 	if weekday == 0 {
 		survey(db, SurveyOptions{
 			SurveyType:     "meetup",
@@ -178,6 +178,15 @@ func surveyMailerWrapper(db *sqlx.DB) {
 			QueryEventName: "Meetup",
 			BodyText:       `Thank you for attending the meetup! Please take this quick survey: https://docs.google.com/forms/d/e/1FAIpQLSfV0smO8sQo1ch-rlX7g9Oz4t_2d3fjGytwrE_yJ8Ez9uLSZQ/viewform?usp=pp_url&entry.1369832182=LINK_PARAM`,
 			BodyHtml:       `<p>Thank you for attending the meetup! Please <a href="https://docs.google.com/forms/d/e/1FAIpQLSfV0smO8sQo1ch-rlX7g9Oz4t_2d3fjGytwrE_yJ8Ez9uLSZQ/viewform?usp=pp_url&entry.1369832182=LINK_PARAM">click here</a> to provide feedback which will help us in planning future events.</p>`,
+			LinkParam:      "date",
+		})
+		survey(db, SurveyOptions{
+			SurveyType:     "popup",
+			QueryDate:      yesterday,
+			QueryEventType: "Community",
+			QueryEventName: "Popup",
+			BodyText:       `Thank you for attending the popup! Please take this quick survey: https://docs.google.com/forms/d/e/1FAIpQLScwpVIvHItvJeUPkKk_UsRjsrDxj29vK8zElS19nnEZmaEy9Q/viewform?usp=pp_url&entry.610934849=LINK_PARAM`,
+			BodyHtml:       `<p>Thank you for attending the meetup! Please <a href="https://docs.google.com/forms/d/e/1FAIpQLScwpVIvHItvJeUPkKk_UsRjsrDxj29vK8zElS19nnEZmaEy9Q/viewform?usp=pp_url&entry.610934849=LINK_PARAM">click here</a> to provide feedback which will help us in planning future events.</p>`,
 			LinkParam:      "date",
 		})
 	}
