@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
@@ -73,9 +74,16 @@ func bulkSendEmails(event model.Event, subject string, bodyText string, bodyHtml
 			missingEmails = append(missingEmails, recipient)
 			continue
 		}
-		log.Println("Sending email to:", recipient)
+		// add stanford survey link to email
+		newBodyText := bodyText
+		newBodyHtml := bodyHtml
+		receipientID := strconv.Itoa(event.AttendeeIDs[i])
+		stanfordLink := "http://ec2.dxe.io/adb-forms/survey.php?activist-id=" + receipientID
+		newBodyText += "P.S. You can greatly help us improve our work by clicking here to take one additional survey: " + stanfordLink
+		newBodyHtml += "<p>P.S. You can greatly help us improve our work by <a href=\"" + stanfordLink + "\">clicking here</a> to take one additional survey.</p>"
 		// Send email
-		err := sendEmail(receipientEmail, subject, bodyText, bodyHtml)
+		log.Println("Sending email to:", recipient)
+		err := sendEmail(receipientEmail, subject, newBodyText, newBodyHtml)
 		if err != nil {
 			sendingErrors = append(sendingErrors, fmt.Sprintf("%v [%v] %v", recipient, event.AttendeeEmails[i], err))
 		}
