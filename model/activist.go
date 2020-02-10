@@ -77,7 +77,6 @@ SELECT
   referral_outlet,
   circle_interest,
   interest_date,
-  survey_completion,
 
   @first_event := (
       SELECT min(e.date) AS min_date
@@ -237,7 +236,6 @@ SET
   referral_outlet = :referral_outlet,
   circle_interest = :circle_interest,
   interest_date = :interest_date,
-  survey_completion = :survey_completion,
   mpi = :mpi,
   notes = :notes,
   vision_wall = :vision_wall
@@ -310,7 +308,6 @@ type ActivistConnectionData struct {
 	ReferralOutlet        string         `db:"referral_outlet"`
 	CircleInterest        bool           `db:"circle_interest"`
 	InterestDate          sql.NullString `db:"interest_date"`
-	SurveyCompletion      sql.NullString `db:"survey_completion"`
 	MPI                   bool           `db:"mpi"`
 	Notes                 sql.NullString `db:"notes"`
 	VisionWall            string         `db:"vision_wall"`
@@ -377,7 +374,6 @@ type ActivistJSON struct {
 	ReferralOutlet        string `json:"referral_outlet"`
 	CircleInterest        bool   `json:"circle_interest"`
 	InterestDate          string `json:"interest_date"`
-	SurveyCompletion      string `json:"survey_completion"`
 	MPI                   bool   `json:"mpi"`
 	Notes                 string `json:"notes"`
 	VisionWall            string `json:"vision_wall"`
@@ -533,10 +529,6 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 		if a.ActivistConnectionData.InterestDate.Valid {
 			interest_date = a.ActivistConnectionData.InterestDate.String
 		}
-		survey_completion := ""
-		if a.ActivistConnectionData.SurveyCompletion.Valid {
-			survey_completion = a.ActivistConnectionData.SurveyCompletion.String
-		}
 		notes := ""
 		if a.ActivistConnectionData.Notes.Valid {
 			notes = a.ActivistConnectionData.Notes.String
@@ -595,7 +587,6 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			ReferralOutlet:        a.ReferralOutlet,
 			CircleInterest:        a.CircleInterest,
 			InterestDate:          interest_date,
-			SurveyCompletion:      survey_completion,
 			MPI:                   a.MPI,
 			Notes:                 notes,
 			VisionWall:            a.VisionWall,
@@ -946,7 +937,6 @@ INSERT INTO activists (
   referral_outlet,
   circle_interest,
   interest_date,
-  survey_completion,
   mpi,
   notes,
   vision_wall
@@ -988,7 +978,6 @@ INSERT INTO activists (
   :referral_outlet,
   :circle_interest,
   :interest_date,
-  :survey_completion,
   :mpi,
   :notes,
   :vision_wall,
@@ -1049,7 +1038,6 @@ SET
   referral_outlet = :referral_outlet,
   circle_interest = :circle_interest,
   interest_date = :interest_date,
-  survey_completion = :survey_completion,
   mpi = :mpi,
   notes = :notes,
   vision_wall = :vision_wall
@@ -1272,7 +1260,6 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 	target.ReferralApply = stringMerge(original.ReferralApply, target.ReferralApply)
 	target.ReferralOutlet = stringMerge(original.ReferralOutlet, target.ReferralOutlet)
 	target.InterestDate = stringMergeSqlNullString(original.InterestDate, target.InterestDate)
-	target.SurveyCompletion = stringMergeSqlNullString(original.SurveyCompletion, target.SurveyCompletion)
 	target.Notes = stringMergeSqlNullString(original.Notes, target.Notes)
 	target.VisionWall = stringMerge(original.VisionWall, target.VisionWall)
 	target.ApplicationType = stringMerge(original.ApplicationType, target.ApplicationType)
@@ -1532,11 +1519,6 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 		// Not specified so insert null value into database
 		validInterestDate = false
 	}
-	validSurveyCompletion := true
-	if activistJSON.SurveyCompletion == "" {
-		// Not specified so insert null value into database
-		validSurveyCompletion = false
-	}
 	validNotes := true
 	if activistJSON.Notes == "" {
 		// Not specified so insert null value into database
@@ -1584,7 +1566,6 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			ReferralOutlet:        strings.TrimSpace(activistJSON.ReferralOutlet),
 			CircleInterest:        activistJSON.CircleInterest,
 			InterestDate:          sql.NullString{String: strings.TrimSpace(activistJSON.InterestDate), Valid: validInterestDate},
-			SurveyCompletion:      sql.NullString{String: strings.TrimSpace(activistJSON.SurveyCompletion), Valid: validSurveyCompletion},
 			MPI:                   activistJSON.MPI,
 			Notes:                 sql.NullString{String: strings.TrimSpace(activistJSON.Notes), Valid: validNotes},
 			VisionWall:            strings.TrimSpace(activistJSON.VisionWall),
