@@ -27,6 +27,7 @@ func TestGetEvents(t *testing.T) {
 		EventType:      "Working Group",
 		Attendees:      []string{a1.Name},
 		AttendeeEmails: []string{a1.Email},
+		AttendeeIDs:    []int{a1.ID},
 	}, {
 		ID:             2,
 		EventName:      "event two",
@@ -34,6 +35,7 @@ func TestGetEvents(t *testing.T) {
 		EventType:      "Protest",
 		Attendees:      []string{a1.Name, a2.Name},
 		AttendeeEmails: []string{a1.Email, a2.Email},
+		AttendeeIDs:    []int{a1.ID, a2.ID},
 	}}
 
 	for _, e := range wantEvents {
