@@ -40,6 +40,7 @@ type EventJSON struct {
 	EventType        string   `json:"event_type"`
 	Attendees        []string `json:"attendees"` // For displaying all event attendees
 	AttendeeEmails   []string `json:"attendee_emails"`
+	AttendeeIDs      []int    `json:"attendee_ids"`
 	AddedAttendees   []string `json:"added_attendees"`   // Used for Updating Events
 	DeletedAttendees []string `json:"deleted_attendees"` // Used for Updating Events
 }
@@ -53,6 +54,7 @@ type Event struct {
 	SurveySent            int       `db:"survey_sent"` // Used for sending event surveys
 	Attendees             []string  // For retrieving all event attendees
 	AttendeeEmails        []string
+	AttendeeIDs           []int
 	AttendeeMissingEmails []string   // Used for sending event surveys
 	AddedAttendees        []Activist // Used for Updating Events
 	DeletedAttendees      []Activist // Used for Updating Events
@@ -66,6 +68,7 @@ func (event *Event) ToJSON() EventJSON {
 		EventType:      string(event.EventType),
 		Attendees:      event.Attendees,
 		AttendeeEmails: event.AttendeeEmails,
+		AttendeeIDs:    event.AttendeeIDs,
 	}
 }
 
@@ -199,7 +202,8 @@ ON (e.id = ea.event_id AND ea.activist_id = a.id)
 SELECT
   ea.event_id,
   a.name as activist_name,
-  a.email as activist_email
+  a.email as activist_email,
+  a.id as activist_id
 FROM activists a
 JOIN event_attendance ea
   ON a.id = ea.activist_id
@@ -214,6 +218,7 @@ WHERE
 		EventID       int    `db:"event_id"`
 		ActivistName  string `db:"activist_name"`
 		ActivistEmail string `db:"activist_email"`
+		ActivistID    int    `db:"activist_id"`
 	}
 	var allAttendance []Attendance
 	err = db.Select(&allAttendance, attendanceQuery, attendanceArgs...)
@@ -225,6 +230,7 @@ WHERE
 		i := eventIDToIndex[a.EventID]
 		events[i].Attendees = append(events[i].Attendees, a.ActivistName)
 		events[i].AttendeeEmails = append(events[i].AttendeeEmails, a.ActivistEmail)
+		events[i].AttendeeIDs = append(events[i].AttendeeIDs, a.ActivistID)
 	}
 
 	return events, nil
