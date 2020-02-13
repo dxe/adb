@@ -166,7 +166,7 @@ func surveyMailerWrapper(db *sqlx.DB) {
 		return
 	}
 
-	// send protest surveys daily
+	// send protest & sanctuary surveys daily
 	survey(db, SurveyOptions{
 		SurveyType:     "protest",
 		QueryDate:      yesterday,
@@ -174,6 +174,15 @@ func surveyMailerWrapper(db *sqlx.DB) {
 		QueryEventName: "",
 		BodyText:       `Thank you for taking part in direct action! Please take this quick survey: https://docs.google.com/forms/d/e/1FAIpQLScfrPtPxmYAroODhBkwUGq753JPykYKNdosg4gUR_SRng8BRQ/viewform?usp=pp_url&entry.466557185=LINK_PARAM. If you captured any photos or videos, please upload them here: dxe.io/upload.`,
 		BodyHtml:       `<p>Thank you for taking part in direct action! Please <a href="https://docs.google.com/forms/d/e/1FAIpQLScfrPtPxmYAroODhBkwUGq753JPykYKNdosg4gUR_SRng8BRQ/viewform?usp=pp_url&entry.466557185=LINK_PARAM">click here</a> to take a quick survey.</p><p>If you captured any photos or videos, please upload them <a href="http://dxe.io/upload">here</a>.</p>`,
+		LinkParam:      "name",
+	})
+	survey(db, SurveyOptions{
+		SurveyType:     "sanctuary",
+		QueryDate:      yesterday,
+		QueryEventType: "Sanctuary",
+		QueryEventName: "",
+		BodyText:       `Thank you for attending a sanctuary event! Please take this quick survey: https://docs.google.com/forms/d/e/1FAIpQLSdxn514dpwXduMeaGr8xCszoAUYDS0_95faskbFCzVNcAJ_fw/viewform?usp=pp_url&entry.466557185=LINK_PARAM. If you captured any photos or videos, please upload them here: dxe.io/upload.`,
+		BodyHtml:       `<p>Thank you for attending a sanctuary event! Please <a href="https://docs.google.com/forms/d/e/1FAIpQLSdxn514dpwXduMeaGr8xCszoAUYDS0_95faskbFCzVNcAJ_fw/viewform?usp=pp_url&entry.466557185=LINK_PARAM">click here</a> to take a quick survey.</p><p>If you captured any photos or videos, please upload them <a href="http://dxe.io/upload">here</a>.</p>`,
 		LinkParam:      "name",
 	})
 
