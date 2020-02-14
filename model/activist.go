@@ -58,6 +58,7 @@ SELECT
   training4,
   training5,
   training6,
+  training_protest,
   dev_application_date,
   dev_application_type,
   dev_quiz,
@@ -219,6 +220,7 @@ SET
   training4 = :training4,
   training5 = :training5,
   training6 = :training6,
+  training_protest = :training_protest,
   dev_application_date = :dev_application_date,
   dev_application_type = :dev_application_type,
   dev_quiz = :dev_quiz,
@@ -288,6 +290,7 @@ type ActivistConnectionData struct {
 	Training4       sql.NullString `db:"training4"`
 	Training5       sql.NullString `db:"training5"`
 	Training6       sql.NullString `db:"training6"`
+	TrainingProtest sql.NullString `db:"training_protest"`
 	ApplicationDate mysql.NullTime `db:"dev_application_date"`
 	ApplicationType string         `db:"dev_application_type"`
 	Quiz            sql.NullString `db:"dev_quiz"`
@@ -354,6 +357,7 @@ type ActivistJSON struct {
 	Training4       string `json:"training4"`
 	Training5       string `json:"training5"`
 	Training6       string `json:"training6"`
+	TrainingProtest string `json:"training_protest"`
 	ApplicationDate string `json:"dev_application_date"`
 	ApplicationType string `json:"dev_application_type"`
 	Quiz            string `json:"dev_quiz"`
@@ -501,6 +505,10 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 		if a.ActivistConnectionData.Training6.Valid {
 			training6 = a.ActivistConnectionData.Training6.String
 		}
+		training_protest := ""
+		if a.ActivistConnectionData.TrainingProtest.Valid {
+			training_protest = a.ActivistConnectionData.TrainingProtest.String
+		}
 		quiz := ""
 		if a.ActivistConnectionData.Quiz.Valid {
 			quiz = a.ActivistConnectionData.Quiz.String
@@ -567,6 +575,7 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			Training4:       training4,
 			Training5:       training5,
 			Training6:       training6,
+			TrainingProtest: training_protest,
 			ApplicationDate: applicationDate,
 			ApplicationType: a.ApplicationType,
 			Quiz:            quiz,
@@ -921,6 +930,7 @@ INSERT INTO activists (
   training4,
   training5,
   training6,
+  training_protest,
   dev_manager,
   dev_interest,
   dev_quiz,
@@ -962,6 +972,7 @@ INSERT INTO activists (
   :training4,
   :training5,
   :training6,
+  :training_protest,
   :dev_manager,
   :dev_interest,
   :dev_quiz,
@@ -1023,6 +1034,7 @@ SET
   training4 = :training4,
   training5 = :training5,
   training6 = :training6,
+  training_protest = :training_protest,
   dev_manager = :dev_manager,
   dev_interest = :dev_interest,
   dev_quiz = :dev_quiz,
@@ -1248,6 +1260,7 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 	target.Training4 = stringMergeSqlNullString(original.Training4, target.Training4)
 	target.Training5 = stringMergeSqlNullString(original.Training5, target.Training5)
 	target.Training6 = stringMergeSqlNullString(original.Training6, target.Training6)
+	target.TrainingProtest = stringMergeSqlNullString(original.TrainingProtest, target.TrainingProtest)
 	target.DevManager = stringMerge(original.DevManager, target.DevManager)
 	target.DevInterest = stringMerge(original.DevInterest, target.DevInterest)
 	target.ApplicationDate = stringMergeSqlNullTime(original.ApplicationDate, target.ApplicationDate)
@@ -1489,6 +1502,11 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 		// Not specified so insert null value into database
 		validTraining6 = false
 	}
+	validTrainingProtest := true
+	if activistJSON.TrainingProtest == "" {
+		// Not specified so insert null value into database
+		validTrainingProtest = false
+	}
 	validCMFirstEmail := true
 	if activistJSON.CMFirstEmail == "" {
 		// Not specified so insert null value into database
@@ -1541,17 +1559,18 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			Hiatus:        activistJSON.Hiatus,
 		},
 		ActivistConnectionData: ActivistConnectionData{
-			Connector:   strings.TrimSpace(activistJSON.Connector),
-			Training0:   sql.NullString{String: strings.TrimSpace(activistJSON.Training0), Valid: validTraining0},
-			Training1:   sql.NullString{String: strings.TrimSpace(activistJSON.Training1), Valid: validTraining1},
-			Training2:   sql.NullString{String: strings.TrimSpace(activistJSON.Training2), Valid: validTraining2},
-			Training3:   sql.NullString{String: strings.TrimSpace(activistJSON.Training3), Valid: validTraining3},
-			Training4:   sql.NullString{String: strings.TrimSpace(activistJSON.Training4), Valid: validTraining4},
-			Training5:   sql.NullString{String: strings.TrimSpace(activistJSON.Training5), Valid: validTraining5},
-			Training6:   sql.NullString{String: strings.TrimSpace(activistJSON.Training6), Valid: validTraining6},
-			DevManager:  strings.TrimSpace(activistJSON.DevManager),
-			DevInterest: strings.TrimSpace(activistJSON.DevInterest),
-			Quiz:        sql.NullString{String: strings.TrimSpace(activistJSON.Quiz), Valid: validQuiz},
+			Connector:       strings.TrimSpace(activistJSON.Connector),
+			Training0:       sql.NullString{String: strings.TrimSpace(activistJSON.Training0), Valid: validTraining0},
+			Training1:       sql.NullString{String: strings.TrimSpace(activistJSON.Training1), Valid: validTraining1},
+			Training2:       sql.NullString{String: strings.TrimSpace(activistJSON.Training2), Valid: validTraining2},
+			Training3:       sql.NullString{String: strings.TrimSpace(activistJSON.Training3), Valid: validTraining3},
+			Training4:       sql.NullString{String: strings.TrimSpace(activistJSON.Training4), Valid: validTraining4},
+			Training5:       sql.NullString{String: strings.TrimSpace(activistJSON.Training5), Valid: validTraining5},
+			Training6:       sql.NullString{String: strings.TrimSpace(activistJSON.Training6), Valid: validTraining6},
+			TrainingProtest: sql.NullString{String: strings.TrimSpace(activistJSON.TrainingProtest), Valid: validTrainingProtest},
+			DevManager:      strings.TrimSpace(activistJSON.DevManager),
+			DevInterest:     strings.TrimSpace(activistJSON.DevInterest),
+			Quiz:            sql.NullString{String: strings.TrimSpace(activistJSON.Quiz), Valid: validQuiz},
 
 			ProspectSeniorOrganizer: activistJSON.ProspectSeniorOrganizer,
 

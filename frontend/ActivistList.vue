@@ -895,6 +895,19 @@ function getDefaultColumns(view: string): Column[] {
     },
 
     {
+      header: 'Tier 2',
+      longHeader: 'Date Attended Training: Tier II Protest',
+      data: {
+        type: 'date',
+        data: 'training_protest',
+        dateFormat: 'YYYY-MM-DD',
+        correctFormat: true,
+        colWidths: 100,
+      },
+      enabled: false,
+    },
+
+    {
       header: 'Quiz',
       longHeader: 'Organizer: Quiz',
       data: {

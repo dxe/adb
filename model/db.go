@@ -53,6 +53,7 @@ CREATE TABLE activists (
   training4 VARCHAR(20),
   training5 VARCHAR(20),
   training6 VARCHAR(20),
+  training_protest VARCHAR(20),
   prospect_organizer TINYINT(1) NOT NULL DEFAULT '0',
   prospect_chapter_member TINYINT NOT NULL DEFAULT '0',
   circle_agreement TINYINT NOT NULL DEFAULT '0',
