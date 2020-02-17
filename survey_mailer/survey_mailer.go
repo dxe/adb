@@ -79,8 +79,8 @@ func bulkSendEmails(event model.Event, subject string, bodyText string, bodyHtml
 		newBodyHtml := bodyHtml
 		receipientID := strconv.Itoa(event.AttendeeIDs[i])
 		stanfordLink := "http://ec2.dxe.io/adb-forms/survey.php?activist-id=" + receipientID
-		newBodyText += "P.S. You can greatly help us improve our work by clicking here to take one additional survey: " + stanfordLink
-		newBodyHtml += "<p>P.S. You can greatly help us improve our work by <a href=\"" + stanfordLink + "\">clicking here</a> to take one additional survey.</p>"
+		newBodyText += "P.S. You can greatly help us improve our work by clicking the following link to take one additional survey. This link is unique to you, so please DO NOT share it with others: " + stanfordLink
+		newBodyHtml += "<p>P.S. You can greatly help us improve our work by <a href=\"" + stanfordLink + "\">clicking here</a> to take one additional survey. This link is unique to you, so please DO NOT share it with others.</p>"
 		// Send email
 		log.Println("Sending email to:", recipient)
 		err := sendEmail(receipientEmail, subject, newBodyText, newBodyHtml)
