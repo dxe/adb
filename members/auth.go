@@ -72,9 +72,10 @@ func (s *server) login() {
 		return
 	}
 	http.SetCookie(s.w, &http.Cookie{
-		Name:   membersState,
-		Value:  state,
-		MaxAge: 3600,
+		Name:     membersState,
+		Value:    state,
+		MaxAge:   3600,
+		SameSite: http.SameSiteStrictMode,
 	})
 
 	var opts []oauth2.AuthCodeOption
@@ -109,9 +110,10 @@ func (s *server) auth() {
 
 	idToken := token.Extra("id_token").(string)
 	http.SetCookie(s.w, &http.Cookie{
-		Name:   membersIDToken,
-		Value:  idToken,
-		MaxAge: 3600,
+		Name:     membersIDToken,
+		Value:    idToken,
+		MaxAge:   3600,
+		SameSite: http.SameSiteStrictMode,
 	})
 	s.redirect(absURL("/"))
 }
