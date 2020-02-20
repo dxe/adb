@@ -75,7 +75,8 @@ func (s *server) login() {
 		Name:     membersState,
 		Value:    state,
 		MaxAge:   3600,
-		SameSite: http.SameSiteStrictMode,
+		SameSite: http.SameSiteLaxMode,
+		HttpOnly: true,
 	})
 
 	var opts []oauth2.AuthCodeOption
@@ -114,6 +115,7 @@ func (s *server) auth() {
 		Value:    idToken,
 		MaxAge:   3600,
 		SameSite: http.SameSiteStrictMode,
+		HttpOnly: true,
 	})
 	s.redirect(absURL("/"))
 }
