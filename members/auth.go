@@ -114,7 +114,7 @@ func (s *server) auth() {
 		Name:     membersIDToken,
 		Value:    idToken,
 		MaxAge:   3600,
-		SameSite: http.SameSiteStrictMode,
+		SameSite: http.SameSiteLaxMode,
 		HttpOnly: true,
 	})
 	s.redirect(absURL("/"))
