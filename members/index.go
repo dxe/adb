@@ -38,8 +38,10 @@ func (s *server) index() {
 		Birthday      string
 		ActivistLevel string
 
-		EligibleVoter      bool
-		EligibleNomination int // boolean
+		Organizer     bool
+		ChapterMember bool
+		FebVoter      bool
+		MarVoter      bool
 
 		WorkingGroups []string
 
