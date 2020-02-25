@@ -73,8 +73,11 @@ select json_object(
   'Birthday', x.dob,
   'ActivistLevel', x.activist_level,
 
-  'EligibleVoter', x.activist_level in ('Organizer', 'Senior Organizer') and sum(x.mpi and x.month >= 201911 and x.month <= 202001) >= 2,
-  'EligibleNomination', x.activist_level in ('Organizer', 'Senior Organizer') and x.date_organizer <= ('2020-02-16' - interval 6 month),
+  'Organizer', x.activist_level in ('Organizer', 'Senior Organizer'),
+  'ChapterMember', x.activist_level in ('Chapter Member', 'Organizer', 'Senior Organizer'),
+
+  'FebVoter', sum(x.mpi and x.month >= 201911 and x.month < 202002) >= 2,
+  'MarVoter', sum(x.mpi and x.month >= 201912 and x.month < 202003) >= 2,
 
   'WorkingGroups', (
     select json_arrayagg(w.name)
@@ -97,7 +100,7 @@ from (
   select a.id, a.name, a.email, a.phone, a.location, a.facebook, a.activist_level, a.dob, a.date_organizer,
     e.month, count(e.id) as subtotal,
     max(e.community) as community, max(e.direct_action) as direct_action,
-    (max(e.direct_action) and (max(e.community) or (e.month >= 202001 and e.month <= 202002))) as mpi,
+    (max(e.direct_action) and (max(e.community) or (e.month >= 202001 and e.month < 202003))) as mpi,
     json_arrayagg(json_object(
       'Date', e.date,
       'Name', e.name,
@@ -254,16 +257,23 @@ table.profile td:nth-child(1), table.election, td:nth-child(1) {
 <tr><td><a href="https://docs.google.com/document/d/1QnJXz8YuQeBL0cz4iK60mOvQfDN1vd7SBwvVhRFDHNc/preview">Activist Level</a>:</td><td>{{.ActivistLevel}}</td></tr>
 </table>
 
-<h2>Elections</h2>
+<h2>Voter Eligibility</h2>
 
 <table class="elections">
 <tr>
-  <td><a href="https://docs.dxesf.org/#33-organizers">Eligible to Vote</a>:</td>
-  <td>{{if .EligibleVoter}}Yes{{else}}No{{end}}</td>
+  <th>Month</th>
+  <th><a href="https://docs.dxesf.org/#32-chapter-members">Chapter Member Votes</a></th>
+  <th><a href="https://docs.dxesf.org/#33-organizers">Organizer Votes</a></th>
 </tr>
 <tr>
-  <td><a href="https://docs.dxesf.org/#43-nomination-procedure-time-of-elections">Eligible for Nomination</a>:</td>
-  <td>{{if .EligibleNomination}}Yes{{else}}No{{end}}</td>
+  <td>February 2020</td>
+  <td>{{if (.ChapterMember) (.FebVoter)}}Yes{{else}}No{{end}}</td>
+  <td>{{if (.Organizer) (.FebVoter)}}Yes{{else}}No{{end}}</td>
+</tr>
+<tr>
+  <td>March 2020</td>
+  <td>{{if (.ChapterMember) (.MarVoter)}}Yes{{else}}No{{end}}</td>
+  <td>{{if (.Organizer) (.MarVoter)}}Yes{{else}}No{{end}}</td>
 </tr>
 </table>
 
