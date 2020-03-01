@@ -269,13 +269,13 @@ table.profile td:nth-child(1), table.election, td:nth-child(1) {
 </tr>
 <tr>
   <td>February 2020</td>
-  <td>{{if (.ChapterMember) (.FebVoter)}}Yes{{else}}No{{end}}</td>
-  <td>{{if (.Organizer) (.FebVoter)}}Yes{{else}}No{{end}}</td>
+  <td>{{if and .ChapterMember .FebVoter}}Yes{{else}}No{{end}}</td>
+  <td>{{if and .Organizer .FebVoter}}Yes{{else}}No{{end}}</td>
 </tr>
 <tr>
   <td>March 2020</td>
-  <td>{{if (.ChapterMember) (.MarVoter)}}Yes{{else}}No{{end}}</td>
-  <td>{{if (.Organizer) (.MarVoter)}}Yes{{else}}No{{end}}</td>
+  <td>{{if and .ChapterMember .MarVoter}}Yes{{else}}No{{end}}</td>
+  <td>{{if and .Organizer .MarVoter}}Yes{{else}}No{{end}}</td>
 </tr>
 </table>
 
@@ -304,7 +304,7 @@ a <b class="gray">gray</b> bar indicates you did not.</p>
 <table class="attendance">
 {{range .Attendance}}
 <tr class="month {{if .MPI}}mpi{{end}}">
-  <td>{{if .Community}}🏙️{{else if (ge .Month 202001) (le .Month 202002)}}🆓{{end}}</td>
+  <td>{{if .Community}}🏙️{{else if and (ge .Month 202001) (le .Month 202002)}}🆓{{end}}</td>
   <td>{{if .DirectAction}}📣{{end}}</td>
   <td colspan=2>{{monthfmt .Month}}</td>
 </tr>
