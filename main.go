@@ -29,18 +29,18 @@ import (
 
 func flashMessageSuccess(w http.ResponseWriter, message string) {
 	http.SetCookie(w, &http.Cookie{
-		Name:     "flash_message_success",
-		Value:    message,
-		Path:     "/",
+		Name:  "flash_message_success",
+		Value: message,
+		Path:  "/",
 		//SameSite: http.SameSiteStrictMode,
 	})
 }
 
 func flashMesssageError(w http.ResponseWriter, message string) {
 	http.SetCookie(w, &http.Cookie{
-		Name:     "flash_message_error",
-		Value:    message,
-		Path:     "/",
+		Name:  "flash_message_error",
+		Value: message,
+		Path:  "/",
 		//SameSite: http.SameSiteStrictMode,
 	})
 }
@@ -400,10 +400,10 @@ func (c MainController) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 func (c MainController) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	cookie := &http.Cookie{
-		Name:     "auth-session",
-		Value:    "",
-		Path:     "/",
-		MaxAge:   -1,
+		Name:   "auth-session",
+		Value:  "",
+		Path:   "/",
+		MaxAge: -1,
 		//SameSite: http.SameSiteStrictMode,
 	}
 
