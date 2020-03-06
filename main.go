@@ -29,19 +29,19 @@ import (
 
 func flashMessageSuccess(w http.ResponseWriter, message string) {
 	http.SetCookie(w, &http.Cookie{
-		Name:  "flash_message_success",
-		Value: message,
-		Path:  "/",
-		//SameSite: http.SameSiteStrictMode,
+		Name:     "flash_message_success",
+		Value:    message,
+		Path:     "/",
+		SameSite: http.SameSiteLaxMode,
 	})
 }
 
 func flashMesssageError(w http.ResponseWriter, message string) {
 	http.SetCookie(w, &http.Cookie{
-		Name:  "flash_message_error",
-		Value: message,
-		Path:  "/",
-		//SameSite: http.SameSiteStrictMode,
+		Name:     "flash_message_error",
+		Value:    message,
+		Path:     "/",
+		SameSite: http.SameSiteLaxMode,
 	})
 }
 
@@ -222,7 +222,7 @@ func (c MainController) authRoleMiddleware(h http.Handler, allowedRoles []string
 				Path:     "/",
 				MaxAge:   -1,
 				HttpOnly: true,
-				//SameSite: http.SameSiteStrictMode,
+				SameSite: http.SameSiteLaxMode,
 			}
 			http.SetCookie(w, c)
 
@@ -400,11 +400,11 @@ func (c MainController) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 func (c MainController) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	cookie := &http.Cookie{
-		Name:   "auth-session",
-		Value:  "",
-		Path:   "/",
-		MaxAge: -1,
-		//SameSite: http.SameSiteStrictMode,
+		Name:     "auth-session",
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		SameSite: http.SameSiteLaxMode,
 	}
 
 	http.SetCookie(w, cookie)
