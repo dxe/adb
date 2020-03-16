@@ -198,10 +198,12 @@ export default Vue.extend({
       // try to save twice. Re-enable it when we get any response back
       // from the server (even an error).
       this.disableConfirmButton = true;
+      const csrfToken = $('meta[name="csrf-token"]').attr("content")
 
       $.ajax({
         url: '/user/save',
         method: 'POST',
+        headers: { "X-CSRF-Token": csrfToken },
         contentType: 'application/json',
         data: JSON.stringify(this.currentUser),
         success: (data) => {
