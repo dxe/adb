@@ -20,7 +20,8 @@ var (
 	Route1 = mustGetenv("ROUTE_1", "/route1", true)
 	Route2 = mustGetenv("ROUTE_2", "/route2", true)
 
-	CookieSecret = mustGetenv("COOKIE_SECRET", "some-fake-secret", true)
+	CookieSecret = mustGetenv("COOKIE_SECRET", "some-fake-secret")
+	CsrfAuthKey = mustGetenv("CSRF_AUTH_KEY", "")
 
 	// Path to Google API oauth client_secrets.json file, with
 	// access to the following scope:

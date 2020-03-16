@@ -117,7 +117,11 @@ func noCacheHandler(h http.Handler) http.Handler {
 func router() (*mux.Router, *sqlx.DB) {
 	db := model.NewDB(config.DBDataSource())
 	main := MainController{db: db}
-	csrfMiddleware := csrf.Protect([]byte("1FnjxBuVHvLvvIN6mpjabBR0O3eJvKxu"))
+	csrfMiddleware := csrf.Protect(
+		[]byte(config.CsrfAuthKey),
+		csrf.Secure(config.IsProd), // disable secure flag in dev
+		csrf.Path("/"),
+	)
 
 	router := mux.NewRouter()
 	members.Route(router.PathPrefix("/members").Subrouter(), db)
@@ -855,7 +859,7 @@ func (c MainController) EventGetHandler(w http.ResponseWriter, r *http.Request) 
 func (c MainController) EventSaveHandler(w http.ResponseWriter, r *http.Request) {
 	event, err := model.CleanEventData(c.db, r.Body)
 	if err != nil {
-		sendErrorMessage(w, err) // TODO: don't send error message to user
+		sendErrorMessage(w, err)
 		return
 	}
 
@@ -1312,6 +1316,5 @@ func main() {
 
 	fmt.Println("IsProd =", config.IsProd)
 	fmt.Println("Listening on localhost:" + config.Port)
-	// CSRF := csrf.Protect([]byte("1FnjxBuVHvLvvIN6mpjabBR0O3eJvKxu"))
 	log.Fatal(http.ListenAndServe(":"+config.Port, n))
 }
