@@ -198,10 +198,12 @@ export default Vue.extend({
       // try to save twice. Re-enable it when we get any response back
       // from the server (even an error).
       this.disableConfirmButton = true;
+      const csrfToken = $('meta[name="csrf-token"]').attr('content');
 
       $.ajax({
         url: '/user/save',
         method: 'POST',
+        headers: { 'X-CSRF-Token': csrfToken },
         contentType: 'application/json',
         data: JSON.stringify(this.currentUser),
         success: (data) => {
@@ -316,10 +318,12 @@ export default Vue.extend({
       // If the specified Role already exists in the Current User's role list,
       // then we assume the role should be removed.
       const existingRole = this.currentUser.roles.indexOf(role) >= 0;
+      const csrfToken = $('meta[name="csrf-token"]').attr('content');
 
       $.ajax({
         url: existingRole ? '/users-roles/remove' : '/users-roles/add',
         method: 'POST',
+        headers: { 'X-CSRF-Token': csrfToken },
         contentType: 'application/json',
         data: JSON.stringify({
           user_id: this.currentUser.id,

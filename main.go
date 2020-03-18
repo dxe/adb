@@ -19,6 +19,7 @@ import (
 	"github.com/dxe/adb/model"
 	"github.com/dxe/adb/survey_mailer"
 	"github.com/getsentry/sentry-go"
+	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/jmoiron/sqlx"
@@ -116,9 +117,17 @@ func noCacheHandler(h http.Handler) http.Handler {
 func router() (*mux.Router, *sqlx.DB) {
 	db := model.NewDB(config.DBDataSource())
 	main := MainController{db: db}
+	csrfMiddleware := csrf.Protect(
+		[]byte(config.CsrfAuthKey),
+		csrf.Secure(config.IsProd), // disable secure flag in dev
+		csrf.Path("/"),
+	)
 
 	router := mux.NewRouter()
 	members.Route(router.PathPrefix("/members").Subrouter(), db)
+
+	admin := router.PathPrefix("").Subrouter()
+	admin.Use(csrfMiddleware)
 
 	// Unauthed pages
 	router.HandleFunc("/login", main.LoginHandler)
@@ -153,7 +162,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/list_circles", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListCirclesHandler))
 
 	// Authed Admin pages
-	router.Handle("/admin/users", alice.New(main.authAdminMiddleware).ThenFunc(main.ListUsersHandler))
+	admin.Handle("/admin/users", alice.New(main.authAdminMiddleware).ThenFunc(main.ListUsersHandler))
 
 	// Unauthed API
 	router.HandleFunc("/tokensignin", main.TokenSignInHandler)
@@ -184,12 +193,12 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/circle/delete", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.CircleGroupDeleteHandler))
 
 	// Authed Admin API
-	router.Handle("/user/list", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserListHandler))
-	router.Handle("/user/save", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserSaveHandler))
-	router.Handle("/user/delete", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserDeleteHandler))
+	admin.Handle("/user/list", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserListHandler))
+	admin.Handle("/user/save", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserSaveHandler))
+	admin.Handle("/user/delete", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserDeleteHandler))
 	// Authed Admin API for managing Users Roles
-	router.Handle("/users-roles/add", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UsersRolesAddHandler))
-	router.Handle("/users-roles/remove", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UsersRolesRemoveHandler))
+	admin.Handle("/users-roles/add", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UsersRolesAddHandler))
+	admin.Handle("/users-roles/remove", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UsersRolesRemoveHandler))
 
 	// Pprof debug routes
 	router.HandleFunc("/debug/pprof/", pprof.Index)
@@ -608,6 +617,7 @@ var templates = template.Must(template.New("").Funcs(
 type PageData struct {
 	PageName  string
 	Data      interface{}
+	CsrfField string
 	MainRole  string
 	UserName  string
 	UserEmail string
@@ -618,6 +628,7 @@ type PageData struct {
 // Render a page. All templates that load a header expect a PageData
 // object.
 func renderPage(w io.Writer, r *http.Request, name string, pageData PageData) {
+	pageData.CsrfField = csrf.Token(r)
 	pageData.StaticResourcesHash = config.StaticResourcesHash()
 	pageData.MainRole = getUserMainRole(getUserFromContext(r.Context()))
 	pageData.UserName = getUserName(getUserFromContext(r.Context()))
