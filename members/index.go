@@ -40,8 +40,8 @@ func (s *server) index() {
 
 		Organizer     int // boolean
 		ChapterMember int // boolean
-		FebVoter      bool
-		MarVoter      bool
+		AprVoter      bool
+		MayVoter      bool
 
 		WorkingGroups []string
 
@@ -78,8 +78,8 @@ select json_object(
   'Organizer', x.activist_level in ('Organizer', 'Senior Organizer'),
   'ChapterMember', x.activist_level in ('Chapter Member', 'Organizer', 'Senior Organizer'),
 
-  'FebVoter', sum(x.mpi and x.month >= 201911 and x.month < 202002) >= 2,
-  'MarVoter', sum(x.mpi and x.month >= 201912 and x.month < 202003) >= 2,
+  'AprVoter', sum(x.mpi and x.month >= 202001 and x.month < 202004) >= 2,
+  'MayVoter', sum(x.mpi and x.month >= 202002 and x.month < 202005) >= 2,
 
   'WorkingGroups', (
     select json_arrayagg(w.name)
@@ -102,7 +102,7 @@ from (
   select a.id, a.name, a.email, a.phone, a.location, a.facebook, a.activist_level, a.dob, a.date_organizer,
     e.month, count(e.id) as subtotal,
     max(e.community) as community, max(e.direct_action) as direct_action,
-    (max(e.direct_action) and (max(e.community) or (e.month >= 202001 and e.month < 202003))) as mpi,
+    (max(e.direct_action) and (max(e.community) or e.month >= 202001)) as mpi,
     json_arrayagg(json_object(
       'Date', e.date,
       'Name', e.name,
@@ -268,14 +268,14 @@ table.profile td:nth-child(1), table.election, td:nth-child(1) {
   <th><a href="https://docs.dxesf.org/#33-organizers">Organizer Votes</a></th>
 </tr>
 <tr>
-  <td>February 2020</td>
-  <td>{{if and .ChapterMember .FebVoter}}Yes{{else}}No{{end}}</td>
-  <td>{{if and .Organizer .FebVoter}}Yes{{else}}No{{end}}</td>
+  <td>April 2020</td>
+  <td>{{if and .ChapterMember .AprVoter}}Yes{{else}}No{{end}}</td>
+  <td>{{if and .Organizer .AprVoter}}Yes{{else}}No{{end}}</td>
 </tr>
 <tr>
-  <td>March 2020</td>
-  <td>{{if and .ChapterMember .MarVoter}}Yes{{else}}No{{end}}</td>
-  <td>{{if and .Organizer .MarVoter}}Yes{{else}}No{{end}}</td>
+  <td>May 2020</td>
+  <td>{{if and .ChapterMember .MayVoter}}Yes{{else}}No{{end}}</td>
+  <td>{{if and .Organizer .MayVoter}}Yes{{else}}No{{end}}</td>
 </tr>
 </table>
 
@@ -304,7 +304,7 @@ a <b class="gray">gray</b> bar indicates you did not.</p>
 <table class="attendance">
 {{range .Attendance}}
 <tr class="month {{if .MPI}}mpi{{end}}">
-  <td>{{if .Community}}🏙️{{else if and (ge .Month 202001) (le .Month 202002)}}🆓{{end}}</td>
+  <td>{{if .Community}}🏙️{{else if (ge .Month 202001)}}🆓{{end}}</td>
   <td>{{if .DirectAction}}📣{{end}}</td>
   <td colspan=2>{{monthfmt .Month}}</td>
 </tr>
