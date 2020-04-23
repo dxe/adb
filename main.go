@@ -14,6 +14,7 @@ import (
 
 	oidc "github.com/coreos/go-oidc"
 	"github.com/dxe/adb/config"
+	"github.com/dxe/adb/facebook_events"
 	"github.com/dxe/adb/mailinglist_sync"
 	"github.com/dxe/adb/members"
 	"github.com/dxe/adb/model"
@@ -166,10 +167,13 @@ func router() (*mux.Router, *sqlx.DB) {
 
 	// Unauthed API
 	router.HandleFunc("/tokensignin", main.TokenSignInHandler)
-	router.HandleFunc(config.Route0, main.TransposedEventsDataJsonHandler)
-	router.HandleFunc("/wallboard_mpi", main.newPowerWallboard)                    // new endpoint for arc tv to get mpi
-	router.HandleFunc("/wallboard_chaptermembers", main.newChapterMemberWallboard) // new endpoint for arc tv to get chapter members
-	router.HandleFunc(config.Route2, main.ActivistListHandler)                     // used for connections google sheet
+	router.HandleFunc("/fb_events/{page_id:[0-9]+}", main.ListFBEventsHandler)  
+
+	// Defunct Unauthed API
+	//router.HandleFunc(config.Route0, main.TransposedEventsDataJsonHandler)
+	//router.HandleFunc("/wallboard_mpi", main.newPowerWallboard)                    // new endpoint for arc tv to get mpi
+	//router.HandleFunc("/wallboard_chaptermembers", main.newChapterMemberWallboard) // new endpoint for arc tv to get chapter members
+	//router.HandleFunc(config.Route2, main.ActivistListHandler)                     // used for connections google sheet
 
 	// Authed API
 	router.Handle("/activist_names/get", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteActivistsHandler))
@@ -702,19 +706,20 @@ func (c MainController) UpdateConnectionHandler(w http.ResponseWriter, r *http.R
 	})
 }
 
-func (c MainController) TransposedEventsDataJsonHandler(w http.ResponseWriter, r *http.Request) {
-	events, err := model.GetEventsJSON(c.db, model.GetEventOptions{
-		OrderBy:   "e.date ASC",
-		DateFrom:  "2017-01-01",
-		DateTo:    "",
-		EventType: "",
-	})
-	if err != nil {
-		panic(err)
-	}
+// DEFUNCT
+// func (c MainController) TransposedEventsDataJsonHandler(w http.ResponseWriter, r *http.Request) {
+// 	events, err := model.GetEventsJSON(c.db, model.GetEventOptions{
+// 		OrderBy:   "e.date ASC",
+// 		DateFrom:  "2017-01-01",
+// 		DateTo:    "",
+// 		EventType: "",
+// 	})
+// 	if err != nil {
+// 		panic(err)
+// 	}
 
-	writeJSON(w, events)
-}
+// 	writeJSON(w, events)
+// }
 
 func (c MainController) AutocompleteActivistsHandler(w http.ResponseWriter, r *http.Request) {
 	names := model.GetAutocompleteNames(c.db)
@@ -1205,29 +1210,30 @@ func (c MainController) UserDeleteHandler(w http.ResponseWriter, r *http.Request
 	writeJSON(w, out)
 }
 
-func (c MainController) newPowerWallboard(w http.ResponseWriter, r *http.Request) {
-	power, err := model.GetPower(c.db)
-	if err != nil {
-		panic(err)
-	}
+// DEFUNCT
+// func (c MainController) newPowerWallboard(w http.ResponseWriter, r *http.Request) {
+// 	power, err := model.GetPower(c.db)
+// 	if err != nil {
+// 		panic(err)
+// 	}
 
-	writeJSON(w, map[string]interface{}{
-		"status": "success",
-		"Power":  power,
-	})
-}
+// 	writeJSON(w, map[string]interface{}{
+// 		"status": "success",
+// 		"Power":  power,
+// 	})
+// }
 
-func (c MainController) newChapterMemberWallboard(w http.ResponseWriter, r *http.Request) {
-	members, err := model.GetActiveChapterMembers(c.db)
-	if err != nil {
-		panic(err)
-	}
+// func (c MainController) newChapterMemberWallboard(w http.ResponseWriter, r *http.Request) {
+// 	members, err := model.GetActiveChapterMembers(c.db)
+// 	if err != nil {
+// 		panic(err)
+// 	}
 
-	writeJSON(w, map[string]interface{}{
-		"status":  "success",
-		"Members": members,
-	})
-}
+// 	writeJSON(w, map[string]interface{}{
+// 		"status":  "success",
+// 		"Members": members,
+// 	})
+// }
 
 func (c MainController) UsersRolesAddHandler(w http.ResponseWriter, r *http.Request) {
 	var userRoleData struct {
@@ -1287,6 +1293,39 @@ func (c MainController) UsersRolesRemoveHandler(w http.ResponseWriter, r *http.R
 	})
 }
 
+func (c MainController) ListFBEventsHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	var pageID int
+	if pageIDStr, ok := vars["page_id"]; ok {
+		var err error
+		pageID, err = strconv.Atoi(pageIDStr)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	events, err := model.GetFacebookEvents(c.db, pageID)
+	if err != nil {
+		panic(err)
+	}
+
+	writeJSON(w, events)
+}
+
+
+// func (c MainController) newChapterMemberWallboard(w http.ResponseWriter, r *http.Request) {
+// 	members, err := model.GetActiveChapterMembers(c.db)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+
+// 	writeJSON(w, map[string]interface{}{
+// 		"status":  "success",
+// 		"Members": members,
+// 	})
+// }
+
+
 func main() {
 	sentry.Init(sentry.ClientOptions{
 		Dsn: "https://dc89e0cef6204791a1f199564aec911c@sentry.io/1820804",
@@ -1310,6 +1349,9 @@ func main() {
 	if config.SurveyMissingEmail != "" && config.SurveyFromEmail != "" && config.AWSAccessKey != "" && config.AWSSecretKey != "" && config.AWSSESEndpoint != "" {
 		go survey_mailer.StartSurveyMailer(db)
 	}
+
+	// Start syncing Facebook events
+	go facebook_events.StartFacebookSync(db)
 
 	// Set up server
 	n.UseHandler(r)
