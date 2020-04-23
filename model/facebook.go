@@ -95,12 +95,12 @@ func GetFacebookPages(db *sqlx.DB) ([]FacebookPage, error) {
 }
 
 func FindNearestFacebookPage(db *sqlx.DB, lat float64, lng float64) ([]FacebookPageOutput, error) {
+	// if this is too broad, we can add "HAVING distance < 100" to query to limit to 100 miles
+	// or maybe it would be better to just check on the frontend if the closest is over 100 miles
 	query := `SELECT id, name, (3959*acos(cos(radians(` + fmt.Sprintf("%f", lat) + `))*cos(radians(lat))* 
 		cos(radians(lng)-radians(` + fmt.Sprintf("%f", lng) + `))+sin(radians(` + fmt.Sprintf("%f", lat) + `))* 
 		sin(radians(lat)))) AS distance
 		FROM fb_pages
-		HAVING
-		distance < 25
 		ORDER BY distance
 		LIMIT 3`
 	var page []FacebookPageOutput
