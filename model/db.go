@@ -29,6 +29,8 @@ func WipeDatabase(db *sqlx.DB) {
 	db.MustExec(`DROP TABLE IF EXISTS working_group_members`)
 	db.MustExec(`DROP TABLE IF EXISTS circles`)
 	db.MustExec(`DROP TABLE IF EXISTS circle_members`)
+	db.MustExec(`DROP TABLE IF EXISTS fb_pages`)
+	db.MustExec(`DROP TABLE IF EXISTS fb_events`)
 
 	db.MustExec(`
 CREATE TABLE activists (
@@ -202,7 +204,43 @@ CREATE TABLE users_roles (
     FOREIGN KEY (user_id)
     REFERENCES adb_users (id)
     ON DELETE NO ACTION
-    ON UPDATE NO ACTION);
+    ON UPDATE NO ACTION
+)
+`)
+
+	db.MustExec(`
+CREATE TABLE fb_pages (
+  id BIGINT PRIMARY KEY,
+  name VARCHAR(75) NOT NULL,
+  lat FLOAT(10,6) DEFAULT NULL,
+  lng FLOAT(10,6) DEFAULT NULL,
+  token VARCHAR(200) NOT NULL
+)
+`)
+
+	db.MustExec(`
+CREATE TABLE fb_events (
+  id BIGINT NOT NULL,
+  page_id BIGINT NOT NULL,
+  name VARCHAR(64) NOT NULL,
+  description TEXT,
+  start_time DATETIME NOT NULL,
+  end_time DATETIME NOT NULL,
+  location_name VARCHAR(140),
+  location_city VARCHAR(200),
+  location_country VARCHAR(200),
+  location_state VARCHAR(200),
+  location_address VARCHAR(200),
+  location_zip VARCHAR(20),
+  lat FLOAT(10,6) DEFAULT NULL,
+  lng FLOAT(10,6) DEFAULT NULL,
+  cover VARCHAR(300),
+  attending_count MEDIUMINT NOT NULL DEFAULT '0',
+  interested_count MEDIUMINT NOT NULL DEFAULT '0',
+  is_canceled TINYINT NOT NULL DEFAULT '0',
+  last_update TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id, page_id)
+)
 `)
 
 }
