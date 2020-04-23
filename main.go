@@ -1312,7 +1312,7 @@ func (c MainController) ListFBEventsHandler(w http.ResponseWriter, r *http.Reque
 	params := u.Query()
 	var startTimeStr string
 	var endTimeStr string
-	stringFormat := "[0-9]{4}-[0-9]{2}-[0-9]{2}"
+	stringFormat := "^[0-9]{4}-[0-9]{2}-[0-9]{2}$|^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}$"
 	if startTime, ok := params["start_time"]; ok {
 		startTimeStr = startTime[0]
 		match, _ := regexp.MatchString(stringFormat, startTimeStr)
