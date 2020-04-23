@@ -3,7 +3,7 @@ package model
 import (
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
-	"strings"
+	"strconv"
 	"time"
 )
 
@@ -92,15 +92,13 @@ func GetFacebookEvents(db *sqlx.DB, pageID int, startTime string, endTime string
 		location_country, location_country, location_state, location_address, location_zip,
 		lat, lng, cover, attending_count, interested_count, is_canceled, last_update FROM fb_events`
 
-	whereClause := []string{}
+	query += " WHERE page_id = " + strconv.Itoa(pageID)
+
 	if startTime != "" {
-		whereClause = append(whereClause, "start_time >= '"+startTime+"'")
+		query += " and start_time >= '" + startTime + "'"
 	}
 	if endTime != "" {
-		whereClause = append(whereClause, "end_time <= '"+endTime+"'")
-	}
-	if len(whereClause) != 0 {
-		query += " WHERE " + strings.Join(whereClause, " AND ")
+		query += " and end_time <= '" + endTime + "'"
 	}
 
 	query += " ORDER BY start_time"
