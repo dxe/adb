@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	"strconv"
@@ -74,6 +75,12 @@ type FacebookEventOutput struct {
 	LastUpdate      time.Time `db:"last_update"`
 }
 
+type FacebookPageOutput struct {
+	ID       int     `db:"id"`
+	Name     string  `db:"name"`
+	Distance float32 `db:"distance"`
+}
+
 func GetFacebookPages(db *sqlx.DB) ([]FacebookPage, error) {
 	query := `SELECT id, name, lat, lng, token FROM fb_pages`
 
@@ -85,6 +92,24 @@ func GetFacebookPages(db *sqlx.DB) ([]FacebookPage, error) {
 	}
 
 	return pages, nil
+}
+
+func FindNearestFacebookPage(db *sqlx.DB, lat float64, lng float64) ([]FacebookPageOutput, error) {
+	query := `SELECT id, name, (3959*acos(cos(radians(` + fmt.Sprintf("%f", lat) + `))*cos(radians(lat))* 
+		cos(radians(lng)-radians(` + fmt.Sprintf("%f", lng) + `))+sin(radians(` + fmt.Sprintf("%f", lat) + `))* 
+		sin(radians(lat)))) AS distance
+		FROM fb_pages
+		HAVING
+		distance < 25
+		ORDER BY distance
+		LIMIT 3`
+	var page []FacebookPageOutput
+	err := db.Select(&page, query)
+	if err != nil {
+		// error
+		return nil, errors.Wrap(err, "failed to select page")
+	}
+	return page, nil
 }
 
 func GetFacebookEvents(db *sqlx.DB, pageID int, startTime string, endTime string) ([]FacebookEventOutput, error) {
