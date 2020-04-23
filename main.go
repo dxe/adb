@@ -9,6 +9,8 @@ import (
 	"log"
 	"net/http"
 	"net/http/pprof"
+	"net/url"
+	"regexp"
 	"strconv"
 	"time"
 
@@ -1294,6 +1296,7 @@ func (c MainController) UsersRolesRemoveHandler(w http.ResponseWriter, r *http.R
 }
 
 func (c MainController) ListFBEventsHandler(w http.ResponseWriter, r *http.Request) {
+	// page ID (required)
 	vars := mux.Vars(r)
 	var pageID int
 	if pageIDStr, ok := vars["page_id"]; ok {
@@ -1304,11 +1307,40 @@ func (c MainController) ListFBEventsHandler(w http.ResponseWriter, r *http.Reque
 		}
 	}
 
-	events, err := model.GetFacebookEvents(c.db, pageID)
+	// start & end time (optional)
+	u, _ := url.Parse(r.URL.String())
+	params := u.Query()
+	var startTimeStr string
+	var endTimeStr string
+	stringFormat := "[0-9]{4}-[0-9]{2}-[0-9]{2}"
+	if startTime, ok := params["start_time"]; ok {
+		startTimeStr = startTime[0]
+		match, _ := regexp.MatchString(stringFormat, startTimeStr)
+		if !match {
+			writeJSON(w, map[string]interface{}{
+				"error": "start_time format incorrect",
+			})
+			return
+		}
+	}
+	if endTime, ok := params["end_time"]; ok {
+		endTimeStr = endTime[0]
+		match, _ := regexp.MatchString(stringFormat, endTimeStr)
+		if !match {
+			writeJSON(w, map[string]interface{}{
+				"error": "end_time format incorrect",
+			})
+			return
+		}
+	}
+
+	// run query
+	events, err := model.GetFacebookEvents(c.db, pageID, startTimeStr, endTimeStr)
 	if err != nil {
 		panic(err)
 	}
 
+	// return json
 	writeJSON(w, events)
 }
 
