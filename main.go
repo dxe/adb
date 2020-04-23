@@ -170,6 +170,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	// Unauthed API
 	router.HandleFunc("/tokensignin", main.TokenSignInHandler)
 	router.HandleFunc("/fb_events/{page_id:[0-9]+}", main.ListFBEventsHandler)
+	router.HandleFunc("/fb_page/{lat:[0-9.\\-]+},{lng:[0-9.\\-]+}", main.FindNearestFacebookPageHandler)
 
 	// Defunct Unauthed API
 	//router.HandleFunc(config.Route0, main.TransposedEventsDataJsonHandler)
@@ -708,21 +709,6 @@ func (c MainController) UpdateConnectionHandler(w http.ResponseWriter, r *http.R
 	})
 }
 
-// DEFUNCT
-// func (c MainController) TransposedEventsDataJsonHandler(w http.ResponseWriter, r *http.Request) {
-// 	events, err := model.GetEventsJSON(c.db, model.GetEventOptions{
-// 		OrderBy:   "e.date ASC",
-// 		DateFrom:  "2017-01-01",
-// 		DateTo:    "",
-// 		EventType: "",
-// 	})
-// 	if err != nil {
-// 		panic(err)
-// 	}
-
-// 	writeJSON(w, events)
-// }
-
 func (c MainController) AutocompleteActivistsHandler(w http.ResponseWriter, r *http.Request) {
 	names := model.GetAutocompleteNames(c.db)
 	writeJSON(w, map[string][]string{
@@ -1212,31 +1198,6 @@ func (c MainController) UserDeleteHandler(w http.ResponseWriter, r *http.Request
 	writeJSON(w, out)
 }
 
-// DEFUNCT
-// func (c MainController) newPowerWallboard(w http.ResponseWriter, r *http.Request) {
-// 	power, err := model.GetPower(c.db)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-
-// 	writeJSON(w, map[string]interface{}{
-// 		"status": "success",
-// 		"Power":  power,
-// 	})
-// }
-
-// func (c MainController) newChapterMemberWallboard(w http.ResponseWriter, r *http.Request) {
-// 	members, err := model.GetActiveChapterMembers(c.db)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-
-// 	writeJSON(w, map[string]interface{}{
-// 		"status":  "success",
-// 		"Members": members,
-// 	})
-// }
-
 func (c MainController) UsersRolesAddHandler(w http.ResponseWriter, r *http.Request) {
 	var userRoleData struct {
 		UserID int    `json:"user_id"`
@@ -1344,17 +1305,36 @@ func (c MainController) ListFBEventsHandler(w http.ResponseWriter, r *http.Reque
 	writeJSON(w, events)
 }
 
-// func (c MainController) newChapterMemberWallboard(w http.ResponseWriter, r *http.Request) {
-// 	members, err := model.GetActiveChapterMembers(c.db)
-// 	if err != nil {
-// 		panic(err)
-// 	}
+func (c MainController) FindNearestFacebookPageHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("hello")
+	// lat, lng
+	vars := mux.Vars(r)
+	var lat float64
+	var lng float64
+	if latStr, ok := vars["lat"]; ok {
+		var err error
+		lat, err = strconv.ParseFloat(latStr, 64)
+		if err != nil {
+			panic(err)
+		}
+	}
+	if lngStr, ok := vars["lng"]; ok {
+		var err error
+		lng, err = strconv.ParseFloat(lngStr, 64)
+		if err != nil {
+			panic(err)
+		}
+	}
 
-// 	writeJSON(w, map[string]interface{}{
-// 		"status":  "success",
-// 		"Members": members,
-// 	})
-// }
+	// run query
+	page, err := model.FindNearestFacebookPage(c.db, lat, lng)
+	if err != nil {
+		panic(err)
+	}
+
+	// return json
+	writeJSON(w, page)
+}
 
 func main() {
 	sentry.Init(sentry.ClientOptions{

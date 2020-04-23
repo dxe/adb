@@ -13,6 +13,7 @@ require (
 	github.com/gorilla/sessions v1.2.0
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/justinas/alice v1.2.0
+	github.com/martinlindhe/google-geolocate v0.0.0-20170601090011-fec8026db902
 	github.com/pkg/errors v0.8.1
 	github.com/pquerna/cachecontrol v0.0.0-20180517163645-1555304b9b35 // indirect
 	github.com/sourcegraph/go-ses v0.0.0-20160405160939-6bd8d17cf7c1
