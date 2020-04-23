@@ -8,6 +8,7 @@ COPY main.go ./
 COPY config config/
 COPY mailinglist_sync mailinglist_sync/
 COPY survey_mailer survey_mailer/
+COPY facebook_events facebook_events/
 COPY members members/
 COPY model model/
 RUN CGO_ENABLED=0 go build -o adb
