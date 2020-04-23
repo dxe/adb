@@ -74,11 +74,6 @@ func syncFacebookEvents(db *sqlx.DB) {
 // Should be run in a goroutine.
 func StartFacebookSync(db *sqlx.DB) {
 
-	// test getting events by page id
-	//events, _ := model.GetFacebookEvents(db, 1377014279263790)
-	//log.Println("events:")
-	//log.Println(events)
-
 	for {
 		log.Println("Starting Facebook event sync")
 		syncFacebookEvents(db)

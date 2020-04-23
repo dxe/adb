@@ -51,25 +51,25 @@ type FacebookCoverJSON struct {
 }
 
 type FacebookEventOutput struct {
-	ID int `db:"id"`
-	PageID int `db:"page_id"`
-	Name string `db:"name"`
-	Description string `db:"description"`
-	StartTime time.Time `db:"start_time"`
-	EndTime time.Time `db:"end_time"`
-	LocationName string `db:"location_name"`
-	LocationCity string `db:"location_city"`
-	LocationCountry string `db:"location_country"`
-	LocationState string `db:"location_state"`
-	LocationAddress string `db:"location_address"`
-	LocationZip string `db:"location_zip"`
-	Lat float64 `db:"lat"`
-	Lng float64 `db:"lng"`
-	Cover string `db:"cover"`
-	AttendingCount int `db:"attending_count"`
-	InterestedCount int `db:"interested_count"`
-	IsCanceled bool `db:"is_canceled"`
-	LastUpdate time.Time `db:"last_update"`
+	ID              int       `db:"id"`
+	PageID          int       `db:"page_id"`
+	Name            string    `db:"name"`
+	Description     string    `db:"description"`
+	StartTime       time.Time `db:"start_time"`
+	EndTime         time.Time `db:"end_time"`
+	LocationName    string    `db:"location_name"`
+	LocationCity    string    `db:"location_city"`
+	LocationCountry string    `db:"location_country"`
+	LocationState   string    `db:"location_state"`
+	LocationAddress string    `db:"location_address"`
+	LocationZip     string    `db:"location_zip"`
+	Lat             float64   `db:"lat"`
+	Lng             float64   `db:"lng"`
+	Cover           string    `db:"cover"`
+	AttendingCount  int       `db:"attending_count"`
+	InterestedCount int       `db:"interested_count"`
+	IsCanceled      bool      `db:"is_canceled"`
+	LastUpdate      time.Time `db:"last_update"`
 }
 
 func GetFacebookPages(db *sqlx.DB) ([]FacebookPage, error) {

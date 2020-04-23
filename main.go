@@ -167,7 +167,7 @@ func router() (*mux.Router, *sqlx.DB) {
 
 	// Unauthed API
 	router.HandleFunc("/tokensignin", main.TokenSignInHandler)
-	router.HandleFunc("/fb_events/{page_id:[0-9]+}", main.ListFBEventsHandler)  
+	router.HandleFunc("/fb_events/{page_id:[0-9]+}", main.ListFBEventsHandler)
 
 	// Defunct Unauthed API
 	//router.HandleFunc(config.Route0, main.TransposedEventsDataJsonHandler)
@@ -1312,7 +1312,6 @@ func (c MainController) ListFBEventsHandler(w http.ResponseWriter, r *http.Reque
 	writeJSON(w, events)
 }
 
-
 // func (c MainController) newChapterMemberWallboard(w http.ResponseWriter, r *http.Request) {
 // 	members, err := model.GetActiveChapterMembers(c.db)
 // 	if err != nil {
@@ -1324,7 +1323,6 @@ func (c MainController) ListFBEventsHandler(w http.ResponseWriter, r *http.Reque
 // 		"Members": members,
 // 	})
 // }
-
 
 func main() {
 	sentry.Init(sentry.ClientOptions{
