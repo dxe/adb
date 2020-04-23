@@ -2,7 +2,6 @@ package facebook_events
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
@@ -19,17 +18,15 @@ func getFacebookEvents(page model.FacebookPage) []model.FacebookEventJSON {
 	if err != nil {
 		panic(err)
 	}
+	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		panic(resp.StatusCode)
 	}
-	defer resp.Body.Close()
-	// read the response
-	body, err := ioutil.ReadAll(resp.Body)
-	// unmarshal the json data
+	// read the response & decode the json data
 	data := model.FacebookResponseJSON{}
-	err = json.Unmarshal(body, &data)
+	err = json.NewDecoder(resp.Body).Decode(&data)
 	if err != nil {
-		panic(err.Error())
+		panic(err)
 	}
 	return data.Data
 }
@@ -45,6 +42,7 @@ func syncFacebookEvents(db *sqlx.DB) {
 	pages, err := model.GetFacebookPages(db)
 	if err != nil {
 		log.Println("ERROR:", err)
+		return
 	}
 	if pages == nil {
 		// stop if no pages in database
@@ -62,7 +60,7 @@ func syncFacebookEvents(db *sqlx.DB) {
 		// loop through events
 		for _, event := range events {
 			// insert (replace into) database
-			_, err = model.InsertFacebookEvent(db, event, page)
+			err = model.InsertFacebookEvent(db, event, page)
 			if err != nil {
 				log.Println("ERROR:", err)
 			}

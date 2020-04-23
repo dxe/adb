@@ -18,6 +18,7 @@ type FacebookResponseJSON struct {
 	Data []FacebookEventJSON `json:"data"`
 }
 
+// fb event schema: https://developers.facebook.com/docs/graph-api/reference/event/
 type FacebookEventJSON struct {
 	ID              string            `json:"id"`
 	Name            string            `json:"name"`
@@ -81,10 +82,6 @@ func GetFacebookPages(db *sqlx.DB) ([]FacebookPage, error) {
 		// error
 		return nil, errors.Wrap(err, "failed to select pages")
 	}
-	if len(pages) == 0 {
-		// no pages in database
-		return nil, nil
-	}
 
 	return pages, nil
 }
@@ -100,24 +97,17 @@ func GetFacebookEvents(db *sqlx.DB, pageID int) ([]FacebookEventOutput, error) {
 		// error
 		return nil, errors.Wrap(err, "failed to select events")
 	}
-	if len(events) == 0 {
-		// no pages in database
-		return nil, nil
-	}
 
 	return events, nil
 }
 
-func InsertFacebookEvent(db *sqlx.DB, event FacebookEventJSON, page FacebookPage) (nil, err error) { // we don't really need to return anything unless there's an error
-	tx, err := db.Beginx()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create transaction")
-	}
+func InsertFacebookEvent(db *sqlx.DB, event FacebookEventJSON, page FacebookPage) (err error) {
 	// parse fb's datetimes
 	fbTimeLayout := "2006-01-02T15:04:05-0700"
 	startTime, err := time.Parse(fbTimeLayout, event.StartTime)
 	endTime, err := time.Parse(fbTimeLayout, event.EndTime)
-	_, err = tx.Exec(`REPLACE INTO fb_events (id, page_id, name, description, start_time, end_time,
+	// insert into database
+	_, err = db.Exec(`REPLACE INTO fb_events (id, page_id, name, description, start_time, end_time,
 		location_name, location_city, location_country, location_state, location_address, location_zip,
 		lat, lng, cover, attending_count, interested_count, is_canceled, last_update) VALUES
 		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now())`,
@@ -127,12 +117,7 @@ func InsertFacebookEvent(db *sqlx.DB, event FacebookEventJSON, page FacebookPage
 		event.Place.Location.Zip, event.Place.Location.Lat, event.Place.Location.Lng, event.Cover.Source,
 		event.AttendingCount, event.InterestedCount, event.IsCanceled)
 	if err != nil {
-		tx.Rollback()
-		return nil, errors.Wrap(err, "failed to insert event")
+		return errors.Wrap(err, "failed to insert event")
 	}
-	if err := tx.Commit(); err != nil {
-		tx.Rollback()
-		return nil, errors.Wrap(err, "failed insert event transaction")
-	}
-	return nil, nil
+	return nil
 }
