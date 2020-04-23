@@ -3,6 +3,7 @@ package model
 import (
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
+	"strings"
 	"time"
 )
 
@@ -86,10 +87,23 @@ func GetFacebookPages(db *sqlx.DB) ([]FacebookPage, error) {
 	return pages, nil
 }
 
-func GetFacebookEvents(db *sqlx.DB, pageID int) ([]FacebookEventOutput, error) {
+func GetFacebookEvents(db *sqlx.DB, pageID int, startTime string, endTime string) ([]FacebookEventOutput, error) {
 	query := `SELECT id, page_id, name, description, start_time, end_time, location_name,
 		location_country, location_country, location_state, location_address, location_zip,
 		lat, lng, cover, attending_count, interested_count, is_canceled, last_update FROM fb_events`
+
+	whereClause := []string{}
+	if startTime != "" {
+		whereClause = append(whereClause, "start_time >= '"+startTime+"'")
+	}
+	if endTime != "" {
+		whereClause = append(whereClause, "end_time <= '"+endTime+"'")
+	}
+	if len(whereClause) != 0 {
+		query += " WHERE " + strings.Join(whereClause, " AND ")
+	}
+
+	query += " ORDER BY start_time"
 
 	var events []FacebookEventOutput
 	err := db.Select(&events, query)
@@ -105,7 +119,9 @@ func InsertFacebookEvent(db *sqlx.DB, event FacebookEventJSON, page FacebookPage
 	// parse fb's datetimes
 	fbTimeLayout := "2006-01-02T15:04:05-0700"
 	startTime, err := time.Parse(fbTimeLayout, event.StartTime)
+	startTime = startTime.UTC()
 	endTime, err := time.Parse(fbTimeLayout, event.EndTime)
+	endTime = endTime.UTC()
 	// insert into database
 	_, err = db.Exec(`REPLACE INTO fb_events (id, page_id, name, description, start_time, end_time,
 		location_name, location_city, location_country, location_state, location_address, location_zip,
