@@ -57,6 +57,12 @@ func syncFacebookEvents(db *sqlx.DB) {
 		// make call to fb api
 		events := getFacebookEvents(page)
 
+		// if no events returned, make note in log
+		if len(events) == 0 {
+			log.Println("No events returned for", page.Name)
+			return
+		}
+
 		// loop through events
 		for _, event := range events {
 			// insert (replace into) database
