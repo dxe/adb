@@ -137,7 +137,9 @@ func GetFacebookEvents(db *sqlx.DB, pageID int, startTime string, endTime string
 		query += " and start_time >= '" + startTime + "'"
 	}
 	if endTime != "" {
-		query += " and end_time <= '" + endTime + "'"
+		// we actually want to show events which have a START time before the query's end time
+		// otherwise really long (or recurring) events could be hidden
+		query += " and start_time <= '" + endTime + "'"
 	}
 
 	query += " ORDER BY start_time"
