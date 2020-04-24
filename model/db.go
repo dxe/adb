@@ -210,11 +210,14 @@ CREATE TABLE users_roles (
 
 	db.MustExec(`
 CREATE TABLE fb_pages (
-  id BIGINT PRIMARY KEY,
-  name VARCHAR(75) NOT NULL,
-  lat FLOAT(10,6) DEFAULT NULL,
-  lng FLOAT(10,6) DEFAULT NULL,
-  token VARCHAR(200) NOT NULL
+  id BIGINT(16) NOT NULL DEFAULT '0',
+  name VARCHAR(75) PRIMARY KEY,
+  region ENUM('','North America','Central & South America','Europe','Middle East & Africa','Asia-Pacific','Online') NOT NULL DEFAULT '',
+  flag VARCHAR(2) NOT NULL DEFAULT '',
+  lat FLOAT(10,6) NOT NULL DEFAULT '0.000000',
+  lng FLOAT(10,6) NOT NULL DEFAULT '0.000000',
+  fb_url VARCHAR(100) NOT NULL,
+  token VARCHAR(200) NOT NULL DEFAULT ''
 )
 `)
 
