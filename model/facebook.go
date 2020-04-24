@@ -79,8 +79,8 @@ type FacebookPageOutput struct {
 	ID       int     `db:"id"`
 	Name     string  `db:"name"`
 	Flag     string  `db:"flag"`
-	FbURL     string  `db:"fb_url"`
-	Region     string  `db:"region"`
+	FbURL    string  `db:"fb_url"`
+	Region   string  `db:"region"`
 	Distance float32 `db:"distance"`
 }
 
@@ -129,10 +129,10 @@ func GetAllFBPages(db *sqlx.DB) (map[string][]FacebookPageOutput, error) {
 	}
 
 	regions := make(map[string][]FacebookPageOutput)
-    for _, p := range pages {
-        regions[p.Region] = append(regions[p.Region], p)
-    }
- 
+	for _, p := range pages {
+		regions[p.Region] = append(regions[p.Region], p)
+	}
+
 	//return pages grouped into regions, nil
 	return regions, nil
 }
