@@ -19,6 +19,7 @@ func getFacebookEvents(page model.FacebookPage) []model.FacebookEventJSON {
 		panic(err)
 	}
 	defer resp.Body.Close()
+	// TODO: we should handle errors better so we don't stop all pages from syncing
 	if resp.StatusCode != http.StatusOK {
 		panic(resp.StatusCode)
 	}
@@ -57,19 +58,17 @@ func syncFacebookEvents(db *sqlx.DB) {
 		// make call to fb api
 		events := getFacebookEvents(page)
 
-		// if no events returned, make note in log
-		if len(events) == 0 {
-			log.Println("No events returned for", page.Name)
-			return
-		}
-
-		// loop through events
-		for _, event := range events {
-			// insert (replace into) database
-			err = model.InsertFacebookEvent(db, event, page)
-			if err != nil {
-				log.Println("ERROR:", err)
+		if len(events) > 0 {
+			// loop through events
+			for _, event := range events {
+				// insert (replace into) database
+				err = model.InsertFacebookEvent(db, event, page)
+				if err != nil {
+					log.Println("ERROR:", err)
+				}
 			}
+		} else {
+			log.Println("No events returned for", page.Name)
 		}
 	}
 }
