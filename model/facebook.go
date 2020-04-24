@@ -114,7 +114,7 @@ func FindNearestFacebookPages(db *sqlx.DB, lat float64, lng float64) ([]Facebook
 }
 
 func GetAllFBPages(db *sqlx.DB) ([]FacebookPageOutput, error) {
-	query := `SELECT id, name
+	query := `SELECT ifnull(id,'0') as id, name
 		FROM fb_pages
 		ORDER BY name`
 	var pages []FacebookPageOutput
