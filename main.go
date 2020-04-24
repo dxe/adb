@@ -171,6 +171,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.HandleFunc("/tokensignin", main.TokenSignInHandler)
 	router.HandleFunc("/fb_events/{page_id:[0-9]+}", main.ListFBEventsHandler)
 	router.HandleFunc("/fb_page/{lat:[0-9.\\-]+},{lng:[0-9.\\-]+}", main.FindNearestFacebookPagesHandler)
+	router.HandleFunc("/fb_pages", main.ListAllFBPages)
 
 	// Defunct Unauthed API
 	//router.HandleFunc(config.Route0, main.TransposedEventsDataJsonHandler)
@@ -1306,7 +1307,6 @@ func (c MainController) ListFBEventsHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (c MainController) FindNearestFacebookPagesHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("hello")
 	// lat, lng
 	vars := mux.Vars(r)
 	var lat float64
@@ -1327,13 +1327,24 @@ func (c MainController) FindNearestFacebookPagesHandler(w http.ResponseWriter, r
 	}
 
 	// run query
-	page, err := model.FindNearestFacebookPages(c.db, lat, lng)
+	pages, err := model.FindNearestFacebookPages(c.db, lat, lng)
 	if err != nil {
 		panic(err)
 	}
 
 	// return json
-	writeJSON(w, page)
+	writeJSON(w, pages)
+}
+
+func (c MainController) ListAllFBPages(w http.ResponseWriter, r *http.Request) {
+	// run query
+	pages, err := model.GetAllFBPages(c.db)
+	if err != nil {
+		panic(err)
+	}
+
+	// return json
+	writeJSON(w, pages)
 }
 
 func main() {

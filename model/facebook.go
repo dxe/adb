@@ -81,7 +81,8 @@ type FacebookPageOutput struct {
 	Distance float32 `db:"distance"`
 }
 
-func GetFacebookPages(db *sqlx.DB) ([]FacebookPage, error) {
+// used for making api calls to facebook, not for responding to our api requests
+func GetFacebookPagesWithTokens(db *sqlx.DB) ([]FacebookPage, error) {
 	query := `SELECT id, name, lat, lng, token FROM fb_pages`
 
 	var pages []FacebookPage
@@ -103,13 +104,26 @@ func FindNearestFacebookPages(db *sqlx.DB, lat float64, lng float64) ([]Facebook
 		FROM fb_pages
 		ORDER BY distance
 		LIMIT 3`
-	var page []FacebookPageOutput
-	err := db.Select(&page, query)
+	var pages []FacebookPageOutput
+	err := db.Select(&pages, query)
 	if err != nil {
 		// error
-		return nil, errors.Wrap(err, "failed to select page")
+		return nil, errors.Wrap(err, "failed to select pages")
 	}
-	return page, nil
+	return pages, nil
+}
+
+func GetAllFBPages(db *sqlx.DB) ([]FacebookPageOutput, error) {
+	query := `SELECT id, name
+		FROM fb_pages
+		ORDER BY name`
+	var pages []FacebookPageOutput
+	err := db.Select(&pages, query)
+	if err != nil {
+		// error
+		return nil, errors.Wrap(err, "failed to select pages")
+	}
+	return pages, nil
 }
 
 func GetFacebookEvents(db *sqlx.DB, pageID int, startTime string, endTime string) ([]FacebookEventOutput, error) {
