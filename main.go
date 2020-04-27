@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	oidc "github.com/coreos/go-oidc"
@@ -47,6 +48,30 @@ func flashMesssageError(w http.ResponseWriter, message string) {
 		Path:     "/",
 		SameSite: http.SameSiteLaxMode,
 	})
+}
+
+type latLng struct {
+	Latitude  string `json:"latitude"`
+	Longitude string `json:"longitude"`
+}
+
+// getIP gets a requests IP address by reading off the forwarded-for
+// header (for proxies) and falls back to use the remote address.
+func getIP(r *http.Request) string {
+	forwarded := r.Header.Get("X-FORWARDED-FOR")
+	if forwarded != "" {
+		// if contains ":" then split at ":" and return [0]
+		return stripPort(forwarded)
+	}
+	return stripPort(r.RemoteAddr)
+}
+
+// removes port # from an ip string (e.g. 1.1.1.1:80 to 1.1.1.1)
+func stripPort(ip string) string {
+	if strings.Contains(ip, ":") {
+		return strings.Split(ip, ":")[0]
+	}
+	return ip
 }
 
 var sessionStore = sessions.NewCookieStore([]byte(config.CookieSecret))
@@ -1307,7 +1332,7 @@ func (c MainController) ListFBEventsHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (c MainController) FindNearestFacebookPagesHandler(w http.ResponseWriter, r *http.Request) {
-	// lat, lng
+	// get lat, lng
 	vars := mux.Vars(r)
 	var lat float64
 	var lng float64
@@ -1321,6 +1346,39 @@ func (c MainController) FindNearestFacebookPagesHandler(w http.ResponseWriter, r
 	if lngStr, ok := vars["lng"]; ok {
 		var err error
 		lng, err = strconv.ParseFloat(lngStr, 64)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	// if lat & lng = 0, then get location using IP address
+	if lat == 0 && lng == 0 {
+		if config.IPGeolocationKey == "" {
+			writeJSON(w, map[string]string{
+				"status":  "error",
+				"message": "Geolocation API key not configured",
+			})
+			return
+		}
+
+		ip := getIP(r)
+
+		url := "https://api.ipgeolocation.io/ipgeo?apiKey=" + config.IPGeolocationKey + "&ip=" + "1.1.1.1" + "&fields=latitude,longitude"
+		resp, err := http.Get(url)
+		if err != nil {
+			panic(err)
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			panic(resp.StatusCode)
+		}
+		loc := latLng{}
+		err = json.NewDecoder(resp.Body).Decode(&loc)
+		if err != nil {
+			panic(err)
+		}
+		lat, err = strconv.ParseFloat(loc.Latitude, 64)
+		lng, err = strconv.ParseFloat(loc.Longitude, 64)
 		if err != nil {
 			panic(err)
 		}

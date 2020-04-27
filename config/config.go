@@ -41,6 +41,9 @@ var (
 	SurveyMissingEmail = mustGetenv("SURVEY_MISSING_EMAIL", "", false)
 	SurveyFromEmail    = mustGetenv("SURVEY_FROM_EMAIL", "", false)
 
+	// for IP geolocation
+	IPGeolocationKey = mustGetenv("IPGEOLOCATION_KEY", "", false)
+
 	// For members.dxesf.org
 	MembersClientID     = mustGetenv("MEMBERS_CLIENT_ID", "", false)
 	MembersClientSecret = mustGetenv("MEMBERS_CLIENT_SECRET", "", false)

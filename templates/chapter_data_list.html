@@ -1,0 +1,8 @@
+{{template "header.html" .}}
+
+<div id="app">
+  <chapter-data-list></chapter-data-list>
+</div>
+<script src="/dist/adb.js?{{ .StaticResourcesHash }}"></script>
+
+{{template "footer.html" .}}
