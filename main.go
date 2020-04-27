@@ -1363,7 +1363,7 @@ func (c MainController) FindNearestFacebookPagesHandler(w http.ResponseWriter, r
 
 		ip := getIP(r)
 
-		url := "https://api.ipgeolocation.io/ipgeo?apiKey=" + config.IPGeolocationKey + "&ip=" + "1.1.1.1" + "&fields=latitude,longitude"
+		url := "https://api.ipgeolocation.io/ipgeo?apiKey=" + config.IPGeolocationKey + "&ip=" + ip + "&fields=latitude,longitude"
 		resp, err := http.Get(url)
 		if err != nil {
 			panic(err)
