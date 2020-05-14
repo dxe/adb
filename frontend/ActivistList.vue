@@ -522,6 +522,7 @@ function getDefaultColumns(view: string): Column[] {
           'Organizer',
           'Senior Organizer',
           'Non-Local',
+          'Global Network Member',
         ],
       },
       enabled:
