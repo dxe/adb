@@ -12,7 +12,7 @@ import (
 )
 
 func getFacebookEvents(page model.FacebookPage) []model.FacebookEventJSON {
-	url := "https://graph.facebook.com/v4.0/" + strconv.Itoa(page.ID) + "/events?fields=name,start_time,end_time,cover,attending_count,description,place,interested_count,is_canceled&limit=50&access_token=" + page.Token
+	url := "https://graph.facebook.com/v4.0/" + strconv.Itoa(page.ID) + "/events?fields=name,start_time,end_time,cover,attending_count,description,place,interested_count,is_canceled,event_times&limit=50&access_token=" + page.Token
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -30,6 +30,27 @@ func getFacebookEvents(page model.FacebookPage) []model.FacebookEventJSON {
 		panic(err)
 	}
 	return data.Data
+}
+
+func getFacebookEvent(page model.FacebookPage, eventID string) model.FacebookEventJSON {
+	url := "https://graph.facebook.com/v4.0/" + eventID + "?fields=name,start_time,end_time,cover,attending_count,description,place,interested_count,is_canceled,event_times&limit=50&access_token=" + page.Token
+
+	resp, err := http.Get(url)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+	// TODO: we should handle errors better so we don't stop all pages from syncing
+	if resp.StatusCode != http.StatusOK {
+		panic(resp.StatusCode)
+	}
+	// read the response & decode the json data
+	data := model.FacebookEventJSON{}
+	err = json.NewDecoder(resp.Body).Decode(&data)
+	if err != nil {
+		panic(err)
+	}
+	return data
 }
 
 func syncFacebookEvents(db *sqlx.DB) {
@@ -61,6 +82,19 @@ func syncFacebookEvents(db *sqlx.DB) {
 		if len(events) > 0 {
 			// loop through events
 			for _, event := range events {
+				// if event has event_times, then we need to find the sub-events instead
+				if event.EventTimes != nil {
+					for _, subEvent := range event.EventTimes {
+						// make api call for subEvent
+						subEventData := getFacebookEvent(page, subEvent.ID)
+						// insert (replace into) database
+						err = model.InsertFacebookEvent(db, subEventData, page)
+						if err != nil {
+							log.Println("ERROR:", err)
+						}
+					}
+					continue
+				}
 				// insert (replace into) database
 				err = model.InsertFacebookEvent(db, event, page)
 				if err != nil {

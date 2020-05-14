@@ -22,16 +22,17 @@ type FacebookResponseJSON struct {
 
 // fb event schema: https://developers.facebook.com/docs/graph-api/reference/event/
 type FacebookEventJSON struct {
-	ID              string            `json:"id"`
-	Name            string            `json:"name"`
-	Description     string            `json:"description"`
-	StartTime       string            `json:"start_time"`
-	EndTime         string            `json:"end_time"`
-	AttendingCount  int               `json:"attending_count"`
-	InterestedCount int               `json:"interested_count"`
-	IsCanceled      bool              `json:"is_canceled"`
-	Place           FacebookPlaceJSON `json:"place"`
-	Cover           FacebookCoverJSON `json:"cover"`
+	ID              string              `json:"id"`
+	Name            string              `json:"name"`
+	Description     string              `json:"description"`
+	StartTime       string              `json:"start_time"`
+	EndTime         string              `json:"end_time"`
+	AttendingCount  int                 `json:"attending_count"`
+	InterestedCount int                 `json:"interested_count"`
+	IsCanceled      bool                `json:"is_canceled"`
+	Place           FacebookPlaceJSON   `json:"place"`
+	Cover           FacebookCoverJSON   `json:"cover"`
+	EventTimes      []FacebookEventJSON `json:"event_times"`
 }
 
 type FacebookPlaceJSON struct {
