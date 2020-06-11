@@ -77,12 +77,17 @@ type FacebookEventOutput struct {
 }
 
 type FacebookPageOutput struct {
-	ID       int     `db:"id"`
-	Name     string  `db:"name"`
-	Flag     string  `db:"flag"`
-	FbURL    string  `db:"fb_url"`
-	Region   string  `db:"region"`
-	Distance float32 `db:"distance"`
+	ID         int     `db:"id"`
+	Name       string  `db:"name"`
+	Flag       string  `db:"flag"`
+	FbURL      string  `db:"fb_url"`
+	TwitterURL string  `db:"twitter_url"`
+	InstaURL   string  `db:"insta_url"`
+	Email      string  `db:"email"`
+	Region     string  `db:"region"`
+	Lat        float64 `db:"lat"`
+	Lng        float64 `db:"lng"`
+	Distance   float32 `db:"distance"`
 }
 
 // used for making api calls to facebook, not for responding to our api requests
@@ -119,7 +124,7 @@ func FindNearestFacebookPages(db *sqlx.DB, lat float64, lng float64) ([]Facebook
 
 // returns pages grouped by region
 func GetAllFBPages(db *sqlx.DB) (map[string][]FacebookPageOutput, error) {
-	query := `SELECT id, name, flag, fb_url, region
+	query := `SELECT id, name, flag, fb_url, twitter_url, insta_url, email, region
 		FROM fb_pages
 		ORDER BY name`
 	var pages []FacebookPageOutput
