@@ -12,7 +12,7 @@ import (
 )
 
 func getFacebookEvents(page model.FacebookPage) []model.FacebookEventJSON {
-	url := "https://graph.facebook.com/v4.0/" + strconv.Itoa(page.ID) + "/events?fields=name,start_time,end_time,cover,attending_count,description,place,interested_count,is_canceled,event_times&limit=50&access_token=" + page.Token
+	url := "https://graph.facebook.com/v4.0/" + strconv.Itoa(page.ID) + "/events?include_canceled=1&fields=name,start_time,end_time,cover,attending_count,description,place,interested_count,is_canceled,event_times&limit=50&access_token=" + page.Token
 
 	resp, err := http.Get(url)
 	if err != nil {

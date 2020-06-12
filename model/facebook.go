@@ -148,7 +148,7 @@ func GetFacebookEvents(db *sqlx.DB, pageID int, startTime string, endTime string
 		location_country, location_country, location_state, location_address, location_zip,
 		lat, lng, cover, attending_count, interested_count, is_canceled, last_update FROM fb_events`
 
-	query += " WHERE page_id = " + strconv.Itoa(pageID)
+	query += " WHERE is_canceled = 0 and page_id = " + strconv.Itoa(pageID)
 
 	if startTime != "" {
 		query += " and start_time >= '" + startTime + "'"
