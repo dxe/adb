@@ -1,0 +1,33 @@
+{{template "header.html" .}}
+
+<style>
+	td {
+		padding: 3px;
+	}
+</style>
+
+<div style="width: 1000px; height: 100%; background-color: white; margin-left: auto; margin-right: auto; padding: 10px;">
+
+  <h1>Edit Chapter</h1>
+
+	    <form method="POST" action="TODO: URL FOR POSTING TO GOES HERE">
+	      <label>ID</label><input disabled name="id" value="{{ .Data.Chapter.ID }}" /><br />
+	      <label>Name</label><input type="text" name="name" value="{{ .Data.Chapter.Name }}" /><br />
+	      <label>Flag</label><input type="text" name="city" value="{{ .Data.Chapter.Flag }}" /><br />
+	      <label>Facebook</label><input type="text" name="city" value="{{ .Data.Chapter.FbURL }}" /><br />
+	      <label>Twitter</label><input type="text" name="city" value="{{ .Data.Chapter.TwitterURL }}" /><br />
+	      <label>Instagram</label><input type="text" name="city" value="{{ .Data.Chapter.InstaURL }}" /><br />
+	      <label>Email</label><input type="text" name="city" value="{{ .Data.Chapter.Email }}" /><br />
+	      <label>Region (TODO: MAKE A SELECT)</label><input type="text" name="city" value="{{ .Data.Chapter.Region }}" /><br />
+	      <label>Lat</label><input type="text" name="city" value="{{ .Data.Chapter.Lat }}" /><br />
+	      <label>Lng</label><input type="text" name="city" value="{{ .Data.Chapter.Lng }}" /><br />
+	      <label>Token</label><input type="text" name="city" value="{{ .Data.Chapter.Token }}" /><br />
+	      <input type="submit" value="Save" />
+	    </form>
+
+	    <div><a href="/list_chapters"><- Back to all chapters</a></div>
+
+</div>
+<script src="/dist/adb.js?{{ .StaticResourcesHash }}"></script>
+
+{{template "footer.html" .}}

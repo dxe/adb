@@ -88,6 +88,7 @@ type FacebookPageOutput struct {
 	Lat        float64 `db:"lat"`
 	Lng        float64 `db:"lng"`
 	Distance   float32 `db:"distance"`
+	Token  string  `db:"token"`
 }
 
 // used for making api calls to facebook, not for responding to our api requests
@@ -104,9 +105,37 @@ func GetFacebookPagesWithTokens(db *sqlx.DB) ([]FacebookPage, error) {
 	return pages, nil
 }
 
+// for the chapter management admin page on the ADB itself
+func GetAllChapters(db *sqlx.DB) ([]FacebookPageOutput, error) {
+	query := `SELECT id, name, flag, fb_url, twitter_url, insta_url, email, region, lat, lng, token
+		FROM fb_pages
+		ORDER BY name`
+	var pages []FacebookPageOutput
+	err := db.Select(&pages, query)
+	if err != nil {
+		// error
+		return nil, errors.Wrap(err, "failed to select pages")
+	}
+	return pages, nil
+}
+// for the chapter management admin page on the ADB itself
+func GetChapterByID(db *sqlx.DB, id string) (FacebookPageOutput, error) {
+	query := `SELECT id, name, flag, fb_url, twitter_url, insta_url, email, region, lat, lng, token
+		FROM fb_pages
+		WHERE id = ?`
+	var pages []FacebookPageOutput
+	err := db.Select(&pages, query, id)
+	if err != nil {
+		return FacebookPageOutput{}, errors.Wrap(err, "failed to select page")
+	} else if len(pages) == 0 {
+		return FacebookPageOutput{}, errors.New("Could not find page")
+	} else if len(pages) > 1 {
+		return FacebookPageOutput{}, errors.New("Found too many pages")
+	}
+	return pages[0], nil
+}
+
 func FindNearestFacebookPages(db *sqlx.DB, lat float64, lng float64) ([]FacebookPageOutput, error) {
-	// if this is too broad, we can add "HAVING distance < 100" to query to limit to 100 miles
-	// or maybe it would be better to just check on the frontend if the closest is over 100 miles
 	query := `SELECT id, name, flag, fb_url, region, (3959*acos(cos(radians(` + fmt.Sprintf("%f", lat) + `))*cos(radians(lat))* 
 		cos(radians(lng)-radians(` + fmt.Sprintf("%f", lng) + `))+sin(radians(` + fmt.Sprintf("%f", lat) + `))* 
 		sin(radians(lat)))) AS distance
@@ -133,12 +162,10 @@ func GetAllFBPages(db *sqlx.DB) (map[string][]FacebookPageOutput, error) {
 		// error
 		return nil, errors.Wrap(err, "failed to select pages")
 	}
-
 	regions := make(map[string][]FacebookPageOutput)
 	for _, p := range pages {
 		regions[p.Region] = append(regions[p.Region], p)
 	}
-
 	//return pages grouped into regions, nil
 	return regions, nil
 }

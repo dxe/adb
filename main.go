@@ -191,6 +191,8 @@ func router() (*mux.Router, *sqlx.DB) {
 
 	// Authed Admin pages
 	admin.Handle("/admin/users", alice.New(main.authAdminMiddleware).ThenFunc(main.ListUsersHandler))
+	admin.Handle("/list_chapters", alice.New(main.authAdminMiddleware).ThenFunc(main.ListChaptersHandler))
+	admin.Handle("/chapters/edit", alice.New(main.authAdminMiddleware).ThenFunc(main.EditChapterHandler))
 
 	// Unauthed API
 	router.HandleFunc("/tokensignin", main.TokenSignInHandler)
@@ -635,6 +637,31 @@ func (c MainController) ListCirclesHandler(w http.ResponseWriter, r *http.Reques
 
 func (c MainController) ListUsersHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, r, "user_list", PageData{PageName: "UserList"})
+}
+
+func (c MainController) ListChaptersHandler(w http.ResponseWriter, r *http.Request) {
+	chapters, err := model.GetAllChapters(c.db)
+	if err != nil {
+		panic(err)
+	}
+	renderPage(w, r, "chapters_list", PageData{
+		PageName: "ChaptersList",
+		Data: map[string]interface{}{
+			"Chapters": chapters,
+		}})
+}
+
+func (c MainController) EditChapterHandler(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	chapter, err := model.GetChapterByID(c.db, id)
+	if err != nil {
+		panic(err)
+	}
+	renderPage(w, r, "chapter_edit", PageData{
+		PageName: "ChaptersList",
+		Data: map[string]interface{}{
+			"Chapter": chapter,
+		}})
 }
 
 var templates = template.Must(template.New("").Funcs(

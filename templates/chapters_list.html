@@ -1,0 +1,57 @@
+{{template "header.html" .}}
+
+<style>
+	td {
+		padding: 3px;
+	}
+</style>
+
+<div style="width: 1000px; height: 100%; background-color: white; margin-left: auto; margin-right: auto; padding: 10px;">
+
+  <h1>Chapters</h1>
+
+	  <table border="1">
+	      <thead>
+	      <tr>
+	        <td>ID</td>
+	        <td>Name</td>
+	        <td>Flag</td>
+	        <td>FbURL</td>
+	        <td>TwitterURL</td>
+	        <td>InstaURL</td>
+	        <td>Email</td>
+	        <td>Region</td>
+	        <td>Lat</td>
+	        <td>Lng</td>
+	        <td>Token</td>
+	        <td>*EDIT*</td>
+	        <td>*DELETE*</td>
+	      </tr>
+	       </thead>
+	       <tbody>
+	    {{ range .Data.Chapters }}
+	      <tr>
+	        <td>{{ .ID }}</td>
+	        <td>{{ .Name }}</td>
+	        <td>{{ .Flag }}</td>
+	        <td>{{ .FbURL }}</td>
+	        <td>{{ .TwitterURL }}</td>
+	        <td>{{ .InstaURL }}</td>
+	        <td>{{ .Email }}</td>
+	        <td>{{ .Region }}</td>
+	        <td>{{ .Lat }}</td>
+	        <td>{{ .Lng }}</td>
+	        <td>{{ .Token }}</td>     
+	        <td><a href="/chapters/edit?id={{ .ID }}">edit</a></td>
+	        <td><a href="/chapters/delete?id={{ .ID }}">delete</a></td>
+	      </tr>
+	    {{ end }}
+	       </tbody>
+	    </table>
+
+	    <div><a href="/list_chapters"><- Back to all chapters</a></div>
+
+</div>
+<script src="/dist/adb.js?{{ .StaticResourcesHash }}"></script>
+
+{{template "footer.html" .}}
