@@ -34,7 +34,7 @@
 	      <tr>
 	      	<td nowrap>
 	      		<button class="btn btn-default glyphicon glyphicon-pencil" onclick="window.location.href='/chapter/edit?id={{ .ChapterID }}'"></button>
-	      		<button class="btn btn-danger glyphicon glyphicon-trash" onclick="window.location.href='/chapter/delete?id={{ .ChapterID }}'"></button>
+	      		<button class="btn btn-danger glyphicon glyphicon-trash" onclick="confirmDelete('{{ .Name }}', '{{ .ChapterID }}')"></button>
 	      	</td>
 	        <td nowrap>{{ .Name }}</td>
 	        <td>{{ .Flag }}</td>
@@ -51,5 +51,14 @@
 </div>
 
 <script src="/dist/adb.js?{{ .StaticResourcesHash }}"></script>
+
+<script>
+	function confirmDelete(chapterName, chapterID) {
+		var result = confirm(`Are you sure you want to delete ${chapterName}?`);
+		if (result) {
+			window.location.href=`/chapter/delete?id=${chapterID}`;
+		}
+	}
+</script>
 
 {{template "footer.html" .}}
