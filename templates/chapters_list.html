@@ -26,29 +26,23 @@
 	        <th>TwitterURL</th>
 	        <th>InstaURL</th>
 	        <th>Email</th>
-	        <th>Region</th>
-	        <th>Lat</th>
-	        <th>Lng</th>
-	        <th>FB ID</th>
+	        <th>FB Data Last Received</th>
 	      </tr>
 	       </thead>
 	       <tbody>
 	    {{ range .Data.Chapters }}
 	      <tr>
-	      	<td>
+	      	<td nowrap>
 	      		<button class="btn btn-default glyphicon glyphicon-pencil" onclick="window.location.href='/chapter/edit?id={{ .ChapterID }}'"></button>
 	      		<button class="btn btn-danger glyphicon glyphicon-trash" onclick="window.location.href='/chapter/delete?id={{ .ChapterID }}'"></button>
 	      	</td>
-	        <td>{{ .Name }}</td>
+	        <td nowrap>{{ .Name }}</td>
 	        <td>{{ .Flag }}</td>
-	        <td>{{ .FbURL }}</td>
-	        <td>{{ .TwitterURL }}</td>
-	        <td>{{ .InstaURL }}</td>
-	        <td>{{ .Email }}</td>
-	        <td>{{ .Region }}</td>
-	        <td>{{ .Lat }}</td>
-	        <td>{{ .Lng }}</td>
-	        <td>{{ .ID }}</td>
+	        <td>{{ .FbURL | abbrev }}</td>
+	        <td>{{ .TwitterURL | abbrev }}</td>
+	        <td>{{ .InstaURL | abbrev }}</td>
+	        <td>{{ .Email | abbrev }}</td>
+	        <td>{{ .LastUpdate }}</td>
 	      </tr>
 	    {{ end }}
 	       </tbody>

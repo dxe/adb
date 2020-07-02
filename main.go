@@ -751,6 +751,13 @@ var templates = template.Must(template.New("").Funcs(
 		"datenotzero": func(date time.Time) bool {
 			return !time.Time{}.Equal(date)
 		},
+		"abbrev": func(input string) string {
+			length := len(input)
+			if (length > 16) {
+				return input [0:15] + "..."
+			}
+			return input
+		},
 	}).ParseGlob("templates/*.html"))
 
 type PageData struct {
