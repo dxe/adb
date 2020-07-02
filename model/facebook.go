@@ -90,7 +90,7 @@ type FacebookPageOutput struct {
 	Lng        float64 `db:"lng"`
 	Distance   float32 `db:"distance"`
 	Token      string  `db:"token"`
-	LastUpdate string `db:"last_update"`
+	LastUpdate string  `db:"last_update"`
 }
 
 // used for making api calls to facebook, not for responding to our api requests
