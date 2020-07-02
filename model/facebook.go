@@ -90,6 +90,7 @@ type FacebookPageOutput struct {
 	Lng        float64 `db:"lng"`
 	Distance   float32 `db:"distance"`
 	Token      string  `db:"token"`
+	LastUpdate string `db:"last_update"`
 }
 
 // used for making api calls to facebook, not for responding to our api requests
@@ -108,8 +109,10 @@ func GetFacebookPagesWithTokens(db *sqlx.DB) ([]FacebookPage, error) {
 
 // for the chapter management admin page on the ADB itself
 func GetAllChapters(db *sqlx.DB) ([]FacebookPageOutput, error) {
-	query := `SELECT id, chapter_id, name, flag, fb_url, twitter_url, insta_url, email, region, lat, lng, token
+	query := `SELECT fb_pages.id, chapter_id, fb_pages.name, flag, fb_url, twitter_url, insta_url, email, region, fb_pages.lat, fb_pages.lng, token, IFNULL(MAX(last_update),'') as last_update
 		FROM fb_pages
+		LEFT JOIN fb_events on fb_pages.id = fb_events.page_id
+		GROUP BY fb_pages.chapter_id
 		ORDER BY name`
 	var pages []FacebookPageOutput
 	err := db.Select(&pages, query)
