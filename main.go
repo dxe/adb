@@ -681,6 +681,9 @@ func (c MainController) ChapterUpdateHandler(w http.ResponseWriter, r *http.Requ
 		chapterID, err := strconv.Atoi(r.FormValue("chapter-id"))
 		lat, err := strconv.ParseFloat(r.FormValue("lat"), 64)
 		lng, err := strconv.ParseFloat(r.FormValue("lng"), 64)
+		if err != nil {
+			panic(err.Error())
+		}
 		page.ID = pageID
 		page.ChapterID = chapterID
 		page.Lat = lat
@@ -698,6 +701,7 @@ func (c MainController) ChapterUpdateHandler(w http.ResponseWriter, r *http.Requ
 			panic(err.Error())
 		}
 	}
+	flashMessageSuccess(w, "Saved succesfully.")
 	http.Redirect(w, r, "/list_chapters", http.StatusFound)
 }
 
