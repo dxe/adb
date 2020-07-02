@@ -192,7 +192,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	// Authed Admin pages
 	admin.Handle("/admin/users", alice.New(main.authAdminMiddleware).ThenFunc(main.ListUsersHandler))
 	admin.Handle("/list_chapters", alice.New(main.authAdminMiddleware).ThenFunc(main.ListChaptersHandler))
-	admin.Handle("/chapters/edit", alice.New(main.authAdminMiddleware).ThenFunc(main.EditChapterHandler))
+	admin.Handle("/chapter/edit", alice.New(main.authAdminMiddleware).ThenFunc(main.EditChapterHandler))
 
 	// Unauthed API
 	router.HandleFunc("/tokensignin", main.TokenSignInHandler)
@@ -231,6 +231,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	admin.Handle("/user/list", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserListHandler))
 	admin.Handle("/user/save", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserSaveHandler))
 	admin.Handle("/user/delete", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserDeleteHandler))
+	admin.Handle("/chapter/update", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.ChapterUpdateHandler))
 	// Authed Admin API for managing Users Roles
 	admin.Handle("/users-roles/add", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UsersRolesAddHandler))
 	admin.Handle("/users-roles/remove", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UsersRolesRemoveHandler))
@@ -662,6 +663,31 @@ func (c MainController) EditChapterHandler(w http.ResponseWriter, r *http.Reques
 		Data: map[string]interface{}{
 			"Chapter": chapter,
 		}})
+}
+
+func (c MainController) ChapterUpdateHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "POST" {
+		var page model.FacebookPageOutput
+		pageID, err := strconv.Atoi(r.FormValue("id"))
+		lat, err := strconv.ParseFloat(r.FormValue("lat"), 64)
+		lng, err := strconv.ParseFloat(r.FormValue("lng"), 64)
+		page.ID = pageID
+		page.Lat = lat
+		page.Lng = lng
+		page.Name = r.FormValue("name")
+		page.Flag = r.FormValue("flag")
+		page.FbURL = r.FormValue("facebook")
+		page.TwitterURL = r.FormValue("twitter")
+		page.InstaURL = r.FormValue("instagram")
+		page.Email = r.FormValue("email")
+		page.Region = r.FormValue("region")
+		page.Token = r.FormValue("token")
+		err = model.UpdateChapter(c.db, page)
+		if err != nil {
+			panic(err.Error())
+		}
+	}
+	http.Redirect(w, r, "/list_chapters", 301)
 }
 
 var templates = template.Must(template.New("").Funcs(

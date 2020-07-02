@@ -10,18 +10,19 @@
 
   <h1>Edit Chapter</h1>
 
-	    <form method="POST" action="TODO: URL FOR POSTING TO GOES HERE">
-	      <label>ID</label><input disabled name="id" value="{{ .Data.Chapter.ID }}" /><br />
+	    <form method="POST" action="/chapter/update">
+	      <label>ID</label><input readonly name="id" value="{{ .Data.Chapter.ID }}" /><br />
 	      <label>Name</label><input type="text" name="name" value="{{ .Data.Chapter.Name }}" /><br />
-	      <label>Flag</label><input type="text" name="city" value="{{ .Data.Chapter.Flag }}" /><br />
-	      <label>Facebook</label><input type="text" name="city" value="{{ .Data.Chapter.FbURL }}" /><br />
-	      <label>Twitter</label><input type="text" name="city" value="{{ .Data.Chapter.TwitterURL }}" /><br />
-	      <label>Instagram</label><input type="text" name="city" value="{{ .Data.Chapter.InstaURL }}" /><br />
-	      <label>Email</label><input type="text" name="city" value="{{ .Data.Chapter.Email }}" /><br />
-	      <label>Region (TODO: MAKE A SELECT)</label><input type="text" name="city" value="{{ .Data.Chapter.Region }}" /><br />
-	      <label>Lat</label><input type="text" name="city" value="{{ .Data.Chapter.Lat }}" /><br />
-	      <label>Lng</label><input type="text" name="city" value="{{ .Data.Chapter.Lng }}" /><br />
-	      <label>Token</label><input type="text" name="city" value="{{ .Data.Chapter.Token }}" /><br />
+	      <label>Flag</label><input type="text" name="flag" value="{{ .Data.Chapter.Flag }}" /><br />
+	      <label>Facebook</label><input type="text" name="facebook" value="{{ .Data.Chapter.FbURL }}" /><br />
+	      <label>Twitter</label><input type="text" name="twitter" value="{{ .Data.Chapter.TwitterURL }}" /><br />
+	      <label>Instagram</label><input type="text" name="instagram" value="{{ .Data.Chapter.InstaURL }}" /><br />
+	      <label>Email</label><input type="text" name="email" value="{{ .Data.Chapter.Email }}" /><br />
+	      <label>Region (TODO: MAKE A SELECT)</label><input type="text" name="region" value="{{ .Data.Chapter.Region }}" /><br />
+	      <label>Lat</label><input type="text" name="lat" value="{{ .Data.Chapter.Lat }}" /><br />
+	      <label>Lng</label><input type="text" name="lng" value="{{ .Data.Chapter.Lng }}" /><br />
+	      <label>Token</label><input type="text" name="token" value="{{ .Data.Chapter.Token }}" /><br />
+	      <input type="hidden" name="gorilla.csrf.Token" value={{ .CsrfField }}>
 	      <input type="submit" value="Save" />
 	    </form>
 

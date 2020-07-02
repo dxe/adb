@@ -88,7 +88,7 @@ type FacebookPageOutput struct {
 	Lat        float64 `db:"lat"`
 	Lng        float64 `db:"lng"`
 	Distance   float32 `db:"distance"`
-	Token  string  `db:"token"`
+	Token      string  `db:"token"`
 }
 
 // used for making api calls to facebook, not for responding to our api requests
@@ -118,6 +118,7 @@ func GetAllChapters(db *sqlx.DB) ([]FacebookPageOutput, error) {
 	}
 	return pages, nil
 }
+
 // for the chapter management admin page on the ADB itself
 func GetChapterByID(db *sqlx.DB, id string) (FacebookPageOutput, error) {
 	query := `SELECT id, name, flag, fb_url, twitter_url, insta_url, email, region, lat, lng, token
@@ -133,6 +134,26 @@ func GetChapterByID(db *sqlx.DB, id string) (FacebookPageOutput, error) {
 		return FacebookPageOutput{}, errors.New("Found too many pages")
 	}
 	return pages[0], nil
+}
+
+// for the chapter management admin page on the ADB itself
+func UpdateChapter(db *sqlx.DB, page FacebookPageOutput) error {
+	_, err := db.NamedExec(`UPDATE fb_pages
+		SET name = :name,
+		flag = :flag,
+		fb_url = :fb_url,
+		insta_url = :insta_url,
+		twitter_url = :twitter_url,
+		email = :email,
+		region = :region,
+		lat = :lat,
+		lng = :lng,
+		token = :token
+		WHERE id = :id`, page)
+	if err != nil {
+		return errors.Wrapf(err, "failed to update chapter %d", page.ID)
+	}
+	return nil
 }
 
 func FindNearestFacebookPages(db *sqlx.DB, lat float64, lng float64) ([]FacebookPageOutput, error) {
