@@ -6,29 +6,41 @@
 	}
 </style>
 
-<div style="width: 1000px; height: 100%; background-color: white; margin-left: auto; margin-right: auto; padding: 10px;">
+<div class="body-wrapper">
 
-  <h1>Edit Chapter</h1>
+	<div class="title">
+  		<h1>Edit Chapter</h1>
+  	</div>
 
-	    <form method="POST" action="/chapter/update">
-	      <label>ID</label><input readonly name="id" value="{{ .Data.Chapter.ID }}" /><br />
-	      <label>Name</label><input type="text" name="name" value="{{ .Data.Chapter.Name }}" /><br />
-	      <label>Flag</label><input type="text" name="flag" value="{{ .Data.Chapter.Flag }}" /><br />
-	      <label>Facebook</label><input type="text" name="facebook" value="{{ .Data.Chapter.FbURL }}" /><br />
-	      <label>Twitter</label><input type="text" name="twitter" value="{{ .Data.Chapter.TwitterURL }}" /><br />
-	      <label>Instagram</label><input type="text" name="instagram" value="{{ .Data.Chapter.InstaURL }}" /><br />
-	      <label>Email</label><input type="text" name="email" value="{{ .Data.Chapter.Email }}" /><br />
-	      <label>Region (TODO: MAKE A SELECT)</label><input type="text" name="region" value="{{ .Data.Chapter.Region }}" /><br />
-	      <label>Lat</label><input type="text" name="lat" value="{{ .Data.Chapter.Lat }}" /><br />
-	      <label>Lng</label><input type="text" name="lng" value="{{ .Data.Chapter.Lng }}" /><br />
-	      <label>Token</label><input type="text" name="token" value="{{ .Data.Chapter.Token }}" /><br />
-	      <input type="hidden" name="gorilla.csrf.Token" value={{ .CsrfField }}>
-	      <input type="submit" value="Save" />
-	    </form>
-
-	    <div><a href="/list_chapters"><- Back to all chapters</a></div>
+    <form method="POST" action="/chapter/update"  autocomplete="off">
+      <input hidden name="chapter-id" value="{{ .Data.Chapter.ChapterID }}" /><br />
+      <label>Name</label><input type="text" name="name" maxlength="75" value="{{ .Data.Chapter.Name }}" class="form-control" /><br />
+      <label>Flag</label><input type="text" name="flag" maxlength="2" value="{{ .Data.Chapter.Flag }}" class="form-control" /><br />
+      <label>Facebook</label><input type="text" name="facebook" maxlength="100" value="{{ .Data.Chapter.FbURL }}" class="form-control" /><br />
+      <label>Twitter</label><input type="text" name="twitter" maxlength="100" value="{{ .Data.Chapter.TwitterURL }}" class="form-control" /><br />
+      <label>Instagram</label><input type="text" name="instagram" maxlength="100" value="{{ .Data.Chapter.InstaURL }}" class="form-control" /><br />
+      <label>Email</label><input type="text" name="email" maxlength="100" value="{{ .Data.Chapter.Email }}" class="form-control" /><br />
+      <label>Region</label>
+      <select name="region" class="form-control">
+		<option value="North America" {{ if eq .Data.Chapter.Region "North America" }}selected="selected"{{ end }}>North America</option>
+		<option value="Central & South America" {{ if eq .Data.Chapter.Region "Central & South America" }}selected="selected"{{ end }}>Central & South America</option>
+		<option value="Europe" {{ if eq .Data.Chapter.Region "Europe" }}selected="selected"{{ end }}>Europe</option>
+		<option value="Middle East & Africa" {{ if eq .Data.Chapter.Region "Middle East & Africa" }}selected="selected"{{ end }}>Middle East & Africa</option>
+		<option value="Asia-Pacific" {{ if eq .Data.Chapter.Region "Asia-Pacific" }}selected="selected"{{ end }}>Asia-Pacific</option>
+		<option value="Online" {{ if eq .Data.Chapter.Region "Online" }}selected="selected"{{ end }}>Online</option>
+	  </select>
+	  <br />
+      <label>Lat</label><input type="text" name="lat" value="{{ .Data.Chapter.Lat }}" class="form-control" /><br />
+      <label>Lng</label><input type="text" name="lng" value="{{ .Data.Chapter.Lng }}" class="form-control" /><br />
+      <label>Facebook ID</label><input name="facebook-id" maxlength="16" value="{{ .Data.Chapter.ID }}" class="form-control" /><br />
+      <label>Facebook Token</label><input type="text" name="token" maxlength="200" value="{{ .Data.Chapter.Token }}" class="form-control" /><br />
+      <input type="hidden" name="gorilla.csrf.Token" value={{ .CsrfField }}>
+      <button class="btn btn-secondary" type="button" onclick="window.location.href='/list_chapters'">Cancel</button>
+      <input class="btn btn-success" type="submit" value="Save" />
+    </form>
 
 </div>
+
 <script src="/dist/adb.js?{{ .StaticResourcesHash }}"></script>
 
 {{template "footer.html" .}}

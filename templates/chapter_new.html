@@ -1,0 +1,45 @@
+{{template "header.html" .}}
+
+<style>
+	td {
+		padding: 3px;
+	}
+</style>
+
+<div class="body-wrapper">
+
+	<div class="title">
+  		<h1>New Chapter</h1>
+  	</div>
+
+    <form method="POST" action="/chapter/insert" autocomplete="off">
+      <label>Name</label><input type="text" name="name" maxlength="75" class="form-control" /><br />
+      <label>Flag</label><input type="text" name="flag" maxlength="2" class="form-control" /><br />
+      <label>Facebook</label><input type="text" name="facebook" maxlength="100" class="form-control" /><br />
+      <label>Twitter</label><input type="text" name="twitter" maxlength="100" class="form-control" /><br />
+      <label>Instagram</label><input type="text" name="instagram" maxlength="100" class="form-control" /><br />
+      <label>Email</label><input type="text" name="email" maxlength="100" class="form-control" /><br />
+      <label>Region</label>
+      <select name="region" class="form-control">
+		<option value="North America">North America</option>
+		<option value="Central & South America">Central & South America</option>
+		<option value="Europe">Europe</option>
+		<option value="Middle East & Africa">Middle East & Africa</option>
+		<option value="Asia-Pacific">Asia-Pacific</option>
+		<option value="Online">Online</option>
+	  </select>
+	  <br />
+      <label>Lat</label><input type="text" name="lat" class="form-control" /><br />
+      <label>Lng</label><input type="text" name="lng" class="form-control" /><br />
+      <label>Facebook ID</label><input name="facebook-id" maxlength="16" class="form-control" /><br />
+      <label>Facebook Token</label><input type="text" name="token" maxlength="200" class="form-control" /><br />
+      <input type="hidden" name="gorilla.csrf.Token" value={{ .CsrfField }}>
+      <button class="btn btn-secondary" type="button" onclick="window.location.href='/list_chapters'">Cancel</button>
+      <input class="btn btn-success" type="submit" value="Save" />
+    </form>
+
+</div>
+
+<script src="/dist/adb.js?{{ .StaticResourcesHash }}"></script>
+
+{{template "footer.html" .}}

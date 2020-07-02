@@ -193,6 +193,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	admin.Handle("/admin/users", alice.New(main.authAdminMiddleware).ThenFunc(main.ListUsersHandler))
 	admin.Handle("/list_chapters", alice.New(main.authAdminMiddleware).ThenFunc(main.ListChaptersHandler))
 	admin.Handle("/chapter/edit", alice.New(main.authAdminMiddleware).ThenFunc(main.EditChapterHandler))
+	admin.Handle("/chapter/new", alice.New(main.authAdminMiddleware).ThenFunc(main.NewChapterHandler))
 
 	// Unauthed API
 	router.HandleFunc("/tokensignin", main.TokenSignInHandler)
@@ -232,6 +233,8 @@ func router() (*mux.Router, *sqlx.DB) {
 	admin.Handle("/user/save", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserSaveHandler))
 	admin.Handle("/user/delete", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserDeleteHandler))
 	admin.Handle("/chapter/update", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.ChapterUpdateHandler))
+	admin.Handle("/chapter/delete", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.ChapterDeleteHandler))
+	admin.Handle("/chapter/insert", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.ChapterInsertHandler))
 	// Authed Admin API for managing Users Roles
 	admin.Handle("/users-roles/add", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UsersRolesAddHandler))
 	admin.Handle("/users-roles/remove", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UsersRolesRemoveHandler))
@@ -653,7 +656,7 @@ func (c MainController) ListChaptersHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (c MainController) EditChapterHandler(w http.ResponseWriter, r *http.Request) {
-	id := r.URL.Query().Get("id")
+	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	chapter, err := model.GetChapterByID(c.db, id)
 	if err != nil {
 		panic(err)
@@ -665,13 +668,21 @@ func (c MainController) EditChapterHandler(w http.ResponseWriter, r *http.Reques
 		}})
 }
 
+func (c MainController) NewChapterHandler(w http.ResponseWriter, r *http.Request) {
+	renderPage(w, r, "chapter_new", PageData{
+		PageName: "ChaptersList",
+	})
+}
+
 func (c MainController) ChapterUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		var page model.FacebookPageOutput
-		pageID, err := strconv.Atoi(r.FormValue("id"))
+		pageID, err := strconv.Atoi(r.FormValue("facebook-id"))
+		chapterID, err := strconv.Atoi(r.FormValue("chapter-id"))
 		lat, err := strconv.ParseFloat(r.FormValue("lat"), 64)
 		lng, err := strconv.ParseFloat(r.FormValue("lng"), 64)
 		page.ID = pageID
+		page.ChapterID = chapterID
 		page.Lat = lat
 		page.Lng = lng
 		page.Name = r.FormValue("name")
@@ -687,7 +698,45 @@ func (c MainController) ChapterUpdateHandler(w http.ResponseWriter, r *http.Requ
 			panic(err.Error())
 		}
 	}
-	http.Redirect(w, r, "/list_chapters", 301)
+	http.Redirect(w, r, "/list_chapters", http.StatusFound)
+}
+
+func (c MainController) ChapterDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	var page model.FacebookPageOutput
+	id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	page.ChapterID = id
+	err = model.DeleteChapter(c.db, page)
+	if err != nil {
+		panic(err.Error())
+	}
+	http.Redirect(w, r, "/list_chapters", http.StatusFound)
+}
+
+func (c MainController) ChapterInsertHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "POST" {
+		var page model.FacebookPageOutput
+		pageID, err := strconv.Atoi(r.FormValue("facebook-id"))
+		chapterID, err := strconv.Atoi(r.FormValue("chapter-id"))
+		lat, err := strconv.ParseFloat(r.FormValue("lat"), 64)
+		lng, err := strconv.ParseFloat(r.FormValue("lng"), 64)
+		page.ID = pageID
+		page.ChapterID = chapterID
+		page.Lat = lat
+		page.Lng = lng
+		page.Name = r.FormValue("name")
+		page.Flag = r.FormValue("flag")
+		page.FbURL = r.FormValue("facebook")
+		page.TwitterURL = r.FormValue("twitter")
+		page.InstaURL = r.FormValue("instagram")
+		page.Email = r.FormValue("email")
+		page.Region = r.FormValue("region")
+		page.Token = r.FormValue("token")
+		err = model.InsertChapter(c.db, page)
+		if err != nil {
+			panic(err.Error())
+		}
+	}
+	http.Redirect(w, r, "/list_chapters", http.StatusFound)
 }
 
 var templates = template.Must(template.New("").Funcs(

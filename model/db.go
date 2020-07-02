@@ -211,7 +211,8 @@ CREATE TABLE users_roles (
 	db.MustExec(`
 CREATE TABLE fb_pages (
   id BIGINT(16) NOT NULL DEFAULT '0',
-  name VARCHAR(75) PRIMARY KEY,
+  chapter_id INTEGER PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(75) NOT NULL,
   region ENUM('','North America','Central & South America','Europe','Middle East & Africa','Asia-Pacific','Online') NOT NULL DEFAULT '',
   flag VARCHAR(2) NOT NULL DEFAULT '',
   lat FLOAT(10,6) NOT NULL DEFAULT '0.000000',

@@ -78,6 +78,7 @@ type FacebookEventOutput struct {
 
 type FacebookPageOutput struct {
 	ID         int     `db:"id"`
+	ChapterID  int     `db:"chapter_id"`
 	Name       string  `db:"name"`
 	Flag       string  `db:"flag"`
 	FbURL      string  `db:"fb_url"`
@@ -107,7 +108,7 @@ func GetFacebookPagesWithTokens(db *sqlx.DB) ([]FacebookPage, error) {
 
 // for the chapter management admin page on the ADB itself
 func GetAllChapters(db *sqlx.DB) ([]FacebookPageOutput, error) {
-	query := `SELECT id, name, flag, fb_url, twitter_url, insta_url, email, region, lat, lng, token
+	query := `SELECT id, chapter_id, name, flag, fb_url, twitter_url, insta_url, email, region, lat, lng, token
 		FROM fb_pages
 		ORDER BY name`
 	var pages []FacebookPageOutput
@@ -120,17 +121,19 @@ func GetAllChapters(db *sqlx.DB) ([]FacebookPageOutput, error) {
 }
 
 // for the chapter management admin page on the ADB itself
-func GetChapterByID(db *sqlx.DB, id string) (FacebookPageOutput, error) {
-	query := `SELECT id, name, flag, fb_url, twitter_url, insta_url, email, region, lat, lng, token
+func GetChapterByID(db *sqlx.DB, id int) (FacebookPageOutput, error) {
+	query := `SELECT id, chapter_id, name, flag, fb_url, twitter_url, insta_url, email, region, lat, lng, token
 		FROM fb_pages
-		WHERE id = ?`
+		WHERE chapter_id = ?`
 	var pages []FacebookPageOutput
 	err := db.Select(&pages, query, id)
 	if err != nil {
 		return FacebookPageOutput{}, errors.Wrap(err, "failed to select page")
-	} else if len(pages) == 0 {
+	}
+	if len(pages) == 0 {
 		return FacebookPageOutput{}, errors.New("Could not find page")
-	} else if len(pages) > 1 {
+	}
+	if len(pages) > 1 {
 		return FacebookPageOutput{}, errors.New("Found too many pages")
 	}
 	return pages[0], nil
@@ -139,7 +142,8 @@ func GetChapterByID(db *sqlx.DB, id string) (FacebookPageOutput, error) {
 // for the chapter management admin page on the ADB itself
 func UpdateChapter(db *sqlx.DB, page FacebookPageOutput) error {
 	_, err := db.NamedExec(`UPDATE fb_pages
-		SET name = :name,
+		SET id = :id,
+		name = :name,
 		flag = :flag,
 		fb_url = :fb_url,
 		insta_url = :insta_url,
@@ -149,9 +153,29 @@ func UpdateChapter(db *sqlx.DB, page FacebookPageOutput) error {
 		lat = :lat,
 		lng = :lng,
 		token = :token
-		WHERE id = :id`, page)
+		WHERE chapter_id = :chapter_id`, page)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update chapter %d", page.ID)
+	}
+	return nil
+}
+
+// for the chapter management admin page on the ADB itself
+func DeleteChapter(db *sqlx.DB, page FacebookPageOutput) error {
+	_, err := db.NamedExec(`DELETE FROM fb_pages
+		WHERE chapter_id = :chapter_id`, page)
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete chapter %d", page.ID)
+	}
+	return nil
+}
+
+// for the chapter management admin page on the ADB itself
+func InsertChapter(db *sqlx.DB, page FacebookPageOutput) error {
+	_, err := db.NamedExec(`INSERT INTO fb_pages ( id, name, flag, fb_url, insta_url, twitter_url, email, region, lat, lng, token )
+		VALUES ( :id, :name, :flag, :fb_url, :insta_url, :twitter_url, :email, :region, :lat, :lng, :token )`, page)
+	if err != nil {
+		return errors.Wrapf(err, "failed to insert chapter %d", page.ID)
 	}
 	return nil
 }

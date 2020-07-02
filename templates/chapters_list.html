@@ -6,32 +6,39 @@
 	}
 </style>
 
-<div style="width: 1000px; height: 100%; background-color: white; margin-left: auto; margin-right: auto; padding: 10px;">
+<div class="body-wrapper-extra-wide">
 
-  <h1>Chapters</h1>
+  	  <div class="title">
+  		<h1>Chapters</h1>
+  	  </div>
 
-	  <table border="1">
+  	  <button class="btn btn-default" onclick="window.location.href='/chapter/new'">
+      	<span class="glyphicon glyphicon-plus"></span>&nbsp;&nbsp;Add New Chapter
+      </button>
+
+	  <table class="adb-table table table-hover table-striped">
 	      <thead>
 	      <tr>
-	        <td>ID</td>
-	        <td>Name</td>
-	        <td>Flag</td>
-	        <td>FbURL</td>
-	        <td>TwitterURL</td>
-	        <td>InstaURL</td>
-	        <td>Email</td>
-	        <td>Region</td>
-	        <td>Lat</td>
-	        <td>Lng</td>
-	        <td>Token</td>
-	        <td>*EDIT*</td>
-	        <td>*DELETE*</td>
+	      	<th></th>
+	        <th>Name</th>
+	        <th>Flag</th>
+	        <th>FbURL</th>
+	        <th>TwitterURL</th>
+	        <th>InstaURL</th>
+	        <th>Email</th>
+	        <th>Region</th>
+	        <th>Lat</th>
+	        <th>Lng</th>
+	        <th>FB ID</th>
 	      </tr>
 	       </thead>
 	       <tbody>
 	    {{ range .Data.Chapters }}
 	      <tr>
-	        <td>{{ .ID }}</td>
+	      	<td>
+	      		<button class="btn btn-default glyphicon glyphicon-pencil" onclick="window.location.href='/chapter/edit?id={{ .ChapterID }}'"></button>
+	      		<button class="btn btn-danger glyphicon glyphicon-trash" onclick="window.location.href='/chapter/delete?id={{ .ChapterID }}'"></button>
+	      	</td>
 	        <td>{{ .Name }}</td>
 	        <td>{{ .Flag }}</td>
 	        <td>{{ .FbURL }}</td>
@@ -41,17 +48,14 @@
 	        <td>{{ .Region }}</td>
 	        <td>{{ .Lat }}</td>
 	        <td>{{ .Lng }}</td>
-	        <td>{{ .Token }}</td>     
-	        <td><a href="/chapter/edit?id={{ .ID }}">edit</a></td>
-	        <td><a href="/chapter/delete?id={{ .ID }}">delete</a></td>
+	        <td>{{ .ID }}</td>
 	      </tr>
 	    {{ end }}
 	       </tbody>
 	    </table>
 
-	    <div><a href="/list_chapters"><- Back to all chapters</a></div>
-
 </div>
+
 <script src="/dist/adb.js?{{ .StaticResourcesHash }}"></script>
 
 {{template "footer.html" .}}
