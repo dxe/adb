@@ -254,13 +254,9 @@ func InsertFacebookEvent(db *sqlx.DB, event FacebookEventJSON, page FacebookPage
 	startTime = startTime.UTC()
 	endTime, err := time.Parse(fbTimeLayout, event.EndTime)
 	endTime = endTime.UTC()
+	placeName := event.Place.Name
 	if event.IsOnline {
-		event.Place.Name = "Online"
-		event.Place.Location.City = ""
-		event.Place.Location.Country = ""
-		event.Place.Location.State = ""
-		event.Place.Location.Street = ""
-		event.Place.Location.Zip = ""
+		placeName = "Online"
 	}
 	// insert into database
 	_, err = db.Exec(`REPLACE INTO fb_events (id, page_id, name, description, start_time, end_time,
@@ -268,7 +264,7 @@ func InsertFacebookEvent(db *sqlx.DB, event FacebookEventJSON, page FacebookPage
 		lat, lng, cover, attending_count, interested_count, is_canceled, last_update) VALUES
 		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now())`,
 		event.ID, page.ID, event.Name, event.Description, startTime.Format("2006-01-02T15:04:05"),
-		endTime.Format("2006-01-02T15:04:05"), event.Place.Name, event.Place.Location.City,
+		endTime.Format("2006-01-02T15:04:05"), placeName, event.Place.Location.City,
 		event.Place.Location.Country, event.Place.Location.State, event.Place.Location.Street,
 		event.Place.Location.Zip, event.Place.Location.Lat, event.Place.Location.Lng, event.Cover.Source,
 		event.AttendingCount, event.InterestedCount, event.IsCanceled)
