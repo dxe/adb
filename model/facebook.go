@@ -30,6 +30,7 @@ type FacebookEventJSON struct {
 	AttendingCount  int                 `json:"attending_count"`
 	InterestedCount int                 `json:"interested_count"`
 	IsCanceled      bool                `json:"is_canceled"`
+	IsOnline        bool                `json:"is_online"`
 	Place           FacebookPlaceJSON   `json:"place"`
 	Cover           FacebookCoverJSON   `json:"cover"`
 	EventTimes      []FacebookEventJSON `json:"event_times"`
@@ -253,6 +254,14 @@ func InsertFacebookEvent(db *sqlx.DB, event FacebookEventJSON, page FacebookPage
 	startTime = startTime.UTC()
 	endTime, err := time.Parse(fbTimeLayout, event.EndTime)
 	endTime = endTime.UTC()
+	if event.IsOnline {
+		event.Place.Name = "Online"
+		event.Place.Location.City = ""
+		event.Place.Location.Country = ""
+		event.Place.Location.State = ""
+		event.Place.Location.Street = ""
+		event.Place.Location.Zip = ""
+	}
 	// insert into database
 	_, err = db.Exec(`REPLACE INTO fb_events (id, page_id, name, description, start_time, end_time,
 		location_name, location_city, location_country, location_state, location_address, location_zip,

@@ -12,7 +12,7 @@ import (
 )
 
 func getFacebookEvents(page model.FacebookPage) []model.FacebookEventJSON {
-	url := "https://graph.facebook.com/v4.0/" + strconv.Itoa(page.ID) + "/events?include_canceled=1&fields=name,start_time,end_time,cover,attending_count,description,place,interested_count,is_canceled,event_times&limit=50&access_token=" + page.Token
+	url := "https://graph.facebook.com/v4.0/" + strconv.Itoa(page.ID) + "/events?include_canceled=1&fields=name,start_time,end_time,cover,attending_count,description,place,interested_count,is_canceled,event_times,is_online&limit=50&access_token=" + page.Token
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -33,7 +33,7 @@ func getFacebookEvents(page model.FacebookPage) []model.FacebookEventJSON {
 }
 
 func getFacebookEvent(page model.FacebookPage, eventID string) model.FacebookEventJSON {
-	url := "https://graph.facebook.com/v4.0/" + eventID + "?fields=name,start_time,end_time,cover,attending_count,description,place,interested_count,is_canceled,event_times&limit=50&access_token=" + page.Token
+	url := "https://graph.facebook.com/v4.0/" + eventID + "?fields=name,start_time,end_time,cover,attending_count,description,place,interested_count,is_canceled,event_times,is_online&limit=50&access_token=" + page.Token
 
 	resp, err := http.Get(url)
 	if err != nil {
