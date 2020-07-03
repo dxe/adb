@@ -40,8 +40,8 @@ func (s *server) index() {
 
 		Organizer     int // boolean
 		ChapterMember int // boolean
-		JunVoter      bool
 		JulVoter      bool
+		AugVoter      bool
 
 		WorkingGroups []string
 
@@ -78,8 +78,8 @@ select json_object(
   'Organizer', x.activist_level in ('Organizer', 'Senior Organizer'),
   'ChapterMember', x.activist_level in ('Chapter Member', 'Organizer', 'Senior Organizer'),
 
-  'JunVoter', sum(x.mpi and x.month >= 202003 and x.month < 202006) >= 2,
   'JulVoter', sum(x.mpi and x.month >= 202004 and x.month < 202007) >= 2,
+  'AugVoter', sum(x.mpi and x.month >= 202005 and x.month < 202008) >= 2,
 
   'WorkingGroups', (
     select json_arrayagg(w.name)
@@ -268,14 +268,14 @@ table.profile td:nth-child(1), table.election, td:nth-child(1) {
   <th><a href="https://docs.dxesf.org/#33-organizers">Organizer Votes</a></th>
 </tr>
 <tr>
-  <td>June 2020</td>
-  <td>{{if and .ChapterMember .JunVoter}}Yes{{else}}No{{end}}</td>
-  <td>{{if and .Organizer .JunVoter}}Yes{{else}}No{{end}}</td>
-</tr>
-<tr>
   <td>July 2020</td>
   <td>{{if and .ChapterMember .JulVoter}}Yes{{else}}No{{end}}</td>
   <td>{{if and .Organizer .JulVoter}}Yes{{else}}No{{end}}</td>
+</tr>
+<tr>
+  <td>August 2020</td>
+  <td>{{if and .ChapterMember .AugVoter}}Yes{{else}}No{{end}}</td>
+  <td>{{if and .Organizer .AugVoter}}Yes{{else}}No{{end}}</td>
 </tr>
 </table>
 
