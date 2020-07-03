@@ -4,6 +4,18 @@
 	td {
 		padding: 3px;
 	}
+	a:link {
+	  color: black;
+	}
+	a:visited {
+	  color: black;
+	}
+	a:hover {
+	  color: blue;
+	}
+	a:active {
+	  color: blue;
+	}
 </style>
 
 <div class="body-wrapper-extra-wide">
@@ -26,6 +38,7 @@
 	        <th>TwitterURL</th>
 	        <th>InstaURL</th>
 	        <th>Email</th>
+	        <th>Region</th>
 	        <th>FB Data Last Received</th>
 	      </tr>
 	       </thead>
@@ -38,10 +51,11 @@
 	      	</td>
 	        <td nowrap>{{ .Name }}</td>
 	        <td>{{ .Flag }}</td>
-	        <td>{{ .FbURL | abbrev }}</td>
-	        <td>{{ .TwitterURL | abbrev }}</td>
-	        <td>{{ .InstaURL | abbrev }}</td>
-	        <td>{{ .Email | abbrev }}</td>
+	        <td>{{ if .FbURL }} <a href="{{ .FbURL }}" target="_blank"><span class="glyphicon glyphicon-link"></span></a> {{ end }}</td>
+	        <td>{{ if .TwitterURL }} <a href="{{ .TwitterURL }}" target="_blank"><span class="glyphicon glyphicon-link"></span></a> {{ end }}</td>
+	        <td>{{ if .InstaURL }} <a href="{{ .InstaURL }}" target="_blank"><span class="glyphicon glyphicon-link"></span></a> {{ end }}</td>
+	        <td>{{ if .Email }} <a href="mailto:{{ .Email }}" target="_blank"><span class="glyphicon glyphicon-envelope"></span></a> {{ end }}</td>
+	        <td>{{ .Region }}</td>
 	        <td nowrap>{{ .LastUpdate }}</td>
 	      </tr>
 	    {{ end }}
