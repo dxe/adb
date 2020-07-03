@@ -740,6 +740,7 @@ func (c MainController) ChapterInsertHandler(w http.ResponseWriter, r *http.Requ
 			panic(err.Error())
 		}
 	}
+	flashMessageSuccess(w, "New chapter created.")
 	http.Redirect(w, r, "/list_chapters", http.StatusFound)
 }
 
