@@ -724,7 +724,7 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 			whereClause = append(whereClause, "(a.activist_level like '%organizer' OR a.activist_level = 'chapter member')")
 		}
 		if options.Filter == "community_prospects" {
-			whereClause = append(whereClause, "(source like '%form%' or source like '%fur ban%' or source like 'petition%') and source <> 'circle interest form' and source not like '%application%'")
+			whereClause = append(whereClause, "(source like '%form%' or source like '%fur ban%' or source like 'petition%' or source like 'eventbrite%') and source <> 'circle interest form' and source not like '%application%'")
 			whereClause = append(whereClause, "(activist_level = 'supporter' or activist_level = 'circle member')")
 			whereClause = append(whereClause, "interest_date >= DATE_SUB(now(), INTERVAL 3 MONTH)")
 		}
