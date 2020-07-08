@@ -115,6 +115,6 @@ func StartFacebookSync(db *sqlx.DB) {
 		log.Println("Starting Facebook event sync")
 		syncFacebookEvents(db)
 		log.Println("Finished Facebook event sync")
-		time.Sleep(15 * time.Minute)
+		time.Sleep(60 * time.Minute)
 	}
 }
