@@ -771,8 +771,8 @@ function getDefaultColumns(view: string): Column[] {
     },
 
     {
-      header: 'MPP Current Month',
-      longHeader: 'MPP Requirements in Current Month',
+      header: 'DA&C Current Month',
+      longHeader: 'Has attended both a Direct Action & a Community event in the Current Month',
       data: {
         data: 'mpp_requirements',
         colWidths: 80,
@@ -1009,6 +1009,16 @@ function getDefaultColumns(view: string): Column[] {
         colWidths: 100,
       },
       enabled: false,
+    },
+    {
+      header: 'Voting Agreement',
+      longHeader: 'Has signed voting agreement',
+      data: {
+        type: 'checkbox',
+        data: 'voting_agreement',
+        colWidths: 50,
+      },
+      enabled: view === 'chapter_member_development',
     },
   ];
 }

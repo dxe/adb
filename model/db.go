@@ -93,6 +93,7 @@ CREATE TABLE activists (
   study_activator varchar(40) NOT NULL DEFAULT '',
   study_conversation varchar(20),
   survey_completion VARCHAR(20),
+  voting_agreement TINYINT(1) NOT NULL DEFAULT '0',
   UNIQUE (name)
 )
 `)

@@ -161,7 +161,8 @@ SELECT
     mpi,
     notes,
     vision_wall,
-    mpp_requirements
+    mpp_requirements,
+    voting_agreement
 
 FROM activists a
 
@@ -240,7 +241,8 @@ SET
   interest_date = :interest_date,
   mpi = :mpi,
   notes = :notes,
-  vision_wall = :vision_wall
+  vision_wall = :vision_wall,
+  voting_agreement = :voting_agreement
 
 WHERE
   id = :id`
@@ -315,6 +317,7 @@ type ActivistConnectionData struct {
 	Notes                 sql.NullString `db:"notes"`
 	VisionWall            string         `db:"vision_wall"`
 	MPPRequirements       string         `db:"mpp_requirements"`
+	VotingAgreement       bool           `db:"voting_agreement"`
 }
 
 type ActivistExtra struct {
@@ -382,6 +385,7 @@ type ActivistJSON struct {
 	Notes                 string `json:"notes"`
 	VisionWall            string `json:"vision_wall"`
 	MPPRequirements       string `json:"mpp_requirements"`
+	VotingAgreement       bool   `json:"voting_agreement"`
 }
 
 type GetActivistOptions struct {
@@ -600,6 +604,7 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			Notes:                 notes,
 			VisionWall:            a.VisionWall,
 			MPPRequirements:       a.MPPRequirements,
+			VotingAgreement:       a.VotingAgreement,
 		})
 	}
 
@@ -949,7 +954,8 @@ INSERT INTO activists (
   interest_date,
   mpi,
   notes,
-  vision_wall
+  vision_wall,
+  voting_agreement
 
 ) VALUES (
 
@@ -992,6 +998,7 @@ INSERT INTO activists (
   :mpi,
   :notes,
   :vision_wall,
+  :voting_agreement,
 
 )`, activist)
 	if err != nil {
@@ -1052,7 +1059,8 @@ SET
   interest_date = :interest_date,
   mpi = :mpi,
   notes = :notes,
-  vision_wall = :vision_wall
+  vision_wall = :vision_wall,
+  voting_agreement = :voting_agreement
   
 WHERE
   id = :id`, activist)
@@ -1244,6 +1252,7 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 	target.CircleInterest = boolMerge(original.CircleInterest, target.CircleInterest)
 	target.MPI = boolMerge(original.MPI, target.MPI)
 	target.Hiatus = boolMerge(original.Hiatus, target.Hiatus)
+	target.VotingAgreement = boolMerge(original.VotingAgreement, target.VotingAgreement)
 
 	// Check string fields for empty values
 
@@ -1590,6 +1599,7 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			Notes:                 sql.NullString{String: strings.TrimSpace(activistJSON.Notes), Valid: validNotes},
 			VisionWall:            strings.TrimSpace(activistJSON.VisionWall),
 			MPPRequirements:       strings.TrimSpace(activistJSON.MPPRequirements),
+			VotingAgreement:       activistJSON.VotingAgreement,
 		},
 	}
 
