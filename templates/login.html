@@ -1,12 +1,15 @@
 {{template "header.html" .}}
 <meta name="google-signin-client_id" content="975059814880-lfffftbpt7fdl14cevtve8sjvh015udc.apps.googleusercontent.com">
-<script src="https://apis.google.com/js/platform.js" async defer></script>
+<script src="https://apis.google.com/js/platform.js" onerror="onScriptLoadError()" async defer></script>
 
 <div class="body-wrapper">
-  <p>Please log in.</p>
+  <p id="login-text">Please log in.</p>
   <div id="message"></div>
   <div class="g-signin2" data-onsuccess="onSignIn"></div>
   <script>
+    function onScriptLoadError() {
+      $("#login-text").text("The Google login API failed to load. If you are using an ad blocker, please disable it and refresh this page. If it still fails to load, please contact tech@dxe.io.")
+    }
     function onSignIn(googleUser) {
       var id_token = googleUser.getAuthResponse().id_token;
       var xhr = new XMLHttpRequest();
