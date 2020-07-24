@@ -753,8 +753,8 @@ var templates = template.Must(template.New("").Funcs(
 		},
 		"abbrev": func(input string) string {
 			length := len(input)
-			if (length > 16) {
-				return input [0:15] + "..."
+			if length > 16 {
+				return input[0:15] + "..."
 			}
 			return input
 		},
