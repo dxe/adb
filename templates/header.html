@@ -42,10 +42,10 @@
                 <li class="{{if (eq .PageName "EventList")}}active{{end}}"><a href="/list_events">All Events</a></li>
               </ul>
             </li>
-            <li class="{{if and (ne .MainRole "admin") (ne .MainRole "organizer")}}hide{{end}} dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#">Connections <span class="caret"></span></a>
+            <li class="{{if and (ne .MainRole "admin") (ne .MainRole "organizer")}}hide{{end}} dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#">Coaching <span class="caret"></span></a>
               <ul class="dropdown-menu">
-                <li class="{{if (eq .PageName "NewConnection")}}active{{end}}"><a href="/new_connection">New Maintenance Connection</a></li>
-                <li class="{{if (eq .PageName "ConnectionsList")}}active{{end}}"><a href="/list_connections">All Maintenance Connections</a></li>
+                <li class="{{if (eq .PageName "NewConnection")}}active{{end}}"><a href="/new_connection">New Maintenance Coaching</a></li>
+                <li class="{{if (eq .PageName "ConnectionsList")}}active{{end}}"><a href="/list_connections">All Maintenance Coachings</a></li>
                 <!-- <li class="{{if (eq .PageName "ActivistPool")}}active{{end}}"><a href="/activist_pool">Recruitment Connections</a></li> -->
               </ul>
             </li>

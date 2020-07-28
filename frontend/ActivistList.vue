@@ -782,8 +782,8 @@ function getDefaultColumns(view: string): Column[] {
     },
 
     {
-      header: 'Connector',
-      longHeader: 'Connector Name',
+      header: 'Coach',
+      longHeader: 'Coach Name',
       data: {
         data: 'connector',
         colWidths: 125,
@@ -795,8 +795,8 @@ function getDefaultColumns(view: string): Column[] {
         view === 'senior_organizer_development',
     },
     {
-      header: 'Last Maint. Conn.',
-      longHeader: 'Last Maintenance Connection',
+      header: 'Last Maint. Coaching',
+      longHeader: 'Last Maintenance Coaching',
       data: {
         type: 'date',
         data: 'last_connection',

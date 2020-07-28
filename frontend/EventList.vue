@@ -1,7 +1,7 @@
 <template>
-  <adb-page :title="connections ? 'All Maintenance Connections' : 'Events'">
+  <adb-page :title="connections ? 'All Maintenance Coachings' : 'Events'">
     <form class="form-inline hidden-xs" v-on:submit.prevent="eventListRequest">
-      <label for="event-name">{{ connections ? 'Connector' : 'Event Name' }}:</label>
+      <label for="event-name">{{ connections ? 'Coach' : 'Event Name' }}:</label>
       <input
         id="event-name"
         class="form-control filter-margin"
@@ -9,7 +9,7 @@
         v-model="search.name"
       />
 
-      <label for="event-activist">{{ connections ? 'Connectee' : 'Activist' }}:</label>
+      <label for="event-activist">{{ connections ? 'Coachees' : 'Activist' }}:</label>
       <select id="event-activist" class="filter-margin" style="width: 100%"></select>
 
       <label for="event-date-start">From:</label>
@@ -57,12 +57,13 @@
         <tr>
           <th class="col-xs-1"></th>
           <th class="col-xs-2">Date</th>
-          <th class="col-xs-2">{{ connections ? 'Connector' : 'Name' }}</th>
+          <th class="col-xs-2">{{ connections ? 'Coach' : 'Name' }}</th>
           <th class="col-xs-2 hidden-xs">Type</th>
-          <th class="col-xs-1 hidden-xs">Total {{ connections ? 'Connectees' : 'Attendance' }}</th>
+          <th class="col-xs-1 hidden-xs">Total {{ connections ? 'Coachees' : 'Attendance' }}</th>
           <th class="col-xs-4 hidden-xs">
-            Attendees
-            <span style="display: inline-block">
+            {{ connections ? 'Coachees' : 'Attendees' }}
+            <!-- hide this span on connections page -->
+            <span style="display: inline-block" v-if="!connections">
               (
               <button title="Show all attendees" class="btn btn-link" v-on:click="showAllAttendees">
                 +
@@ -125,13 +126,14 @@
           <td>
             <b>{{ event.event_name }}</b>
           </td>
-          <td nowrap class="hidden-xs">{{ event.event_type }}</td>
+          <td nowrap class="hidden-xs">{{ connections ? 'Coaching' : event.event_type }}</td>
           <td nowrap class="hidden-xs">{{ event.attendees.length }}</td>
           <td class="hidden-xs">
-            <button class="btn btn-link" v-on:click="toggleAttendees(event)">
-              <span v-if="event.showAttendees">-</span> <span v-else>+</span> Attendees
+            <button v-if="!connections" class="btn btn-link" v-on:click="toggleAttendees(event)">
+              <span v-if="event.showAttendees">-</span> <span v-else>+</span>
+              {{ connections ? 'Coachees' : 'Attendees' }}
             </button>
-            <a target="_blank" class="btn btn-link" :href="event.emailLink">
+            <a target="_blank" class="btn btn-link" :href="event.emailLink" v-if="!connections">
               <span class="glyphicon glyphicon-envelope"></span>
             </a>
             <ul class="attendee-list" v-show="event.showAttendees">

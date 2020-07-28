@@ -1,13 +1,13 @@
 <template>
   <adb-page
-    :title="connections ? 'Maintenance Connection' : 'Event'"
+    :title="connections ? 'Maintenance Coaching' : 'Event'"
     narrow
     class="event-new-content"
   >
     <form action id="eventForm" v-on:change="changed('change', -1)" autocomplete="off">
       <fieldset :disabled="loading">
         <label for="eventName" id="nameLabel">
-          <b>{{ connections ? 'Connector' : 'Event' }} name</b> <br />
+          <b>{{ connections ? 'Coach' : 'Event' }} name</b> <br />
         </label>
         <input id="eventName" class="form-control" v-model="name" /> <br />
 
@@ -29,7 +29,7 @@
         </template>
 
         <label for="eventDate">
-          <b>{{ connections ? 'Connection' : 'Event' }} date</b>
+          <b>{{ connections ? 'Coaching' : 'Event' }} date</b>
           <button
             class="btn btn-xs btn-primary"
             style="margin: 0px 10px"
@@ -42,7 +42,7 @@
         <input id="eventDate" class="form-control" type="date" v-model="date" /> <br />
 
         <label for="attendee1" id="attendeeLabel">
-          <b>{{ connections ? 'Connectees' : 'Attendees' }}</b> <br />
+          <b>{{ connections ? 'Coachees' : 'Attendees' }}</b> <br />
         </label>
         <div id="attendee-rows">
           <div class="row-container form-group row" v-for="(attendee, index) in attendees">
@@ -84,7 +84,7 @@
         v-on:click="save"
         :disabled="saving"
       >
-        <span>Save {{ connections ? 'connection' : 'event' }}</span>
+        <span>Save {{ connections ? 'coaching' : 'event' }}</span>
       </button>
     </center>
     <br />
