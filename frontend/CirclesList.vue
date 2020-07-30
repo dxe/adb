@@ -3,33 +3,15 @@
     <button class="btn btn-default" @click="showModal('edit-circle-modal')">
       <span class="glyphicon glyphicon-plus"></span>&nbsp;&nbsp;Add New Circle
     </button>
-    &nbsp;&nbsp;&nbsp;&nbsp;
-    <button
-      id="showMem"
-      class="btn btn-default"
-      onclick="$('.wgMembers').show(); $('#showMem').hide(); $('#hideMem').show();"
-    >
-      <span class="glyphicon glyphicon-eye-open"></span>&nbsp;&nbsp;Show members
-    </button>
-    <button
-      id="hideMem"
-      class="btn btn-default"
-      onclick="$('.wgMembers').hide(); $('#showMem').show(); $('#hideMem').hide();"
-      style="display: none;"
-    >
-      <span class="glyphicon glyphicon-eye-close"></span>&nbsp;&nbsp;Hide members
-    </button>
 
     <table id="working-group-list" class="adb-table table table-hover table-striped">
       <thead>
         <tr>
-          <th></th>
-          <th></th>
+          <th style="width: 1px; white-space: nowrap;"></th>
+          <th style="width: 1px; white-space: nowrap;"></th>
           <th>Name</th>
           <th>Email</th>
-          <th>Total Members</th>
           <th>Host</th>
-          <th class="wgMembers">Members</th>
         </tr>
       </thead>
       <tbody id="working-group-list-body">
@@ -56,7 +38,6 @@
           </td>
           <td>{{ circleGroup.name }}</td>
           <td>{{ circleGroup.email }}</td>
-          <td>{{ numberOfCircleGroupMembers(circleGroup) }}</td>
           <td>
             <!-- There should only ever be one point person -->
             <template v-for="member in circleGroup.members">
@@ -65,14 +46,6 @@
               </template>
             </template>
           </td>
-          <td>
-            <ul v-for="member in circleGroup.members">
-              <template v-if="!member.point_person && !member.non_member_on_mailing_list">
-                <li class="wgMembers">{{ member.name }}</li>
-              </template>
-            </ul>
-          </td>
-          <td></td>
         </tr>
       </tbody>
     </table>
@@ -224,27 +197,6 @@
               >
                 Add point person
               </button>
-              <p><label for="members">Members: </label></p>
-              <div class="select-row" v-for="(member, index) in currentCircleGroup.members">
-                <template v-if="!member.point_person && !member.non_member_on_mailing_list">
-                  <basic-select
-                    :options="activistOptions"
-                    :selected-option="memberOption(member)"
-                    :extra-data="{ index: index }"
-                    inheritStyle="min-width: 500px"
-                    @select="onMemberSelect"
-                  >
-                  </basic-select>
-                  <button
-                    type="button"
-                    class="select-row-btn btn btn-sm btn-danger"
-                    @click="removeMember(index)"
-                  >
-                    -
-                  </button>
-                </template>
-              </div>
-              <button type="button" class="btn btn-sm" @click="addMember">Add member</button>
             </form>
           </div>
           <div class="modal-footer">

@@ -133,23 +133,6 @@ SELECT
   IFNULL(totalPoints, 0) as total_points,
   IF(@last_event >= (now() - interval 30 day), 1, 0) as active,
 
-  IFNULL(
-    (SELECT
-      GROUP_CONCAT(DISTINCT wg.name SEPARATOR ', ')
-    FROM working_groups wg
-    JOIN working_group_members wgm ON wg.id = wgm.working_group_id
-    WHERE
-      wgm.activist_id = a.id and wgm.non_member_on_mailing_list = 0),
-    '') AS working_group_list,
-    IFNULL(
-    (SELECT
-      GROUP_CONCAT(DISTINCT circles.name SEPARATOR ', ')
-    FROM circles
-    JOIN circle_members ON circles.id = circle_members.circle_id
-    WHERE
-      circle_members.activist_id = a.id),
-    '') AS circles_list,
-
     IFNULL((
     SELECT max(e.date) AS max_date
     FROM event_attendance ea
@@ -280,7 +263,6 @@ type ActivistMembershipData struct {
 	Source        string `db:"source"`
 	Hiatus        bool   `db:"hiatus"`
 	WorkingGroups string `db:"working_group_list"`
-	Circles       string `db:"circles_list"`
 }
 
 type ActivistConnectionData struct {
@@ -350,7 +332,6 @@ type ActivistJSON struct {
 	Source        string `json:"source"`
 	Hiatus        bool   `json:"hiatus"`
 	WorkingGroups string `json:"working_group_list"`
-	Circles       string `json:"circles_list"`
 
 	Connector       string `json:"connector"`
 	Training0       string `json:"training0"`
@@ -567,7 +548,6 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 
 			ActivistLevel: a.ActivistLevel,
 			WorkingGroups: a.WorkingGroups,
-			Circles:       a.Circles,
 			Source:        a.Source,
 			Hiatus:        a.Hiatus,
 
@@ -730,14 +710,11 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 		}
 		if options.Filter == "community_prospects" {
 			whereClause = append(whereClause, "(source like '%form%' or source like '%fur ban%' or source like 'petition%' or source like 'eventbrite%') and source <> 'circle interest form' and source not like '%application%'")
-			whereClause = append(whereClause, "(activist_level = 'supporter' or activist_level = 'circle member')")
+			whereClause = append(whereClause, "activist_level = 'supporter'")
 			whereClause = append(whereClause, "interest_date >= DATE_SUB(now(), INTERVAL 3 MONTH)")
 		}
-		if options.Filter == "circle_members" {
-			whereClause = append(whereClause, "id in (select distinct activist_id from circle_members)")
-		}
 		if options.Filter == "circle_member_prospects" {
-			whereClause = append(whereClause, "circle_interest = 1 AND a.id not in (select distinct activist_id from circle_members)")
+			whereClause = append(whereClause, "circle_interest = 1")
 		}
 		if options.Filter == "leaderboard" {
 			whereClause = append(whereClause, "a.id in (select distinct activist_id  from event_attendance ea  where ea.event_id in (select id from events e where e.date >= (now() - interval 30 day)))")
@@ -1238,10 +1215,9 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 		"Supporter":             0,
 		"Non-Local":             1,
 		"Global Network Member": 2,
-		"Circle Member":         3,
-		"Chapter Member":        4,
-		"Organizer":             5,
-		"Senior Organizer":      6,
+		"Chapter Member":        3,
+		"Organizer":             4,
+		"Senior Organizer":      5,
 	}
 
 	// Check boolean values
@@ -1613,7 +1589,6 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 
 var validActivistLevels = map[string]struct{}{
 	"Supporter":             struct{}{},
-	"Circle Member":         struct{}{},
 	"Chapter Member":        struct{}{},
 	"Organizer":             struct{}{},
 	"Senior Organizer":      struct{}{},

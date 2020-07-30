@@ -249,7 +249,6 @@ interface Activist {
   prospect_chapter_member: number;
   dev_interest: string;
   circle_interest: number;
-  circles_list: string;
   total_events: number;
   source: string;
   interest_date: string;
@@ -409,7 +408,6 @@ function getDefaultColumns(view: string): Column[] {
         view === 'chapter_member_prospects' ||
         view === 'chapter_member_development' ||
         view === 'circle_member_prospects' ||
-        view === 'circle_members' ||
         view === 'community_prospects',
     },
     {
@@ -517,7 +515,6 @@ function getDefaultColumns(view: string): Column[] {
         type: 'dropdown',
         source: [
           'Supporter',
-          'Circle Member',
           'Chapter Member',
           'Organizer',
           'Senior Organizer',
@@ -534,8 +531,7 @@ function getDefaultColumns(view: string): Column[] {
         view === 'chapter_member_prospects' ||
         view === 'chapter_member_development' ||
         view === 'circle_member_prospects' ||
-        view === 'senior_organizer_prospects' ||
-        view === 'circle_members',
+        view === 'senior_organizer_prospects',
     },
 
     {
@@ -677,17 +673,6 @@ function getDefaultColumns(view: string): Column[] {
       enabled: view === 'action_team' || view === 'organizer_prospects' || view === 'development',
     },
     {
-      header: 'Circles',
-      longHeader: 'Circle Membership',
-      data: {
-        data: 'circles_list',
-        readOnly: true,
-        colWidths: 200,
-      },
-      enabled:
-        view === 'circle_members' || view === 'organizer_prospects' || view === 'development',
-    },
-    {
       header: 'First Event',
       longHeader: 'First Event Attended',
       data: {
@@ -723,7 +708,7 @@ function getDefaultColumns(view: string): Column[] {
         readOnly: true,
         colWidths: 100,
       },
-      enabled: view === 'circle_members',
+      enabled: false,
     },
     {
       header: 'Total Events',
