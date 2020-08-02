@@ -113,7 +113,7 @@ select json_object(
     )))
 )
 from (
-  select a.id, a.name, a.email, a.phone, a.location, a.facebook, a.activist_level, a.dob, a.date_organizer,
+  select a.id, a.name, a.email, a.phone, a.location, a.facebook, a.activist_level, a.dob, a.date_organizer, a.cm_approval_email, a.voting_agreement,
     e.month, count(e.id) as subtotal,
     max(e.community) as community, max(e.direct_action) as direct_action,
     (max(e.direct_action) and (max(e.community) or e.month >= 202001)) as mpi,
