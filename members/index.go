@@ -88,11 +88,11 @@ select json_object(
   'VotingAgreement', x.voting_agreement,
 
   'AugPast3',     sum(x.mpi and x.month >= 202005 and x.month < 202008),
-  'AugPast12',    sum(x.mpi and x.month >= 202008 and x.month < 202008),
+  'AugPast12',    sum(x.mpi and x.month >= 201908 and x.month < 202008),
   'AugApproved6', cm_approval_email < '2020-02-01',
 
   'SepPast3',     sum(x.mpi and x.month >= 202006 and x.month < 202009),
-  'SepPast12',    sum(x.mpi and x.month >= 202009 and x.month < 202009),
+  'SepPast12',    sum(x.mpi and x.month >= 201909 and x.month < 202009),
   'SepApproved6', cm_approval_email < '2020-03-01',
 
   'WorkingGroups', (
