@@ -157,6 +157,8 @@ group by x.id
 		sort.Slice(events, func(i, j int) bool { return events[i].Date > events[j].Date })
 	}
 
+	sort.Strings(data.WorkingGroups)
+
 	s.render(indexTmpl, &data)
 }
 
