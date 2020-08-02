@@ -235,7 +235,7 @@ tr.mpi {
   background-color: #beb;
 }
 
-td {
+th, td {
   padding: 0.375em;
 }
 
