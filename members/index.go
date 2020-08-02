@@ -195,6 +195,7 @@ var indexTmpl = template.Must(template.New("index").Funcs(template.FuncMap{
 <!doctype html>
 <html>
 <head>
+<title>DxE SF Activist Record</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro&display=swap" rel="stylesheet">
 
