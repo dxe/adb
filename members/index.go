@@ -42,8 +42,14 @@ func (s *server) index() {
 		ChapterMember   int // boolean
 		VotingAgreement int // boolean
 
-		AugPast3, AugPast12 int
-		SepPast3, SepPast12 int
+		// Past3 and Past12 are how many of the past 3 and 12
+		// months, respectively, the activist fulfilled MPI
+		// requirements.
+		//
+		// Approved6 is whether the member was an approved
+		// Chapter Member for the prior 6 months.
+		AugPast3, AugPast12, AugApproved6 int
+		SepPast3, SepPast12, SepApproved6 int
 
 		WorkingGroups []string
 
@@ -81,10 +87,13 @@ select json_object(
   'ChapterMember', x.activist_level in ('Chapter Member', 'Organizer', 'Senior Organizer'),
   'VotingAgreement', x.voting_agreement,
 
-  'AugPast3',  sum(x.mpi and x.month >= 202005 and x.month < 202008),
-  'AugPast12', sum(x.mpi and x.month >= 202008 and x.month < 202008),
-  'SepPast3',  sum(x.mpi and x.month >= 202006 and x.month < 202009),
-  'SepPast12', sum(x.mpi and x.month >= 202009 and x.month < 202009),
+  'AugPast3',     sum(x.mpi and x.month >= 202005 and x.month < 202008),
+  'AugPast12',    sum(x.mpi and x.month >= 202008 and x.month < 202008),
+  'AugApproved6', cm_approval_email < '2020-02-01',
+
+  'SepPast3',     sum(x.mpi and x.month >= 202006 and x.month < 202009),
+  'SepPast12',    sum(x.mpi and x.month >= 202009 and x.month < 202009),
+  'SepApproved6', cm_approval_email < '2020-03-01',
 
   'WorkingGroups', (
     select json_arrayagg(w.name)
@@ -271,8 +280,8 @@ table.profile td:nth-child(1), table.election, td:nth-child(1) {
   <li>August 2020:    {{if ge .AugPast3 2}}Yes{{else}}No{{end}}</li>
   <li>September 2020: {{if ge .SepPast3 2}}Yes{{else}}No{{end}}</li>
 {{else if .ChapterMember}}
-  <li>August 2020:    {{if and (ge .AugPast12 8) .VotingAgreement}}Yes{{else}}No{{end}}</li>
-  <li>September 2020: {{if and (ge .SepPast12 8) .VotingAgreement}}Yes{{else}}No{{end}}</li>
+  <li>August 2020:    {{if and (ge .AugPast12 8) .AugApproved6 .VotingAgreement}}Yes{{else}}No{{end}}</li>
+  <li>September 2020: {{if and (ge .SepPast12 8) .SepApproved6 .VotingAgreement}}Yes{{else}}No{{end}}</li>
 {{else}}
   <li>August 2020:    No</li>
   <li>September 2020: No</li>
