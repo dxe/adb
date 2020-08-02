@@ -275,18 +275,55 @@ table.profile td:nth-child(1), table.election, td:nth-child(1) {
 
 <h2>Voter Eligibility</h2>
 
-<ul>
 {{if .Organizer}}
-  <li>August 2020:    {{if ge .AugPast3 2}}Yes{{else}}No{{end}}</li>
-  <li>September 2020: {{if ge .SepPast3 2}}Yes{{else}}No{{end}}</li>
+<p>As an <a href="https://docs.dxesf.org/#33-organizers">Organizer</a>, you are eligible to vote if you've been on the Movement-Power Index for 2 of the past 3 full months at the time of the vote.</p>
+
+<table class="elections">
+<tr>
+  <th>Month</th>
+  <th>MPI of past 3 months</th>
+  <th>Eligible?</th>
+</tr>
+<tr>
+  <td>August 2020</td>
+  <td>{{.AugPast3}}</td>
+  <td>{{if ge .AugPast3 2}}Yes{{else}}No{{end}}</td>
+</tr>
+<tr>
+  <td>September 2020</td>
+  <td>{{.SepPast3}}</td>
+  <td>{{if ge .SepPast3 2}}Yes{{else}}No{{end}}</td>
+</tr>
+</table>
 {{else if .ChapterMember}}
-  <li>August 2020:    {{if and (ge .AugPast12 8) .AugApproved6 .VotingAgreement}}Yes{{else}}No{{end}}</li>
-  <li>September 2020: {{if and (ge .SepPast12 8) .SepApproved6 .VotingAgreement}}Yes{{else}}No{{end}}</li>
+<p>As a <a href="https://docs.dxesf.org/#32-chapter-members">Chapter Member</a>, you are eligible to vote if you've been a Chapter Member for the past 6 full months, on the Movement-Power Index for 8 of the past 12 full months at the time of the vote, and have signed the voting agreement.</p>
+
+<table class="elections">
+<tr>
+  <th>Month</th>
+  <th>CM for 6 months</th>
+  <th>MPI of past 12 months</th>
+  <th>Voting agreement</th>
+  <th>Eligible?</th>
+</tr>
+<tr>
+  <td>August 2020</td>
+  <td>{{if .AugApproved6}}Yes{{else}}No{{end}}</td>
+  <td>{{.AugPast12}}</td>
+  <td>{{if .VotingAgreement}}Yes{{else}}No{{end}}</td>
+  <td>{{if and .AugApproved6 (ge .AugPast12 8) .VotingAgreement}}Yes{{else}}No{{end}}</td>
+</tr>
+<tr>
+  <td>September 2020</td>
+  <td>{{if .SepApproved6}}Yes{{else}}No{{end}}</td>
+  <td>{{.SepPast12}}</td>
+  <td>{{if .VotingAgreement}}Yes{{else}}No{{end}}</td>
+  <td>{{if and .SepApproved6 (ge .SepPast12 8) .VotingAgreement}}Yes{{else}}No{{end}}</td>
+</tr>
+</table>
 {{else}}
-  <li>August 2020:    No</li>
-  <li>September 2020: No</li>
+<p>Sorry, you are not eligible. You must be a Chapter Member to be eligible to vote.</p>
 {{end}}
-</ul>
 
 <h2>Working Groups</h2>
 
