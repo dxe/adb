@@ -38,10 +38,12 @@ func (s *server) index() {
 		Birthday      string
 		ActivistLevel string
 
-		Organizer     int // boolean
-		ChapterMember int // boolean
-		JulVoter      bool
-		AugVoter      bool
+		Organizer       int // boolean
+		ChapterMember   int // boolean
+		VotingAgreement int // boolean
+
+		AugPast3, AugPast12 int
+		SepPast3, SepPast12 int
 
 		WorkingGroups []string
 
@@ -77,9 +79,12 @@ select json_object(
 
   'Organizer', x.activist_level in ('Organizer', 'Senior Organizer'),
   'ChapterMember', x.activist_level in ('Chapter Member', 'Organizer', 'Senior Organizer'),
+  'VotingAgreement', x.voting_agreement,
 
-  'JulVoter', sum(x.mpi and x.month >= 202004 and x.month < 202007) >= 2,
-  'AugVoter', sum(x.mpi and x.month >= 202005 and x.month < 202008) >= 2,
+  'AugPast3',  sum(x.mpi and x.month >= 202005 and x.month < 202008),
+  'AugPast12', sum(x.mpi and x.month >= 202008 and x.month < 202008),
+  'SepPast3',  sum(x.mpi and x.month >= 202006 and x.month < 202009),
+  'SepPast12', sum(x.mpi and x.month >= 202009 and x.month < 202009),
 
   'WorkingGroups', (
     select json_arrayagg(w.name)
@@ -261,23 +266,18 @@ table.profile td:nth-child(1), table.election, td:nth-child(1) {
 
 <h2>Voter Eligibility</h2>
 
-<table class="elections">
-<tr>
-  <th>Month</th>
-  <th><a href="https://docs.dxesf.org/#32-chapter-members">Chapter Member Votes</a></th>
-  <th><a href="https://docs.dxesf.org/#33-organizers">Organizer Votes</a></th>
-</tr>
-<tr>
-  <td>July 2020</td>
-  <td>{{if and .ChapterMember .JulVoter}}Yes{{else}}No{{end}}</td>
-  <td>{{if and .Organizer .JulVoter}}Yes{{else}}No{{end}}</td>
-</tr>
-<tr>
-  <td>August 2020</td>
-  <td>{{if and .ChapterMember .AugVoter}}Yes{{else}}No{{end}}</td>
-  <td>{{if and .Organizer .AugVoter}}Yes{{else}}No{{end}}</td>
-</tr>
-</table>
+<ul>
+{{if .Organizer}}
+  <li>August 2020:    {{if ge .AugPast3 2}}Yes{{else}}No{{end}}</li>
+  <li>September 2020: {{if ge .SepPast3 2}}Yes{{else}}No{{end}}</li>
+{{else if .ChapterMember}}
+  <li>August 2020:    {{if and (ge .AugPast12 8) .VotingAgreement}}Yes{{else}}No{{end}}</li>
+  <li>September 2020: {{if and (ge .SepPast12 8) .VotingAgreement}}Yes{{else}}No{{end}}</li>
+{{else}}
+  <li>August 2020:    No</li>
+  <li>September 2020: No</li>
+{{end}}
+</ul>
 
 <h2>Working Groups</h2>
 
