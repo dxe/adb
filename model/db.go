@@ -36,6 +36,7 @@ func WipeDatabase(db *sqlx.DB) {
 CREATE TABLE activists (
   id INTEGER PRIMARY KEY AUTO_INCREMENT,
   name VARCHAR(80) NOT NULL,
+  preferred_name VARCHAR(80) NOT NULL DEFAULT '',
   email VARCHAR(80) NOT NULL DEFAULT '',
   phone VARCHAR(20) NOT NULL DEFAULT '',
   location VARCHAR(200) DEFAULT '',

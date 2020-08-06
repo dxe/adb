@@ -43,6 +43,7 @@ SELECT
   a.id,
   location,
   a.name,
+  preferred_name,
   phone,
   dob,
 
@@ -189,6 +190,7 @@ SET
   facebook = :facebook,
   location = :location,
   name = :name,
+  preferred_name = :preferred_name,
   phone = :phone,
   dob = :dob,
 
@@ -236,14 +238,15 @@ const AscOrder int = 1
 /** Type Definitions */
 
 type Activist struct {
-	Email    string         `db:"email"`
-	Facebook string         `db:"facebook"`
-	Hidden   bool           `db:"hidden"`
-	ID       int            `db:"id"`
-	Location sql.NullString `db:"location"`
-	Name     string         `db:"name"`
-	Phone    string         `db:"phone"`
-	Birthday sql.NullString `db:"dob"`
+	Email         string         `db:"email"`
+	Facebook      string         `db:"facebook"`
+	Hidden        bool           `db:"hidden"`
+	ID            int            `db:"id"`
+	Location      sql.NullString `db:"location"`
+	Name          string         `db:"name"`
+	PreferredName string         `db:"preferred_name"`
+	Phone         string         `db:"phone"`
+	Birthday      sql.NullString `db:"dob"`
 }
 
 type ActivistEventData struct {
@@ -310,13 +313,14 @@ type ActivistExtra struct {
 }
 
 type ActivistJSON struct {
-	Email    string `json:"email"`
-	Facebook string `json:"facebook"`
-	ID       int    `json:"id"`
-	Location string `json:"location"`
-	Name     string `json:"name"`
-	Phone    string `json:"phone"`
-	Birthday string `json:"dob"`
+	Email         string `json:"email"`
+	Facebook      string `json:"facebook"`
+	ID            int    `json:"id"`
+	Location      string `json:"location"`
+	Name          string `json:"name"`
+	PreferredName string `json:"preferred_name"`
+	Phone         string `json:"phone"`
+	Birthday      string `json:"dob"`
 
 	FirstEvent     string `json:"first_event"`
 	LastEvent      string `json:"last_event"`
@@ -528,13 +532,14 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 		}
 
 		activistsJSON = append(activistsJSON, ActivistJSON{
-			Email:    a.Email,
-			Facebook: a.Facebook,
-			ID:       a.ID,
-			Location: location,
-			Name:     a.Name,
-			Phone:    a.Phone,
-			Birthday: dob,
+			Email:         a.Email,
+			Facebook:      a.Facebook,
+			ID:            a.ID,
+			Location:      location,
+			Name:          a.Name,
+			PreferredName: a.PreferredName,
+			Phone:         a.Phone,
+			Birthday:      dob,
 
 			FirstEvent:     firstEvent,
 			LastEvent:      lastEvent,
@@ -897,6 +902,7 @@ INSERT INTO activists (
   facebook,
   location,
   name,
+  preferred_name,
   phone,
   dob,
 
@@ -940,6 +946,7 @@ INSERT INTO activists (
   :facebook,
   :location,
   :name,
+  :preferred_name,
   :phone,
   :dob,
 
@@ -1003,6 +1010,7 @@ SET
   facebook = :facebook,
   location = :location,
   name = :name,
+  preferred_name = :preferred_name,
   phone = :phone,
   dob = :dob,
 
@@ -1387,22 +1395,25 @@ ORDER BY MAX(e.date) DESC`)
 }
 
 type ActivistBasicInfoJSON struct {
-	Name  string `json:"name"`
-	Email string `json:"email"`
-	Phone string `json:"phone"`
+	Name          string `json:"name"`
+	Email         string `json:"email"`
+	Phone         string `json:"phone"`
+	PreferredName string `json:"preferred_name"`
 }
 
 type ActivistBasicInfo struct {
-	Name  string `db:"name"`
-	Email string `db:"email"`
-	Phone string `db:"phone"`
+	Name          string `db:"name"`
+	Email         string `db:"email"`
+	Phone         string `db:"phone"`
+	PreferredName string `db:"preferred_name"`
 }
 
 func (activist *ActivistBasicInfo) ToJSON() ActivistBasicInfoJSON {
 	return ActivistBasicInfoJSON{
-		Name:  activist.Name,
-		Email: activist.Email,
-		Phone: activist.Phone,
+		Name:          activist.Name,
+		Email:         activist.Email,
+		Phone:         activist.Phone,
+		PreferredName: activist.PreferredName,
 	}
 }
 
@@ -1411,7 +1422,7 @@ func GetActivistListBasicJSON(db *sqlx.DB) []ActivistBasicInfoJSON {
 
 	// Order the activists by the last even they've been to.
 	err := db.Select(&activists, `
-SELECT a.name, a.email, a.phone FROM activists a
+SELECT a.name, a.email, a.phone, a.preferred_name FROM activists a
 LEFT OUTER JOIN event_attendance ea ON a.id = ea.activist_id
 LEFT OUTER JOIN events e ON e.id = ea.event_id
 WHERE a.hidden = 0
@@ -1531,13 +1542,14 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 
 	activistExtra := ActivistExtra{
 		Activist: Activist{
-			Email:    strings.TrimSpace(activistJSON.Email),
-			Facebook: strings.TrimSpace(activistJSON.Facebook),
-			ID:       activistJSON.ID,
-			Location: sql.NullString{String: strings.TrimSpace(activistJSON.Location), Valid: validLoc},
-			Name:     strings.TrimSpace(activistJSON.Name),
-			Phone:    strings.TrimSpace(activistJSON.Phone),
-			Birthday: sql.NullString{String: strings.TrimSpace(activistJSON.Birthday), Valid: validBirthday},
+			Email:         strings.TrimSpace(activistJSON.Email),
+			Facebook:      strings.TrimSpace(activistJSON.Facebook),
+			ID:            activistJSON.ID,
+			Location:      sql.NullString{String: strings.TrimSpace(activistJSON.Location), Valid: validLoc},
+			Name:          strings.TrimSpace(activistJSON.Name),
+			PreferredName: strings.TrimSpace(activistJSON.PreferredName),
+			Phone:         strings.TrimSpace(activistJSON.Phone),
+			Birthday:      sql.NullString{String: strings.TrimSpace(activistJSON.Birthday), Valid: validBirthday},
 		},
 		ActivistMembershipData: ActivistMembershipData{
 			ActivistLevel: strings.TrimSpace(activistJSON.ActivistLevel),

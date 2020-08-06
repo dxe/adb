@@ -345,6 +345,15 @@ function getDefaultColumns(view: string): Column[] {
       enabled: true,
     },
     {
+      header: 'Preferred Name',
+      longHeader: 'Preferred Name (First Name or Nickname)',
+      data: {
+        data: 'preferred_name',
+        colWidths: 90,
+      },
+      enabled: view === 'chapter_member_development',
+    },
+    {
       header: 'Notes',
       longHeader: 'Notes',
       data: {
