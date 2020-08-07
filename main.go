@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -226,6 +227,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/circle/save", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.CircleGroupSaveHandler))
 	router.Handle("/circle/list", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.CircleGroupListHandler))
 	router.Handle("/circle/delete", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.CircleGroupDeleteHandler))
+	router.Handle("/csv/chapter_member_spoke", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.ChapterMemberSpokeCSVHandler))
 
 	// Authed Admin API
 	admin.Handle("/user/list", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserListHandler))
@@ -1251,6 +1253,34 @@ func (c MainController) ActivistListBasicHandler(w http.ResponseWriter, r *http.
 	}
 
 	writeJSON(w, out)
+}
+
+func (c MainController) ChapterMemberSpokeCSVHandler(w http.ResponseWriter, r *http.Request) {
+	activists, err := model.GetActivistSpokeInfo(c.db)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Disposition", "attachment; filename=chapter_members_spoke.csv")
+	w.Header().Set("Content-Type", "text/csv")
+	w.Header().Set("Transfer-Encoding", "chunked")
+
+	writer := csv.NewWriter(w)
+	err = writer.Write([]string{"first_name", "last_name", "cell"})
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+	for _, activist := range activists {
+		err := writer.Write([]string{activist.FirstName, activist.LastName, activist.Cell})
+		if err != nil {
+			sendErrorMessage(w, err)
+			return
+		}
+	}
+	writer.Flush()
+
 }
 
 func (c MainController) UserListHandler(w http.ResponseWriter, r *http.Request) {

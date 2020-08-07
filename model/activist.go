@@ -1442,6 +1442,32 @@ ORDER BY MAX(e.date) DESC`)
 	return activistsJSON
 }
 
+type ChapterMemberSpokeInfo struct {
+	FirstName string `db:"first_name"`
+	LastName  string `db:"last_name"`
+	Cell      string `db:"cell"`
+}
+
+func GetActivistSpokeInfo(db *sqlx.DB) ([]ChapterMemberSpokeInfo, error) {
+	activists := []ChapterMemberSpokeInfo{}
+
+	// Order the activists by the last even they've been to.
+	err := db.Select(&activists, `
+		SELECT
+			IF(preferred_name <> '', preferred_name, substring_index(name, " ", 1)) as first_name,
+			SUBSTRING(name, LOCATE(' ', name)) as last_name,
+			phone as cell
+		FROM activists
+		WHERE
+			activist_level in ('chapter member', 'organizer', 'senior organizer')
+			and hidden = 0`)
+	if err != nil {
+		return []ChapterMemberSpokeInfo{}, err
+	}
+
+	return activists, nil
+}
+
 func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 	var activistJSON ActivistJSON
 	err := json.NewDecoder(body).Decode(&activistJSON)

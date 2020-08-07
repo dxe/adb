@@ -23,6 +23,13 @@
 
       <span v-if="loading"><i>Loading...</i></span>
 
+      <span v-if="view == 'chapter_member_development'">
+        &nbsp;&nbsp;&nbsp;&nbsp;
+        <a class="btn btn-default" href="/csv/chapter_member_spoke">
+          <span class="glyphicon glyphicon-download-alt"></span>&nbsp;&nbsp;Export CSV for Spoke
+        </a>
+      </span>
+
       <div v-if="showOptions === 'filters'">
         <div>
           <label>Location:</label>
