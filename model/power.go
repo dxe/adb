@@ -33,7 +33,7 @@ SELECT
 	count(id) active_chapter_members
 FROM activists
 where mpi = 1
-and activist_level in ('chapter member','organizer','senior organizer')
+and activist_level in ('chapter member','organizer')
 `
 	var members string
 	if err := db.Get(&members, query); err != nil {

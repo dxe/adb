@@ -381,7 +381,7 @@ function getDefaultColumns(view: string): Column[] {
         data: 'dev_manager',
         colWidths: 100,
       },
-      enabled: view === 'organizer_prospects' || view === 'senior_organizer_prospects',
+      enabled: view === 'organizer_prospects',
     },
     {
       header: 'Points',
@@ -529,14 +529,7 @@ function getDefaultColumns(view: string): Column[] {
         data: 'activist_level',
         colWidths: 140,
         type: 'dropdown',
-        source: [
-          'Supporter',
-          'Chapter Member',
-          'Organizer',
-          'Senior Organizer',
-          'Non-Local',
-          'Global Network Member',
-        ],
+        source: ['Supporter', 'Chapter Member', 'Organizer', 'Non-Local', 'Global Network Member'],
       },
       enabled:
         view === 'all_activists' ||
@@ -546,8 +539,7 @@ function getDefaultColumns(view: string): Column[] {
         view === 'organizer_prospects' ||
         view === 'chapter_member_prospects' ||
         view === 'chapter_member_development' ||
-        view === 'circle_member_prospects' ||
-        view === 'senior_organizer_prospects',
+        view === 'circle_member_prospects',
     },
 
     {
@@ -597,10 +589,7 @@ function getDefaultColumns(view: string): Column[] {
         colWidths: 100,
         readOnly: true,
       },
-      enabled:
-        view === 'chapter_member_prospects' ||
-        view === 'organizer_prospects' ||
-        view === 'senior_organizer_prospects',
+      enabled: view === 'chapter_member_prospects' || view === 'organizer_prospects',
     },
 
     {
@@ -611,10 +600,7 @@ function getDefaultColumns(view: string): Column[] {
         colWidths: 80,
         readOnly: true,
       },
-      enabled:
-        view === 'chapter_member_prospects' ||
-        view === 'organizer_prospects' ||
-        view === 'senior_organizer_prospects',
+      enabled: view === 'chapter_member_prospects' || view === 'organizer_prospects',
     },
 
     {
@@ -639,18 +625,6 @@ function getDefaultColumns(view: string): Column[] {
         colWidths: 100,
       },
       enabled: view === 'organizer_prospects',
-    },
-
-    {
-      header: 'Prsp. Sen. Org.',
-      longHeader: 'Prospective Senior Organizer',
-      data: {
-        type: 'dropdown',
-        source: [true, false],
-        data: 'prospect_senior_organizer',
-        colWidths: 100,
-      },
-      enabled: view === 'senior_organizer_prospects' || view === 'development',
     },
 
     {
@@ -767,7 +741,6 @@ function getDefaultColumns(view: string): Column[] {
         view === 'chapter_member_prospects' ||
         view === 'chapter_member_development' ||
         view === 'organizer_prospects' ||
-        view === 'senior_organizer_development' ||
         view === 'development',
     },
 
@@ -789,11 +762,7 @@ function getDefaultColumns(view: string): Column[] {
         data: 'connector',
         colWidths: 125,
       },
-      enabled:
-        view === 'activist_pool' ||
-        view === 'action_team' ||
-        view === 'development' ||
-        view === 'senior_organizer_development',
+      enabled: view === 'activist_pool' || view === 'action_team' || view === 'development',
     },
     {
       header: 'Last Maint. Coaching',
@@ -1068,7 +1037,6 @@ function setPreviousSortData(field: string, ascending: boolean) {
 //   "activist" : 3,
 //   "core_activist" : 2,
 //   "organizer" : 1,
-//   "senior_organizer" : 0
 // };
 
 (window as any).showOptionsModal = function(row: number) {

@@ -208,7 +208,7 @@ func syncChapterMemberMailingList(db *sqlx.DB, adminService *admin.Service) {
 
 func syncOrganizersMailingList(db *sqlx.DB, adminService *admin.Service) {
 	// Sync sfbay-organizers@directactioneverywhere.com to contain all
-	// activists that have activist_level of "Organizer" or "Senior Organizer".
+	// activists that have activist_level of "Organizer"
 
 	members, err := model.GetOrganizers(db)
 	if err != nil {

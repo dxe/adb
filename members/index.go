@@ -83,8 +83,8 @@ select json_object(
   'Birthday', x.dob,
   'ActivistLevel', x.activist_level,
 
-  'Organizer', x.activist_level in ('Organizer', 'Senior Organizer'),
-  'ChapterMember', x.activist_level in ('Chapter Member', 'Organizer', 'Senior Organizer'),
+  'Organizer', x.activist_level = 'Organizer',
+  'ChapterMember', x.activist_level in ('Chapter Member', 'Organizer'),
   'VotingAgreement', x.voting_agreement,
 
   'AugPast3',     sum(x.mpi and x.month >= 202005 and x.month < 202008),

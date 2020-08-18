@@ -66,8 +66,6 @@ SELECT
   dev_manager,
   dev_interest,
 
-  prospect_senior_organizer,
-
   cm_first_email,
   cm_approval_email,
   cm_warning_email,
@@ -212,7 +210,6 @@ SET
   dev_quiz = :dev_quiz,
   dev_manager = :dev_manager,
   dev_interest = :dev_interest,
-  prospect_senior_organizer = :prospect_senior_organizer,
   cm_first_email = :cm_first_email,
   cm_approval_email = :cm_approval_email,
   cm_warning_email = :cm_warning_email,
@@ -284,8 +281,6 @@ type ActivistConnectionData struct {
 	DevManager      string         `db:"dev_manager"`
 	DevInterest     string         `db:"dev_interest"`
 
-	ProspectSeniorOrganizer bool `db:"prospect_senior_organizer"`
-
 	CMFirstEmail          sql.NullString `db:"cm_first_email"`
 	CMApprovalEmail       sql.NullString `db:"cm_approval_email"`
 	CMWarningEmail        sql.NullString `db:"cm_warning_email"`
@@ -351,8 +346,6 @@ type ActivistJSON struct {
 	Quiz            string `json:"dev_quiz"`
 	DevManager      string `json:"dev_manager"`
 	DevInterest     string `json:"dev_interest"`
-
-	ProspectSeniorOrganizer bool `json:"prospect_senior_organizer"`
 
 	CMFirstEmail          string `json:"cm_first_email"`
 	CMApprovalEmail       string `json:"cm_approval_email"`
@@ -571,8 +564,6 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			DevManager:      a.DevManager,
 			DevInterest:     a.DevInterest,
 
-			ProspectSeniorOrganizer: a.ProspectSeniorOrganizer,
-
 			CMFirstEmail:          cm_first_email,
 			CMApprovalEmail:       cm_approval_email,
 			CMWarningEmail:        cm_warning_email,
@@ -638,13 +629,13 @@ SELECT
   name,
   email
 FROM activists
-WHERE hidden = 0 AND activist_level IN('Organizer', 'Senior Organizer', 'Chapter Member')
+WHERE hidden = 0 AND activist_level IN('Organizer', 'Chapter Member')
 `
 
 	var activists []Activist
 	err := db.Select(&activists, query)
 	if err != nil {
-		return []Activist{}, errors.Wrapf(err, "GetChapterMembers: Failed retrieving activists for levels Organizer, Senior Organizer, and Chapter Member")
+		return []Activist{}, errors.Wrapf(err, "GetChapterMembers: Failed retrieving activists for levels Organizer and Chapter Member")
 	}
 
 	return activists, nil
@@ -657,13 +648,13 @@ SELECT
   name,
   email
 FROM activists
-WHERE hidden = 0 AND activist_level IN('Organizer', 'Senior Organizer')
+WHERE hidden = 0 AND activist_level = 'Organizer'
 `
 
 	var activists []Activist
 	err := db.Select(&activists, query)
 	if err != nil {
-		return []Activist{}, errors.Wrapf(err, "GetOrganizers: Failed retrieving activists for levels Organizer and Senior Organizer")
+		return []Activist{}, errors.Wrapf(err, "GetOrganizers: Failed retrieving activists for levels Organizer")
 	}
 
 	return activists, nil
@@ -703,12 +694,6 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 		}
 		if options.Filter == "organizer_prospects" {
 			whereClause = append(whereClause, "prospect_organizer = true AND a.activist_level not like '%organizer'")
-		}
-		if options.Filter == "senior_organizer_prospects" {
-			whereClause = append(whereClause, "prospect_senior_organizer = true AND a.activist_level <> 'senior organizer'")
-		}
-		if options.Filter == "senior_organizer_development" {
-			whereClause = append(whereClause, "a.activist_level = 'senior organizer'")
 		}
 		if options.Filter == "chapter_member_development" {
 			whereClause = append(whereClause, "(a.activist_level like '%organizer' OR a.activist_level = 'chapter member')")
@@ -922,7 +907,6 @@ INSERT INTO activists (
   dev_manager,
   dev_interest,
   dev_quiz,
-  prospect_senior_organizer,
   cm_first_email,
   cm_approval_email,
   cm_warning_email,
@@ -966,7 +950,6 @@ INSERT INTO activists (
   :dev_manager,
   :dev_interest,
   :dev_quiz,
-  :prospect_senior_organizer,
   :cm_first_email,
   :cm_approval_email,
   :cm_warning_email,
@@ -1030,7 +1013,6 @@ SET
   dev_manager = :dev_manager,
   dev_interest = :dev_interest,
   dev_quiz = :dev_quiz,
-  prospect_senior_organizer = :prospect_senior_organizer,
   cm_first_email = :cm_first_email,
   cm_approval_email = :cm_approval_email,
   cm_warning_email = :cm_warning_email,
@@ -1225,14 +1207,12 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 		"Global Network Member": 2,
 		"Chapter Member":        3,
 		"Organizer":             4,
-		"Senior Organizer":      5,
 	}
 
 	// Check boolean values
 
 	target.ProspectOrganizer = boolMerge(original.ProspectOrganizer, target.ProspectOrganizer)
 	target.ProspectChapterMember = boolMerge(original.ProspectChapterMember, target.ProspectChapterMember)
-	target.ProspectSeniorOrganizer = boolMerge(original.ProspectSeniorOrganizer, target.ProspectSeniorOrganizer)
 	target.CircleInterest = boolMerge(original.CircleInterest, target.CircleInterest)
 	target.MPI = boolMerge(original.MPI, target.MPI)
 	target.Hiatus = boolMerge(original.Hiatus, target.Hiatus)
@@ -1459,7 +1439,7 @@ func GetActivistSpokeInfo(db *sqlx.DB) ([]ChapterMemberSpokeInfo, error) {
 			phone as cell
 		FROM activists
 		WHERE
-			activist_level in ('chapter member', 'organizer', 'senior organizer')
+			activist_level in ('chapter member', 'organizer')
 			and hidden = 0`)
 	if err != nil {
 		return []ChapterMemberSpokeInfo{}, err
@@ -1596,8 +1576,6 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			DevInterest:     strings.TrimSpace(activistJSON.DevInterest),
 			Quiz:            sql.NullString{String: strings.TrimSpace(activistJSON.Quiz), Valid: validQuiz},
 
-			ProspectSeniorOrganizer: activistJSON.ProspectSeniorOrganizer,
-
 			CMFirstEmail:          sql.NullString{String: strings.TrimSpace(activistJSON.CMFirstEmail), Valid: validCMFirstEmail},
 			CMApprovalEmail:       sql.NullString{String: strings.TrimSpace(activistJSON.CMApprovalEmail), Valid: validCMApprovalEmail},
 			CMWarningEmail:        sql.NullString{String: strings.TrimSpace(activistJSON.CMWarningEmail), Valid: validCMWarningEmail},
@@ -1629,7 +1607,6 @@ var validActivistLevels = map[string]struct{}{
 	"Supporter":             struct{}{},
 	"Chapter Member":        struct{}{},
 	"Organizer":             struct{}{},
-	"Senior Organizer":      struct{}{},
 	"Non-Local":             struct{}{},
 	"Global Network Member": struct{}{},
 }
