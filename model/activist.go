@@ -144,7 +144,10 @@ SELECT
     notes,
     vision_wall,
     mpp_requirements,
-    voting_agreement
+    voting_agreement,
+    street_address,
+    city,
+    state
 
 FROM activists a
 
@@ -224,7 +227,10 @@ SET
   mpi = :mpi,
   notes = :notes,
   vision_wall = :vision_wall,
-  voting_agreement = :voting_agreement
+  voting_agreement = :voting_agreement,
+  street_address = :street_address,
+  city = :city,
+  state = :state
 
 WHERE
   id = :id`
@@ -298,6 +304,9 @@ type ActivistConnectionData struct {
 	VisionWall            string         `db:"vision_wall"`
 	MPPRequirements       string         `db:"mpp_requirements"`
 	VotingAgreement       bool           `db:"voting_agreement"`
+	StreetAddress         string         `db:"street_address"`
+	City                  string         `db:"city"`
+	State                 string         `db:"state"`
 }
 
 type ActivistExtra struct {
@@ -364,6 +373,9 @@ type ActivistJSON struct {
 	VisionWall            string `json:"vision_wall"`
 	MPPRequirements       string `json:"mpp_requirements"`
 	VotingAgreement       bool   `json:"voting_agreement"`
+	StreetAddress         string `json:"street_address"`
+	City                  string `json:"city"`
+	State                 string `json:"state"`
 }
 
 type GetActivistOptions struct {
@@ -581,6 +593,9 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			VisionWall:            a.VisionWall,
 			MPPRequirements:       a.MPPRequirements,
 			VotingAgreement:       a.VotingAgreement,
+			StreetAddress:         a.StreetAddress,
+			City:                  a.City,
+			State:                 a.State,
 		})
 	}
 
@@ -922,7 +937,10 @@ INSERT INTO activists (
   mpi,
   notes,
   vision_wall,
-  voting_agreement
+  voting_agreement,
+  street_address,
+  city,
+  state
 
 ) VALUES (
 
@@ -966,6 +984,9 @@ INSERT INTO activists (
   :notes,
   :vision_wall,
   :voting_agreement,
+  :street_address,
+  :city,
+  :state
 
 )`, activist)
 	if err != nil {
@@ -1027,7 +1048,10 @@ SET
   mpi = :mpi,
   notes = :notes,
   vision_wall = :vision_wall,
-  voting_agreement = :voting_agreement
+  voting_agreement = :voting_agreement,
+  street_address = :street_address,
+  city = :city,
+  state = :state
   
 WHERE
   id = :id`, activist)
@@ -1250,6 +1274,9 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 	target.Notes = stringMergeSqlNullString(original.Notes, target.Notes)
 	target.VisionWall = stringMerge(original.VisionWall, target.VisionWall)
 	target.ApplicationType = stringMerge(original.ApplicationType, target.ApplicationType)
+	target.StreetAddress = stringMerge(original.StreetAddress, target.StreetAddress)
+	target.City = stringMerge(original.City, target.City)
+	target.State = stringMerge(original.State, target.State)
 
 	// Check Activist Levels
 	if len(original.ActivistLevel) != 0 && len(target.ActivistLevel) != 0 {
@@ -1592,6 +1619,9 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			VisionWall:            strings.TrimSpace(activistJSON.VisionWall),
 			MPPRequirements:       strings.TrimSpace(activistJSON.MPPRequirements),
 			VotingAgreement:       activistJSON.VotingAgreement,
+			StreetAddress:         strings.TrimSpace(activistJSON.StreetAddress),
+			City:                  strings.TrimSpace(activistJSON.City),
+			State:                 strings.TrimSpace(activistJSON.State),
 		},
 	}
 

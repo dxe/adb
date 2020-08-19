@@ -73,13 +73,6 @@ CREATE TABLE activists (
   cm_approval_email VARCHAR(20),
   cm_warning_email VARCHAR(20),
   cir_first_email VARCHAR(20),
-  so_auth varchar(20),
-  so_core varchar(20),
-  so_agreement tinyint(1) NOT NULL DEFAULT '0',
-  so_training varchar(20),
-  so_quiz varchar(20),
-  so_connector varchar(100) NOT NULL DEFAULT '',
-  so_onboarding tinyint(1) NOT NULL DEFAULT '0',
   referral_friends varchar(100) NOT NULL DEFAULT '',
   referral_apply varchar(100) NOT NULL DEFAULT '',
   referral_outlet varchar(100) NOT NULL DEFAULT '',
@@ -93,6 +86,9 @@ CREATE TABLE activists (
   study_conversation varchar(20),
   survey_completion VARCHAR(20),
   voting_agreement TINYINT(1) NOT NULL DEFAULT '0',
+  street_address VARCHAR(200) NOT NULL DEFAULT '',
+  city VARCHAR(100) NOT NULL DEFAULT '',
+  state VARCHAR(40) NOT NULL DEFAULT '',
   UNIQUE (name)
 )
 `)

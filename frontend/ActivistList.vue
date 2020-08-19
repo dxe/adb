@@ -32,13 +32,13 @@
 
       <div v-if="showOptions === 'filters'">
         <div>
-          <label>Location:</label>
+          <label>Zip Code:</label>
 
           <input
             v-on:input="debounceSearchLocationInput"
             class="form-control filter-margin"
             type="text"
-            placeholder="Zipcode or City"
+            placeholder="Zipcode"
           />
 
           <label>Radius:</label>
@@ -452,8 +452,35 @@ function getDefaultColumns(view: string): Column[] {
       enabled: view === 'all_activists',
     },
     {
-      header: 'Location',
-      longHeader: 'Location',
+      header: 'Street Address',
+      longHeader: 'Street Address',
+      data: {
+        data: 'street_address',
+        colWidths: 100,
+      },
+      enabled: false,
+    },
+    {
+      header: 'City',
+      longHeader: 'City',
+      data: {
+        data: 'city',
+        colWidths: 100,
+      },
+      enabled: false,
+    },
+    {
+      header: 'State',
+      longHeader: 'State',
+      data: {
+        data: 'state',
+        colWidths: 100,
+      },
+      enabled: false,
+    },
+    {
+      header: 'Zip Code',
+      longHeader: 'Zip Code',
       data: {
         data: 'location',
         colWidths: 100,
