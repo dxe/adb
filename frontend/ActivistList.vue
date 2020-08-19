@@ -352,8 +352,8 @@ function getDefaultColumns(view: string): Column[] {
       enabled: true,
     },
     {
-      header: 'Preferred Name',
-      longHeader: 'Preferred Name (First Name or Nickname)',
+      header: 'SMS Name',
+      longHeader: 'SMS Name (First Name or Nickname)',
       data: {
         data: 'preferred_name',
         colWidths: 90,
