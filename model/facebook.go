@@ -247,6 +247,34 @@ func GetFacebookEvents(db *sqlx.DB, pageID int, startTime string, endTime string
 	return events, nil
 }
 
+func GetOnlineFacebookEvents(db *sqlx.DB, startTime string, endTime string) ([]FacebookEventOutput, error) {
+	// TODO: move these page IDs to config variables?
+	query := `SELECT id, page_id, name, description, start_time, end_time, location_name,
+		location_country, location_country, location_state, location_address, location_zip,
+		lat, lng, cover, attending_count, interested_count, is_canceled, last_update FROM fb_events
+		WHERE is_canceled = 0 and ((page_id = 1377014279263790 and location_name = 'Online') or page_id = 287332515138353)`
+
+	if startTime != "" {
+		query += " and start_time >= '" + startTime + "'"
+	}
+	if endTime != "" {
+		// we actually want to show events which have a START time before the query's end time
+		// otherwise really long (or recurring) events could be hidden
+		query += " and start_time <= '" + endTime + "'"
+	}
+
+	query += " ORDER BY start_time"
+
+	var events []FacebookEventOutput
+	err := db.Select(&events, query)
+	if err != nil {
+		// error
+		return nil, errors.Wrap(err, "failed to select events")
+	}
+
+	return events, nil
+}
+
 func InsertFacebookEvent(db *sqlx.DB, event FacebookEventJSON, page FacebookPage) (err error) {
 	// parse fb's datetimes
 	fbTimeLayout := "2006-01-02T15:04:05-0700"

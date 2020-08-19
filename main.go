@@ -1429,14 +1429,32 @@ func (c MainController) ListFBEventsHandler(w http.ResponseWriter, r *http.Reque
 		}
 	}
 
-	// run query
+	localEventsFound := false
+
+	// run query to get local events
 	events, err := model.GetFacebookEvents(c.db, pageID, startTimeStr, endTimeStr)
 	if err != nil {
 		panic(err)
 	}
 
+	// check if any local events were returned
+	if len(events) > 0 {
+		localEventsFound = true
+	}
+
+	if !localEventsFound {
+		// get online SF Bay + ALOA events instead
+		events, err = model.GetOnlineFacebookEvents(c.db, startTimeStr, endTimeStr)
+		if err != nil {
+			panic(err)
+		}
+	}
+
 	// return json
-	writeJSON(w, events)
+	writeJSON(w, map[string]interface{}{
+		"local_events_found": localEventsFound,
+		"events":             events,
+	})
 }
 
 func (c MainController) FindNearestFacebookPagesHandler(w http.ResponseWriter, r *http.Request) {
