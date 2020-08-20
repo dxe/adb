@@ -357,6 +357,7 @@ func getUserEmail(user model.ADBUser) string {
 func (c MainController) apiRoleMiddleware(h http.Handler, allowedRoles []string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, authed := getAuthedADBUser(c.db, r)
+
 		if !authed {
 			http.Error(w, http.StatusText(400), 400)
 			return
@@ -849,8 +850,8 @@ func (c MainController) ActivistInfiniteScrollHandler(w http.ResponseWriter, r *
 }
 
 func (c MainController) ActivistSaveHandler(w http.ResponseWriter, r *http.Request) {
-	// get requesting user's email (for logging)
-	userEmail := getUserEmail(getUserFromContext(r.Context()))
+	// get requesting user's (for logging)
+	user, _ := getAuthedADBUser(c.db, r)
 
 	activistExtra, err := model.CleanActivistData(r.Body)
 	if err != nil {
@@ -864,7 +865,7 @@ func (c MainController) ActivistSaveHandler(w http.ResponseWriter, r *http.Reque
 	if activistExtra.ID == 0 {
 		activistID, err = model.CreateActivist(c.db, activistExtra)
 	} else {
-		activistID, err = model.UpdateActivistData(c.db, activistExtra, userEmail) // testing logging
+		activistID, err = model.UpdateActivistData(c.db, activistExtra, user.Email) // testing logging
 	}
 	if err != nil {
 		sendErrorMessage(w, err)
