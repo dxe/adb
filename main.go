@@ -849,6 +849,9 @@ func (c MainController) ActivistInfiniteScrollHandler(w http.ResponseWriter, r *
 }
 
 func (c MainController) ActivistSaveHandler(w http.ResponseWriter, r *http.Request) {
+	// get requesting user's email (for logging)
+	userEmail := getUserEmail(getUserFromContext(r.Context()))
+
 	activistExtra, err := model.CleanActivistData(r.Body)
 	if err != nil {
 		sendErrorMessage(w, err)
@@ -861,7 +864,7 @@ func (c MainController) ActivistSaveHandler(w http.ResponseWriter, r *http.Reque
 	if activistExtra.ID == 0 {
 		activistID, err = model.CreateActivist(c.db, activistExtra)
 	} else {
-		activistID, err = model.UpdateActivistData(c.db, activistExtra)
+		activistID, err = model.UpdateActivistData(c.db, activistExtra, userEmail) // testing logging
 	}
 	if err != nil {
 		sendErrorMessage(w, err)

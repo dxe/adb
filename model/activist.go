@@ -3,6 +3,7 @@ package model
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"io"
 	"strings"
 	"time"
@@ -999,7 +1000,7 @@ INSERT INTO activists (
 	return int(id), nil
 }
 
-func UpdateActivistData(db *sqlx.DB, activist ActivistExtra) (int, error) {
+func UpdateActivistData(db *sqlx.DB, activist ActivistExtra, userEmail string) (int, error) {
 	if activist.ID == 0 {
 		return 0, errors.New("activist ID cannot be 0")
 	}
@@ -1059,6 +1060,23 @@ WHERE
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to update activist data")
 	}
+
+	// LOGGING (work in progress)
+	_, err = db.NamedExec(`INSERT INTO activists_history (activist_id, action, user_email, name, email, facebook, activist_level)
+	VALUES (
+		:id,
+		'UPDATE',
+		'`+userEmail+`',
+		:name,
+		:email,
+		:facebook,
+		:activist_level
+)`, activist)
+
+	if err != nil {
+		fmt.Println("Error logging activist update: " + err.Error())
+	}
+
 	return activist.ID, nil
 }
 

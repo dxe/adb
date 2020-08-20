@@ -20,6 +20,7 @@ func WipeDatabase(db *sqlx.DB) {
 	}
 
 	db.MustExec(`DROP TABLE IF EXISTS activists`)
+	db.MustExec(`DROP TABLE IF EXISTS activists_history`)
 	db.MustExec(`DROP TABLE IF EXISTS events`)
 	db.MustExec(`DROP TABLE IF EXISTS event_attendance`)
 	db.MustExec(`DROP TABLE IF EXISTS users_roles`)
@@ -91,6 +92,21 @@ CREATE TABLE activists (
   state VARCHAR(40) NOT NULL DEFAULT '',
   UNIQUE (name)
 )
+`)
+
+	db.MustExec(`
+CREATE TABLE activists_history (
+  revision INTEGER AUTO_INCREMENT,
+  action VARCHAR(20) NOT NULL,
+  timestamp TIMESTAMP DEFAULT NOW(),
+  user_email VARCHAR(80) NOT NULL,
+  activist_id INTEGER NOT NULL,
+  name VARCHAR(80) NOT NULL,
+  email VARCHAR(80) NOT NULL,
+  facebook VARCHAR(200) NOT NULL,
+  activist_level VARCHAR(40) NOT NULL,
+  PRIMARY KEY (activist_id, revision)
+  ) ENGINE=MyISAM
 `)
 
 	db.MustExec(`
