@@ -77,6 +77,7 @@ type FacebookEventOutput struct {
 	LastUpdate      time.Time `db:"last_update"`
 }
 
+// TODO: replace this with a new struct called "ChapterWithToken" that is similar to the Chapter struct
 type FacebookPageOutput struct {
 	ID         int     `db:"id"`
 	ChapterID  int     `db:"chapter_id"`
@@ -94,6 +95,21 @@ type FacebookPageOutput struct {
 	LastUpdate string  `db:"last_update"`
 }
 
+// used by public API
+type Chapter struct {
+	ID         int     `db:"chapter_id"`
+	FacebookID int     `db:"id"`
+	Name       string  `db:"name"`
+	Flag       string  `db:"flag"`
+	FbURL      string  `db:"fb_url"`
+	TwitterURL string  `db:"twitter_url"`
+	InstaURL   string  `db:"insta_url"`
+	Email      string  `db:"email"`
+	Region     string  `db:"region"`
+	Lat        float64 `db:"lat"`
+	Lng        float64 `db:"lng"`
+}
+
 // used for making api calls to facebook, not for responding to our api requests
 func GetFacebookPagesWithTokens(db *sqlx.DB) ([]FacebookPage, error) {
 	query := `SELECT id, name, lat, lng, token FROM fb_pages WHERE token <> '' and id <> 0`
@@ -108,7 +124,7 @@ func GetFacebookPagesWithTokens(db *sqlx.DB) ([]FacebookPage, error) {
 	return pages, nil
 }
 
-// for the chapter management admin page on the ADB itself
+// for the chapter management admin page on the ADB itself -- NOTE THAT THIS RETURNS TOKENS, SO IT SHOULD NOT BE MADE PUBLIC
 func GetAllChapters(db *sqlx.DB) ([]FacebookPageOutput, error) {
 	query := `SELECT fb_pages.id, chapter_id, fb_pages.name, flag, fb_url, twitter_url, insta_url, email, region, fb_pages.lat, fb_pages.lng, token, IFNULL(MAX(last_update),'') as last_update
 		FROM fb_pages
@@ -184,6 +200,21 @@ func InsertChapter(db *sqlx.DB, page FacebookPageOutput) error {
 	return nil
 }
 
+// returns all public chapter data for public API consumption
+func GetAllChaptersWithoutTokens(db *sqlx.DB) ([]Chapter, error) {
+	query := `SELECT chapter_id, id, name, flag, fb_url, twitter_url, insta_url, email, region, lat, lng
+		FROM fb_pages
+		ORDER BY name`
+	var chapters []Chapter
+	err := db.Select(&chapters, query)
+	if err != nil {
+		// error
+		return nil, errors.Wrap(err, "failed to select chapters")
+	}
+	return chapters, nil
+}
+
+// TODO: update this to use the Chapter struct instead of FacebookPageOutput (will also need to update website)
 func FindNearestFacebookPages(db *sqlx.DB, lat float64, lng float64) ([]FacebookPageOutput, error) {
 	query := `SELECT id, name, flag, fb_url, region, (3959*acos(cos(radians(` + fmt.Sprintf("%f", lat) + `))*cos(radians(lat))* 
 		cos(radians(lng)-radians(` + fmt.Sprintf("%f", lng) + `))+sin(radians(` + fmt.Sprintf("%f", lat) + `))* 
@@ -201,7 +232,8 @@ func FindNearestFacebookPages(db *sqlx.DB, lat float64, lng float64) ([]Facebook
 }
 
 // returns pages grouped by region
-func GetAllFBPages(db *sqlx.DB) (map[string][]FacebookPageOutput, error) {
+// TODO: update this to use the Chapter struct instead of FacebookPageOutput (will also need to update website)
+func GetAllFBPagesByRegion(db *sqlx.DB) (map[string][]FacebookPageOutput, error) {
 	query := `SELECT id, name, flag, fb_url, twitter_url, insta_url, email, region, lat, lng
 		FROM fb_pages
 		ORDER BY name`

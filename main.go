@@ -198,6 +198,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.HandleFunc("/fb_events/{page_id:[0-9]+}", main.ListFBEventsHandler)
 	router.HandleFunc("/fb_page/{lat:[0-9.\\-]+},{lng:[0-9.\\-]+}", main.FindNearestFacebookPagesHandler)
 	router.HandleFunc("/fb_pages", main.ListAllFBPages)
+	router.HandleFunc("/chapters", main.ListAllChapters)
 
 	// Defunct Unauthed API
 	//router.HandleFunc(config.Route0, main.TransposedEventsDataJsonHandler)
@@ -1526,13 +1527,24 @@ func (c MainController) FindNearestFacebookPagesHandler(w http.ResponseWriter, r
 
 func (c MainController) ListAllFBPages(w http.ResponseWriter, r *http.Request) {
 	// run query
-	pages, err := model.GetAllFBPages(c.db)
+	pages, err := model.GetAllFBPagesByRegion(c.db)
 	if err != nil {
 		panic(err)
 	}
 
 	// return json
 	writeJSON(w, pages)
+}
+
+func (c MainController) ListAllChapters(w http.ResponseWriter, r *http.Request) {
+	// run query
+	chapters, err := model.GetAllChaptersWithoutTokens(c.db)
+	if err != nil {
+		panic(err)
+	}
+
+	// return json
+	writeJSON(w, chapters)
 }
 
 func main() {
