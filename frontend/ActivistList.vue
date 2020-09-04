@@ -940,7 +940,7 @@ function getDefaultColumns(view: string): Column[] {
         correctFormat: true,
         colWidths: 100,
       },
-      enabled: view === 'chapter_member_prospects',
+      enabled: view === 'chapter_member_prospects' || view === 'chapter_member_development',
     },
     {
       header: 'MPI Email',
@@ -952,7 +952,7 @@ function getDefaultColumns(view: string): Column[] {
         correctFormat: true,
         colWidths: 100,
       },
-      enabled: view === 'chapter_member_development',
+      enabled: false,
     },
 
     {

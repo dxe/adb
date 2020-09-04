@@ -77,7 +77,7 @@ type FacebookEventOutput struct {
 	LastUpdate      time.Time `db:"last_update"`
 }
 
-// TODO: replace this with a new struct called "ChapterWithToken" that is similar to the Chapter struct
+// TODO: replace this with a new struct called "ChapterWithToken" that is similar to the Chapter struct (or maybe just have one struct using "omitempty")
 type FacebookPageOutput struct {
 	ID         int     `db:"id"`
 	ChapterID  int     `db:"chapter_id"`

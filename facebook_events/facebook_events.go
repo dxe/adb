@@ -29,6 +29,7 @@ func getFacebookEvents(page model.FacebookPage) []model.FacebookEventJSON {
 	if err != nil {
 		panic(err)
 	}
+
 	return data.Data
 }
 
@@ -80,8 +81,10 @@ func syncFacebookEvents(db *sqlx.DB) {
 		events := getFacebookEvents(page)
 
 		if len(events) > 0 {
+
 			// loop through events
 			for _, event := range events {
+
 				// if event has event_times, then we need to find the sub-events instead
 				if event.EventTimes != nil {
 					for _, subEvent := range event.EventTimes {
