@@ -51,8 +51,6 @@ CREATE TABLE activists (
   dob TEXT,
   training0 VARCHAR(20),
   training1 VARCHAR(20),
-  training2 VARCHAR(20),
-  training3 VARCHAR(20),
   training4 VARCHAR(20),
   training5 VARCHAR(20),
   training6 VARCHAR(20),

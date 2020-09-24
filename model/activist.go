@@ -55,8 +55,6 @@ SELECT
   connector,
   training0,
   training1,
-  training2,
-  training3,
   training4,
   training5,
   training6,
@@ -203,8 +201,6 @@ SET
   connector = :connector,
   training0 = :training0,
   training1 = :training1,
-  training2 = :training2,
-  training3 = :training3,
   training4 = :training4,
   training5 = :training5,
   training6 = :training6,
@@ -276,8 +272,6 @@ type ActivistConnectionData struct {
 	Connector       string         `db:"connector"`
 	Training0       sql.NullString `db:"training0"`
 	Training1       sql.NullString `db:"training1"`
-	Training2       sql.NullString `db:"training2"`
-	Training3       sql.NullString `db:"training3"`
 	Training4       sql.NullString `db:"training4"`
 	Training5       sql.NullString `db:"training5"`
 	Training6       sql.NullString `db:"training6"`
@@ -345,8 +339,6 @@ type ActivistJSON struct {
 	Connector       string `json:"connector"`
 	Training0       string `json:"training0"`
 	Training1       string `json:"training1"`
-	Training2       string `json:"training2"`
-	Training3       string `json:"training3"`
 	Training4       string `json:"training4"`
 	Training5       string `json:"training5"`
 	Training6       string `json:"training6"`
@@ -480,14 +472,6 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 		if a.ActivistConnectionData.Training1.Valid {
 			training1 = a.ActivistConnectionData.Training1.String
 		}
-		training2 := ""
-		if a.ActivistConnectionData.Training2.Valid {
-			training2 = a.ActivistConnectionData.Training2.String
-		}
-		training3 := ""
-		if a.ActivistConnectionData.Training3.Valid {
-			training3 = a.ActivistConnectionData.Training3.String
-		}
 		training4 := ""
 		if a.ActivistConnectionData.Training4.Valid {
 			training4 = a.ActivistConnectionData.Training4.String
@@ -565,8 +549,6 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			Connector:       a.Connector,
 			Training0:       training0,
 			Training1:       training1,
-			Training2:       training2,
-			Training3:       training3,
 			Training4:       training4,
 			Training5:       training5,
 			Training6:       training6,
@@ -914,8 +896,6 @@ INSERT INTO activists (
   connector,
   training0,
   training1,
-  training2,
-  training3,
   training4,
   training5,
   training6,
@@ -960,8 +940,6 @@ INSERT INTO activists (
   :connector,
   :training0,
   :training1,
-  :training2,
-  :training3,
   :training4,
   :training5,
   :training6,
@@ -1026,8 +1004,6 @@ SET
   connector = :connector,
   training0 = :training0,
   training1 = :training1,
-  training2 = :training2,
-  training3 = :training3,
   training4 = :training4,
   training5 = :training5,
   training6 = :training6,
@@ -1271,8 +1247,6 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 	target.Source = stringMerge(original.Source, target.Source)
 	target.Training0 = stringMergeSqlNullString(original.Training0, target.Training0)
 	target.Training1 = stringMergeSqlNullString(original.Training1, target.Training1)
-	target.Training2 = stringMergeSqlNullString(original.Training2, target.Training2)
-	target.Training3 = stringMergeSqlNullString(original.Training3, target.Training3)
 	target.Training4 = stringMergeSqlNullString(original.Training4, target.Training4)
 	target.Training5 = stringMergeSqlNullString(original.Training5, target.Training5)
 	target.Training6 = stringMergeSqlNullString(original.Training6, target.Training6)
@@ -1525,16 +1499,6 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 		// Not specified so insert null value into database
 		validTraining1 = false
 	}
-	validTraining2 := true
-	if activistJSON.Training2 == "" {
-		// Not specified so insert null value into database
-		validTraining2 = false
-	}
-	validTraining3 := true
-	if activistJSON.Training3 == "" {
-		// Not specified so insert null value into database
-		validTraining3 = false
-	}
 	validTraining4 := true
 	if activistJSON.Training4 == "" {
 		// Not specified so insert null value into database
@@ -1611,8 +1575,6 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			Connector:       strings.TrimSpace(activistJSON.Connector),
 			Training0:       sql.NullString{String: strings.TrimSpace(activistJSON.Training0), Valid: validTraining0},
 			Training1:       sql.NullString{String: strings.TrimSpace(activistJSON.Training1), Valid: validTraining1},
-			Training2:       sql.NullString{String: strings.TrimSpace(activistJSON.Training2), Valid: validTraining2},
-			Training3:       sql.NullString{String: strings.TrimSpace(activistJSON.Training3), Valid: validTraining3},
 			Training4:       sql.NullString{String: strings.TrimSpace(activistJSON.Training4), Valid: validTraining4},
 			Training5:       sql.NullString{String: strings.TrimSpace(activistJSON.Training5), Valid: validTraining5},
 			Training6:       sql.NullString{String: strings.TrimSpace(activistJSON.Training6), Valid: validTraining6},

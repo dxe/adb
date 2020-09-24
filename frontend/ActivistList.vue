@@ -820,8 +820,8 @@ function getDefaultColumns(view: string): Column[] {
         view === 'organizer_prospects',
     },
     {
-      header: 'Consent&A-O',
-      longHeader: 'Date Attended Training: Consent & Anti-Opression',
+      header: 'Consent & Oppress',
+      longHeader: 'Date Attended Training: Consent & Anti-Oppression',
       data: {
         type: 'date',
         data: 'training1',
@@ -832,32 +832,8 @@ function getDefaultColumns(view: string): Column[] {
       enabled: view === 'development' || view === 'organizer_prospects',
     },
     {
-      header: 'Nuts&Bolts',
-      longHeader: 'Date Attended Training: Nuts & Bolts',
-      data: {
-        type: 'date',
-        data: 'training2',
-        dateFormat: 'YYYY-MM-DD',
-        correctFormat: true,
-        colWidths: 100,
-      },
-      enabled: view === 'development' || view === 'organizer_prospects',
-    },
-    {
-      header: 'Talk About AR',
-      longHeader: 'Date Attended Training: How To Talk About Animal Rights',
-      data: {
-        type: 'date',
-        data: 'training3',
-        dateFormat: 'YYYY-MM-DD',
-        correctFormat: true,
-        colWidths: 100,
-      },
-      enabled: view === 'development' || view === 'organizer_prospects',
-    },
-    {
-      header: 'Healthy Cmnty',
-      longHeader: 'Date Attended Training: Healthy Community',
+      header: 'Prpsful Cmnty',
+      longHeader: 'Date Attended Training: Building Purposeful Communities',
       data: {
         type: 'date',
         data: 'training4',
@@ -868,8 +844,8 @@ function getDefaultColumns(view: string): Column[] {
       enabled: view === 'development' || view === 'organizer_prospects',
     },
     {
-      header: 'Emergent Ldshp',
-      longHeader: 'Date Attended Training: Emergent Leadership',
+      header: 'Ldshp & Mgmt',
+      longHeader: 'Date Attended Training: Leadership and Management',
       data: {
         type: 'date',
         data: 'training5',
@@ -880,8 +856,8 @@ function getDefaultColumns(view: string): Column[] {
       enabled: view === 'development' || view === 'organizer_prospects',
     },
     {
-      header: 'Histry&Vision',
-      longHeader: 'Date Attended Training: History & Vision',
+      header: 'Vision & Strat',
+      longHeader: 'Date Attended Training: Vision and Strategy',
       data: {
         type: 'date',
         data: 'training6',
