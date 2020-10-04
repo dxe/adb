@@ -48,8 +48,9 @@ func (s *server) index() {
 		//
 		// Approved6 is whether the member was an approved
 		// Chapter Member for the prior 6 months.
-		AugPast3, AugPast12, AugApproved6 int
-		SepPast3, SepPast12, SepApproved6 int
+		ThisPast3, ThisPast12, ThisApproved6 int
+		NextPast3, NextPast12, NextApproved6 int
+		ThisMonth, NextMonth                 string // "Month Year"
 
 		WorkingGroups []string
 
@@ -63,7 +64,7 @@ func (s *server) index() {
 				Date         string // "YYYY-MM-DD"
 				Name         string
 				Community    int // boolean
-				DirectAction int //  boolean
+				DirectAction int // boolean
 			}
 		}
 	}
@@ -75,25 +76,31 @@ func (s *server) index() {
 	// the immediately outer context.
 	const q = `
 select json_object(
-  'Name', x.name,
-  'Email', x.email,
-  'Phone', x.phone,
-  'Location', x.location,
-  'Facebook', x.facebook,
-  'Birthday', x.dob,
+  'Name',          x.name,
+  'Email',         x.email,
+  'Phone',         x.phone,
+  'Location',      x.location,
+  'Facebook',      x.facebook,
+  'Birthday',      x.dob,
   'ActivistLevel', x.activist_level,
 
-  'Organizer', x.activist_level = 'Organizer',
-  'ChapterMember', x.activist_level in ('Chapter Member', 'Organizer'),
+  'Organizer',       x.activist_level in ('Organizer'),
+  'ChapterMember',   x.activist_level in ('Chapter Member', 'Organizer'),
   'VotingAgreement', x.voting_agreement,
 
-  'AugPast3',     sum(x.mpi and x.month >= 202005 and x.month < 202008),
-  'AugPast12',    sum(x.mpi and x.month >= 201908 and x.month < 202008),
-  'AugApproved6', cm_approval_email < '2020-02-01',
+  'ThisMonth',     date_format(now(), '%M %Y'),
+  'ThisPast3',     sum(x.mpi and x.month >= extract(year_month from date_add(now(), interval -3 month))
+                             and x.month <  extract(year_month from date_add(now(), interval 0 month))),
+  'ThisPast12',    sum(x.mpi and x.month >= extract(year_month from date_add(now(), interval -12 month))
+                             and x.month <  extract(year_month from date_add(now(), interval 0 month))),
+  'ThisApproved6', cm_approval_email < date_format(date_sub(now(), interval 6 month), '%Y-%m-01'),
 
-  'SepPast3',     sum(x.mpi and x.month >= 202006 and x.month < 202009),
-  'SepPast12',    sum(x.mpi and x.month >= 201909 and x.month < 202009),
-  'SepApproved6', cm_approval_email < '2020-03-01',
+  'NextMonth',     date_format(date_add(now(), interval 1 month), '%M %Y'),
+  'NextPast3',     sum(x.mpi and x.month >= extract(year_month from date_add(now(), interval -2 month))
+                             and x.month <  extract(year_month from date_add(now(), interval 1 month))),
+  'NextPast12',    sum(x.mpi and x.month >= extract(year_month from date_add(now(), interval -11 month))
+                             and x.month <  extract(year_month from date_add(now(), interval 1 month))),
+  'NextApproved6', cm_approval_email < date_format(date_sub(now(), interval 5 month), '%Y-%m-01'),
 
   'WorkingGroups', (
     select json_arrayagg(w.name)
@@ -288,14 +295,14 @@ table.profile td:nth-child(1), table.election, td:nth-child(1) {
   <th>Eligible?</th>
 </tr>
 <tr>
-  <td>August 2020</td>
-  <td>{{.AugPast3}}</td>
-  <td>{{if ge .AugPast3 2}}Yes{{else}}No{{end}}</td>
+  <td>{{.ThisMonth}}</td>
+  <td>{{.ThisPast3}}</td>
+  <td>{{if ge .ThisPast3 2}}Yes{{else}}No{{end}}</td>
 </tr>
 <tr>
-  <td>September 2020</td>
-  <td>{{.SepPast3}}</td>
-  <td>{{if ge .SepPast3 2}}Yes{{else}}No{{end}}</td>
+  <td>{{.NextMonth}}</td>
+  <td>{{.NextPast3}}</td>
+  <td>{{if ge .NextPast3 2}}Yes{{else}}No{{end}}</td>
 </tr>
 </table>
 {{else if .ChapterMember}}
@@ -310,18 +317,18 @@ table.profile td:nth-child(1), table.election, td:nth-child(1) {
   <th>Eligible?</th>
 </tr>
 <tr>
-  <td>August 2020</td>
-  <td>{{if .AugApproved6}}Yes{{else}}No{{end}}</td>
-  <td>{{.AugPast12}}</td>
+  <td>{{.ThisMonth}}</td>
+  <td>{{if .ThisApproved6}}Yes{{else}}No{{end}}</td>
+  <td>{{.ThisPast12}}</td>
   <td>{{if .VotingAgreement}}Yes{{else}}No{{end}}</td>
-  <td>{{if and .AugApproved6 (ge .AugPast12 8) .VotingAgreement}}Yes{{else}}No{{end}}</td>
+  <td>{{if and .ThisApproved6 (ge .ThisPast12 8) .VotingAgreement}}Yes{{else}}No{{end}}</td>
 </tr>
 <tr>
-  <td>September 2020</td>
-  <td>{{if .SepApproved6}}Yes{{else}}No{{end}}</td>
-  <td>{{.SepPast12}}</td>
+  <td>{{.NextMonth}}</td>
+  <td>{{if .NextApproved6}}Yes{{else}}No{{end}}</td>
+  <td>{{.NextPast12}}</td>
   <td>{{if .VotingAgreement}}Yes{{else}}No{{end}}</td>
-  <td>{{if and .SepApproved6 (ge .SepPast12 8) .VotingAgreement}}Yes{{else}}No{{end}}</td>
+  <td>{{if and .NextApproved6 (ge .NextPast12 8) .VotingAgreement}}Yes{{else}}No{{end}}</td>
 </tr>
 </table>
 {{else}}
