@@ -1042,12 +1042,18 @@ WHERE
 	VALUES (
 		:id,
 		'UPDATE',
-		'`+userEmail+`',
+		:user_email,
 		:name,
 		:email,
 		:facebook,
 		:activist_level
-)`, activist)
+	)`, struct {
+		UserEmail string `db:"user_email"`
+		*ActivistExtra
+	}{
+		userEmail,
+		&activist,
+	})
 
 	if err != nil {
 		fmt.Println("Error logging activist update: " + err.Error())
