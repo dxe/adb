@@ -185,15 +185,16 @@ func surveyMailerWrapper(db *sqlx.DB) {
 		BodyHtml:       `<p>Thank you for attending a sanctuary event! Please <a href="https://docs.google.com/forms/d/e/1FAIpQLSdxn514dpwXduMeaGr8xCszoAUYDS0_95faskbFCzVNcAJ_fw/viewform?usp=pp_url&entry.466557185=LINK_PARAM">click here</a> to take a quick survey.</p><p>If you captured any photos or videos, please upload them <a href="http://dxe.io/upload">here</a>.</p>`,
 		LinkParam:      "name",
 	})
-	survey(db, SurveyOptions{
-		SurveyType:     "training",
-		QueryDate:      yesterday,
-		QueryEventType: "Training",
-		QueryEventName: "",
-		BodyText:       `Thank you for attending the training yesterday! Please take this quick survey: https://docs.google.com/forms/d/e/1FAIpQLSdIUm7nBy83mTIgZ8eDcSjCHZTZ62jcTghmx_q25eA3umo2ug/viewform?usp=pp_url&entry.1179483307=LINK_PARAM.`,
-		BodyHtml:       `<p>Thank you for attending the training yesterday! Please <a href="https://docs.google.com/forms/d/e/1FAIpQLSdIUm7nBy83mTIgZ8eDcSjCHZTZ62jcTghmx_q25eA3umo2ug/viewform?usp=pp_url&entry.1179483307=LINK_PARAM">click here</a> to take a quick survey.</p>`,
-		LinkParam:      "name",
-	})
+	// trainings survey disabled as per ana's request on 2020.10.22
+	// survey(db, SurveyOptions{
+	// 	SurveyType:     "training",
+	// 	QueryDate:      yesterday,
+	// 	QueryEventType: "Training",
+	// 	QueryEventName: "",
+	// 	BodyText:       `Thank you for attending the training yesterday! Please take this quick survey: https://docs.google.com/forms/d/e/1FAIpQLSdIUm7nBy83mTIgZ8eDcSjCHZTZ62jcTghmx_q25eA3umo2ug/viewform?usp=pp_url&entry.1179483307=LINK_PARAM.`,
+	// 	BodyHtml:       `<p>Thank you for attending the training yesterday! Please <a href="https://docs.google.com/forms/d/e/1FAIpQLSdIUm7nBy83mTIgZ8eDcSjCHZTZ62jcTghmx_q25eA3umo2ug/viewform?usp=pp_url&entry.1179483307=LINK_PARAM">click here</a> to take a quick survey.</p>`,
+	// 	LinkParam:      "name",
+	// })
 
 	// only send meetup & popup surveys on sunday
 	if weekday == 0 {
