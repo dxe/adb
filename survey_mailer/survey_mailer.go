@@ -74,16 +74,18 @@ func bulkSendEmails(event model.Event, subject string, bodyText string, bodyHtml
 			missingEmails = append(missingEmails, recipient)
 			continue
 		}
-		// add stanford survey link to email
-		newBodyText := bodyText
-		newBodyHtml := bodyHtml
-		receipientID := strconv.Itoa(event.AttendeeIDs[i])
-		stanfordLink := "http://ec2.dxe.io/adb-forms/survey.php?activist-id=" + receipientID
-		newBodyText += "P.S. You can greatly help us improve our work by clicking the following link to take one additional survey. This link is unique to you, so please DO NOT share it with others: " + stanfordLink
-		newBodyHtml += "<p>P.S. You can greatly help us improve our work by <a href=\"" + stanfordLink + "\">clicking here</a> to take one additional survey. This link is unique to you, so please DO NOT share it with others.</p>"
+		
+		// add stanford survey link to email (DISABLED 2020.10.23 as per Eva's request)
+		// newBodyText := bodyText
+		// newBodyHtml := bodyHtml
+		// receipientID := strconv.Itoa(event.AttendeeIDs[i])
+		// stanfordLink := "http://ec2.dxe.io/adb-forms/survey.php?activist-id=" + receipientID
+		// newBodyText += "P.S. You can greatly help us improve our work by clicking the following link to take one additional survey. This link is unique to you, so please DO NOT share it with others: " + stanfordLink
+		// newBodyHtml += "<p>P.S. You can greatly help us improve our work by <a href=\"" + stanfordLink + "\">clicking here</a> to take one additional survey. This link is unique to you, so please DO NOT share it with others.</p>"
+		
 		// Send email
 		log.Println("Sending email to:", recipient)
-		err := sendEmail(receipientEmail, subject, newBodyText, newBodyHtml)
+		err := sendEmail(receipientEmail, subject, bodyText, bodyHtml)
 		if err != nil {
 			sendingErrors = append(sendingErrors, fmt.Sprintf("%v [%v] %v", recipient, event.AttendeeEmails[i], err))
 		}
