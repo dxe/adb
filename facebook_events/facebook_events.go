@@ -21,13 +21,15 @@ func getFacebookEvents(page model.FacebookPage) []model.FacebookEventJSON {
 	defer resp.Body.Close()
 	// TODO: we should handle errors better so we don't stop all pages from syncing
 	if resp.StatusCode != http.StatusOK {
-		panic(resp.StatusCode)
+		log.Println("ERROR getting events from", page.Name, err)
+		return nil
 	}
 	// read the response & decode the json data
 	data := model.FacebookResponseJSON{}
 	err = json.NewDecoder(resp.Body).Decode(&data)
 	if err != nil {
-		panic(err)
+		log.Println("ERROR getting events from", page.Name, err)
+		return nil
 	}
 
 	return data.Data
