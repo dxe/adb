@@ -14,7 +14,8 @@ var (
 	DBName     = mustGetenv("DB_NAME", "adb_db", true)
 	DBProtocol = mustGetenv("DB_PROTOCOL", "", true)
 
-	Port = mustGetenv("PORT", "8080", true)
+	Port    = mustGetenv("PORT", "8080", true)
+	UrlPath = mustGetenv("ADB_URL_PATH", "http://localhost:"+Port, true)
 
 	Route0 = mustGetenv("ROUTE_0", "/route0", true)
 	Route1 = mustGetenv("ROUTE_1", "/route1", true)
@@ -47,6 +48,10 @@ var (
 	// For members.dxesf.org
 	MembersClientID     = mustGetenv("MEMBERS_CLIENT_ID", "", false)
 	MembersClientSecret = mustGetenv("MEMBERS_CLIENT_SECRET", "", false)
+
+	// For Discord bot
+	DiscordSecret    = mustGetenv("DISCORD_SECRET", "some-fake-secret", false)
+	DiscordFromEmail = mustGetenv("DISCORD_FROM_EMAIL", "", false)
 )
 
 func mustGetenv(key, fallback string, mandatory bool) string {

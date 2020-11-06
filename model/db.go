@@ -32,6 +32,7 @@ func WipeDatabase(db *sqlx.DB) {
 	db.MustExec(`DROP TABLE IF EXISTS circle_members`)
 	db.MustExec(`DROP TABLE IF EXISTS fb_pages`)
 	db.MustExec(`DROP TABLE IF EXISTS fb_events`)
+	db.MustExec(`DROP TABLE IF EXISTS discord_users`)
 
 	db.MustExec(`
 CREATE TABLE activists (
@@ -257,6 +258,15 @@ CREATE TABLE fb_events (
   is_canceled TINYINT NOT NULL DEFAULT '0',
   last_update TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id, page_id)
+)
+`)
+
+	db.MustExec(`
+CREATE TABLE discord_users (
+  id BIGINT(18) PRIMARY KEY,
+  email VARCHAR(200) NOT NULL,
+  token VARCHAR(64) NOT NULL,
+  confirmed TINYINT(1) NOT NULL DEFAULT '0'
 )
 `)
 
