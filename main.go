@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/subtle"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
@@ -30,6 +32,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/justinas/alice"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/go-ses"
 	"github.com/urfave/negroni"
 )
 
@@ -73,6 +76,15 @@ func stripPort(ip string) string {
 		return strings.Split(ip, ":")[0]
 	}
 	return ip
+}
+
+func generateToken() string {
+	b := make([]byte, 32)
+	_, err := rand.Read(b)
+	if err != nil {
+		panic(err)
+	}
+	return fmt.Sprintf("%x", b)
 }
 
 var sessionStore = sessions.NewCookieStore([]byte(config.CookieSecret))
@@ -238,6 +250,11 @@ func router() (*mux.Router, *sqlx.DB) {
 	// Authed Admin API for managing Users Roles
 	admin.Handle("/users-roles/add", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UsersRolesAddHandler))
 	admin.Handle("/users-roles/remove", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UsersRolesRemoveHandler))
+
+	// Discord API
+	router.Handle("/discord/status", alice.New(main.discordBotAuthMiddleware).ThenFunc(main.DiscordStatusHandler))
+	router.Handle("/discord/generate", alice.New(main.discordBotAuthMiddleware).ThenFunc(main.DiscordGenerateHandler))
+	router.HandleFunc("/discord/confirm/{id:[0-9]+}/{token:[a-zA-Z0-9]+}", main.DiscordConfirmHandler)
 
 	// Pprof debug routes
 	router.HandleFunc("/debug/pprof/", pprof.Index)
@@ -1545,6 +1562,164 @@ func (c MainController) ListAllChapters(w http.ResponseWriter, r *http.Request) 
 
 	// return json
 	writeJSON(w, chapters)
+}
+
+func (c MainController) discordBotAuthMiddleware(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		err := r.ParseForm()
+		if err != nil {
+			http.Error(w, http.StatusText(400), 400)
+			return
+		}
+
+		// check that discord auth matches (shared secret w/ discord bot)
+		discordAuth := r.PostFormValue("auth")
+		if subtle.ConstantTimeCompare([]byte(discordAuth), []byte(config.DiscordSecret)) != 1 {
+			http.Error(w, http.StatusText(401), 401)
+			return
+		}
+
+		h.ServeHTTP(w, r)
+	})
+}
+
+func (c MainController) DiscordStatusHandler(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		writeJSON(w, map[string]interface{}{
+			"status": "error parsing form",
+		})
+		return
+	}
+
+	discordUserID, err := strconv.Atoi(r.PostFormValue("id"))
+	if err != nil {
+		panic(err)
+	}
+
+	// see if a record exists for this user id in the discord_users table (pending, confirmed, or not found)
+	status, err := model.GetDiscordUserStatus(c.db, discordUserID)
+	if err != nil {
+		panic(err.Error())
+	}
+	log.Println("Discord user status:", status)
+
+	// return the status found from database
+	writeJSON(w, map[string]interface{}{
+		"status": status,
+	})
+}
+
+func (c MainController) DiscordGenerateHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, http.StatusText(400), 400)
+		return
+	}
+
+	var user model.DiscordUser
+	userID, err := strconv.Atoi(r.PostFormValue("id"))
+	if err != nil {
+		http.Error(w, http.StatusText(400), 400)
+		return
+	}
+	user.ID = userID
+	user.Email = r.PostFormValue("email")
+	user.Token = generateToken()
+
+	// confirm that this email exists in ADB. if not, return error.
+	activists, err := model.GetActivistsByEmail(c.db, user.Email)
+	if len(activists) < 1 {
+		writeJSON(w, map[string]interface{}{
+			"status": "invalid email",
+		})
+		return
+	}
+
+	// check that user isn't already confirmed
+	status, err := model.GetDiscordUserStatus(c.db, user.ID)
+	if err != nil {
+		panic(err.Error())
+	}
+	if status == model.Confirmed {
+		writeJSON(w, map[string]interface{}{
+			"status": "already confirmed",
+		})
+		return
+	}
+
+	// INSERT/REPLACE into database (only allows one record per discord ID)
+	err = model.InsertOrUpdateDiscordUser(c.db, user)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	// trigger email to be sent w/ verification link
+	if config.DiscordFromEmail != "" && config.AWSAccessKey != "" && config.AWSSecretKey != "" && config.AWSSESEndpoint != "" {
+		subjectText := "Please verify your email"
+		// TODO: make nicer looking email
+		confirmLink := config.UrlPath + "/discord/confirm/" + strconv.Itoa(user.ID) + "/" + user.Token
+		bodyText := "Hello, Please click this link to verify your email address: " + confirmLink + " Cheers, The DxE Discord Bot"
+		bodyHtml := `<p>Hello,</p><p>Please click the link below to verify your email address.</p><p><a href="` + confirmLink + `">CONFIRM</a></p><p>Cheers,<br />The DxE Discord Bot</p><br /><br /><br /><p><em>This email was sent to you by DxE to verify your email address for Discord. If you did not request this verification, please do not click the above link.</em></p>`
+		_, err = ses.EnvConfig.SendEmailHTML(config.DiscordFromEmail, user.Email, subjectText, bodyText, bodyHtml)
+		if err != nil {
+			panic(err.Error())
+		}
+	} else {
+		log.Printf("WARNING: Discord confirmation email could not be sent to %v due to missing SES configuration.\n", user.Email)
+	}
+
+	writeJSON(w, map[string]interface{}{
+		"status": "success",
+	})
+}
+
+func (c MainController) DiscordConfirmHandler(w http.ResponseWriter, r *http.Request) {
+
+	var user model.DiscordUser
+
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		panic(err)
+	}
+	user.ID = id
+	user.Token = vars["token"]
+
+	// try to confirm user
+	err = model.ConfirmDiscordUser(c.db, user)
+	if err != nil {
+		panic(err)
+	}
+
+	// get user status
+	status, err := model.GetDiscordUserStatus(c.db, user.ID)
+	if err != nil {
+		panic(err.Error())
+	}
+	log.Println("Discord user confirmation status:", status)
+
+	// if status = confirmed, we are good
+	if status == model.Confirmed {
+		// render page saying confirmation successful (or not) & link back to discord
+		renderPage(w, r, "discord", PageData{
+			PageName: "Success",
+			Data: map[string]interface{}{
+				"message": "Your email has been confirmed.",
+			},
+		})
+		// TODO: assign roles in discord immediately once bot is ready to take requests
+		return
+	}
+
+	// render error page
+	renderPage(w, r, "discord", PageData{
+		PageName: "Error",
+		Data: map[string]interface{}{
+			"message": "There was a problem verifying your email. Please try again or contact " + template.HTML(`<a href="mailto:`+config.SupportEmail+`">`+config.SupportEmail+`</a>`) + ".",
+		},
+	})
+	return
 }
 
 func main() {

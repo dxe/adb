@@ -620,6 +620,23 @@ func getActivists(db *sqlx.DB, name string) ([]Activist, error) {
 	return activists, nil
 }
 
+func GetActivistsByEmail(db *sqlx.DB, email string) ([]Activist, error) {
+	var queryArgs []interface{}
+	query := selectActivistBaseQuery
+
+	if email != "" {
+		query += " WHERE email = ? AND hidden = 0"
+		queryArgs = append(queryArgs, email)
+	}
+
+	var activists []Activist
+	if err := db.Select(&activists, query, queryArgs...); err != nil {
+		return nil, errors.Wrapf(err, "failed to get activists for %s", email)
+	}
+
+	return activists, nil
+}
+
 func GetChapterMembers(db *sqlx.DB) ([]Activist, error) {
 	query := `
 SELECT

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="csrf-token" content="{{ .CsrfField }}">
+    <title>Activist Database</title>
+    <link rel="icon" type="image/png"
+     href="/static/img/favicon.png" />
+
+    <link href="/static/external/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="/static/css/style.css?{{ .StaticResourcesHash }}">
+    <script src="/static/external/jquery-3.2.1.js"></script>
+    <script src="/static/external/bootstrap/js/bootstrap.min.js"></script>
+
+    <style>
+      a {
+        color: black;
+      }
+      a:hover {
+        color: blue;
+      }
+    </style>
+  </head>
+  <body>
+
+    <div class="body-wrapper">
+      <h1>{{ .PageName }}</h1>
+      <div>{{ .Data.message }}</div>
+      <br />
+      <a class="btn btn-primary" type="submit" href="https://discord.com/login">Return to Discord</a>
+      <br />
+    </div>
+
+  </body>
+</html>
