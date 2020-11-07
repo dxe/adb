@@ -16,8 +16,8 @@ type DiscordUserStatus string
 
 const (
 	NotFound  DiscordUserStatus = "not found"
-	Pending                     = "pending"
-	Confirmed                   = "confirmed"
+	Pending   DiscordUserStatus = "pending"
+	Confirmed DiscordUserStatus = "confirmed"
 )
 
 func InsertOrUpdateDiscordUser(db *sqlx.DB, user DiscordUser) error {
@@ -51,10 +51,10 @@ func GetDiscordUserStatus(db *sqlx.DB, id int) (DiscordUserStatus, error) {
 	return NotFound, nil
 }
 
-func ConfirmDiscordUser(db *sqlx.DB, user DiscordUser) (bool, error) {
+func ConfirmDiscordUser(db *sqlx.DB, user DiscordUser) error {
 	_, err := db.NamedExec(`UPDATE discord_users SET confirmed = 1 WHERE id = :id AND token = :token`, user)
 	if err != nil {
-		return false, err
+		return err
 	}
-	return true, nil
+	return nil
 }

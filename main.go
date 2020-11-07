@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/rand"
+	"crypto/subtle"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
@@ -79,7 +80,10 @@ func stripPort(ip string) string {
 
 func generateToken() string {
 	b := make([]byte, 32)
-	rand.Read(b)
+	_, err := rand.Read(b)
+	if err != nil {
+		panic(err)
+	}
 	return fmt.Sprintf("%x", b)
 }
 
@@ -1560,7 +1564,6 @@ func (c MainController) ListAllChapters(w http.ResponseWriter, r *http.Request) 
 	writeJSON(w, chapters)
 }
 
-// testing this
 func (c MainController) discordBotAuthMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -1572,7 +1575,7 @@ func (c MainController) discordBotAuthMiddleware(h http.Handler) http.Handler {
 
 		// check that discord auth matches (shared secret w/ discord bot)
 		discordAuth := r.PostFormValue("auth")
-		if discordAuth != config.DiscordSecret {
+		if subtle.ConstantTimeCompare([]byte(discordAuth), []byte(config.DiscordSecret)) != 1 {
 			http.Error(w, http.StatusText(401), 401)
 			return
 		}
@@ -1591,6 +1594,9 @@ func (c MainController) DiscordStatusHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	discordUserID, err := strconv.Atoi(r.PostFormValue("id"))
+	if err != nil {
+		panic(err)
+	}
 
 	// see if a record exists for this user id in the discord_users table (pending, confirmed, or not found)
 	status, err := model.GetDiscordUserStatus(c.db, discordUserID)
@@ -1681,7 +1687,10 @@ func (c MainController) DiscordConfirmHandler(w http.ResponseWriter, r *http.Req
 	user.Token = vars["token"]
 
 	// try to confirm user
-	_, err = model.ConfirmDiscordUser(c.db, user)
+	err = model.ConfirmDiscordUser(c.db, user)
+	if err != nil {
+		panic(err)
+	}
 
 	// get user status
 	status, err := model.GetDiscordUserStatus(c.db, user.ID)
@@ -1707,7 +1716,7 @@ func (c MainController) DiscordConfirmHandler(w http.ResponseWriter, r *http.Req
 	renderPage(w, r, "discord", PageData{
 		PageName: "Error",
 		Data: map[string]interface{}{
-			"message": "There was a problem verifying your email. Please try again or contact " + template.HTML(`<a href="mailto:tech@dxe.io">tech@dxe.io</a>`) + ".",
+			"message": "There was a problem verifying your email. Please try again or contact " + template.HTML(`<a href="mailto:`+config.SupportEmail+`">`+config.SupportEmail+`</a>`) + ".",
 		},
 	})
 	return

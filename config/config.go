@@ -52,6 +52,7 @@ var (
 	// For Discord bot
 	DiscordSecret    = mustGetenv("DISCORD_SECRET", "some-fake-secret", false)
 	DiscordFromEmail = mustGetenv("DISCORD_FROM_EMAIL", "", false)
+	SupportEmail     = mustGetenv("SUPPORT_EMAIL", "tech@dxe.io", false)
 )
 
 func mustGetenv(key, fallback string, mandatory bool) string {
