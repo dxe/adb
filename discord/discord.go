@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"github.com/dxe/adb/config"
 	"log"
 	"net/http"
 	"strconv"
 )
 
-// TODO: move url & port to config
-const DISCORD_BOT_BASE_URL = "http://localhost:6070"
+const DISCORD_BOT_BASE_URL = config.DiscordBotBaseUrl
 
 func GetUserRoles(userID int) map[int]string {
 
