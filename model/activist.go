@@ -146,7 +146,8 @@ SELECT
     voting_agreement,
     street_address,
     city,
-    state
+    state,
+    discord_id
 
 FROM activists a
 
@@ -227,7 +228,8 @@ SET
   voting_agreement = :voting_agreement,
   street_address = :street_address,
   city = :city,
-  state = :state
+  state = :state,
+  discord_id = :discord_id
 
 WHERE
   id = :id`
@@ -302,6 +304,7 @@ type ActivistConnectionData struct {
 	StreetAddress         string         `db:"street_address"`
 	City                  string         `db:"city"`
 	State                 string         `db:"state"`
+	DiscordID             sql.NullString `db:"discord_id"`
 }
 
 type ActivistExtra struct {
@@ -369,6 +372,7 @@ type ActivistJSON struct {
 	StreetAddress         string `json:"street_address"`
 	City                  string `json:"city"`
 	State                 string `json:"state"`
+	DiscordID             string `json:"discord_id"`
 }
 
 type GetActivistOptions struct {
@@ -520,6 +524,10 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 		if a.ActivistConnectionData.Notes.Valid {
 			notes = a.ActivistConnectionData.Notes.String
 		}
+		discord_id := ""
+		if a.ActivistConnectionData.DiscordID.Valid {
+			discord_id = a.ActivistConnectionData.DiscordID.String
+		}
 
 		activistsJSON = append(activistsJSON, ActivistJSON{
 			Email:         a.Email,
@@ -579,6 +587,7 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			StreetAddress:         a.StreetAddress,
 			City:                  a.City,
 			State:                 a.State,
+			DiscordID:             discord_id,
 		})
 	}
 
@@ -620,16 +629,16 @@ func getActivists(db *sqlx.DB, name string) ([]Activist, error) {
 	return activists, nil
 }
 
-func GetActivistsByEmail(db *sqlx.DB, email string) ([]Activist, error) {
+func GetActivistsByEmail(db *sqlx.DB, email string) ([]ActivistExtra, error) {
 	var queryArgs []interface{}
-	query := selectActivistBaseQuery
+	query := selectActivistExtraBaseQuery
 
 	if email != "" {
 		query += " WHERE email = ? AND hidden = 0"
 		queryArgs = append(queryArgs, email)
 	}
 
-	var activists []Activist
+	var activists []ActivistExtra
 	if err := db.Select(&activists, query, queryArgs...); err != nil {
 		return nil, errors.Wrapf(err, "failed to get activists for %s", email)
 	}
@@ -938,7 +947,8 @@ INSERT INTO activists (
   voting_agreement,
   street_address,
   city,
-  state
+  state,
+  discord_id
 
 ) VALUES (
 
@@ -982,7 +992,8 @@ INSERT INTO activists (
   :voting_agreement,
   :street_address,
   :city,
-  :state
+  :state,
+  :discord_id
 
 )`, activist)
 	if err != nil {
@@ -1045,7 +1056,8 @@ SET
   voting_agreement = :voting_agreement,
   street_address = :street_address,
   city = :city,
-  state = :state
+  state = :state,
+  discord_id = :discord_id
   
 WHERE
   id = :id`, activist)
@@ -1292,6 +1304,7 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 	target.StreetAddress = stringMerge(original.StreetAddress, target.StreetAddress)
 	target.City = stringMerge(original.City, target.City)
 	target.State = stringMerge(original.State, target.State)
+	target.DiscordID = stringMergeSqlNullString(original.DiscordID, target.DiscordID)
 
 	// Check Activist Levels
 	if len(original.ActivistLevel) != 0 && len(target.ActivistLevel) != 0 {
@@ -1577,6 +1590,10 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 		// Not specified so insert null value into database
 		validNotes = false
 	}
+	validDiscordID := true
+	if activistJSON.DiscordID == "" {
+		validDiscordID = false
+	}
 
 	activistExtra := ActivistExtra{
 		Activist: Activist{
@@ -1625,6 +1642,7 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			StreetAddress:         strings.TrimSpace(activistJSON.StreetAddress),
 			City:                  strings.TrimSpace(activistJSON.City),
 			State:                 strings.TrimSpace(activistJSON.State),
+			DiscordID:             sql.NullString{String: strings.TrimSpace(activistJSON.DiscordID), Valid: validDiscordID},
 		},
 	}
 

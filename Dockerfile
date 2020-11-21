@@ -11,6 +11,7 @@ COPY survey_mailer survey_mailer/
 COPY facebook_events facebook_events/
 COPY members members/
 COPY model model/
+COPY discord discord/
 RUN CGO_ENABLED=0 go build -o adb
 
 
