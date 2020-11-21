@@ -58,3 +58,21 @@ func ConfirmDiscordUser(db *sqlx.DB, user DiscordUser) error {
 	}
 	return nil
 }
+
+func GetEmailFromDiscordToken(db *sqlx.DB, token string) (string, error) {
+	query := `SELECT email
+		FROM discord_users
+		WHERE token = ?`
+	var users []DiscordUser
+	err := db.Select(&users, query, token)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to select user")
+	}
+	if len(users) > 1 {
+		return "", errors.New("found too many users")
+	}
+	if len(users) == 1 {
+		return users[0].Email, nil
+	}
+	return "", nil
+}

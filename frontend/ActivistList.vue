@@ -993,6 +993,16 @@ function getDefaultColumns(view: string): Column[] {
       },
       enabled: view === 'chapter_member_development',
     },
+    {
+      header: 'Discord ID',
+      longHeader: 'Discord ID',
+      data: {
+        //type: 'numeric',
+        data: 'discord_id',
+        colWidths: 50,
+      },
+      enabled: false,
+    },
   ];
 }
 

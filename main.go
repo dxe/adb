@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/subtle"
+	"database/sql"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
@@ -20,6 +21,7 @@ import (
 
 	oidc "github.com/coreos/go-oidc"
 	"github.com/dxe/adb/config"
+	"github.com/dxe/adb/discord"
 	"github.com/dxe/adb/facebook_events"
 	"github.com/dxe/adb/mailinglist_sync"
 	"github.com/dxe/adb/members"
@@ -883,7 +885,7 @@ func (c MainController) ActivistSaveHandler(w http.ResponseWriter, r *http.Reque
 	if activistExtra.ID == 0 {
 		activistID, err = model.CreateActivist(c.db, activistExtra)
 	} else {
-		activistID, err = model.UpdateActivistData(c.db, activistExtra, user.Email) // testing logging
+		activistID, err = model.UpdateActivistData(c.db, activistExtra, user.Email)
 	}
 	if err != nil {
 		sendErrorMessage(w, err)
@@ -1635,6 +1637,13 @@ func (c MainController) DiscordGenerateHandler(w http.ResponseWriter, r *http.Re
 		})
 		return
 	}
+	// ensure there aren't multiple activist records w/ this email to avoid issues later on
+	if len(activists) > 1 {
+		writeJSON(w, map[string]interface{}{
+			"status": "too many activists",
+		})
+		return
+	}
 
 	// check that user isn't already confirmed
 	status, err := model.GetDiscordUserStatus(c.db, user.ID)
@@ -1699,16 +1708,77 @@ func (c MainController) DiscordConfirmHandler(w http.ResponseWriter, r *http.Req
 	}
 	log.Println("Discord user confirmation status:", status)
 
-	// if status = confirmed, we are good
+	// if status = confirmed, we are good to try to update things
 	if status == model.Confirmed {
-		// render page saying confirmation successful (or not) & link back to discord
+
+		// get the email associated with the token
+		user.Email, err = model.GetEmailFromDiscordToken(c.db, user.Token)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		// lookup full activist record using the email
+		activists, err := model.GetActivistsByEmail(c.db, user.Email)
+		if err != nil {
+			panic(err.Error())
+		}
+		if len(activists) < 1 {
+			renderPage(w, r, "discord", PageData{
+				PageName: "Error",
+				Data: map[string]interface{}{
+					"message": "Your email address is not associated with any activist. Please reach out to tech@dxe.io for assistance.",
+				},
+			})
+			return
+		}
+		if len(activists) > 1 {
+			renderPage(w, r, "discord", PageData{
+				PageName: "Error",
+				Data: map[string]interface{}{
+					"message": "There are multiple activists associated with your email address. Please reach out to tech@dxe.io for assistance.",
+				},
+			})
+			return
+		}
+
+		// modify the discord_id in the selected activist record
+		activists[0].DiscordID = sql.NullString{String: strings.TrimSpace(strconv.Itoa(user.ID)), Valid: true}
+		// save the updated activist record to the database
+		_, err = model.UpdateActivistData(c.db, activists[0], "SYSTEM")
+		if err != nil {
+			panic(err.Error())
+		}
+
+		// set name in discord to same name as ADB (skip error check here b/c it's not a big deal)
+		discord.UpdateNickname(user.ID, activists[0].Name)
+
+		// add roles (TODO: figure out best way to check for errors here)
+		discord.AddUserRole(user.ID, "Verified")
+		welcomeMessage := ""
+		if activists[0].ActivistLevel == "Chapter Member" {
+			discord.AddUserRole(user.ID, "SF Bay Area, USA")
+			welcomeMessage = "Your email has been confirmed. I've added you to the Chapter Member channels. Welcome!"
+		} else if activists[0].ActivistLevel == "Organizer" {
+			discord.AddUserRole(user.ID, "SF Bay Area, USA")
+			discord.AddUserRole(user.ID, "Organizer")
+			welcomeMessage = "Your email has been confirmed. I've added you to the Chapter Member and Organizer channels. Welcome!"
+		} else {
+			// send message (not bay area chapter member)
+			welcomeMessage = "Based on my records, it appears that you are not a DxE SF Bay chapter member. If this isn't right, please email tech@dxe.io for help."
+		}
+		discord.SendMessage(user.ID, welcomeMessage) // should probably check this for errors
+
+		// TODO: handle working groups
+		// at first, maybe just see if they are in a WG & tell them to message the leader to join
+
+		// render page saying confirmation successful & link back to discord
 		renderPage(w, r, "discord", PageData{
 			PageName: "Success",
 			Data: map[string]interface{}{
 				"message": "Your email has been confirmed.",
 			},
 		})
-		// TODO: assign roles in discord immediately once bot is ready to take requests
+
 		return
 	}
 
