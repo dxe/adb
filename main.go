@@ -1754,16 +1754,17 @@ func (c MainController) DiscordConfirmHandler(w http.ResponseWriter, r *http.Req
 
 		// add roles (TODO: figure out best way to check for errors here)
 		discord.AddUserRole(user.ID, "Verified")
+		welcomeMessage := ""
 		if activists[0].ActivistLevel == "Chapter Member" {
-			err := discord.AddUserRole(user.ID, "SF Bay Area, USA")
-			welcomeMessage := "Your email has been confirmed. I've added you to the Chapter Member channels. Welcome!"
+			discord.AddUserRole(user.ID, "SF Bay Area, USA")
+			welcomeMessage = "Your email has been confirmed. I've added you to the Chapter Member channels. Welcome!"
 		} else if activists[0].ActivistLevel == "Organizer" {
-			err := discord.AddUserRole(user.ID, "SF Bay Area, USA")
-			err := discord.AddUserRole(user.ID, "Organizer")
-			welcomeMessage := "Your email has been confirmed. I've added you to the Chapter Member and Organizer channels. Welcome!"
+			discord.AddUserRole(user.ID, "SF Bay Area, USA")
+			discord.AddUserRole(user.ID, "Organizer")
+			welcomeMessage = "Your email has been confirmed. I've added you to the Chapter Member and Organizer channels. Welcome!"
 		} else {
 			// send message (not bay area chapter member)
-			welcomeMessage := "Based on my records, it appears that you are not a DxE SF Bay chapter member. If this isn't right, please email tech@dxe.io for help."
+			welcomeMessage = "Based on my records, it appears that you are not a DxE SF Bay chapter member. If this isn't right, please email tech@dxe.io for help."
 		}
 		discord.SendMessage(user.ID, welcomeMessage) // should probably check this for errors
 
@@ -1817,11 +1818,6 @@ func main() {
 
 	// Start syncing Facebook events
 	go facebook_events.StartFacebookSync(db)
-
-	// TODO: remove these tests before deploying to prod
-	discord.AddUserRole(610653287854768141, "Creative")
-	roles := discord.GetUserRoles(610653287854768141)
-	fmt.Println(roles)
 
 	// Set up server
 	n.UseHandler(r)
