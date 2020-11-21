@@ -10,11 +10,9 @@ import (
 	"strconv"
 )
 
-const DISCORD_BOT_BASE_URL = config.DiscordBotBaseUrl
-
 func GetUserRoles(userID int) map[int]string {
 
-	url := DISCORD_BOT_BASE_URL + "/roles/get?user=" + strconv.Itoa(userID)
+	url := config.DiscordBotBaseUrl + "/roles/get?user=" + strconv.Itoa(userID)
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -39,7 +37,7 @@ func GetUserRoles(userID int) map[int]string {
 
 func AddUserRole(userID int, role string) error {
 
-	url := DISCORD_BOT_BASE_URL + "/roles/add"
+	url := config.DiscordBotBaseUrl + "/roles/add"
 
 	requestBody, err := json.Marshal(map[string]string{
 		"user": strconv.Itoa(userID),
@@ -65,7 +63,7 @@ func AddUserRole(userID int, role string) error {
 
 func UpdateNickname(userID int, nickname string) error {
 
-	url := DISCORD_BOT_BASE_URL + "/update_nickname"
+	url := config.DiscordBotBaseUrl + "/update_nickname"
 
 	requestBody, err := json.Marshal(map[string]string{
 		"user": strconv.Itoa(userID),
@@ -91,7 +89,7 @@ func UpdateNickname(userID int, nickname string) error {
 
 func SendMessage(userID int, role string) error {
 
-	url := DISCORD_BOT_BASE_URL + "/send_message"
+	url := config.DiscordBotBaseUrl + "/send_message"
 
 	requestBody, err := json.Marshal(map[string]string{
 		"recipient": strconv.Itoa(userID),
