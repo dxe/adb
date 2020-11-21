@@ -1749,24 +1749,42 @@ func (c MainController) DiscordConfirmHandler(w http.ResponseWriter, r *http.Req
 			panic(err.Error())
 		}
 
-		// set name in discord to same name as ADB (skip error check here b/c it's not a big deal)
-		discord.UpdateNickname(user.ID, activists[0].Name)
+		// set name in discord to same name as ADB
+		err = discord.UpdateNickname(user.ID, activists[0].Name)
+		if err != nil {
+			log.Println("Error updating Discord nickname!", err)
+		}
 
 		// add roles (TODO: figure out best way to check for errors here)
-		discord.AddUserRole(user.ID, "Verified")
+		err = discord.AddUserRole(user.ID, "Verified")
+		if err != nil {
+			log.Println("Error adding 'Verified' Discord user role!", err)
+		}
 		welcomeMessage := ""
 		if activists[0].ActivistLevel == "Chapter Member" {
-			discord.AddUserRole(user.ID, "SF Bay Area, USA")
+			err := discord.AddUserRole(user.ID, "SF Bay Area, USA")
+			if err != nil {
+				log.Println("Error adding 'SF Bay Area, USA' Discord user role!", err)
+			}
 			welcomeMessage = "Your email has been confirmed. I've added you to the Chapter Member channels. Welcome!"
 		} else if activists[0].ActivistLevel == "Organizer" {
-			discord.AddUserRole(user.ID, "SF Bay Area, USA")
-			discord.AddUserRole(user.ID, "Organizer")
+			err := discord.AddUserRole(user.ID, "SF Bay Area, USA")
+			if err != nil {
+				log.Println("Error adding 'SF Bay Area, USA' Discord user role!", err)
+			}
+			err = discord.AddUserRole(user.ID, "Organizer")
+			if err != nil {
+				log.Println("Error adding 'Organizer, USA' Discord user role!", err)
+			}
 			welcomeMessage = "Your email has been confirmed. I've added you to the Chapter Member and Organizer channels. Welcome!"
 		} else {
 			// send message (not bay area chapter member)
 			welcomeMessage = "Based on my records, it appears that you are not a DxE SF Bay chapter member. If this isn't right, please email tech@dxe.io for help."
 		}
-		discord.SendMessage(user.ID, welcomeMessage) // should probably check this for errors
+		err = discord.SendMessage(user.ID, welcomeMessage)
+		if err != nil {
+			log.Println("Error adding sending Discord welcome message!", welcomeMessage, err)
+		}
 
 		// TODO: handle working groups
 		// at first, maybe just see if they are in a WG & tell them to message the leader to join
