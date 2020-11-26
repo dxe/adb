@@ -1586,6 +1586,7 @@ func (c MainController) discordBotAuthMiddleware(h http.Handler) http.Handler {
 	})
 }
 
+// TODO: move some of the discord logic out of main.go
 func (c MainController) DiscordStatusHandler(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
@@ -1762,15 +1763,15 @@ func (c MainController) DiscordConfirmHandler(w http.ResponseWriter, r *http.Req
 		}
 		welcomeMessage := ""
 		if activists[0].ActivistLevel == "Chapter Member" {
-			err := discord.AddUserRole(user.ID, "SF Bay Area, USA")
+			err := discord.AddUserRole(user.ID, "SF Bay Chapter Member")
 			if err != nil {
-				log.Println("Error adding 'SF Bay Area, USA' Discord user role!", err)
+				log.Println("Error adding 'SF Bay Chapter Member' Discord user role!", err)
 			}
 			welcomeMessage = "Your email has been confirmed. I've added you to the Chapter Member channels. Welcome!"
 		} else if activists[0].ActivistLevel == "Organizer" {
-			err := discord.AddUserRole(user.ID, "SF Bay Area, USA")
+			err := discord.AddUserRole(user.ID, "SF Bay Chapter Member")
 			if err != nil {
-				log.Println("Error adding 'SF Bay Area, USA' Discord user role!", err)
+				log.Println("Error adding 'SF Bay Chapter Member' Discord user role!", err)
 			}
 			err = discord.AddUserRole(user.ID, "Organizer")
 			if err != nil {
