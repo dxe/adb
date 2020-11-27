@@ -58,6 +58,7 @@ SELECT
   training4,
   training5,
   training6,
+  consent_quiz,
   training_protest,
   dev_application_date,
   dev_application_type,
@@ -205,6 +206,7 @@ SET
   training4 = :training4,
   training5 = :training5,
   training6 = :training6,
+  consent_quiz = :consent_quiz,
   training_protest = :training_protest,
   dev_application_date = :dev_application_date,
   dev_application_type = :dev_application_type,
@@ -277,6 +279,7 @@ type ActivistConnectionData struct {
 	Training4       sql.NullString `db:"training4"`
 	Training5       sql.NullString `db:"training5"`
 	Training6       sql.NullString `db:"training6"`
+	ConsentQuiz     sql.NullString `db:"consent_quiz"`
 	TrainingProtest sql.NullString `db:"training_protest"`
 	ApplicationDate mysql.NullTime `db:"dev_application_date"`
 	ApplicationType string         `db:"dev_application_type"`
@@ -345,6 +348,7 @@ type ActivistJSON struct {
 	Training4       string `json:"training4"`
 	Training5       string `json:"training5"`
 	Training6       string `json:"training6"`
+	ConsentQuiz     string `json:"consent_quiz"`
 	TrainingProtest string `json:"training_protest"`
 	ApplicationDate string `json:"dev_application_date"`
 	ApplicationType string `json:"dev_application_type"`
@@ -488,6 +492,10 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 		if a.ActivistConnectionData.Training6.Valid {
 			training6 = a.ActivistConnectionData.Training6.String
 		}
+		consent_quiz := ""
+		if a.ActivistConnectionData.ConsentQuiz.Valid {
+			consent_quiz = a.ActivistConnectionData.ConsentQuiz.String
+		}
 		training_protest := ""
 		if a.ActivistConnectionData.TrainingProtest.Valid {
 			training_protest = a.ActivistConnectionData.TrainingProtest.String
@@ -560,6 +568,7 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			Training4:       training4,
 			Training5:       training5,
 			Training6:       training6,
+			ConsentQuiz:     consent_quiz,
 			TrainingProtest: training_protest,
 			ApplicationDate: applicationDate,
 			ApplicationType: a.ApplicationType,
@@ -925,6 +934,7 @@ INSERT INTO activists (
   training4,
   training5,
   training6,
+  consent_quiz,
   training_protest,
   dev_manager,
   dev_interest,
@@ -970,6 +980,7 @@ INSERT INTO activists (
   :training4,
   :training5,
   :training6,
+  :consent_quiz,
   :training_protest,
   :dev_manager,
   :dev_interest,
@@ -1035,6 +1046,7 @@ SET
   training4 = :training4,
   training5 = :training5,
   training6 = :training6,
+  consent_quiz = :consent_quiz,
   training_protest = :training_protest,
   dev_manager = :dev_manager,
   dev_interest = :dev_interest,
@@ -1285,6 +1297,7 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 	target.Training4 = stringMergeSqlNullString(original.Training4, target.Training4)
 	target.Training5 = stringMergeSqlNullString(original.Training5, target.Training5)
 	target.Training6 = stringMergeSqlNullString(original.Training6, target.Training6)
+	target.ConsentQuiz = stringMergeSqlNullString(original.ConsentQuiz, target.ConsentQuiz)
 	target.TrainingProtest = stringMergeSqlNullString(original.TrainingProtest, target.TrainingProtest)
 	target.DevManager = stringMerge(original.DevManager, target.DevManager)
 	target.DevInterest = stringMerge(original.DevInterest, target.DevInterest)
@@ -1550,6 +1563,11 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 		// Not specified so insert null value into database
 		validTraining6 = false
 	}
+	validConsentQuiz := true
+	if activistJSON.ConsentQuiz == "" {
+		// Not specified so insert null value into database
+		validConsentQuiz = false
+	}
 	validTrainingProtest := true
 	if activistJSON.TrainingProtest == "" {
 		// Not specified so insert null value into database
@@ -1618,6 +1636,7 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			Training4:       sql.NullString{String: strings.TrimSpace(activistJSON.Training4), Valid: validTraining4},
 			Training5:       sql.NullString{String: strings.TrimSpace(activistJSON.Training5), Valid: validTraining5},
 			Training6:       sql.NullString{String: strings.TrimSpace(activistJSON.Training6), Valid: validTraining6},
+			ConsentQuiz:     sql.NullString{String: strings.TrimSpace(activistJSON.ConsentQuiz), Valid: validConsentQuiz},
 			TrainingProtest: sql.NullString{String: strings.TrimSpace(activistJSON.TrainingProtest), Valid: validTrainingProtest},
 			DevManager:      strings.TrimSpace(activistJSON.DevManager),
 			DevInterest:     strings.TrimSpace(activistJSON.DevInterest),
