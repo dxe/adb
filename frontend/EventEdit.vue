@@ -168,7 +168,7 @@ export default Vue.extend({
           this.type = event.event_type || '';
           this.date = event.event_date || '';
           this.attendees = event.attendees || [];
-          this.suppressSurvey = event.suppress_survey || 0;
+          this.suppressSurvey = event.suppress_survey || false;
 
           // ensure we show the indicators for each attendee
           for (let i = 0; i < this.attendees.length; i++) {
