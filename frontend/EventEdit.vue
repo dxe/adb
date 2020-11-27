@@ -25,8 +25,14 @@
             <option value="Sanctuary">Sanctuary</option>
             <option value="Training">Training</option>
           </select>
-          <br />
         </template>
+
+        <div class="checkbox">
+          <span v-if="shouldShowSuppressSurveyCheckbox()">
+            <strong>Survey</strong><br />
+            <label><input type="checkbox" v-model="suppressSurvey" />Don't send survey</label>
+          </span>
+        </div>
 
         <label for="eventDate">
           <b>{{ connections ? 'Coaching' : 'Event' }} date</b>
@@ -37,9 +43,9 @@
           >
             today
           </button>
-          <br />
         </label>
-        <input id="eventDate" class="form-control" type="date" v-model="date" /> <br />
+
+        <input id="eventDate" class="form-control" type="date" v-model="date" /><br />
 
         <label for="attendee1" id="attendeeLabel">
           <b>{{ connections ? 'Coachees' : 'Attendees' }}</b> <br />
@@ -120,11 +126,13 @@ export default Vue.extend({
       date: '',
       type: '',
       attendees: [] as string[],
+      suppressSurvey: false,
 
       oldName: '',
       oldDate: '',
       oldType: '',
       oldAttendees: [] as string[],
+      oldSuppressSurvey: false,
 
       allActivists: [] as string[],
       allActivistsSet: new Set<string>(),
@@ -160,6 +168,7 @@ export default Vue.extend({
           this.type = event.event_type || '';
           this.date = event.event_date || '';
           this.attendees = event.attendees || [];
+          this.suppressSurvey = event.suppress_survey || 0;
 
           // ensure we show the indicators for each attendee
           for (let i = 0; i < this.attendees.length; i++) {
@@ -171,6 +180,7 @@ export default Vue.extend({
           this.oldType = this.type;
           this.oldDate = this.date;
           this.oldAttendees = [...this.attendees];
+          this.oldSuppressSurvey = this.suppressSurvey;
 
           this.loading = false;
           this.changed('load', -1);
@@ -193,12 +203,14 @@ export default Vue.extend({
               type: this.type,
               date: this.date,
               attendees: this.attendees,
+              suppressSurvey: this.suppressSurvey,
             },
             old: {
               name: this.oldName,
               type: this.oldType,
               date: this.oldDate,
               attendees: this.oldAttendees,
+              suppressSurvey: this.suppressSurvey,
             },
           }),
         );
@@ -360,6 +372,7 @@ export default Vue.extend({
       const name = this.name.trim();
       const date = this.date;
       const type = this.connections ? 'Connection' : this.type;
+      const suppressSurvey = this.suppressSurvey;
       if (name === '') {
         flashMessage('Error: Please enter event name!', true);
         return;
@@ -409,6 +422,7 @@ export default Vue.extend({
           event_type: type,
           added_attendees: addedActivists,
           deleted_attendees: deletedActivists,
+          suppress_survey: suppressSurvey,
         }),
         success: (data) => {
           this.saving = false;
@@ -422,6 +436,7 @@ export default Vue.extend({
           this.oldType = type;
           this.oldDate = date;
           this.oldAttendees = attendees;
+          this.oldSuppressSurvey = suppressSurvey;
 
           // TODO(mdempsky): Remove after figuring out Safari issue.
           if (this.dirty()) {
@@ -433,12 +448,14 @@ export default Vue.extend({
                   type: this.type,
                   date: this.date,
                   attendees: this.attendees,
+                  suppressSurvey: this.suppressSurvey,
                 },
                 old: {
                   name: this.oldName,
                   type: this.oldType,
                   date: this.oldDate,
                   attendees: this.oldAttendees,
+                  suppressSurvey: this.oldSuppressSurvey,
                 },
               }),
             );
@@ -514,6 +531,14 @@ export default Vue.extend({
 
       return activistFull && activistFull.email && activistFull.phone;
     },
+    shouldShowSuppressSurveyCheckbox() {
+      // only show checkbox if a survey will be sent for this event
+      if (this.name.toLowerCase().includes("chapter meeting")) return true;
+      if (this.name.toLowerCase().includes("popup") && this.type === 'Community') return true;
+      if (this.name.toLowerCase().includes("meetup") && this.type === 'Community') return true;
+      if (this.type === 'Action' || this.type === 'Campaign Action') return true;
+      return false;
+    }
   },
 });
 </script>

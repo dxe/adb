@@ -113,6 +113,7 @@ func survey(db *sqlx.DB, surveyOptions SurveyOptions) {
 		EventType:      surveyOptions.QueryEventType,
 		EventNameQuery: surveyOptions.QueryEventName,
 		SurveySent:     "0",
+		SuppressSurvey: "0",
 	})
 	if err != nil {
 		log.Printf("Failed to get events: %v", err)

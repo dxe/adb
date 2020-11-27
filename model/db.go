@@ -126,6 +126,7 @@ CREATE TABLE events (
   date DATE NOT NULL,
   event_type VARCHAR(60) NOT NULL,
   survey_sent TINYINT(1) NOT NULL DEFAULT '0',
+  suppress_survey TINYINT(1) NOT NULL DEFAULT '0',
   INDEX (date, name),
   FULLTEXT (name)
 )

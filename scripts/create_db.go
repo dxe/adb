@@ -33,12 +33,12 @@ func createCurrentDateString(day int) string {
 func createEventsDevDB() string {
 	days := []int{15, 16, 17, 18, 19, 13}
 	eventFormatStrings := []string{
-		"(1, 'Event One', '%s', 'Working Group', '0'),",
-		"(2, 'Event Two', '%s', 'Protest', '0'),",
-		"(3, 'Event Three', '%s', 'Community', '0'),",
-		"(4, 'Event Four', '%s', 'Outreach', '0'),",
-		"(5, 'Event Five', '%s', 'Key Event', '0'),",
-		"(6, 'Event Six', '%s', 'Key Event', '0');"}
+		"(1, 'Event One', '%s', 'Working Group', '0', '0'),",
+		"(2, 'Event Two', '%s', 'Protest', '0', '0'),",
+		"(3, 'Event Three', '%s', 'Community', '0', '0'),",
+		"(4, 'Event Four', '%s', 'Outreach', '0', '0'),",
+		"(5, 'Event Five', '%s', 'Key Event', '0', '0'),",
+		"(6, 'Event Six', '%s', 'Key Event', '0', '0');"}
 
 	//assert
 	if len(days) != len(eventFormatStrings) {
