@@ -1756,19 +1756,23 @@ func (c MainController) DiscordConfirmHandler(w http.ResponseWriter, r *http.Req
 			log.Println("Error updating Discord nickname!", err)
 		}
 
-		// add roles (TODO: figure out best way to check for errors here)
-		err = discord.AddUserRole(user.ID, "Verified")
-		if err != nil {
-			log.Println("Error adding 'Verified' Discord user role!", err)
-		}
+		// add roles & send welcome message
 		welcomeMessage := ""
 		if activists[0].ActivistLevel == "Chapter Member" {
+			err = discord.AddUserRole(user.ID, "Verified")
+			if err != nil {
+				log.Println("Error adding 'Verified' Discord user role!", err)
+			}
 			err := discord.AddUserRole(user.ID, "SF Bay Chapter Member")
 			if err != nil {
 				log.Println("Error adding 'SF Bay Chapter Member' Discord user role!", err)
 			}
 			welcomeMessage = "Your email has been confirmed. I've added you to the Chapter Member channels. Welcome!"
 		} else if activists[0].ActivistLevel == "Organizer" {
+			err = discord.AddUserRole(user.ID, "Verified")
+			if err != nil {
+				log.Println("Error adding 'Verified' Discord user role!", err)
+			}
 			err := discord.AddUserRole(user.ID, "SF Bay Chapter Member")
 			if err != nil {
 				log.Println("Error adding 'SF Bay Chapter Member' Discord user role!", err)
