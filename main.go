@@ -254,6 +254,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	admin.Handle("/users-roles/remove", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UsersRolesRemoveHandler))
 
 	// Discord API
+	router.Handle("/discord/list", alice.New(main.discordBotAuthMiddleware).ThenFunc(main.DiscordListHandler))
 	router.Handle("/discord/status", alice.New(main.discordBotAuthMiddleware).ThenFunc(main.DiscordStatusHandler))
 	router.Handle("/discord/generate", alice.New(main.discordBotAuthMiddleware).ThenFunc(main.DiscordGenerateHandler))
 	router.HandleFunc("/discord/confirm/{id:[0-9]+}/{token:[a-zA-Z0-9]+}", main.DiscordConfirmHandler)
@@ -1587,6 +1588,18 @@ func (c MainController) discordBotAuthMiddleware(h http.Handler) http.Handler {
 }
 
 // TODO: move some of the discord logic out of main.go
+func (c MainController) DiscordListHandler(w http.ResponseWriter, r *http.Request) {
+	// this function provides a list of all activists who have a confirmed discord id
+	activists, err := model.GetActivistsWithDiscordID(c.db)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	writeJSON(w, map[string]interface{}{
+		"activists": activists,
+	})
+}
+
 func (c MainController) DiscordStatusHandler(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {

@@ -317,6 +317,11 @@ type ActivistExtra struct {
 	ActivistConnectionData
 }
 
+type ActivistDiscord struct {
+	Name      string `db:"name"`
+	DiscordID int    `db:"discord_id"`
+}
+
 type ActivistJSON struct {
 	Email         string `json:"email"`
 	Facebook      string `json:"facebook"`
@@ -650,6 +655,17 @@ func GetActivistsByEmail(db *sqlx.DB, email string) ([]ActivistExtra, error) {
 	var activists []ActivistExtra
 	if err := db.Select(&activists, query, queryArgs...); err != nil {
 		return nil, errors.Wrapf(err, "failed to get activists for %s", email)
+	}
+
+	return activists, nil
+}
+
+func GetActivistsWithDiscordID(db *sqlx.DB) ([]ActivistDiscord, error) {
+	query := "SELECT name, discord_id from activists WHERE discord_id is not null AND hidden = 0"
+
+	var activists []ActivistDiscord
+	if err := db.Select(&activists, query); err != nil {
+		return nil, errors.Wrapf(err, "failed to get activists with Discord ID")
 	}
 
 	return activists, nil
