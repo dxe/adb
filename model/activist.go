@@ -319,7 +319,7 @@ type ActivistExtra struct {
 
 type ActivistDiscord struct {
 	Name      string `db:"name"`
-	DiscordID int    `db:"discord_id"`
+	DiscordID string `db:"discord_id"`
 }
 
 type ActivistJSON struct {
