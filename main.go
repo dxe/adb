@@ -1795,6 +1795,18 @@ func (c MainController) DiscordConfirmHandler(w http.ResponseWriter, r *http.Req
 				log.Println("Error adding 'Organizer, USA' Discord user role!", err)
 			}
 			welcomeMessage = "Your email has been confirmed. I've added you to the Chapter Member and Organizer channels. Welcome!"
+			// send email to alert discord mods to add this person to working group roles
+			emailBody := activists[0].Name + " joined Discord. Please manually add their working group roles."
+			_, err = ses.EnvConfig.SendEmailHTML(config.DiscordFromEmail, config.DiscordModeratorEmail, "Organizer joined Discord", emailBody, emailBody)
+			if err != nil {
+				log.Println("Error sending Discord alert email to moderators!", err)
+			}
+		} else if activists[0].ActivistLevel == "Supporter" || activists[0].ActivistLevel == "Non-Local" {
+			err = discord.AddUserRole(user.ID, "Verified")
+			if err != nil {
+				log.Println("Error adding 'Verified' Discord user role!", err)
+			}
+			welcomeMessage = "Your email has been confirmed. I've added you to the Global channels. Welcome! (It seems that you are not a Chapter Member in the SF Bay Area, so I did not add you to the SF Bay channels. Please email tech@dxe.io if that is incorrect.)"
 		} else {
 			// send message (not bay area chapter member)
 			welcomeMessage = "Based on my records, it appears that you are not a DxE SF Bay chapter member. If this isn't right, please email tech@dxe.io for help."
