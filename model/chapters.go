@@ -161,6 +161,7 @@ func FindNearestChapters(db *sqlx.DB, lat float64, lng float64) ([]ChapterWithTo
 	}
 	return pages, nil
 }
+
 // returns pages grouped by region
 // TODO: update this function (and the website) to handle data in the normal Chapter struct instead of w/ Token
 func GetAllChaptersByRegion(db *sqlx.DB) (map[string][]ChapterWithToken, error) {
