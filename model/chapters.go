@@ -73,7 +73,7 @@ func GetChaptersWithEventbriteTokens(db *sqlx.DB) ([]ChapterWithToken, error) {
 
 // for the chapter management admin page on the ADB itself -- NOTE THAT THIS RETURNS TOKENS, SO IT SHOULD NOT BE MADE PUBLIC
 func GetAllChapters(db *sqlx.DB) ([]ChapterWithToken, error) {
-	query := `SELECT fb_pages.id, chapter_id, fb_pages.name, flag, fb_url, twitter_url, insta_url, email, region, fb_pages.lat, fb_pages.lng, token, IFNULL(MAX(last_update),'') as last_update, eventbrite_id, eventbrite_token
+	query := `SELECT fb_pages.id, chapter_id, fb_pages.name, flag, fb_url, twitter_url, insta_url, email, region, fb_pages.lat, fb_pages.lng, token, IFNULL(MAX(last_update),'') as last_update, fb_pages.eventbrite_id, eventbrite_token
 		FROM fb_pages
 		LEFT JOIN fb_events on fb_pages.id = fb_events.page_id
 		GROUP BY fb_pages.chapter_id

@@ -46,6 +46,28 @@ type FacebookCoverJSON struct {
 	Source string `json:"source"`
 }
 
+type EventbriteResponseJSON struct {
+	Events []EventbriteEventJSON `json:"events"`
+}
+
+type EventbriteEventJSON struct {
+	ID    string               `json:"id"`
+	Name  EventbriteEventName  `json:"name"`
+	URL   string               `json:"url"`
+	Start EventbriteEventStart `json:"start"`
+}
+
+type EventbriteEventName struct {
+	Text string `json:"text"`
+	HTML string `json:"html"`
+}
+
+type EventbriteEventStart struct {
+	TimeZone string `json:"timezone"`
+	Local    string `json:"local"`
+	UTC      string `json:"utc"`
+}
+
 type ExternalEventOutput struct {
 	ID              int       `db:"id"`
 	PageID          int       `db:"page_id"`
@@ -147,6 +169,15 @@ func InsertFacebookEvent(db *sqlx.DB, event FacebookEventJSON, page ChapterWithT
 		event.AttendingCount, event.InterestedCount, event.IsCanceled)
 	if err != nil {
 		return errors.Wrap(err, "failed to insert event")
+	}
+	return nil
+}
+
+func AddEventbriteDetailsToEvent(db *sqlx.DB, event EventbriteEventJSON) error {
+	// UPDATE fb_events SET eventbrite_id = XXX AND eventbrite_url = XXX WHERE name = XXX and left(name) = XXX
+	_, err := db.NamedExec(`UPDATE fb_events SET eventbrite_id = :id AND eventbrite_url = :url WHERE name = :name.text and left(start_time, 10) = left(:start.utc, 10)`, event)
+	if err != nil {
+		return errors.Wrap(err, "failed to update event")
 	}
 	return nil
 }

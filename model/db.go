@@ -262,6 +262,8 @@ CREATE TABLE fb_events (
   interested_count MEDIUMINT NOT NULL DEFAULT '0',
   is_canceled TINYINT NOT NULL DEFAULT '0',
   last_update TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  eventbrite_id VARCHAR(32) NOT NULL DEFAULT '',
+  eventbrite_url VARCHAR(400) NOT NULL DEFAULT '',
   PRIMARY KEY (id, page_id)
 )
 `)
