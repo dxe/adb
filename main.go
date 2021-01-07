@@ -218,7 +218,6 @@ func router() (*mux.Router, *sqlx.DB) {
 	//router.HandleFunc(config.Route0, main.TransposedEventsDataJsonHandler)
 	//router.HandleFunc("/wallboard_mpi", main.newPowerWallboard)                    // new endpoint for arc tv to get mpi
 	//router.HandleFunc("/wallboard_chaptermembers", main.newChapterMemberWallboard) // new endpoint for arc tv to get chapter members
-	//router.HandleFunc(config.Route2, main.ActivistListHandler)                     // used for connections google sheet
 
 	// Authed API
 	router.Handle("/activist_names/get", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteActivistsHandler))
