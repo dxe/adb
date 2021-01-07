@@ -88,12 +88,13 @@ type ExternalEventOutput struct {
 	InterestedCount int       `db:"interested_count"`
 	IsCanceled      bool      `db:"is_canceled"`
 	LastUpdate      time.Time `db:"last_update"`
+	EventbriteURL   string    `db:"eventbrite_url"`
 }
 
 func GetFacebookEvents(db *sqlx.DB, pageID int, startTime string, endTime string) ([]ExternalEventOutput, error) {
 	query := `SELECT id, page_id, name, start_time, end_time, location_name,
 		location_country, location_country, location_state, location_address, location_zip,
-		lat, lng, cover, attending_count, interested_count, is_canceled, last_update FROM fb_events`
+		lat, lng, cover, attending_count, interested_count, is_canceled, last_update, eventbrite_url FROM fb_events`
 
 	query += " WHERE is_canceled = 0 and page_id = " + strconv.Itoa(pageID)
 
@@ -122,7 +123,7 @@ func GetOnlineFacebookEvents(db *sqlx.DB, startTime string, endTime string) ([]E
 	// TODO: move these page IDs to config variables?
 	query := `SELECT id, page_id, name, start_time, end_time, location_name,
 		location_country, location_country, location_state, location_address, location_zip,
-		lat, lng, cover, attending_count, interested_count, is_canceled, last_update FROM fb_events
+		lat, lng, cover, attending_count, interested_count, is_canceled, last_update, eventbrite_url FROM fb_events
 		WHERE is_canceled = 0 and ((page_id = 1377014279263790 and location_name = 'Online') or page_id = 287332515138353)`
 
 	if startTime != "" {
