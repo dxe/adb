@@ -158,7 +158,7 @@ func syncEventbriteEvents(db *sqlx.DB) {
 
 		log.Println("Getting EB events from", page.Name, "(", page.EventbriteID, ")")
 
-		// make call to fb api
+		// make call to eventbrite api
 		events := getEventbriteEvents(page)
 
 		if len(events) > 0 {
