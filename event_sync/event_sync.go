@@ -164,7 +164,8 @@ func syncEventbriteEvents(db *sqlx.DB) {
 		if len(events) > 0 {
 			// loop through events
 			for _, event := range events {
-				println("Syncing EB event:", event.Name.Text, " ", "at", event.Start.UTC)
+				// TODO: remove this println once you know it's working fine in prod
+				println("Syncing EB event:", event.Name.Text, "at", event.Start.UTC)
 				err = model.AddEventbriteDetailsToEvent(db, event)
 				if err != nil {
 					log.Println("ERROR:", err)

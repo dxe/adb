@@ -174,8 +174,9 @@ func InsertFacebookEvent(db *sqlx.DB, event FacebookEventJSON, page ChapterWithT
 }
 
 func AddEventbriteDetailsToEvent(db *sqlx.DB, event EventbriteEventJSON) error {
-	// UPDATE fb_events SET eventbrite_id = XXX AND eventbrite_url = XXX WHERE name = XXX and left(name) = XXX
-	_, err := db.NamedExec(`UPDATE fb_events SET eventbrite_id = :id AND eventbrite_url = :url WHERE name = :name.text and left(start_time, 10) = left(:start.utc, 10)`, event)
+	_, err := db.NamedExec(`UPDATE fb_events
+		SET eventbrite_id = :id, eventbrite_url = :url
+		WHERE name = :name.text and left(start_time, 10) = left(:start.utc, 10)`, event)
 	if err != nil {
 		return errors.Wrap(err, "failed to update event")
 	}
