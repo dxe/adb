@@ -141,8 +141,8 @@ func DeleteChapter(db *sqlx.DB, page ChapterWithToken) error {
 
 // for the chapter management admin page on the ADB itself
 func InsertChapter(db *sqlx.DB, page ChapterWithToken) error {
-	_, err := db.NamedExec(`INSERT INTO fb_pages ( id, name, flag, fb_url, insta_url, twitter_url, email, region, lat, lng, token )
-		VALUES ( :id, :name, :flag, :fb_url, :insta_url, :twitter_url, :email, :region, :lat, :lng, :token, eventbrite_id, eventbrite_token )`, page)
+	_, err := db.NamedExec(`INSERT INTO fb_pages ( id, name, flag, fb_url, insta_url, twitter_url, email, region, lat, lng, token, eventbrite_id, eventbrite_token )
+		VALUES ( :id, :name, :flag, :fb_url, :insta_url, :twitter_url, :email, :region, :lat, :lng, :token, :eventbrite_id, :eventbrite_token )`, page)
 	if err != nil {
 		return errors.Wrapf(err, "failed to insert chapter %d", page.ID)
 	}
