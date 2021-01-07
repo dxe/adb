@@ -6,8 +6,9 @@ import (
 	"github.com/pkg/errors"
 )
 
+// TODO: consolidate these structs (will need to update some things in the database too)
+
 // used by public API
-// TODO: change "id" to "facebook_id" and "chapter_id" to "id" in the database schema (also affects the next type)
 type Chapter struct {
 	ID         int     `db:"chapter_id"`
 	FacebookID int     `db:"id"`
@@ -144,14 +145,15 @@ func GetAllChapterInfo(db *sqlx.DB) ([]Chapter, error) {
 	return chapters, nil
 }
 
-func FindNearestChapters(db *sqlx.DB, lat float64, lng float64) ([]Chapter, error) {
+// TODO: update this function (and the website) to handle data in the normal Chapter struct instead of w/ Token
+func FindNearestChapters(db *sqlx.DB, lat float64, lng float64) ([]ChapterWithToken, error) {
 	query := `SELECT id, name, flag, fb_url, region, (3959*acos(cos(radians(` + fmt.Sprintf("%f", lat) + `))*cos(radians(lat))* 
 		cos(radians(lng)-radians(` + fmt.Sprintf("%f", lng) + `))+sin(radians(` + fmt.Sprintf("%f", lat) + `))* 
 		sin(radians(lat)))) AS distance
 		FROM fb_pages
 		ORDER BY distance
 		LIMIT 3`
-	var pages []Chapter
+	var pages []ChapterWithToken // we aren't actually getting tokens, but the website expects the FB ID to be in the ID field
 	err := db.Select(&pages, query)
 	if err != nil {
 		// error
@@ -159,19 +161,19 @@ func FindNearestChapters(db *sqlx.DB, lat float64, lng float64) ([]Chapter, erro
 	}
 	return pages, nil
 }
-
 // returns pages grouped by region
-func GetAllChaptersByRegion(db *sqlx.DB) (map[string][]Chapter, error) {
+// TODO: update this function (and the website) to handle data in the normal Chapter struct instead of w/ Token
+func GetAllChaptersByRegion(db *sqlx.DB) (map[string][]ChapterWithToken, error) {
 	query := `SELECT id, name, flag, fb_url, twitter_url, insta_url, email, region, lat, lng
 		FROM fb_pages
 		ORDER BY name`
-	var pages []Chapter
+	var pages []ChapterWithToken // we aren't actually getting tokens, but the website expects the FB ID to be in the ID field
 	err := db.Select(&pages, query)
 	if err != nil {
 		// error
 		return nil, errors.Wrap(err, "failed to select pages")
 	}
-	regions := make(map[string][]Chapter)
+	regions := make(map[string][]ChapterWithToken) // we aren't actually getting tokens, but the website expects the FB ID to be in the ID field
 	for _, p := range pages {
 		regions[p.Region] = append(regions[p.Region], p)
 	}

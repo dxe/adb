@@ -45,10 +45,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b0313163-9991-4825-9a38-c44aa2f8ae76" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/Dockerfile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/facebook_events/facebook_events.go" beforeDir="false" afterPath="$PROJECT_DIR$/event_sync/event_sync.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/model/facebook.go" beforeDir="false" afterPath="$PROJECT_DIR$/model/external_events.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/model/chapters.go" beforeDir="false" afterPath="$PROJECT_DIR$/model/chapters.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
