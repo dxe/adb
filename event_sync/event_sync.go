@@ -189,6 +189,5 @@ func StartFacebookSync(db *sqlx.DB) {
 		syncEventbriteEvents(db)
 		log.Println("Finished Eventbrite event sync")
 		time.Sleep(60 * time.Minute)
-		time.Sleep(60 * time.Minute)
 	}
 }
