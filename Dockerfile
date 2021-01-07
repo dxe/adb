@@ -8,7 +8,7 @@ COPY main.go ./
 COPY config config/
 COPY mailinglist_sync mailinglist_sync/
 COPY survey_mailer survey_mailer/
-COPY facebook_events facebook_events/
+COPY event_sync event_sync/
 COPY members members/
 COPY model model/
 COPY discord discord/

@@ -22,7 +22,7 @@ import (
 	oidc "github.com/coreos/go-oidc"
 	"github.com/dxe/adb/config"
 	"github.com/dxe/adb/discord"
-	"github.com/dxe/adb/facebook_events"
+	"github.com/dxe/adb/event_sync"
 	"github.com/dxe/adb/mailinglist_sync"
 	"github.com/dxe/adb/members"
 	"github.com/dxe/adb/model"
@@ -209,9 +209,12 @@ func router() (*mux.Router, *sqlx.DB) {
 
 	// Unauthed API
 	router.HandleFunc("/tokensignin", main.TokenSignInHandler)
-	router.HandleFunc("/fb_events/{page_id:[0-9]+}", main.ListFBEventsHandler)
-	router.HandleFunc("/fb_page/{lat:[0-9.\\-]+},{lng:[0-9.\\-]+}", main.FindNearestFacebookPagesHandler)
-	router.HandleFunc("/fb_pages", main.ListAllFBPages)
+	router.HandleFunc("/fb_events/{page_id:[0-9]+}", main.ListFBEventsHandler) // TODO: remove this after updating website
+	router.HandleFunc("/external_events/{page_id:[0-9]+}", main.ListFBEventsHandler)
+	router.HandleFunc("/fb_page/{lat:[0-9.\\-]+},{lng:[0-9.\\-]+}", main.FindNearestFacebookPagesHandler) // TODO: remove this after updating website
+	router.HandleFunc("/chapters/{lat:[0-9.\\-]+},{lng:[0-9.\\-]+}", main.FindNearestFacebookPagesHandler)
+	router.HandleFunc("/fb_pages", main.ListAllChaptersByRegion) // TODO: remove this after updating website
+	router.HandleFunc("/regions", main.ListAllChaptersByRegion)
 	router.HandleFunc("/chapters", main.ListAllChapters)
 
 	// Defunct Unauthed API
@@ -664,7 +667,7 @@ func (c MainController) NewChapterHandler(w http.ResponseWriter, r *http.Request
 
 func (c MainController) ChapterUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
-		var page model.FacebookPageOutput
+		var page model.ChapterWithToken
 		pageID, err := strconv.Atoi(r.FormValue("facebook-id"))
 		chapterID, err := strconv.Atoi(r.FormValue("chapter-id"))
 		lat, err := strconv.ParseFloat(r.FormValue("lat"), 64)
@@ -694,7 +697,7 @@ func (c MainController) ChapterUpdateHandler(w http.ResponseWriter, r *http.Requ
 }
 
 func (c MainController) ChapterDeleteHandler(w http.ResponseWriter, r *http.Request) {
-	var page model.FacebookPageOutput
+	var page model.ChapterWithToken
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	page.ChapterID = id
 	err = model.DeleteChapter(c.db, page)
@@ -706,7 +709,7 @@ func (c MainController) ChapterDeleteHandler(w http.ResponseWriter, r *http.Requ
 
 func (c MainController) ChapterInsertHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
-		var page model.FacebookPageOutput
+		var page model.ChapterWithToken
 		pageID, err := strconv.Atoi(r.FormValue("facebook-id"))
 		chapterID, err := strconv.Atoi(r.FormValue("chapter-id"))
 		lat, err := strconv.ParseFloat(r.FormValue("lat"), 64)
@@ -1536,7 +1539,7 @@ func (c MainController) FindNearestFacebookPagesHandler(w http.ResponseWriter, r
 	}
 
 	// run query
-	pages, err := model.FindNearestFacebookPages(c.db, lat, lng)
+	pages, err := model.FindNearestChapters(c.db, lat, lng)
 	if err != nil {
 		panic(err)
 	}
@@ -1545,9 +1548,9 @@ func (c MainController) FindNearestFacebookPagesHandler(w http.ResponseWriter, r
 	writeJSON(w, pages)
 }
 
-func (c MainController) ListAllFBPages(w http.ResponseWriter, r *http.Request) {
+func (c MainController) ListAllChaptersByRegion(w http.ResponseWriter, r *http.Request) {
 	// run query
-	pages, err := model.GetAllFBPagesByRegion(c.db)
+	pages, err := model.GetAllChaptersByRegion(c.db)
 	if err != nil {
 		panic(err)
 	}
@@ -1558,7 +1561,7 @@ func (c MainController) ListAllFBPages(w http.ResponseWriter, r *http.Request) {
 
 func (c MainController) ListAllChapters(w http.ResponseWriter, r *http.Request) {
 	// run query
-	chapters, err := model.GetAllChaptersWithoutTokens(c.db)
+	chapters, err := model.GetAllChapterInfo(c.db)
 	if err != nil {
 		panic(err)
 	}
@@ -1866,7 +1869,7 @@ func main() {
 	}
 
 	// Start syncing Facebook events
-	go facebook_events.StartFacebookSync(db)
+	go event_sync.StartFacebookSync(db)
 
 	// Set up server
 	n.UseHandler(r)
