@@ -1,4 +1,4 @@
-package facebook_events
+package event_sync
 
 import (
 	"encoding/json"
@@ -11,7 +11,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-func getFacebookEvents(page model.FacebookPage) []model.FacebookEventJSON {
+func getFacebookEvents(page model.ChapterWithToken) []model.FacebookEventJSON {
 	url := "https://graph.facebook.com/v4.0/" + strconv.Itoa(page.ID) + "/events?include_canceled=1&fields=name,start_time,end_time,cover,attending_count,description,place,interested_count,is_canceled,event_times,is_online&limit=50&access_token=" + page.Token
 
 	resp, err := http.Get(url)
@@ -35,7 +35,7 @@ func getFacebookEvents(page model.FacebookPage) []model.FacebookEventJSON {
 	return data.Data
 }
 
-func getFacebookEvent(page model.FacebookPage, eventID string) model.FacebookEventJSON {
+func getFacebookEvent(page model.ChapterWithToken, eventID string) model.FacebookEventJSON {
 	url := "https://graph.facebook.com/v4.0/" + eventID + "?fields=name,start_time,end_time,cover,attending_count,description,place,interested_count,is_canceled,event_times,is_online&limit=50&access_token=" + page.Token
 
 	resp, err := http.Get(url)
@@ -64,7 +64,7 @@ func syncFacebookEvents(db *sqlx.DB) {
 	}()
 
 	// get pages from database
-	pages, err := model.GetFacebookPagesWithTokens(db)
+	pages, err := model.GetChaptersWithTokens(db)
 	if err != nil {
 		log.Println("ERROR:", err)
 		return
