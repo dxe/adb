@@ -69,7 +69,7 @@ type ExternalEventOutput struct {
 }
 
 func GetFacebookEvents(db *sqlx.DB, pageID int, startTime string, endTime string) ([]ExternalEventOutput, error) {
-	query := `SELECT id, page_id, name, description, start_time, end_time, location_name,
+	query := `SELECT id, page_id, name, start_time, end_time, location_name,
 		location_country, location_country, location_state, location_address, location_zip,
 		lat, lng, cover, attending_count, interested_count, is_canceled, last_update FROM fb_events`
 
@@ -98,7 +98,7 @@ func GetFacebookEvents(db *sqlx.DB, pageID int, startTime string, endTime string
 
 func GetOnlineFacebookEvents(db *sqlx.DB, startTime string, endTime string) ([]ExternalEventOutput, error) {
 	// TODO: move these page IDs to config variables?
-	query := `SELECT id, page_id, name, description, start_time, end_time, location_name,
+	query := `SELECT id, page_id, name, start_time, end_time, location_name,
 		location_country, location_country, location_state, location_address, location_zip,
 		lat, lng, cover, attending_count, interested_count, is_canceled, last_update FROM fb_events
 		WHERE is_canceled = 0 and ((page_id = 1377014279263790 and location_name = 'Online') or page_id = 287332515138353)`
