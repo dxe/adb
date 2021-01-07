@@ -34,6 +34,8 @@
       <label>Lng</label><input type="number" name="lng" value="{{ .Data.Chapter.Lng }}" class="form-control" placeholder="000.000000" step="0.000001" min="-180" max="180" /><br />
       <label>Facebook ID</label><input type="number" name="facebook-id" maxlength="16" value="{{ .Data.Chapter.ID }}" class="form-control" /><br />
       <label>Facebook Token</label><input type="text" name="token" maxlength="200" value="{{ .Data.Chapter.Token }}" class="form-control" /><br />
+      <label>Eventbrite ID</label><input type="number" name="eventbrite-id" maxlength="16" value="{{ .Data.Chapter.EventbriteID }}" class="form-control" /><br />
+      <label>Eventbrite Token</label><input type="text" name="eventbrite-token" maxlength="200" value="{{ .Data.Chapter.EventbriteToken }}" class="form-control" /><br />
       <input type="hidden" name="gorilla.csrf.Token" value={{ .CsrfField }}>
       <button class="btn btn-secondary" type="button" onclick="window.location.href='/list_chapters'">Cancel</button>
       <input class="btn btn-success" type="submit" value="Save" />

@@ -683,6 +683,8 @@ func (c MainController) ChapterUpdateHandler(w http.ResponseWriter, r *http.Requ
 		page.Email = r.FormValue("email")
 		page.Region = r.FormValue("region")
 		page.Token = r.FormValue("token")
+		page.EventbriteID = r.FormValue("eventbrite-id")
+		page.EventbriteToken = r.FormValue("eventbrite-token")
 		err = model.UpdateChapter(c.db, page)
 		if err != nil {
 			panic(err.Error())
@@ -722,6 +724,8 @@ func (c MainController) ChapterInsertHandler(w http.ResponseWriter, r *http.Requ
 		page.Email = r.FormValue("email")
 		page.Region = r.FormValue("region")
 		page.Token = r.FormValue("token")
+		page.EventbriteID = r.FormValue("eventbrite-id")
+		page.EventbriteToken = r.FormValue("eventbrite-token")
 		err = model.InsertChapter(c.db, page)
 		if err != nil {
 			panic(err.Error())

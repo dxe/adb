@@ -235,7 +235,9 @@ CREATE TABLE fb_pages (
   twitter_url VARCHAR(100) NOT NULL DEFAULT '',
   insta_url VARCHAR(100) NOT NULL DEFAULT '',
   email VARCHAR(100) NOT NULL DEFAULT '',
-  token VARCHAR(200) NOT NULL DEFAULT ''
+  token VARCHAR(200) NOT NULL DEFAULT '',
+  eventbrite_id VARCHAR(16) NOT NULL DEFAULT '',
+  eventbrite_token VARCHAR(32) NOT NULL DEFAULT ''
 )
 `)
 

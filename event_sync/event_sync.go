@@ -64,7 +64,7 @@ func syncFacebookEvents(db *sqlx.DB) {
 	}()
 
 	// get pages from database
-	pages, err := model.GetChaptersWithTokens(db)
+	pages, err := model.GetChaptersWithFacebookTokens(db)
 	if err != nil {
 		log.Println("ERROR:", err)
 		return
