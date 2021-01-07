@@ -209,11 +209,8 @@ func router() (*mux.Router, *sqlx.DB) {
 
 	// Unauthed API
 	router.HandleFunc("/tokensignin", main.TokenSignInHandler)
-	router.HandleFunc("/fb_events/{page_id:[0-9]+}", main.ListFBEventsHandler) // TODO: remove this after updating website
 	router.HandleFunc("/external_events/{page_id:[0-9]+}", main.ListFBEventsHandler)
-	router.HandleFunc("/fb_page/{lat:[0-9.\\-]+},{lng:[0-9.\\-]+}", main.FindNearestFacebookPagesHandler) // TODO: remove this after updating website
 	router.HandleFunc("/chapters/{lat:[0-9.\\-]+},{lng:[0-9.\\-]+}", main.FindNearestFacebookPagesHandler)
-	router.HandleFunc("/fb_pages", main.ListAllChaptersByRegion) // TODO: remove this after updating website
 	router.HandleFunc("/regions", main.ListAllChaptersByRegion)
 	router.HandleFunc("/chapters", main.ListAllChapters)
 

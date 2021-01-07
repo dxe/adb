@@ -112,7 +112,7 @@ func GetOnlineFacebookEvents(db *sqlx.DB, startTime string, endTime string) ([]E
 		query += " and start_time <= '" + endTime + "'"
 	}
 
-	query += " ORDER BY start_time"
+	query += " GROUP BY id ORDER BY start_time"
 
 	var events []ExternalEventOutput
 	err := db.Select(&events, query)
