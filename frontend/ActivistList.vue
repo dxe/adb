@@ -1352,6 +1352,8 @@ export default Vue.extend({
     loadActivists() {
       this.loading = true;
 
+      console.log(this.listActivistsParameters());
+
       $.ajax({
         url: '/activist/list',
         method: 'POST',
