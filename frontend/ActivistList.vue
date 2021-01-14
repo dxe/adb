@@ -1352,8 +1352,6 @@ export default Vue.extend({
     loadActivists() {
       this.loading = true;
 
-      console.log(this.listActivistsParameters());
-
       $.ajax({
         url: '/activist/list',
         method: 'POST',
@@ -1395,6 +1393,9 @@ export default Vue.extend({
         },
       });
     },
+    debounceLoadActivists: debounce(function(this: any) {
+      this.loadActivists();
+    }, 500),
     afterChangeCallback(changes: any[], source: string) {
       if (
         source !== 'edit' &&
@@ -1671,10 +1672,10 @@ export default Vue.extend({
   },
   watch: {
     lastEventDateFrom() {
-      this.loadActivists();
+      this.debounceLoadActivists();
     },
     lastEventDateTo() {
-      this.loadActivists();
+      this.debounceLoadActivists();
     },
     filterInterest() {
       this.loadActivists();
