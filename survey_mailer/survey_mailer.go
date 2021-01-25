@@ -20,7 +20,6 @@ type SurveyOptions struct {
 	QueryEventName string
 	BodyText       string
 	BodyHtml       string
-	LinkParam      string
 }
 
 func sendMissingEmail(eventName string, attendees []string, sendingErrors []string) {
@@ -123,18 +122,13 @@ func survey(db *sqlx.DB, surveyOptions SurveyOptions) {
 	// Iterate through events
 	for _, event := range events {
 		subject := "Survey: " + event.EventName
-		// set linkParam based on LinkParam option
-		linkParam := ""
-		if surveyOptions.LinkParam == "name" {
-			linkParam = strings.Replace(event.EventName, " ", "+", -1)
-		}
-		if surveyOptions.LinkParam == "date" {
-			linkParam = event.EventDate.Format("2006-01-02")
-		}
-		// build body by replacing LINK_PARAM with the actual link param
-		bodyText := strings.Replace(surveyOptions.BodyText, "LINK_PARAM", linkParam, -1)
+		linkParamName := strings.Replace(event.EventName, " ", "+", -1)
+		linkParamDate := event.EventDate.Format("2006-01-02")
 		// TODO: Look into better ways for escaping this to prevent XSS attacks
-		bodyHtml := strings.Replace(surveyOptions.BodyHtml, "LINK_PARAM", html.EscapeString(linkParam), -1)
+		bodyText := strings.Replace(surveyOptions.BodyText, "LINK_PARAM_NAME", linkParamName, -1)
+		bodyText = strings.Replace(surveyOptions.BodyText, "LINK_PARAM_DATE", linkParamDate, -1)
+		bodyHtml := strings.Replace(surveyOptions.BodyHtml, "LINK_PARAM_NAME", html.EscapeString(linkParamName), -1)
+		bodyHtml = strings.Replace(surveyOptions.BodyHtml, "LINK_PARAM_DATE", html.EscapeString(linkParamDate), -1)
 
 		log.Println("Sending", surveyOptions.SurveyType, "survey for event:", event.EventName)
 
@@ -168,70 +162,56 @@ func surveyMailerWrapper(db *sqlx.DB) {
 		return
 	}
 
-	// send protest, sanctuary, & training surveys daily
-	survey(db, SurveyOptions{
-		SurveyType:     "protest",
-		QueryDate:      yesterday,
-		QueryEventType: "%Action",
-		QueryEventName: "",
-		BodyText:       `Thank you for taking part in direct action! Please take this quick survey: https://docs.google.com/forms/d/e/1FAIpQLScfrPtPxmYAroODhBkwUGq753JPykYKNdosg4gUR_SRng8BRQ/viewform?usp=pp_url&entry.466557185=LINK_PARAM. If you captured any photos or videos, please upload them here: dxe.io/upload.`,
-		BodyHtml:       `<p>Thank you for taking part in direct action! Please <a href="https://docs.google.com/forms/d/e/1FAIpQLScfrPtPxmYAroODhBkwUGq753JPykYKNdosg4gUR_SRng8BRQ/viewform?usp=pp_url&entry.466557185=LINK_PARAM">click here</a> to take a quick survey.</p><p>If you captured any photos or videos, please upload them <a href="http://dxe.io/upload">here</a>.</p>`,
-		LinkParam:      "name",
-	})
-	survey(db, SurveyOptions{
-		SurveyType:     "sanctuary",
-		QueryDate:      yesterday,
-		QueryEventType: "Sanctuary",
-		QueryEventName: "",
-		BodyText:       `Thank you for attending a sanctuary event! Please take this quick survey: https://docs.google.com/forms/d/e/1FAIpQLSdxn514dpwXduMeaGr8xCszoAUYDS0_95faskbFCzVNcAJ_fw/viewform?usp=pp_url&entry.466557185=LINK_PARAM. If you captured any photos or videos, please upload them here: dxe.io/upload.`,
-		BodyHtml:       `<p>Thank you for attending a sanctuary event! Please <a href="https://docs.google.com/forms/d/e/1FAIpQLSdxn514dpwXduMeaGr8xCszoAUYDS0_95faskbFCzVNcAJ_fw/viewform?usp=pp_url&entry.466557185=LINK_PARAM">click here</a> to take a quick survey.</p><p>If you captured any photos or videos, please upload them <a href="http://dxe.io/upload">here</a>.</p>`,
-		LinkParam:      "name",
-	})
-	// trainings survey disabled as per ana's request on 2020.10.22
-	// survey(db, SurveyOptions{
-	// 	SurveyType:     "training",
-	// 	QueryDate:      yesterday,
-	// 	QueryEventType: "Training",
-	// 	QueryEventName: "",
-	// 	BodyText:       `Thank you for attending the training yesterday! Please take this quick survey: https://docs.google.com/forms/d/e/1FAIpQLSdIUm7nBy83mTIgZ8eDcSjCHZTZ62jcTghmx_q25eA3umo2ug/viewform?usp=pp_url&entry.1179483307=LINK_PARAM.`,
-	// 	BodyHtml:       `<p>Thank you for attending the training yesterday! Please <a href="https://docs.google.com/forms/d/e/1FAIpQLSdIUm7nBy83mTIgZ8eDcSjCHZTZ62jcTghmx_q25eA3umo2ug/viewform?usp=pp_url&entry.1179483307=LINK_PARAM">click here</a> to take a quick survey.</p>`,
-	// 	LinkParam:      "name",
-	// })
-
-	// only send meetup & popup surveys on sunday
+	// send meetup survey on sunday
 	if weekday == 0 {
 		survey(db, SurveyOptions{
 			SurveyType:     "meetup",
 			QueryDate:      yesterday,
 			QueryEventType: "Community",
 			QueryEventName: "Meetup",
-			BodyText:       `Thank you for attending the meetup! Please take this quick survey: https://docs.google.com/forms/d/e/1FAIpQLSfV0smO8sQo1ch-rlX7g9Oz4t_2d3fjGytwrE_yJ8Ez9uLSZQ/viewform?usp=pp_url&entry.1369832182=LINK_PARAM`,
-			BodyHtml:       `<p>Thank you for attending the meetup! Please <a href="https://docs.google.com/forms/d/e/1FAIpQLSfV0smO8sQo1ch-rlX7g9Oz4t_2d3fjGytwrE_yJ8Ez9uLSZQ/viewform?usp=pp_url&entry.1369832182=LINK_PARAM">click here</a> to provide feedback which will help us in planning future events.</p>`,
-			LinkParam:      "date",
-		})
-		survey(db, SurveyOptions{
-			SurveyType:     "popup",
-			QueryDate:      yesterday,
-			QueryEventType: "Community",
-			QueryEventName: "Popup",
-			BodyText:       `Thank you for attending the popup! Please take this quick survey: https://docs.google.com/forms/d/e/1FAIpQLScwpVIvHItvJeUPkKk_UsRjsrDxj29vK8zElS19nnEZmaEy9Q/viewform?usp=pp_url&entry.610934849=LINK_PARAM`,
-			BodyHtml:       `<p>Thank you for attending the meetup! Please <a href="https://docs.google.com/forms/d/e/1FAIpQLScwpVIvHItvJeUPkKk_UsRjsrDxj29vK8zElS19nnEZmaEy9Q/viewform?usp=pp_url&entry.610934849=LINK_PARAM">click here</a> to provide feedback which will help us in planning future events.</p>`,
-			LinkParam:      "date",
+			BodyText:       `Thank you for attending the meetup! Please take this quick survey: https://docs.google.com/forms/d/e/1FAIpQLSfV0smO8sQo1ch-rlX7g9Oz4t_2d3fjGytwrE_yJ8Ez9uLSZQ/viewform?usp=pp_url&entry.783443419=LINK_PARAM_NAME&entry.1369832182=LINK_PARAM_DATE`,
+			BodyHtml:       `<p>Thank you for attending the meetup! Please <a href="https://docs.google.com/forms/d/e/1FAIpQLSfV0smO8sQo1ch-rlX7g9Oz4t_2d3fjGytwrE_yJ8Ez9uLSZQ/viewform?usp=pp_url&entry.783443419=LINK_PARAM_NAME&entry.1369832182=LINK_PARAM_DATE">click here</a> to provide feedback which will help us in planning future events.</p>`,
 		})
 	}
 
-	// only send chapter mtg surveys on monday
+	// send chapter mtg surveys on monday
 	if weekday == 1 {
 		survey(db, SurveyOptions{
 			SurveyType:     "chapter meeting",
 			QueryDate:      yesterday,
 			QueryEventType: "",
 			QueryEventName: `"Chapter Meeting"`,
-			BodyText:       `Thank you for attending the chapter meeting! Please take this quick survey: https://docs.google.com/forms/d/e/1FAIpQLSfc_mgwH_zYYEQ5MTJwgyvCy5klsY_xrVBXgTDHM8sSxLIJrQ/viewform?usp=pp_url&entry.502269384=LINK_PARAM`,
-			BodyHtml:       `<p>Thank you for attending the chapter meeting! Please <a href="https://docs.google.com/forms/d/e/1FAIpQLSfc_mgwH_zYYEQ5MTJwgyvCy5klsY_xrVBXgTDHM8sSxLIJrQ/viewform?usp=pp_url&entry.502269384=LINK_PARAM">click here</a> to take a quick survey.</p>`,
-			LinkParam:      "date",
+			BodyText:       `Thank you for attending the chapter meeting! Please take this quick survey: https://docs.google.com/forms/d/e/1FAIpQLSfc_mgwH_zYYEQ5MTJwgyvCy5klsY_xrVBXgTDHM8sSxLIJrQ/viewform?usp=pp_url&entry.502269384=LINK_PARAM_DATE`,
+			BodyHtml:       `<p>Thank you for attending the chapter meeting! Please <a href="https://docs.google.com/forms/d/e/1FAIpQLSfc_mgwH_zYYEQ5MTJwgyvCy5klsY_xrVBXgTDHM8sSxLIJrQ/viewform?usp=pp_url&entry.502269384=LINK_PARAM_DATE">click here</a> to take a quick survey.</p>`,
 		})
 	}
+
+	// send protest, sanctuary, & community surveys daily
+	survey(db, SurveyOptions{
+		SurveyType:     "protest",
+		QueryDate:      yesterday,
+		QueryEventType: "%Action",
+		QueryEventName: "",
+		BodyText:       `Thank you for taking part in direct action! Please take this quick survey: https://docs.google.com/forms/d/e/1FAIpQLScfrPtPxmYAroODhBkwUGq753JPykYKNdosg4gUR_SRng8BRQ/viewform?usp=pp_url&entry.466557185=LINK_PARAM_NAME. If you captured any photos or videos, please upload them here: dxe.io/upload.`,
+		BodyHtml:       `<p>Thank you for taking part in direct action! Please <a href="https://docs.google.com/forms/d/e/1FAIpQLScfrPtPxmYAroODhBkwUGq753JPykYKNdosg4gUR_SRng8BRQ/viewform?usp=pp_url&entry.466557185=LINK_PARAM_NAME">click here</a> to take a quick survey.</p><p>If you captured any photos or videos, please upload them <a href="http://dxe.io/upload">here</a>.</p>`,
+	})
+	survey(db, SurveyOptions{
+		SurveyType:     "sanctuary",
+		QueryDate:      yesterday,
+		QueryEventType: "Sanctuary",
+		QueryEventName: "",
+		BodyText:       `Thank you for attending a sanctuary event! Please take this quick survey: https://docs.google.com/forms/d/e/1FAIpQLSdxn514dpwXduMeaGr8xCszoAUYDS0_95faskbFCzVNcAJ_fw/viewform?usp=pp_url&entry.466557185=LINK_PARAM_NAME. If you captured any photos or videos, please upload them here: dxe.io/upload.`,
+		BodyHtml:       `<p>Thank you for attending a sanctuary event! Please <a href="https://docs.google.com/forms/d/e/1FAIpQLSdxn514dpwXduMeaGr8xCszoAUYDS0_95faskbFCzVNcAJ_fw/viewform?usp=pp_url&entry.466557185=LINK_PARAM_NAME">click here</a> to take a quick survey.</p><p>If you captured any photos or videos, please upload them <a href="http://dxe.io/upload">here</a>.</p>`,
+	})
+	survey(db, SurveyOptions{
+		SurveyType:     "community",
+		QueryDate:      yesterday,
+		QueryEventType: "Community",
+		QueryEventName: "",
+		BodyText:       `Thank you for attending our community event! Please take this quick survey: https://docs.google.com/forms/d/e/1FAIpQLSfV0smO8sQo1ch-rlX7g9Oz4t_2d3fjGytwrE_yJ8Ez9uLSZQ/viewform?usp=pp_url&entry.783443419=LINK_PARAM_NAME&entry.1369832182=LINK_PARAM_DATE`,
+		BodyHtml:       `<p>Thank you for attending our community event! Please <a href="https://docs.google.com/forms/d/e/1FAIpQLSfV0smO8sQo1ch-rlX7g9Oz4t_2d3fjGytwrE_yJ8Ez9uLSZQ/viewform?usp=pp_url&entry.783443419=LINK_PARAM_NAME&entry.1369832182=LINK_PARAM_DATE">click here</a> to provide feedback which will help us in planning future events.</p>`,
+	})
+
 }
 
 // Sends surveys based on event attendance every 60 minutes.
