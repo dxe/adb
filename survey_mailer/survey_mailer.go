@@ -46,8 +46,12 @@ func sendMissingEmail(eventName string, attendees []string, sendingErrors []stri
 	}
 
 	if bodyText != "" {
-		sendEmail(to, subject, bodyText, bodyHtml)
-		log.Println("Sending email of missing emails and errors.")
+		err := sendEmail(to, subject, bodyText, bodyHtml)
+		if err != nil {
+			log.Println("ERROR sending email of missing emails and errors.")
+			return
+		}
+		log.Println("Sent email of missing emails and errors.")
 	}
 }
 
@@ -76,8 +80,8 @@ func bulkSendEmails(event model.Event, subject string, bodyText string, bodyHtml
 		// add stanford survey link to email (DISABLED 2020.10.23 as per Eva's request)
 		// newBodyText := bodyText
 		// newBodyHtml := bodyHtml
-		// receipientID := strconv.Itoa(event.AttendeeIDs[i])
-		// stanfordLink := "http://ec2.dxe.io/adb-forms/survey.php?activist-id=" + receipientID
+		// recipientID := strconv.Itoa(event.AttendeeIDs[i])
+		// stanfordLink := "http://ec2.dxe.io/adb-forms/survey.php?activist-id=" + recipientID
 		// newBodyText += "P.S. You can greatly help us improve our work by clicking the following link to take one additional survey. This link is unique to you, so please DO NOT share it with others: " + stanfordLink
 		// newBodyHtml += "<p>P.S. You can greatly help us improve our work by <a href=\"" + stanfordLink + "\">clicking here</a> to take one additional survey. This link is unique to you, so please DO NOT share it with others.</p>"
 

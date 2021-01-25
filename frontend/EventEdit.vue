@@ -533,10 +533,16 @@ export default Vue.extend({
     },
     shouldShowSuppressSurveyCheckbox() {
       // only show checkbox if a survey will be sent for this event
+      if (
+        this.type === 'Action' ||
+        this.type === 'Campaign Action' ||
+        this.type === 'Community' ||
+        this.type === 'Sanctuary'
+      )
+        return true;
       if (this.name.toLowerCase().includes('chapter meeting')) return true;
       if (this.name.toLowerCase().includes('popup') && this.type === 'Community') return true;
       if (this.name.toLowerCase().includes('meetup') && this.type === 'Community') return true;
-      if (this.type === 'Action' || this.type === 'Campaign Action') return true;
       return false;
     },
   },
