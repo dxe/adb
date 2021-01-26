@@ -1460,7 +1460,7 @@ func (c MainController) ListFBEventsHandler(w http.ResponseWriter, r *http.Reque
 	localEventsFound := false
 
 	// run query to get local events
-	events, err := model.GetFacebookEvents(c.db, pageID, startTimeStr, endTimeStr)
+	events, err := model.GetFacebookEvents(c.db, pageID, startTimeStr, endTimeStr, false)
 	if err != nil {
 		panic(err)
 	}
@@ -1472,7 +1472,7 @@ func (c MainController) ListFBEventsHandler(w http.ResponseWriter, r *http.Reque
 
 	if !localEventsFound {
 		// get online SF Bay + ALOA events instead
-		events, err = model.GetOnlineFacebookEvents(c.db, startTimeStr, endTimeStr)
+		events, err = model.GetFacebookEvents(c.db, 0, startTimeStr, endTimeStr, true)
 		if err != nil {
 			panic(err)
 		}

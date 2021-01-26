@@ -91,12 +91,18 @@ type ExternalEventOutput struct {
 	EventbriteURL   string    `db:"eventbrite_url"`
 }
 
-func GetFacebookEvents(db *sqlx.DB, pageID int, startTime string, endTime string) ([]ExternalEventOutput, error) {
+func GetFacebookEvents(db *sqlx.DB, pageID int, startTime string, endTime string, onlineOnly bool) ([]ExternalEventOutput, error) {
 	query := `SELECT id, page_id, name, start_time, end_time, location_name,
 		location_country, location_country, location_state, location_address, location_zip,
 		lat, lng, cover, attending_count, interested_count, is_canceled, last_update, eventbrite_url FROM fb_events`
 
-	query += " WHERE is_canceled = 0 and page_id = " + strconv.Itoa(pageID)
+	query += " WHERE is_canceled = 0"
+
+	if onlineOnly {
+		query += " and ((page_id = 1377014279263790 and location_name = 'Online') or page_id = 287332515138353)"
+	} else {
+		query += " and page_id = " + strconv.Itoa(pageID)
+	}
 
 	if startTime != "" {
 		query += " and start_time >= '" + startTime + "'"
@@ -108,34 +114,6 @@ func GetFacebookEvents(db *sqlx.DB, pageID int, startTime string, endTime string
 	}
 
 	query += " ORDER BY start_time"
-
-	var events []ExternalEventOutput
-	err := db.Select(&events, query)
-	if err != nil {
-		// error
-		return nil, errors.Wrap(err, "failed to select events")
-	}
-
-	return events, nil
-}
-
-func GetOnlineFacebookEvents(db *sqlx.DB, startTime string, endTime string) ([]ExternalEventOutput, error) {
-	// TODO: move these page IDs to config variables?
-	query := `SELECT id, page_id, name, start_time, end_time, location_name,
-		location_country, location_country, location_state, location_address, location_zip,
-		lat, lng, cover, attending_count, interested_count, is_canceled, last_update, eventbrite_url FROM fb_events
-		WHERE is_canceled = 0 and ((page_id = 1377014279263790 and location_name = 'Online') or page_id = 287332515138353)`
-
-	if startTime != "" {
-		query += " and start_time >= '" + startTime + "'"
-	}
-	if endTime != "" {
-		// we actually want to show events which have a START time before the query's end time
-		// otherwise really long (or recurring) events could be hidden
-		query += " and start_time <= '" + endTime + "'"
-	}
-
-	query += " GROUP BY id ORDER BY start_time"
 
 	var events []ExternalEventOutput
 	err := db.Select(&events, query)
