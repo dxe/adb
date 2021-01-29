@@ -68,7 +68,7 @@ type EventbriteEventStart struct {
 	UTC      string `json:"utc"`
 }
 
-type ExternalEventOutput struct {
+type ExternalEvent struct {
 	ID              int       `db:"id"`
 	PageID          int       `db:"page_id"`
 	Name            string    `db:"name"`
@@ -91,10 +91,10 @@ type ExternalEventOutput struct {
 	EventbriteURL   string    `db:"eventbrite_url"`
 }
 
-func GetFacebookEvents(db *sqlx.DB, pageID int, startTime string, endTime string, onlineOnly bool) ([]ExternalEventOutput, error) {
+func GetFacebookEvents(db *sqlx.DB, pageID int, startTime string, endTime string, onlineOnly bool) ([]ExternalEvent, error) {
 	query := `SELECT id, page_id, name, start_time, end_time, location_name,
 		location_country, location_country, location_state, location_address, location_zip,
-		lat, lng, cover, attending_count, interested_count, is_canceled, last_update, eventbrite_url FROM fb_events`
+		lat, lng, cover, attending_count, interested_count, is_canceled, last_update, eventbrite_url, description FROM fb_events`
 
 	query += " WHERE is_canceled = 0"
 
@@ -115,7 +115,7 @@ func GetFacebookEvents(db *sqlx.DB, pageID int, startTime string, endTime string
 
 	query += " ORDER BY start_time"
 
-	var events []ExternalEventOutput
+	var events []ExternalEvent
 	err := db.Select(&events, query)
 	if err != nil {
 		// error
@@ -152,10 +152,20 @@ func InsertFacebookEvent(db *sqlx.DB, event FacebookEventJSON, page ChapterWithT
 	return nil
 }
 
-func AddEventbriteDetailsToEvent(db *sqlx.DB, event EventbriteEventJSON) error {
+func AddEventbriteDetailsToEventByName(db *sqlx.DB, event EventbriteEventJSON) error {
 	_, err := db.NamedExec(`UPDATE fb_events
 		SET eventbrite_id = :id, eventbrite_url = :url
 		WHERE name = :name.text and left(start_time, 10) = left(:start.utc, 10)`, event)
+	if err != nil {
+		return errors.Wrap(err, "failed to update event")
+	}
+	return nil
+}
+
+func AddEventbriteDetailsToEventByID(db *sqlx.DB, fbID int, ebID string, ebURL string) error {
+	_, err := db.Exec(`UPDATE fb_events
+		SET eventbrite_id = ?, eventbrite_url = ?
+		WHERE id = ?`, ebID, ebURL, fbID)
 	if err != nil {
 		return errors.Wrap(err, "failed to update event")
 	}

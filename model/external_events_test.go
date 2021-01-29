@@ -42,7 +42,7 @@ func TestInsertFacebookEvent(t *testing.T) {
 	err := InsertFacebookEvent(db, event, page)
 	require.NoError(t, err)
 
-	var events []ExternalEventOutput
+	var events []ExternalEvent
 	require.NoError(t,
 		db.Select(&events, "select id, page_id, name from fb_events where name = 'Test Event 1'"))
 
@@ -206,7 +206,7 @@ func TestGetFacebookEvents(t *testing.T) {
 	err = InsertFacebookEvent(db, event5, page1)
 	require.NoError(t, err)
 
-	var events []ExternalEventOutput
+	var events []ExternalEvent
 
 	// get events for specific chapter, excluding cancelled events
 	events, err = GetFacebookEvents(db, 456456456456, "2019-12-01T00:00", "2020-03-01T00:00", false)

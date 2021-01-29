@@ -1868,8 +1868,8 @@ func main() {
 		go survey_mailer.StartSurveyMailer(db)
 	}
 
-	// Start syncing Facebook events
-	go event_sync.StartFacebookSync(db)
+	// Start syncing Facebook & Eventbrite events
+	go event_sync.StartExternalEventSync(db)
 
 	// Set up server
 	n.UseHandler(r)
