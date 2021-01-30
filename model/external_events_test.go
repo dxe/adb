@@ -1,8 +1,10 @@
 package model
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/dxe/adb/event_sync"
+	"github.com/stretchr/testify/require"
 )
 
 func TestInsertFacebookEvent(t *testing.T) {
@@ -12,7 +14,7 @@ func TestInsertFacebookEvent(t *testing.T) {
 	page := ChapterWithToken{
 		ID: 123123123123,
 	}
-	event := FacebookEventJSON{
+	event := event_sync.FacebookEvent{
 		ID:              "1111111111",
 		Name:            "Test Event 1",
 		Description:     "This is a test event.",
@@ -22,9 +24,9 @@ func TestInsertFacebookEvent(t *testing.T) {
 		InterestedCount: 50,
 		IsCanceled:      false,
 		IsOnline:        false,
-		Place: FacebookPlaceJSON{
+		Place: event_sync.FacebookPlace{
 			Name: "Berkeley Animal Rights Center",
-			Location: FacebookLocationJSON{
+			Location: event_sync.FacebookLocation{
 				City:    "Berkeley",
 				State:   "CA",
 				Country: "United States",
@@ -34,12 +36,12 @@ func TestInsertFacebookEvent(t *testing.T) {
 				Lng:     1.000,
 			},
 		},
-		Cover: FacebookCoverJSON{
+		Cover: event_sync.FacebookCover{
 			Source: "http://not-a-real-link",
 		},
 	}
 
-	err := InsertFacebookEvent(db, event, page)
+	err := InsertExternalEvent(db, event, page)
 	require.NoError(t, err)
 
 	var events []ExternalEvent
@@ -60,7 +62,7 @@ func TestGetFacebookEvents(t *testing.T) {
 	page2 := ChapterWithToken{
 		ID: 456456456456,
 	}
-	event1 := FacebookEventJSON{
+	event1 := event_sync.FacebookEvent{
 		ID:              "1111111111",
 		Name:            "Test Event 1",
 		Description:     "This is a test event in Berkeley.",
@@ -70,9 +72,9 @@ func TestGetFacebookEvents(t *testing.T) {
 		InterestedCount: 50,
 		IsCanceled:      false,
 		IsOnline:        false,
-		Place: FacebookPlaceJSON{
+		Place: event_sync.FacebookPlace{
 			Name: "Berkeley Animal Rights Center",
-			Location: FacebookLocationJSON{
+			Location: event_sync.FacebookLocation{
 				City:    "Berkeley",
 				State:   "CA",
 				Country: "United States",
@@ -82,11 +84,11 @@ func TestGetFacebookEvents(t *testing.T) {
 				Lng:     1.000,
 			},
 		},
-		Cover: FacebookCoverJSON{
+		Cover: event_sync.FacebookCover{
 			Source: "http://not-a-real-link",
 		},
 	}
-	event2 := FacebookEventJSON{
+	event2 := event_sync.FacebookEvent{
 		ID:              "2222222222",
 		Name:            "Test Event 2",
 		Description:     "This is a test event in NY.",
@@ -96,9 +98,9 @@ func TestGetFacebookEvents(t *testing.T) {
 		InterestedCount: 50,
 		IsCanceled:      false,
 		IsOnline:        false,
-		Place: FacebookPlaceJSON{
+		Place: event_sync.FacebookPlace{
 			Name: "Not Berkeley Animal Rights Center",
-			Location: FacebookLocationJSON{
+			Location: event_sync.FacebookLocation{
 				City:    "New York",
 				State:   "NY",
 				Country: "United States",
@@ -108,11 +110,11 @@ func TestGetFacebookEvents(t *testing.T) {
 				Lng:     1.000,
 			},
 		},
-		Cover: FacebookCoverJSON{
+		Cover: event_sync.FacebookCover{
 			Source: "http://not-a-real-link",
 		},
 	}
-	event3 := FacebookEventJSON{
+	event3 := event_sync.FacebookEvent{
 		ID:              "3333333333",
 		Name:            "Test Event 3",
 		Description:     "This is a test event in NY at a later date.",
@@ -122,9 +124,9 @@ func TestGetFacebookEvents(t *testing.T) {
 		InterestedCount: 50,
 		IsCanceled:      false,
 		IsOnline:        false,
-		Place: FacebookPlaceJSON{
+		Place: event_sync.FacebookPlace{
 			Name: "Not Berkeley Animal Rights Center",
-			Location: FacebookLocationJSON{
+			Location: event_sync.FacebookLocation{
 				City:    "New York",
 				State:   "NY",
 				Country: "United States",
@@ -134,11 +136,11 @@ func TestGetFacebookEvents(t *testing.T) {
 				Lng:     1.000,
 			},
 		},
-		Cover: FacebookCoverJSON{
+		Cover: event_sync.FacebookCover{
 			Source: "http://not-a-real-link",
 		},
 	}
-	event4 := FacebookEventJSON{
+	event4 := event_sync.FacebookEvent{
 		ID:              "444444444",
 		Name:            "Test Event 4",
 		Description:     "This is a test event that was cancelled.",
@@ -148,9 +150,9 @@ func TestGetFacebookEvents(t *testing.T) {
 		InterestedCount: 50,
 		IsCanceled:      true,
 		IsOnline:        false,
-		Place: FacebookPlaceJSON{
+		Place: event_sync.FacebookPlace{
 			Name: "Not Berkeley Animal Rights Center",
-			Location: FacebookLocationJSON{
+			Location: event_sync.FacebookLocation{
 				City:    "New York",
 				State:   "NY",
 				Country: "United States",
@@ -160,11 +162,11 @@ func TestGetFacebookEvents(t *testing.T) {
 				Lng:     1.000,
 			},
 		},
-		Cover: FacebookCoverJSON{
+		Cover: event_sync.FacebookCover{
 			Source: "http://not-a-real-link",
 		},
 	}
-	event5 := FacebookEventJSON{
+	event5 := event_sync.FacebookEvent{
 		ID:              "5555555555",
 		Name:            "Test Event 5",
 		Description:     "This is a online event in Berkeley.",
@@ -174,9 +176,9 @@ func TestGetFacebookEvents(t *testing.T) {
 		InterestedCount: 50,
 		IsCanceled:      false,
 		IsOnline:        true,
-		Place: FacebookPlaceJSON{
+		Place: event_sync.FacebookPlace{
 			Name: "Berkeley Animal Rights Center",
-			Location: FacebookLocationJSON{
+			Location: event_sync.FacebookLocation{
 				City:    "Berkeley",
 				State:   "CA",
 				Country: "United States",
@@ -186,40 +188,40 @@ func TestGetFacebookEvents(t *testing.T) {
 				Lng:     1.000,
 			},
 		},
-		Cover: FacebookCoverJSON{
+		Cover: event_sync.FacebookCover{
 			Source: "http://not-a-real-link",
 		},
 	}
 
-	err := InsertFacebookEvent(db, event1, page1)
+	err := InsertExternalEvent(db, event1, page1)
 	require.NoError(t, err)
 
-	err = InsertFacebookEvent(db, event2, page2)
+	err = InsertExternalEvent(db, event2, page2)
 	require.NoError(t, err)
 
-	err = InsertFacebookEvent(db, event3, page2)
+	err = InsertExternalEvent(db, event3, page2)
 	require.NoError(t, err)
 
-	err = InsertFacebookEvent(db, event4, page2)
+	err = InsertExternalEvent(db, event4, page2)
 	require.NoError(t, err)
 
-	err = InsertFacebookEvent(db, event5, page1)
+	err = InsertExternalEvent(db, event5, page1)
 	require.NoError(t, err)
 
 	var events []ExternalEvent
 
 	// get events for specific chapter, excluding cancelled events
-	events, err = GetFacebookEvents(db, 456456456456, "2019-12-01T00:00", "2020-03-01T00:00", false)
+	events, err = GetExternalEvents(db, 456456456456, "2019-12-01T00:00", "2020-03-01T00:00", false)
 	require.Equal(t, len(events), 2)
 	require.Equal(t, events[0].PageID, 456456456456)
 
 	// get events filtered by date for specific chapter
-	events, err = GetFacebookEvents(db, 456456456456, "2019-12-01T00:00", "2020-01-15T00:00", false)
+	events, err = GetExternalEvents(db, 456456456456, "2019-12-01T00:00", "2020-01-15T00:00", false)
 	require.Equal(t, len(events), 1)
 	require.Equal(t, events[0].PageID, 456456456456)
 
 	// get online events
-	events, err = GetFacebookEvents(db, 0, "2019-12-01T00:00", "2020-01-15T00:00", true)
+	events, err = GetExternalEvents(db, 0, "2019-12-01T00:00", "2020-01-15T00:00", true)
 	require.Equal(t, len(events), 1)
 	require.Equal(t, events[0].ID, 5555555555)
 }
