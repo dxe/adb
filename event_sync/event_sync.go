@@ -11,7 +11,6 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// TODO: Refactor this function to be easier to follow.
 func syncFacebookEvents(db *sqlx.DB) {
 	defer func() {
 		if r := recover(); r != nil {
