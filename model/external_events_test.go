@@ -2,8 +2,8 @@ package model
 
 import (
 	"testing"
+	"time"
 
-	"github.com/dxe/adb/event_sync"
 	"github.com/stretchr/testify/require"
 )
 
@@ -11,37 +11,28 @@ func TestInsertFacebookEvent(t *testing.T) {
 	db := newTestDB()
 	defer db.Close()
 
-	page := ChapterWithToken{
-		ID: 123123123123,
-	}
-	event := event_sync.FacebookEvent{
-		ID:              "1111111111",
+	event := ExternalEvent{
+		ID:              1111111111,
+		PageID:          123123123123,
 		Name:            "Test Event 1",
 		Description:     "This is a test event.",
-		StartTime:       "2020-01-01T11:00:00-0700",
-		EndTime:         "2020-01-01T13:00:00-0700",
+		StartTime:       time.Date(2020, 1, 1, 11, 0, 0, 0, time.UTC),
+		EndTime:         time.Date(2020, 1, 1, 13, 0, 0, 0, time.UTC),
+		LocationName:    "Berkeley Animal Rights Center",
+		LocationCity:    "Berkeley",
+		LocationCountry: "United States",
+		LocationState:   "CA",
+		LocationAddress: "123 Channing Way",
+		LocationZip:     "94703",
+		Lat:             1.000,
+		Lng:             1.000,
+		Cover:           "http://not-a-real-link",
 		AttendingCount:  25,
 		InterestedCount: 50,
 		IsCanceled:      false,
-		IsOnline:        false,
-		Place: event_sync.FacebookPlace{
-			Name: "Berkeley Animal Rights Center",
-			Location: event_sync.FacebookLocation{
-				City:    "Berkeley",
-				State:   "CA",
-				Country: "United States",
-				Street:  "123 Channing Way",
-				Zip:     "94703",
-				Lat:     1.000,
-				Lng:     1.000,
-			},
-		},
-		Cover: event_sync.FacebookCover{
-			Source: "http://not-a-real-link",
-		},
 	}
 
-	err := InsertExternalEvent(db, event, page)
+	err := InsertExternalEvent(db, event)
 	require.NoError(t, err)
 
 	var events []ExternalEvent
@@ -56,172 +47,157 @@ func TestGetFacebookEvents(t *testing.T) {
 	db := newTestDB()
 	defer db.Close()
 
-	page1 := ChapterWithToken{
-		ID: 1377014279263790,
-	}
-	page2 := ChapterWithToken{
-		ID: 456456456456,
-	}
-	event1 := event_sync.FacebookEvent{
-		ID:              "1111111111",
+	const pageBerkeley int = 1377014279263790
+	const pageOther int = 456456456456
+
+	event1 := ExternalEvent{
+		ID:              1111111111,
+		PageID:          pageBerkeley,
 		Name:            "Test Event 1",
 		Description:     "This is a test event in Berkeley.",
-		StartTime:       "2020-01-01T11:00:00-0700",
-		EndTime:         "2020-01-01T13:00:00-0700",
+		StartTime:       time.Date(2020, 1, 1, 11, 0, 0, 0, time.UTC),
+		EndTime:         time.Date(2020, 1, 1, 13, 0, 0, 0, time.UTC),
+		LocationName:    "Berkeley Animal Rights Center",
+		LocationCity:    "Berkeley",
+		LocationCountry: "United States",
+		LocationState:   "CA",
+		LocationAddress: "123 Channing Way",
+		LocationZip:     "94703",
+		Lat:             1.000,
+		Lng:             1.000,
+		Cover:           "http://not-a-real-link",
 		AttendingCount:  25,
 		InterestedCount: 50,
 		IsCanceled:      false,
-		IsOnline:        false,
-		Place: event_sync.FacebookPlace{
-			Name: "Berkeley Animal Rights Center",
-			Location: event_sync.FacebookLocation{
-				City:    "Berkeley",
-				State:   "CA",
-				Country: "United States",
-				Street:  "123 Channing Way",
-				Zip:     "94703",
-				Lat:     1.000,
-				Lng:     1.000,
-			},
-		},
-		Cover: event_sync.FacebookCover{
-			Source: "http://not-a-real-link",
-		},
 	}
-	event2 := event_sync.FacebookEvent{
-		ID:              "2222222222",
+
+	event2 := ExternalEvent{
+		ID:              2222222222,
+		PageID:          pageOther,
 		Name:            "Test Event 2",
 		Description:     "This is a test event in NY.",
-		StartTime:       "2020-01-01T11:00:00-0700",
-		EndTime:         "2020-01-01T13:00:00-0700",
+		StartTime:       time.Date(2020, 1, 1, 11, 0, 0, 0, time.UTC),
+		EndTime:         time.Date(2020, 1, 1, 13, 0, 0, 0, time.UTC),
+		LocationName:    "Not Berkeley Animal Rights Center",
+		LocationCity:    "New York",
+		LocationCountry: "United States",
+		LocationState:   "NY",
+		LocationAddress: "123 Main St",
+		LocationZip:     "10258",
+		Lat:             1.000,
+		Lng:             1.000,
+		Cover:           "http://not-a-real-link",
 		AttendingCount:  25,
 		InterestedCount: 50,
 		IsCanceled:      false,
-		IsOnline:        false,
-		Place: event_sync.FacebookPlace{
-			Name: "Not Berkeley Animal Rights Center",
-			Location: event_sync.FacebookLocation{
-				City:    "New York",
-				State:   "NY",
-				Country: "United States",
-				Street:  "123 Main St",
-				Zip:     "10258",
-				Lat:     1.000,
-				Lng:     1.000,
-			},
-		},
-		Cover: event_sync.FacebookCover{
-			Source: "http://not-a-real-link",
-		},
 	}
-	event3 := event_sync.FacebookEvent{
-		ID:              "3333333333",
+
+	event3 := ExternalEvent{
+		ID:              3333333333,
+		PageID:          pageOther,
 		Name:            "Test Event 3",
 		Description:     "This is a test event in NY at a later date.",
-		StartTime:       "2020-02-01T11:00:00-0700",
-		EndTime:         "2020-02-01T13:00:00-0700",
+		StartTime:       time.Date(2020, 2, 1, 11, 0, 0, 0, time.UTC),
+		EndTime:         time.Date(2020, 2, 1, 13, 0, 0, 0, time.UTC),
+		LocationName:    "Not Berkeley Animal Rights Center",
+		LocationCity:    "New York",
+		LocationCountry: "United States",
+		LocationState:   "NY",
+		LocationAddress: "123 Main St",
+		LocationZip:     "10258",
+		Lat:             1.000,
+		Lng:             1.000,
+		Cover:           "http://not-a-real-link",
 		AttendingCount:  25,
 		InterestedCount: 50,
 		IsCanceled:      false,
-		IsOnline:        false,
-		Place: event_sync.FacebookPlace{
-			Name: "Not Berkeley Animal Rights Center",
-			Location: event_sync.FacebookLocation{
-				City:    "New York",
-				State:   "NY",
-				Country: "United States",
-				Street:  "123 Main St",
-				Zip:     "10258",
-				Lat:     1.000,
-				Lng:     1.000,
-			},
-		},
-		Cover: event_sync.FacebookCover{
-			Source: "http://not-a-real-link",
-		},
 	}
-	event4 := event_sync.FacebookEvent{
-		ID:              "444444444",
+
+	event4 := ExternalEvent{
+		ID:              4444444444,
+		PageID:          pageOther,
 		Name:            "Test Event 4",
 		Description:     "This is a test event that was cancelled.",
-		StartTime:       "2020-02-01T11:00:00-0700",
-		EndTime:         "2020-02-01T13:00:00-0700",
+		StartTime:       time.Date(2020, 2, 1, 11, 0, 0, 0, time.UTC),
+		EndTime:         time.Date(2020, 2, 1, 13, 0, 0, 0, time.UTC),
+		LocationName:    "Not Berkeley Animal Rights Center",
+		LocationCity:    "New York",
+		LocationCountry: "United States",
+		LocationState:   "NY",
+		LocationAddress: "123 Main St",
+		LocationZip:     "10258",
+		Lat:             1.000,
+		Lng:             1.000,
+		Cover:           "http://not-a-real-link",
 		AttendingCount:  25,
 		InterestedCount: 50,
 		IsCanceled:      true,
-		IsOnline:        false,
-		Place: event_sync.FacebookPlace{
-			Name: "Not Berkeley Animal Rights Center",
-			Location: event_sync.FacebookLocation{
-				City:    "New York",
-				State:   "NY",
-				Country: "United States",
-				Street:  "123 Main St",
-				Zip:     "10258",
-				Lat:     1.000,
-				Lng:     1.000,
-			},
-		},
-		Cover: event_sync.FacebookCover{
-			Source: "http://not-a-real-link",
-		},
 	}
-	event5 := event_sync.FacebookEvent{
-		ID:              "5555555555",
+
+	event5 := ExternalEvent{
+		ID:              5555555555,
+		PageID:          pageBerkeley,
 		Name:            "Test Event 5",
-		Description:     "This is a online event in Berkeley.",
-		StartTime:       "2020-01-01T11:00:00-0700",
-		EndTime:         "2020-01-01T13:00:00-0700",
+		Description:     "This is an online event hosted by Berkeley.",
+		StartTime:       time.Date(2020, 1, 1, 11, 0, 0, 0, time.UTC),
+		EndTime:         time.Date(2020, 1, 1, 13, 0, 0, 0, time.UTC),
+		LocationName:    "Online",
+		LocationCity:    "",
+		LocationCountry: "",
+		LocationState:   "",
+		LocationAddress: "",
+		LocationZip:     "",
+		Lat:             1.000,
+		Lng:             1.000,
+		Cover:           "http://not-a-real-link",
 		AttendingCount:  25,
 		InterestedCount: 50,
 		IsCanceled:      false,
-		IsOnline:        true,
-		Place: event_sync.FacebookPlace{
-			Name: "Berkeley Animal Rights Center",
-			Location: event_sync.FacebookLocation{
-				City:    "Berkeley",
-				State:   "CA",
-				Country: "United States",
-				Street:  "123 Channing Way",
-				Zip:     "94703",
-				Lat:     1.000,
-				Lng:     1.000,
-			},
-		},
-		Cover: event_sync.FacebookCover{
-			Source: "http://not-a-real-link",
-		},
 	}
 
-	err := InsertExternalEvent(db, event1, page1)
+	err := InsertExternalEvent(db, event1)
 	require.NoError(t, err)
 
-	err = InsertExternalEvent(db, event2, page2)
+	err = InsertExternalEvent(db, event2)
 	require.NoError(t, err)
 
-	err = InsertExternalEvent(db, event3, page2)
+	err = InsertExternalEvent(db, event3)
 	require.NoError(t, err)
 
-	err = InsertExternalEvent(db, event4, page2)
+	err = InsertExternalEvent(db, event4)
 	require.NoError(t, err)
 
-	err = InsertExternalEvent(db, event5, page1)
+	err = InsertExternalEvent(db, event5)
 	require.NoError(t, err)
 
 	var events []ExternalEvent
 
+	const queryTimeLayout string = "2006-01-02T15:04"
+
 	// get events for specific chapter, excluding cancelled events
-	events, err = GetExternalEvents(db, 456456456456, "2019-12-01T00:00", "2020-03-01T00:00", false)
+	queryStartTime, err := time.Parse(queryTimeLayout, "2019-12-01T00:00")
+	require.NoError(t, err)
+	queryEndTime, err := time.Parse(queryTimeLayout, "2020-03-01T00:00")
+	require.NoError(t, err)
+	events, err = GetExternalEvents(db, 456456456456, queryStartTime, queryEndTime, false)
 	require.Equal(t, len(events), 2)
 	require.Equal(t, events[0].PageID, 456456456456)
 
 	// get events filtered by date for specific chapter
-	events, err = GetExternalEvents(db, 456456456456, "2019-12-01T00:00", "2020-01-15T00:00", false)
+	queryStartTime, err = time.Parse(queryTimeLayout, "2019-12-01T00:00")
+	require.NoError(t, err)
+	queryEndTime, err = time.Parse(queryTimeLayout, "2020-01-15T00:00")
+	require.NoError(t, err)
+	events, err = GetExternalEvents(db, 456456456456, queryStartTime, queryEndTime, false)
 	require.Equal(t, len(events), 1)
 	require.Equal(t, events[0].PageID, 456456456456)
 
 	// get online events
-	events, err = GetExternalEvents(db, 0, "2019-12-01T00:00", "2020-01-15T00:00", true)
+	queryStartTime, err = time.Parse(queryTimeLayout, "2019-12-01T00:00")
+	require.NoError(t, err)
+	queryEndTime, err = time.Parse(queryTimeLayout, "2020-01-15T00:00")
+	require.NoError(t, err)
+	events, err = GetExternalEvents(db, 0, queryStartTime, queryEndTime, true)
 	require.Equal(t, len(events), 1)
 	require.Equal(t, events[0].ID, 5555555555)
 }
