@@ -130,9 +130,9 @@ func survey(db *sqlx.DB, surveyOptions SurveyOptions) {
 		linkParamDate := event.EventDate.Format("2006-01-02")
 		// TODO: Look into better ways for escaping this to prevent XSS attacks
 		bodyText := strings.Replace(surveyOptions.BodyText, "LINK_PARAM_NAME", linkParamName, -1)
-		bodyText = strings.Replace(surveyOptions.BodyText, "LINK_PARAM_DATE", linkParamDate, -1)
+		bodyText = strings.Replace(bodyText, "LINK_PARAM_DATE", linkParamDate, -1)
 		bodyHtml := strings.Replace(surveyOptions.BodyHtml, "LINK_PARAM_NAME", html.EscapeString(linkParamName), -1)
-		bodyHtml = strings.Replace(surveyOptions.BodyHtml, "LINK_PARAM_DATE", html.EscapeString(linkParamDate), -1)
+		bodyHtml = strings.Replace(bodyHtml, "LINK_PARAM_DATE", html.EscapeString(linkParamDate), -1)
 
 		log.Println("Sending", surveyOptions.SurveyType, "survey for event:", event.EventName)
 
