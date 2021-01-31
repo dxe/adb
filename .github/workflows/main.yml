@@ -17,10 +17,12 @@ jobs:
       GOFLAGS: -mod=readonly
       GOPROXY: https://proxy.golang.org
     steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with: 
+          node-version: 12
       - name: before-install
-        shell: bash
         run: |
-          nvm use stable
           node --version
           npm --version
           eval \"$(gimme stable)\""
