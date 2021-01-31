@@ -33,10 +33,10 @@ jobs:
       - name: start-database
         run: |
           sudo /etc/init.d/mysql start
-          mysql -u root -e "CREATE USER adb_user@localhost IDENTIFIED BY 'adbpassword';"
-          mysql -u root -e "GRANT ALL PRIVILEGES ON *.* to adb_user@localhost;"
-          mysql -u root -e "CREATE DATABASE adb_db CHARACTER SET utf8 COLLATE utf8_general_ci;"
-          mysql -u root -e "CREATE DATABASE adb_test_db CHARACTER SET utf8 COLLATE utf8_general_ci;"
+          mysql -h 127.0.0.1 -P 3306 -u root -e "CREATE USER adb_user@localhost IDENTIFIED BY 'adbpassword';"
+          mysql -h 127.0.0.1 -P 3306 -u root -e "GRANT ALL PRIVILEGES ON *.* to adb_user@localhost;"
+          mysql -h 127.0.0.1 -P 3306 -u root -e "CREATE DATABASE adb_db CHARACTER SET utf8 COLLATE utf8_general_ci;"
+          mysql -h 127.0.0.1 -P 3306 -u root -e "CREATE DATABASE adb_test_db CHARACTER SET utf8 COLLATE utf8_general_ci;"
       - name: test
         run: |
           ./hooks/pre-commit
