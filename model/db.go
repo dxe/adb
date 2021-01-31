@@ -106,8 +106,9 @@ CREATE TABLE activists_history (
   email VARCHAR(80) NOT NULL,
   facebook VARCHAR(200) NOT NULL,
   activist_level VARCHAR(40) NOT NULL,
-  PRIMARY KEY (activist_id, revision)
-  ) ENGINE=MyISAM
+  PRIMARY KEY (revision),
+  INDEX (activist_id, revision)
+  )
 `)
 
 	db.MustExec(`
