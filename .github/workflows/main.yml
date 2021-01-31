@@ -18,6 +18,7 @@ jobs:
       GOPROXY: https://proxy.golang.org
     steps:
       - name: before-install
+        shell: bash
         run: |
           nvm use stable
           node --version
