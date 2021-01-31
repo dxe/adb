@@ -1,4 +1,4 @@
-name: Test, Build, & Deploy ADB (Master)
+name: Build, Test, Deploy
 
 on:
   push:
@@ -10,9 +10,11 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      GOFLAGS: -mod=readonly
-      GOPROXY: https://proxy.golang.org
+    services: 
+      mysqldb:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: password
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
@@ -32,11 +34,10 @@ jobs:
           go mod download
       - name: start-database
         run: |
-          sudo /etc/init.d/mysql start
-          mysql -h127.0.0.1 -P3306 -uroot -e "CREATE USER adb_user@localhost IDENTIFIED BY 'adbpassword';"
-          mysql -h127.0.0.1 -P3306 -uroot -e "GRANT ALL PRIVILEGES ON *.* to adb_user@localhost;"
-          mysql -h127.0.0.1 -P3306 -uroot -e "CREATE DATABASE adb_db CHARACTER SET utf8 COLLATE utf8_general_ci;"
-          mysql -h127.0.0.1 -P3306 -uroot -e "CREATE DATABASE adb_test_db CHARACTER SET utf8 COLLATE utf8_general_ci;"
+          mysql --host mysqldb -uroot -ppassword -e "CREATE USER adb_user@localhost IDENTIFIED BY 'adbpassword';"
+          mysql --host mysqldb -uroot -ppassword -e "GRANT ALL PRIVILEGES ON *.* to adb_user@localhost;"
+          mysql --host mysqldb -uroot -ppassword -e "CREATE DATABASE adb_db CHARACTER SET utf8 COLLATE utf8_general_ci;"
+          mysql --host mysqldb -uroot -ppassword -e "CREATE DATABASE adb_test_db CHARACTER SET utf8 COLLATE utf8_general_ci;"
       - name: test
         run: |
           ./hooks/pre-commit
