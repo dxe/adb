@@ -38,7 +38,9 @@ jobs:
         run: |
           ./hooks/pre-commit
           go test github.com/dxe/adb/...
-      - uses: kciter/aws-ecr-action@master
+      - name: push-to-ecr
+        if: ${{ github.event_name == 'push' }}  # don't deploy branches
+        uses: kciter/aws-ecr-action@master
         with:
           access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
