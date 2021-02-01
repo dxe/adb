@@ -1,4 +1,4 @@
-name: Build, Test, Deploy
+name: Build
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -38,13 +38,11 @@ jobs:
         run: |
           ./hooks/pre-commit
           go test github.com/dxe/adb/...
-#       - uses: kciter/aws-ecr-action@master
-#         with:
-#           access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-#           secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#           account_id: ${{ secrets.AWS_ACCOUNT_ID }}
-#           repo: docker/repo
-#           region: ap-northeast-2
-#           tags: latest,${{ github.sha }}
-#           create_repo: true
-    
+      - uses: kciter/aws-ecr-action@master
+        with:
+          access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          account_id: ${{ secrets.AWS_ACCOUNT_ID }}
+          repo: adb
+          region: us-west-2
+          tags: latest,${{ github.sha }}    
