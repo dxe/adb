@@ -14,7 +14,6 @@ import (
 	"net/http"
 	"net/http/pprof"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -1433,24 +1432,24 @@ func (c MainController) ListFBEventsHandler(w http.ResponseWriter, r *http.Reque
 	// start & end time (optional)
 	u, _ := url.Parse(r.URL.String())
 	params := u.Query()
-	var startTimeStr string
-	var endTimeStr string
-	stringFormat := "^[0-9]{4}-[0-9]{2}-[0-9]{2}$|^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}$"
-	if startTime, ok := params["start_time"]; ok {
-		startTimeStr = startTime[0]
-		match, _ := regexp.MatchString(stringFormat, startTimeStr)
-		if !match {
-			writeJSON(w, map[string]interface{}{
+
+	var startTime, endTime time.Time
+	var err error
+
+	if startTimeStr, ok := params["start_time"]; ok {
+		startTime, err = time.Parse(time.RFC3339, startTimeStr[0])
+		if err != nil {
+			writeJSON(w, map[string]string{
 				"error": "start_time format incorrect",
 			})
 			return
 		}
 	}
-	if endTime, ok := params["end_time"]; ok {
-		endTimeStr = endTime[0]
-		match, _ := regexp.MatchString(stringFormat, endTimeStr)
-		if !match {
-			writeJSON(w, map[string]interface{}{
+
+	if endTimeStr, ok := params["end_time"]; ok {
+		endTime, err = time.Parse(time.RFC3339, endTimeStr[0])
+		if err != nil {
+			writeJSON(w, map[string]string{
 				"error": "end_time format incorrect",
 			})
 			return
@@ -1460,7 +1459,7 @@ func (c MainController) ListFBEventsHandler(w http.ResponseWriter, r *http.Reque
 	localEventsFound := false
 
 	// run query to get local events
-	events, err := model.GetFacebookEvents(c.db, pageID, startTimeStr, endTimeStr, false)
+	events, err := model.GetExternalEvents(c.db, pageID, startTime, endTime, false)
 	if err != nil {
 		panic(err)
 	}
@@ -1472,7 +1471,7 @@ func (c MainController) ListFBEventsHandler(w http.ResponseWriter, r *http.Reque
 
 	if !localEventsFound {
 		// get online SF Bay + ALOA events instead
-		events, err = model.GetFacebookEvents(c.db, 0, startTimeStr, endTimeStr, true)
+		events, err = model.GetExternalEvents(c.db, 0, startTime, endTime, true)
 		if err != nil {
 			panic(err)
 		}
@@ -1868,8 +1867,8 @@ func main() {
 		go survey_mailer.StartSurveyMailer(db)
 	}
 
-	// Start syncing Facebook events
-	go event_sync.StartFacebookSync(db)
+	// Start syncing Facebook & Eventbrite events
+	go event_sync.StartExternalEventSync(db)
 
 	// Set up server
 	n.UseHandler(r)

@@ -246,7 +246,7 @@ CREATE TABLE fb_pages (
 CREATE TABLE fb_events (
   id BIGINT NOT NULL,
   page_id BIGINT NOT NULL,
-  name VARCHAR(64) NOT NULL,
+  name VARCHAR(200) NOT NULL,
   description TEXT,
   start_time DATETIME NOT NULL,
   end_time DATETIME NOT NULL,
@@ -258,7 +258,7 @@ CREATE TABLE fb_events (
   location_zip VARCHAR(20),
   lat FLOAT(10,6) DEFAULT NULL,
   lng FLOAT(10,6) DEFAULT NULL,
-  cover VARCHAR(300),
+  cover VARCHAR(500),
   attending_count MEDIUMINT NOT NULL DEFAULT '0',
   interested_count MEDIUMINT NOT NULL DEFAULT '0',
   is_canceled TINYINT NOT NULL DEFAULT '0',
