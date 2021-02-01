@@ -84,7 +84,7 @@ func isEC2() bool {
 var IsProd bool = isEC2()
 
 func DBDataSource() string {
-	return DBUser + ":" + DBPassword + "@" + DBProtocol + "/" + DBName + "?parseTime=true"
+	return DBUser + ":" + DBPassword + "@" + DBProtocol + "/" + DBName + "?parseTime=true&tls=true&charset=utf8mb4"
 }
 
 func DBTestDataSource() string {
