@@ -176,7 +176,7 @@ func getUpcomingEventsFromEventbrite(chapter model.ChapterWithToken) ([]Eventbri
 		"/events?status=live&page_size=200&token=" + chapter.EventbriteToken
 
 	var events EventbriteEvents
-	err := callAPIGet(path, &events)
+	err := getAPI(path, &events)
 	if err != nil {
 		return []EventbriteEvent{}, errors.New("failed to get upcoming events from Eventbrite: " + err.Error())
 	}

@@ -61,7 +61,7 @@ func getFacebookEvents(page model.ChapterWithToken) ([]FacebookEvent, error) {
 	path := facebookAPIBaseURL + "/" + strconv.Itoa(page.ID) + "/events?include_canceled=1&fields=name,start_time,end_time,cover,attending_count,description,place,interested_count,is_canceled,event_times,is_online&limit=50&access_token=" + page.Token
 
 	var events FacebookEvents
-	err := callAPIGet(path, &events)
+	err := getAPI(path, &events)
 	if err != nil {
 		return []FacebookEvent{}, errors.New("failed to get events from Facebook: " + err.Error())
 	}
@@ -73,7 +73,7 @@ func getFacebookEvent(page model.ChapterWithToken, eventID string) (FacebookEven
 	path := facebookAPIBaseURL + "/" + eventID + "?fields=name,start_time,end_time,cover,attending_count,description,place,interested_count,is_canceled,event_times,is_online&limit=50&access_token=" + page.Token
 
 	var event FacebookEvent
-	err := callAPIGet(path, &event)
+	err := getAPI(path, &event)
 	if err != nil {
 		return event, errors.New("failed to get individual event from Facebook: " + err.Error())
 	}

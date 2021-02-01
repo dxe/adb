@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-func callAPIPost(path string, req, resp interface{}) error {
+func postAPI(path string, req, resp interface{}) error {
 	var body bytes.Buffer
 	err := json.NewEncoder(&body).Encode(&req)
 	if err != nil {
@@ -24,16 +24,10 @@ func callAPIPost(path string, req, resp interface{}) error {
 	if response.StatusCode != http.StatusOK {
 		return errors.New("POST request failed. Status: " + strconv.Itoa(response.StatusCode))
 	}
-
-	err = json.NewDecoder(response.Body).Decode(&resp)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return json.NewDecoder(response.Body).Decode(&resp)
 }
 
-func callAPIGet(path string, resp interface{}) error {
+func getAPI(path string, resp interface{}) error {
 	response, err := http.Get(path)
 	if err != nil {
 		return err
@@ -42,7 +36,5 @@ func callAPIGet(path string, resp interface{}) error {
 	if response.StatusCode != http.StatusOK {
 		return errors.New("GET request failed. Status: " + strconv.Itoa(response.StatusCode))
 	}
-	err = json.NewDecoder(response.Body).Decode(&resp)
-
-	return nil
+	return json.NewDecoder(response.Body).Decode(&resp)
 }

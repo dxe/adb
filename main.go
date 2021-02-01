@@ -1442,6 +1442,7 @@ func (c MainController) ListFBEventsHandler(w http.ResponseWriter, r *http.Reque
 			writeJSON(w, map[string]string{
 				"error": "start_time format incorrect",
 			})
+			return
 		}
 	}
 
@@ -1451,6 +1452,7 @@ func (c MainController) ListFBEventsHandler(w http.ResponseWriter, r *http.Reque
 			writeJSON(w, map[string]string{
 				"error": "end_time format incorrect",
 			})
+			return
 		}
 	}
 

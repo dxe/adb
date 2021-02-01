@@ -108,7 +108,7 @@ func createEventbriteVenue(event model.ExternalEvent, chapter model.ChapterWithT
 
 	var resp venue
 
-	err := callAPIPost(path, &req, &resp)
+	err := postAPI(path, &req, &resp)
 	if err != nil {
 		return "", errors.New("failed to create venue on Eventbrite: " + err.Error())
 	}
@@ -179,7 +179,7 @@ func addEventToEventbrite(event model.ExternalEvent, chapter model.ChapterWithTo
 
 	var resp EventbriteEvent
 
-	err := callAPIPost(path, &req, &resp)
+	err := postAPI(path, &req, &resp)
 	if err != nil {
 		return resp, errors.New("failed to add event to Eventbrite: " + err.Error())
 	}
@@ -214,7 +214,7 @@ func addEventTicketClass(eventId string, token string) error {
 
 	var resp interface{} // we don't care about the response data
 
-	err := callAPIPost(path, &req, &resp)
+	err := postAPI(path, &req, &resp)
 	if err != nil {
 		return errors.New("failed to add ticket class to Eventbrite: " + err.Error())
 	}
@@ -230,7 +230,7 @@ func getNextDescriptionID(eventID string, token string) (string, error) {
 		VersionID string `json:"page_version_number"`
 	}
 
-	err := callAPIGet(path, &version)
+	err := getAPI(path, &version)
 	if err != nil {
 		return "", errors.New("failed to get next description ID from Eventbrite: " + err.Error())
 	}
@@ -290,7 +290,7 @@ func updateEventDescription(eventID string, description string, token string) er
 
 	var resp interface{} // we don't care about the response data
 
-	err = callAPIPost(path, &req, &resp)
+	err = postAPI(path, &req, &resp)
 	if err != nil {
 		return errors.New("failed to add description to Eventbrite: " + err.Error())
 	}
@@ -305,7 +305,7 @@ func publishEvent(eventID string, token string) error {
 	var req EmptyRequest
 	var resp interface{} // we don't care about the response data
 
-	err := callAPIPost(path, &req, &resp)
+	err := postAPI(path, &req, &resp)
 	if err != nil {
 		return errors.New("failed to add publish event on Eventbrite: " + err.Error())
 	}
@@ -319,7 +319,7 @@ func getEventbriteUploadToken(token string) (EventbriteUploadData, error) {
 
 	var resp EventbriteUploadData
 
-	err := callAPIGet(path, &resp)
+	err := getAPI(path, &resp)
 	if err != nil {
 		return EventbriteUploadData{}, errors.New("failed to get S3 details for uploading image: " + err.Error())
 	}
@@ -411,7 +411,7 @@ func notifyEventbriteOfNewImage(token string, uploadToken string) (string, error
 
 	var resp respBody
 
-	err := callAPIPost(path, &req, &resp)
+	err := postAPI(path, &req, &resp)
 	if err != nil {
 		return "", errors.New("failed to notify Eventbrite of image upload: " + err.Error())
 	}
