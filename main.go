@@ -1858,7 +1858,7 @@ func main() {
 
 	r, db := router()
 
-	if config.ClusterRole != "webserver" {
+	if config.ClusterRole == "background" || config.ClusterRole == "standalone" {
 		// Start syncing mailing lists in the background if we have
 		// the environment set up.
 		if config.SyncMailingListsConfigFile != "" {
@@ -1873,9 +1873,16 @@ func main() {
 
 		// Start syncing Facebook & Eventbrite events
 		go event_sync.StartExternalEventSync(db)
+
+		// Just wait here forever if we are running in background mode in a cluster
+		if config.ClusterRole == "background" {
+			for {
+			}
+		}
+
 	}
 
-	if config.ClusterRole != "background" {
+	if config.ClusterRole == "webserver" || config.ClusterRole == "standalone" {
 		// Set up webserver
 		n.UseHandler(r)
 		fmt.Println("Listening on localhost:" + config.Port)

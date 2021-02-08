@@ -152,7 +152,7 @@ func surveyMailerWrapper(db *sqlx.DB) {
 	}()
 
 	// Get current time in US Pacific time zone
-	loc, _ := time.LoadLocation("America/Los_Angeles")
+	loc, _ := time.LoadLocation("America/Los_Angeles") // TODO: move to config
 	now := time.Now().In(loc)
 	// Calculate current hour of day & current day of week
 	weekday := now.Weekday()
