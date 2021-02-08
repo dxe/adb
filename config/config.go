@@ -78,7 +78,7 @@ func mustGetenvAsBool(key string, fallback, mandatory bool) bool {
 	if val, err := strconv.ParseBool(val); err == nil {
 		return val
 	}
-	if !mandatory || !IsProd {
+	if !mandatory {
 		return fallback
 	}
 
