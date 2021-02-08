@@ -22,9 +22,6 @@ var (
 	// Possible values: standalone (run everything), webserver (process incoming requests), background (run background tasks)
 	ClusterRole = mustGetenv("CLUSTER_ROLE", "standalone", true)
 
-	// Deprecated
-	Route0 = mustGetenv("ROUTE_0", "/route0", true)
-
 	CookieSecret = mustGetenv("COOKIE_SECRET", "some-fake-secret", true)
 	CsrfAuthKey  = mustGetenv("CSRF_AUTH_KEY", "", true)
 
