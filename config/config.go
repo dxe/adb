@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -82,9 +83,18 @@ func isEC2() bool {
 	return string(data[:3]) == "ec2"
 }
 
+func isAmazonLinux() bool {
+	data, err := ioutil.ReadFile("/etc/os-release")
+	if err != nil {
+		// The file must exist on EC2
+		return false
+	}
+	return strings.Contains(string(data), "Amazon Linux")
+}
+
 // Always run as IsProd in EC2. This means you can't develop on EC2,
 // but we'll cross that bridge when we get there.
-var IsProd bool = isEC2()
+var IsProd bool = isEC2() || isAmazonLinux()
 
 func DBDataSource() string {
 	connectionString := DBUser + ":" + DBPassword + "@" + DBProtocol + "/" + DBName + "?parseTime=true&charset=utf8mb4"
