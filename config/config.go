@@ -1,11 +1,9 @@
 package config
 
 import (
-	"io/ioutil"
 	"math/rand"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -17,6 +15,8 @@ var (
 
 	Port    = mustGetenv("PORT", "8080", true)
 	UrlPath = mustGetenv("ADB_URL_PATH", "http://localhost:"+Port, true)
+
+	IsProd = mustGetenvAsBool("PROD", false, false)
 
 	// Cluster role is used to assign a role to each running instance of the app.
 	// Possible values: standalone (run everything), webserver (process incoming requests), background (run background tasks)
@@ -73,28 +73,17 @@ func mustGetenv(key, fallback string, mandatory bool) string {
 	panic("Environment variable " + key + " cannot be empty")
 }
 
-func isEC2() bool {
-	// see http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/identify_ec2_instances.html
-	data, err := ioutil.ReadFile("/sys/hypervisor/uuid")
-	if err != nil {
-		// The file must exist on EC2
-		return false
+func mustGetenvAsBool(key string, fallback, mandatory bool) bool {
+	val := os.Getenv(key)
+	if val, err := strconv.ParseBool(val); err == nil {
+		return val
 	}
-	return string(data[:3]) == "ec2"
-}
-
-func isAmazonLinux() bool {
-	data, err := ioutil.ReadFile("/etc/os-release")
-	if err != nil {
-		// The file must exist on EC2
-		return false
+	if !mandatory || !IsProd {
+		return fallback
 	}
-	return strings.Contains(string(data), "Amazon Linux")
-}
 
-// Always run as IsProd in EC2. This means you can't develop on EC2,
-// but we'll cross that bridge when we get there.
-var IsProd bool = isEC2() || isAmazonLinux()
+	panic("Environment variable " + key + " cannot be empty")
+}
 
 func DBDataSource() string {
 	connectionString := DBUser + ":" + DBPassword + "@" + DBProtocol + "/" + DBName + "?parseTime=true&charset=utf8mb4"
