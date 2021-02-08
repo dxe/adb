@@ -135,7 +135,7 @@ func syncEventbriteEvents(db *sqlx.DB) {
 	}
 	if pages == nil {
 		// stop if no pages in database
-		log.Println("ERROR: There are no Eventbrite pages to sync.")
+		log.Println("There are no Eventbrite pages to sync.")
 		return
 	}
 	// for each page

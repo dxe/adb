@@ -1844,6 +1844,9 @@ func (c MainController) DiscordConfirmHandler(w http.ResponseWriter, r *http.Req
 }
 
 func main() {
+	fmt.Println("IsProd =", config.IsProd)
+	fmt.Println("ClusterRole =", config.ClusterRole)
+
 	sentry.Init(sentry.ClientOptions{
 		Dsn: "https://dc89e0cef6204791a1f199564aec911c@sentry.io/1820804",
 	})
@@ -1855,25 +1858,28 @@ func main() {
 
 	r, db := router()
 
-	// Start syncing mailing lists in the background if we have
-	// the environment set up.
-	if config.SyncMailingListsConfigFile != "" {
-		go mailinglist_sync.StartMailingListsSync(db)
+	if config.ClusterRole != "webserver" {
+		// Start syncing mailing lists in the background if we have
+		// the environment set up.
+		if config.SyncMailingListsConfigFile != "" {
+			go mailinglist_sync.StartMailingListsSync(db)
+		}
+
+		// Start running survey mailer in the background if we have
+		// the environment set up.
+		if config.SurveyMissingEmail != "" && config.SurveyFromEmail != "" && config.AWSAccessKey != "" && config.AWSSecretKey != "" && config.AWSSESEndpoint != "" {
+			go survey_mailer.StartSurveyMailer(db)
+		}
+
+		// Start syncing Facebook & Eventbrite events
+		go event_sync.StartExternalEventSync(db)
 	}
 
-	// Start running survey mailer in the background if we have
-	// the environment set up.
-	if config.SurveyMissingEmail != "" && config.SurveyFromEmail != "" && config.AWSAccessKey != "" && config.AWSSecretKey != "" && config.AWSSESEndpoint != "" {
-		go survey_mailer.StartSurveyMailer(db)
+	if config.ClusterRole != "background" {
+		// Set up webserver
+		n.UseHandler(r)
+		fmt.Println("Listening on localhost:" + config.Port)
+		log.Fatal(http.ListenAndServe(":"+config.Port, n))
 	}
 
-	// Start syncing Facebook & Eventbrite events
-	go event_sync.StartExternalEventSync(db)
-
-	// Set up server
-	n.UseHandler(r)
-
-	fmt.Println("IsProd =", config.IsProd)
-	fmt.Println("Listening on localhost:" + config.Port)
-	log.Fatal(http.ListenAndServe(":"+config.Port, n))
 }

@@ -17,9 +17,12 @@ var (
 	Port    = mustGetenv("PORT", "8080", true)
 	UrlPath = mustGetenv("ADB_URL_PATH", "http://localhost:"+Port, true)
 
+	// Cluster role is used to assign a role to each running instance of the app.
+	// Possible values: standalone (run everything), webserver (process incoming requests), background (run background tasks)
+	ClusterRole = mustGetenv("CLUSTER_ROLE", "standalone", true)
+
+	// Deprecated
 	Route0 = mustGetenv("ROUTE_0", "/route0", true)
-	Route1 = mustGetenv("ROUTE_1", "/route1", true)
-	Route2 = mustGetenv("ROUTE_2", "/route2", true)
 
 	CookieSecret = mustGetenv("COOKIE_SECRET", "some-fake-secret", true)
 	CsrfAuthKey  = mustGetenv("CSRF_AUTH_KEY", "", true)
@@ -84,7 +87,11 @@ func isEC2() bool {
 var IsProd bool = isEC2()
 
 func DBDataSource() string {
-	return DBUser + ":" + DBPassword + "@" + DBProtocol + "/" + DBName + "?parseTime=true&tls=true&charset=utf8mb4"
+	connectionString := DBUser + ":" + DBPassword + "@" + DBProtocol + "/" + DBName + "?parseTime=true&charset=utf8mb4"
+	if IsProd {
+		return connectionString + "&tls=true"
+	}
+	return connectionString
 }
 
 func DBTestDataSource() string {
