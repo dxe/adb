@@ -1845,48 +1845,24 @@ func (c MainController) DiscordConfirmHandler(w http.ResponseWriter, r *http.Req
 
 func main() {
 	fmt.Println("IsProd =", config.IsProd)
-	fmt.Println("ClusterRole =", config.ClusterRole)
 
 	sentry.Init(sentry.ClientOptions{
 		Dsn: "https://dc89e0cef6204791a1f199564aec911c@sentry.io/1820804",
 	})
 
 	n := negroni.New()
-
 	n.Use(negroni.NewRecovery())
 	n.Use(negroni.NewLogger())
-
 	r, db := router()
+	n.UseHandler(r)
 
-	if config.ClusterRole == "background" || config.ClusterRole == "standalone" {
-		// Start syncing mailing lists in the background if we have
-		// the environment set up.
-		if config.SyncMailingListsConfigFile != "" {
-			go mailinglist_sync.StartMailingListsSync(db)
-		}
-
-		// Start running survey mailer in the background if we have
-		// the environment set up.
-		if config.SurveyMissingEmail != "" && config.SurveyFromEmail != "" && config.AWSAccessKey != "" && config.AWSSecretKey != "" && config.AWSSESEndpoint != "" {
-			go survey_mailer.StartSurveyMailer(db)
-		}
-
-		// Start syncing Facebook & Eventbrite events
+	if config.RunBackgroundJobs {
+		go mailinglist_sync.StartMailingListsSync(db)
+		go survey_mailer.StartSurveyMailer(db)
 		go event_sync.StartExternalEventSync(db)
-
-		// Just wait here forever if we are running in background mode in a cluster
-		if config.ClusterRole == "background" {
-			for {
-			}
-		}
-
 	}
 
-	if config.ClusterRole == "webserver" || config.ClusterRole == "standalone" {
-		// Set up webserver
-		n.UseHandler(r)
-		fmt.Println("Listening on localhost:" + config.Port)
-		log.Fatal(http.ListenAndServe(":"+config.Port, n))
-	}
+	fmt.Println("Listening on localhost:" + config.Port)
+	log.Fatal(http.ListenAndServe(":"+config.Port, n))
 
 }

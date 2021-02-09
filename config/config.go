@@ -16,11 +16,8 @@ var (
 	Port    = mustGetenv("PORT", "8080", true)
 	UrlPath = mustGetenv("ADB_URL_PATH", "http://localhost:"+Port, true)
 
-	IsProd = mustGetenvAsBool("PROD", false, false)
-
-	// Cluster role is used to assign a role to each running instance of the app.
-	// Possible values: standalone (run everything), webserver (process incoming requests), background (run background tasks)
-	ClusterRole = mustGetenv("CLUSTER_ROLE", "standalone", true)
+	IsProd            = mustGetenvAsBool("PROD")
+	RunBackgroundJobs = mustGetenvAsBool("RUN_BACKGROUND_JOBS")
 
 	CookieSecret = mustGetenv("COOKIE_SECRET", "some-fake-secret", true)
 	CsrfAuthKey  = mustGetenv("CSRF_AUTH_KEY", "", true)
@@ -70,16 +67,13 @@ func mustGetenv(key, fallback string, mandatory bool) string {
 	panic("Environment variable " + key + " cannot be empty")
 }
 
-func mustGetenvAsBool(key string, fallback, mandatory bool) bool {
+// mustGetenvAsBool always defaults to false, so it should only be used to enable extra features.
+func mustGetenvAsBool(key string) bool {
 	val := os.Getenv(key)
 	if val, err := strconv.ParseBool(val); err == nil {
 		return val
 	}
-	if !mandatory {
-		return fallback
-	}
-
-	panic("Environment variable " + key + " cannot be empty")
+	return false
 }
 
 func DBDataSource() string {

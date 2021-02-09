@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 
 	"golang.org/x/oauth2/google"
-	"google.golang.org/api/admin/directory/v1"
+	admin "google.golang.org/api/admin/directory/v1"
 )
 
 func getAdminService() (*admin.Service, error) {
@@ -246,6 +246,12 @@ func syncMailingListsWrapper(db *sqlx.DB, adminService *admin.Service) {
 // Syncs the mailing list every 5 minutes. Should be run in a
 // goroutine.
 func StartMailingListsSync(db *sqlx.DB) {
+
+	if config.SyncMailingListsConfigFile == "" {
+		log.Println("WARNING: Sync mailing list config invalid.")
+		return
+	}
+
 	adminService, err := getAdminService()
 	if err != nil {
 		// Just panic if we can't get an admin service so that

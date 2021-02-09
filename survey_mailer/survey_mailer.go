@@ -218,9 +218,34 @@ func surveyMailerWrapper(db *sqlx.DB) {
 
 }
 
+func validSurveyConfig() bool {
+	if config.SurveyMissingEmail == "" {
+		return false
+	}
+	if config.SurveyFromEmail == "" {
+		return false
+	}
+	if config.AWSAccessKey == "" {
+		return false
+	}
+	if config.AWSSecretKey == "" {
+		return false
+	}
+	if config.AWSSESEndpoint == "" {
+		return false
+	}
+	return true
+}
+
 // Sends surveys based on event attendance every 60 minutes.
 // Should be run in a goroutine.
 func StartSurveyMailer(db *sqlx.DB) {
+
+	if !validSurveyConfig() {
+		log.Println("WARNING: Survey config invalid.")
+		return
+	}
+
 	for {
 		log.Println("Starting survey mailer")
 		surveyMailerWrapper(db)
