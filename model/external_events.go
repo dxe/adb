@@ -59,7 +59,6 @@ func GetExternalEvents(db *sqlx.DB, pageID int, startTime time.Time, endTime tim
 	var events []ExternalEvent
 	err := db.Select(&events, query)
 	if err != nil {
-		// error
 		return nil, errors.Wrap(err, "failed to select events")
 	}
 
