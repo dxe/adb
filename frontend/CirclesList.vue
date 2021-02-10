@@ -467,7 +467,7 @@ export default Vue.extend({
           return;
         }
         // status === "success"
-        this.circleGroups = parsed.working_groups;
+        this.circleGroups = parsed.circle_groups;
       },
       error: (err) => {
         console.warn(err.responseText);

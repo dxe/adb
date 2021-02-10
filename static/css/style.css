@@ -211,3 +211,7 @@ a:hover {
 .form-group {
     margin-bottom: 7px;
 }
+
+.form-check-label {
+    font-weight: normal;
+}

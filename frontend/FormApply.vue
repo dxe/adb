@@ -9,13 +9,15 @@
 
 <template>
   <adb-page title="Join the SF Bay Area Chapter">
-    <div v-if="submitSuccess">
-      <h2>Thank you!</h2>
-      <p>
-        An organizer will reach out to you within the next week and let you know what next steps
-        need to be taken for your application to be approved!
-      </p>
-    </div>
+    <transition name="fade">
+      <div v-if="submitSuccess">
+        <h2>Thank you!</h2>
+        <p>
+          An organizer will reach out to you within the next week and let you know what next steps
+          need to be taken for your application to be approved!
+        </p>
+      </div>
+    </transition>
 
     <form id="form" @submit.prevent="submitForm" autocomplete="off" v-if="!submitSuccess">
       <div v-if="local === ''">
@@ -94,7 +96,7 @@
 
             <br />
 
-            <button type="button" class="btn btn-success" @click="showForm = true">
+            <button type="button" class="btn btn-success" @click="applyButtonClicked">
               Apply now
             </button>
           </div>
@@ -109,7 +111,7 @@
               </p>
 
               <div class="row">
-                <div class="form-group col-md-6">
+                <div class="form-group col-sm-6">
                   <label>First Name</label>
                   <input
                     type="text"
@@ -121,7 +123,7 @@
                   />
                 </div>
 
-                <div class="form-group col-md-6">
+                <div class="form-group col-sm-6">
                   <label>Last Name</label>
                   <input
                     type="text"
@@ -203,7 +205,7 @@
               </div>
 
               <div class="row">
-                <div class="form-group col-md-9">
+                <div class="form-group col-sm-9">
                   <label>City</label>
                   <input
                     type="text"
@@ -214,7 +216,7 @@
                     required
                   />
                 </div>
-                <div class="form-group col-md-3">
+                <div class="form-group col-sm-3">
                   <label>Zip code</label>
                   <input
                     type="text"
@@ -228,7 +230,7 @@
               </div>
 
               <div class="row">
-                <div class="form-group col-md-7">
+                <div class="form-group col-sm-7">
                   <label>Phone number</label>
                   <input
                     type="tel"
@@ -239,7 +241,7 @@
                     required
                   />
                 </div>
-                <div class="form-group col-md-5">
+                <div class="form-group col-sm-5">
                   <label>Birthday</label>
                   <input
                     type="date"
@@ -327,6 +329,10 @@ Vue.use(vmodal);
 export default Vue.extend({
   name: 'form-apply',
   methods: {
+    applyButtonClicked: function() {
+      this.showForm = true;
+      window.scrollTo(0, 0);
+    },
     submitForm: function() {
       this.submitting = true;
       $.ajax({
