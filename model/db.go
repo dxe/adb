@@ -33,6 +33,8 @@ func WipeDatabase(db *sqlx.DB) {
 	db.MustExec(`DROP TABLE IF EXISTS fb_pages`)
 	db.MustExec(`DROP TABLE IF EXISTS fb_events`)
 	db.MustExec(`DROP TABLE IF EXISTS discord_users`)
+	db.MustExec(`DROP TABLE IF EXISTS form_application`)
+	db.MustExec(`DROP TABLE IF EXISTS form_interest`)
 
 	db.MustExec(`
 CREATE TABLE activists (
@@ -275,6 +277,51 @@ CREATE TABLE discord_users (
   email VARCHAR(200) NOT NULL,
   token VARCHAR(64) NOT NULL,
   confirmed TINYINT(1) NOT NULL DEFAULT '0'
+)
+`)
+
+	db.MustExec(`
+CREATE TABLE form_application (
+  id int(11) NOT NULL AUTO_INCREMENT,
+  email varchar(200) NOT NULL,
+  name varchar(200) NOT NULL,
+  phone varchar(20) NOT NULL,
+  address varchar(200) NOT NULL,
+  city varchar(200) NOT NULL,
+  zip varchar(10) NOT NULL,
+  birthday varchar(20) NOT NULL,
+  pronouns varchar(20) NOT NULL DEFAULT '',
+  application_type varchar(50) NOT NULL,
+  agree_circle varchar(200) NOT NULL DEFAULT ' ',
+  agree_mpp varchar(200) NOT NULL DEFAULT ' ',
+  circle_interest varchar(200) NOT NULL DEFAULT ' ',
+  wg_interest varchar(200) NOT NULL DEFAULT ' ',
+  committee_interest varchar(200) NOT NULL DEFAULT '  ',
+  referral_friends varchar(200) NOT NULL DEFAULT ' ',
+  referral_apply varchar(200) NOT NULL DEFAULT ' ',
+  referral_outlet varchar(200) NOT NULL DEFAULT ' ',
+  contact_method varchar(50) NOT NULL DEFAULT '',
+  timestamp datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  processed tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (id)
+)`)
+
+	db.MustExec(`
+CREATE TABLE form_interest (
+  id int(11) NOT NULL AUTO_INCREMENT,
+  form varchar(255) NOT NULL,
+  email varchar(255) NOT NULL,
+  name varchar(255) NOT NULL,
+  phone varchar(20) NOT NULL,
+  zip varchar(10) NOT NULL,
+  referral_friends varchar(200) NOT NULL DEFAULT '',
+  referral_apply varchar(200) NOT NULL DEFAULT '',
+  referral_outlet varchar(200) NOT NULL DEFAULT '',
+  comments varchar(200) NOT NULL DEFAULT '',
+  interests varchar(400) NOT NULL DEFAULT '',
+  timestamp datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  processed tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (id)
 )
 `)
 

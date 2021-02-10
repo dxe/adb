@@ -5,6 +5,8 @@ import EventEdit from './EventEdit.vue';
 import EventList from './EventList.vue';
 import UserList from './UserList.vue';
 import WorkingGroupList from './WorkingGroupList.vue';
+import FormApply from './FormApply.vue';
+import FormInterest from './FormInterest.vue';
 
 new Vue({
   el: '#app',
@@ -15,5 +17,7 @@ new Vue({
     EventList,
     UserList,
     WorkingGroupList,
+    FormApply,
+    FormInterest,
   },
 });

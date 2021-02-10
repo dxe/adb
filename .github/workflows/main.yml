@@ -18,27 +18,27 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: ^1.15.0
-      - name: before-install
+      - name: Version check
         run: |
           node --version
           npm --version
           go version
-      - name: install-deps
+      - name: Install deps
         run: |
           npm ci
           go mod download
-      - name: start-database
+      - name: Start database
         run: |
           sudo /etc/init.d/mysql start
           mysql -h127.0.0.1 -P3306 -uroot -proot -e "CREATE USER adb_user@localhost IDENTIFIED BY 'adbpassword';"
           mysql -h127.0.0.1 -P3306 -uroot -proot -e "GRANT ALL PRIVILEGES ON *.* to adb_user@localhost;"
           mysql -h127.0.0.1 -P3306 -uroot -proot -e "CREATE DATABASE adb_db CHARACTER SET utf8 COLLATE utf8_general_ci;"
           mysql -h127.0.0.1 -P3306 -uroot -proot -e "CREATE DATABASE adb_test_db CHARACTER SET utf8 COLLATE utf8_general_ci;"
-      - name: test
+      - name: Run tests
         run: |
           ./hooks/pre-commit
           go test github.com/dxe/adb/...
-      - name: push-to-ecr
+      - name: Deploy image to ECR
         if: ${{ github.event_name == 'push' }}  # don't deploy branches
         uses: kciter/aws-ecr-action@master
         with:

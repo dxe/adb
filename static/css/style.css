@@ -27,32 +27,19 @@ body {
 }
 
 a {
-        color: lightgrey;
-        text-decoration: none;
-        font-weight: bold;
+    color: darkblue;
+    text-decoration: none;
+    font-weight: bold;
+}
+a:visited {
+    color: darkblue;
 }
 a:hover {
-        color: white;
+        color: grey;
 }
-a.edit-link {
-        color: black;
-        text-decoration: none;
-}
-a.edit-link:hover {
-        color: lightgrey;
-        text-decoration: none;
-}
+
 .hide {
     display:none;
-}
-
-a.logout-link:link, a.logout-link:visited {
-    color: black;
-}
-
-a.logout-link:hover, a.logout-link:active {
-    color: darkgrey;
-    text-decoration:none;
 }
 
 
@@ -223,4 +210,8 @@ a.logout-link:hover, a.logout-link:active {
 
 .form-group {
     margin-bottom: 7px;
+}
+
+.form-check-label {
+    font-weight: normal;
 }

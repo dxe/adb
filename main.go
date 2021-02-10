@@ -174,6 +174,8 @@ func router() (*mux.Router, *sqlx.DB) {
 	// Unauthed pages
 	router.HandleFunc("/login", main.LoginHandler)
 	router.HandleFunc("/logout", main.LogoutHandler)
+	router.HandleFunc("/apply", main.ApplicationFormHandler)
+	router.HandleFunc("/interest", main.InterestFormHandler) // TODO: allow URL params
 
 	// Error pages
 	router.HandleFunc("/403", main.ForbiddenHandler)
@@ -212,11 +214,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.HandleFunc("/chapters/{lat:[0-9.\\-]+},{lng:[0-9.\\-]+}", main.FindNearestFacebookPagesHandler)
 	router.HandleFunc("/regions", main.ListAllChaptersByRegion)
 	router.HandleFunc("/chapters", main.ListAllChapters)
-
-	// Defunct Unauthed API
-	//router.HandleFunc(config.Route0, main.TransposedEventsDataJsonHandler)
-	//router.HandleFunc("/wallboard_mpi", main.newPowerWallboard)                    // new endpoint for arc tv to get mpi
-	//router.HandleFunc("/wallboard_chaptermembers", main.newChapterMemberWallboard) // new endpoint for arc tv to get chapter members
+	router.HandleFunc("/circles", main.CircleGroupListHandler)
 
 	// Authed API
 	router.Handle("/activist_names/get", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteActivistsHandler))
@@ -1201,8 +1199,8 @@ func (c MainController) CircleGroupListHandler(w http.ResponseWriter, r *http.Re
 	}
 
 	writeJSON(w, map[string]interface{}{
-		"status":         "success",
-		"working_groups": cirs,
+		"status":        "success",
+		"circle_groups": cirs,
 	})
 }
 
@@ -1841,6 +1839,71 @@ func (c MainController) DiscordConfirmHandler(w http.ResponseWriter, r *http.Req
 		},
 	})
 	return
+}
+
+func (c MainController) ApplicationFormHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "GET" {
+		renderPage(w, r, "form_application", PageData{
+			PageName: "FormApplication",
+		})
+	}
+	if r.Method == "POST" {
+
+		var formData model.ApplicationFormData
+
+		err := json.NewDecoder(r.Body).Decode(&formData)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		err = model.SubmitApplicationForm(c.db, formData)
+
+		if err != nil {
+			fmt.Println(err.Error())
+			fmt.Println(formData)
+			writeJSON(w, map[string]interface{}{
+				"status": "error",
+			})
+			return
+		}
+
+		writeJSON(w, map[string]interface{}{
+			"status": "success",
+		})
+	}
+}
+
+func (c MainController) InterestFormHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "GET" {
+		renderPage(w, r, "form_interest", PageData{
+			PageName: "FormInterest",
+		})
+	}
+	if r.Method == "POST" {
+		var formData model.InterestFormData
+
+		err := json.NewDecoder(r.Body).Decode(&formData)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		err = model.SubmitInterestForm(c.db, formData)
+
+		if err != nil {
+			fmt.Println(err.Error())
+			fmt.Println(formData)
+			writeJSON(w, map[string]interface{}{
+				"status": "error",
+			})
+			return
+		}
+
+		writeJSON(w, map[string]interface{}{
+			"status": "success",
+		})
+	}
 }
 
 func main() {
