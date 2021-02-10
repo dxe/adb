@@ -16,6 +16,6 @@ new Vue({
     EventList,
     UserList,
     WorkingGroupList,
-    FormApply
+    FormApply,
   },
 });
