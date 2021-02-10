@@ -1,10 +1,10 @@
 <style>
-  .fade-enter-active {
-    transition: opacity .5s;
-  }
-  .fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
-    opacity: 0;
-  }
+.fade-enter-active {
+  transition: opacity 0.5s;
+}
+.fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
+  opacity: 0;
+}
 </style>
 
 <template>
@@ -18,7 +18,6 @@
     </div>
 
     <form id="form" @submit.prevent="submitForm" autocomplete="off" v-if="!submitSuccess">
-
       <div v-if="local === ''">
         <legend>Do you live within 100 miles of Berkeley, CA?</legend>
         <div class="radio">
@@ -33,7 +32,7 @@
         <div v-if="local === 'no'">
           <p>
             <a href="https://www.directactioneverywhere.com/chapters">Click here</a> to find a
-              chapter local to you.
+            chapter local to you.
           </p>
         </div>
       </transition>
@@ -42,20 +41,21 @@
         <div v-if="local === 'yes'">
           <div v-if="!showForm">
             <p>
-              Decades of research into historic movements – like the Civil Rights Movement or Gay Rights
-              Movement – tells us that the most important factor in creating social and political change
-              is sustained participation in nonviolent direct action. We also know that sustained
-              participation is more likely when activists are embedded in a strong, supportive
-              community. When you become a chapter member, you're committing to being an integral part
-              of this activist community and to coming to one direct action event (like a protest,
-              outreach event, or sanctuary workday) every month.
+              Decades of research into historic movements – like the Civil Rights Movement or Gay
+              Rights Movement – tells us that the most important factor in creating social and
+              political change is sustained participation in nonviolent direct action. We also know
+              that sustained participation is more likely when activists are embedded in a strong,
+              supportive community. When you become a chapter member, you're committing to being an
+              integral part of this activist community and to coming to one direct action event
+              (like a protest, outreach event, or sanctuary workday) every month.
             </p>
 
             <h2>How to become a Chapter Member</h2>
             <ul>
               <li>
-                Attend DxE’s <a href="http://dxe.io/workshop" target="_blank">intro workshop</a> (held
-                monthly) to learn about our community and theory of change
+                Attend DxE’s
+                <a href="http://dxe.io/workshop" target="_blank">intro workshop</a> (held monthly)
+                to learn about our community and theory of change
               </li>
               <li>Take the Movement Power Pledge below (attend one action each month)</li>
             </ul>
@@ -65,12 +65,13 @@
               <li>Voting rights (after sustained participation in the chapter)</li>
               <li>Access to chapter member mailing lists, Discord server, and Facebook group</li>
               <li>
-                Added to a small community group with other chapter members in your neighborhood/area
+                Added to a small community group with other chapter members in your
+                neighborhood/area
               </li>
               <li>Invites to special events and opportunities</li>
               <li>
-                Your photo posted at the Berkeley Animal Rights Center and on the virtual chapter member
-                wall
+                Your photo posted at the Berkeley Animal Rights Center and on the virtual chapter
+                member wall
               </li>
             </ul>
 
@@ -84,27 +85,27 @@
                   >code of conduct</a
                 >
                 and
-                <a href="https://www.directactioneverywhere.com/core-values" target="_blank">values</a>
+                <a href="https://www.directactioneverywhere.com/core-values" target="_blank"
+                  >values</a
+                >
               </li>
               <li>Uphold the Movement Power Pledge (attend one action every month)</li>
             </ul>
 
             <br />
 
-            <button
-                type="button"
-                class="btn btn-success"
-                @click="showForm = true"
-            >Apply now</button>
+            <button type="button" class="btn btn-success" @click="showForm = true">
+              Apply now
+            </button>
           </div>
 
           <transition name="fade">
             <div v-if="showForm">
-
               <h2>Take The Movement Power Pledge</h2>
 
               <p>
-                By entering your name below, you are pledging to come to at least one action each month.
+                By entering your name below, you are pledging to come to at least one action each
+                month.
               </p>
 
               <div class="row">
@@ -273,10 +274,11 @@
                 >
                 <br />
                 <small>
-                  Organizers take ownership over achieving the chapter’s objectives and make our chapter
-                  function by organizing community events, editing videos, leading protests, raising
-                  money, writing press releases, and more. By becoming an organizer, you become a primary
-                  driver of the chapter’s objectives. They volunteer for 2-5 hours per week.
+                  Organizers take ownership over achieving the chapter’s objectives and make our
+                  chapter function by organizing community events, editing videos, leading protests,
+                  raising money, writing press releases, and more. By becoming an organizer, you
+                  become a primary driver of the chapter’s objectives. They volunteer for 2-5 hours
+                  per week.
                 </small>
               </p>
               <div class="radio">
@@ -305,10 +307,8 @@
               <br />
 
               <input type="submit" class="btn btn-primary" value="Submit" :disabled="submitting" />
-
             </div>
           </transition>
-
         </div>
       </transition>
     </form>
