@@ -285,7 +285,7 @@ export default Vue.extend({
         method: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({
-          form: this.formOptions.formName + " Form",
+          form: this.formOptions.formName + ' Form',
           name: this.firstName + ' ' + this.lastName,
           firstName: this.firstName,
           lastName: this.lastName,
