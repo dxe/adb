@@ -63,12 +63,12 @@
         <div class="row">
           <div class="form-group col-md-6">
             <label>First Name</label>
-            <input type="text" class="form-control" v-model="firstName" name="firstName" maxlength="100" required>
+            <input type="text" class="form-control" v-model="firstName" name="firstName" maxlength="35" required>
           </div>
 
           <div class="form-group col-md-6">
             <label>Last Name</label>
-            <input type="text" class="form-control" v-model="lastName" name="lastName" maxlength="100" required>
+            <input type="text" class="form-control" v-model="lastName" name="lastName" maxlength="35" required>
           </div>
         </div>
 
@@ -103,13 +103,13 @@
 
         <div class="form-group">
           <label>Street address</label>
-          <input type="text" class="form-control" v-model="address" name="address" required>
+          <input type="text" class="form-control" v-model="address" name="address" maxlength="190" required>
         </div>
 
         <div class="row">
           <div class="form-group col-md-9">
             <label>City</label>
-            <input type="text" class="form-control" v-model="city" name="city" required>
+            <input type="text" class="form-control" v-model="city" name="city" maxlength="90" required>
           </div>
           <div class="form-group col-md-3">
             <label>Zip code</label>
@@ -124,7 +124,7 @@
           </div>
           <div class="form-group col-md-5">
             <label>Birthday</label>
-            <input type="date" class="form-control" v-model="birthday" name="birthday" required>
+            <input type="date" class="form-control" v-model="birthday" name="birthday" maxlength="10" required>
           </div>
         </div>
 
