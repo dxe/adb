@@ -72,11 +72,11 @@ a:hover {
 }
 
 
-/*@media (max-width: 610px) {*/
-/*    .body-wrapper-wide {*/
-/*        padding: 25px 10px 25px 10px;*/
-/*    }*/
-/*}*/
+@media (max-width: 610px) {
+    .body-wrapper-wide, .body-wrapper {
+        margin-top: 20px;
+    }
+}
 
 .display-none {
     display: none;
