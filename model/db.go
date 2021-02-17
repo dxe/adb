@@ -33,6 +33,7 @@ func WipeDatabase(db *sqlx.DB) {
 	db.MustExec(`DROP TABLE IF EXISTS fb_pages`)
 	db.MustExec(`DROP TABLE IF EXISTS fb_events`)
 	db.MustExec(`DROP TABLE IF EXISTS discord_users`)
+	db.MustExec(`DROP TABLE IF EXISTS discord_messages`)
 	db.MustExec(`DROP TABLE IF EXISTS form_application`)
 	db.MustExec(`DROP TABLE IF EXISTS form_interest`)
 
