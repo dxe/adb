@@ -281,6 +281,15 @@ CREATE TABLE discord_users (
 `)
 
 	db.MustExec(`
+CREATE TABLE discord_messages (
+  message_name VARCHAR(100) PRIMARY KEY,
+  message_text VARCHAR(2000) NOT NULL,
+  last_updated datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_by BIGINT(18) NOT NULL
+)
+`)
+
+	db.MustExec(`
 CREATE TABLE form_application (
   id int(11) NOT NULL AUTO_INCREMENT,
   email varchar(200) NOT NULL,

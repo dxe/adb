@@ -254,6 +254,8 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/discord/status", alice.New(main.discordBotAuthMiddleware).ThenFunc(main.DiscordStatusHandler))
 	router.Handle("/discord/generate", alice.New(main.discordBotAuthMiddleware).ThenFunc(main.DiscordGenerateHandler))
 	router.HandleFunc("/discord/confirm/{id:[0-9]+}/{token:[a-zA-Z0-9]+}", main.DiscordConfirmHandler)
+	router.Handle("/discord/get_message/{message:[a-zA-Z]+}", alice.New(main.discordBotAuthMiddleware).ThenFunc(main.DiscordGetMessageHandler))
+	router.Handle("/discord/set_message/{message:[a-zA-Z]+}", alice.New(main.discordBotAuthMiddleware).ThenFunc(main.DiscordSetMessageHandler))
 
 	// Pprof debug routes
 	router.HandleFunc("/debug/pprof/", pprof.Index)
@@ -1839,6 +1841,51 @@ func (c MainController) DiscordConfirmHandler(w http.ResponseWriter, r *http.Req
 		},
 	})
 	return
+}
+
+func (c MainController) DiscordGetMessageHandler(w http.ResponseWriter, r *http.Request) {
+	messageName := mux.Vars(r)["message"]
+
+	message, err := model.GetDiscordMessage(c.db, messageName)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	out := map[string]interface{}{
+		"status":  "success",
+		"message": message,
+	}
+	writeJSON(w, out)
+}
+
+func (c MainController) DiscordSetMessageHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, http.StatusText(400), 400)
+		return
+	}
+
+	userID, err := strconv.Atoi(r.PostFormValue("user"))
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	var message model.DiscordMessage
+	message.Name = mux.Vars(r)["message"]
+	message.Text = r.PostFormValue("text")
+	message.UpdatedBy = userID
+
+	err = model.SetDiscordMessage(c.db, message)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	out := map[string]interface{}{
+		"status": "success",
+	}
+	writeJSON(w, out)
 }
 
 func (c MainController) ApplicationFormHandler(w http.ResponseWriter, r *http.Request) {
