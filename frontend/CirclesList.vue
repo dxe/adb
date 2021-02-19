@@ -10,7 +10,6 @@
           <th style="width: 1px; white-space: nowrap;"></th>
           <th style="width: 1px; white-space: nowrap;"></th>
           <th>Name</th>
-          <th>Email</th>
           <th>Host</th>
           <th>Last Event</th>
         </tr>
@@ -38,7 +37,6 @@
             </dropdown>
           </td>
           <td>{{ circleGroup.name }}</td>
-          <td>{{ circleGroup.email }}</td>
           <td>
             <!-- There should only ever be one point person -->
             <template v-for="member in circleGroup.members">
