@@ -6,46 +6,61 @@
   >
     <form action id="eventForm" v-on:change="changed('change', -1)" autocomplete="off">
       <fieldset :disabled="loading">
-        <label for="eventName" id="nameLabel">
-          <b>{{ connections ? 'Coach' : 'Event' }} name</b> <br />
-        </label>
-        <input id="eventName" class="form-control" v-model="name" /> <br />
+        <div style="margin-bottom: 10px">
+          <label for="eventName" id="nameLabel">
+            <b>{{ connections ? 'Coach' : 'Event' }} name</b>
+          </label>
+          <input id="eventName" class="form-control" v-model="name" />
+        </div>
 
-        <template v-if="!connections">
-          <label for="eventType"> <b>Event type</b> <br /> </label>
-          <select id="eventType" class="form-control" v-model="type">
-            <option disabled selected value>-- select an option --</option>
-            <option value="Action">Action</option>
-            <option value="Campaign Action">Campaign Action</option>
-            <option value="Circle">Circle</option>
-            <option value="Community">Community</option>
-            <option value="Frontline Surveillance">Frontline Surveillance</option>
-            <option value="Meeting">Meeting</option>
-            <option value="Outreach">Outreach</option>
-            <option value="Sanctuary">Sanctuary</option>
-            <option value="Training">Training</option>
-          </select>
-        </template>
+        <div v-if="!connections" style="margin-bottom: 10px">
+          <div style="margin-bottom: 10px">
+            <label for="eventType"> <b>Event type</b> <br /> </label>
+            <select id="eventType" class="form-control" v-model="type">
+              <option disabled selected value>-- select an option --</option>
+              <option value="Action">Action</option>
+              <option value="Campaign Action">Campaign Action</option>
+              <option value="Community">Community</option>
+              <option value="Frontline Surveillance">Frontline Surveillance</option>
+              <option value="Meeting">Meeting</option>
+              <option value="Outreach">Outreach</option>
+              <option value="Sanctuary">Sanctuary</option>
+              <option value="Training">Training</option>
+            </select>
+          </div>
+          <div style="margin-bottom: 10px">
+            <label for="circle" style="font-weight: normal">
+              <b>Circle</b> <i>(optional)</i> <br />
+            </label>
+            <select id="circle" class="form-control" v-model="selectedCircleID">
+              <option selected value="0">N/A</option>
+              <option v-for="circle in allCircles" v-bind:value="circle.id">{{
+                circle.name
+              }}</option>
+            </select>
+          </div>
+        </div>
 
-        <div class="checkbox">
-          <span v-if="shouldShowSuppressSurveyCheckbox()">
+        <div style="margin-bottom: 10px">
+          <label for="eventDate">
+            <b>{{ connections ? 'Coaching' : 'Event' }} date</b>
+            <button
+              class="btn btn-xs btn-primary"
+              style="margin: 0px 10px"
+              v-on:click.prevent="setDateToToday"
+            >
+              today
+            </button>
+          </label>
+          <input id="eventDate" class="form-control" type="date" v-model="date" />
+        </div>
+
+        <div class="checkbox" v-if="shouldShowSuppressSurveyCheckbox()">
+          <span>
             <strong>Survey</strong><br />
             <label><input type="checkbox" v-model="suppressSurvey" />Don't send survey</label>
           </span>
         </div>
-
-        <label for="eventDate">
-          <b>{{ connections ? 'Coaching' : 'Event' }} date</b>
-          <button
-            class="btn btn-xs btn-primary"
-            style="margin: 0px 10px"
-            v-on:click.prevent="setDateToToday"
-          >
-            today
-          </button>
-        </label>
-
-        <input id="eventDate" class="form-control" type="date" v-model="date" /><br />
 
         <label for="attendee1" id="attendeeLabel">
           <b>{{ connections ? 'Coachees' : 'Attendees' }}</b> <br />
@@ -138,6 +153,9 @@ export default Vue.extend({
       allActivistsSet: new Set<string>(),
       allActivistsFull: {} as { [name: string]: any },
       showIndicatorForAttendee: {} as any,
+
+      selectedCircleID: 0,
+      allCircles: [] as any,
     };
   },
   computed: {
@@ -154,6 +172,7 @@ export default Vue.extend({
 
   created() {
     this.updateAutocompleteNames();
+    this.getCircleNames();
 
     // If we're editing an existing event, fetch the data.
     if (Number(this.id) != 0) {
@@ -169,6 +188,17 @@ export default Vue.extend({
           this.date = event.event_date || '';
           this.attendees = event.attendees || [];
           this.suppressSurvey = event.suppress_survey || false;
+
+          this.selectedCircleID = event.circle_id || 0;
+
+          // if circle_id is not in allCircles and id is not 0, add a dummy extra for the select field to display
+          if (
+            this.allCircles.filter((c: { id: any }) => c.id === event.circle_id).length === 0 &&
+            event.circle_id != 0
+          ) {
+            this.allCircles.push({ id: event.circle_id, name: '*Circle Deleted or Unknown*' });
+            this.selectedCircleID = event.circle_id;
+          }
 
           // ensure we show the indicators for each attendee
           for (let i = 0; i < this.attendees.length; i++) {
@@ -423,6 +453,7 @@ export default Vue.extend({
           added_attendees: addedActivists,
           deleted_attendees: deletedActivists,
           suppress_survey: suppressSurvey,
+          circle_id: this.selectedCircleID,
         }),
         success: (data) => {
           this.saving = false;
@@ -502,6 +533,19 @@ export default Vue.extend({
         },
         error: () => {
           flashMessage('Error: could not load activist names', true);
+        },
+      });
+    },
+    getCircleNames() {
+      $.ajax({
+        url: '/circle/list',
+        method: 'GET',
+        dataType: 'json',
+        success: (data) => {
+          this.allCircles = data.circle_groups;
+        },
+        error: () => {
+          flashMessage('Error: could not load circles', true);
         },
       });
     },
