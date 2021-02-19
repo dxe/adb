@@ -253,8 +253,6 @@ export default Vue.extend({
   },
 
   updated() {
-    console.log(this);
-
     this.$nextTick(() => {
       for (let row of $(
         '#attendee-rows > div.row-container > div.col-xs-10 > input.attendee-input',
@@ -442,7 +440,6 @@ export default Vue.extend({
       });
 
       this.saving = true;
-      console.log(this);
       $.ajax({
         url: this.connections ? '/connection/save' : '/event/save',
         method: 'POST',
