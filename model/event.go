@@ -18,7 +18,6 @@ const EventDateLayout string = "2006-01-02"
 var EventTypes map[string]bool = map[string]bool{
 	"Action":                 true,
 	"Campaign Action":        true,
-	"Circle":                 true,
 	"Community":              true,
 	"Frontline Surveillance": true,
 	"Meeting":                true,
@@ -44,6 +43,7 @@ type EventJSON struct {
 	AddedAttendees   []string `json:"added_attendees"`   // Used for Updating Events
 	DeletedAttendees []string `json:"deleted_attendees"` // Used for Updating Events
 	SuppressSurvey   bool     `json:"suppress_survey"`
+	CircleID         int      `json:"circle_id"`
 }
 
 /* TODO Restructure this Struct */
@@ -60,6 +60,7 @@ type Event struct {
 	AttendeeMissingEmails []string   // Used for sending event surveys
 	AddedAttendees        []Activist // Used for Updating Events
 	DeletedAttendees      []Activist // Used for Updating Events
+	CircleID              int        `db:"circle_id"`
 }
 
 func (event *Event) ToJSON() EventJSON {
@@ -72,6 +73,7 @@ func (event *Event) ToJSON() EventJSON {
 		AttendeeEmails: event.AttendeeEmails,
 		AttendeeIDs:    event.AttendeeIDs,
 		SuppressSurvey: event.SuppressSurvey,
+		CircleID:       event.CircleID,
 	}
 }
 
@@ -125,7 +127,7 @@ func GetEvent(db *sqlx.DB, options GetEventOptions) (Event, error) {
 }
 
 func getEvents(db *sqlx.DB, options GetEventOptions) ([]Event, error) {
-	query := `SELECT e.id, e.name, e.date, e.event_type, e.survey_sent, e.suppress_survey FROM events e `
+	query := `SELECT e.id, e.name, e.date, e.event_type, e.survey_sent, e.suppress_survey, e.circle_id FROM events e `
 
 	// Items in whereClause are added to the query in order, separated by ' AND '.
 	var whereClause []string
@@ -315,8 +317,8 @@ func insertEvent(db *sqlx.DB, event Event) (eventID int, err error) {
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to create transaction")
 	}
-	res, err := tx.NamedExec(`INSERT INTO events (name, date, event_type, suppress_survey)
-VALUES (:name, :date, :event_type, :suppress_survey)`, event)
+	res, err := tx.NamedExec(`INSERT INTO events (name, date, event_type, suppress_survey, circle_id)
+VALUES (:name, :date, :event_type, :suppress_survey, :circle_id)`, event)
 	if err != nil {
 		tx.Rollback()
 		return 0, errors.Wrap(err, "failed to insert event")
@@ -362,7 +364,8 @@ SET
   name = :name,
   date = :date,
   event_type = :event_type,
-  suppress_survey = :suppress_survey
+  suppress_survey = :suppress_survey,
+  circle_id = :circle_id
 WHERE
   id = :id`, event)
 	if err != nil {
@@ -479,6 +482,8 @@ func CleanEventData(db *sqlx.DB, body io.Reader) (Event, error) {
 	e.DeletedAttendees = deletedAttendees
 
 	e.SuppressSurvey = eventJSON.SuppressSurvey
+
+	e.CircleID = eventJSON.CircleID
 
 	return e, nil
 }
