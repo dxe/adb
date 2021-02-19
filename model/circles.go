@@ -41,6 +41,7 @@ type CircleGroup struct {
 	MeetingTime     string `db:"meeting_time"`
 	MeetingLocation string `db:"meeting_location"`
 	Coords          string `db:"coords"`
+	LastMeeting  string  `db:"last_meeting"`
 }
 
 type CircleGroupQueryOptions struct {
@@ -66,6 +67,7 @@ type CircleGroupJSON struct {
 	MeetingTime     string                  `json:"meeting_time"`
 	MeetingLocation string                  `json:"meeting_location"`
 	Coords          string                  `json:"coords"`
+	LastMeeting     string                  `json:"last_meeting"`
 }
 
 type CircleGroupMemberJSON struct {
@@ -333,6 +335,7 @@ func getCircleGroupsJSON(db *sqlx.DB, options CircleGroupQueryOptions) ([]Circle
 			MeetingTime:     cir.MeetingTime,
 			MeetingLocation: cir.MeetingLocation,
 			Coords:          cir.Coords,
+			LastMeeting:     cir.LastMeeting,
 		})
 	}
 
@@ -371,7 +374,9 @@ func GetCircleGroup(db *sqlx.DB, options CircleGroupQueryOptions) (CircleGroup, 
 
 func getCircleGroups(db *sqlx.DB, options CircleGroupQueryOptions) ([]CircleGroup, error) {
 	query := `
-SELECT w.id, w.name, w.type, lower(w.group_email) as group_email, w.visible, w.description, w.meeting_time, w.meeting_location, w.coords FROM circles w
+SELECT w.id, w.name, w.type, lower(w.group_email) as group_email, w.visible, w.description, w.meeting_time, w.meeting_location, w.coords,
+@lastMeeting := IFNULL((SELECT max(date) from events where circle_id = w.id),"") as last_meeting
+FROM circles w
 `
 
 	var queryArgs []interface{}

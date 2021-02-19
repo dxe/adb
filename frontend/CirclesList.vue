@@ -12,6 +12,7 @@
           <th>Name</th>
           <th>Email</th>
           <th>Host</th>
+          <th>Last Event</th>
         </tr>
       </thead>
       <tbody id="working-group-list-body">
@@ -46,6 +47,7 @@
               </template>
             </template>
           </td>
+          <td>{{ circleGroup.last_meeting }}</td>
         </tr>
       </tbody>
     </table>
@@ -238,6 +240,7 @@ interface Circle {
   id: number;
   name: string;
   members: Activist[];
+  last_meeting: string;
 }
 
 export default Vue.extend({
