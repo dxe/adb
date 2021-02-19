@@ -41,7 +41,7 @@ type CircleGroup struct {
 	MeetingTime     string `db:"meeting_time"`
 	MeetingLocation string `db:"meeting_location"`
 	Coords          string `db:"coords"`
-	LastMeeting  string  `db:"last_meeting"`
+	LastMeeting     string `db:"last_meeting"`
 }
 
 type CircleGroupQueryOptions struct {
