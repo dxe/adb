@@ -33,7 +33,6 @@
               <b>Circle</b> <i>(optional)</i> <br />
             </label>
             <select id="circle" class="form-control" v-model="selectedCircleID">
-              <option selected value="0">N/A</option>
               <option v-for="circle in allCircles" v-bind:value="circle.id">{{
                 circle.name
               }}</option>
@@ -154,7 +153,7 @@ export default Vue.extend({
       allActivistsFull: {} as { [name: string]: any },
       showIndicatorForAttendee: {} as any,
 
-      selectedCircleID: 0,
+      selectedCircleID: 0 as number,
       allCircles: [] as any,
     };
   },
@@ -254,6 +253,8 @@ export default Vue.extend({
   },
 
   updated() {
+    console.log(this);
+
     this.$nextTick(() => {
       for (let row of $(
         '#attendee-rows > div.row-container > div.col-xs-10 > input.attendee-input',
@@ -441,6 +442,7 @@ export default Vue.extend({
       });
 
       this.saving = true;
+      console.log(this);
       $.ajax({
         url: this.connections ? '/connection/save' : '/event/save',
         method: 'POST',
@@ -543,6 +545,7 @@ export default Vue.extend({
         dataType: 'json',
         success: (data) => {
           this.allCircles = data.circle_groups;
+          this.allCircles.unshift({ id: 0, name: 'N/A' });
         },
         error: () => {
           flashMessage('Error: could not load circles', true);

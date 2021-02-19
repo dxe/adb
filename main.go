@@ -26,7 +26,6 @@ import (
 	"github.com/dxe/adb/members"
 	"github.com/dxe/adb/model"
 	"github.com/dxe/adb/survey_mailer"
-	"github.com/getsentry/sentry-go"
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -1955,10 +1954,6 @@ func (c MainController) InterestFormHandler(w http.ResponseWriter, r *http.Reque
 
 func main() {
 	fmt.Println("IsProd =", config.IsProd)
-
-	sentry.Init(sentry.ClientOptions{
-		Dsn: "https://dc89e0cef6204791a1f199564aec911c@sentry.io/1820804",
-	})
 
 	n := negroni.New()
 	n.Use(negroni.NewRecovery())

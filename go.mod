@@ -8,7 +8,6 @@ require (
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/coreos/go-oidc v2.1.0+incompatible
-	github.com/getsentry/sentry-go v0.3.1
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
 	github.com/google/uuid v1.1.1 // indirect
