@@ -152,9 +152,9 @@ SELECT
 
 	IFNULL((
       SELECT GROUP_CONCAT(c.name)
-      FROM circles c
-      JOIN circle_members inner_cm ON inner_cm.activist_id = a.id
-      WHERE inner_cm.activist_id = a.id and c.type = 2
+      FROM circle_members cm
+      JOIN circles c ON cm.circle_id = c.id
+      WHERE cm.activist_id = a.id and c.type = 2
   	),"") AS geo_circles
 
 FROM activists a
