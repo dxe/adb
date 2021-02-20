@@ -314,7 +314,7 @@ type ActivistConnectionData struct {
 	City                  string         `db:"city"`
 	State                 string         `db:"state"`
 	DiscordID             sql.NullString `db:"discord_id"`
-	GeoCircles   string  `db:"geo_circles"`
+	GeoCircles            string         `db:"geo_circles"`
 }
 
 type ActivistExtra struct {
@@ -388,7 +388,7 @@ type ActivistJSON struct {
 	City                  string `json:"city"`
 	State                 string `json:"state"`
 	DiscordID             string `json:"discord_id"`
-	GeoCircles  string  `json:"geo_circles"`
+	GeoCircles            string `json:"geo_circles"`
 }
 
 type GetActivistOptions struct {
@@ -608,7 +608,7 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			City:                  a.City,
 			State:                 a.State,
 			DiscordID:             discord_id,
-			GeoCircles:  a.GeoCircles,
+			GeoCircles:            a.GeoCircles,
 		})
 	}
 
