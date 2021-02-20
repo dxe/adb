@@ -338,7 +338,7 @@ func getCircleGroupsJSON(db *sqlx.DB, options CircleGroupQueryOptions) ([]Circle
 		coords := cir.Coords
 		if options.PublicAPI && options.CircleType == 2 && coords != "" {
 			cir.MeetingLocation = ""
-			coordsSlice:= strings.Split(cir.Coords,", ")
+			coordsSlice := strings.Split(cir.Coords, ", ")
 			lat, err := strconv.ParseFloat(coordsSlice[0], 32)
 			lng, err := strconv.ParseFloat(coordsSlice[1], 32)
 			if err != nil {
