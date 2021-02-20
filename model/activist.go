@@ -150,7 +150,7 @@ SELECT
     state,
     discord_id,
 
-	@geo_circles := IFNULL((
+	IFNULL((
       SELECT GROUP_CONCAT(c.name)
       FROM circles c
       JOIN circle_members inner_cm ON inner_cm.activist_id = a.id
