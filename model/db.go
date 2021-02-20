@@ -94,6 +94,8 @@ CREATE TABLE activists (
   city VARCHAR(100) NOT NULL DEFAULT '',
   state VARCHAR(40) NOT NULL DEFAULT '',
   discord_id BIGINT(18) DEFAULT NULL,
+  lat FLOAT(10,6) NULL DEFAULT '0',
+  lng FLOAT(10,6) NULL DEFAULT '0',
   UNIQUE (name)
 )
 `)

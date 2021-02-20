@@ -145,11 +145,8 @@
                   id="meeting_time"
                 />
               </p>
-              <p>
-                <label for="meeting_location"
-                  >{{
-                    title === 'CirclesList' ? 'Meeting Location' : 'Host Address & City'
-                  }}: </label
+              <p v-if="title === 'CirclesList'">
+                <label for="meeting_location">Meeting Location: </label
                 ><input
                   class="form-control"
                   type="text"
@@ -164,13 +161,11 @@
                   type="text"
                   v-model.trim="currentCircleGroup.coords"
                   id="coords"
+                  :disabled="title === 'GeoCirclesList'"
                 />
               </p>
               <p>
-                <label for="visible"
-                  >Visible on map{{
-                    title === 'CirclesList' ? ' & Circle Interest form' : ''
-                  }}: </label
+                <label for="visible">Visible to public: </label
                 ><input
                   class="form-control"
                   type="checkbox"

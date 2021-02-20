@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"strconv"
 	"strings"
 
 	"github.com/jmoiron/sqlx"
@@ -55,11 +54,13 @@ type CircleGroupQueryOptions struct {
 }
 
 type CircleGroupMember struct {
-	ActivistName           string `db:"activist_name"`
-	ActivistID             int    `db:"activist_id"`
-	ActivistEmail          string `db:"activist_email"`
-	PointPerson            bool   `db:"point_person"`
-	NonMemberOnMailingList bool   `db:"non_member_on_mailing_list"`
+	ActivistName           string  `db:"activist_name"`
+	ActivistID             int     `db:"activist_id"`
+	ActivistEmail          string  `db:"activist_email"`
+	Lat                    float64 `db:"lat"`
+	Lng                    float64 `db:"lng"`
+	PointPerson            bool    `db:"point_person"`
+	NonMemberOnMailingList bool    `db:"non_member_on_mailing_list"`
 }
 
 type CircleGroupJSON struct {
@@ -144,26 +145,51 @@ id = :id
 	res, err := tx.NamedExec(query, circleGroup)
 	if err != nil {
 		tx.Rollback()
-		return 0, errors.Wrap(err, "Failed to insert new circle")
+		return 0, errors.Wrap(err, "Failed to insert or update circle")
 	}
 
 	if circleGroup.ID == 0 {
 		id, err := res.LastInsertId()
 		if err != nil {
 			tx.Rollback()
-			return 0, errors.Wrap(err, "Failed to get last inserted Circle ID")
+			return 0, errors.Wrap(err, "Failed to get last inserted Circle ID.")
 		}
 		circleGroup.ID = int(id)
 	}
 
 	if err := insertCircleGroupMembers(tx, circleGroup); err != nil {
 		tx.Rollback()
-		return 0, errors.Wrapf(err, "Failed to insert members for Circle %s", circleGroup.Name)
+		return 0, errors.Wrapf(err, "Please check for duplicate members. Failed to insert members for Circle %s.", circleGroup.Name)
 	}
+
+	// if geo-circle, calculate lat & lng based on members
+	if circleGroup.Type == geo_circle_group_db_value {
+		var circleSize int
+		var totLat, totLng float64
+		for _, m := range circleGroup.Members {
+			if m.Lat != 0 && m.Lng != 0 {
+				// Just averaging will have weird edge cases if lat/lng are near the equator or prime merridian, but should be fine for the US.
+				// TODO: It would probably also be good to remove noise if someone's coords are very far away from the others.
+				totLat += m.Lat
+				totLng += m.Lng
+				circleSize++
+			}
+		}
+		avgLat := totLat / float64(circleSize)
+		avgLng := totLng / float64(circleSize)
+		circleGroup.Coords = fmt.Sprintf("%.6f, %.6f", avgLat, avgLng)
+		_, err := tx.NamedExec(`UPDATE circles SET coords = :coords WHERE id = :id`, circleGroup)
+		if err != nil {
+			tx.Rollback()
+			return 0, errors.Wrap(err, "Failed to update geo-circle coords")
+		}
+	}
+
 	if err := tx.Commit(); err != nil {
 		tx.Rollback()
 		return 0, errors.Wrapf(err, "Failed to commit Circle %s", circleGroup.Name)
 	}
+
 	return circleGroup.ID, nil
 }
 
@@ -171,7 +197,7 @@ func insertCircleGroupMembers(tx *sqlx.Tx, circleGroup CircleGroup) error {
 	if circleGroup.ID == 0 {
 		return errors.New("Invalid Circle ID. ID's must be greater than 0")
 	}
-	// First drop all working group members for the working group.
+	// First drop all members.
 	_, err := tx.Exec(`DELETE FROM circle_members WHERE circle_id = ?`, circleGroup.ID)
 	if err != nil {
 		return errors.Wrapf(err, "Failed to drop members for circle: %s", circleGroup.Name)
@@ -228,6 +254,8 @@ func CleanCircleGroupData(db *sqlx.DB, body io.Reader) (CircleGroup, error) {
 			ActivistName:           activist.Name,
 			ActivistID:             activist.ID,
 			ActivistEmail:          activist.Email,
+			Lat:                    activist.Lat,
+			Lng:                    activist.Lng,
 			PointPerson:            m.PointPerson,
 			NonMemberOnMailingList: m.NonMemberOnMailingList,
 		})
@@ -294,6 +322,7 @@ WHERE id = ?`, circleGroupID)
 }
 
 func GetCircleGroupJSON(db *sqlx.DB, circleGroupID int) (CircleGroupJSON, error) {
+
 	cirs, err := getCircleGroupsJSON(db, CircleGroupQueryOptions{
 		GroupID: circleGroupID,
 	})
@@ -316,6 +345,7 @@ func GetCircleGroupsJSON(db *sqlx.DB, circleType int, publicAPI bool) ([]CircleG
 }
 
 func getCircleGroupsJSON(db *sqlx.DB, options CircleGroupQueryOptions) ([]CircleGroupJSON, error) {
+
 	cirs, err := getCircleGroups(db, options)
 	if err != nil {
 		return nil, err
@@ -324,7 +354,7 @@ func getCircleGroupsJSON(db *sqlx.DB, options CircleGroupQueryOptions) ([]Circle
 	cirsJSON := make([]CircleGroupJSON, 0, len(cirs))
 	for _, cir := range cirs {
 		cirMembers := make([]CircleGroupMemberJSON, 0, len(cir.Members))
-		if !options.PublicAPI {
+		if !options.PublicAPI { // public API should not list members for privacy reasons
 			for _, member := range cir.Members {
 				cirMembers = append(cirMembers, CircleGroupMemberJSON{
 					Name:                   member.ActivistName,
@@ -333,18 +363,6 @@ func getCircleGroupsJSON(db *sqlx.DB, options CircleGroupQueryOptions) ([]Circle
 					NonMemberOnMailingList: member.NonMemberOnMailingList,
 				})
 			}
-		}
-		// for geo-circles public api, hide location & jitter the coords
-		coords := cir.Coords
-		if options.PublicAPI && options.CircleType == 2 && coords != "" {
-			cir.MeetingLocation = ""
-			coordsSlice := strings.Split(cir.Coords, ", ")
-			lat, err := strconv.ParseFloat(coordsSlice[0], 32)
-			lng, err := strconv.ParseFloat(coordsSlice[1], 32)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to parse lat, lng")
-			}
-			coords = fmt.Sprintf("%.2f", lat) + ", " + fmt.Sprintf("%.2f", lng)
 		}
 		cirsJSON = append(cirsJSON, CircleGroupJSON{
 			ID:              cir.ID,
@@ -356,7 +374,7 @@ func getCircleGroupsJSON(db *sqlx.DB, options CircleGroupQueryOptions) ([]Circle
 			Description:     cir.Description,
 			MeetingTime:     cir.MeetingTime,
 			MeetingLocation: cir.MeetingLocation,
-			Coords:          coords,
+			Coords:          cir.Coords,
 			LastMeeting:     cir.LastMeeting,
 		})
 	}
@@ -414,7 +432,7 @@ FROM circles w
 		queryArgs = append(queryArgs, options.CircleType)
 	}
 
-	if options.PublicAPI {
+	if options.PublicAPI { // public API should only list visible circles
 		whereClause = append(whereClause, "w.visible = 1")
 	}
 
@@ -456,6 +474,8 @@ SELECT
   a.name as activist_name,
   a.email as activist_email,
   a.id as activist_id,
+  a.lat as lat,
+  a.lng as lng,
   wm.point_person,
   wm.non_member_on_mailing_list
 FROM activists a

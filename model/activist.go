@@ -27,7 +27,9 @@ SELECT
   id,
   location,
   name,
-  phone
+  phone,
+  lat,
+  lng
 FROM activists
 `
 
@@ -155,7 +157,7 @@ SELECT
       FROM circle_members cm
       JOIN circles c ON cm.circle_id = c.id
       WHERE cm.activist_id = a.id and c.type = 2
-  	),"") AS geo_circles
+  	),"") AS geo_circles,
 
 FROM activists a
 
@@ -258,6 +260,8 @@ type Activist struct {
 	PreferredName string         `db:"preferred_name"`
 	Phone         string         `db:"phone"`
 	Birthday      sql.NullString `db:"dob"`
+	Lat           float64        `json:"lat"`
+	Lng           float64        `json:"lng"`
 }
 
 type ActivistEventData struct {
@@ -367,28 +371,30 @@ type ActivistJSON struct {
 	DevManager      string `json:"dev_manager"`
 	DevInterest     string `json:"dev_interest"`
 
-	CMFirstEmail          string `json:"cm_first_email"`
-	CMApprovalEmail       string `json:"cm_approval_email"`
-	CMWarningEmail        string `json:"cm_warning_email"`
-	CirFirstEmail         string `json:"cir_first_email"`
-	ProspectOrganizer     bool   `json:"prospect_organizer"`
-	ProspectChapterMember bool   `json:"prospect_chapter_member"`
-	LastConnection        string `json:"last_connection"`
-	ReferralFriends       string `json:"referral_friends"`
-	ReferralApply         string `json:"referral_apply"`
-	ReferralOutlet        string `json:"referral_outlet"`
-	CircleInterest        bool   `json:"circle_interest"`
-	InterestDate          string `json:"interest_date"`
-	MPI                   bool   `json:"mpi"`
-	Notes                 string `json:"notes"`
-	VisionWall            string `json:"vision_wall"`
-	MPPRequirements       string `json:"mpp_requirements"`
-	VotingAgreement       bool   `json:"voting_agreement"`
-	StreetAddress         string `json:"street_address"`
-	City                  string `json:"city"`
-	State                 string `json:"state"`
-	DiscordID             string `json:"discord_id"`
-	GeoCircles            string `json:"geo_circles"`
+	CMFirstEmail          string  `json:"cm_first_email"`
+	CMApprovalEmail       string  `json:"cm_approval_email"`
+	CMWarningEmail        string  `json:"cm_warning_email"`
+	CirFirstEmail         string  `json:"cir_first_email"`
+	ProspectOrganizer     bool    `json:"prospect_organizer"`
+	ProspectChapterMember bool    `json:"prospect_chapter_member"`
+	LastConnection        string  `json:"last_connection"`
+	ReferralFriends       string  `json:"referral_friends"`
+	ReferralApply         string  `json:"referral_apply"`
+	ReferralOutlet        string  `json:"referral_outlet"`
+	CircleInterest        bool    `json:"circle_interest"`
+	InterestDate          string  `json:"interest_date"`
+	MPI                   bool    `json:"mpi"`
+	Notes                 string  `json:"notes"`
+	VisionWall            string  `json:"vision_wall"`
+	MPPRequirements       string  `json:"mpp_requirements"`
+	VotingAgreement       bool    `json:"voting_agreement"`
+	StreetAddress         string  `json:"street_address"`
+	City                  string  `json:"city"`
+	State                 string  `json:"state"`
+	DiscordID             string  `json:"discord_id"`
+	GeoCircles            string  `json:"geo_circles"`
+	Lat                   float64 `json:"lat"`
+	Lng                   float64 `json:"lng"`
 }
 
 type GetActivistOptions struct {
