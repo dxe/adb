@@ -1207,7 +1207,7 @@ func (c MainController) CircleGroupSaveHandler(w http.ResponseWriter, r *http.Re
 }
 
 func (c MainController) CircleGroupListHandler(w http.ResponseWriter, r *http.Request) {
-	cirs, err := model.GetCircleGroupsJSON(c.db, 0)
+	cirs, err := model.GetCircleGroupsJSON(c.db, 0, false)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
@@ -1220,7 +1220,7 @@ func (c MainController) CircleGroupListHandler(w http.ResponseWriter, r *http.Re
 }
 
 func (c MainController) CircleGroupNormalListHandler(w http.ResponseWriter, r *http.Request) {
-	cirs, err := model.GetCircleGroupsJSON(c.db, 1)
+	cirs, err := model.GetCircleGroupsJSON(c.db, 1, true)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
@@ -1233,7 +1233,7 @@ func (c MainController) CircleGroupNormalListHandler(w http.ResponseWriter, r *h
 }
 
 func (c MainController) CircleGroupGeoListHandler(w http.ResponseWriter, r *http.Request) {
-	cirs, err := model.GetCircleGroupsJSON(c.db, 2)
+	cirs, err := model.GetCircleGroupsJSON(c.db, 2, true)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return

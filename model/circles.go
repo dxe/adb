@@ -49,6 +49,7 @@ type CircleGroup struct {
 type CircleGroupQueryOptions struct {
 	GroupID    int
 	CircleType int
+	PublicAPI  bool
 }
 
 type CircleGroupMember struct {
@@ -305,8 +306,11 @@ func GetCircleGroupJSON(db *sqlx.DB, circleGroupID int) (CircleGroupJSON, error)
 	return cirs[0], nil
 }
 
-func GetCircleGroupsJSON(db *sqlx.DB, circleType int) ([]CircleGroupJSON, error) {
-	return getCircleGroupsJSON(db, CircleGroupQueryOptions{CircleType: circleType})
+func GetCircleGroupsJSON(db *sqlx.DB, circleType int, publicAPI bool) ([]CircleGroupJSON, error) {
+	return getCircleGroupsJSON(db, CircleGroupQueryOptions{
+		CircleType: circleType,
+		PublicAPI:  publicAPI,
+	})
 }
 
 func getCircleGroupsJSON(db *sqlx.DB, options CircleGroupQueryOptions) ([]CircleGroupJSON, error) {
@@ -318,13 +322,19 @@ func getCircleGroupsJSON(db *sqlx.DB, options CircleGroupQueryOptions) ([]Circle
 	cirsJSON := make([]CircleGroupJSON, 0, len(cirs))
 	for _, cir := range cirs {
 		cirMembers := make([]CircleGroupMemberJSON, 0, len(cir.Members))
-		for _, member := range cir.Members {
-			cirMembers = append(cirMembers, CircleGroupMemberJSON{
-				Name:                   member.ActivistName,
-				Email:                  member.ActivistEmail,
-				PointPerson:            member.PointPerson,
-				NonMemberOnMailingList: member.NonMemberOnMailingList,
-			})
+		if !options.PublicAPI {
+			for _, member := range cir.Members {
+				cirMembers = append(cirMembers, CircleGroupMemberJSON{
+					Name:                   member.ActivistName,
+					Email:                  member.ActivistEmail,
+					PointPerson:            member.PointPerson,
+					NonMemberOnMailingList: member.NonMemberOnMailingList,
+				})
+			}
+		}
+		// for geo-circles public api, hide location & jitter the coords
+		if options.PublicAPI && options.CircleType == 2 {
+			cir.MeetingLocation = ""
 		}
 		cirsJSON = append(cirsJSON, CircleGroupJSON{
 			ID:              cir.ID,
@@ -392,6 +402,10 @@ FROM circles w
 	if options.CircleType != 0 {
 		whereClause = append(whereClause, "w.type = ?")
 		queryArgs = append(queryArgs, options.CircleType)
+	}
+
+	if options.PublicAPI {
+		whereClause = append(whereClause, "w.visible = 1")
 	}
 
 	if len(whereClause) > 0 {
