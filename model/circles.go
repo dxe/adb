@@ -354,8 +354,9 @@ func getCircleGroupsJSON(db *sqlx.DB, options CircleGroupQueryOptions) ([]Circle
 	cirsJSON := make([]CircleGroupJSON, 0, len(cirs))
 	for _, cir := range cirs {
 		cirMembers := make([]CircleGroupMemberJSON, 0, len(cir.Members))
-		if !options.PublicAPI { // public API should not list members for privacy reasons
-			for _, member := range cir.Members {
+		for _, member := range cir.Members {
+			// don't include member info in public API unless it's the point person
+			if !options.PublicAPI || member.PointPerson {
 				cirMembers = append(cirMembers, CircleGroupMemberJSON{
 					Name:                   member.ActivistName,
 					Email:                  member.ActivistEmail,
