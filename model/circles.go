@@ -2,7 +2,9 @@ package model
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
+	"strconv"
 	"strings"
 
 	"github.com/jmoiron/sqlx"
@@ -333,8 +335,16 @@ func getCircleGroupsJSON(db *sqlx.DB, options CircleGroupQueryOptions) ([]Circle
 			}
 		}
 		// for geo-circles public api, hide location & jitter the coords
-		if options.PublicAPI && options.CircleType == 2 {
+		coords := cir.Coords
+		if options.PublicAPI && options.CircleType == 2 && coords != "" {
 			cir.MeetingLocation = ""
+			coordsSlice:= strings.Split(cir.Coords,", ")
+			lat, err := strconv.ParseFloat(coordsSlice[0], 32)
+			lng, err := strconv.ParseFloat(coordsSlice[1], 32)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to parse lat, lng")
+			}
+			coords = fmt.Sprintf("%.2f", lat) + ", " + fmt.Sprintf("%.2f", lng)
 		}
 		cirsJSON = append(cirsJSON, CircleGroupJSON{
 			ID:              cir.ID,
@@ -346,7 +356,7 @@ func getCircleGroupsJSON(db *sqlx.DB, options CircleGroupQueryOptions) ([]Circle
 			Description:     cir.Description,
 			MeetingTime:     cir.MeetingTime,
 			MeetingLocation: cir.MeetingLocation,
-			Coords:          cir.Coords,
+			Coords:          coords,
 			LastMeeting:     cir.LastMeeting,
 		})
 	}
