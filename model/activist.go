@@ -157,7 +157,7 @@ SELECT
       FROM circle_members cm
       JOIN circles c ON cm.circle_id = c.id
       WHERE cm.activist_id = a.id and c.type = 2
-  	),"") AS geo_circles,
+  	),"") AS geo_circles
 
 FROM activists a
 
