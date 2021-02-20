@@ -12,11 +12,13 @@ import (
 /** Constant and Variable Definitions */
 
 const (
-	circle_group_db_value = 1
+	circle_group_db_value     = 1
+	geo_circle_group_db_value = 2
 )
 
 var CircleGroupTypes map[int]string = map[int]string{
-	circle_group_db_value: "circle",
+	circle_group_db_value:     "circle",
+	geo_circle_group_db_value: "geo-circle",
 }
 
 var CircleGroupTypeStringToInt map[string]int
@@ -45,7 +47,8 @@ type CircleGroup struct {
 }
 
 type CircleGroupQueryOptions struct {
-	GroupID int
+	GroupID    int
+	CircleType int
 }
 
 type CircleGroupMember struct {
@@ -103,8 +106,8 @@ func createOrUpdateCircleGroup(db *sqlx.DB, circleGroup CircleGroup) (int, error
 	if circleGroup.Name == "" {
 		return 0, errors.New("Circle name must not be zero-value")
 	}
-	if circleGroup.Type != circle_group_db_value && circleGroup.Type != committee_db_value {
-		return 0, errors.New("Circle type must be 'Circle'")
+	if circleGroup.Type != circle_group_db_value && circleGroup.Type != geo_circle_group_db_value {
+		return 0, errors.New("Circle type must be circle or geo-circle")
 	}
 
 	var query string
@@ -112,7 +115,7 @@ func createOrUpdateCircleGroup(db *sqlx.DB, circleGroup CircleGroup) (int, error
 		// Create Circle
 		query = `
     INSERT INTO circles (name, type, group_email, visible, description, meeting_time, meeting_location, coords)
-    VALUES (:name, "1", :group_email, :visible, :description, :meeting_time, :meeting_location, :coords)
+    VALUES (:name, :type, :group_email, :visible, :description, :meeting_time, :meeting_location, :coords)
     `
 	} else {
 		// Update existing working group
@@ -120,7 +123,7 @@ func createOrUpdateCircleGroup(db *sqlx.DB, circleGroup CircleGroup) (int, error
 UPDATE circles
 SET
   name = :name,
-  type = "1",
+  type = :type,
   group_email = :group_email,
   visible = :visible,
   description = :description,
@@ -200,11 +203,10 @@ func CleanCircleGroupData(db *sqlx.DB, body io.Reader) (CircleGroup, error) {
 	}
 
 	if circleGroupJSON.Type == "" {
-		circleGroupJSON.Type = "circle"
-		//	return CircleGroup{}, errors.New("Circle type can't be empty")
+		return CircleGroup{}, errors.New("Circle type can't be empty")
 	}
 
-	wgType, ok := CircleGroupTypeStringToInt[circleGroupJSON.Type]
+	cirType, ok := CircleGroupTypeStringToInt[circleGroupJSON.Type]
 	if !ok {
 		return CircleGroup{}, errors.Errorf("Circle type doesn't exist: %s", circleGroupJSON.Type)
 	}
@@ -231,7 +233,7 @@ func CleanCircleGroupData(db *sqlx.DB, body io.Reader) (CircleGroup, error) {
 	return CircleGroup{
 		ID:              circleGroupJSON.ID,
 		Name:            strings.TrimSpace(circleGroupJSON.Name),
-		Type:            wgType,
+		Type:            cirType,
 		GroupEmail:      strings.TrimSpace(circleGroupJSON.Email),
 		Members:         members,
 		Visible:         circleGroupJSON.Visible,
@@ -303,8 +305,8 @@ func GetCircleGroupJSON(db *sqlx.DB, circleGroupID int) (CircleGroupJSON, error)
 	return cirs[0], nil
 }
 
-func GetCircleGroupsJSON(db *sqlx.DB) ([]CircleGroupJSON, error) {
-	return getCircleGroupsJSON(db, CircleGroupQueryOptions{})
+func GetCircleGroupsJSON(db *sqlx.DB, circleType int) ([]CircleGroupJSON, error) {
+	return getCircleGroupsJSON(db, CircleGroupQueryOptions{CircleType: circleType})
 }
 
 func getCircleGroupsJSON(db *sqlx.DB, options CircleGroupQueryOptions) ([]CircleGroupJSON, error) {
@@ -385,6 +387,11 @@ FROM circles w
 	if options.GroupID != 0 {
 		whereClause = append(whereClause, "w.id = ?")
 		queryArgs = append(queryArgs, options.GroupID)
+	}
+
+	if options.CircleType != 0 {
+		whereClause = append(whereClause, "w.type = ?")
+		queryArgs = append(queryArgs, options.CircleType)
 	}
 
 	if len(whereClause) > 0 {

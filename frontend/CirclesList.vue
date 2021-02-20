@@ -1,7 +1,8 @@
 <template>
-  <adb-page title="Circles">
+  <adb-page :title="title === 'CirclesList' ? 'Circles' : 'Geo-Circles'">
     <button class="btn btn-default" @click="showModal('edit-circle-modal')">
-      <span class="glyphicon glyphicon-plus"></span>&nbsp;&nbsp;Add New Circle
+      <span class="glyphicon glyphicon-plus"></span>&nbsp;&nbsp;Add New
+      {{ title === 'CirclesList' ? 'Circle' : 'Geo-Circle' }}
     </button>
 
     <table id="working-group-list" class="adb-table table table-hover table-striped">
@@ -11,7 +12,8 @@
           <th style="width: 1px; white-space: nowrap;"></th>
           <th>Name</th>
           <th>Host</th>
-          <th>Last Event</th>
+          <th v-if="title === 'GeoCirclesList'">Total Members</th>
+          <th v-if="title === 'CirclesList'">Last Event</th>
         </tr>
       </thead>
       <tbody id="working-group-list-body">
@@ -45,7 +47,8 @@
               </template>
             </template>
           </td>
-          <td>{{ circleGroup.last_meeting }}</td>
+          <td v-if="title === 'GeoCirclesList'">{{ numberOfCircleGroupMembers(circleGroup) }}</td>
+          <td v-if="title === 'CirclesList'">{{ circleGroup.last_meeting }}</td>
         </tr>
       </tbody>
     </table>
@@ -87,8 +90,12 @@
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
-            <h2 class="modal-title" v-if="currentCircleGroup.id">Edit Circle</h2>
-            <h2 class="modal-title" v-if="!currentCircleGroup.id">New Circle</h2>
+            <h2 class="modal-title" v-if="currentCircleGroup.id">
+              Edit {{ title === 'CirclesList' ? 'Circle' : 'Geo-Circle' }}
+            </h2>
+            <h2 class="modal-title" v-if="!currentCircleGroup.id">
+              New {{ title === 'CirclesList' ? 'Circle' : 'Geo-Circle' }}
+            </h2>
           </div>
           <div class="modal-body">
             <form action="" id="editCircleGroupForm">
@@ -103,7 +110,7 @@
                 />
               </p>
               <p>
-                <label for="email">Email: </label
+                <label for="email">Host Email: </label
                 ><input
                   class="form-control"
                   type="text"
@@ -112,16 +119,15 @@
                 />
               </p>
 
-              <!--
-              <p
+              <p hidden>
                 <label for="type">Type: </label>
                 <select id="type" class="form-control" v-model="currentCircleGroup.type">
                   <option value="circle">Circle</option>
+                  <option value="geo-circle">Geo-Circle</option>
                 </select>
               </p>
-            -->
 
-              <p>
+              <p v-if="title === 'CirclesList'">
                 <label for="description">Description: </label
                 ><input
                   class="form-control"
@@ -130,7 +136,7 @@
                   id="description"
                 />
               </p>
-              <p>
+              <p v-if="title === 'CirclesList'">
                 <label for="meeting_time">Meeting Day & Time: </label
                 ><input
                   class="form-control"
@@ -140,7 +146,10 @@
                 />
               </p>
               <p>
-                <label for="meeting_location">Meeting Location: </label
+                <label for="meeting_location"
+                  >{{
+                    title === 'CirclesList' ? 'Meeting Location' : 'Host Address & City'
+                  }}: </label
                 ><input
                   class="form-control"
                   type="text"
@@ -158,7 +167,10 @@
                 />
               </p>
               <p>
-                <label for="visible">Visible on application: </label
+                <label for="visible"
+                  >Visible on map{{
+                    title === 'CirclesList' ? ' & Circle Interest form' : ''
+                  }}: </label
                 ><input
                   class="form-control"
                   type="checkbox"
@@ -195,8 +207,31 @@
                 class="btn btn-sm"
                 @click="addPointPerson"
               >
-                Add point person
+                Add host
               </button>
+              <div v-if="title === 'GeoCirclesList'">
+                <p><label for="members">Members: </label></p>
+                <div class="select-row" v-for="(member, index) in currentCircleGroup.members">
+                  <template v-if="!member.point_person && !member.non_member_on_mailing_list">
+                    <basic-select
+                      :options="activistOptions"
+                      :selected-option="memberOption(member)"
+                      :extra-data="{ index: index }"
+                      inheritStyle="min-width: 500px"
+                      @select="onMemberSelect"
+                    >
+                    </basic-select>
+                    <button
+                      type="button"
+                      class="select-row-btn btn btn-sm btn-danger"
+                      @click="removeMember(index)"
+                    >
+                      -
+                    </button>
+                  </template>
+                </div>
+                <button type="button" class="btn btn-sm" @click="addMember">Add member</button>
+              </div>
             </form>
           </div>
           <div class="modal-footer">
@@ -239,10 +274,14 @@ interface Circle {
   name: string;
   members: Activist[];
   last_meeting: string;
+  type: string;
 }
 
 export default Vue.extend({
   name: 'circle-list',
+  props: {
+    title: String,
+  },
   methods: {
     showModal(modalName: string, circleGroup: Circle, index: number) {
       // Check to see if there's a modal open, and close it if so.
@@ -251,6 +290,9 @@ export default Vue.extend({
       }
 
       this.currentCircleGroup = { ...circleGroup };
+
+      // always set the type based on the page we are on
+      this.currentCircleGroup.type = this.title === 'CirclesList' ? 'circle' : 'geo-circle';
 
       if (index != undefined) {
         this.circleGroupIndex = index;
@@ -372,10 +414,12 @@ export default Vue.extend({
     modalClosed() {
       $(document.body).removeClass('noscroll');
     },
-    displaycircleGroupType(type: string) {
+    displayCircleGroupType(type: string) {
       switch (type) {
         case 'circle':
           return 'Circle';
+        case 'geo-circle':
+          return 'Geo-Circle';
       }
       return '';
     },
@@ -468,7 +512,16 @@ export default Vue.extend({
           return;
         }
         // status === "success"
-        this.circleGroups = parsed.circle_groups;
+        if (this.title === 'GeoCirclesList') {
+          this.circleGroups = parsed.circle_groups.filter((c: any) => {
+            return c.type === 'geo-circle';
+          });
+          return;
+        }
+        this.circleGroups = parsed.circle_groups.filter((c: any) => {
+          return c.type === 'circle';
+        });
+        return;
       },
       error: (err) => {
         console.warn(err.responseText);
@@ -478,7 +531,7 @@ export default Vue.extend({
 
     // Get activists for members dropdown.
     $.ajax({
-      url: '/activist_names/get',
+      url: '/activist_names/get_chaptermembers',
       method: 'GET',
       success: (data) => {
         var parsed = JSON.parse(data);

@@ -680,16 +680,6 @@ function getDefaultColumns(view: string): Column[] {
         view === 'community_prospects',
     },
     {
-      header: 'Working Groups',
-      longHeader: 'Working Group Membership',
-      data: {
-        data: 'working_group_list',
-        readOnly: true,
-        colWidths: 200,
-      },
-      enabled: view === 'action_team' || view === 'organizer_prospects' || view === 'development',
-    },
-    {
       header: 'First Event',
       longHeader: 'First Event Attended',
       data: {
@@ -1015,6 +1005,16 @@ function getDefaultColumns(view: string): Column[] {
         colWidths: 50,
       },
       enabled: false,
+    },
+    {
+      header: 'Geo-Circle',
+      longHeader: 'Geo-Circle Membership',
+      data: {
+        data: 'geo_circles',
+        readOnly: true,
+        colWidths: 100,
+      },
+      enabled: view === 'chapter_member_development',
     },
   ];
 }

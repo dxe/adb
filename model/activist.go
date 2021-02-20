@@ -148,7 +148,14 @@ SELECT
     street_address,
     city,
     state,
-    discord_id
+    discord_id,
+
+	@geo_circles := IFNULL((
+      SELECT GROUP_CONCAT(c.name)
+      FROM circles c
+      JOIN circle_members inner_cm ON inner_cm.activist_id = a.id
+      WHERE inner_cm.activist_id = a.id and c.type = 2
+  	),"") AS geo_circles
 
 FROM activists a
 
@@ -269,7 +276,6 @@ type ActivistMembershipData struct {
 	ActivistLevel string `db:"activist_level"`
 	Source        string `db:"source"`
 	Hiatus        bool   `db:"hiatus"`
-	WorkingGroups string `db:"working_group_list"`
 }
 
 type ActivistConnectionData struct {
@@ -308,6 +314,7 @@ type ActivistConnectionData struct {
 	City                  string         `db:"city"`
 	State                 string         `db:"state"`
 	DiscordID             sql.NullString `db:"discord_id"`
+	GeoCircles   string  `db:"geo_circles"`
 }
 
 type ActivistExtra struct {
@@ -345,7 +352,6 @@ type ActivistJSON struct {
 	ActivistLevel string `json:"activist_level"`
 	Source        string `json:"source"`
 	Hiatus        bool   `json:"hiatus"`
-	WorkingGroups string `json:"working_group_list"`
 
 	Connector       string `json:"connector"`
 	Training0       string `json:"training0"`
@@ -382,6 +388,7 @@ type ActivistJSON struct {
 	City                  string `json:"city"`
 	State                 string `json:"state"`
 	DiscordID             string `json:"discord_id"`
+	GeoCircles  string  `json:"geo_circles"`
 }
 
 type GetActivistOptions struct {
@@ -563,7 +570,6 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			Active:         a.Active,
 
 			ActivistLevel: a.ActivistLevel,
-			WorkingGroups: a.WorkingGroups,
 			Source:        a.Source,
 			Hiatus:        a.Hiatus,
 
@@ -602,6 +608,7 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			City:                  a.City,
 			State:                 a.State,
 			DiscordID:             discord_id,
+			GeoCircles:  a.GeoCircles,
 		})
 	}
 
@@ -1411,7 +1418,7 @@ func GetAutocompleteNames(db *sqlx.DB) []string {
 	type Name struct {
 		Name string `db:"name"`
 	}
-	names := []Name{}
+	var names []Name
 	// Order the activists by the last even they've been to.
 	err := db.Select(&names, `
 SELECT a.name FROM activists a
@@ -1425,7 +1432,7 @@ ORDER BY MAX(e.date) DESC`)
 		panic(err)
 	}
 
-	ret := []string{}
+	var ret []string
 	for _, n := range names {
 		ret = append(ret, n.Name)
 	}
@@ -1437,21 +1444,38 @@ func GetAutocompleteOrganizerNames(db *sqlx.DB) []string {
 	type Name struct {
 		Name string `db:"name"`
 	}
-	names := []Name{}
-	// Order the activists by the last even they've been to.
+	var names []Name
 	err := db.Select(&names, `
 SELECT a.name FROM activists a
-LEFT OUTER JOIN event_attendance ea ON a.id = ea.activist_id
-LEFT OUTER JOIN events e ON e.id = ea.event_id
-WHERE a.hidden = 0 and (a.activist_level like '%organizer' or a.activist_level = 'non-local')
-GROUP BY a.name
-ORDER BY MAX(e.date) DESC`)
+WHERE a.hidden = 0 and a.activist_level in ('non-local', 'organizer')
+GROUP BY a.name`)
 	if err != nil {
 		// TODO: return error
 		panic(err)
 	}
 
-	ret := []string{}
+	var ret []string
+	for _, n := range names {
+		ret = append(ret, n.Name)
+	}
+	return ret
+}
+
+func GetAutocompleteChapterMembersNames(db *sqlx.DB) []string {
+	type Name struct {
+		Name string `db:"name"`
+	}
+	var names []Name
+	err := db.Select(&names, `
+SELECT a.name FROM activists a
+WHERE a.hidden = 0 and a.activist_level in ('chapter member', 'organizer')
+GROUP BY a.name`)
+	if err != nil {
+		// TODO: return error
+		panic(err)
+	}
+
+	var ret []string
 	for _, n := range names {
 		ret = append(ret, n.Name)
 	}

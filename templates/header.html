@@ -53,6 +53,7 @@
               <ul class="dropdown-menu">
                 <li class="{{if (eq .PageName "CircleMemberProspects")}}active{{end}}"><a href="/circle_member_prospects">Circle Member Prospects</a></li>
                 <li class="{{if (eq .PageName "CirclesList")}}active{{end}}"><a href="/list_circles">Circles</a></li>
+                <li class="{{if (eq .PageName "GeoCirclesList")}}active{{end}}"><a href="/list_geocircles">Geo-Circles</a></li>
               </ul>
             </li>
             <li class="{{if and (ne .MainRole "admin") (ne .MainRole "organizer")}}hide{{end}} dropdown hidden-xs"><a class="dropdown-toggle" data-toggle="dropdown" href="#">Chapter Members <span class="caret"></span></a>

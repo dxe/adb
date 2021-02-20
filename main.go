@@ -200,6 +200,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/leaderboard", alice.New(main.authOrganizerMiddleware).ThenFunc(main.LeaderboardHandler))
 	router.Handle("/list_working_groups", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListWorkingGroupsHandler))
 	router.Handle("/list_circles", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListCirclesHandler))
+	router.Handle("/list_geocircles", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListGeoCirclesHandler))
 
 	// Authed Admin pages
 	admin.Handle("/admin/users", alice.New(main.authAdminMiddleware).ThenFunc(main.ListUsersHandler))
@@ -213,11 +214,13 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.HandleFunc("/chapters/{lat:[0-9.\\-]+},{lng:[0-9.\\-]+}", main.FindNearestFacebookPagesHandler)
 	router.HandleFunc("/regions", main.ListAllChaptersByRegion)
 	router.HandleFunc("/chapters", main.ListAllChapters)
-	router.HandleFunc("/circles", main.CircleGroupListHandler)
+	router.HandleFunc("/circles", main.CircleGroupNormalListHandler) // TODO: maybe the public endpoints should return less info
+	router.HandleFunc("/geocircles", main.CircleGroupGeoListHandler) // TODO: maybe the public endpoints should return less info
 
 	// Authed API
 	router.Handle("/activist_names/get", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteActivistsHandler))
 	router.Handle("/activist_names/get_organizers", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteOrganizersHandler))
+	router.Handle("/activist_names/get_chaptermembers", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteChapterMembersHandler))
 	router.Handle("/event/get/{event_id:[0-9]+}", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.EventGetHandler))
 	router.Handle("/event/save", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.EventSaveHandler))
 	router.Handle("/connection/save", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.ConnectionSaveHandler))
@@ -624,6 +627,10 @@ func (c MainController) ListCirclesHandler(w http.ResponseWriter, r *http.Reques
 	renderPage(w, r, "circles_list", PageData{PageName: "CirclesList"})
 }
 
+func (c MainController) ListGeoCirclesHandler(w http.ResponseWriter, r *http.Request) {
+	renderPage(w, r, "circles_list", PageData{PageName: "GeoCirclesList"})
+}
+
 func (c MainController) ListUsersHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, r, "user_list", PageData{PageName: "UserList"})
 }
@@ -847,6 +854,13 @@ func (c MainController) AutocompleteActivistsHandler(w http.ResponseWriter, r *h
 
 func (c MainController) AutocompleteOrganizersHandler(w http.ResponseWriter, r *http.Request) {
 	names := model.GetAutocompleteOrganizerNames(c.db)
+	writeJSON(w, map[string][]string{
+		"activist_names": names,
+	})
+}
+
+func (c MainController) AutocompleteChapterMembersHandler(w http.ResponseWriter, r *http.Request) {
+	names := model.GetAutocompleteChapterMembersNames(c.db)
 	writeJSON(w, map[string][]string{
 		"activist_names": names,
 	})
@@ -1193,7 +1207,33 @@ func (c MainController) CircleGroupSaveHandler(w http.ResponseWriter, r *http.Re
 }
 
 func (c MainController) CircleGroupListHandler(w http.ResponseWriter, r *http.Request) {
-	cirs, err := model.GetCircleGroupsJSON(c.db)
+	cirs, err := model.GetCircleGroupsJSON(c.db, 0)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	writeJSON(w, map[string]interface{}{
+		"status":        "success",
+		"circle_groups": cirs,
+	})
+}
+
+func (c MainController) CircleGroupNormalListHandler(w http.ResponseWriter, r *http.Request) {
+	cirs, err := model.GetCircleGroupsJSON(c.db, 1)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	writeJSON(w, map[string]interface{}{
+		"status":        "success",
+		"circle_groups": cirs,
+	})
+}
+
+func (c MainController) CircleGroupGeoListHandler(w http.ResponseWriter, r *http.Request) {
+	cirs, err := model.GetCircleGroupsJSON(c.db, 2)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
