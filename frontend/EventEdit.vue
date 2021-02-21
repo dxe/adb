@@ -541,7 +541,9 @@ export default Vue.extend({
         method: 'GET',
         dataType: 'json',
         success: (data) => {
-          this.allCircles = data.circle_groups;
+          this.allCircles = data.circle_groups.filter((c: { type: string }) => {
+            return c.type === 'circle'; // only include classic circles, not geo-circles
+          });
           this.allCircles.unshift({ id: 0, name: 'N/A' });
         },
         error: () => {
