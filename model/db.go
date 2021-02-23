@@ -244,7 +244,10 @@ CREATE TABLE fb_pages (
   email VARCHAR(100) NOT NULL DEFAULT '',
   token VARCHAR(200) NOT NULL DEFAULT '',
   eventbrite_id VARCHAR(16) NOT NULL DEFAULT '',
-  eventbrite_token VARCHAR(32) NOT NULL DEFAULT ''
+  eventbrite_token VARCHAR(32) NOT NULL DEFAULT '',
+  ml_type VARCHAR(100) NOT NULL DEFAULT '',
+  ml_radius SMALLINT NOT NULL DEFAULT '0',
+  ml_id VARCHAR(100) NOT NULL DEFAULT ''
 )
 `)
 

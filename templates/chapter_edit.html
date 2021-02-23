@@ -9,40 +9,62 @@
 <div class="body-wrapper">
 
 	<div class="title">
-  		<h1>Edit Chapter</h1>
+  		<h1>{{ .Data.Chapter.Name }}</h1>
   	</div>
 
     <form method="POST" action="/chapter/update"  autocomplete="off">
-      <input hidden name="chapter-id" value="{{ .Data.Chapter.ChapterID }}" /><br />
-      <label>Name</label><input type="text" name="name" maxlength="75" value="{{ .Data.Chapter.Name }}" class="form-control" /><br />
-      <label>Flag</label><input type="text" name="flag" maxlength="2" value="{{ .Data.Chapter.Flag }}" class="form-control" /><br />
-      <label>Facebook</label><input type="text" name="facebook" maxlength="100" value="{{ .Data.Chapter.FbURL }}" class="form-control" /><br />
-      <label>Twitter</label><input type="text" name="twitter" maxlength="100" value="{{ .Data.Chapter.TwitterURL }}" class="form-control" /><br />
-      <label>Instagram</label><input type="text" name="instagram" maxlength="100" value="{{ .Data.Chapter.InstaURL }}" class="form-control" /><br />
-      <label>Email</label><input type="text" name="email" maxlength="100" value="{{ .Data.Chapter.Email }}" class="form-control" /><br />
-      <label>Region</label>
-      <select name="region" class="form-control">
-		<option value="North America" {{ if eq .Data.Chapter.Region "North America" }}selected="selected"{{ end }}>North America</option>
-		<option value="Central & South America" {{ if eq .Data.Chapter.Region "Central & South America" }}selected="selected"{{ end }}>Central & South America</option>
-		<option value="Europe" {{ if eq .Data.Chapter.Region "Europe" }}selected="selected"{{ end }}>Europe</option>
-		<option value="Middle East & Africa" {{ if eq .Data.Chapter.Region "Middle East & Africa" }}selected="selected"{{ end }}>Middle East & Africa</option>
-		<option value="Asia-Pacific" {{ if eq .Data.Chapter.Region "Asia-Pacific" }}selected="selected"{{ end }}>Asia-Pacific</option>
-		<option value="Online" {{ if eq .Data.Chapter.Region "Online" }}selected="selected"{{ end }}>Online</option>
-	  </select>
-	  <br />
-      <label>Lat</label><input type="number" name="lat" value="{{ .Data.Chapter.Lat }}" class="form-control" placeholder="00.000000" step="0.000001" min="-90" max="90" /><br />
-      <label>Lng</label><input type="number" name="lng" value="{{ .Data.Chapter.Lng }}" class="form-control" placeholder="000.000000" step="0.000001" min="-180" max="180" /><br />
-      <label>Facebook ID</label><input type="number" name="facebook-id" maxlength="16" value="{{ .Data.Chapter.ID }}" class="form-control" /><br />
-      <label>Facebook Token</label><input type="text" name="token" maxlength="200" value="{{ .Data.Chapter.Token }}" class="form-control" /><br />
-      <label>Eventbrite ID</label><input type="number" name="eventbrite-id" maxlength="16" value="{{ .Data.Chapter.EventbriteID }}" class="form-control" /><br />
-      <label>Eventbrite Token</label><input type="text" name="eventbrite-token" maxlength="200" value="{{ .Data.Chapter.EventbriteToken }}" class="form-control" /><br />
-      <input type="hidden" name="gorilla.csrf.Token" value={{ .CsrfField }}>
-      <button class="btn btn-secondary" type="button" onclick="window.location.href='/list_chapters'">Cancel</button>
-      <input class="btn btn-success" type="submit" value="Save" />
+        <input hidden name="chapter-id" value="{{ .Data.Chapter.ChapterID }}" /><br />
+        <label><i style="font-weight: normal">Please contact Tech in order to rename this chapter.</i></label><br/><input hidden name="name" maxlength="75" value="{{ .Data.Chapter.Name }}" /><br />
+        <label>Flag</label><input type="text" name="flag" maxlength="2" value="{{ .Data.Chapter.Flag }}" class="form-control" /><br />
+        <label>Facebook</label><input type="text" name="facebook" maxlength="100" value="{{ .Data.Chapter.FbURL }}" class="form-control" /><br />
+        <label>Twitter</label><input type="text" name="twitter" maxlength="100" value="{{ .Data.Chapter.TwitterURL }}" class="form-control" /><br />
+        <label>Instagram</label><input type="text" name="instagram" maxlength="100" value="{{ .Data.Chapter.InstaURL }}" class="form-control" /><br />
+        <label>Email</label><input type="text" name="email" maxlength="100" value="{{ .Data.Chapter.Email }}" class="form-control" /><br />
+        <label>Region</label>
+        <select name="region" class="form-control">
+            <option value="North America" {{ if eq .Data.Chapter.Region "North America" }}selected="selected"{{ end }}>North America</option>
+            <option value="Central & South America" {{ if eq .Data.Chapter.Region "Central & South America" }}selected="selected"{{ end }}>Central & South America</option>
+            <option value="Europe" {{ if eq .Data.Chapter.Region "Europe" }}selected="selected"{{ end }}>Europe</option>
+            <option value="Middle East & Africa" {{ if eq .Data.Chapter.Region "Middle East & Africa" }}selected="selected"{{ end }}>Middle East & Africa</option>
+            <option value="Asia-Pacific" {{ if eq .Data.Chapter.Region "Asia-Pacific" }}selected="selected"{{ end }}>Asia-Pacific</option>
+            <option value="Online" {{ if eq .Data.Chapter.Region "Online" }}selected="selected"{{ end }}>Online</option>
+        </select>
+        <br />
+        <label>Lat</label><input type="number" name="lat" value="{{ .Data.Chapter.Lat }}" class="form-control" placeholder="00.000000" step="0.000001" min="-90" max="90" /><br />
+        <label>Lng</label><input type="number" name="lng" value="{{ .Data.Chapter.Lng }}" class="form-control" placeholder="000.000000" step="0.000001" min="-180" max="180" /><br />
+        <div id="more-options-toggle">
+            <a onclick="showMoreOptions()" href="#">Show options for event & mailing list integrations</a><br/><br/>
+        </div>
+        <div id="more-options" hidden>
+            <div style="color: red; font-size: 1.5em; font-weight: bold;">WARNING! If you are not sure what the below options are for, please do not change them.</div><br/>
+            <label>Facebook ID</label><input type="number" name="facebook-id" maxlength="16" value="{{ .Data.Chapter.ID }}" class="form-control" /><br />
+            <label>Facebook Token</label><input type="text" name="token" maxlength="200" value="{{ .Data.Chapter.Token }}" class="form-control" /><br />
+            <label>Eventbrite ID</label><input type="number" name="eventbrite-id" maxlength="16" value="{{ .Data.Chapter.EventbriteID }}" class="form-control" /><br />
+            <label>Eventbrite Token</label><input type="text" name="eventbrite-token" maxlength="200" value="{{ .Data.Chapter.EventbriteToken }}" class="form-control" /><br />
+            <label>Mailing List Type</label>
+            <select name="ml-type" class="form-control">
+                <option value="" {{ if eq .Data.Chapter.MailingListType "" }}selected="selected"{{ end }}>None</option>
+                <option value="Sendinblue" {{ if eq .Data.Chapter.MailingListType "Sendinblue" }}selected="selected"{{ end }}>Sendinblue</option>
+                <option value="Google Groups" {{ if eq .Data.Chapter.MailingListType "Google Groups" }}selected="selected"{{ end }}>Google Groups</option>
+            </select>
+            <br />
+            <label>Mailing List ID</label><input type="text" name="ml-id" maxlength="100" value="{{ .Data.Chapter.MailingListID }}" class="form-control" /><br />
+            <label>Mailing List Radius</label><input type="number" name="ml-radius" min="0" max="500" value="{{ .Data.Chapter.MailingListRadius }}" class="form-control" /><br />
+        </div>
+        <input type="hidden" name="gorilla.csrf.Token" value={{ .CsrfField }}>
+        <button class="btn btn-secondary" type="button" onclick="window.location.href='/list_chapters'">Cancel</button>
+        <input class="btn btn-success" type="submit" value="Save" />
     </form>
 
 </div>
 
 <script src="/dist/adb.js?{{ .StaticResourcesHash }}"></script>
+
+<script>
+    function showMoreOptions() {
+        document.getElementById("more-options").removeAttribute("hidden");
+        document.getElementById("more-options-toggle").setAttribute("hidden", "true")
+    }
+</script>
 
 {{template "footer.html" .}}

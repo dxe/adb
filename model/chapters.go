@@ -9,7 +9,7 @@ import (
 
 // TODO: consolidate these structs (will need to update some things in the database too)
 
-// used by public API
+// used by public API, which is polled by https://animalrightsmap.org
 type Chapter struct {
 	ID         int     `db:"chapter_id"`
 	FacebookID int     `db:"id"`
@@ -24,24 +24,27 @@ type Chapter struct {
 	Lng        float64 `db:"lng"`
 }
 
-// used for internal Chapters page on ADB, as well as syncing with FB and Eventbrite
+// used for internal Chapters page on ADB, syncing with FB and Eventbrite, and for display events on the website
 type ChapterWithToken struct {
-	ID              int     `db:"id"`
-	ChapterID       int     `db:"chapter_id"`
-	Name            string  `db:"name"`
-	Flag            string  `db:"flag"`
-	FbURL           string  `db:"fb_url"`
-	TwitterURL      string  `db:"twitter_url"`
-	InstaURL        string  `db:"insta_url"`
-	Email           string  `db:"email"`
-	Region          string  `db:"region"`
-	Lat             float64 `db:"lat"`
-	Lng             float64 `db:"lng"`
-	Distance        float32 `db:"distance"`
-	Token           string  `db:"token,omitempty"`
-	LastUpdate      string  `db:"last_update"`
-	EventbriteID    string  `db:"eventbrite_id"`
-	EventbriteToken string  `db:"eventbrite_token"`
+	ID                int     `db:"id"`
+	ChapterID         int     `db:"chapter_id"`
+	Name              string  `db:"name"`
+	Flag              string  `db:"flag"`
+	FbURL             string  `db:"fb_url"`
+	TwitterURL        string  `db:"twitter_url"`
+	InstaURL          string  `db:"insta_url"`
+	Email             string  `db:"email"`
+	Region            string  `db:"region"`
+	Lat               float64 `db:"lat"`
+	Lng               float64 `db:"lng"`
+	Distance          float32 `db:"distance"`
+	MailingListType   string  `db:"ml_type"`
+	MailingListRadius int     `db:"ml_radius"`
+	MailingListID     string  `db:"ml_id"`
+	Token             string  `db:"token,omitempty"`
+	LastUpdate        string  `db:"last_update"`
+	EventbriteID      string  `db:"eventbrite_id"`
+	EventbriteToken   string  `db:"eventbrite_token"`
 }
 
 // used for making api calls to facebook, not for responding to our api requests
@@ -72,9 +75,9 @@ func GetChaptersWithEventbriteTokens(db *sqlx.DB) ([]ChapterWithToken, error) {
 	return pages, nil
 }
 
-// for the chapter management admin page on the ADB itself -- NOTE THAT THIS RETURNS TOKENS, SO IT SHOULD NOT BE MADE PUBLIC
+// for the chapter management admin page on the ADB itself – NOTE THAT THIS RETURNS TOKENS, SO IT SHOULD NOT BE MADE PUBLIC
 func GetAllChapters(db *sqlx.DB) ([]ChapterWithToken, error) {
-	query := `SELECT fb_pages.id, chapter_id, fb_pages.name, flag, fb_url, twitter_url, insta_url, email, region, fb_pages.lat, fb_pages.lng, token, fb_pages.eventbrite_id, eventbrite_token,
+	query := `SELECT fb_pages.id, chapter_id, fb_pages.name, flag, fb_url, twitter_url, insta_url, email, region, fb_pages.lat, fb_pages.lng, token, fb_pages.eventbrite_id, eventbrite_token, ml_type, ml_radius, ml_id,
 	
 		@last_update := IFNULL((
 		  SELECT max(last_update) AS last_update
@@ -96,7 +99,7 @@ func GetAllChapters(db *sqlx.DB) ([]ChapterWithToken, error) {
 
 // for the chapter management admin page on the ADB itself
 func GetChapterByID(db *sqlx.DB, id int) (ChapterWithToken, error) {
-	query := `SELECT id, chapter_id, name, flag, fb_url, twitter_url, insta_url, email, region, lat, lng, token, eventbrite_id, eventbrite_token
+	query := `SELECT id, chapter_id, name, flag, fb_url, twitter_url, insta_url, email, region, lat, lng, token, eventbrite_id, eventbrite_token, ml_type, ml_radius, ml_id
 		FROM fb_pages
 		WHERE chapter_id = ?`
 	var pages []ChapterWithToken
@@ -128,7 +131,10 @@ func UpdateChapter(db *sqlx.DB, page ChapterWithToken) error {
 		lng = :lng,
 		token = :token,
 		eventbrite_id = :eventbrite_id,
-		eventbrite_token = :eventbrite_token
+		eventbrite_token = :eventbrite_token,
+		ml_type = :ml_type,
+		ml_radius = :ml_radius,
+		ml_id = :ml_id
 		WHERE chapter_id = :chapter_id`, page)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update chapter %d", page.ID)
@@ -148,8 +154,8 @@ func DeleteChapter(db *sqlx.DB, page ChapterWithToken) error {
 
 // for the chapter management admin page on the ADB itself
 func InsertChapter(db *sqlx.DB, page ChapterWithToken) error {
-	_, err := db.NamedExec(`INSERT INTO fb_pages ( id, name, flag, fb_url, insta_url, twitter_url, email, region, lat, lng, token, eventbrite_id, eventbrite_token )
-		VALUES ( :id, :name, :flag, :fb_url, :insta_url, :twitter_url, :email, :region, :lat, :lng, :token, :eventbrite_id, :eventbrite_token )`, page)
+	_, err := db.NamedExec(`INSERT INTO fb_pages ( id, name, flag, fb_url, insta_url, twitter_url, email, region, lat, lng )
+		VALUES ( :id, :name, :flag, :fb_url, :insta_url, :twitter_url, :email, :region, :lat, :lng )`, page)
 	if err != nil {
 		return errors.Wrapf(err, "failed to insert chapter %d", page.ID)
 	}
@@ -172,10 +178,11 @@ func GetAllChapterInfo(db *sqlx.DB) ([]Chapter, error) {
 
 // TODO: update this function (and the website) to handle data in the normal Chapter struct instead of w/ Token
 func FindNearestChapters(db *sqlx.DB, lat float64, lng float64) ([]ChapterWithToken, error) {
-	query := `SELECT id, name, flag, fb_url, region, (3959*acos(cos(radians(` + fmt.Sprintf("%f", lat) + `))*cos(radians(lat))* 
+	query := `SELECT id, name, flag, fb_url, region, ml_type, ml_radius, ml_id, (3959*acos(cos(radians(` + fmt.Sprintf("%f", lat) + `))*cos(radians(lat))* 
 		cos(radians(lng)-radians(` + fmt.Sprintf("%f", lng) + `))+sin(radians(` + fmt.Sprintf("%f", lat) + `))* 
 		sin(radians(lat)))) AS distance
 		FROM fb_pages
+		WHERE region <> 'Online'
 		ORDER BY distance
 		LIMIT 3`
 	var pages []ChapterWithToken // we aren't actually getting tokens, but the website expects the FB ID to be in the ID field

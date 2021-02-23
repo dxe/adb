@@ -211,7 +211,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	// Unauthed API
 	router.HandleFunc("/tokensignin", main.TokenSignInHandler)
 	router.HandleFunc("/external_events/{page_id:[0-9]+}", main.ListFBEventsHandler)
-	router.HandleFunc("/chapters/{lat:[0-9.\\-]+},{lng:[0-9.\\-]+}", main.FindNearestFacebookPagesHandler)
+	router.HandleFunc("/chapters/{lat:[0-9.\\-]+},{lng:[0-9.\\-]+}", main.FindNearestChaptersHandler)
 	router.HandleFunc("/regions", main.ListAllChaptersByRegion)
 	router.HandleFunc("/chapters", main.ListAllChapters)
 	router.HandleFunc("/circles", main.CircleGroupNormalListHandler) // TODO: maybe the public endpoints should return less info
@@ -690,6 +690,13 @@ func (c MainController) ChapterUpdateHandler(w http.ResponseWriter, r *http.Requ
 		page.Token = r.FormValue("token")
 		page.EventbriteID = r.FormValue("eventbrite-id")
 		page.EventbriteToken = r.FormValue("eventbrite-token")
+		page.MailingListType = r.FormValue("ml-type")
+		page.MailingListID = r.FormValue("ml-id")
+		mailingListRadius, err := strconv.Atoi(r.FormValue("ml-radius"))
+		if err != nil {
+			panic(err.Error())
+		}
+		page.MailingListRadius = mailingListRadius
 		err = model.UpdateChapter(c.db, page)
 		if err != nil {
 			panic(err.Error())
@@ -1523,7 +1530,7 @@ func (c MainController) ListFBEventsHandler(w http.ResponseWriter, r *http.Reque
 	})
 }
 
-func (c MainController) FindNearestFacebookPagesHandler(w http.ResponseWriter, r *http.Request) {
+func (c MainController) FindNearestChaptersHandler(w http.ResponseWriter, r *http.Request) {
 	// get lat, lng
 	vars := mux.Vars(r)
 	var lat float64
