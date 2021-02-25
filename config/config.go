@@ -40,7 +40,7 @@ var (
 	SurveyMissingEmail = mustGetenv("SURVEY_MISSING_EMAIL", "", false)
 	SurveyFromEmail    = mustGetenv("SURVEY_FROM_EMAIL", "", false)
 
-	// for IP geolocation
+	// For IP geolocation
 	IPGeolocationKey = mustGetenv("IPGEOLOCATION_KEY", "", false)
 
 	// For members.dxesf.org
@@ -53,6 +53,10 @@ var (
 	DiscordFromEmail      = mustGetenv("DISCORD_FROM_EMAIL", "", false)
 	DiscordModeratorEmail = mustGetenv("DISCORD_MODERATOR_EMAIL", "", false)
 	SupportEmail          = mustGetenv("SUPPORT_EMAIL", "tech@dxe.io", false)
+
+	// For mailing list signups
+	SignupURI    = mustGetenv("SIGNUP_ENDPOINT", "", false)
+	SignupAPIKey = mustGetenv("SIGNUP_KEY", "", false)
 )
 
 func mustGetenv(key, fallback string, mandatory bool) string {

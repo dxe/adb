@@ -22,7 +22,7 @@ import (
 	"github.com/dxe/adb/config"
 	"github.com/dxe/adb/discord"
 	"github.com/dxe/adb/event_sync"
-	"github.com/dxe/adb/mailinglist_sync"
+	"github.com/dxe/adb/google_groups_sync"
 	"github.com/dxe/adb/members"
 	"github.com/dxe/adb/model"
 	"github.com/dxe/adb/survey_mailer"
@@ -2009,7 +2009,7 @@ func main() {
 	n.UseHandler(r)
 
 	if config.RunBackgroundJobs {
-		go mailinglist_sync.StartMailingListsSync(db)
+		go google_groups_sync.StartMailingListsSync(db)
 		go survey_mailer.StartSurveyMailer(db)
 		go event_sync.StartExternalEventSync(db)
 	}

@@ -6,7 +6,7 @@ COPY go.mod go.sum ./
 RUN GOFLAGS=-mod=readonly GOPROXY=https://proxy.golang.org go mod download
 COPY main.go ./
 COPY config config/
-COPY mailinglist_sync mailinglist_sync/
+COPY google_groups_sync mailinglist_sync/
 COPY survey_mailer survey_mailer/
 COPY event_sync event_sync/
 COPY members members/

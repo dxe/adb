@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dxe/adb/mailing_list_signup"
+
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
@@ -1054,7 +1056,35 @@ func UpdateActivistData(db *sqlx.DB, activist ActivistExtra, userEmail string) (
 		return 0, errors.New("Name cannot be empty")
 	}
 
-	_, err := db.NamedExec(`UPDATE activists
+	// get original activist to see if we need to update the mailing list
+	orig, err := GetActivistsExtra(db, GetActivistOptions{
+		ID: activist.ID,
+	})
+	origActivist := orig[0]
+
+	if activist.Name != origActivist.Name ||
+		activist.Email != origActivist.Email ||
+		activist.Phone != origActivist.Phone ||
+		activist.Location != origActivist.Location ||
+		activist.City != origActivist.City ||
+		activist.State != origActivist.State {
+		signup := mailing_list_signup.Signup{
+			Source: "adb",
+			Name:   activist.Name,
+			Email:  activist.Email,
+			Phone:  activist.Phone,
+			City:   activist.City,
+			State:  activist.State,
+			Zip:    activist.Location.String,
+		}
+		err := mailing_list_signup.Enqueue(signup)
+		if err != nil {
+			// Don't return this error because we still want to successfully update the activist in the database.
+			fmt.Println("ERROR updating activist on mailing list:", err.Error())
+		}
+	}
+
+	_, err = db.NamedExec(`UPDATE activists
 SET
 
   email = :email,

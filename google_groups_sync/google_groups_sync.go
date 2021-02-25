@@ -1,4 +1,4 @@
-package mailinglist_sync
+package google_groups_sync
 
 import (
 	"context"
