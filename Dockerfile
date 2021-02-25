@@ -6,12 +6,13 @@ COPY go.mod go.sum ./
 RUN GOFLAGS=-mod=readonly GOPROXY=https://proxy.golang.org go mod download
 COPY main.go ./
 COPY config config/
-COPY google_groups_sync mailinglist_sync/
+COPY google_groups_sync google_groups_sync/
 COPY survey_mailer survey_mailer/
 COPY event_sync event_sync/
 COPY members members/
 COPY model model/
 COPY discord discord/
+COPY mailing_list_signup mailing_list_signup/
 RUN CGO_ENABLED=0 go build -o adb
 
 
