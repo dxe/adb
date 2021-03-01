@@ -1062,12 +1062,13 @@ func UpdateActivistData(db *sqlx.DB, activist ActivistExtra, userEmail string) (
 	})
 	origActivist := orig[0]
 
-	if activist.Name != origActivist.Name ||
+	if (activist.Name != origActivist.Name ||
 		activist.Email != origActivist.Email ||
 		activist.Phone != origActivist.Phone ||
 		activist.Location != origActivist.Location ||
 		activist.City != origActivist.City ||
-		activist.State != origActivist.State {
+		activist.State != origActivist.State) &&
+		activist.Email != "" {
 		signup := mailing_list_signup.Signup{
 			Source: "adb",
 			Name:   activist.Name,
