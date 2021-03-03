@@ -21,15 +21,16 @@ type ApplicationFormData struct {
 }
 
 type InterestFormData struct {
-	Form            string `json:"form" db:"form"`
-	Name            string `json:"name" db:"name"`
-	Email           string `json:"email" db:"email"`
-	Zip             string `json:"zip" db:"zip"`
-	Phone           string `json:"phone" db:"phone"`
-	ReferralFriends string `json:"referralFriends" db:"referral_friends"`
-	ReferralApply   string `json:"referralApply" db:"referral_apply"`
-	ReferralOutlet  string `json:"referralOutlet" db:"referral_outlet"`
-	Interests       string `json:"interests" db:"interests"`
+	Form                      string `json:"form" db:"form"`
+	Name                      string `json:"name" db:"name"`
+	Email                     string `json:"email" db:"email"`
+	Zip                       string `json:"zip" db:"zip"`
+	Phone                     string `json:"phone" db:"phone"`
+	ReferralFriends           string `json:"referralFriends" db:"referral_friends"`
+	ReferralApply             string `json:"referralApply" db:"referral_apply"`
+	ReferralOutlet            string `json:"referralOutlet" db:"referral_outlet"`
+	Interests                 string `json:"interests" db:"interests"`
+	SubmittedViaSignupService bool   `json:"submitted_via_signup_service"`
 }
 
 func SubmitApplicationForm(db *sqlx.DB, formData ApplicationFormData) error {
@@ -71,17 +72,19 @@ func SubmitInterestForm(db *sqlx.DB, formData InterestFormData) error {
 		return errors.Wrap(err, "failed to insert interest data")
 	}
 
-	signup := mailing_list_signup.Signup{
-		Source: "adb-interest-form",
-		Name:   formData.Name,
-		Email:  formData.Email,
-		Phone:  formData.Phone,
-		Zip:    formData.Zip,
-	}
-	err = mailing_list_signup.Enqueue(signup)
-	if err != nil {
-		// Don't return this error because we still want to successfully update the database.
-		fmt.Println("ERROR adding application form submission to mailing list:", err.Error())
+	if !formData.SubmittedViaSignupService {
+		signup := mailing_list_signup.Signup{
+			Source: "adb-interest-form",
+			Name:   formData.Name,
+			Email:  formData.Email,
+			Phone:  formData.Phone,
+			Zip:    formData.Zip,
+		}
+		err = mailing_list_signup.Enqueue(signup)
+		if err != nil {
+			// Don't return this error because we still want to successfully update the database.
+			fmt.Println("ERROR adding application form submission to mailing list:", err.Error())
+		}
 	}
 
 	return nil
