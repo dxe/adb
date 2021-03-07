@@ -420,6 +420,11 @@ export default Vue.extend({
       for (let attendee of this.attendees) {
         attendee = attendee.trim();
         if (attendee != '' && !attendeesSet.has(attendee)) {
+          // check that attendee has first & last name
+          if (attendee.indexOf(' ') == -1) {
+            flashMessage('Error: New activists must have first and last name.', true);
+            return;
+          }
           attendees.push(attendee);
           attendeesSet.add(attendee);
         }
