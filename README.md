@@ -32,13 +32,6 @@ CREATE DATABASE adb_test_db CHARACTER SET utf8 COLLATE utf8_general_ci;
 
 Then run `make dev_db`.
 
-### Environment variables required for surveys to be sent
-- AWS_ACCESS_KEY_ID
-- AWS_SECRET_KEY
-- AWS_SES_ENDPOINT (example: https://email.us-west-2.amazonaws.com)
-- SURVEY_FROM_EMAIL (address surveys should be sent from)
-- SURVEY_MISSING_EMAIL (address to alert is survey recipients are missing email address)
-
 ## JS
 
 This project uses webpack to compile our frontend files. Frontend
@@ -60,3 +53,52 @@ webpack.js.config.
 The most convenient workflow is to run `make watch` in one terminal
 and `make run` in another one. Then your JS changes will automatically
 be built as you edit them.
+
+## Required enviornment variables for running in prod:
+
+- ADB_URL_PATH: For example, "http://adb.domain.com"
+- PORT: The port to run the webserver on
+- DB_USER
+- DB_PASSWORD
+- DB_NAME
+- DB_PROTOCOL: For example, "tcp([host]:[port])"
+- PROD: [true or false]
+- RUN_BACKGROUND_JOBS: [true or false] should only be true on at most one instance if load balancing
+- COOKIE_SECRET: [a random string]
+- CSRF_AUTH_KEY: [a random string]
+
+## Optional environment variables
+
+### For signing people up to DxE's main mailing list & chapter-specific mailing lists (please reach out to tech@dxe.io to get an API key to sign people up)
+- SIGNUP_ENDPOINT
+- SIGNUP_KEY
+
+### For syncing with a chapter's internal Google Groups (for example, working group lists):
+- SYNC_MAILING_LISTS_CONFIG_FILE: relative path to client_secrets.json if syncing with google groups
+- SYNC_MAILING_LISTS_OAUTH_SUBJECT: google account to use to sync
+
+### For sending surveys to event attendees via Amazon SES:
+- AWS_ACCESS_KEY_ID
+- AWS_SECRET_KEY
+- AWS_SES_ENDPOINT: For example, "https://email.us-west-2.amazonaws.com"
+- SURVEY_FROM_EMAIL: For example, "ADB Surveys \<no-reply@domain.com\>"
+- SURVEY_MISSING_EMAIL: Email to send survey errors to
+
+### Google Cloud client ID/secret for the Members page:
+- MEMBERS_CLIENT_ID
+- MEMBERS_CLIENT_SECRET
+
+### ipgeolocation.io key for finding nearby upcoming events based on a user's IP address (used w/ public-facing API):
+- IPGEOLOCATION_KEY
+
+### Discord config for verifying accounts:
+- DISCORD_SECRET
+- DISCORD_BOT_BASE_URL
+- DISCORD_FROM_EMAIL
+- SUPPORT_EMAIL
+- DISCORD_MODERATOR_EMAIL
+
+### Deprecated variables that will soon be removed:
+- ROUTE_0="none"
+- ROUTE_1="none"
+- ROUTE_2="none"
