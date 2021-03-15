@@ -21,6 +21,7 @@ import (
 	"github.com/dxe/adb/mailer"
 
 	oidc "github.com/coreos/go-oidc"
+	"github.com/dxe/adb/adb-forms/processor"
 	"github.com/dxe/adb/config"
 	"github.com/dxe/adb/discord"
 	"github.com/dxe/adb/event_sync"
@@ -2072,6 +2073,7 @@ func main() {
 		go google_groups_sync.StartMailingListsSync(db)
 		go survey_mailer.StartSurveyMailer(db)
 		go event_sync.StartExternalEventSync(db)
+		go processor.StartFormProcessor()
 	}
 
 	fmt.Println("Listening on localhost:" + config.Port)
