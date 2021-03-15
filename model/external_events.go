@@ -71,6 +71,7 @@ func InsertExternalEvent(db *sqlx.DB, event ExternalEvent) (err error) {
 
 	// insert into database
 	// TODO: we should store eventbrite event info in a separate table so that we can just do "REPLACE INTO here" instead of handling "ON DUPLICATE KEY"
+	// TODO: used NamedExec here to make it more maintainable
 	_, err = db.Exec(`INSERT INTO fb_events (id, page_id, name, description, start_time, end_time,
 		location_name, location_city, location_country, location_state, location_address, location_zip,
 		lat, lng, cover, attending_count, interested_count, is_canceled, last_update) VALUES

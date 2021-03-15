@@ -1817,7 +1817,7 @@ func (c MainController) DiscordConfirmHandler(w http.ResponseWriter, r *http.Req
 			log.Println("Error updating Discord nickname!", err)
 		}
 
-		// add roles & send welcome message
+		// add roles & send welcome message - TODO: clean this up to not use so many elses
 		welcomeMessage := ""
 		if activists[0].ActivistLevel == "Chapter Member" {
 			err = discord.AddUserRole(user.ID, "Verified")

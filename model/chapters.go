@@ -82,10 +82,9 @@ func GetAllChapters(db *sqlx.DB) ([]ChapterWithToken, error) {
 		@last_update := IFNULL((
 		  SELECT max(last_update) AS last_update
 		  FROM fb_events
-		  JOIN fb_pages inner_pages ON inner_pages.id = fb_events.page_id
-		  WHERE inner_pages.id = fb_events.page_id    
-	  	), "") AS last_update
-	  
+		  WHERE fb_pages.id = fb_events.page_id    
+		), "") AS last_update
+		
 		FROM fb_pages
 		ORDER BY name`
 	var pages []ChapterWithToken
