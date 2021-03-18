@@ -55,7 +55,6 @@ var (
 	DiscordBotBaseUrl     = mustGetenv("DISCORD_BOT_BASE_URL", "http://localhost:6070", false)
 	DiscordFromEmail      = mustGetenv("DISCORD_FROM_EMAIL", "", false)
 	DiscordModeratorEmail = mustGetenv("DISCORD_MODERATOR_EMAIL", "", false)
-	SupportEmail          = mustGetenv("SUPPORT_EMAIL", "tech@dxe.io", false)
 
 	// For mailing list signups
 	SignupURI    = mustGetenv("SIGNUP_ENDPOINT", "", false)

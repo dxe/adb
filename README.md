@@ -98,7 +98,6 @@ be built as you edit them.
 - DISCORD_SECRET
 - DISCORD_BOT_BASE_URL
 - DISCORD_FROM_EMAIL
-- SUPPORT_EMAIL
 - DISCORD_MODERATOR_EMAIL
 
 ### Deprecated variables that will soon be removed:

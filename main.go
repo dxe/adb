@@ -1895,7 +1895,7 @@ func (c MainController) DiscordConfirmHandler(w http.ResponseWriter, r *http.Req
 	renderPage(w, r, "discord", PageData{
 		PageName: "Error",
 		Data: map[string]interface{}{
-			"message": "There was a problem verifying your email. Please try again or contact " + template.HTML(`<a href="mailto:`+config.SupportEmail+`">`+config.SupportEmail+`</a>`) + ".",
+			"message": "There was a problem verifying your email. Please try again or contact " + template.HTML(`<a href="mailto:`+config.DiscordModeratorEmail+`">`+config.DiscordModeratorEmail+`</a>`) + ".",
 		},
 	})
 	return
