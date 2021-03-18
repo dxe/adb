@@ -77,10 +77,13 @@ be built as you edit them.
 - SYNC_MAILING_LISTS_CONFIG_FILE: relative path to client_secrets.json if syncing with google groups
 - SYNC_MAILING_LISTS_OAUTH_SUBJECT: google account to use to sync
 
-### For sending surveys to event attendees via Amazon SES:
-- AWS_ACCESS_KEY_ID
-- AWS_SECRET_KEY
-- AWS_SES_ENDPOINT: For example, "https://email.us-west-2.amazonaws.com"
+### For sending emails via SMTP:
+- SMTP_HOST
+- SMTP_PORT  
+- SMTP_USER
+- SMTP_PASSWORD
+
+### For sending surveys to event attendees:
 - SURVEY_FROM_EMAIL: For example, "ADB Surveys \<no-reply@domain.com\>"
 - SURVEY_MISSING_EMAIL: Email to send survey errors to
 

@@ -33,10 +33,13 @@ var (
 	// take action as.
 	SyncMailingListsOauthSubject = mustGetenv("SYNC_MAILING_LISTS_OAUTH_SUBJECT", "", false)
 
-	// For sending surveys
-	AWSAccessKey       = mustGetenv("AWS_ACCESS_KEY_ID", "", false)
-	AWSSecretKey       = mustGetenv("AWS_SECRET_KEY", "", false)
-	AWSSESEndpoint     = mustGetenv("AWS_SES_ENDPOINT", "", false)
+	// For sending email
+	SMTPHost     = mustGetenv("SMTP_HOST", "", false)
+	SMTPPort     = mustGetenv("SMTP_PORT", "", false)
+	SMTPUser     = mustGetenv("SMTP_USER", "", false)
+	SMTPPassword = mustGetenv("SMTP_PASSWORD", "", false)
+
+	// For surveys
 	SurveyMissingEmail = mustGetenv("SURVEY_MISSING_EMAIL", "", false)
 	SurveyFromEmail    = mustGetenv("SURVEY_FROM_EMAIL", "", false)
 

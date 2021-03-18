@@ -18,6 +18,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dxe/adb/mailer"
+
 	oidc "github.com/coreos/go-oidc"
 	"github.com/dxe/adb/config"
 	"github.com/dxe/adb/discord"
@@ -32,7 +34,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/justinas/alice"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/go-ses"
 	"github.com/urfave/negroni"
 )
 
@@ -1726,13 +1727,18 @@ func (c MainController) DiscordGenerateHandler(w http.ResponseWriter, r *http.Re
 	}
 
 	// trigger email to be sent w/ verification link
-	if config.DiscordFromEmail != "" && config.AWSAccessKey != "" && config.AWSSecretKey != "" && config.AWSSESEndpoint != "" {
+	if config.DiscordFromEmail != "" {
 		subjectText := "Please verify your email"
 		// TODO: make nicer looking email
 		confirmLink := config.UrlPath + "/discord/confirm/" + strconv.Itoa(user.ID) + "/" + user.Token
-		bodyText := "Hello, Please click this link to verify your email address: " + confirmLink + " Cheers, The DxE Discord Bot"
 		bodyHtml := `<p>Hello,</p><p>Please click the link below to verify your email address.</p><p><a href="` + confirmLink + `">CONFIRM</a></p><p>Cheers,<br />The DxE Discord Bot</p><br /><br /><br /><p><em>This email was sent to you by DxE to verify your email address for Discord. If you did not request this verification, please do not click the above link.</em></p>`
-		_, err = ses.EnvConfig.SendEmailHTML(config.DiscordFromEmail, user.Email, subjectText, bodyText, bodyHtml)
+		err = mailer.Send(mailer.Message{
+			FromName:    "DxE Discord",
+			FromAddress: config.DiscordFromEmail,
+			ToEmail:     user.Email,
+			Subject:     subjectText,
+			BodyHTML:    bodyHtml,
+		})
 		if err != nil {
 			panic(err.Error())
 		}
@@ -1859,8 +1865,14 @@ func (c MainController) DiscordConfirmHandler(w http.ResponseWriter, r *http.Req
 		}
 
 		// send email to alert discord mods to add this person to working group roles
-		emailBody := activists[0].Name + "(" + activists[0].ActivistLevel + ") confirmed their account on Discord. Please manually add their working group roles if needed."
-		_, err = ses.EnvConfig.SendEmailHTML(config.DiscordFromEmail, config.DiscordModeratorEmail, "Discord user confirmed", emailBody, emailBody)
+		emailBody := activists[0].Name + " (" + activists[0].ActivistLevel + ") confirmed their account on Discord. Please manually add their working group roles if needed."
+		err = mailer.Send(mailer.Message{
+			FromName:    "DxE Discord",
+			FromAddress: config.DiscordFromEmail,
+			ToEmail:     config.DiscordModeratorEmail,
+			Subject:     "Discord user confirmed",
+			BodyHTML:    emailBody,
+		})
 		if err != nil {
 			log.Println("Error sending Discord alert email to moderators!", err)
 		}
@@ -2000,6 +2012,7 @@ func (c MainController) InterestFormHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func main() {
+
 	fmt.Println("IsProd =", config.IsProd)
 
 	n := negroni.New()
