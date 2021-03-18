@@ -84,7 +84,7 @@ be built as you edit them.
 - SMTP_PASSWORD
 
 ### For sending surveys to event attendees:
-- SURVEY_FROM_EMAIL: For example, "ADB Surveys \<no-reply@domain.com\>"
+- SURVEY_FROM_EMAIL
 - SURVEY_MISSING_EMAIL: Email to send survey errors to
 
 ### Google Cloud client ID/secret for the Members page:
