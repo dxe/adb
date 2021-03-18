@@ -37,20 +37,22 @@ func sendMissingEmail(eventName string, attendees []string, sendingErrors []stri
 		bodyHtml += "</p>"
 	}
 
-	if bodyHtml != "" {
-		err := mailer.Send(mailer.Message{
-			FromName:    "DxE Surveys",
-			FromAddress: config.SurveyFromEmail,
-			ToEmail:     config.SurveyMissingEmail,
-			Subject:     subject,
-			BodyHTML:    bodyHtml,
-		})
-		if err != nil {
-			log.Println("ERROR sending email of missing emails and errors.")
-			return
-		}
-		log.Println("Sent email of missing emails and errors.")
+	if bodyHtml == "" {
+		return
 	}
+
+	err := mailer.Send(mailer.Message{
+		FromName:    "DxE Surveys",
+		FromAddress: config.SurveyFromEmail,
+		ToEmail:     config.SurveyMissingEmail,
+		Subject:     subject,
+		BodyHTML:    bodyHtml,
+	})
+	if err != nil {
+		log.Println("ERROR sending email of missing emails and errors.")
+		return
+	}
+	log.Println("Sent email of missing emails and errors.")
 }
 
 func bulkSendEmails(event model.Event, subject string, bodyHtml string) {
