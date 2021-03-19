@@ -775,6 +775,8 @@ type PageData struct {
 	UserEmail string
 	// Filled in by renderPage.
 	StaticResourcesHash string
+	// Only used on International Form page
+	GooglePlacesAPIKey string
 }
 
 // Render a page. All templates that load a header expect a PageData
@@ -1955,6 +1957,8 @@ func (c MainController) ApplicationFormHandler(w http.ResponseWriter, r *http.Re
 	}
 	if r.Method == "POST" {
 
+		// TODO: verify the request is coming from our frontend & not someone else
+
 		var formData model.ApplicationFormData
 
 		err := json.NewDecoder(r.Body).Decode(&formData)
@@ -1969,7 +1973,8 @@ func (c MainController) ApplicationFormHandler(w http.ResponseWriter, r *http.Re
 			fmt.Println(err.Error())
 			fmt.Println(formData)
 			writeJSON(w, map[string]interface{}{
-				"status": "error",
+				"status":  "error",
+				"message": err.Error(),
 			})
 			return
 		}
@@ -1987,6 +1992,9 @@ func (c MainController) InterestFormHandler(w http.ResponseWriter, r *http.Reque
 		})
 	}
 	if r.Method == "POST" {
+
+		// TODO: verify the request is coming from our frontend & not someone else
+
 		var formData model.InterestFormData
 
 		err := json.NewDecoder(r.Body).Decode(&formData)
@@ -2001,7 +2009,8 @@ func (c MainController) InterestFormHandler(w http.ResponseWriter, r *http.Reque
 			fmt.Println(err.Error())
 			fmt.Println(formData)
 			writeJSON(w, map[string]interface{}{
-				"status": "error",
+				"status":  "error",
+				"message": err.Error(),
 			})
 			return
 		}
@@ -2015,33 +2024,37 @@ func (c MainController) InterestFormHandler(w http.ResponseWriter, r *http.Reque
 func (c MainController) InternationalFormHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		renderPage(w, r, "form_international", PageData{
-			PageName: "FormInternational",
+			PageName:           "FormInternational",
+			GooglePlacesAPIKey: config.GooglePlacesAPIKey,
 		})
 	}
 	if r.Method == "POST" {
 
-		//var formData model.ApplicationFormData
-		//
-		//err := json.NewDecoder(r.Body).Decode(&formData)
-		//if err != nil {
-		//	http.Error(w, err.Error(), http.StatusBadRequest)
-		//	return
-		//}
-		//
-		//err = model.SubmitApplicationForm(c.db, formData)
-		//
-		//if err != nil {
-		//	fmt.Println(err.Error())
-		//	fmt.Println(formData)
-		//	writeJSON(w, map[string]interface{}{
-		//		"status": "error",
-		//	})
-		//	return
-		//}
-		//
-		//writeJSON(w, map[string]interface{}{
-		//	"status": "success",
-		//})
+		// TODO: verify the request is coming from our frontend & not someone else
+
+		var formData model.InternationalFormData
+
+		err := json.NewDecoder(r.Body).Decode(&formData)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		err = model.SubmitInternationalForm(c.db, formData)
+
+		if err != nil {
+			fmt.Println(err.Error())
+			fmt.Println(formData)
+			writeJSON(w, map[string]interface{}{
+				"status":  "error",
+				"message": err.Error(),
+			})
+			return
+		}
+
+		writeJSON(w, map[string]interface{}{
+			"status": "success",
+		})
 	}
 }
 

@@ -7,7 +7,7 @@ import UserList from './UserList.vue';
 import WorkingGroupList from './WorkingGroupList.vue';
 import FormApply from './FormApply.vue';
 import FormInterest from './FormInterest.vue';
-import FormInternational from "./FormInternational.vue";
+import FormInternational from './FormInternational.vue';
 
 new Vue({
   el: '#app',
@@ -23,4 +23,3 @@ new Vue({
     FormInternational,
   },
 });
-
