@@ -175,7 +175,8 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.HandleFunc("/login", main.LoginHandler)
 	router.HandleFunc("/logout", main.LogoutHandler)
 	router.HandleFunc("/apply", main.ApplicationFormHandler)
-	router.HandleFunc("/interest", main.InterestFormHandler) // TODO: allow URL params
+	router.HandleFunc("/interest", main.InterestFormHandler)
+	router.HandleFunc("/international", main.InternationalFormHandler)
 
 	// Error pages
 	router.HandleFunc("/403", main.ForbiddenHandler)
@@ -2008,6 +2009,39 @@ func (c MainController) InterestFormHandler(w http.ResponseWriter, r *http.Reque
 		writeJSON(w, map[string]interface{}{
 			"status": "success",
 		})
+	}
+}
+
+func (c MainController) InternationalFormHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "GET" {
+		renderPage(w, r, "form_international", PageData{
+			PageName: "FormInternational",
+		})
+	}
+	if r.Method == "POST" {
+
+		//var formData model.ApplicationFormData
+		//
+		//err := json.NewDecoder(r.Body).Decode(&formData)
+		//if err != nil {
+		//	http.Error(w, err.Error(), http.StatusBadRequest)
+		//	return
+		//}
+		//
+		//err = model.SubmitApplicationForm(c.db, formData)
+		//
+		//if err != nil {
+		//	fmt.Println(err.Error())
+		//	fmt.Println(formData)
+		//	writeJSON(w, map[string]interface{}{
+		//		"status": "error",
+		//	})
+		//	return
+		//}
+		//
+		//writeJSON(w, map[string]interface{}{
+		//	"status": "success",
+		//})
 	}
 }
 
