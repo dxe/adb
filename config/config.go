@@ -59,6 +59,9 @@ var (
 	// For mailing list signups
 	SignupURI    = mustGetenv("SIGNUP_ENDPOINT", "", false)
 	SignupAPIKey = mustGetenv("SIGNUP_KEY", "", false)
+
+	// For location picker on International form
+	GooglePlacesAPIKey = mustGetenv("GOOGLE_PLACES_API_KEY", "", false)
 )
 
 func mustGetenv(key, fallback string, mandatory bool) string {

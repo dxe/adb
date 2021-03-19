@@ -3,6 +3,8 @@ package model
 import (
 	"fmt"
 
+	"github.com/dxe/adb/mailer"
+
 	"github.com/dxe/adb/mailing_list_signup"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
@@ -31,6 +33,21 @@ type InterestFormData struct {
 	ReferralOutlet            string `json:"referralOutlet" db:"referral_outlet"`
 	Interests                 string `json:"interests" db:"interests"`
 	SubmittedViaSignupService bool   `json:"submitted_via_signup_service"`
+}
+
+type InternationalFormData struct {
+	FirstName   string  `json:"firstName" db:"first_name"`
+	LastName    string  `json:"lastName" db:"last_name"`
+	Email       string  `json:"email" db:"email"`
+	Phone       string  `json:"phone" db:"phone"`
+	Interest    string  `json:"interest" db:"interest"`
+	Skills      string  `json:"skills" db:"skills"`
+	Involvement string  `json:"involvement" db:"involvement"`
+	City        string  `json:"city" db:"city"`
+	State       string  `json:"state" db:"state"`
+	Country     string  `json:"country" db:"country"`
+	Lat         float64 `json:"lat" db:"lat"`
+	Lng         float64 `json:"lng" db:"lng"`
 }
 
 func SubmitApplicationForm(db *sqlx.DB, formData ApplicationFormData) error {
@@ -86,6 +103,69 @@ func SubmitInterestForm(db *sqlx.DB, formData InterestFormData) error {
 			fmt.Println("ERROR adding application form submission to mailing list:", err.Error())
 		}
 	}
+
+	return nil
+}
+
+func SubmitInternationalForm(db *sqlx.DB, formData InternationalFormData) error {
+	_, err := db.NamedExec(`INSERT INTO form_international
+		(first_name, last_name, email, phone, interest, skills, involvement, city, state, country, lat, lng)
+		VALUES
+		(:first_name, :last_name, :email, :phone, :interest, :skills, :involvement, :city, :state, :country, :lat, :lng)
+		`, formData)
+
+	if err != nil {
+		return errors.Wrap(err, "failed to insert international form data")
+	}
+
+	nearestChapters, err := FindNearestChapters(db, formData.Lat, formData.Lng)
+	if err != nil {
+		panic(err)
+	}
+	nearestChapter := nearestChapters[0]
+
+	// For now, send an email alert to the International Coordination team.
+	// TODO: Make the email body nicer using a template instead of Sprintf?
+	// TODO: eventually just email the person directly (as Ana?) instead of alerting the team.
+	body := fmt.Sprintf(`
+		<p><strong>Name:</strong> %v %v</p>
+		<p><strong>Email:</strong> %v</p>
+		<p><strong>Phone:</strong> %v</p>
+		<p><strong>Interest:</strong> %v</p>
+		<p><strong>Skills:</strong> %v</p>
+		<p><strong>Involvement:</strong> %v</p>
+		<p><strong>Location:</strong> %v %v %v</p>
+		<p><strong>Nearest chapter:</strong> %v (%.2f miles away)</p>
+`, formData.FirstName, formData.LastName, formData.Email, formData.Phone, formData.Interest, formData.Skills, formData.Involvement, formData.City, formData.State, formData.Country, nearestChapter.Name, nearestChapter.Distance)
+	err = mailer.Send(mailer.Message{
+		FromName:    "DxE International Signup",
+		FromAddress: "noreply@directactioneverywhere.com",
+		ToName:      "International Coordination",
+		//ToEmail:     "internationalcoordination@directactioneverywhere.com",
+		ToEmail:  "jake@dxe.io",
+		Subject:  fmt.Sprintf("New Signup: %v %v", formData.FirstName, formData.LastName),
+		BodyHTML: body,
+	})
+	if err != nil {
+		fmt.Println("failed to send email for international form submission")
+	}
+
+	// TODO: sign up to signup service w/ proper fields
+	// TODO: maybe using city/country is enough to find zipcode for US?
+	// TODO: then just use the lat/lng for others?
+	// TODO: make sure we don't trigger an "interest form"
+	//signup := mailing_list_signup.Signup{
+	//	Source: "adb-interest-form",
+	//	Name:   formData.Name,
+	//	Email:  formData.Email,
+	//	Phone:  formData.Phone,
+	//	Zip:    formData.Zip,
+	//}
+	//err = mailing_list_signup.Enqueue(signup)
+	//if err != nil {
+	//	// Don't return this error because we still want to successfully update the database.
+	//	fmt.Println("ERROR adding application form submission to mailing list:", err.Error())
+	//}
 
 	return nil
 }

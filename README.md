@@ -100,6 +100,9 @@ be built as you edit them.
 - DISCORD_FROM_EMAIL
 - DISCORD_MODERATOR_EMAIL
 
+### Google Places API Key for finding city information on International form
+- GOOGLE_PLACES_API_KEY
+
 ### Deprecated variables that will soon be removed:
 - ROUTE_0="none"
 - ROUTE_1="none"

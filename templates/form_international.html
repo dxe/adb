@@ -1,0 +1,10 @@
+{{template "header.html" .}}
+
+<script src="https://maps.googleapis.com/maps/api/js?key={{ .GooglePlacesAPIKey }}&libraries=places"></script>
+
+<div id="app">
+    <form-international></form-international>
+</div>
+<script src="/dist/adb.js?{{ .StaticResourcesHash }}"></script>
+
+{{template "footer.html" .}}
