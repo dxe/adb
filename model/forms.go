@@ -3,6 +3,8 @@ package model
 import (
 	"fmt"
 
+	"github.com/dxe/adb/mailer"
+
 	"github.com/dxe/adb/mailing_list_signup"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
@@ -116,7 +118,42 @@ func SubmitInternationalForm(db *sqlx.DB, formData InternationalFormData) error 
 		return errors.Wrap(err, "failed to insert international form data")
 	}
 
+	nearestChapters, err := FindNearestChapters(db, formData.Lat, formData.Lng)
+	if err != nil {
+		panic(err)
+	}
+	nearestChapter := nearestChapters[0]
+
+	// For now, send an email alert to the International Coordination team.
+	// TODO: Make the email body nicer using a template instead of Sprintf?
+	// TODO: eventually just email the person directly (as Ana?) instead of alerting the team.
+	body := fmt.Sprintf(`
+		<p><strong>Name:</strong> %v %v</p>
+		<p><strong>Email:</strong> %v</p>
+		<p><strong>Phone:</strong> %v</p>
+		<p><strong>Interest:</strong> %v</p>
+		<p><strong>Skills:</strong> %v</p>
+		<p><strong>Involvement:</strong> %v</p>
+		<p><strong>Location:</strong> %v %v %v</p>
+		<p><strong>Nearest chapter:</strong> %v (%.2f miles away)</p>
+`, formData.FirstName, formData.LastName, formData.Email, formData.Phone, formData.Interest, formData.Skills, formData.Involvement, formData.City, formData.State, formData.Country, nearestChapter.Name, nearestChapter.Distance)
+	err = mailer.Send(mailer.Message{
+		FromName:    "DxE International Signup",
+		FromAddress: "noreply@directactioneverywhere.com",
+		ToName:      "International Coordination",
+		//ToEmail:     "internationalcoordination@directactioneverywhere.com",
+		ToEmail:  "jake@dxe.io",
+		Subject:  fmt.Sprintf("New Signup: %v %v", formData.FirstName, formData.LastName),
+		BodyHTML: body,
+	})
+	if err != nil {
+		fmt.Println("failed to send email for international form submission")
+	}
+
 	// TODO: sign up to signup service w/ proper fields
+	// TODO: maybe using city/country is enough to find zipcode for US?
+	// TODO: then just use the lat/lng for others?
+	// TODO: make sure we don't trigger an "interest form"
 	//signup := mailing_list_signup.Signup{
 	//	Source: "adb-interest-form",
 	//	Name:   formData.Name,
