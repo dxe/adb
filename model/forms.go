@@ -137,14 +137,19 @@ func SubmitInternationalForm(db *sqlx.DB, formData InternationalFormData) error 
 		<p><strong>Location:</strong> %v %v %v</p>
 		<p><strong>Nearest chapter:</strong> %v (%.2f miles away)</p>
 `, formData.FirstName, formData.LastName, formData.Email, formData.Phone, formData.Interest, formData.Skills, formData.Involvement, formData.City, formData.State, formData.Country, nearestChapter.Name, nearestChapter.Distance)
+	if nearestChapter.FbURL != "" {
+		body += fmt.Sprintf(`<p><a href="%v">%v Facebook page</a></p>`, nearestChapter.FbURL, nearestChapter.Name)
+	}
+	if nearestChapter.Email != "" {
+		body += fmt.Sprintf(`<p><strong>Public email: </strong>%v</p>`, nearestChapter.Email)
+	}
 	err = mailer.Send(mailer.Message{
 		FromName:    "DxE International Signup",
 		FromAddress: "noreply@directactioneverywhere.com",
 		ToName:      "International Coordination",
-		//ToEmail:     "internationalcoordination@directactioneverywhere.com",
-		ToEmail:  "jake@dxe.io",
-		Subject:  fmt.Sprintf("New Signup: %v %v", formData.FirstName, formData.LastName),
-		BodyHTML: body,
+		ToEmail:     "internationalcoordination@directactioneverywhere.com",
+		Subject:     fmt.Sprintf("New Signup: %v %v", formData.FirstName, formData.LastName),
+		BodyHTML:    body,
 	})
 	if err != nil {
 		fmt.Println("failed to send email for international form submission")
