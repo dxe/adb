@@ -44,11 +44,11 @@
             <label>Mailing List Type</label>
             <select name="ml-type" class="form-control">
                 <option value="" {{ if eq .Data.Chapter.MailingListType "" }}selected="selected"{{ end }}>None</option>
-                <option value="Sendinblue" {{ if eq .Data.Chapter.MailingListType "Sendinblue" }}selected="selected"{{ end }}>Sendinblue</option>
+                <option value="Sendy" {{ if eq .Data.Chapter.MailingListType "Sendy" }}selected="selected"{{ end }}>Sendy</option>
                 <option value="Google Groups" {{ if eq .Data.Chapter.MailingListType "Google Groups" }}selected="selected"{{ end }}>Google Groups</option>
             </select>
             <br />
-            <label>Google Group Address</label><input type="text" name="ml-id" maxlength="100" value="{{ .Data.Chapter.MailingListID }}" class="form-control" /><br />
+            <label>Mailing List ID</label><input type="text" name="ml-id" maxlength="100" value="{{ .Data.Chapter.MailingListID }}" class="form-control" /><br />
             <label>Mailing List Radius</label><input type="number" name="ml-radius" min="0" max="500" value="{{ .Data.Chapter.MailingListRadius }}" class="form-control" /><br />
         </div>
         <input type="hidden" name="gorilla.csrf.Token" value={{ .CsrfField }}>
