@@ -2073,7 +2073,7 @@ func main() {
 		go google_groups_sync.StartMailingListsSync(db)
 		go survey_mailer.StartSurveyMailer(db)
 		go event_sync.StartExternalEventSync(db)
-		go processor.StartFormProcessor()
+		go processor.StartFormProcessor(db)
 	}
 
 	fmt.Println("Listening on localhost:" + config.Port)

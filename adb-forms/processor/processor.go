@@ -2,9 +2,9 @@ package processor
 
 import (
 	"context"
-	"database/sql"
 	"flag"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
 	"github.com/robfig/cron/v3"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -13,7 +13,7 @@ import (
 )
 
 // Should be run in a goroutine.
-func StartFormProcessor() {
+func StartFormProcessor(db *sqlx.DB) {
 	/* Define command-line arguments */
 	var logLevel = flag.Int("logLevel", 1, "log level (see https://github.com/rs/zerolog#leveled-logging)")
 	flag.Parse()
@@ -54,11 +54,11 @@ func StartFormProcessor() {
 	/* Start tasks on a scheduule */
 	cron := cron.New()
 	cron.AddFunc(mainEnv.sendLogByEmailCronExpression, sendLogByEmail)
-	cron.AddFunc(mainEnv.processFormsCronExpression, process)
+	cron.AddFunc(mainEnv.processFormsCronExpression, func() { process(db) })
 	cron.Run()
 }
 
-func process() {
+func process(db *sqlx.DB) {
 	log.Debug().Msg("starting processing run")
 	processEnv, ok := getProcessEnv()
 	if !ok {
@@ -80,15 +80,6 @@ func process() {
 	}
 	log.Debug().Msg("successfully created lock file; proceeding")
 
-	/* Open MySQL connection */
-	db, openDbErr := sql.Open("mysql", processEnv.mysqlConnectionString)
-	if openDbErr != nil {
-		log.Error().Msgf("error opening connection to database; exiting; %s", openDbErr)
-		removeLockFile(processEnv.lockFilePath)
-		return
-	}
-	defer db.Close()
-
 	/* Process form applications */
 	processForms(db)
 
@@ -105,7 +96,7 @@ func removeLockFile(lockFilePath string) {
 	}
 }
 
-func processForms(db *sql.DB) {
+func processForms(db *sqlx.DB) {
 	/* Get form applications to process */
 	applicationIds, isSuccess := getResponsesToProcess(db, applicationResponsesToProcessQuery)
 	if !isSuccess {

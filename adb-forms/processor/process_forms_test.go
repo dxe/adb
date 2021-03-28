@@ -1,7 +1,7 @@
 package processor
 
 import (
-	"database/sql"
+	"github.com/jmoiron/sqlx"
 	"github.com/lestrrat-go/test-mysqld"
 	"testing"
 )
@@ -11,13 +11,13 @@ type activist struct {
 	id int
 }
 
-func createTables(t *testing.T) (*mysqltest.TestMysqld, *sql.DB) {
+func createTables(t *testing.T) (*mysqltest.TestMysqld, *sqlx.DB) {
 	/* Set up MySQL */
 	mysqld, err := mysqltest.NewMysqld(nil)
 	if err != nil {
 		t.Fatalf("failed to start mysqld: %s", err)
 	}
-	db, err := sql.Open("mysql", mysqld.Datasource("test", "", "", 0))
+	db, err := sqlx.Open("mysql", mysqld.Datasource("test", "", "", 0))
 	if err != nil {
 		t.Fatalf("failed to open MySQL connection: %s", err)
 	}
@@ -46,7 +46,7 @@ func createTables(t *testing.T) (*mysqltest.TestMysqld, *sql.DB) {
 	return mysqld, db
 }
 
-func verifyFormWasMarkedAsProcessed(t *testing.T, db *sql.DB, query string) {
+func verifyFormWasMarkedAsProcessed(t *testing.T, db *sqlx.DB, query string) {
 	rawActivists, err := db.Query(getActivistsQuery)
 	defer rawActivists.Close()
 	if err != nil {

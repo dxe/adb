@@ -4,9 +4,8 @@
 2. Set a value for `MYSQL_CONNECTION_STRING` in `<project root>/.env` (e.g. by using a local MySQL instance)
 
 ### Commands
-- Run: `go run ./cmd/processor`
-- Test: `go test ./... -v`
-	- Run specific test: `go test ./... -v -run <test name>`
+- Test: From `adb-forms.`: `go test ./adb-forms/... -v`
+	- Run specific test: `go test ./adb-forms/... -v -run <test name>`
 
 
 # ADB Form Processor Overview

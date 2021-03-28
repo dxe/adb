@@ -3,8 +3,8 @@ package processor
 import (
 	"bytes"
 	"fmt"
+	"github.com/dxe/adb/mailer"
 	"github.com/rs/zerolog/log"
-	"gopkg.in/mail.v2"
 	"os"
 )
 
@@ -31,21 +31,15 @@ func sendLogByEmail() {
 	logFileContents := buffer.String()
 
 	/* Send the email */
-	m := mail.NewMessage()
-	m.SetHeader("From", "DxE Tech Server <tech-noreply@directactioneverywhere.com>")
-	m.SetHeader("To", sendLogByEmailEnv.emailTo)
-	m.SetHeader("Reply-To", "tech@dxe.io")
-	m.SetHeader("Subject", "Form processor log (from Go)")
-	m.SetBody("text/html", fmt.Sprintf("<div style='white-space: pre-line'>%s</div>", logFileContents))
+	sendErr := mailer.Send(mailer.Message{
+		FromName:    "DxE Tech Server",
+		FromAddress: "tech-noreply@directactioneverywhere.com",
+		ToEmail:     sendLogByEmailEnv.toAddress,
+		Subject:     "Form processor log (from ADB)",
+		BodyHTML:    fmt.Sprintf("<div style='white-space: pre-line'>%s</div>", logFileContents),
+	})
 
-	dialer := mail.NewDialer(
-		sendLogByEmailEnv.emailHost,
-		sendLogByEmailEnv.emailPort,
-		sendLogByEmailEnv.emailUsername,
-		sendLogByEmailEnv.emailPassword,
-	)
-
-	if sendErr := dialer.DialAndSend(m); sendErr != nil {
+	if sendErr != nil {
 		log.Error().Msgf("failed to send email %s", sendErr)
 	} else {
 		log.Info().Msg("Successfully sent the log by email")

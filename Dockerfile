@@ -5,6 +5,7 @@ WORKDIR /src
 COPY go.mod go.sum ./
 RUN GOFLAGS=-mod=readonly GOPROXY=https://proxy.golang.org go mod download
 COPY main.go ./
+COPY adb-forms adb-forms/
 COPY config config/
 COPY google_groups_sync google_groups_sync/
 COPY survey_mailer survey_mailer/

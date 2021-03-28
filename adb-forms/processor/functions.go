@@ -2,16 +2,17 @@ package processor
 
 import (
 	"database/sql"
+	"github.com/jmoiron/sqlx"
 	"github.com/rs/zerolog/log"
 )
 
-func getResponsesToProcess(db *sql.DB, query string) ([]int, bool) {
+func getResponsesToProcess(db *sqlx.DB, query string) ([]int, bool) {
 	rawApplicationIds, getApplicationIdsErr := db.Query(query)
-	defer rawApplicationIds.Close()
 	if getApplicationIdsErr != nil {
 		log.Error().Msgf("error getting applicationIds: %s", getApplicationIdsErr)
 		return nil, false
 	}
+	defer rawApplicationIds.Close()
 	var applicationIds []int
 	for rawApplicationIds.Next() {
 		var applicationId int
@@ -25,7 +26,7 @@ func getResponsesToProcess(db *sql.DB, query string) ([]int, bool) {
 	return applicationIds, true
 }
 
-func getProcessingStatus(db *sql.DB, query string, id int) (bool, bool) {
+func getProcessingStatus(db *sqlx.DB, query string, id int) (bool, bool) {
 	var processed bool
 	err := db.QueryRow(query, id).Scan(&processed)
 	if err == sql.ErrNoRows {
@@ -39,7 +40,7 @@ func getProcessingStatus(db *sql.DB, query string, id int) (bool, bool) {
 	return processed, true
 }
 
-func getEmail(db *sql.DB, query string, id int) (string, bool) {
+func getEmail(db *sqlx.DB, query string, id int) (string, bool) {
 	var email string
 	err := db.QueryRow(query, id).Scan(&email)
 	if err != nil {
@@ -50,7 +51,7 @@ func getEmail(db *sql.DB, query string, id int) (string, bool) {
 	return email, true
 }
 
-func countActivistsForEmail(db *sql.DB, email string) (int, bool) {
+func countActivistsForEmail(db *sqlx.DB, email string) (int, bool) {
 	var count int
 	// TODO: is only getting the first row accceptable?
 	err := db.QueryRow(countActivistsForEmailQuery, email).Scan(&count)
