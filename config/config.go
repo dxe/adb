@@ -1,6 +1,7 @@
 package config
 
 import (
+	"flag"
 	"math/rand"
 	"os"
 	"strconv"
@@ -16,7 +17,7 @@ var (
 	Port    = mustGetenv("PORT", "8080", true)
 	UrlPath = mustGetenv("ADB_URL_PATH", "http://localhost:"+Port, true)
 
-	IsProd            = mustGetenvAsBool("PROD")
+	IsProd            = getIsProd()
 	RunBackgroundJobs = mustGetenvAsBool("RUN_BACKGROUND_JOBS")
 
 	CookieSecret = mustGetenv("COOKIE_SECRET", "some-fake-secret", true)
@@ -96,6 +97,14 @@ var (
 	)
 )
 
+func getIsProd() bool {
+	var isProd = flag.Bool("prod", false, "whether to run as production")
+	if !IsFlagPassed("prod") {
+		*isProd = mustGetenvAsBool("PROD")
+	}
+	return *isProd
+}
+
 func mustGetenv(key, fallback string, mandatory bool) string {
 	val := os.Getenv(key)
 	if val != "" {
@@ -138,4 +147,14 @@ var staticResourcesHash = strconv.FormatInt(rand.NewSource(time.Now().UnixNano()
 // for now.
 func StaticResourcesHash() string {
 	return staticResourcesHash
+}
+
+func IsFlagPassed(name string) bool {
+	found := false
+	flag.Visit(func(f *flag.Flag) {
+		if f.Name == name {
+			found = true
+		}
+	})
+	return found
 }

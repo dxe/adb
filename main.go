@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"encoding/csv"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"html/template"
 	"io"
@@ -18,14 +19,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dxe/adb/mailer"
-
 	oidc "github.com/coreos/go-oidc"
 	"github.com/dxe/adb/adb-forms/processor"
 	"github.com/dxe/adb/config"
 	"github.com/dxe/adb/discord"
 	"github.com/dxe/adb/event_sync"
 	"github.com/dxe/adb/google_groups_sync"
+	"github.com/dxe/adb/mailer"
 	"github.com/dxe/adb/members"
 	"github.com/dxe/adb/model"
 	"github.com/dxe/adb/survey_mailer"
@@ -2060,7 +2060,7 @@ func (c MainController) InternationalFormHandler(w http.ResponseWriter, r *http.
 }
 
 func main() {
-
+	flag.Parse()
 	fmt.Println("IsProd =", config.IsProd)
 
 	n := negroni.New()
