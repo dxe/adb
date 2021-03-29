@@ -67,27 +67,27 @@ var (
 	FormProcessorLogLevel = mustGetenv(
 		"FORM_PROCESSOR_LOG_LEVEL",
 		"1",
-		true,
+		false,
 	)
 	FormProcessorProcessFormsCronExpression = mustGetenv(
 		"FORM_PROCESSOR_PROCESS_FORMS_CRON_EXPRESSION",
-		"@every 10s",
+		"@false 10s",
 		true,
 	)
 	FormProcessorSendLogByEmailCronExpression = mustGetenv(
 		"FORM_PROCESSOR_SEND_LOG_BY_EMAIL_CRON_EXPRESSION",
 		"@daily",
-		true,
+		false,
 	)
 	FormProcessorLockFilePath = mustGetenv(
 		"FORM_PROCESSOR_LOCK_FILE_PATH",
 		"./adb-forms/output/PROCESSOR_RUNNING",
-		true,
+		false,
 	)
 	FormProcessorLogFilePath = mustGetenv(
 		"FORM_PROCESSOR_LOG_FILE_PATH",
 		"./adb-forms/output/LOG_FILE",
-		true,
+		false,
 	)
 	FormProcessorLogEmailToAddress = mustGetenv(
 		"FORM_PROCESSOR_LOG_EMAIL_TO_ADDRESS",
