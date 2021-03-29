@@ -71,8 +71,8 @@ var (
 	)
 	FormProcessorProcessFormsCronExpression = mustGetenv(
 		"FORM_PROCESSOR_PROCESS_FORMS_CRON_EXPRESSION",
-		"@false 10s",
-		true,
+		"@every 10s",
+		false,
 	)
 	FormProcessorSendLogByEmailCronExpression = mustGetenv(
 		"FORM_PROCESSOR_SEND_LOG_BY_EMAIL_CRON_EXPRESSION",
