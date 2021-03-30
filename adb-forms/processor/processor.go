@@ -3,6 +3,7 @@ package processor
 import (
 	"context"
 	"flag"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/robfig/cron/v3"
 	"github.com/rs/zerolog"
@@ -10,7 +11,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	_ "github.com/go-sql-driver/mysql"
 )
 
 // Should be run in a goroutine.
