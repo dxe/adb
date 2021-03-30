@@ -20,10 +20,10 @@ import (
 	"time"
 
 	oidc "github.com/coreos/go-oidc"
-	"github.com/dxe/adb/adb-forms/processor"
 	"github.com/dxe/adb/config"
 	"github.com/dxe/adb/discord"
 	"github.com/dxe/adb/event_sync"
+	"github.com/dxe/adb/form_processor"
 	"github.com/dxe/adb/google_groups_sync"
 	"github.com/dxe/adb/mailer"
 	"github.com/dxe/adb/members"
@@ -2061,8 +2061,13 @@ func (c MainController) InternationalFormHandler(w http.ResponseWriter, r *http.
 
 func main() {
 	var isProdArgument = flag.Bool("prod", false, "whether to run as production")
+	var logLevel = flag.Int(
+		"logLevel",
+		1,
+		"log level (see https://github.com/rs/zerolog#leveled-logging)",
+	)
 	flag.Parse()
-	config.SetIsProd(*isProdArgument)
+	config.SetCommandLineFlags(*isProdArgument, *logLevel)
 	fmt.Println("IsProd =", config.IsProd)
 
 	n := negroni.New()
@@ -2075,7 +2080,7 @@ func main() {
 		go google_groups_sync.StartMailingListsSync(db)
 		go survey_mailer.StartSurveyMailer(db)
 		go event_sync.StartExternalEventSync(db)
-		go processor.StartFormProcessor(db)
+		go form_processor.StartFormProcessor(db)
 	}
 
 	fmt.Println("Listening on localhost:" + config.Port)

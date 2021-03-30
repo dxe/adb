@@ -1,8 +1,7 @@
-package processor
+package form_processor
 
 import (
 	"context"
-	"flag"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/robfig/cron/v3"
@@ -15,16 +14,12 @@ import (
 
 // Should be run in a goroutine.
 func StartFormProcessor(db *sqlx.DB) {
-	/* Define command-line arguments */
-	var logLevel = flag.Int("logLevel", 1, "log level (see https://github.com/rs/zerolog#leveled-logging)")
-	flag.Parse()
-
 	/* Set default log level */
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	log.Info().Msg("starting go processor; logging to default location before opening log file")
 
 	/* Get config */
-	mainEnv, ok := getMainEnv(*logLevel)
+	mainEnv, ok := getMainEnv()
 	if !ok {
 		log.Error().Msg("failed to get ENV variables; will exit main program")
 		return

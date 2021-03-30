@@ -19,6 +19,7 @@ var (
 
 	IsProd            = false
 	RunBackgroundJobs = mustGetenvAsBool("RUN_BACKGROUND_JOBS")
+	LogLevel          = 1
 
 	CookieSecret = mustGetenv("COOKIE_SECRET", "some-fake-secret", true)
 	CsrfAuthKey  = mustGetenv("CSRF_AUTH_KEY", "", true)
@@ -65,11 +66,6 @@ var (
 	GooglePlacesAPIKey = mustGetenv("GOOGLE_PLACES_API_KEY", "", false)
 
 	// For form processor
-	FormProcessorLogLevel = mustGetenv(
-		"FORM_PROCESSOR_LOG_LEVEL",
-		"1",
-		false,
-	)
 	FormProcessorProcessFormsCronExpression = mustGetenv(
 		"FORM_PROCESSOR_PROCESS_FORMS_CRON_EXPRESSION",
 		"@every 10s",
@@ -97,11 +93,22 @@ var (
 	)
 )
 
-func SetIsProd(isProdArgument bool) {
+func SetCommandLineFlags(isProdArgument bool, logLevel int) {
 	if IsFlagPassed("prod") {
 		IsProd = isProdArgument
 	} else {
 		IsProd = mustGetenvAsBool("PROD")
+	}
+
+	if IsFlagPassed("logLevel") {
+		LogLevel = logLevel
+	} else {
+		parsedLogLevel, ok := parseUint64(os.Getenv("LOG_LEVEL"))
+		if ok {
+			LogLevel = int(parsedLogLevel)
+		} else {
+			LogLevel = 1
+		}
 	}
 }
 
@@ -157,4 +164,12 @@ func IsFlagPassed(name string) bool {
 		}
 	})
 	return found
+}
+
+func parseUint64(value string) (uint64, bool) {
+	parsed, parseErr := strconv.ParseUint(value, 10, 64)
+	if parseErr != nil {
+		return 0, false
+	}
+	return parsed, true
 }
