@@ -37,7 +37,14 @@ func StartFormProcessor(db *sqlx.DB) {
 		0666,
 	)
 	if os.IsNotExist(openLogFileErr) {
-		os.MkdirAll(filepath.Dir(mainEnv.logFilePath), 0700)
+		mkdirErr := os.MkdirAll(filepath.Dir(mainEnv.logFilePath), 0700)
+		if mkdirErr != nil {
+			log.Error().Msgf(
+				"failed to create directories recusrively; will exit main program; %s",
+				mkdirErr,
+			)
+			return
+		}
 		logFile, openLogFileErr = os.OpenFile(
 			mainEnv.logFilePath,
 			os.O_RDWR|os.O_CREATE|os.O_APPEND,
@@ -45,7 +52,7 @@ func StartFormProcessor(db *sqlx.DB) {
 		)
 	}
 	if openLogFileErr != nil {
-		log.Error().Msgf("error opening log file; exiting; %s", openLogFileErr)
+		log.Error().Msgf("error opening log file; will exit main program; %s", openLogFileErr)
 		return
 	}
 	defer logFile.Close()
