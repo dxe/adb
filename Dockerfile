@@ -34,7 +34,6 @@ RUN npm run build
 FROM alpine:latest
 RUN apk add --no-cache ca-certificates tzdata
 RUN addgroup -S adb && adduser -S adb -G adb
-USER adb
 
 WORKDIR /app
 COPY run.sh ./
@@ -44,5 +43,7 @@ COPY --from=build-api /src/adb ./
 COPY --from=build-ui /src/dist dist/
 RUN mkdir output/
 RUN chown -R adb output/
+
+USER adb
 
 ENTRYPOINT ["./run.sh"]
