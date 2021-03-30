@@ -7,7 +7,6 @@ adb-config
 adb.db
 dist
 docker-compose.yml
-FORM_PROCESSOR_LOG_FILE
-FORM_PROCESSOR_ROCESSOR_RUNNING
 node_modules
 npm-debug.log
+output/
