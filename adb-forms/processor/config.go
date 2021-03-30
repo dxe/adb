@@ -1,7 +1,6 @@
 package processor
 
 import (
-	"flag"
 	"github.com/dxe/adb/config"
 	"github.com/rs/zerolog/log"
 	"strconv"
@@ -26,7 +25,7 @@ type sendLogByEmailEnv struct {
 
 func getMainEnv(logLevel int) (mainEnv, bool) {
 	var emptyMainEnv mainEnv
-	if !isFlagPassed("logLevel") {
+	if !config.IsFlagPassed("logLevel") {
 		envLogLevel, ok := parseUint64(config.FormProcessorLogLevel)
 		if !ok {
 			return emptyMainEnv, false
@@ -70,14 +69,4 @@ func parseUint64(value string) (uint64, bool) {
 		return 0, false
 	}
 	return parsed, true
-}
-
-func isFlagPassed(name string) bool {
-	found := false
-	flag.Visit(func(f *flag.Flag) {
-		if f.Name == name {
-			found = true
-		}
-	})
-	return found
 }
