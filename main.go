@@ -2060,7 +2060,9 @@ func (c MainController) InternationalFormHandler(w http.ResponseWriter, r *http.
 }
 
 func main() {
+	var isProdArgument = flag.Bool("prod", false, "whether to run as production")
 	flag.Parse()
+	config.SetIsProd(*isProdArgument)
 	fmt.Println("IsProd =", config.IsProd)
 
 	n := negroni.New()
