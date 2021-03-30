@@ -82,12 +82,12 @@ var (
 	)
 	FormProcessorLockFilePath = mustGetenv(
 		"FORM_PROCESSOR_LOCK_FILE_PATH",
-		"FORM_PROCESSOR_ROCESSOR_RUNNING",
+		"output/FORM_PROCESSOR_ROCESSOR_RUNNING",
 		false,
 	)
 	FormProcessorLogFilePath = mustGetenv(
 		"FORM_PROCESSOR_LOG_FILE_PATH",
-		"FORM_PROCESSOR_LOG_FILE",
+		"output/FORM_PROCESSOR_LOG_FILE",
 		false,
 	)
 	FormProcessorLogEmailToAddress = mustGetenv(
