@@ -329,11 +329,11 @@ Vue.use(vmodal);
 export default Vue.extend({
   name: 'form-apply',
   methods: {
-    applyButtonClicked: function() {
+    applyButtonClicked: function () {
       this.showForm = true;
       window.scrollTo(0, 0);
     },
-    submitForm: function() {
+    submitForm: function () {
       this.submitting = true;
       $.ajax({
         url: '/apply',

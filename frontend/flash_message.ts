@@ -10,7 +10,7 @@ export function flashMessage(content: string, isError?: boolean) {
   flash.text(content);
   flash.show();
 
-  setTimeout(function() {
+  setTimeout(function () {
     flash.hide();
   }, 5 * 1000);
 }

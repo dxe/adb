@@ -74,7 +74,7 @@
             </form>
 
             <div v-if="currentUser.id">
-              <p style="margin-top: 20px;"></p>
+              <p style="margin-top: 20px"></p>
               <h3 class="text-center">Roles</h3>
               <form action="" id="editUserRolesForm">
                 <p>
@@ -266,7 +266,7 @@ export default Vue.extend({
         return;
       }
 
-      this.users.sort(function(a, b) {
+      this.users.sort(function (a, b) {
         var emailA = a.email.toLowerCase();
         var emailB = b.email.toLowerCase();
 

@@ -278,7 +278,7 @@ Vue.use(vmodal);
 export default Vue.extend({
   name: 'form-interest',
   methods: {
-    submitForm: function() {
+    submitForm: function () {
       this.submitting = true;
       $.ajax({
         url: '/interest',
@@ -316,7 +316,7 @@ export default Vue.extend({
         },
       });
     },
-    reloadPage: function() {
+    reloadPage: function () {
       if (this.$options.data) {
         location.reload();
       }

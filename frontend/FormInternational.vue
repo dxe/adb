@@ -15,9 +15,7 @@ legend {
     <transition name="fade">
       <div v-if="submitSuccess">
         <h2>Thank you!</h2>
-        <p>
-          An organizer will reach out to you within the next week.
-        </p>
+        <p>An organizer will reach out to you within the next week.</p>
       </div>
     </transition>
 
@@ -189,7 +187,7 @@ interface locationData {
 export default Vue.extend({
   name: 'form-international',
   methods: {
-    citySelected: function(loc: locationData) {
+    citySelected: function (loc: locationData) {
       this.city = loc.locality;
       this.state = loc.administrative_area_level_1;
       this.country = loc.country;
@@ -197,7 +195,7 @@ export default Vue.extend({
       this.lng = loc.longitude;
       this.locationChosen = true;
     },
-    submitForm: function() {
+    submitForm: function () {
       if (!this.locationChosen) {
         alert('Please choose your city from the dropbox list.');
         return;

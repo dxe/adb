@@ -8,8 +8,8 @@
     <table id="working-group-list" class="adb-table table table-hover table-striped">
       <thead>
         <tr>
-          <th style="width: 1px; white-space: nowrap;"></th>
-          <th style="width: 1px; white-space: nowrap;"></th>
+          <th style="width: 1px; white-space: nowrap"></th>
+          <th style="width: 1px; white-space: nowrap"></th>
           <th>Name</th>
           <th>Host</th>
           <th v-if="title === 'GeoCirclesList'">Total Members</th>

@@ -15,7 +15,7 @@
       id="hideMem"
       class="btn btn-default"
       onclick="$('.wgMembers').hide(); $('#showMem').show(); $('#hideMem').hide();"
-      style="display: none;"
+      style="display: none"
     >
       <span class="glyphicon glyphicon-eye-close"></span>&nbsp;&nbsp;Hide members
     </button>
