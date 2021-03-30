@@ -3,13 +3,14 @@ package processor
 import (
 	"context"
 	"flag"
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/robfig/cron/v3"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"io"
 	"os"
+	"path/filepath"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 // Should be run in a goroutine.
@@ -35,6 +36,14 @@ func StartFormProcessor(db *sqlx.DB) {
 		os.O_RDWR|os.O_CREATE|os.O_APPEND,
 		0666,
 	)
+	if os.IsNotExist(openLogFileErr) {
+		os.MkdirAll(filepath.Dir(mainEnv.logFilePath), 0700)
+		logFile, openLogFileErr = os.OpenFile(
+			mainEnv.logFilePath,
+			os.O_RDWR|os.O_CREATE|os.O_APPEND,
+			0666,
+		)
+	}
 	if openLogFileErr != nil {
 		log.Error().Msgf("error opening log file; exiting; %s", openLogFileErr)
 		return
