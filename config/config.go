@@ -82,12 +82,12 @@ var (
 	)
 	FormProcessorLockFilePath = mustGetenv(
 		"FORM_PROCESSOR_LOCK_FILE_PATH",
-		"./adb-forms/output/PROCESSOR_RUNNING",
+		"FORM_PROCESSOR_ROCESSOR_RUNNING",
 		false,
 	)
 	FormProcessorLogFilePath = mustGetenv(
 		"FORM_PROCESSOR_LOG_FILE_PATH",
-		"./adb-forms/output/LOG_FILE",
+		"FORM_PROCESSOR_LOG_FILE",
 		false,
 	)
 	FormProcessorLogEmailToAddress = mustGetenv(
