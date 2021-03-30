@@ -34,15 +34,10 @@ RUN npm run build
 FROM alpine:latest
 RUN apk add --no-cache ca-certificates tzdata
 RUN addgroup -S adb && adduser -S adb -G adb
-
-# Create output/ folder for form processor
-RUN mkdir -p output/
-RUN chown adb output/
-
-# Set current user
+RUN mkdir output/
+RUN chown -R 777 adb output/
 USER adb
 
-## Assemble composite server container.
 WORKDIR /app
 COPY run.sh ./
 COPY static static/

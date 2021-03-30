@@ -17,7 +17,7 @@ var (
 	Port    = mustGetenv("PORT", "8080", true)
 	UrlPath = mustGetenv("ADB_URL_PATH", "http://localhost:"+Port, true)
 
-	IsProd            = getIsProd()
+	IsProd            = false
 	RunBackgroundJobs = mustGetenvAsBool("RUN_BACKGROUND_JOBS")
 
 	CookieSecret = mustGetenv("COOKIE_SECRET", "some-fake-secret", true)
@@ -97,12 +97,12 @@ var (
 	)
 )
 
-func getIsProd() bool {
-	var isProd = flag.Bool("prod", false, "whether to run as production")
-	if !IsFlagPassed("prod") {
-		*isProd = mustGetenvAsBool("PROD")
+func SetIsProd(isProdArgument bool) {
+	if IsFlagPassed("prod") {
+		IsProd = isProdArgument
+	} else {
+		IsProd = mustGetenvAsBool("PROD")
 	}
-	return *isProd
 }
 
 func mustGetenv(key, fallback string, mandatory bool) string {
