@@ -1,4 +1,4 @@
-package processor
+package form_processor
 
 /* Form application queries */
 const applicationResponsesToProcessQuery = "SELECT id FROM form_application WHERE processed = 0 and name <> ''"

@@ -1,4 +1,4 @@
-package processor
+package form_processor
 
 // NOTE(AlexisDeschamps): the `CREATE TABLE` queries were obtained by calling
 // `SHOW CREATE TABLE <table name>` and then modifying `AUTO_INCREMENT=<>` to be

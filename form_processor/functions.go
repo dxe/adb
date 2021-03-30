@@ -1,4 +1,4 @@
-package processor
+package form_processor
 
 import (
 	"database/sql"

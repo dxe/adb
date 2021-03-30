@@ -1,9 +1,7 @@
-package processor
+package form_processor
 
 import (
 	"github.com/dxe/adb/config"
-	"github.com/rs/zerolog/log"
-	"strconv"
 )
 
 type mainEnv struct {
@@ -23,17 +21,9 @@ type sendLogByEmailEnv struct {
 	toAddress   string
 }
 
-func getMainEnv(logLevel int) (mainEnv, bool) {
-	var emptyMainEnv mainEnv
-	if !config.IsFlagPassed("logLevel") {
-		envLogLevel, ok := parseUint64(config.FormProcessorLogLevel)
-		if !ok {
-			return emptyMainEnv, false
-		}
-		logLevel = int(envLogLevel)
-	}
+func getMainEnv() (mainEnv, bool) {
 	return mainEnv{
-			logLevel:                     logLevel,
+			logLevel:                     config.LogLevel,
 			logFilePath:                  config.FormProcessorLogFilePath,
 			sendLogByEmailCronExpression: config.FormProcessorSendLogByEmailCronExpression,
 			processFormsCronExpression:   config.FormProcessorProcessFormsCronExpression,
@@ -51,22 +41,9 @@ func getProcessEnv() (processEnv, bool) {
 }
 
 func getSendLogByEmailEnv() (sendLogByEmailEnv, bool) {
-	var emptySendLogByEmailEnv sendLogByEmailEnv
-	if config.FormProcessorLogEmailToAddress == "" {
-		return emptySendLogByEmailEnv, false
-	}
 	return sendLogByEmailEnv{
 			logFilePath: config.FormProcessorLogFilePath,
 			toAddress:   config.FormProcessorLogEmailToAddress,
 		},
 		true
-}
-
-func parseUint64(value string) (uint64, bool) {
-	parsed, parseErr := strconv.ParseUint(value, 10, 64)
-	if parseErr != nil {
-		log.Error().Msgf("failed to parse '%s' env variable; %s", value, parseErr)
-		return 0, false
-	}
-	return parsed, true
 }
