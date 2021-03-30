@@ -35,7 +35,7 @@ FROM alpine:latest
 RUN apk add --no-cache ca-certificates tzdata
 RUN addgroup -S adb && adduser -S adb -G adb
 RUN mkdir output/
-RUN chown -R 777 adb output/
+RUN chown -R adb output/
 USER adb
 
 WORKDIR /app
