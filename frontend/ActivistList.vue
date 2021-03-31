@@ -1175,22 +1175,9 @@ export default Vue.extend({
   props: {
     title: String,
     description: String,
-    // `view` is the default view to show. It can be one of:
-    // "all_activists", "leaderboard", "activist_pool",
-    // "activist_recruitment", or "action_team"
+    // `view` is the default view to show.
     view: {
       type: String,
-      /*validator(value) {
-        var validViews = [
-          'all_activists',
-          'leaderboard',
-          'activist_pool',
-          'activist_recruitment',
-          'action_team',
-          'development',
-        ];
-        return validViews.indexOf(value) !== -1;
-      },*/
     },
   },
   methods: {

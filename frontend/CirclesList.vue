@@ -5,6 +5,22 @@
       {{ title === 'CirclesList' ? 'Circle' : 'Geo-Circle' }}
     </button>
 
+    <button
+      id="showMem"
+      class="btn btn-default"
+      onclick="$('.cirMembers').show(); $('#showMem').hide(); $('#hideMem').show(); $('.memCount').hide();"
+    >
+      <span class="glyphicon glyphicon-eye-open"></span>&nbsp;&nbsp;Show members
+    </button>
+    <button
+      id="hideMem"
+      class="btn btn-default"
+      onclick="$('.cirMembers').hide(); $('#showMem').show(); $('#hideMem').hide(); $('.memCount').show();"
+      style="display: none;"
+    >
+      <span class="glyphicon glyphicon-eye-close"></span>&nbsp;&nbsp;Hide members
+    </button>
+
     <table id="working-group-list" class="adb-table table table-hover table-striped">
       <thead>
         <tr>
@@ -12,8 +28,9 @@
           <th style="width: 1px; white-space: nowrap;"></th>
           <th>Name</th>
           <th>Host</th>
-          <th v-if="title === 'GeoCirclesList'">Total Members</th>
+          <th v-if="title === 'GeoCirclesList'" class="memCount">Total Members</th>
           <th v-if="title === 'CirclesList'">Last Event</th>
+          <th class="cirMembers">Members</th>
         </tr>
       </thead>
       <tbody id="working-group-list-body">
@@ -47,8 +64,17 @@
               </template>
             </template>
           </td>
-          <td v-if="title === 'GeoCirclesList'">{{ numberOfCircleGroupMembers(circleGroup) }}</td>
+          <td v-if="title === 'GeoCirclesList'" class="memCount">
+            {{ numberOfCircleGroupMembers(circleGroup) }}
+          </td>
           <td v-if="title === 'CirclesList'">{{ circleGroup.last_meeting }}</td>
+          <td>
+            <ul class="cirMembers" v-for="member in circleGroup.members">
+              <template v-if="!member.point_person">
+                <li>{{ member.name }}</li>
+              </template>
+            </ul>
+          </td>
         </tr>
       </tbody>
     </table>
@@ -109,15 +135,6 @@
                   v-focus
                 />
               </p>
-              <p>
-                <label for="email">Host Email: </label
-                ><input
-                  class="form-control"
-                  type="text"
-                  v-model.trim="currentCircleGroup.email"
-                  id="email"
-                />
-              </p>
 
               <p hidden>
                 <label for="type">Type: </label>
@@ -127,9 +144,12 @@
                 </select>
               </p>
 
-              <p v-if="title === 'CirclesList'">
-                <label for="description">Description: </label
-                ><input
+              <p>
+                <label for="description" v-if="title === 'CirclesList'">Description: </label>
+                <label for="description" v-if="title === 'GeoCirclesList'"
+                  >Description or Notes:
+                </label>
+                <input
                   class="form-control"
                   type="text"
                   v-model.trim="currentCircleGroup.description"
@@ -176,7 +196,7 @@
 
               <hr />
 
-              <p><label for="point-person">Host: </label></p>
+              <p><label>Host: </label></p>
               <div class="select-row" v-for="(member, index) in currentCircleGroup.members">
                 <template v-if="member.point_person">
                   <basic-select
@@ -205,7 +225,7 @@
                 Add host
               </button>
               <div v-if="title === 'GeoCirclesList'">
-                <p><label for="members">Members: </label></p>
+                <p><label>Members: </label></p>
                 <div class="select-row" v-for="(member, index) in currentCircleGroup.members">
                   <template v-if="!member.point_person && !member.non_member_on_mailing_list">
                     <basic-select
@@ -560,7 +580,7 @@ export default Vue.extend({
   margin: 0 5px;
 }
 
-.wgMembers {
+.cirMembers {
   display: none;
 }
 </style>

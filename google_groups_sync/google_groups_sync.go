@@ -170,9 +170,14 @@ func syncCircleHostMailingList(db *sqlx.DB, adminService *admin.Service) {
 	// The circle host's email is used as the circle's group email.
 	var emails []string
 	for _, c := range circles {
-		email := normalizeEmail(c.GroupEmail)
+		var email string
+		for _, a := range c.Members {
+			if a.PointPerson {
+				email = normalizeEmail(a.ActivistEmail)
+			}
+		}
 		if email == "" {
-			log.Printf("Circle has no email, will not be synced to mailing list: %s", c.Name)
+			log.Printf("Circle host has no email, will not be synced to mailing list: %s", c.Name)
 			continue
 		}
 		emails = append(emails, email)
