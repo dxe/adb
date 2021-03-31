@@ -6,6 +6,7 @@
     </button>
 
     <button
+      v-if="title === 'GeoCirclesList'"
       id="showMem"
       class="btn btn-default"
       onclick="$('.cirMembers').show(); $('#showMem').hide(); $('#hideMem').show(); $('.memCount').hide();"
