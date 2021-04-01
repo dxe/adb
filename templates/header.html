@@ -81,7 +81,7 @@
 
             <li class="{{if and (ne .MainRole "admin") (ne .MainRole "organizer") (ne .MainRole "attendance")}}hide{{end}} hidden-sm hidden-md hidden-lg hidden-xl"><a href="/logout">Logout</a></li>
 
-            <li style="position:fixed; right: 20px;" class="{{if or (eq .PageName "Login") (eq .PageName "Logout") (eq .PageName "FormApplication") (eq .PageName "FormInterest") }}hide{{end}} dropdown navbar-right hidden-xs hidden-sm"><a class="dropdown-toggle" data-toggle="dropdown" href="#"><span class="glyphicon glyphicon-user"></span><span class="caret"></span></a>
+            <li style="position:fixed; right: 20px;" class="{{if or (eq .PageName "Login") (eq .PageName "Logout") (eq .PageName "FormApplication") (eq .PageName "FormInterest") (eq .PageName "FormInternational") (eq .PageName "FormDiscord") }}hide{{end}} dropdown navbar-right hidden-xs hidden-sm"><a class="dropdown-toggle" data-toggle="dropdown" href="#"><span class="glyphicon glyphicon-user"></span><span class="caret"></span></a>
               <ul class="dropdown-menu">
                 <div style="padding-left: 5px; padding-right: 5px;">
                   <b>Current user:</b> <br /> {{ .UserName }} <br /> {{ .UserEmail }}<br /><br />
