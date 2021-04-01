@@ -1690,7 +1690,7 @@ func (c MainController) DiscordGenerateHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	if config.DiscordFromEmail != "" {
+	if config.DiscordFromEmail == "" {
 		log.Println("ERROR: Discord From Email is not configured! Unable to send verification email.")
 		http.Error(w, http.StatusText(500), 500)
 		return
