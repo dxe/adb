@@ -126,13 +126,15 @@ export default Vue.extend({
         }),
         success: (data) => {
           this.submitting = false;
+          console.log(data);
           let parsed = JSON.parse(data);
-          if (parsed.status === 'success') {
-            flashMessage('Submitted!', false);
-            this.submitSuccess = true;
+          console.log(parsed);
+          if (parsed.status != 'success') {
+            flashMessage(this.errorMessage, true);
             return;
           }
-          flashMessage(this.errorMessage, true);
+          flashMessage('Submitted!', false);
+          this.submitSuccess = true;
           return;
         },
         error: () => {
