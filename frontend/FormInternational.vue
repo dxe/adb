@@ -172,7 +172,7 @@ legend {
 import vmodal from 'vue-js-modal';
 import Vue from 'vue';
 //@ts-ignore
-import VueGoogleAutocomplete from 'vue-google-autocomplete';
+import VueGoogleAutocomplete from './external/vue-google-autocomplete';
 import AdbPage from './AdbPage.vue';
 import { flashMessage } from './flash_message';
 

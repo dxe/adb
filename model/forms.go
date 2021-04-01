@@ -168,22 +168,20 @@ func SubmitInternationalForm(db *sqlx.DB, formData InternationalFormData) error 
 		fmt.Println("failed to send email for international form submission")
 	}
 
-	// TODO: sign up to signup service w/ proper fields
-	// TODO: maybe using city/country is enough to find zipcode for US?
-	// TODO: then just use the lat/lng for others?
-	// TODO: make sure we don't trigger an "interest form"
-	//signup := mailing_list_signup.Signup{
-	//	Source: "adb-interest-form",
-	//	Name:   formData.Name,
-	//	Email:  formData.Email,
-	//	Phone:  formData.Phone,
-	//	Zip:    formData.Zip,
-	//}
-	//err = mailing_list_signup.Enqueue(signup)
-	//if err != nil {
-	//	// Don't return this error because we still want to successfully update the database.
-	//	fmt.Println("ERROR adding application form submission to mailing list:", err.Error())
-	//}
+	signup := mailing_list_signup.Signup{
+		Source:  "international-form",
+		Name:    formData.FirstName + " " + formData.LastName,
+		Email:   formData.Email,
+		City:    formData.City,
+		State:   formData.State,
+		Country: formData.Country,
+		Coords:  fmt.Sprintf("%.6f", formData.Lat) + "," + fmt.Sprintf("%.6f", formData.Lng),
+	}
+	err = mailing_list_signup.Enqueue(signup)
+	if err != nil {
+		// Don't return this error because we still want to successfully update the database.
+		fmt.Println("ERROR adding international form submission to mailing list:", err.Error())
+	}
 
 	return nil
 }
@@ -199,22 +197,20 @@ func SubmitDiscordForm(db *sqlx.DB, formData DiscordFormData) error {
 		return errors.Wrap(err, "failed to insert discord form data")
 	}
 
-	// TODO: sign up to signup service w/ proper fields
-	// TODO: maybe using city/country is enough to find zipcode for US?
-	// TODO: then just use the lat/lng for others?
-	// TODO: do we want to trigger an "interest form"?
-	//signup := mailing_list_signup.Signup{
-	//	Source: "adb-interest-form",
-	//	Name:   formData.Name,
-	//	Email:  formData.Email,
-	//	Phone:  formData.Phone,
-	//	Zip:    formData.Zip,
-	//}
-	//err = mailing_list_signup.Enqueue(signup)
-	//if err != nil {
-	//	// Don't return this error because we still want to successfully update the database.
-	//	fmt.Println("ERROR adding application form submission to mailing list:", err.Error())
-	//}
+	signup := mailing_list_signup.Signup{
+		Source:  "discord-form",
+		Name:    formData.FirstName + " " + formData.LastName,
+		Email:   formData.Email,
+		City:    formData.City,
+		State:   formData.State,
+		Country: formData.Country,
+		Coords:  fmt.Sprintf("%.6f", formData.Lat) + "," + fmt.Sprintf("%.6f", formData.Lng),
+	}
+	err = mailing_list_signup.Enqueue(signup)
+	if err != nil {
+		// Don't return this error because we still want to successfully update the database.
+		fmt.Println("ERROR adding discord form submission to mailing list:", err.Error())
+	}
 
 	return nil
 }

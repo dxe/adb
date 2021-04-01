@@ -11,13 +11,15 @@ import (
 )
 
 type Signup struct {
-	Source string
-	Name   string
-	Email  string
-	Phone  string
-	City   string
-	State  string
-	Zip    string
+	Source  string
+	Name    string
+	Email   string
+	Phone   string
+	City    string
+	State   string
+	Zip     string
+	Country string
+	Coords  string
 }
 
 func Enqueue(signup Signup) error {
