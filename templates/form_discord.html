@@ -1,0 +1,10 @@
+{{template "header.html" .}}
+
+<script src="https://maps.googleapis.com/maps/api/js?key={{ .GooglePlacesAPIKey }}&libraries=places"></script>
+
+<div id="app">
+    <form-discord id="{{.DiscordUser.ID}}" token="{{.DiscordUser.Token}}"></form-discord>
+</div>
+<script src="/dist/adb.js?{{ .StaticResourcesHash }}"></script>
+
+{{template "footer.html" .}}

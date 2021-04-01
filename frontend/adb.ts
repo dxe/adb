@@ -8,6 +8,7 @@ import WorkingGroupList from './WorkingGroupList.vue';
 import FormApply from './FormApply.vue';
 import FormInterest from './FormInterest.vue';
 import FormInternational from './FormInternational.vue';
+import FormDiscord from './FormDiscord.vue';
 
 new Vue({
   el: '#app',
@@ -21,5 +22,6 @@ new Vue({
     FormApply,
     FormInterest,
     FormInternational,
+    FormDiscord,
   },
 });

@@ -259,6 +259,8 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/discord/status", alice.New(main.discordBotAuthMiddleware).ThenFunc(main.DiscordStatusHandler))
 	router.Handle("/discord/generate", alice.New(main.discordBotAuthMiddleware).ThenFunc(main.DiscordGenerateHandler))
 	router.HandleFunc("/discord/confirm/{id:[0-9]+}/{token:[a-zA-Z0-9]+}", main.DiscordConfirmHandler)
+	router.HandleFunc("/discord/confirm_new/{id:[0-9]+}/{token:[a-zA-Z0-9]+}", main.DiscordConfirmNewHandler)
+	router.HandleFunc("/discord/confirm_new", main.DiscordConfirmNewHandler)
 	router.Handle("/discord/get_message/{message:[a-zA-Z]+}", alice.New(main.discordBotAuthMiddleware).ThenFunc(main.DiscordGetMessageHandler))
 	router.Handle("/discord/set_message/{message:[a-zA-Z]+}", alice.New(main.discordBotAuthMiddleware).ThenFunc(main.DiscordSetMessageHandler))
 
@@ -776,8 +778,10 @@ type PageData struct {
 	UserEmail string
 	// Filled in by renderPage.
 	StaticResourcesHash string
-	// Only used on International Form page
+	// Used on International & Discord Form pages
 	GooglePlacesAPIKey string
+	// Used on Discord Form page
+	DiscordUser model.DiscordUser
 }
 
 // Render a page. All templates that load a header expect a PageData
@@ -1686,6 +1690,12 @@ func (c MainController) DiscordGenerateHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	if config.DiscordFromEmail != "" {
+		log.Println("ERROR: Discord From Email is not configured! Unable to send verification email.")
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
 	var user model.DiscordUser
 	userID, err := strconv.Atoi(r.PostFormValue("id"))
 	if err != nil {
@@ -1695,22 +1705,6 @@ func (c MainController) DiscordGenerateHandler(w http.ResponseWriter, r *http.Re
 	user.ID = userID
 	user.Email = r.PostFormValue("email")
 	user.Token = generateToken()
-
-	// confirm that this email exists in ADB. if not, return error.
-	activists, err := model.GetActivistsByEmail(c.db, user.Email)
-	if len(activists) < 1 {
-		writeJSON(w, map[string]interface{}{
-			"status": "invalid email",
-		})
-		return
-	}
-	// ensure there aren't multiple activist records w/ this email to avoid issues later on
-	if len(activists) > 1 {
-		writeJSON(w, map[string]interface{}{
-			"status": "too many activists",
-		})
-		return
-	}
 
 	// check that user isn't already confirmed
 	status, err := model.GetDiscordUserStatus(c.db, user.ID)
@@ -1724,35 +1718,157 @@ func (c MainController) DiscordGenerateHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	// Get activists already associated with this email.
+	activists, err := model.GetActivistsByEmail(c.db, user.Email)
+
+	// ensure there aren't multiple activist records w/ this email to avoid issues later on
+	if len(activists) > 1 {
+		writeJSON(w, map[string]interface{}{
+			"status": "too many activists",
+		})
+		return
+	}
+
 	// INSERT/REPLACE into database (only allows one record per discord ID)
 	err = model.InsertOrUpdateDiscordUser(c.db, user)
 	if err != nil {
 		panic(err.Error())
 	}
 
+	confirmPath := "confirm"
+	if len(activists) == 0 {
+		confirmPath = "confirm_new"
+	}
+
 	// trigger email to be sent w/ verification link
-	if config.DiscordFromEmail != "" {
-		subjectText := "Please verify your email"
-		// TODO: make nicer looking email
-		confirmLink := config.UrlPath + "/discord/confirm/" + strconv.Itoa(user.ID) + "/" + user.Token
-		bodyHtml := `<p>Hello,</p><p>Please click the link below to verify your email address.</p><p><a href="` + confirmLink + `">CONFIRM</a></p><p>Cheers,<br />The DxE Discord Bot</p><br /><br /><br /><p><em>This email was sent to you by DxE to verify your email address for Discord. If you did not request this verification, please do not click the above link.</em></p>`
-		err = mailer.Send(mailer.Message{
-			FromName:    "DxE Discord",
-			FromAddress: config.DiscordFromEmail,
-			ToEmail:     user.Email,
-			Subject:     subjectText,
-			BodyHTML:    bodyHtml,
-		})
-		if err != nil {
-			panic(err.Error())
-		}
-	} else {
-		log.Printf("WARNING: Discord confirmation email could not be sent to %v due to missing SES configuration.\n", user.Email)
+	subjectText := "Please verify your email"
+	// TODO: make nicer looking email
+	confirmLink := config.UrlPath + "/discord/" + confirmPath + "/" + strconv.Itoa(user.ID) + "/" + user.Token
+	bodyHtml := `<p>Hello,</p><p>Please click the link below to verify your email address.</p><p><a href="` + confirmLink + `">CONFIRM</a></p><p>Cheers,<br />The DxE Discord Bot</p><br /><br /><br /><p><em>This email was sent to you by DxE to verify your email address for Discord. If you did not request this verification, please do not click the above link.</em></p>`
+	err = mailer.Send(mailer.Message{
+		FromName:    "DxE Discord",
+		FromAddress: config.DiscordFromEmail,
+		ToEmail:     user.Email,
+		Subject:     subjectText,
+		BodyHTML:    bodyHtml,
+	})
+	if err != nil {
+		panic(err.Error())
 	}
 
 	writeJSON(w, map[string]interface{}{
 		"status": "success",
 	})
+}
+
+func (c MainController) DiscordConfirmNewHandler(w http.ResponseWriter, r *http.Request) {
+	var user model.DiscordUser
+
+	if r.Method == "GET" {
+		vars := mux.Vars(r)
+		id, err := strconv.Atoi(vars["id"])
+		if err != nil {
+			panic(err)
+		}
+		user.ID = id
+		user.Token = vars["token"]
+
+		renderPage(w, r, "form_discord", PageData{
+			PageName:           "FormDiscord",
+			GooglePlacesAPIKey: config.GooglePlacesAPIKey,
+			DiscordUser:        user,
+		})
+	}
+
+	if r.Method == "POST" {
+		var formData model.DiscordFormData
+
+		err := json.NewDecoder(r.Body).Decode(&formData)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		id, err := strconv.Atoi(formData.ID)
+		if err != nil {
+			panic(err)
+		}
+		user.ID = id
+		user.Token = formData.Token
+		userName := formData.FirstName + " " + formData.LastName
+
+		// get the email associated with the token
+		formData.Email, err = model.GetEmailFromDiscordToken(c.db, user.Token)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		err = model.SubmitDiscordForm(c.db, formData)
+
+		if err != nil {
+			log.Println(err.Error())
+			log.Println(formData)
+			writeJSON(w, map[string]interface{}{
+				"status":  "error",
+				"message": err.Error(),
+			})
+			return
+		}
+
+		err = model.ConfirmDiscordUser(c.db, user)
+		if err != nil {
+			panic(err)
+		}
+
+		// get user status
+		status, err := model.GetDiscordUserStatus(c.db, user.ID)
+		if err != nil {
+			panic(err.Error())
+		}
+		log.Println("Discord user confirmation status:", status)
+
+		// TODO: refactor this so there is no duplicate code
+		if status == model.Confirmed {
+
+			err = discord.UpdateNickname(user.ID, userName)
+			if err != nil {
+				log.Println("Error updating Discord nickname!", err)
+			}
+
+			err = discord.AddUserRole(user.ID, "Verified")
+			if err != nil {
+				log.Println(err)
+			}
+
+			welcomeMessage := "Your email has been confirmed. I've added you to the DxE Global channels. Welcome! With that out of the way, introduce yourself in <#814302017026654228> to meet our community."
+			err = discord.SendMessage(user.ID, welcomeMessage)
+			if err != nil {
+				log.Println("Error sending Discord welcome message!", welcomeMessage, err)
+			}
+
+			// send email to alert discord mods
+			emailBody := userName + " (New User) confirmed their account on Discord. If they are already in the ADB using a different name or email, please add their Discord ID (" + strconv.Itoa(user.ID) + ") to the ADB manually."
+			err = mailer.Send(mailer.Message{
+				FromName:    "DxE Discord",
+				FromAddress: config.DiscordFromEmail,
+				ToEmail:     config.DiscordModeratorEmail,
+				Subject:     "Discord user confirmed",
+				BodyHTML:    emailBody,
+			})
+			if err != nil {
+				log.Println("Error sending Discord alert email to moderators!", err)
+			}
+
+			writeJSON(w, map[string]interface{}{
+				"status": "success",
+			})
+		}
+
+		writeJSON(w, map[string]interface{}{
+			"status": "error confirming user",
+		})
+
+	}
 }
 
 func (c MainController) DiscordConfirmHandler(w http.ResponseWriter, r *http.Request) {
@@ -1827,45 +1943,35 @@ func (c MainController) DiscordConfirmHandler(w http.ResponseWriter, r *http.Req
 			log.Println("Error updating Discord nickname!", err)
 		}
 
-		// add roles & send welcome message - TODO: clean this up to not use so many elses
+		// add roles & send welcome message
 		welcomeMessage := ""
-		if activists[0].ActivistLevel == "Chapter Member" {
-			err = discord.AddUserRole(user.ID, "Verified")
-			if err != nil {
-				log.Println("Error adding 'Verified' Discord user role!", err)
-			}
-			err := discord.AddUserRole(user.ID, "SF Bay Chapter Member")
-			if err != nil {
-				log.Println("Error adding 'SF Bay Chapter Member' Discord user role!", err)
-			}
+		var rolesToAdd []string
+
+		switch activists[0].ActivistLevel {
+		case "Chapter Member":
+			rolesToAdd = append(rolesToAdd, "Verified")
+			rolesToAdd = append(rolesToAdd, "SF Bay Chapter Member")
 			welcomeMessage = "Your email has been confirmed. I've added you to the Chapter Member channels. Welcome!"
-		} else if activists[0].ActivistLevel == "Organizer" {
-			err = discord.AddUserRole(user.ID, "Verified")
-			if err != nil {
-				log.Println("Error adding 'Verified' Discord user role!", err)
-			}
-			err := discord.AddUserRole(user.ID, "SF Bay Chapter Member")
-			if err != nil {
-				log.Println("Error adding 'SF Bay Chapter Member' Discord user role!", err)
-			}
-			err = discord.AddUserRole(user.ID, "Organizer")
-			if err != nil {
-				log.Println("Error adding 'Organizer, USA' Discord user role!", err)
-			}
+		case "Organizer":
+			rolesToAdd = append(rolesToAdd, "Verified")
+			rolesToAdd = append(rolesToAdd, "SF Bay Chapter Member")
+			rolesToAdd = append(rolesToAdd, "Organizer")
 			welcomeMessage = "Your email has been confirmed. I've added you to the Chapter Member and Organizer channels. Welcome!"
-		} else if activists[0].ActivistLevel == "Supporter" || activists[0].ActivistLevel == "Non-Local" {
-			err = discord.AddUserRole(user.ID, "Verified")
-			if err != nil {
-				log.Println("Error adding 'Verified' Discord user role!", err)
-			}
-			welcomeMessage = "Your email has been confirmed. I've added you to the Global channels. Welcome! (It seems that you are not a Chapter Member in the SF Bay Area, so I did not add you to the SF Bay channels. Please email tech@dxe.io if that is incorrect.)"
-		} else {
-			// send message (email not found in ADB - this should never happen since we check before sending the confirmation link)
-			welcomeMessage = "Based on my records, it appears that you are not a DxE SF Bay chapter member. If this isn't right, please email tech@dxe.io for help."
+		default:
+			rolesToAdd = append(rolesToAdd, "Verified")
+			welcomeMessage = "Your email has been confirmed. I've added you to the Global channels. Welcome! (It seems that you are not a Chapter Member in the SF Bay Area, so I did not add you to the SF Bay channels. Please email discord-mods@dxe.io if that doesn't seem right.)"
 		}
+
+		err = discord.AddUserRoles(user.ID, rolesToAdd)
+		if err != nil {
+			log.Println(err)
+		}
+
+		welcomeMessage += " With that out of the way, introduce yourself in <#814302017026654228> to meet our community."
+
 		err = discord.SendMessage(user.ID, welcomeMessage)
 		if err != nil {
-			log.Println("Error adding sending Discord welcome message!", welcomeMessage, err)
+			log.Println("Error sending Discord welcome message!", welcomeMessage, err)
 		}
 
 		// send email to alert discord mods to add this person to working group roles

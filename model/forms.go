@@ -50,6 +50,19 @@ type InternationalFormData struct {
 	Lng         float64 `json:"lng" db:"lng"`
 }
 
+type DiscordFormData struct {
+	ID        string  `json:"id" db:"discord_id"`
+	Token     string  `json:"token" db:"token"`
+	FirstName string  `json:"firstName" db:"first_name"`
+	LastName  string  `json:"lastName" db:"last_name"`
+	Email     string  `json:"email" db:"email"`
+	City      string  `json:"city" db:"city"`
+	State     string  `json:"state" db:"state"`
+	Country   string  `json:"country" db:"country"`
+	Lat       float64 `json:"lat" db:"lat"`
+	Lng       float64 `json:"lng" db:"lng"`
+}
+
 func SubmitApplicationForm(db *sqlx.DB, formData ApplicationFormData) error {
 	_, err := db.NamedExec(`INSERT INTO form_application
 		(email, name, phone, address, city, zip, birthday, application_type, referral_apply)
@@ -159,6 +172,37 @@ func SubmitInternationalForm(db *sqlx.DB, formData InternationalFormData) error 
 	// TODO: maybe using city/country is enough to find zipcode for US?
 	// TODO: then just use the lat/lng for others?
 	// TODO: make sure we don't trigger an "interest form"
+	//signup := mailing_list_signup.Signup{
+	//	Source: "adb-interest-form",
+	//	Name:   formData.Name,
+	//	Email:  formData.Email,
+	//	Phone:  formData.Phone,
+	//	Zip:    formData.Zip,
+	//}
+	//err = mailing_list_signup.Enqueue(signup)
+	//if err != nil {
+	//	// Don't return this error because we still want to successfully update the database.
+	//	fmt.Println("ERROR adding application form submission to mailing list:", err.Error())
+	//}
+
+	return nil
+}
+
+func SubmitDiscordForm(db *sqlx.DB, formData DiscordFormData) error {
+	_, err := db.NamedExec(`INSERT INTO form_discord
+		(first_name, last_name, email, city, state, country, lat, lng, discord_id)
+		VALUES
+		(:first_name, :last_name, :email, :city, :state, :country, :lat, :lng, :discord_id)
+		`, formData)
+
+	if err != nil {
+		return errors.Wrap(err, "failed to insert discord form data")
+	}
+
+	// TODO: sign up to signup service w/ proper fields
+	// TODO: maybe using city/country is enough to find zipcode for US?
+	// TODO: then just use the lat/lng for others?
+	// TODO: do we want to trigger an "interest form"?
 	//signup := mailing_list_signup.Signup{
 	//	Source: "adb-interest-form",
 	//	Name:   formData.Name,

@@ -58,7 +58,7 @@ func GetDiscordUserStatus(db *sqlx.DB, id int) (DiscordUserStatus, error) {
 }
 
 func ConfirmDiscordUser(db *sqlx.DB, user DiscordUser) error {
-	_, err := db.NamedExec(`UPDATE discord_users SET confirmed = 1 WHERE id = :id AND token = :token`, user)
+	_, err := db.NamedExec(`UPDATE discord_users SET confirmed = 1, confirm_date = now() WHERE id = :id AND token = :token`, user)
 	if err != nil {
 		return err
 	}

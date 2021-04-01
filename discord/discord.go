@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"github.com/dxe/adb/config"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/dxe/adb/config"
 )
 
 func GetUserRoles(userID int) map[int]string {
@@ -35,6 +37,21 @@ func GetUserRoles(userID int) map[int]string {
 	return data
 }
 
+func AddUserRoles(userID int, roles []string) error {
+	if len(roles) == 0 {
+		return nil
+	}
+
+	for _, r := range roles {
+		err := AddUserRole(userID, r)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func AddUserRole(userID int, role string) error {
 
 	url := config.DiscordBotBaseUrl + "/roles/add"
@@ -44,19 +61,21 @@ func AddUserRole(userID int, role string) error {
 		"role": role,
 	})
 	if err != nil {
-		return err
+		errText := fmt.Sprintf("ERROR adding Discord role %v to %v: %v", role, userID, err.Error())
+		return errors.New(errText)
 	}
 
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(requestBody))
 	if err != nil {
-		return err
+		errText := fmt.Sprintf("ERROR adding Discord role %v to %v: %v", role, userID, err.Error())
+		return errors.New(errText)
 	}
 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		log.Println("ERROR adding Discord role", userID, err)
-		return errors.New("ERROR adding Discord role.")
+		errText := fmt.Sprintf("ERROR adding Discord role %v to %v: Status %v", role, userID, strconv.Itoa(resp.StatusCode))
+		return errors.New(errText)
 	}
 	return nil
 }
@@ -107,8 +126,8 @@ func SendMessage(userID int, role string) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		log.Println("ERROR adding Discord role", userID, err)
-		return errors.New("ERROR adding Discord role.")
+		log.Println("ERROR sending Discord message", userID, err)
+		return errors.New("ERROR sending Discord message.")
 	}
 	return nil
 }
