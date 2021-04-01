@@ -1571,8 +1571,8 @@ func (c MainController) FindNearestChaptersHandler(w http.ResponseWriter, r *htt
 
 		ip := getIP(r)
 
-		url := "https://api.ipgeolocation.io/ipgeo?apiKey=" + config.IPGeolocationKey + "&ip=" + ip + "&fields=latitude,longitude"
-		resp, err := http.Get(url)
+		path := "https://api.ipgeolocation.io/ipgeo?apiKey=" + config.IPGeolocationKey + "&ip=" + ip + "&fields=latitude,longitude"
+		resp, err := http.Get(path)
 		if err != nil {
 			panic(err)
 		}
@@ -1804,8 +1804,7 @@ func (c MainController) DiscordConfirmNewHandler(w http.ResponseWriter, r *http.
 		}
 		if formData.Email == "" {
 			writeJSON(w, map[string]interface{}{
-				"status":  "invalid token",
-				"message": err.Error(),
+				"status": "invalid token",
 			})
 			return
 		}
