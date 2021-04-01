@@ -338,6 +338,7 @@ CREATE TABLE form_interest (
   referral_outlet varchar(200) NOT NULL DEFAULT '',
   comments varchar(200) NOT NULL DEFAULT '',
   interests varchar(400) NOT NULL DEFAULT '',
+  discord_id varchar(18) NOT NULL DEFAULT '',
   timestamp datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   processed tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (id)

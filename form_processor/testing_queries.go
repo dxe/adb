@@ -139,6 +139,7 @@ CREATE TABLE form_interest (
   interests text COLLATE utf8mb4_unicode_ci NOT NULL,
   timestamp datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   processed tinyint(1) NOT NULL DEFAULT '0',
+  discord_id varchar(18) NOT NULL DEFAULT '',
   PRIMARY KEY (id),
   UNIQUE KEY uidx (form,name,email)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

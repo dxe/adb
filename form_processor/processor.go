@@ -2,14 +2,15 @@ package form_processor
 
 import (
 	"context"
+	"io"
+	"os"
+	"path/filepath"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/robfig/cron/v3"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"io"
-	"os"
-	"path/filepath"
 )
 
 // Should be run in a goroutine.
@@ -222,6 +223,7 @@ func processForms(db *sqlx.DB) {
 	}
 	for _, id := range interestIds {
 		log.Info().Msgf("Processing Interest row %d", id)
+
 		_, processErr := db.Exec(processInterestOnNameQuery, id)
 		if processErr != nil {
 			log.Error().Msgf("error processing interest on name; exiting; %s", processErr)

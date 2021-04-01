@@ -33,6 +33,7 @@ type InterestFormData struct {
 	ReferralOutlet            string `json:"referralOutlet" db:"referral_outlet"`
 	Interests                 string `json:"interests" db:"interests"`
 	SubmittedViaSignupService bool   `json:"submitted_via_signup_service"`
+	DiscordID                 string `json:"discord_id" db:"discord_id"`
 }
 
 type InternationalFormData struct {
@@ -93,9 +94,9 @@ func SubmitApplicationForm(db *sqlx.DB, formData ApplicationFormData) error {
 
 func SubmitInterestForm(db *sqlx.DB, formData InterestFormData) error {
 	_, err := db.NamedExec(`INSERT INTO form_interest
-		(form, email, name, phone, zip, referral_friends, referral_apply, referral_outlet, interests)
+		(form, email, name, phone, zip, referral_friends, referral_apply, referral_outlet, interests, discord_id)
 		VALUES
-		(:form, :email, :name, :phone, :zip, :referral_friends, :referral_apply, :referral_outlet, :interests)
+		(:form, :email, :name, :phone, :zip, :referral_friends, :referral_apply, :referral_outlet, :interests, :discord_id)
 		`, formData)
 
 	if err != nil {
@@ -198,13 +199,14 @@ func SubmitDiscordForm(db *sqlx.DB, formData DiscordFormData) error {
 	}
 
 	signup := mailing_list_signup.Signup{
-		Source:  "discord-form",
-		Name:    formData.FirstName + " " + formData.LastName,
-		Email:   formData.Email,
-		City:    formData.City,
-		State:   formData.State,
-		Country: formData.Country,
-		Coords:  fmt.Sprintf("%.6f", formData.Lat) + "," + fmt.Sprintf("%.6f", formData.Lng),
+		Source:    "discord-form",
+		Name:      formData.FirstName + " " + formData.LastName,
+		Email:     formData.Email,
+		City:      formData.City,
+		State:     formData.State,
+		Country:   formData.Country,
+		Coords:    fmt.Sprintf("%.6f", formData.Lat) + "," + fmt.Sprintf("%.6f", formData.Lng),
+		DiscordID: formData.ID,
 	}
 	err = mailing_list_signup.Enqueue(signup)
 	if err != nil {

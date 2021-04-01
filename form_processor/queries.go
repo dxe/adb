@@ -225,6 +225,7 @@ SET
 	activists.referral_outlet = IF(LENGTH(form_interest.referral_outlet), form_interest.referral_outlet, activists.referral_outlet),
 	# only update source if source is currently empty
 	activists.source = IF(LENGTH(activists.source), activists.source, form_interest.form),
+	activists.discord_id = IF(LENGTH(activists.discord_id), activists.discord_id, IF(LENGTH(form_interest.discord_id), form_interest.discord_id, NULL)),
 	# mark as processed
 	form_interest.processed = 1
 
@@ -259,6 +260,7 @@ SET
 	activists.referral_outlet = IF(LENGTH(form_interest.referral_outlet), form_interest.referral_outlet, activists.referral_outlet),
 	# only update source if source is currently empty
 	activists.source = IF(LENGTH(activists.source), activists.source, form_interest.form),
+	activists.discord_id = IF(LENGTH(activists.discord_id), activists.discord_id, IF(LENGTH(form_interest.discord_id), form_interest.discord_id, NULL)),
 	# mark as processed
 	form_interest.processed = 1
 WHERE
@@ -318,7 +320,8 @@ INSERT INTO activists (
     vision_wall,
     study_group,
     study_activator,
-    study_conversation
+    study_conversation,
+	discord_id
 )
 SELECT
     NULL,
@@ -367,7 +370,8 @@ SELECT
     '',
     '',
     '',
-    NULL
+    NULL,
+	IF(LENGTH(form_interest.discord_id),form_interest.discord_id,NULL)
 FROM
 	form_interest
 WHERE
