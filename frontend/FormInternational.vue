@@ -199,7 +199,7 @@ export default Vue.extend({
     },
     submitForm: function() {
       if (!this.locationChosen) {
-        alert('Please choose your city from the dropbox list.');
+        alert('Please choose your city from the dropdown list.');
         return;
       }
       this.submitting = true;

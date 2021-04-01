@@ -1802,9 +1802,15 @@ func (c MainController) DiscordConfirmNewHandler(w http.ResponseWriter, r *http.
 		if err != nil {
 			panic(err.Error())
 		}
+		if formData.Email == "" {
+			writeJSON(w, map[string]interface{}{
+				"status":  "invalid token",
+				"message": err.Error(),
+			})
+			return
+		}
 
 		err = model.SubmitDiscordForm(c.db, formData)
-
 		if err != nil {
 			log.Println(err.Error())
 			log.Println(formData)
@@ -1817,7 +1823,13 @@ func (c MainController) DiscordConfirmNewHandler(w http.ResponseWriter, r *http.
 
 		err = model.ConfirmDiscordUser(c.db, user)
 		if err != nil {
-			panic(err)
+			log.Println(err.Error())
+			log.Println(formData)
+			writeJSON(w, map[string]interface{}{
+				"status":  "invalid token",
+				"message": err.Error(),
+			})
+			return
 		}
 
 		// get user status
@@ -1847,7 +1859,7 @@ func (c MainController) DiscordConfirmNewHandler(w http.ResponseWriter, r *http.
 			}
 
 			// send email to alert discord mods
-			emailBody := userName + " (New User) confirmed their account on Discord. If they are already in the ADB using a different name or email, please add their Discord ID (" + strconv.Itoa(user.ID) + ") to the ADB manually."
+			emailBody := userName + " (New User) confirmed their account on Discord.<br/>If they are already in the ADB using a different name or email, please add their Discord ID (" + strconv.Itoa(user.ID) + ") to the ADB manually."
 			err = mailer.Send(mailer.Message{
 				FromName:    "DxE Discord",
 				FromAddress: config.DiscordFromEmail,

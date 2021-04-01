@@ -103,7 +103,7 @@ export default Vue.extend({
     },
     submitForm: function() {
       if (!this.locationChosen) {
-        alert('Please choose your city from the dropbox list.');
+        alert('Please choose your city from the dropdown list.');
         return;
       }
       this.submitting = true;
@@ -126,20 +126,22 @@ export default Vue.extend({
         }),
         success: (data) => {
           this.submitting = false;
-          console.log(data);
           let parsed = JSON.parse(data);
-          console.log(parsed);
-          if (parsed.status != 'success') {
-            flashMessage(this.errorMessage, true);
+          if (parsed.status == 'success') {
+            flashMessage('Submitted!', false);
+            this.submitSuccess = true;
             return;
           }
-          flashMessage('Submitted!', false);
-          this.submitSuccess = true;
+          if (parsed.status == 'invalid token') {
+            flashMessage('ERROR: Your token is invalid.', true);
+            return;
+          }
+          flashMessage('An error occurred.', true);
           return;
         },
         error: () => {
           this.submitting = false;
-          flashMessage(this.errorMessage, true);
+          flashMessage('An error occurred.', true);
         },
       });
     },
@@ -149,7 +151,6 @@ export default Vue.extend({
       submitting: false,
       submitSuccess: false,
       locationChosen: false,
-      errorMessage: 'Sorry, there was an error submitting your form. Please try again.',
       firstName: '',
       lastName: '',
       email: '',
