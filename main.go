@@ -1862,6 +1862,7 @@ func (c MainController) DiscordConfirmNewHandler(w http.ResponseWriter, r *http.
 			writeJSON(w, map[string]interface{}{
 				"status": "success",
 			})
+			return
 		}
 
 		writeJSON(w, map[string]interface{}{
