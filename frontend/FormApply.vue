@@ -22,8 +22,8 @@
     <form id="form" @submit.prevent="submitForm" autocomplete="off" v-if="!submitSuccess">
       <div v-if="!local">
         <legend>Do you live within 100 miles of Berkeley, CA?</legend>
-          <button type="button" class="btn btn-primary" @click="isLocal">Yes</button>
-          <button type="button" class="btn btn-secondary" @click="notLocal">No</button>
+        <button type="button" class="btn btn-primary" @click="isLocal">Yes</button>
+        <button type="button" class="btn btn-secondary" @click="notLocal">No</button>
       </div>
 
       <transition name="fade">
@@ -324,7 +324,7 @@ export default Vue.extend({
       this.local = true;
     },
     notLocal: function() {
-      window.location.href = "/international";
+      window.location.href = '/international';
     },
     submitForm: function() {
       this.submitting = true;
