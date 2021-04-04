@@ -20,27 +20,14 @@
     </transition>
 
     <form id="form" @submit.prevent="submitForm" autocomplete="off" v-if="!submitSuccess">
-      <div v-if="local === ''">
+      <div v-if="!local">
         <legend>Do you live within 100 miles of Berkeley, CA?</legend>
-        <div class="radio">
-          <label><input type="radio" name="location" v-model="local" value="yes" />Yes</label>
-        </div>
-        <div class="radio">
-          <label><input type="radio" name="location" v-model="local" value="no" />No</label>
-        </div>
+          <button type="button" class="btn btn-primary" @click="isLocal">Yes</button>
+          <button type="button" class="btn btn-secondary" @click="notLocal">No</button>
       </div>
 
       <transition name="fade">
-        <div v-if="local === 'no'">
-          <p>
-            <a href="https://www.directactioneverywhere.com/chapters">Click here</a> to find a
-            chapter local to you.
-          </p>
-        </div>
-      </transition>
-
-      <transition name="fade">
-        <div v-if="local === 'yes'">
+        <div v-if="local">
           <div v-if="!showForm">
             <p>
               Decades of research into historic movements – like the Civil Rights Movement or Gay
@@ -333,6 +320,12 @@ export default Vue.extend({
       this.showForm = true;
       window.scrollTo(0, 0);
     },
+    isLocal: function() {
+      this.local = true;
+    },
+    notLocal: function() {
+      window.location.href = "/international";
+    },
     submitForm: function() {
       this.submitting = true;
       $.ajax({
@@ -371,7 +364,7 @@ export default Vue.extend({
   },
   data() {
     return {
-      local: '',
+      local: false,
       submitting: false,
       submitSuccess: false,
       showForm: false,
