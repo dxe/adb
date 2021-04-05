@@ -44,9 +44,8 @@
             </li>
             <li class="{{if and (ne .MainRole "admin") (ne .MainRole "organizer")}}hide{{end}} dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#">Coaching <span class="caret"></span></a>
               <ul class="dropdown-menu">
-                <li class="{{if (eq .PageName "NewConnection")}}active{{end}}"><a href="/new_connection">New Maintenance Coaching</a></li>
-                <li class="{{if (eq .PageName "ConnectionsList")}}active{{end}}"><a href="/list_connections">All Maintenance Coachings</a></li>
-                <!-- <li class="{{if (eq .PageName "ActivistPool")}}active{{end}}"><a href="/activist_pool">Recruitment Connections</a></li> -->
+                <li class="{{if (eq .PageName "NewConnection")}}active{{end}}"><a href="/new_connection">New Coaching</a></li>
+                <li class="{{if (eq .PageName "ConnectionsList")}}active{{end}}"><a href="/list_connections">All Coachings</a></li>
               </ul>
             </li>
             <li class="{{if and (ne .MainRole "admin") (ne .MainRole "organizer")}}hide{{end}} dropdown hidden-xs"><a class="dropdown-toggle" data-toggle="dropdown" href="#">Circles <span class="caret"></span></a>

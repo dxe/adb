@@ -1,9 +1,5 @@
 <template>
-  <adb-page
-    :title="connections ? 'Maintenance Coaching' : 'Event'"
-    narrow
-    class="event-new-content"
-  >
+  <adb-page :title="connections ? 'Coaching' : 'Event'" narrow class="event-new-content">
     <form action id="eventForm" v-on:change="changed('change', -1)" autocomplete="off">
       <fieldset :disabled="loading">
         <div style="margin-bottom: 10px">

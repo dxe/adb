@@ -1,5 +1,5 @@
 <template>
-  <adb-page :title="connections ? 'All Maintenance Coachings' : 'Events'">
+  <adb-page :title="connections ? 'All Coachings' : 'Events'">
     <form class="form-inline hidden-xs" v-on:submit.prevent="eventListRequest">
       <label for="event-name">{{ connections ? 'Coach' : 'Event Name' }}:</label>
       <input

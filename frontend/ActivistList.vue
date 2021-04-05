@@ -12,9 +12,8 @@
         <span v-if="showOptions !== 'filters'">+</span
         ><span v-if="showOptions === 'filters'">-</span> Filters
       </button>
-      <button class="btn-link" id="colFilterBtn" @click="toggleShowOptions('columns')">
-        <span v-if="showOptions !== 'columns'">+</span
-        ><span v-if="showOptions === 'columns'">-</span> Columns
+      <button class="btn-link" id="colFilterBtn" @click="showColumnsModal">
+        Choose visible columns
       </button>
 
       <span>&nbsp;&nbsp;&nbsp;&nbsp;<b>Total rows: </b></span>
@@ -77,15 +76,6 @@
             <option>Protest</option>
             <option>Trainings</option>
           </select>
-        </div>
-      </div>
-
-      <div v-if="showOptions === 'columns'">
-        <div v-for="column in columns">
-          <span v-if="column.header !== ''">
-            <input type="checkbox" :id="column.header" v-model="column.enabled" />
-            <label :for="column.header">{{ column.longHeader }}</label>
-          </span>
         </div>
       </div>
     </div>
@@ -203,6 +193,37 @@
         </div>
       </div>
     </modal>
+    <modal
+      name="columns-modal"
+      height="auto"
+      :scrollable="true"
+      classes="no-background-color"
+      @opened="modalOpened"
+      @closed="modalClosed"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header"><h2 class="modal-title">Choose columns to display</h2></div>
+          <div class="modal-body">
+            <div v-for="(column, idx) in columns">
+              <span v-if="column.header !== ''">
+                <span v-if="columns[idx].category !== columns[idx - 1].category"
+                  ><strong><br />{{ column.category }}</strong
+                  ><br
+                /></span>
+                <input type="checkbox" :id="column.header" v-model="column.enabled" />
+                <label style="font-weight: normal;" :for="column.header">{{
+                  column.longHeader
+                }}</label>
+              </span>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="hideModal">OK</button>
+          </div>
+        </div>
+      </div>
+    </modal>
     <!-- <modal
        name="connection-modal"
        :height="400"
@@ -269,6 +290,7 @@ interface Activist {
 interface Column {
   header: string;
   longHeader?: string;
+  category?: string;
   data: Handsontable.GridSettings;
   enabled: boolean;
 }
@@ -330,10 +352,11 @@ function getDefaultColumns(view: string): Column[] {
       },
       enabled: true,
     },
-    // Standard activist fields
+    // Basic Info
     {
       header: 'ID',
-      longHeader: 'Activist ID',
+      longHeader: 'ID',
+      category: 'Basic Info',
       data: {
         type: 'numeric',
         data: 'id',
@@ -344,7 +367,8 @@ function getDefaultColumns(view: string): Column[] {
     },
     {
       header: 'Name',
-      longHeader: 'Activist Name',
+      longHeader: 'Name',
+      category: 'Basic Info',
       data: {
         data: 'name',
         colWidths: 150,
@@ -354,6 +378,7 @@ function getDefaultColumns(view: string): Column[] {
     {
       header: 'SMS Name',
       longHeader: 'SMS Name (First Name or Nickname)',
+      category: 'Basic Info',
       data: {
         data: 'preferred_name',
         colWidths: 90,
@@ -361,42 +386,9 @@ function getDefaultColumns(view: string): Column[] {
       enabled: view === 'chapter_member_development',
     },
     {
-      header: 'Notes',
-      longHeader: 'Notes',
-      data: {
-        data: 'notes',
-        colWidths: 100,
-      },
-      enabled:
-        view === 'organizer_prospects' ||
-        view === 'development' ||
-        view === 'circle_member_prospects' ||
-        view === 'chapter_member_development' ||
-        view === 'chapter_member_prospects',
-    },
-    {
-      header: 'Managing',
-      longHeader: 'Managing',
-      data: {
-        data: 'dev_manager',
-        colWidths: 100,
-      },
-      enabled: view === 'organizer_prospects',
-    },
-    {
-      header: 'Points',
-      longHeader: 'Leaderboard Points',
-      data: {
-        type: 'numeric',
-        data: 'total_points',
-        readOnly: true,
-        colWidths: 50,
-      },
-      enabled: view === 'leaderboard' || view === 'action_team',
-    },
-    {
       header: 'Email',
       longHeader: 'Email',
+      category: 'Basic Info',
       data: {
         data: 'email',
         colWidths: 150,
@@ -429,6 +421,7 @@ function getDefaultColumns(view: string): Column[] {
     {
       header: 'Phone',
       longHeader: 'Phone Number',
+      category: 'Basic Info',
       data: {
         data: 'phone',
         colWidths: 100,
@@ -440,118 +433,29 @@ function getDefaultColumns(view: string): Column[] {
         view === 'chapter_member_development',
     },
     {
-      header: 'Birthday',
-      longHeader: 'Birthday',
+      header: 'Discord ID',
+      longHeader: 'Discord ID',
+      category: 'Basic Info',
       data: {
-        data: 'dob',
-        colWidths: 100,
-        type: 'date',
-        dateFormat: 'YYYY-MM-DD',
-        correctFormat: true,
-      },
-      enabled: view === 'all_activists',
-    },
-    {
-      header: 'Street Address',
-      longHeader: 'Street Address',
-      data: {
-        data: 'street_address',
-        colWidths: 100,
+        data: 'discord_id',
+        colWidths: 50,
       },
       enabled: false,
-    },
-    {
-      header: 'City',
-      longHeader: 'City',
-      data: {
-        data: 'city',
-        colWidths: 100,
-      },
-      enabled: false,
-    },
-    {
-      header: 'State',
-      longHeader: 'State',
-      data: {
-        data: 'state',
-        colWidths: 100,
-      },
-      enabled: false,
-    },
-    {
-      header: 'Zip Code',
-      longHeader: 'Zip Code',
-      data: {
-        data: 'location',
-        colWidths: 100,
-      },
-      enabled: view === 'all_activists',
     },
     {
       header: 'Facebook',
       longHeader: 'Facebook URL',
+      category: 'Basic Info',
       data: {
         data: 'facebook',
       },
       enabled:
         view === 'all_activists' || view === 'activist_recruitment' || view === 'activist_pool',
     },
-
-    // {
-    //  header: "Contacted Date",
-    //  data: {
-    //    data: "contacted_date",
-    //    type: 'date',
-    //    dateFormat: 'YYYY-MM-DD',
-    //    correctFormat: true,
-    //    colWidths: 100,
-    //  },
-    //  enabled: view === "activist_pool",
-    // }, {
-    //  header: "Interested",
-    //  data: {
-    //    data: "interested",
-    //    colWidths: 100,
-    //    type: 'dropdown',
-    //    source: [
-    //     "",
-    //      "Yes",
-    //      "No",
-    //    ],
-    //  },
-    //  enabled: view === "activist_pool",
-    // },
-
-    // ActivistMembershipData
-    // {
-    //  header: "Recruitment Connection Date",
-    //  data: {
-    //    data: "meeting_date",
-    //    type: 'date',
-    //    dateFormat: 'YYYY-MM-DD',
-    //    correctFormat: true,
-    //    colWidths: 100,
-    //  },
-    //  enabled: view === "activist_pool",
-    // },
-    //{
-    //  header: "Escalation",
-    //  data: {
-    //    data: "escalation",
-    //    type: 'dropdown',
-    //    colWidths: 100,
-    //    source: [
-    //      "",
-    //      "Yes",
-    //      "No",
-    //    ],
-    //  },
-    //  enabled: view === "activist_recruitment",
-    //},
-
     {
       header: 'Level',
-      longHeader: 'Activist Level',
+      longHeader: 'Level',
+      category: 'Basic Info',
       data: {
         data: 'activist_level',
         colWidths: 140,
@@ -568,20 +472,75 @@ function getDefaultColumns(view: string): Column[] {
         view === 'chapter_member_development' ||
         view === 'circle_member_prospects',
     },
-
+    {
+      header: 'Birthday',
+      longHeader: 'Birthday',
+      category: 'Basic Info',
+      data: {
+        data: 'dob',
+        colWidths: 100,
+        type: 'date',
+        dateFormat: 'YYYY-MM-DD',
+        correctFormat: true,
+      },
+      enabled: view === 'all_activists',
+    },
+    // Location
+    {
+      header: 'Street Address',
+      longHeader: 'Street Address',
+      category: 'Location',
+      data: {
+        data: 'street_address',
+        colWidths: 100,
+      },
+      enabled: false,
+    },
+    {
+      header: 'City',
+      longHeader: 'City',
+      category: 'Location',
+      data: {
+        data: 'city',
+        colWidths: 100,
+      },
+      enabled: false,
+    },
+    {
+      header: 'State',
+      longHeader: 'State',
+      category: 'Location',
+      data: {
+        data: 'state',
+        colWidths: 100,
+      },
+      enabled: false,
+    },
+    {
+      header: 'Zip Code',
+      longHeader: 'Zip Code',
+      category: 'Location',
+      data: {
+        data: 'location',
+        colWidths: 100,
+      },
+      enabled: view === 'all_activists',
+    },
+    // Referral Info
     {
       header: 'Source',
       longHeader: 'Source',
+      category: 'Referral Info',
       data: {
         data: 'source',
         colWidths: 100,
       },
       enabled: view === 'community_prospects',
     },
-
     {
       header: 'Interest Date',
       longHeader: 'Date Interest Form Submitted',
+      category: 'Referral Info',
       data: {
         type: 'date',
         data: 'interest_date',
@@ -592,22 +551,43 @@ function getDefaultColumns(view: string): Column[] {
       },
       enabled: view === 'circle_member_prospects' || view === 'community_prospects',
     },
-
     {
-      header: 'Circle Interest',
-      longHeader: 'Circle Interest',
+      header: 'Close Ties',
+      longHeader: 'Close Ties',
+      category: 'Referral Info',
       data: {
-        type: 'dropdown',
-        source: [true, false],
-        data: 'circle_interest',
-        colWidths: 80,
+        data: 'referral_friends',
+        colWidths: 100,
       },
-      enabled: view === 'circle_member_prospects',
+      enabled: false,
     },
 
     {
+      header: 'Referral',
+      longHeader: 'Encouraged to Apply',
+      category: 'Referral Info',
+      data: {
+        data: 'referral_apply',
+        colWidths: 100,
+      },
+      enabled: view === 'community_prospects',
+    },
+
+    {
+      header: 'Referral Outlet',
+      longHeader: 'How did you hear about DxE?',
+      category: 'Referral Info',
+      data: {
+        data: 'referral_outlet',
+        colWidths: 100,
+      },
+      enabled: false,
+    },
+    // Application Info
+    {
       header: 'Applied',
       longHeader: 'Application Date',
+      category: 'Application Info',
       data: {
         type: 'date',
         data: 'dev_application_date',
@@ -622,6 +602,7 @@ function getDefaultColumns(view: string): Column[] {
     {
       header: 'Application',
       longHeader: 'Application Type',
+      category: 'Application Info',
       data: {
         data: 'dev_application_type',
         colWidths: 80,
@@ -633,6 +614,7 @@ function getDefaultColumns(view: string): Column[] {
     {
       header: 'Prsp. Ch. Mem.',
       longHeader: 'Prospective Chapter Member',
+      category: 'Application Info',
       data: {
         type: 'dropdown',
         source: [true, false],
@@ -645,6 +627,7 @@ function getDefaultColumns(view: string): Column[] {
     {
       header: 'Prsp. Organizer',
       longHeader: 'Prospective Organizer',
+      category: 'Application Info',
       data: {
         type: 'dropdown',
         source: [true, false],
@@ -653,10 +636,34 @@ function getDefaultColumns(view: string): Column[] {
       },
       enabled: view === 'organizer_prospects',
     },
-
+    // Circle Info
+    {
+      header: 'Geo-Circle',
+      longHeader: 'Geo-Circle Membership',
+      category: 'Circle Info',
+      data: {
+        data: 'geo_circles',
+        readOnly: true,
+        colWidths: 100,
+      },
+      enabled: view === 'chapter_member_development',
+    },
+    {
+      header: 'Circle Interest',
+      longHeader: 'Circle Interest',
+      category: 'Circle Info',
+      data: {
+        type: 'dropdown',
+        source: [true, false],
+        data: 'circle_interest',
+        colWidths: 80,
+      },
+      enabled: view === 'circle_member_prospects',
+    },
     {
       header: 'Contacted',
-      longHeader: 'Circle Membership: Date Contacted',
+      longHeader: 'Date Contacted',
+      category: 'Circle Info',
       data: {
         type: 'date',
         data: 'cir_first_email',
@@ -666,22 +673,25 @@ function getDefaultColumns(view: string): Column[] {
       },
       enabled: view === 'circle_member_prospects',
     },
-
     {
-      header: 'Interests',
-      longHeader: 'Interests',
+      header: 'Last Circle',
+      longHeader: 'Last Circle Attended',
+      category: 'Circle Info',
       data: {
-        data: 'dev_interest',
+        data: 'last_circle',
+        type: 'date',
+        dateFormat: 'YYYY-MM-DD',
+        correctFormat: true,
+        readOnly: true,
         colWidths: 100,
       },
-      enabled:
-        view === 'organizer_prospects' ||
-        view === 'circle_member_prospects' ||
-        view === 'community_prospects',
+      enabled: false,
     },
+    // Event Attendance
     {
       header: 'First Event',
-      longHeader: 'First Event Attended',
+      longHeader: 'First Event',
+      category: 'Event Attendance',
       data: {
         data: 'first_event_name',
         readOnly: true,
@@ -696,7 +706,8 @@ function getDefaultColumns(view: string): Column[] {
     },
     {
       header: 'Last Event',
-      longHeader: 'Last Event Attended',
+      longHeader: 'Last Event',
+      category: 'Event Attendance',
       data: {
         data: 'last_event_name',
         readOnly: true,
@@ -705,21 +716,9 @@ function getDefaultColumns(view: string): Column[] {
       enabled: view === 'activist_recruitment' || view === 'leaderboard' || view === 'study',
     },
     {
-      header: 'Last Circle',
-      longHeader: 'Last Circle Attended',
-      data: {
-        data: 'last_circle',
-        type: 'date',
-        dateFormat: 'YYYY-MM-DD',
-        correctFormat: true,
-        readOnly: true,
-        colWidths: 100,
-      },
-      enabled: false,
-    },
-    {
       header: 'Total Events',
-      longHeader: 'Total Events Attended',
+      longHeader: 'Total Events',
+      category: 'Event Attendance',
       data: {
         type: 'numeric',
         data: 'total_events',
@@ -728,20 +727,22 @@ function getDefaultColumns(view: string): Column[] {
       },
       enabled: view === 'leaderboard' || view === 'community_prospects' || view === 'study',
     },
-
-    // {
-    //   header: "Active",
-    //   data: {
-    //     type: "checkbox",
-    //     data: "active",
-    //     readOnly: true,
-    //     colWidths: 55,
-    //   },
-    //   enabled: (view === "action_team"),
-    // },
+    {
+      header: 'Points',
+      longHeader: 'Leaderboard Points',
+      category: 'Event Attendance',
+      data: {
+        type: 'numeric',
+        data: 'total_points',
+        readOnly: true,
+        colWidths: 50,
+      },
+      enabled: view === 'leaderboard' || view === 'action_team',
+    },
     {
       header: 'MPI',
       longHeader: 'MPI Status',
+      category: 'Event Attendance',
       data: {
         type: 'checkbox',
         data: 'mpi',
@@ -760,10 +761,10 @@ function getDefaultColumns(view: string): Column[] {
         view === 'organizer_prospects' ||
         view === 'development',
     },
-
     {
       header: 'DA&C Current Month',
-      longHeader: 'Has attended both a Direct Action & a Community event in the Current Month',
+      longHeader: 'Attended both a Direct Action & a Community event in current month',
+      category: 'Event Attendance',
       data: {
         data: 'mpp_requirements',
         colWidths: 80,
@@ -771,32 +772,11 @@ function getDefaultColumns(view: string): Column[] {
       },
       enabled: view === 'chapter_member_development',
     },
-
-    {
-      header: 'Coach',
-      longHeader: 'Coach Name',
-      data: {
-        data: 'connector',
-        colWidths: 125,
-      },
-      enabled: view === 'activist_pool' || view === 'action_team' || view === 'development',
-    },
-    {
-      header: 'Last Maint. Coaching',
-      longHeader: 'Last Maintenance Coaching',
-      data: {
-        type: 'date',
-        data: 'last_connection',
-        dateFormat: 'YYYY-MM-DD',
-        correctFormat: true,
-        colWidths: 100,
-        readOnly: true,
-      },
-      enabled: view === 'development',
-    },
+    // Trainings
     {
       header: 'Workshop',
-      longHeader: 'Date Attended Training: Workshop',
+      longHeader: 'Workshop',
+      category: 'Trainings',
       data: {
         type: 'date',
         data: 'training0',
@@ -811,7 +791,8 @@ function getDefaultColumns(view: string): Column[] {
     },
     {
       header: 'Consent & Oppress',
-      longHeader: 'Date Attended Training: Consent & Anti-Oppression',
+      longHeader: 'Consent & Anti-Oppression',
+      category: 'Trainings',
       data: {
         type: 'date',
         data: 'training1',
@@ -823,7 +804,8 @@ function getDefaultColumns(view: string): Column[] {
     },
     {
       header: 'Prpsful Cmnty',
-      longHeader: 'Date Attended Training: Building Purposeful Communities',
+      longHeader: 'Building Purposeful Communities',
+      category: 'Trainings',
       data: {
         type: 'date',
         data: 'training4',
@@ -835,7 +817,8 @@ function getDefaultColumns(view: string): Column[] {
     },
     {
       header: 'Ldshp & Mgmt',
-      longHeader: 'Date Attended Training: Leadership and Management',
+      longHeader: 'Leadership and Management',
+      category: 'Trainings',
       data: {
         type: 'date',
         data: 'training5',
@@ -847,7 +830,8 @@ function getDefaultColumns(view: string): Column[] {
     },
     {
       header: 'Vision & Strat',
-      longHeader: 'Date Attended Training: Vision and Strategy',
+      longHeader: 'Vision and Strategy',
+      category: 'Trainings',
       data: {
         type: 'date',
         data: 'training6',
@@ -857,23 +841,10 @@ function getDefaultColumns(view: string): Column[] {
       },
       enabled: view === 'development' || view === 'organizer_prospects',
     },
-
-    {
-      header: 'Consent Refresh',
-      longHeader: 'Date Passed Consent Refresher Quiz',
-      data: {
-        type: 'date',
-        data: 'consent_quiz',
-        dateFormat: 'YYYY-MM-DD',
-        correctFormat: true,
-        colWidths: 100,
-      },
-      enabled: false,
-    },
-
     {
       header: 'Tier 2',
-      longHeader: 'Date Attended Training: Tier II Protest',
+      longHeader: 'Tier II Protest',
+      category: 'Trainings',
       data: {
         type: 'date',
         data: 'training_protest',
@@ -883,10 +854,24 @@ function getDefaultColumns(view: string): Column[] {
       },
       enabled: false,
     },
-
+    {
+      header: 'Consent Refresh',
+      longHeader: 'Consent Refresher Quiz',
+      category: 'Trainings',
+      data: {
+        type: 'date',
+        data: 'consent_quiz',
+        dateFormat: 'YYYY-MM-DD',
+        correctFormat: true,
+        colWidths: 100,
+      },
+      enabled: false,
+    },
+    // Development
     {
       header: 'Quiz',
-      longHeader: 'Organizer: Quiz',
+      longHeader: 'Organizer Quiz',
+      category: 'Development',
       data: {
         type: 'date',
         data: 'dev_quiz',
@@ -896,10 +881,35 @@ function getDefaultColumns(view: string): Column[] {
       },
       enabled: view === 'organizer_prospects' || view === 'development',
     },
-
+    {
+      header: 'Coach',
+      longHeader: 'Coach',
+      category: 'Development',
+      data: {
+        data: 'connector',
+        colWidths: 125,
+      },
+      enabled: view === 'activist_pool' || view === 'action_team' || view === 'development',
+    },
+    {
+      header: 'Last Coaching',
+      longHeader: 'Last Coaching',
+      category: 'Development',
+      data: {
+        type: 'date',
+        data: 'last_connection',
+        dateFormat: 'YYYY-MM-DD',
+        correctFormat: true,
+        colWidths: 100,
+        readOnly: true,
+      },
+      enabled: view === 'development',
+    },
+    // Chapter Membership
     {
       header: 'First Text',
-      longHeader: 'Chapter Membership: Date First SMS Message Sent',
+      longHeader: 'First SMS Message Sent',
+      category: 'Chapter Membership',
       data: {
         type: 'date',
         data: 'cm_first_email',
@@ -911,7 +921,8 @@ function getDefaultColumns(view: string): Column[] {
     },
     {
       header: 'Apprv. Email',
-      longHeader: 'Chapter Membership: Date Approval Email Sent',
+      longHeader: 'Approval Email Sent',
+      category: 'Chapter Membership',
       data: {
         type: 'date',
         data: 'cm_approval_email',
@@ -922,21 +933,9 @@ function getDefaultColumns(view: string): Column[] {
       enabled: view === 'chapter_member_prospects' || view === 'chapter_member_development',
     },
     {
-      header: 'MPI Email',
-      longHeader: 'Chapter Membership: Date MPI Warning Email Sent',
-      data: {
-        type: 'date',
-        data: 'cm_warning_email',
-        dateFormat: 'YYYY-MM-DD',
-        correctFormat: true,
-        colWidths: 100,
-      },
-      enabled: false,
-    },
-
-    {
       header: 'Vision Wall',
-      longHeader: 'Chapter Member: Added to Vision Wall',
+      longHeader: 'Vision Wall',
+      category: 'Chapter Membership',
       data: {
         data: 'vision_wall',
         colWidths: 80,
@@ -945,50 +944,10 @@ function getDefaultColumns(view: string): Column[] {
       },
       enabled: view === 'chapter_member_development',
     },
-
-    {
-      header: 'Hiatus',
-      longHeader: 'Hiatus',
-      data: {
-        type: 'checkbox',
-        data: 'hiatus',
-        colWidths: 50,
-      },
-      enabled: view === 'chapter_member_development',
-    },
-
-    {
-      header: 'Close Ties',
-      longHeader: 'Referral: Close Ties',
-      data: {
-        data: 'referral_friends',
-        colWidths: 100,
-      },
-      enabled: false,
-    },
-
-    {
-      header: 'Referral',
-      longHeader: 'Referral: Encouraged to Apply',
-      data: {
-        data: 'referral_apply',
-        colWidths: 100,
-      },
-      enabled: view === 'community_prospects',
-    },
-
-    {
-      header: 'Referral Outlet',
-      longHeader: 'Referral: How did you hear about us?',
-      data: {
-        data: 'referral_outlet',
-        colWidths: 100,
-      },
-      enabled: false,
-    },
     {
       header: 'Voting Agreement',
-      longHeader: 'Has signed voting agreement',
+      longHeader: 'Voting Agreement',
+      category: 'Chapter Membership',
       data: {
         type: 'checkbox',
         data: 'voting_agreement',
@@ -996,23 +955,43 @@ function getDefaultColumns(view: string): Column[] {
       },
       enabled: view === 'chapter_member_development',
     },
+    // Other
     {
-      header: 'Discord ID',
-      longHeader: 'Discord ID',
+      header: 'Notes',
+      longHeader: 'Notes',
+      category: 'Other',
       data: {
-        //type: 'numeric',
-        data: 'discord_id',
-        colWidths: 50,
+        data: 'notes',
+        colWidths: 100,
       },
-      enabled: false,
+      enabled:
+        view === 'organizer_prospects' ||
+        view === 'development' ||
+        view === 'circle_member_prospects' ||
+        view === 'chapter_member_development' ||
+        view === 'chapter_member_prospects',
     },
     {
-      header: 'Geo-Circle',
-      longHeader: 'Geo-Circle Membership',
+      header: 'Interests',
+      longHeader: 'Interests',
+      category: 'Other',
       data: {
-        data: 'geo_circles',
-        readOnly: true,
+        data: 'dev_interest',
         colWidths: 100,
+      },
+      enabled:
+        view === 'organizer_prospects' ||
+        view === 'circle_member_prospects' ||
+        view === 'community_prospects',
+    },
+    {
+      header: 'Hiatus',
+      longHeader: 'Hiatus',
+      category: 'Other',
+      data: {
+        type: 'checkbox',
+        data: 'hiatus',
+        colWidths: 50,
       },
       enabled: view === 'chapter_member_development',
     },
@@ -1185,6 +1164,9 @@ export default Vue.extend({
       var activist = this.activists[row];
       this.showModal('activist-options-modal', activist, row);
     },
+    showColumnsModal() {
+      this.showModal('columns-modal', {} as Activist, 0);
+    },
     showModal(modalName: string, activist: Activist, index: number) {
       // Check to see if there's a modal open, and close it if so.
       if (this.currentModalName) {
@@ -1239,6 +1221,7 @@ export default Vue.extend({
     modalClosed() {
       // Allow body to scroll after modal is closed.
       $(document.body).removeClass('noscroll');
+      window.scrollTo(0, 0);
     },
     removeActivist(id: number) {
       var activistIndex;
@@ -1711,5 +1694,8 @@ export default Vue.extend({
 }
 .activist-list-filters {
   margin: 10px 25px;
+}
+.v--modal-box {
+  top: 50px !important;
 }
 </style>
