@@ -71,13 +71,11 @@ SELECT
 
   cm_first_email,
   cm_approval_email,
-  cir_first_email,
   prospect_organizer,
   prospect_chapter_member,
   referral_friends,
   referral_apply,
   referral_outlet,
-  circle_interest,
   interest_date,
 
   @first_event := (
@@ -223,13 +221,11 @@ SET
   dev_interest = :dev_interest,
   cm_first_email = :cm_first_email,
   cm_approval_email = :cm_approval_email,
-  cir_first_email = :cir_first_email,
   prospect_organizer = :prospect_organizer,
   prospect_chapter_member = :prospect_chapter_member,
   referral_friends = :referral_friends,
   referral_apply = :referral_apply,
   referral_outlet = :referral_outlet,
-  circle_interest = :circle_interest,
   interest_date = :interest_date,
   mpi = :mpi,
   notes = :notes,
@@ -296,14 +292,12 @@ type ActivistConnectionData struct {
 
 	CMFirstEmail          sql.NullString `db:"cm_first_email"`
 	CMApprovalEmail       sql.NullString `db:"cm_approval_email"`
-	CirFirstEmail         sql.NullString `db:"cir_first_email"`
 	ProspectOrganizer     bool           `db:"prospect_organizer"`
 	ProspectChapterMember bool           `db:"prospect_chapter_member"`
 	LastConnection        sql.NullString `db:"last_connection"`
 	ReferralFriends       string         `db:"referral_friends"`
 	ReferralApply         string         `db:"referral_apply"`
 	ReferralOutlet        string         `db:"referral_outlet"`
-	CircleInterest        bool           `db:"circle_interest"`
 	InterestDate          sql.NullString `db:"interest_date"`
 	MPI                   bool           `db:"mpi"`
 	Notes                 sql.NullString `db:"notes"`
@@ -368,14 +362,12 @@ type ActivistJSON struct {
 
 	CMFirstEmail          string  `json:"cm_first_email"`
 	CMApprovalEmail       string  `json:"cm_approval_email"`
-	CirFirstEmail         string  `json:"cir_first_email"`
 	ProspectOrganizer     bool    `json:"prospect_organizer"`
 	ProspectChapterMember bool    `json:"prospect_chapter_member"`
 	LastConnection        string  `json:"last_connection"`
 	ReferralFriends       string  `json:"referral_friends"`
 	ReferralApply         string  `json:"referral_apply"`
 	ReferralOutlet        string  `json:"referral_outlet"`
-	CircleInterest        bool    `json:"circle_interest"`
 	InterestDate          string  `json:"interest_date"`
 	MPI                   bool    `json:"mpi"`
 	Notes                 string  `json:"notes"`
@@ -528,10 +520,6 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 		if a.ActivistConnectionData.CMApprovalEmail.Valid {
 			cm_approval_email = a.ActivistConnectionData.CMApprovalEmail.String
 		}
-		cir_first_email := ""
-		if a.ActivistConnectionData.CirFirstEmail.Valid {
-			cir_first_email = a.ActivistConnectionData.CirFirstEmail.String
-		}
 		interest_date := ""
 		if a.ActivistConnectionData.InterestDate.Valid {
 			interest_date = a.ActivistConnectionData.InterestDate.String
@@ -584,14 +572,12 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 
 			CMFirstEmail:          cm_first_email,
 			CMApprovalEmail:       cm_approval_email,
-			CirFirstEmail:         cir_first_email,
 			ProspectOrganizer:     a.ProspectOrganizer,
 			ProspectChapterMember: a.ProspectChapterMember,
 			LastConnection:        last_connection,
 			ReferralFriends:       a.ReferralFriends,
 			ReferralApply:         a.ReferralApply,
 			ReferralOutlet:        a.ReferralOutlet,
-			CircleInterest:        a.CircleInterest,
 			InterestDate:          interest_date,
 			MPI:                   a.MPI,
 			Notes:                 notes,
@@ -752,9 +738,6 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 			whereClause = append(whereClause, "(source like '%form%' or source like '%fur ban%' or source like 'petition%' or source like 'eventbrite%') and source <> 'circle interest form' and source not like '%application%'")
 			whereClause = append(whereClause, "activist_level = 'supporter'")
 			whereClause = append(whereClause, "interest_date >= DATE_SUB(now(), INTERVAL 3 MONTH)")
-		}
-		if options.Filter == "circle_member_prospects" {
-			whereClause = append(whereClause, "circle_interest = 1")
 		}
 		if options.Filter == "leaderboard" {
 			whereClause = append(whereClause, "a.id in (select distinct activist_id  from event_attendance ea  where ea.event_id in (select id from events e where e.date >= (now() - interval 30 day)))")
@@ -957,14 +940,12 @@ INSERT INTO activists (
   dev_quiz,
   cm_first_email,
   cm_approval_email,
-  cir_first_email,
   prospect_organizer,
   prospect_chapter_member,
   last_connection,
   referral_friends,
   referral_apply,
   referral_outlet,
-  circle_interest,
   interest_date,
   mpi,
   notes,
@@ -1001,14 +982,12 @@ INSERT INTO activists (
   :dev_quiz,
   :cm_first_email,
   :cm_approval_email,
-  :cir_first_email,
   :prospect_organizer,
   :prospect_chapter_member,
   :last_connection,
   :referral_friends,
   :referral_apply,
   :referral_outlet,
-  :circle_interest,
   :interest_date,
   :mpi,
   :notes,
@@ -1094,13 +1073,11 @@ SET
   dev_quiz = :dev_quiz,
   cm_first_email = :cm_first_email,
   cm_approval_email = :cm_approval_email,
-  cir_first_email = :cir_first_email,
   prospect_organizer = :prospect_organizer,
   prospect_chapter_member = :prospect_chapter_member,
   referral_friends = :referral_friends,
   referral_apply = :referral_apply,
   referral_outlet = :referral_outlet,
-  circle_interest = :circle_interest,
   interest_date = :interest_date,
   mpi = :mpi,
   notes = :notes,
@@ -1318,7 +1295,6 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 
 	target.ProspectOrganizer = boolMerge(original.ProspectOrganizer, target.ProspectOrganizer)
 	target.ProspectChapterMember = boolMerge(original.ProspectChapterMember, target.ProspectChapterMember)
-	target.CircleInterest = boolMerge(original.CircleInterest, target.CircleInterest)
 	target.MPI = boolMerge(original.MPI, target.MPI)
 	target.Hiatus = boolMerge(original.Hiatus, target.Hiatus)
 	target.VotingAgreement = boolMerge(original.VotingAgreement, target.VotingAgreement)
@@ -1344,7 +1320,6 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 	target.Quiz = stringMergeSqlNullString(original.Quiz, target.Quiz)
 	target.CMFirstEmail = stringMergeSqlNullString(original.CMFirstEmail, target.CMFirstEmail)
 	target.CMApprovalEmail = stringMergeSqlNullString(original.CMApprovalEmail, target.CMApprovalEmail)
-	target.CirFirstEmail = stringMergeSqlNullString(original.CirFirstEmail, target.CirFirstEmail)
 	target.ReferralFriends = stringMerge(original.ReferralFriends, target.ReferralFriends)
 	target.ReferralApply = stringMerge(original.ReferralApply, target.ReferralApply)
 	target.ReferralOutlet = stringMerge(original.ReferralOutlet, target.ReferralOutlet)
@@ -1638,11 +1613,6 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 		// Not specified so insert null value into database
 		validCMApprovalEmail = false
 	}
-	validCirFirstEmail := true
-	if activistJSON.CirFirstEmail == "" {
-		// Not specified so insert null value into database
-		validCirFirstEmail = false
-	}
 	validQuiz := true
 	if activistJSON.Quiz == "" {
 		// Not specified so insert null value into database
@@ -1693,13 +1663,11 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 
 			CMFirstEmail:          sql.NullString{String: strings.TrimSpace(activistJSON.CMFirstEmail), Valid: validCMFirstEmail},
 			CMApprovalEmail:       sql.NullString{String: strings.TrimSpace(activistJSON.CMApprovalEmail), Valid: validCMApprovalEmail},
-			CirFirstEmail:         sql.NullString{String: strings.TrimSpace(activistJSON.CirFirstEmail), Valid: validCirFirstEmail},
 			ProspectOrganizer:     activistJSON.ProspectOrganizer,
 			ProspectChapterMember: activistJSON.ProspectChapterMember,
 			ReferralFriends:       strings.TrimSpace(activistJSON.ReferralFriends),
 			ReferralApply:         strings.TrimSpace(activistJSON.ReferralApply),
 			ReferralOutlet:        strings.TrimSpace(activistJSON.ReferralOutlet),
-			CircleInterest:        activistJSON.CircleInterest,
 			InterestDate:          sql.NullString{String: strings.TrimSpace(activistJSON.InterestDate), Valid: validInterestDate},
 			MPI:                   activistJSON.MPI,
 			Notes:                 sql.NullString{String: strings.TrimSpace(activistJSON.Notes), Valid: validNotes},

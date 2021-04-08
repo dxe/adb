@@ -415,7 +415,6 @@ function getDefaultColumns(view: string): Column[] {
         view === 'activist_recruitment' ||
         view === 'chapter_member_prospects' ||
         view === 'chapter_member_development' ||
-        view === 'circle_member_prospects' ||
         view === 'community_prospects',
     },
     {
@@ -469,8 +468,7 @@ function getDefaultColumns(view: string): Column[] {
         view === 'action_team' ||
         view === 'organizer_prospects' ||
         view === 'chapter_member_prospects' ||
-        view === 'chapter_member_development' ||
-        view === 'circle_member_prospects',
+        view === 'chapter_member_development',
     },
     {
       header: 'Birthday',
@@ -549,7 +547,7 @@ function getDefaultColumns(view: string): Column[] {
         colWidths: 100,
         readOnly: true,
       },
-      enabled: view === 'circle_member_prospects' || view === 'community_prospects',
+      enabled: view === 'community_prospects',
     },
     {
       header: 'Close Ties',
@@ -647,31 +645,6 @@ function getDefaultColumns(view: string): Column[] {
         colWidths: 100,
       },
       enabled: view === 'chapter_member_development',
-    },
-    {
-      header: 'Circle Interest',
-      longHeader: 'Circle Interest',
-      category: 'Circle Info',
-      data: {
-        type: 'dropdown',
-        source: [true, false],
-        data: 'circle_interest',
-        colWidths: 80,
-      },
-      enabled: view === 'circle_member_prospects',
-    },
-    {
-      header: 'Contacted',
-      longHeader: 'Date Contacted',
-      category: 'Circle Info',
-      data: {
-        type: 'date',
-        data: 'cir_first_email',
-        dateFormat: 'YYYY-MM-DD',
-        correctFormat: true,
-        colWidths: 100,
-      },
-      enabled: view === 'circle_member_prospects',
     },
     {
       header: 'Last Circle',
@@ -967,7 +940,6 @@ function getDefaultColumns(view: string): Column[] {
       enabled:
         view === 'organizer_prospects' ||
         view === 'development' ||
-        view === 'circle_member_prospects' ||
         view === 'chapter_member_development' ||
         view === 'chapter_member_prospects',
     },
@@ -979,10 +951,7 @@ function getDefaultColumns(view: string): Column[] {
         data: 'dev_interest',
         colWidths: 100,
       },
-      enabled:
-        view === 'organizer_prospects' ||
-        view === 'circle_member_prospects' ||
-        view === 'community_prospects',
+      enabled: view === 'organizer_prospects' || view === 'community_prospects',
     },
     {
       header: 'Hiatus',
