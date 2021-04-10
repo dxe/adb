@@ -22,10 +22,15 @@
 
       <span v-if="loading"><i>Loading...</i></span>
 
-      <span v-if="view == 'chapter_member_development'">
-        &nbsp;&nbsp;&nbsp;&nbsp;
+      <span v-if="view === 'chapter_member_development'" style="margin-left: 20px;">
         <a class="btn btn-default" href="/csv/chapter_member_spoke">
-          <span class="glyphicon glyphicon-download-alt"></span>&nbsp;&nbsp;Export CSV for Spoke
+          <span class="glyphicon glyphicon-download -alt"></span>&nbsp;&nbsp;Export CSV for Spoke
+        </a>
+      </span>
+
+      <span v-if="view === 'community_prospects'" style="margin-left: 20px;">
+        <a class="btn btn-default" href="/csv/community_prospects_hubspot">
+          <span class="glyphicon glyphicon-download-alt"></span>&nbsp;&nbsp;Export CSV for HubSpot
         </a>
       </span>
 

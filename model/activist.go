@@ -735,7 +735,7 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 			whereClause = append(whereClause, "(a.activist_level like '%organizer' OR a.activist_level = 'chapter member')")
 		}
 		if options.Filter == "community_prospects" {
-			whereClause = append(whereClause, "(source like '%form%' or source like '%fur ban%' or source like 'petition%' or source like 'eventbrite%') and source <> 'circle interest form' and source not like '%application%'")
+			whereClause = append(whereClause, "(source like '%form%' or source like 'petition%' or source like 'eventbrite%' or source='dxe-signup' or source='arc-signup') and source not like '%application%'")
 			whereClause = append(whereClause, "activist_level = 'supporter'")
 			whereClause = append(whereClause, "interest_date >= DATE_SUB(now(), INTERVAL 3 MONTH)")
 		}
@@ -748,7 +748,7 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 		}
 	}
 
-	havingClause := []string{}
+	var havingClause []string
 	if options.LastEventDateFrom != "" {
 		havingClause = append(havingClause, "last_event >= ?")
 		queryArgs = append(queryArgs, options.LastEventDateFrom)
@@ -1527,7 +1527,7 @@ type ChapterMemberSpokeInfo struct {
 }
 
 func GetActivistSpokeInfo(db *sqlx.DB) ([]ChapterMemberSpokeInfo, error) {
-	activists := []ChapterMemberSpokeInfo{}
+	var activists []ChapterMemberSpokeInfo
 
 	// Order the activists by the last even they've been to.
 	err := db.Select(&activists, `
@@ -1541,6 +1541,40 @@ func GetActivistSpokeInfo(db *sqlx.DB) ([]ChapterMemberSpokeInfo, error) {
 			and hidden = 0`)
 	if err != nil {
 		return []ChapterMemberSpokeInfo{}, err
+	}
+
+	return activists, nil
+}
+
+type CommunityProspectHubSpotInfo struct {
+	FirstName    string `db:"first_name"`
+	LastName     string `db:"last_name"`
+	Email        string `db:"email"`
+	Phone        string `db:"phone"`
+	Zip          string `db:"zip"`
+	Source       string `db:"source"`
+	InterestDate string `db:"interest_date"`
+}
+
+func GetCommunityProspectHubSpotInfo(db *sqlx.DB) ([]CommunityProspectHubSpotInfo, error) {
+	var activists []CommunityProspectHubSpotInfo
+
+	// Order the activists by the last even they've been to.
+	err := db.Select(&activists, `
+		SELECT 
+			IF(preferred_name <> '', preferred_name, substring_index(name, " ", 1)) as first_name,
+			SUBSTRING(name, LOCATE(' ', name)) as last_name,
+			email, phone, location as zip, source,
+			interest_date
+		FROM activists
+		WHERE (source like '%form%' or source like 'petition%' or source like 'eventbrite%' or source='dxe-signup' or source='arc-signup') and source not like '%application%'
+		and activist_level = 'supporter'
+		and interest_date >= DATE_SUB(now(), INTERVAL 3 MONTH)
+		and hidden = 0
+		ORDER BY interest_date desc
+`)
+	if err != nil {
+		return []CommunityProspectHubSpotInfo{}, err
 	}
 
 	return activists, nil

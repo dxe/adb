@@ -241,6 +241,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/circle/list", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.CircleGroupListHandler))
 	router.Handle("/circle/delete", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.CircleGroupDeleteHandler))
 	router.Handle("/csv/chapter_member_spoke", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.ChapterMemberSpokeCSVHandler))
+	router.Handle("/csv/community_prospects_hubspot", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.CommunityProspectHubSpotCSVHandler))
 
 	// Authed Admin API
 	admin.Handle("/user/list", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserListHandler))
@@ -518,7 +519,7 @@ func (c MainController) ListCommunityProspectsHandler(w http.ResponseWriter, r *
 		PageName: "CommunityProspects",
 		Data: ActivistListData{
 			Title:       "Community Prospects",
-			Description: "Everyone whose Level is Supporter or Circle Member, whose Source is a Form (other than the Circle Interest Form), Application, Fur Ban, or Petition that was submitted within the last 3 months",
+			Description: "Everyone whose Level is Supporter whose Source is a Petition or Form (excluding Application Forms) that was submitted within the last 3 months",
 			View:        "community_prospects",
 		},
 	})
@@ -1320,6 +1321,34 @@ func (c MainController) ChapterMemberSpokeCSVHandler(w http.ResponseWriter, r *h
 	}
 	for _, activist := range activists {
 		err := writer.Write([]string{activist.FirstName, activist.LastName, activist.Cell})
+		if err != nil {
+			sendErrorMessage(w, err)
+			return
+		}
+	}
+	writer.Flush()
+
+}
+
+func (c MainController) CommunityProspectHubSpotCSVHandler(w http.ResponseWriter, r *http.Request) {
+	activists, err := model.GetCommunityProspectHubSpotInfo(c.db)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Disposition", "attachment; filename=community_prospects.csv")
+	w.Header().Set("Content-Type", "text/csv")
+	w.Header().Set("Transfer-Encoding", "chunked")
+
+	writer := csv.NewWriter(w)
+	err = writer.Write([]string{"first_name", "last_name", "email", "phone", "zip", "source", "interest_date"})
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+	for _, activist := range activists {
+		err := writer.Write([]string{activist.FirstName, activist.LastName, activist.Email, activist.Phone, activist.Zip, activist.Source, activist.InterestDate})
 		if err != nil {
 			sendErrorMessage(w, err)
 			return
