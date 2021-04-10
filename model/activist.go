@@ -1564,7 +1564,7 @@ func GetCommunityProspectHubSpotInfo(db *sqlx.DB) ([]CommunityProspectHubSpotInf
 		SELECT 
 			IF(preferred_name <> '', preferred_name, substring_index(name, " ", 1)) as first_name,
 			SUBSTRING(name, LOCATE(' ', name)) as last_name,
-			email, phone, location as zip, source,
+			email, phone, IFNULL(location,'') as zip, source,
 			interest_date
 		FROM activists
 		WHERE (source like '%form%' or source like 'petition%' or source like 'eventbrite%' or source='dxe-signup' or source='arc-signup') and source not like '%application%'
