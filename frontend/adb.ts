@@ -9,6 +9,7 @@ import FormApply from './FormApply.vue';
 import FormInterest from './FormInterest.vue';
 import FormInternational from './FormInternational.vue';
 import FormDiscord from './FormDiscord.vue';
+import ChapterList from './ChapterList.vue';
 
 new Vue({
   el: '#app',
@@ -23,5 +24,6 @@ new Vue({
     FormInterest,
     FormInternational,
     FormDiscord,
+    ChapterList,
   },
 });

@@ -413,7 +413,7 @@ export default Vue.extend({
           }
           // status === "success"
           flashMessage(this.currentCircleGroup.name + ' deleted');
-          this.circleGroups.splice(this.circleGroupIndex, this.circleGroupIndex + 1);
+          this.circleGroups.splice(this.circleGroupIndex, 1);
           this.hideModal();
         },
         error: (err) => {

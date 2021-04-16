@@ -207,8 +207,6 @@ func router() (*mux.Router, *sqlx.DB) {
 	// Authed Admin pages
 	admin.Handle("/admin/users", alice.New(main.authAdminMiddleware).ThenFunc(main.ListUsersHandler))
 	admin.Handle("/list_chapters", alice.New(main.authAdminMiddleware).ThenFunc(main.ListChaptersHandler))
-	admin.Handle("/chapter/edit", alice.New(main.authAdminMiddleware).ThenFunc(main.EditChapterHandler))
-	admin.Handle("/chapter/new", alice.New(main.authAdminMiddleware).ThenFunc(main.NewChapterHandler))
 
 	// Unauthed API
 	router.HandleFunc("/tokensignin", main.TokenSignInHandler)
@@ -247,10 +245,9 @@ func router() (*mux.Router, *sqlx.DB) {
 	admin.Handle("/user/list", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserListHandler))
 	admin.Handle("/user/save", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserSaveHandler))
 	admin.Handle("/user/delete", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserDeleteHandler))
-	admin.Handle("/chapter/update", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.ChapterUpdateHandler))
+	admin.Handle("/chapter/list", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.ChapterListHandler))
 	admin.Handle("/chapter/delete", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.ChapterDeleteHandler))
-	admin.Handle("/chapter/insert", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.ChapterInsertHandler))
-	// Authed Admin API for managing Users Roles
+	admin.Handle("/chapter/save", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.ChapterSaveHandler))
 	admin.Handle("/users-roles/add", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UsersRolesAddHandler))
 	admin.Handle("/users-roles/remove", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UsersRolesRemoveHandler))
 
@@ -630,115 +627,71 @@ func (c MainController) ListUsersHandler(w http.ResponseWriter, r *http.Request)
 }
 
 func (c MainController) ListChaptersHandler(w http.ResponseWriter, r *http.Request) {
-	chapters, err := model.GetAllChapters(c.db)
-	if err != nil {
-		panic(err)
-	}
-	renderPage(w, r, "chapters_list", PageData{
-		PageName: "ChaptersList",
-		Data: map[string]interface{}{
-			"Chapters": chapters,
-		}})
+	renderPage(w, r, "chapters_list", PageData{PageName: "ChaptersList"})
 }
 
-func (c MainController) EditChapterHandler(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(r.URL.Query().Get("id"))
-	chapter, err := model.GetChapterByID(c.db, id)
+func (c MainController) ChapterListHandler(w http.ResponseWriter, r *http.Request) {
+	chaps, err := model.GetAllChapters(c.db)
 	if err != nil {
-		panic(err)
+		sendErrorMessage(w, err)
+		return
 	}
-	renderPage(w, r, "chapter_edit", PageData{
-		PageName: "ChaptersList",
-		Data: map[string]interface{}{
-			"Chapter": chapter,
-		}})
-}
 
-func (c MainController) NewChapterHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, r, "chapter_new", PageData{
-		PageName: "ChaptersList",
+	writeJSON(w, map[string]interface{}{
+		"status":   "success",
+		"chapters": chaps,
 	})
 }
 
-func (c MainController) ChapterUpdateHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "POST" {
-		var page model.ChapterWithToken
-		pageID, err := strconv.Atoi(r.FormValue("facebook-id"))
-		chapterID, err := strconv.Atoi(r.FormValue("chapter-id"))
-		lat, err := strconv.ParseFloat(r.FormValue("lat"), 64)
-		lng, err := strconv.ParseFloat(r.FormValue("lng"), 64)
-		if err != nil {
-			panic(err.Error())
-		}
-		page.ID = pageID
-		page.ChapterID = chapterID
-		page.Lat = lat
-		page.Lng = lng
-		page.Name = r.FormValue("name")
-		page.Flag = r.FormValue("flag")
-		page.FbURL = r.FormValue("facebook")
-		page.TwitterURL = r.FormValue("twitter")
-		page.InstaURL = r.FormValue("instagram")
-		page.Email = r.FormValue("email")
-		page.Region = r.FormValue("region")
-		page.Token = r.FormValue("token")
-		page.EventbriteID = r.FormValue("eventbrite-id")
-		page.EventbriteToken = r.FormValue("eventbrite-token")
-		page.MailingListType = r.FormValue("ml-type")
-		page.MailingListID = r.FormValue("ml-id")
-		mailingListRadius, err := strconv.Atoi(r.FormValue("ml-radius"))
-		if err != nil {
-			panic(err.Error())
-		}
-		page.MailingListRadius = mailingListRadius
-		err = model.UpdateChapter(c.db, page)
-		if err != nil {
-			panic(err.Error())
-		}
+func (c MainController) ChapterSaveHandler(w http.ResponseWriter, r *http.Request) {
+	chap, err := model.CleanChapterData(c.db, r.Body)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
 	}
-	flashMessageSuccess(w, "Saved succesfully.")
-	http.Redirect(w, r, "/list_chapters", http.StatusFound)
+
+	var chapID int
+	if chap.ChapterID == 0 {
+		chapID, err = model.InsertChapter(c.db, chap)
+	} else {
+		chapID, err = model.UpdateChapter(c.db, chap)
+	}
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	chapJSON, err := model.GetChapterByID(c.db, chapID)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	writeJSON(w, map[string]interface{}{
+		"status":  "success",
+		"chapter": chapJSON,
+	})
 }
 
 func (c MainController) ChapterDeleteHandler(w http.ResponseWriter, r *http.Request) {
-	var page model.ChapterWithToken
-	id, err := strconv.Atoi(r.URL.Query().Get("id"))
-	page.ChapterID = id
-	err = model.DeleteChapter(c.db, page)
+	var requestData struct {
+		ID int `json:"chapter_id"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&requestData)
 	if err != nil {
-		panic(err.Error())
+		sendErrorMessage(w, err)
+		return
 	}
-	http.Redirect(w, r, "/list_chapters", http.StatusFound)
-}
 
-func (c MainController) ChapterInsertHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "POST" {
-		var page model.ChapterWithToken
-		pageID, err := strconv.Atoi(r.FormValue("facebook-id"))
-		chapterID, err := strconv.Atoi(r.FormValue("chapter-id"))
-		lat, err := strconv.ParseFloat(r.FormValue("lat"), 64)
-		lng, err := strconv.ParseFloat(r.FormValue("lng"), 64)
-		page.ID = pageID
-		page.ChapterID = chapterID
-		page.Lat = lat
-		page.Lng = lng
-		page.Name = r.FormValue("name")
-		page.Flag = r.FormValue("flag")
-		page.FbURL = r.FormValue("facebook")
-		page.TwitterURL = r.FormValue("twitter")
-		page.InstaURL = r.FormValue("instagram")
-		page.Email = r.FormValue("email")
-		page.Region = r.FormValue("region")
-		page.Token = r.FormValue("token")
-		page.EventbriteID = r.FormValue("eventbrite-id")
-		page.EventbriteToken = r.FormValue("eventbrite-token")
-		err = model.InsertChapter(c.db, page)
-		if err != nil {
-			panic(err.Error())
-		}
+	err = model.DeleteChapter(c.db, requestData.ID)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
 	}
-	flashMessageSuccess(w, "New chapter created.")
-	http.Redirect(w, r, "/list_chapters", http.StatusFound)
+
+	writeJSON(w, map[string]string{
+		"status": "success",
+	})
 }
 
 var templates = template.Must(template.New("").Funcs(

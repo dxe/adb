@@ -249,7 +249,14 @@ CREATE TABLE fb_pages (
   eventbrite_token VARCHAR(32) NOT NULL DEFAULT '',
   ml_type VARCHAR(100) NOT NULL DEFAULT '',
   ml_radius SMALLINT NOT NULL DEFAULT '0',
-  ml_id VARCHAR(100) NOT NULL DEFAULT ''
+  ml_id VARCHAR(100) NOT NULL DEFAULT '',
+  mentor VARCHAR(100) NOT NULL DEFAULT '',
+  country VARCHAR(128) NOT NULL DEFAULT '',
+  notes VARCHAR(512) NOT NULL DEFAULT '',
+  last_contact VARCHAR(10) DEFAULT '',
+  last_action VARCHAR(10) DEFAULT '',
+  organizers JSON,
+  last_checkin_email_sent TIMESTAMP DEFAULT NULL
 )
 `)
 

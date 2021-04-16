@@ -1,7 +1,12 @@
 package model
 
 import (
+	"database/sql"
+	"database/sql/driver"
+	"encoding/json"
 	"fmt"
+	"io"
+	"strings"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
@@ -24,27 +29,55 @@ type Chapter struct {
 	Lng        float64 `db:"lng"`
 }
 
-// used for internal Chapters page on ADB, syncing with FB and Eventbrite, and for display events on the website
+// used for internal Chapters page on ADB, syncing with FB and Eventbrite, and for displaying events on the website
 type ChapterWithToken struct {
-	ID                int     `db:"id"`
-	ChapterID         int     `db:"chapter_id"`
-	Name              string  `db:"name"`
-	Flag              string  `db:"flag"`
-	FbURL             string  `db:"fb_url"`
-	TwitterURL        string  `db:"twitter_url"`
-	InstaURL          string  `db:"insta_url"`
-	Email             string  `db:"email"`
-	Region            string  `db:"region"`
-	Lat               float64 `db:"lat"`
-	Lng               float64 `db:"lng"`
-	Distance          float32 `db:"distance"`
-	MailingListType   string  `db:"ml_type"`
-	MailingListRadius int     `db:"ml_radius"`
-	MailingListID     string  `db:"ml_id"`
-	Token             string  `db:"token,omitempty"`
-	LastUpdate        string  `db:"last_update"`
-	EventbriteID      string  `db:"eventbrite_id"`
-	EventbriteToken   string  `db:"eventbrite_token"`
+	ID                   int          `db:"id"`
+	ChapterID            int          `db:"chapter_id"`
+	Name                 string       `db:"name"`
+	Flag                 string       `db:"flag"`
+	FbURL                string       `db:"fb_url"`
+	TwitterURL           string       `db:"twitter_url"`
+	InstaURL             string       `db:"insta_url"`
+	Email                string       `db:"email"`
+	Region               string       `db:"region"`
+	Lat                  float64      `db:"lat"`
+	Lng                  float64      `db:"lng"`
+	Distance             float32      `db:"distance"`
+	MailingListType      string       `db:"ml_type"`
+	MailingListRadius    int          `db:"ml_radius"`
+	MailingListID        string       `db:"ml_id"`
+	Token                string       `db:"token,omitempty"`
+	LastUpdate           string       `db:"last_update"`
+	EventbriteID         string       `db:"eventbrite_id"`
+	EventbriteToken      string       `db:"eventbrite_token"`
+	Mentor               string       `db:"mentor"`
+	Country              string       `db:"country"`
+	Notes                string       `db:"notes"`
+	LastContact          string       `db:"last_contact"`
+	LastAction           string       `db:"last_action"`
+	Organizers           Organizers   `db:"organizers"`
+	LastCheckinEmailSent sql.NullTime `db:"last_checkin_email_sent"`
+	// TODO: Add Last FB Event field (via join with fb_events)
+}
+
+type Organizer struct {
+	Name  string
+	Email string
+	Phone string
+}
+
+type Organizers []*Organizer
+
+func (o Organizers) Value() (driver.Value, error) {
+	return json.Marshal(o)
+}
+
+func (o *Organizers) Scan(value interface{}) error {
+	b, ok := value.([]byte)
+	if !ok {
+		return errors.New("type assertion to []byte failed")
+	}
+	return json.Unmarshal(b, &o)
 }
 
 // used for making api calls to facebook, not for responding to our api requests
@@ -83,7 +116,9 @@ func GetAllChapters(db *sqlx.DB) ([]ChapterWithToken, error) {
 		  SELECT max(last_update) AS last_update
 		  FROM fb_events
 		  WHERE fb_pages.id = fb_events.page_id    
-		), "") AS last_update
+		), "") AS last_update,
+
+		mentor, country, notes, last_contact, last_action, organizers, last_checkin_email_sent
 		
 		FROM fb_pages
 		ORDER BY name`
@@ -93,12 +128,13 @@ func GetAllChapters(db *sqlx.DB) ([]ChapterWithToken, error) {
 		// error
 		return nil, errors.Wrap(err, "failed to select pages")
 	}
+
 	return pages, nil
 }
 
 // for the chapter management admin page on the ADB itself
 func GetChapterByID(db *sqlx.DB, id int) (ChapterWithToken, error) {
-	query := `SELECT id, chapter_id, name, flag, fb_url, twitter_url, insta_url, email, region, lat, lng, token, eventbrite_id, eventbrite_token, ml_type, ml_radius, ml_id
+	query := `SELECT id, chapter_id, name, flag, fb_url, twitter_url, insta_url, email, region, lat, lng, token, eventbrite_id, eventbrite_token, ml_type, ml_radius, ml_id, mentor, country, notes, last_contact, last_action, organizers, last_checkin_email_sent
 		FROM fb_pages
 		WHERE chapter_id = ?`
 	var pages []ChapterWithToken
@@ -116,7 +152,7 @@ func GetChapterByID(db *sqlx.DB, id int) (ChapterWithToken, error) {
 }
 
 // for the chapter management admin page on the ADB itself
-func UpdateChapter(db *sqlx.DB, page ChapterWithToken) error {
+func UpdateChapter(db *sqlx.DB, page ChapterWithToken) (int, error) {
 	_, err := db.NamedExec(`UPDATE fb_pages
 		SET id = :id,
 		name = :name,
@@ -133,32 +169,39 @@ func UpdateChapter(db *sqlx.DB, page ChapterWithToken) error {
 		eventbrite_token = :eventbrite_token,
 		ml_type = :ml_type,
 		ml_radius = :ml_radius,
-		ml_id = :ml_id
+		ml_id = :ml_id,
+		mentor = :mentor,
+		country = :country,
+		notes = :notes,
+		last_contact = :last_contact,
+		last_action = :last_action,
+		organizers = :organizers
 		WHERE chapter_id = :chapter_id`, page)
 	if err != nil {
-		return errors.Wrapf(err, "failed to update chapter %d", page.ID)
+		return 0, errors.Wrapf(err, "failed to update chapter %d", page.ID)
+	}
+	return page.ChapterID, nil
+}
+
+// for the chapter management admin page on the ADB itself
+func DeleteChapter(db *sqlx.DB, chapter int) error {
+	_, err := db.Exec(`DELETE FROM fb_pages
+		WHERE chapter_id = ?`, chapter)
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete chapter %d", chapter)
 	}
 	return nil
 }
 
 // for the chapter management admin page on the ADB itself
-func DeleteChapter(db *sqlx.DB, page ChapterWithToken) error {
-	_, err := db.NamedExec(`DELETE FROM fb_pages
-		WHERE chapter_id = :chapter_id`, page)
+func InsertChapter(db *sqlx.DB, page ChapterWithToken) (int, error) {
+	res, err := db.NamedExec(`INSERT INTO fb_pages ( id, name, flag, fb_url, insta_url, twitter_url, email, region, lat, lng, mentor, country, notes, last_contact, last_action, organizers )
+		VALUES ( :id, :name, :flag, :fb_url, :insta_url, :twitter_url, :email, :region, :lat, :lng, :mentor, :country, :notes, :last_contact, :last_action, :organizers )`, page)
 	if err != nil {
-		return errors.Wrapf(err, "failed to delete chapter %d", page.ID)
+		return 0, errors.Wrapf(err, "failed to insert chapter %d", page.ID)
 	}
-	return nil
-}
-
-// for the chapter management admin page on the ADB itself
-func InsertChapter(db *sqlx.DB, page ChapterWithToken) error {
-	_, err := db.NamedExec(`INSERT INTO fb_pages ( id, name, flag, fb_url, insta_url, twitter_url, email, region, lat, lng )
-		VALUES ( :id, :name, :flag, :fb_url, :insta_url, :twitter_url, :email, :region, :lat, :lng )`, page)
-	if err != nil {
-		return errors.Wrapf(err, "failed to insert chapter %d", page.ID)
-	}
-	return nil
+	insertedID, err := res.LastInsertId()
+	return int(insertedID), nil
 }
 
 // returns all public chapter data for public API consumption
@@ -173,6 +216,26 @@ func GetAllChapterInfo(db *sqlx.DB) ([]Chapter, error) {
 		return nil, errors.Wrap(err, "failed to select chapters")
 	}
 	return chapters, nil
+}
+
+func CleanChapterData(db *sqlx.DB, body io.Reader) (ChapterWithToken, error) {
+	var chapter ChapterWithToken
+	err := json.NewDecoder(body).Decode(&chapter)
+	if err != nil {
+		return ChapterWithToken{}, err
+	}
+
+	// TODO: trim space off more fields
+	chapter.Name = strings.TrimSpace(chapter.Name)
+
+	// TODO: parse dates
+	//t, err := time.Parse(EventDateLayout, eventJSON.EventDate)
+	//if err != nil {
+	//	return Event{}, err
+	//}
+	//e.EventDate = t
+
+	return chapter, nil
 }
 
 // TODO: update this function (and the website) to handle data in the normal Chapter struct instead of w/ Token

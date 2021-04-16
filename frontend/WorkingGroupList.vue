@@ -432,7 +432,7 @@ export default Vue.extend({
           }
           // status === "success"
           flashMessage(this.currentWorkingGroup.name + ' deleted');
-          this.workingGroups.splice(this.workingGroupIndex, this.workingGroupIndex + 1);
+          this.workingGroups.splice(this.workingGroupIndex, 1);
           this.hideModal();
         },
         error: (err) => {

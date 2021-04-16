@@ -1,78 +1,8 @@
 {{template "header.html" .}}
 
-<style>
-	td {
-		padding: 3px;
-	}
-	a:link {
-	  color: black;
-	}
-	a:visited {
-	  color: black;
-	}
-	a:hover {
-	  color: blue;
-	}
-	a:active {
-	  color: blue;
-	}
-</style>
-
-<div class="body-wrapper-extra-wide">
-
-  	  <div class="title">
-  		<h1>Chapters</h1>
-  	  </div>
-
-  	  <button class="btn btn-default" onclick="window.location.href='/chapter/new'">
-      	<span class="glyphicon glyphicon-plus"></span>&nbsp;&nbsp;Add New Chapter
-      </button>
-
-	  <table class="adb-table table table-hover table-striped">
-	      <thead>
-	      <tr>
-	      	<th></th>
-	        <th>Name</th>
-	        <th>Flag</th>
-	        <th>Facebook</th>
-	        <th>Twitter</th>
-	        <th>Instagram</th>
-	        <th>Email</th>
-	        <th>Region</th>
-	        <th>FB Data Last Received</th>
-	      </tr>
-	       </thead>
-	       <tbody>
-	    {{ range .Data.Chapters }}
-	      <tr>
-	      	<td nowrap>
-	      		<button class="btn btn-default glyphicon glyphicon-pencil" onclick="window.location.href='/chapter/edit?id={{ .ChapterID }}'"></button>
-	      		<button class="btn btn-danger glyphicon glyphicon-trash" onclick="confirmDelete('{{ .Name }}', '{{ .ChapterID }}')"></button>
-	      	</td>
-	        <td nowrap>{{ .Name }}</td>
-	        <td>{{ .Flag }}</td>
-	        <td>{{ if .FbURL }} <a href="{{ .FbURL }}" target="_blank"><span class="glyphicon glyphicon-link"></span></a> {{ end }}</td>
-	        <td>{{ if .TwitterURL }} <a href="{{ .TwitterURL }}" target="_blank"><span class="glyphicon glyphicon-link"></span></a> {{ end }}</td>
-	        <td>{{ if .InstaURL }} <a href="{{ .InstaURL }}" target="_blank"><span class="glyphicon glyphicon-link"></span></a> {{ end }}</td>
-	        <td>{{ if .Email }} <a href="mailto:{{ .Email }}" target="_blank"><span class="glyphicon glyphicon-envelope"></span></a> {{ end }}</td>
-	        <td>{{ .Region }}</td>
-	        <td nowrap>{{ .LastUpdate }}</td>
-	      </tr>
-	    {{ end }}
-	       </tbody>
-	    </table>
-
+<div id="app">
+  <chapter-list></chapter-list>
 </div>
-
 <script src="/dist/adb.js?{{ .StaticResourcesHash }}"></script>
-
-<script>
-	function confirmDelete(chapterName, chapterID) {
-		var result = confirm(`Are you sure you want to delete ${chapterName}?`);
-		if (result) {
-			window.location.href=`/chapter/delete?id=${chapterID}`;
-		}
-	}
-</script>
 
 {{template "footer.html" .}}
