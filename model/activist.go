@@ -738,7 +738,7 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 			whereClause = append(whereClause, "(source like '%form%' or source like 'petition%' or source like 'eventbrite%' or source='dxe-signup' or source='arc-signup') and source not like '%application%'")
 			whereClause = append(whereClause, "activist_level = 'supporter'")
 			whereClause = append(whereClause, "interest_date >= DATE_SUB(now(), INTERVAL 3 MONTH)")
-			whereClause = append(whereClause, "a.id in (select distinct activist_id from event_attendance ea)")
+			whereClause = append(whereClause, "a.id not in (select distinct activist_id from event_attendance)")
 		}
 		if options.Filter == "leaderboard" {
 			whereClause = append(whereClause, "a.id in (select distinct activist_id  from event_attendance ea  where ea.event_id in (select id from events e where e.date >= (now() - interval 30 day)))")
@@ -1571,6 +1571,7 @@ func GetCommunityProspectHubSpotInfo(db *sqlx.DB) ([]CommunityProspectHubSpotInf
 		WHERE (source like '%form%' or source like 'petition%' or source like 'eventbrite%' or source='dxe-signup' or source='arc-signup') and source not like '%application%'
 		and activist_level = 'supporter'
 		and interest_date >= DATE_SUB(now(), INTERVAL 3 MONTH)
+		and activists.id not in (select distinct activist_id from event_attendance)
 		and hidden = 0
 		ORDER BY interest_date desc
 `)
