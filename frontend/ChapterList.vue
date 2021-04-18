@@ -737,7 +737,7 @@ export default Vue.extend({
       if (time.isAfter(moment().add(-1, 'hour'))) {
         color = 'green';
       }
-      return `<div class="dot bg-${color}"><small>${timeStr}</small></div>`;
+      return `<div class="dot bg-${color}"></div><div><small>${timeStr}</small></div>`;
     },
     colorQuarterlyGoal(text: string) {
       const time = moment(text);
