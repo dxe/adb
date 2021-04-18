@@ -14,7 +14,7 @@
           <th @click="sort('LastContact')">Last Contact</th>
           <th @click="sort('LastAction')">Last Action</th>
           <th @click="sort('LastFBEvent')">Last FB Event</th>
-          <th @click="sort('FBSyncStatus')">Last FB Sync</th>
+          <th @click="sort('LastFBSync')">Last FB Sync</th>
         </tr>
       </thead>
       <tbody id="working-group-list-body">
@@ -46,11 +46,8 @@
           <td>{{ chapter.Flag }} {{ chapter.Name }}</td>
           <td>{{ chapter.Mentor }}</td>
           <td>{{ chapter.LastContact }}</td>
-          <!-- goal: monthly -->
-          <td>{{ chapter.LastAction }}</td>
-          <!-- goal: quarterly -->
-          <td>{{ chapter.LastFBEvent }}</td>
-          <!-- goal monthly or quarterly? -->
+          <td v-html="colorQuarterlyGoal(chapter.LastAction)"></td>
+          <td v-html="colorQuarterlyGoal(chapter.LastFBEvent)"></td>
           <td v-html="colorFBSyncStatus(chapter.LastFBSync)"></td>
         </tr>
       </tbody>
@@ -482,7 +479,7 @@ import { flashMessage } from './flash_message';
 //@ts-ignore
 import { Dropdown } from 'uiv';
 import { focus } from './directives/focus';
-import moment from './external/moment';
+import moment from 'moment';
 
 Vue.use(vmodal);
 
@@ -708,7 +705,6 @@ export default Vue.extend({
         ? this.currentChapter.Organizers
         : [];
       this.currentChapter.Organizers.push({} as Organizer);
-      console.log(this.currentChapter);
     },
     deleteOrganizer(index: number) {
       this.currentChapter.Organizers.splice(index, 1);
@@ -729,9 +725,10 @@ export default Vue.extend({
     },
     colorFBSyncStatus(text: string) {
       const time = moment(text).add(8, 'hour'); // this converts our DB time for this field to UTC
-      console.log(time);
       let color = 'grey';
+      let timeStr = '';
       if (time.isValid()) {
+        timeStr = time.fromNow();
         color = 'red';
       }
       if (time.isAfter(moment().add(-1, 'day'))) {
@@ -740,8 +737,18 @@ export default Vue.extend({
       if (time.isAfter(moment().add(-1, 'hour'))) {
         color = 'green';
       }
-      console.log(color);
-      return `<div class="dot ${color}"><small>${text}</small></div>`;
+      return `<div class="dot ${color}"><small>${timeStr}</small></div>`;
+    },
+    colorQuarterlyGoal(text: string) {
+      const time = moment(text);
+      let color = 'grey';
+      if (time.isValid()) {
+        color = 'red';
+      }
+      if (time.isAfter(moment().add(-3, 'month'))) {
+        color = 'green';
+      }
+      return `<div class="${color}"><small>${time}</small></div>`;
     },
   },
   data() {
@@ -766,8 +773,6 @@ export default Vue.extend({
       method: 'POST',
       success: (data) => {
         const parsed = JSON.parse(data);
-        // TODO: remove this line
-        console.log(parsed);
         if (parsed.status === 'error') {
           flashMessage('Error: ' + parsed.message, true);
           return;

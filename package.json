@@ -23,6 +23,7 @@
     "chosen-js": "^1.8.7",
     "debounce": "^1.2.0",
     "handsontable": "^6.2.2",
+    "moment": "^2.29.1",
     "serialize-javascript": "^3.1.0",
     "uiv": "^0.28.0",
     "vue": "^2.6.10",
