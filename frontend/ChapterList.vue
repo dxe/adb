@@ -737,18 +737,20 @@ export default Vue.extend({
       if (time.isAfter(moment().add(-1, 'hour'))) {
         color = 'green';
       }
-      return `<div class="dot ${color}"><small>${timeStr}</small></div>`;
+      return `<div class="dot bg-${color}"><small>${timeStr}</small></div>`;
     },
     colorQuarterlyGoal(text: string) {
       const time = moment(text);
       let color = 'grey';
+      let timeStr = '';
       if (time.isValid()) {
+        timeStr = time.format('YYYY-MM-DD');
         color = 'red';
       }
       if (time.isAfter(moment().add(-3, 'month'))) {
         color = 'green';
       }
-      return `<div class="${color}"><small>${time}</small></div>`;
+      return `<div class="${color}"><small>${timeStr}</small></div>`;
     },
   },
   data() {
@@ -803,16 +805,22 @@ export default Vue.extend({
   border-radius: 50%;
   display: inline-block;
 }
-.green {
+.bg-green {
   background-color: green;
 }
-.yellow {
+.bg-yellow {
   background-color: yellow;
 }
-.red {
+.bg-red {
   background-color: red;
 }
-.grey {
+.bg-grey {
   background-color: grey;
+}
+.green {
+  color: green;
+}
+.red {
+  color: red;
 }
 </style>
