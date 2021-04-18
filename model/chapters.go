@@ -47,7 +47,8 @@ type ChapterWithToken struct {
 	MailingListRadius    int          `db:"ml_radius"`
 	MailingListID        string       `db:"ml_id"`
 	Token                string       `db:"token,omitempty"`
-	LastUpdate           string       `db:"last_update"`
+	LastFBSync           string       `db:"last_update"`
+	LastFBEvent          string       `db:"last_fb_event"`
 	EventbriteID         string       `db:"eventbrite_id"`
 	EventbriteToken      string       `db:"eventbrite_token"`
 	Mentor               string       `db:"mentor"`
@@ -57,7 +58,6 @@ type ChapterWithToken struct {
 	LastAction           string       `db:"last_action"`
 	Organizers           Organizers   `db:"organizers"`
 	LastCheckinEmailSent sql.NullTime `db:"last_checkin_email_sent"`
-	// TODO: Add Last FB Event field (via join with fb_events)
 }
 
 type Organizer struct {
@@ -113,10 +113,17 @@ func GetAllChapters(db *sqlx.DB) ([]ChapterWithToken, error) {
 	query := `SELECT fb_pages.id, chapter_id, fb_pages.name, flag, fb_url, twitter_url, insta_url, email, region, fb_pages.lat, fb_pages.lng, token, fb_pages.eventbrite_id, eventbrite_token, ml_type, ml_radius, ml_id,
 	
 		@last_update := IFNULL((
-		  SELECT max(last_update) AS last_update
+		  SELECT MAX(last_update) AS last_update
 		  FROM fb_events
 		  WHERE fb_pages.id = fb_events.page_id    
 		), "") AS last_update,
+		
+		@last_fb_event := IFNULL((
+		  SELECT DATE(MAX(fb_events.start_time)) AS start_time
+		  FROM fb_events
+		  WHERE fb_pages.id = fb_events.page_id
+		  AND fb_events.start_time < NOW()
+		), "") AS last_fb_event,
 
 		mentor, country, notes, last_contact, last_action, organizers, last_checkin_email_sent
 		

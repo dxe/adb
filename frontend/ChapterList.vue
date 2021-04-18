@@ -14,7 +14,7 @@
           <th @click="sort('LastContact')">Last Contact</th>
           <th @click="sort('LastAction')">Last Action</th>
           <th @click="sort('LastFBEvent')">Last FB Event</th>
-          <th @click="sort('FBSyncStatus')">FB Sync Status</th>
+          <th @click="sort('FBSyncStatus')">Last FB Sync</th>
         </tr>
       </thead>
       <tbody id="working-group-list-body">
@@ -46,9 +46,12 @@
           <td>{{ chapter.Flag }} {{ chapter.Name }}</td>
           <td>{{ chapter.Mentor }}</td>
           <td>{{ chapter.LastContact }}</td>
+          <!-- goal: monthly -->
           <td>{{ chapter.LastAction }}</td>
+          <!-- goal: quarterly -->
           <td>{{ chapter.LastFBEvent }}</td>
-          <td>{{ chapter.FBSyncStatus }}</td>
+          <!-- goal monthly or quarterly? -->
+          <td v-html="colorFBSyncStatus(chapter.LastFBSync)"></td>
         </tr>
       </tbody>
     </table>
@@ -443,6 +446,15 @@
                   v-focus
                 />
               </p>
+              <p>
+                <button
+                  class="btn btn-xs btn-primary"
+                  style="margin: 0px 10px"
+                  v-on:click.prevent="setDateToToday"
+                >
+                  today
+                </button>
+              </p>
             </form>
           </div>
           <div class="modal-footer">
@@ -470,6 +482,7 @@ import { flashMessage } from './flash_message';
 //@ts-ignore
 import { Dropdown } from 'uiv';
 import { focus } from './directives/focus';
+import moment from '../static/external/moment.js';
 
 Vue.use(vmodal);
 
@@ -489,7 +502,8 @@ interface Chapter {
   MailingListID: string;
   ID: number; // Facebook ID
   Token: string;
-  LastUpdate: string; // TODO: use string or Date here?
+  LastFBSync: string; // TODO: use string or Date here?
+  LastFBEvent: string; // TODO: use string or Date here?
   EventbriteID: string;
   EventbriteToken: string;
   Mentor: string;
@@ -497,7 +511,6 @@ interface Chapter {
   Notes: string;
   LastContact: string; // TODO: use string or Date here?
   LastAction: string; // TODO: use string or Date here?
-  // TODO: add FB last event field
   Organizers: Organizer[];
 }
 
@@ -569,21 +582,6 @@ export default Vue.extend({
       this.currentModalName = '';
       this.chapterIndex = -1;
       this.currentChapter = {} as Chapter;
-
-      // Sort chapter list
-      this.sortListByName();
-    },
-    sortListByName() {
-      if (!this.chapters) {
-        return;
-      }
-
-      this.chapters.sort((a, b) => {
-        let nameA = a.Name.toLowerCase();
-        let nameB = b.Name.toLowerCase();
-
-        return nameA < nameB ? -1 : nameA > nameB ? 1 : 0;
-      });
     },
     confirmEditChapterModal() {
       if (!this.currentChapter.Name) {
@@ -608,6 +606,13 @@ export default Vue.extend({
       }
       if (!this.currentChapter.Lng) {
         alert('Lng is required and must be a number!');
+        return;
+      }
+      if (
+        this.currentChapter.LastContact &&
+        !this.currentChapter.LastContact.match(/^\d{4}-\d{2}-\d{2}$/)
+      ) {
+        alert('Last Contact date must be in YYYY-MM-DD format!');
         return;
       }
 
@@ -717,6 +722,27 @@ export default Vue.extend({
       }
       this.currentSort = s;
     },
+    setDateToToday() {
+      this.currentChapter.LastContact = moment()
+        .local()
+        .format('YYYY-MM-DD');
+    },
+    colorFBSyncStatus(text: string) {
+      const time = moment(text);
+      console.log(time);
+      let color = 'grey';
+      if (time.isValid()) {
+        color = 'red';
+      }
+      if (time.isAfter(moment().add(-1, 'day'))) {
+        color = 'yellow';
+      }
+      if (time.isAfter(moment().add(-1, 'hour'))) {
+        color = 'green';
+      }
+      console.log(color);
+      return `<div class="dot ${color}"><small>${text}</small></div>`;
+    },
   },
   data() {
     return {
@@ -766,5 +792,22 @@ export default Vue.extend({
 </script>
 
 <style>
-/* TODO */
+.dot {
+  height: 25px;
+  width: 25px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.green {
+  background-color: green;
+}
+.yellow {
+  background-color: yellow;
+}
+.red {
+  background-color: red;
+}
+.grey {
+  background-color: grey;
+}
 </style>
