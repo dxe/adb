@@ -728,7 +728,7 @@ export default Vue.extend({
         .format('YYYY-MM-DD');
     },
     colorFBSyncStatus(text: string) {
-      const time = moment(text);
+      const time = moment(text).add(8, 'hour'); // this converts our DB time for this field to UTC
       console.log(time);
       let color = 'grey';
       if (time.isValid()) {
