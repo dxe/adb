@@ -482,7 +482,7 @@ import { flashMessage } from './flash_message';
 //@ts-ignore
 import { Dropdown } from 'uiv';
 import { focus } from './directives/focus';
-import moment from '../static/external/moment.js';
+import moment from './external/moment';
 
 Vue.use(vmodal);
 
