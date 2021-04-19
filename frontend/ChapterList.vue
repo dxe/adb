@@ -726,9 +726,7 @@ export default Vue.extend({
     colorFBSyncStatus(text: string) {
       const time = moment(text).add(8, 'hour'); // this converts our DB time for this field to UTC
       let color = 'grey';
-      let timeStr = '';
       if (time.isValid()) {
-        timeStr = time.fromNow();
         color = 'red';
       }
       if (time.isAfter(moment().add(-1, 'day'))) {
@@ -737,7 +735,7 @@ export default Vue.extend({
       if (time.isAfter(moment().add(-1, 'hour'))) {
         color = 'green';
       }
-      return `<div class="dot bg-${color}"></div><div><small>${timeStr}</small></div>`;
+      return `<div class="dot bg-${color}"><div>`;
     },
     colorQuarterlyGoal(text: string) {
       const time = moment(text);
