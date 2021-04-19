@@ -14,7 +14,7 @@
           <th @click="sort('LastContact')">Last Contact</th>
           <th @click="sort('LastAction')">Last Action</th>
           <th @click="sort('LastFBEvent')">Last FB Event</th>
-          <th @click="sort('LastFBSync')">Last FB Sync</th>
+          <th @click="sort('LastFBSync')">FB Sync Status</th>
         </tr>
       </thead>
       <tbody id="working-group-list-body">
