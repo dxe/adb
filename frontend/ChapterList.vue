@@ -570,7 +570,7 @@ export default Vue.extend({
           mentors.push(c.Mentor);
         }
       });
-      return mentors;
+      return mentors.sort();
     },
   },
   methods: {
