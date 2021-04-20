@@ -1,8 +1,26 @@
 <template>
   <adb-page title="Chapters" class="body-wrapper-wide">
-    <button class="btn btn-default" @click="showModal('edit-chapter-modal')">
-      <span class="glyphicon glyphicon-plus"></span>&nbsp;&nbsp;Add New Chapter
-    </button>
+    <div class="form-inline">
+      <button class="btn btn-default" @click="showModal('edit-chapter-modal')">
+        <span class="glyphicon glyphicon-plus"></span>&nbsp;&nbsp;Add New Chapter
+      </button>
+
+      &nbsp;&nbsp;
+
+      <label for="region">Filter by mentor: </label>
+      <select
+        id="mentor-filter"
+        class="form-control form-inline"
+        style="width: 200px"
+        v-model="mentorFilter"
+      >
+        <template v-for="(mentor, index) in mentors">
+          <option v-bind="mentor">{{ mentor }}</option>
+        </template>
+      </select>
+    </div>
+
+    <br />
 
     <table id="working-group-list" class="adb-table table table-hover table-striped">
       <thead>
@@ -86,12 +104,12 @@
     <modal
       name="edit-chapter-modal"
       height="auto"
-      width="800"
+      width="1000"
       classes="no-background-color no-top"
       @opened="modalOpened"
       @closed="modalClosed"
     >
-      <div class="modal-dialog" style="width: 800px;">
+      <div class="modal-dialog" style="width: 1000px;">
         <div class="modal-content">
           <div class="modal-header">
             <h2 class="modal-title" v-if="currentChapter.ChapterID">
@@ -101,20 +119,6 @@
           </div>
           <div class="modal-body">
             <form action="" id="editChapterForm">
-              <div class="form-row" v-if="!currentChapter.ChapterID">
-                <div class="col-xs-12">
-                  <label for="name">Name: </label
-                  ><input
-                    class="form-control"
-                    type="text"
-                    v-model.trim="currentChapter.Name"
-                    id="name"
-                    maxlength="75"
-                    v-focus
-                  />
-                </div>
-              </div>
-
               <div class="form-row">
                 <div class="col-xs-2" style="margin-top: 10px;">
                   <label for="flag">Flag: </label
@@ -127,7 +131,19 @@
                   />
                 </div>
 
-                <div class="col-xs-10" style="margin-top: 10px;">
+                <div class="col-xs-6" style="margin-top: 10px;">
+                  <label for="flag">Name: </label
+                  ><input
+                    class="form-control"
+                    type="text"
+                    v-model.trim="currentChapter.Name"
+                    id="chapter-name"
+                    maxlength="100"
+                    :readonly="currentChapter.ChapterID"
+                  />
+                </div>
+
+                <div class="col-xs-4" style="margin-top: 10px;">
                   <label for="mentor">Mentor: </label
                   ><input
                     class="form-control"
@@ -184,7 +200,7 @@
                 </div>
               </div>
               <div class="form-row">
-                <div class="col-xs-6" style="margin-top: 10px;">
+                <div class="col-xs-4" style="margin-top: 10px;">
                   <label for="region">Region: </label
                   ><select id="region" class="form-control" v-model="currentChapter.Region">
                     <option value="North America">North America</option>
@@ -196,7 +212,7 @@
                   </select>
                 </div>
 
-                <div class="col-xs-6" style="margin-top: 10px;">
+                <div class="col-xs-4" style="margin-top: 10px;">
                   <label for="country">Country: </label
                   ><input
                     class="form-control"
@@ -206,10 +222,8 @@
                     id="country"
                   />
                 </div>
-              </div>
 
-              <div class="form-row">
-                <div class="col-xs-6" style="margin-top: 10px;">
+                <div class="col-xs-2" style="margin-top: 10px;">
                   <label for="lat">Lat: </label
                   ><input
                     class="form-control"
@@ -222,7 +236,7 @@
                     max="90"
                   />
                 </div>
-                <div class="col-xs-6" style="margin-top: 10px;">
+                <div class="col-xs-2" style="margin-top: 10px;">
                   <label for="lng">Lng: </label
                   ><input
                     class="form-control"
@@ -236,6 +250,7 @@
                   />
                 </div>
               </div>
+
               <!-- TODO: decide whether to show this row or modal or remove it -->
               <div class="form-row">
                 <div class="col-xs-6" style="margin-top: 10px;">
@@ -277,7 +292,7 @@
                 </div>
 
                 <div class="form-row" v-for="(organizer, index) in currentChapter.Organizers">
-                  <div class="col-xs-4" style="margin-top: 5px;">
+                  <div class="col-xs-3" style="margin-top: 5px;">
                     <input
                       class="form-control"
                       type="text"
@@ -286,7 +301,7 @@
                     />
                   </div>
 
-                  <div class="col-xs-4" style="margin-top: 5px;">
+                  <div class="col-xs-3" style="margin-top: 5px;">
                     <input
                       class="form-control"
                       type="text"
@@ -295,7 +310,7 @@
                     />
                   </div>
 
-                  <div class="col-xs-3" style="margin-top: 5px;">
+                  <div class="col-xs-2" style="margin-top: 5px;">
                     <input
                       class="form-control"
                       type="text"
@@ -304,12 +319,20 @@
                     />
                   </div>
 
+                  <div class="col-xs-3" style="margin-top: 5px;">
+                    <input
+                      class="form-control"
+                      type="text"
+                      placeholder="Facebook"
+                      v-model.trim="organizer.Facebook"
+                    />
+                  </div>
+
                   <div class="col-xs-1" style="margin-top: 5px; padding: 0px;">
                     <a
-                      href="#"
                       class="form-control btn btn-danger"
                       @click="deleteOrganizer(index)"
-                      style="color: white"
+                      style="color: white; cursor: pointer"
                       ><span class="glyphicon glyphicon-trash"></span
                     ></a>
                   </div>
@@ -321,7 +344,7 @@
 
               <p>&nbsp;</p>
               <div>
-                <a @click="toggleShowMoreOptions" href="#">
+                <a @click="toggleShowMoreOptions" style="cursor: pointer">
                   <span v-if="!showMoreOptions"
                     >Show advanced options (for event & mailing list integrations)</span
                   >
@@ -515,19 +538,38 @@ interface Organizer {
   Name: string;
   Email: string;
   Phone: string;
+  Facebook: string;
 }
 
 export default Vue.extend({
   name: 'chapter-list',
   computed: {
     sortedChapters: function(): Chapter[] {
-      return this.chapters.sort((a: any, b: any) => {
+      const sorted = this.chapters.sort((a: any, b: any) => {
         let modifier = 1;
         if (this.currentSortDir === 'desc') modifier = -1;
         if (a[this.currentSort] < b[this.currentSort]) return -1 * modifier;
         if (a[this.currentSort] > b[this.currentSort]) return modifier;
         return 0;
       });
+      if (this.mentorFilter === 'All') {
+        return sorted;
+      }
+      return this.chapters.filter((c) => {
+        return c.Mentor === this.mentorFilter;
+      });
+    },
+    mentors: function(): string[] {
+      let mentors: string[];
+      mentors = ['All'];
+      this.chapters.forEach((c) => {
+        console.log(c.Mentor);
+        if (c.Mentor && mentors.indexOf(c.Mentor) === -1) {
+          console.log('hi');
+          mentors.push(c.Mentor);
+        }
+      });
+      return mentors;
     },
   },
   methods: {
@@ -761,6 +803,7 @@ export default Vue.extend({
       showMoreOptions: false,
       currentSort: 'Name',
       currentSortDir: 'asc',
+      mentorFilter: 'All',
     };
   },
 
