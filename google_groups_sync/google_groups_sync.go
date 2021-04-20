@@ -193,7 +193,7 @@ func syncChapterMemberMailingList(db *sqlx.DB, adminService *admin.Service) {
 
 	members, err := model.GetChapterMembers(db)
 	if err != nil {
-		log.Printf("Failed to query chapters: %v", err)
+		log.Printf("Failed to query activists: %v", err)
 		return
 	}
 
@@ -217,7 +217,7 @@ func syncOrganizersMailingList(db *sqlx.DB, adminService *admin.Service) {
 
 	members, err := model.GetOrganizers(db)
 	if err != nil {
-		log.Printf("Failed to query chapters: %v", err)
+		log.Printf("Failed to query activists: %v", err)
 		return
 	}
 
@@ -235,6 +235,28 @@ func syncOrganizersMailingList(db *sqlx.DB, adminService *admin.Service) {
 	syncMailingList(adminService, "sfbay-organizers@directactioneverywhere.com", emails)
 }
 
+func syncInternationalOrganizersMailingList(db *sqlx.DB, adminService *admin.Service) {
+	chapters, err := model.GetAllChapters(db)
+	if err != nil {
+		log.Printf("Failed to query chapters: %v", err)
+		return
+	}
+
+	var emails []string
+	for _, c := range chapters {
+		for _, o := range c.Organizers {
+			email := normalizeEmail(o.Email)
+			if email == "" {
+				log.Printf("Int'l Organizer has no email, will not be synced to mailing list: %s", o.Name)
+				continue
+			}
+			emails = append(emails, email)
+		}
+	}
+
+	syncMailingList(adminService, "international-organizers@directactioneverywhere.com", emails)
+}
+
 func syncMailingListsWrapper(db *sqlx.DB, adminService *admin.Service) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -246,6 +268,7 @@ func syncMailingListsWrapper(db *sqlx.DB, adminService *admin.Service) {
 	syncCircleHostMailingList(db, adminService)
 	syncChapterMemberMailingList(db, adminService)
 	syncOrganizersMailingList(db, adminService)
+	syncInternationalOrganizersMailingList(db, adminService)
 }
 
 // Syncs the mailing list every 5 minutes. Should be run in a

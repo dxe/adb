@@ -14,9 +14,7 @@
         style="width: 200px"
         v-model="mentorFilter"
       >
-        <template v-for="(mentor, index) in mentors">
-          <option v-bind="mentor">{{ mentor }}</option>
-        </template>
+        <option v-for="mentor in mentors" v-bind:value="mentor">{{ mentor }}</option>
       </select>
     </div>
 
@@ -36,11 +34,11 @@
         </tr>
       </thead>
       <tbody id="working-group-list-body">
-        <tr v-for="(chapter, index) in sortedChapters">
+        <tr v-for="chapter in sortedChapters">
           <td>
             <button
               class="btn btn-default glyphicon glyphicon-pencil"
-              @click="showModal('edit-chapter-modal', chapter, index)"
+              @click="showModal('edit-chapter-modal', chapter)"
             ></button>
           </td>
           <td>
@@ -52,11 +50,11 @@
               ></button>
               <template slot="dropdown">
                 <li>
-                  <a @click="showModal('chapter-last-contact-modal', chapter, index)"
+                  <a @click="showModal('chapter-last-contact-modal', chapter)"
                     >Update Last Contact</a
                   >
                   <a @click="composeEmail(chapter)">Email Organizers</a>
-                  <a @click="showModal('delete-chapter-modal', chapter, index)">Delete Chapter</a>
+                  <a @click="showModal('delete-chapter-modal', chapter)">Delete Chapter</a>
                 </li>
               </template>
             </dropdown>
@@ -342,93 +340,98 @@
                 </div>
               </div>
 
-              <p>&nbsp;</p>
-              <div>
-                <a @click="toggleShowMoreOptions" style="cursor: pointer">
-                  <span v-if="!showMoreOptions"
-                    >Show advanced options (for event & mailing list integrations)</span
-                  >
-                  <span v-if="showMoreOptions">Hide advanced options</span> </a
-                ><br /><br />
-              </div>
               <div v-if="showMoreOptions">
-                <p>
-                  <label for="id">Facebook ID: </label
-                  ><input
-                    class="form-control"
-                    type="number"
-                    maxlength="16"
-                    v-model.number="currentChapter.ID"
-                    id="id"
-                  />
-                </p>
-                <p>
-                  <label for="token">Facebook Token: </label
-                  ><input
-                    class="form-control"
-                    type="text"
-                    maxlength="200"
-                    v-model.trim="currentChapter.Token"
-                    id="token"
-                  />
-                </p>
-                <p>
-                  <label for="eventbrite-id">Eventbrite ID: </label
-                  ><input
-                    class="form-control"
-                    type="number"
-                    maxlength="16"
-                    v-model.trim="currentChapter.EventbriteID"
-                    id="eventbrite-id"
-                  />
-                </p>
-                <p>
-                  <label for="eventbrite-token">Eventbrite Token: </label
-                  ><input
-                    class="form-control"
-                    type="text"
-                    maxlength="200"
-                    v-model.trim="currentChapter.EventbriteToken"
-                    id="eventbrite-token"
-                  />
-                </p>
-                <p>
-                  <label for="ml-type">Mailing List Type: </label
-                  ><select
-                    id="ml-type"
-                    class="form-control"
-                    v-model="currentChapter.MailingListType"
-                  >
-                    <option value="">None</option>
-                    <option value="Sendy">Sendy</option>
-                    <option value="Google Groups">Google Groups</option>
-                  </select>
-                </p>
-                <p>
-                  <label for="ml-id">Mailing List ID: </label
-                  ><input
-                    class="form-control"
-                    type="text"
-                    maxlength="100"
-                    v-model.trim="currentChapter.MailingListID"
-                    id="ml-id"
-                  />
-                </p>
-                <p>
-                  <label for="ml-rad">Mailing List Radius: </label
-                  ><input
-                    class="form-control"
-                    type="number"
-                    min="0"
-                    max="500"
-                    v-model.number="currentChapter.MailingListRadius"
-                    id="ml-rad"
-                  />
-                </p>
+                <div class="form-row">
+                  <div class="col-xs-6" style="margin-top: 10px;">
+                    <label for="id">Facebook ID: </label
+                    ><input
+                      class="form-control"
+                      type="number"
+                      maxlength="16"
+                      v-model.number="currentChapter.ID"
+                      id="id"
+                    />
+                  </div>
+                  <div class="col-xs-6" style="margin-top: 10px;">
+                    <label for="token">Facebook Token: </label
+                    ><input
+                      class="form-control"
+                      type="text"
+                      maxlength="200"
+                      v-model.trim="currentChapter.Token"
+                      id="token"
+                    />
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="col-xs-6" style="margin-top: 10px;">
+                    <label for="eventbrite-id">Eventbrite ID: </label
+                    ><input
+                      class="form-control"
+                      type="number"
+                      maxlength="16"
+                      v-model.trim="currentChapter.EventbriteID"
+                      id="eventbrite-id"
+                    />
+                  </div>
+                  <div class="col-xs-6" style="margin-top: 10px;">
+                    <label for="eventbrite-token">Eventbrite Token: </label
+                    ><input
+                      class="form-control"
+                      type="text"
+                      maxlength="200"
+                      v-model.trim="currentChapter.EventbriteToken"
+                      id="eventbrite-token"
+                    />
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="col-xs-4" style="margin-top: 10px;">
+                    <label for="ml-type">Mailing List Type: </label
+                    ><select
+                      id="ml-type"
+                      class="form-control"
+                      v-model="currentChapter.MailingListType"
+                    >
+                      <option value="">None</option>
+                      <option value="Sendy">Sendy</option>
+                      <option value="Google Groups">Google Groups</option>
+                    </select>
+                  </div>
+                  <div class="col-xs-4" style="margin-top: 10px;">
+                    <label for="ml-id">Mailing List ID: </label
+                    ><input
+                      class="form-control"
+                      type="text"
+                      maxlength="100"
+                      v-model.trim="currentChapter.MailingListID"
+                      id="ml-id"
+                    />
+                  </div>
+                  <div class="col-xs-4" style="margin-top: 10px;">
+                    <label for="ml-rad">Mailing List Radius: </label
+                    ><input
+                      class="form-control"
+                      type="number"
+                      min="0"
+                      max="500"
+                      v-model.number="currentChapter.MailingListRadius"
+                      id="ml-rad"
+                    />
+                  </div>
+                </div>
               </div>
+              <!-- This p is needed to make the modal footer's top border display properly. -->
+              <p>&nbsp;</p>
             </form>
           </div>
           <div class="modal-footer">
+            <button type="button" class="btn btn-warning" @click="toggleShowMoreOptions">
+              Advanced options
+            </button>
+            &nbsp;&nbsp;
             <button type="button" class="btn btn-secondary" @click="hideModal">Cancel</button>
             <button
               type="button"
@@ -563,9 +566,7 @@ export default Vue.extend({
       let mentors: string[];
       mentors = ['All'];
       this.chapters.forEach((c) => {
-        console.log(c.Mentor);
         if (c.Mentor && mentors.indexOf(c.Mentor) === -1) {
-          console.log('hi');
           mentors.push(c.Mentor);
         }
       });
@@ -573,7 +574,7 @@ export default Vue.extend({
     },
   },
   methods: {
-    showModal(modalName: string, chapter: Chapter, index: number) {
+    showModal(modalName: string, chapter: Chapter) {
       // Check to see if there's a modal open, and close it if so.
       if (this.currentModalName) {
         this.hideModal();
@@ -581,11 +582,9 @@ export default Vue.extend({
 
       this.currentChapter = { ...chapter };
 
-      if (index != undefined) {
-        this.chapterIndex = index;
-      } else {
-        this.chapterIndex = -1;
-      }
+      this.currentChapterIndex = this.chapters.findIndex((c) => {
+        return c.ChapterID === this.currentChapter.ChapterID;
+      });
 
       this.currentModalName = modalName;
       this.$modal.show(modalName);
@@ -619,8 +618,8 @@ export default Vue.extend({
         this.$modal.hide(this.currentModalName);
       }
       this.currentModalName = '';
-      this.chapterIndex = -1;
       this.currentChapter = {} as Chapter;
+      this.currentChapterIndex = -1;
     },
     confirmEditChapterModal() {
       if (!this.currentChapter.Name) {
@@ -687,12 +686,12 @@ export default Vue.extend({
           // status === "success"
           flashMessage(this.currentChapter.Name + ' saved');
 
-          if (this.chapterIndex === -1) {
-            // New chapter, insert at the top
+          if (!this.currentChapter.ChapterID) {
+            // New chapter, insert at the top.
             this.chapters = [parsed.chapter].concat(this.chapters);
           } else {
-            // We edited an existing chapter, replace their row.
-            Vue.set(this.chapters, this.chapterIndex, parsed.chapter);
+            // Existing chapter, update it.
+            Vue.set(this.chapters, this.currentChapterIndex, parsed.chapter);
           }
 
           this.hideModal();
@@ -723,9 +722,10 @@ export default Vue.extend({
             flashMessage('Error: ' + parsed.message, true);
             return;
           }
-          // status === "success"
           flashMessage(this.currentChapter.Name + ' deleted');
-          this.chapters.splice(this.chapterIndex, 1);
+
+          this.chapters.splice(this.currentChapterIndex, 1);
+
           this.hideModal();
         },
         error: (err) => {
@@ -796,8 +796,8 @@ export default Vue.extend({
   data() {
     return {
       currentChapter: {} as Chapter,
+      currentChapterIndex: -1,
       chapters: [] as Chapter[],
-      chapterIndex: -1,
       disableConfirmButton: false,
       currentModalName: '',
       showMoreOptions: false,
