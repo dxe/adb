@@ -114,6 +114,7 @@ func survey(db *sqlx.DB, surveyOptions SurveyOptions) {
 		log.Printf("Failed to get events: %v", err)
 		return
 	}
+	log.Printf("Survey mailer found %d events\n", len(events))
 
 	// Iterate through events
 	for _, event := range events {
