@@ -17,7 +17,7 @@ var (
 	Port    = mustGetenv("PORT", "8080", true)
 	UrlPath = mustGetenv("ADB_URL_PATH", "http://localhost:"+Port, true)
 
-	IsProd            = false
+	IsProd            = mustGetenvAsBool("PROD")
 	RunBackgroundJobs = mustGetenvAsBool("RUN_BACKGROUND_JOBS")
 	LogLevel          = 1
 
@@ -96,8 +96,6 @@ var (
 func SetCommandLineFlags(isProdArgument bool, logLevel int) {
 	if IsFlagPassed("prod") {
 		IsProd = isProdArgument
-	} else {
-		IsProd = mustGetenvAsBool("PROD")
 	}
 
 	if IsFlagPassed("logLevel") {
