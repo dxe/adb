@@ -137,6 +137,8 @@ func SubmitInternationalForm(db *sqlx.DB, formData InternationalFormData) error 
 		panic(err)
 	}
 	nearestChapter := nearestChapters[0]
+	fmt.Println("found nearest chapter!")
+	fmt.Println(nearestChapter)
 
 	/* TODO: Make an internal FindNearestChapters function that includes organizer info so we don't need to make two
 	calls. (We don't want to include organizer info on the public endpoint.) */
