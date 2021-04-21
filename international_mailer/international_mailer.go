@@ -69,7 +69,7 @@ Direct Action Everywhere Organizer</p>
 `
 	}
 
-	fmt.Printf("int'l mailer sending email to %v\n", formData.Email)
+	log.Printf("int'l mailer sending email to %v\n", formData.Email)
 
 	err = mailer.Send(mailer.Message{
 		FromName:       "Anastasia Rogers",
@@ -82,12 +82,12 @@ Direct Action Everywhere Organizer</p>
 		CC:             cc,
 	})
 	if err != nil {
-		fmt.Println("failed to send email for international form submission")
+		log.Println("failed to send email for international form submission")
 	}
 
 	err = model.UpdateInternationalFormSubmissionEmailStatus(db, formData.ID)
 	if err != nil {
-		fmt.Println("error updating international for submission email status")
+		log.Println("error updating international for submission email status")
 	}
 
 }
@@ -103,7 +103,7 @@ func internationalMailerWrapper(db *sqlx.DB) {
 	if err != nil {
 		panic("failed to get int'l form submissions to email " + err.Error())
 	}
-	fmt.Printf("int'l form mailer found %d records to process\n", len(records))
+	log.Printf("int'l form mailer found %d records to process\n", len(records))
 
 	for _, rec := range records {
 		processFormSubmission(db, rec)
