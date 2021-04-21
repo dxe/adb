@@ -367,6 +367,8 @@ CREATE TABLE form_international (
   country varchar(256) NOT NULL DEFAULT '',
   lat float(10,6) DEFAULT NULL,
   lng float(10,6) DEFAULT NULL,
+  form_submitted timestamp DEFAULT CURRENT_TIMESTAMP,
+  email_sent timestamp DEFAULT NULL,
   PRIMARY KEY (id)
 )
 `)

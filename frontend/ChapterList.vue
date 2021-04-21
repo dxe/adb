@@ -7,15 +7,35 @@
 
       &nbsp;&nbsp;
 
+      <button
+        class="btn btn-default glyphicon glyphicon-question-sign"
+        onclick="alert('Help feature coming soon.')"
+      ></button>
+
+      &nbsp;&nbsp;
+
       <label for="region">Filter by mentor: </label>
       <select
         id="mentor-filter"
         class="form-control form-inline"
-        style="width: 200px"
+        style="width: 125px"
         v-model="mentorFilter"
       >
         <option v-for="mentor in mentors" v-bind:value="mentor">{{ mentor }}</option>
       </select>
+
+      &nbsp;&nbsp;
+
+      <span>Total chapters: {{ sortedChapters.length }}</span>
+      &nbsp;&nbsp;
+      <span
+        >Active chapters:
+        {{
+          sortedChapters.filter((c) => {
+            return dateInLastThreeMonths(c.LastAction);
+          }).length
+        }}</span
+      >
     </div>
 
     <br />
@@ -23,6 +43,7 @@
     <table id="working-group-list" class="adb-table table table-hover table-striped">
       <thead>
         <tr>
+          <th></th>
           <th></th>
           <th></th>
           <th @click="sort('Name')" class="cursor-pointer">Name</th>
@@ -35,13 +56,19 @@
       </thead>
       <tbody id="working-group-list-body">
         <tr v-for="chapter in sortedChapters">
-          <td>
+          <td style="width: 1px; padding: 8px 2px 8px 5px;">
             <button
               class="btn btn-default glyphicon glyphicon-pencil"
               @click="showModal('edit-chapter-modal', chapter)"
             ></button>
           </td>
-          <td>
+          <td style="width: 1px; padding: 8px 2px;">
+            <button
+              class="btn btn-default glyphicon glyphicon-envelope"
+              @click="composeEmail(chapter)"
+            ></button>
+          </td>
+          <td style="width: 1px; padding: 8px 5px 8px 2px">
             <dropdown>
               <button
                 data-role="trigger"
@@ -50,10 +77,6 @@
               ></button>
               <template slot="dropdown">
                 <li>
-                  <a @click="showModal('chapter-last-contact-modal', chapter)"
-                    >Update Last Contact</a
-                  >
-                  <a @click="composeEmail(chapter)">Email Organizers</a>
                   <a @click="showModal('delete-chapter-modal', chapter)">Delete Chapter</a>
                 </li>
               </template>
@@ -61,8 +84,16 @@
           </td>
           <td>{{ chapter.Flag }} {{ chapter.Name }}</td>
           <td>{{ chapter.Mentor }}</td>
-          <td>{{ chapter.LastContact }}</td>
-          <td v-html="colorQuarterlyGoal(chapter.LastAction)"></td>
+          <td class="cursor-pointer" @click="showModal('chapter-last-contact-modal', chapter)">
+            <a style="text-decoration: none; color: black; font-weight: normal">
+              <small>{{ chapter.LastContact || 'None' }}</small>
+            </a>
+          </td>
+          <td
+            class="cursor-pointer"
+            @click="showModal('chapter-last-action-modal', chapter)"
+            v-html="colorQuarterlyGoal(chapter.LastAction)"
+          ></td>
           <td v-html="colorQuarterlyGoal(chapter.LastFBEvent)"></td>
           <td v-html="colorFBSyncStatus(chapter.LastFBSync)"></td>
         </tr>
@@ -472,7 +503,56 @@
                 <button
                   class="btn btn-xs btn-primary"
                   style="margin: 0px 10px"
-                  v-on:click.prevent="setDateToToday"
+                  v-on:click.prevent="setDateToToday('LastContact')"
+                >
+                  today
+                </button>
+              </p>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="hideModal">Cancel</button>
+            <button
+              type="button"
+              v-bind:disabled="disableConfirmButton"
+              class="btn btn-success"
+              @click="confirmEditChapterModal"
+            >
+              Save changes
+            </button>
+          </div>
+        </div>
+      </div>
+    </modal>
+    <modal
+      name="chapter-last-action-modal"
+      height="auto"
+      classes="no-background-color no-top"
+      @opened="modalOpened"
+      @closed="modalClosed"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 class="modal-title">Update Last Action</h2>
+            <h4>{{ currentChapter.Flag }} {{ currentChapter.Name }}</h4>
+          </div>
+          <div class="modal-body">
+            <form action="" id="updateLastActionForm">
+              <p>
+                <input
+                  class="form-control"
+                  type="date"
+                  v-model.trim="currentChapter.LastAction"
+                  id="last-action-picker"
+                  v-focus
+                />
+              </p>
+              <p>
+                <button
+                  class="btn btn-xs btn-primary"
+                  style="margin: 0px 10px"
+                  v-on:click.prevent="setDateToToday('LastAction')"
                 >
                   today
                 </button>
@@ -766,10 +846,18 @@ export default Vue.extend({
       }
       this.currentSort = s;
     },
-    setDateToToday() {
-      this.currentChapter.LastContact = moment()
-        .local()
-        .format('YYYY-MM-DD');
+    setDateToToday(field: string) {
+      if (field === 'LastContact') {
+        this.currentChapter.LastContact = moment()
+          .local()
+          .format('YYYY-MM-DD');
+        return;
+      }
+      if (field === 'LastAction') {
+        this.currentChapter.LastAction = moment()
+          .local()
+          .format('YYYY-MM-DD');
+      }
     },
     colorFBSyncStatus(text: string) {
       const time = moment(text).add(8, 'hour'); // this converts our DB time for this field to UTC
@@ -788,7 +876,7 @@ export default Vue.extend({
     colorQuarterlyGoal(text: string) {
       const time = moment(text);
       let color = 'grey';
-      let timeStr = '';
+      let timeStr = 'None';
       if (time.isValid()) {
         timeStr = time.format('YYYY-MM-DD');
         color = 'red';
@@ -797,6 +885,9 @@ export default Vue.extend({
         color = 'green';
       }
       return `<div class="${color}"><small>${timeStr}</small></div>`;
+    },
+    dateInLastThreeMonths(text: string): boolean {
+      return moment(text).isAfter(moment().add(-3, 'month'));
     },
   },
   data() {
