@@ -3,9 +3,10 @@ package form_processor
 import (
 	"bytes"
 	"fmt"
+	"os"
+
 	"github.com/dxe/adb/mailer"
 	"github.com/rs/zerolog/log"
-	"os"
 )
 
 func sendLogByEmail() {
@@ -34,7 +35,7 @@ func sendLogByEmail() {
 	sendErr := mailer.Send(mailer.Message{
 		FromName:    "DxE Tech Server",
 		FromAddress: "tech-noreply@directactioneverywhere.com",
-		ToEmail:     sendLogByEmailEnv.toAddress,
+		ToAddress:   sendLogByEmailEnv.toAddress,
 		Subject:     "Form processor log (from ADB)",
 		BodyHTML:    fmt.Sprintf("<div style='white-space: pre-line'>%s</div>", logFileContents),
 	})

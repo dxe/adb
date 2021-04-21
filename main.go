@@ -1718,7 +1718,7 @@ func (c MainController) DiscordGenerateHandler(w http.ResponseWriter, r *http.Re
 	err = mailer.Send(mailer.Message{
 		FromName:    "DxE Discord",
 		FromAddress: config.DiscordFromEmail,
-		ToEmail:     user.Email,
+		ToAddress:   user.Email,
 		Subject:     subjectText,
 		BodyHTML:    bodyHtml,
 	})
@@ -1832,7 +1832,7 @@ func (c MainController) DiscordConfirmNewHandler(w http.ResponseWriter, r *http.
 			err = mailer.Send(mailer.Message{
 				FromName:    "DxE Discord",
 				FromAddress: config.DiscordFromEmail,
-				ToEmail:     config.DiscordModeratorEmail,
+				ToAddress:   config.DiscordModeratorEmail,
 				Subject:     "Discord user confirmed",
 				BodyHTML:    emailBody,
 			})
@@ -1961,7 +1961,7 @@ func (c MainController) DiscordConfirmHandler(w http.ResponseWriter, r *http.Req
 		err = mailer.Send(mailer.Message{
 			FromName:    "DxE Discord",
 			FromAddress: config.DiscordFromEmail,
-			ToEmail:     config.DiscordModeratorEmail,
+			ToAddress:   config.DiscordModeratorEmail,
 			Subject:     "Discord user confirmed",
 			BodyHTML:    emailBody,
 		})

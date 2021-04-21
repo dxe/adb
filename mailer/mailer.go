@@ -1,8 +1,8 @@
 package mailer
 
 import (
-	"fmt"
 	"net/smtp"
+	"strings"
 
 	"github.com/dxe/adb/config"
 
@@ -10,12 +10,14 @@ import (
 )
 
 type Message struct {
-	FromName    string
-	FromAddress string
-	ToName      string
-	ToEmail     string
-	Subject     string
-	BodyHTML    string
+	FromName       string
+	FromAddress    string
+	ToName         string
+	ToAddress      string
+	Subject        string
+	BodyHTML       string
+	ReplyToAddress string
+	CC             []string
 }
 
 func smtpConfigSet() bool {
@@ -30,6 +32,11 @@ func Send(e Message) error {
 		return errors.New("failed to send email due to missing SMTP config")
 	}
 
+	requiredFieldsSet := e.FromName != "" && e.FromAddress != "" && e.ToName != "" && e.ToAddress != "" && e.Subject != "" && e.BodyHTML != ""
+	if !requiredFieldsSet {
+		return errors.New("failed to send email due to missing sender, recipient, subject, or body")
+	}
+
 	host := config.SMTPHost
 	port := config.SMTPPort
 	user := config.SMTPUser
@@ -37,12 +44,19 @@ func Send(e Message) error {
 
 	auth := smtp.PlainAuth("", user, pass, host)
 
-	message := fmt.Sprintf(`To: "%v" <%v>
-From: "%v" <%v>
-Subject: %v
-MIME-version: 1.0;
-Content-Type: text/html; charset="UTF-8";
+	headers := `To: "` + e.ToName + `" <` + e.ToAddress + ">\n"
+	headers += `From: "` + e.FromName + `" <` + e.FromAddress + ">\n"
+	if len(e.CC) > 0 {
+		headers += strings.Join(e.CC, ", ") + "\n"
+	}
+	if e.ReplyToAddress != "" {
+		headers += `Reply-To: ` + e.ReplyToAddress + "\n"
+	}
+	headers += `Subject: ` + e.Subject + "\n"
+	headers += "MIME-version: 1.0;\n"
+	headers += `Content-Type: text/html; charset="UTF-8";` + "\n"
 
+	body := `
 <!DOCTYPE html>
 <html lang="en">
 	<head>
@@ -50,12 +64,14 @@ Content-Type: text/html; charset="UTF-8";
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	</head>
 	<body>
-		%v
+		` + e.BodyHTML + `
 	</body>
 </html>
-`, e.ToName, e.ToEmail, e.FromName, e.FromAddress, e.Subject, e.BodyHTML)
+`
 
-	if err := smtp.SendMail(host+":"+port, auth, e.FromAddress, []string{e.ToEmail}, []byte(message)); err != nil {
+	message := headers + "\n" + body
+
+	if err := smtp.SendMail(host+":"+port, auth, e.FromAddress, []string{e.ToAddress}, []byte(message)); err != nil {
 		return errors.Wrap(err, "failed to send email")
 	}
 	return nil

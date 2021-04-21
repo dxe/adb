@@ -44,7 +44,7 @@ func sendMissingEmail(eventName string, attendees []string, sendingErrors []stri
 	err := mailer.Send(mailer.Message{
 		FromName:    "DxE Surveys",
 		FromAddress: config.SurveyFromEmail,
-		ToEmail:     config.SurveyMissingEmail,
+		ToAddress:   config.SurveyMissingEmail,
 		Subject:     subject,
 		BodyHTML:    bodyHtml,
 	})
@@ -76,7 +76,7 @@ func bulkSendEmails(event model.Event, subject string, bodyHtml string) {
 		err := mailer.Send(mailer.Message{
 			FromName:    "DxE Surveys",
 			FromAddress: config.SurveyFromEmail,
-			ToEmail:     receipientEmail,
+			ToAddress:   receipientEmail,
 			Subject:     subject,
 			BodyHTML:    bodyHtml,
 		})
