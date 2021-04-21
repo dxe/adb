@@ -71,7 +71,12 @@ func Send(e Message) error {
 
 	message := headers + "\n" + body
 
-	if err := smtp.SendMail(host+":"+port, auth, e.FromAddress, []string{e.ToAddress}, []byte(message)); err != nil {
+	sendTo := []string{e.ToAddress}
+	if len(e.CC) > 0 {
+		sendTo = append(sendTo, e.CC...)
+	}
+
+	if err := smtp.SendMail(host+":"+port, auth, e.FromAddress, sendTo, []byte(message)); err != nil {
 		return errors.Wrap(err, "failed to send email")
 	}
 	return nil
