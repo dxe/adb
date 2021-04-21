@@ -150,7 +150,8 @@ func SubmitInternationalForm(db *sqlx.DB, formData InternationalFormData) error 
 }
 
 func GetInternationalFormSubmissionsToEmail(db *sqlx.DB) ([]InternationalFormData, error) {
-	query := `SELECT * from form_international WHERE form_submitted is not null AND email_sent is null`
+	query := `SELECT id, first_name, last_name, email, phone, interest, skills, involvement, city, state, country, lat, lng
+from form_international WHERE form_submitted is not null AND email_sent is null`
 
 	var submissions []InternationalFormData
 	err := db.Select(&submissions, query)
