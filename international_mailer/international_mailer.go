@@ -68,6 +68,8 @@ Direct Action Everywhere Organizer</p>
 `
 	}
 
+	fmt.Printf("int'l mailer sending email to %v\n", formData.Email)
+
 	err = mailer.Send(mailer.Message{
 		FromName:       "Anastasia Rogers",
 		FromAddress:    "arogers@directactioneverywhere.com",
@@ -100,6 +102,7 @@ func internationalMailerWrapper(db *sqlx.DB) {
 	if err != nil {
 		panic("failed to get int'l form submissions to email " + err.Error())
 	}
+	fmt.Printf("int'l form mailer found %d records to process\n", len(records))
 
 	// TODO: process records
 	for _, rec := range records {
@@ -111,9 +114,9 @@ func internationalMailerWrapper(db *sqlx.DB) {
 // Should be run in a goroutine.
 func StartInternationalMailer(db *sqlx.DB) {
 	for {
-		log.Println("Starting survey mailer")
+		log.Println("Starting international mailer")
 		internationalMailerWrapper(db)
-		log.Println("Finished survey mailer")
+		log.Println("Finished international mailer")
 		time.Sleep(60 * time.Minute)
 	}
 }
