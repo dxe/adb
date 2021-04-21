@@ -47,7 +47,7 @@ func Send(e Message) error {
 	headers := `To: "` + e.ToName + `" <` + e.ToAddress + ">\n"
 	headers += `From: "` + e.FromName + `" <` + e.FromAddress + ">\n"
 	if len(e.CC) > 0 {
-		headers += strings.Join(e.CC, ", ") + "\n"
+		headers += "CC: " + strings.Join(e.CC, ", ") + "\n"
 	}
 	if e.ReplyToAddress != "" {
 		headers += `Reply-To: ` + e.ReplyToAddress + "\n"

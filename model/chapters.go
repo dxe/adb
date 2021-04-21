@@ -233,15 +233,9 @@ func CleanChapterData(db *sqlx.DB, body io.Reader) (ChapterWithToken, error) {
 		return ChapterWithToken{}, err
 	}
 
-	// TODO: trim space off more fields
 	chapter.Name = strings.TrimSpace(chapter.Name)
 
-	// TODO: parse dates
-	//t, err := time.Parse(EventDateLayout, eventJSON.EventDate)
-	//if err != nil {
-	//	return Event{}, err
-	//}
-	//e.EventDate = t
+	// TODO: trim space off more fields
 
 	return chapter, nil
 }
