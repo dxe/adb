@@ -8,6 +8,7 @@ COPY main.go ./
 COPY config config/
 COPY google_groups_sync google_groups_sync/
 COPY survey_mailer survey_mailer/
+COPY international_mailer international_mailer/
 COPY mailer mailer/
 COPY event_sync event_sync/
 COPY form_processor form_processor/

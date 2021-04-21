@@ -19,6 +19,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dxe/adb/international_mailer"
+
 	oidc "github.com/coreos/go-oidc"
 	"github.com/dxe/adb/config"
 	"github.com/dxe/adb/discord"
@@ -2167,6 +2169,7 @@ func main() {
 	if config.RunBackgroundJobs {
 		go google_groups_sync.StartMailingListsSync(db)
 		go survey_mailer.StartSurveyMailer(db)
+		go international_mailer.StartInternationalMailer(db)
 		go event_sync.StartExternalEventSync(db)
 		go form_processor.StartFormProcessor(db)
 	}
