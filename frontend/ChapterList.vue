@@ -25,12 +25,12 @@
         <tr>
           <th></th>
           <th></th>
-          <th @click="sort('Name')">Name</th>
-          <th @click="sort('Mentor')">Mentor</th>
-          <th @click="sort('LastContact')">Last Contact</th>
-          <th @click="sort('LastAction')">Last Action</th>
-          <th @click="sort('LastFBEvent')">Last FB Event</th>
-          <th @click="sort('LastFBSync')">FB Sync Status</th>
+          <th @click="sort('Name')" class="cursor-pointer">Name</th>
+          <th @click="sort('Mentor')" class="cursor-pointer">Mentor</th>
+          <th @click="sort('LastContact')" class="cursor-pointer">Last Contact</th>
+          <th @click="sort('LastAction')" class="cursor-pointer">Last Action</th>
+          <th @click="sort('LastFBEvent')" class="cursor-pointer">Last FB Event</th>
+          <th @click="sort('LastFBSync')" class="cursor-pointer">FB Sync Status</th>
         </tr>
       </thead>
       <tbody id="working-group-list-body">
@@ -106,6 +106,7 @@
       classes="no-background-color no-top"
       @opened="modalOpened"
       @closed="modalClosed"
+      :clickToClose="false"
     >
       <div class="modal-dialog" style="width: 1000px;">
         <div class="modal-content">
@@ -326,9 +327,9 @@
 
                   <div class="col-xs-1" style="margin-top: 5px; padding: 0px;">
                     <a
-                      class="form-control btn btn-danger"
+                      class="form-control btn btn-danger cursor-pointer"
                       @click="deleteOrganizer(index)"
-                      style="color: white; cursor: pointer"
+                      style="color: white"
                       ><span class="glyphicon glyphicon-trash"></span
                     ></a>
                   </div>
@@ -868,5 +869,8 @@ export default Vue.extend({
 }
 .red {
   color: red;
+}
+.cursor-pointer {
+  cursor: pointer;
 }
 </style>
