@@ -59,11 +59,12 @@ func bulkSendEmails(event model.Event, subject string, bodyHtml string) {
 	var missingEmails []string
 	var sendingErrors []string
 	for i, recipient := range event.Attendees {
-		receipientEmail := event.AttendeeEmails[i]
-		if receipientEmail == "" {
+		recipientEmail := event.AttendeeEmails[i]
+		if recipientEmail == "" {
 			missingEmails = append(missingEmails, recipient)
 			continue
 		}
+		recipientName := event.Attendees[i]
 
 		// add stanford survey link to email (DISABLED 2020.10.23 as per Eva's request)
 		// newBodyHtml := bodyHtml
@@ -76,7 +77,8 @@ func bulkSendEmails(event model.Event, subject string, bodyHtml string) {
 		err := mailer.Send(mailer.Message{
 			FromName:    "DxE Surveys",
 			FromAddress: config.SurveyFromEmail,
-			ToAddress:   receipientEmail,
+			ToName:      recipientName,
+			ToAddress:   recipientEmail,
 			Subject:     subject,
 			BodyHTML:    bodyHtml,
 		})

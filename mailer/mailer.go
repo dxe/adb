@@ -32,7 +32,7 @@ func Send(e Message) error {
 		return errors.New("failed to send email due to missing SMTP config")
 	}
 
-	requiredFieldsSet := e.FromName != "" && e.FromAddress != "" && e.ToName != "" && e.ToAddress != "" && e.Subject != "" && e.BodyHTML != ""
+	requiredFieldsSet := e.FromName != "" && e.FromAddress != "" && e.ToAddress != "" && e.Subject != "" && e.BodyHTML != ""
 	if !requiredFieldsSet {
 		return errors.New("failed to send email due to missing sender, recipient, subject, or body")
 	}
@@ -44,7 +44,11 @@ func Send(e Message) error {
 
 	auth := smtp.PlainAuth("", user, pass, host)
 
-	headers := `To: "` + e.ToName + `" <` + e.ToAddress + ">\n"
+	toHeader := `To: ` + e.ToAddress + "\n"
+	if e.ToName != "" {
+		toHeader = `To: "` + e.ToName + `" <` + e.ToAddress + ">\n"
+	}
+	headers := toHeader
 	headers += `From: "` + e.FromName + `" <` + e.FromAddress + ">\n"
 	if len(e.CC) > 0 {
 		headers += "CC: " + strings.Join(e.CC, ", ") + "\n"

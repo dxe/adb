@@ -37,7 +37,7 @@ func processFormSubmission(db *sqlx.DB, formData model.InternationalFormData) {
 	}
 
 	// Send an email to the person who submitted the form.
-	subject := "Join your local Direct Action Everywhere chapter!"
+	subject := "Getting involved with Direct Action Everywhere"
 	body := `<p>Hey ` + strings.Title(strings.TrimSpace(formData.FirstName)) + `!</p>
 <p>My name is Anastasia and I’m an organizer with Direct Action Everywhere. I wanted to reach out about your inquiry to get involved in our international network.</p>
 <p>We don’t currently have a DxE chapter in your city, and at the moment, getting involved with a chapter is the main way we have for people around the world to get involved. However, we have some actions you could take to get started! First you can <a href="http://dxe.io/discord">join our Discord server</a>. Next you can <a href="http://nomorefactoryfarms.com">sign our petition to stop factory farms</a>. Most importantly you can <a href="http://dxe.io/workshop">attend our next Zoom workshop for new and aspiring activists</a>.</p>
@@ -56,8 +56,8 @@ Direct Action Everywhere Organizer</p>
 			contactInfo += fmt.Sprintf(`Email address: <a href="mailto:%v">%v</a><br />`, nearestChapter.Email, nearestChapter.Email)
 		}
 
-		subject = "Getting involved with Direct Action Everywhere"
-		body = `<p>Hey ` + formData.FirstName + `!</p>
+		subject = "Join your local Direct Action Everywhere chapter!"
+		body = `<p>Hey ` + strings.Title(strings.TrimSpace(formData.FirstName)) + `!</p>
 <p>My name is Anastasia and I’m an organizer with Direct Action Everywhere. I wanted to reach out about your inquiry to get involved in our international network. There is a DxE chapter near you, so I’ve included their information below so you can reach out and get involved with them!</p> 
 <p>` + contactInfo + `
 I’ve also cc’ed the organizers in your local chapter on this email so that they can reach out as well.</p> 
@@ -69,7 +69,7 @@ Direct Action Everywhere Organizer</p>
 `
 	}
 
-	log.Printf("int'l mailer sending email to %v\n", formData.Email)
+	log.Printf("Int'l mailer sending email to %v\n", formData.Email)
 
 	err = mailer.Send(mailer.Message{
 		FromName:       "Anastasia Rogers",
@@ -82,12 +82,12 @@ Direct Action Everywhere Organizer</p>
 		CC:             cc,
 	})
 	if err != nil {
-		log.Println("failed to send email for international form submission")
+		log.Println("Failed to send email for international form submission")
 	}
 
 	err = model.UpdateInternationalFormSubmissionEmailStatus(db, formData.ID)
 	if err != nil {
-		log.Println("error updating international for submission email status")
+		log.Println("Error updating international for submission email status")
 	}
 
 }
@@ -101,9 +101,9 @@ func internationalMailerWrapper(db *sqlx.DB) {
 
 	records, err := model.GetInternationalFormSubmissionsToEmail(db)
 	if err != nil {
-		panic("failed to get int'l form submissions to email " + err.Error())
+		panic("Failed to get int'l form submissions to email " + err.Error())
 	}
-	log.Printf("int'l form mailer found %d records to process\n", len(records))
+	log.Printf("Int'l form mailer found %d records to process\n", len(records))
 
 	for _, rec := range records {
 		processFormSubmission(db, rec)
