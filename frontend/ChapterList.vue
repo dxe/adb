@@ -258,7 +258,6 @@
                     type="text"
                     v-model.trim="currentChapter.LastContact"
                     id="last-contact"
-                    readonly
                   />
                 </div>
                 <div class="col-xs-6" style="margin-top: 10px;">
@@ -268,7 +267,6 @@
                     type="text"
                     v-model.trim="currentChapter.LastAction"
                     id="last-action"
-                    readonly
                   />
                 </div>
               </div>
@@ -651,6 +649,13 @@ export default Vue.extend({
         !this.currentChapter.LastContact.match(/^\d{4}-\d{2}-\d{2}$/)
       ) {
         alert('Last Contact date must be in YYYY-MM-DD format!');
+        return;
+      }
+      if (
+        this.currentChapter.LastAction &&
+        !this.currentChapter.LastAction.match(/^\d{4}-\d{2}-\d{2}$/)
+      ) {
+        alert('Last Action date must be in YYYY-MM-DD format!');
         return;
       }
 
