@@ -24,7 +24,7 @@
 
       <span v-if="view === 'chapter_member_development'" style="margin-left: 20px;">
         <a class="btn btn-default" href="/csv/chapter_member_spoke">
-          <span class="glyphicon glyphicon-download -alt"></span>&nbsp;&nbsp;Export CSV for Spoke
+          <span class="glyphicon glyphicon-download-alt"></span>&nbsp;&nbsp;Export CSV for Spoke
         </a>
       </span>
 
