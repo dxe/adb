@@ -104,7 +104,6 @@ func internationalMailerWrapper(db *sqlx.DB) {
 	}
 	fmt.Printf("int'l form mailer found %d records to process\n", len(records))
 
-	// TODO: process records
 	for _, rec := range records {
 		processFormSubmission(db, rec)
 	}
