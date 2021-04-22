@@ -964,4 +964,11 @@ export default Vue.extend({
 .cursor-pointer {
   cursor: pointer;
 }
+th {
+  position: sticky;
+  top: 50px;
+  background-color: white;
+  z-index: 1000;
+  border-bottom: 2px solid black;
+}
 </style>

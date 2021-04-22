@@ -69,20 +69,22 @@ Direct Action Everywhere Organizer</p>
 `
 	}
 
-	log.Printf("Int'l mailer sending email to %v\n", formData.Email)
+	if nearestChapter.Name != "SF Bay Area" {
+		log.Printf("Int'l mailer sending email to %v\n", formData.Email)
 
-	err = mailer.Send(mailer.Message{
-		FromName:       "Anastasia Rogers",
-		FromAddress:    "arogers@directactioneverywhere.com",
-		ToName:         formData.FirstName + " " + formData.LastName,
-		ToAddress:      formData.Email,
-		ReplyToAddress: "vanas@umich.edu",
-		Subject:        subject,
-		BodyHTML:       body,
-		CC:             cc,
-	})
-	if err != nil {
-		log.Println("Failed to send email for international form submission")
+		err = mailer.Send(mailer.Message{
+			FromName:       "Anastasia Rogers",
+			FromAddress:    "arogers@directactioneverywhere.com",
+			ToName:         formData.FirstName + " " + formData.LastName,
+			ToAddress:      formData.Email,
+			ReplyToAddress: "vanas@umich.edu",
+			Subject:        subject,
+			BodyHTML:       body,
+			CC:             cc,
+		})
+		if err != nil {
+			log.Println("Failed to send email for international form submission")
+		}
 	}
 
 	err = model.UpdateInternationalFormSubmissionEmailStatus(db, formData.ID)
