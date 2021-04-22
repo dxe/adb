@@ -43,15 +43,15 @@
     <table id="working-group-list" class="adb-table table table-hover table-striped">
       <thead>
         <tr>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th @click="sort('Name')" class="cursor-pointer">Name</th>
-          <th @click="sort('Mentor')" class="cursor-pointer">Mentor</th>
-          <th @click="sort('LastContact')" class="cursor-pointer">Last Contact</th>
-          <th @click="sort('LastAction')" class="cursor-pointer">Last Action</th>
-          <th @click="sort('LastFBEvent')" class="cursor-pointer">Last FB Event</th>
-          <th @click="sort('LastFBSync')" class="cursor-pointer">FB Sync Status</th>
+          <th class="sticky"></th>
+          <th class="sticky"></th>
+          <th class="sticky"></th>
+          <th @click="sort('Name')" class="cursor-pointer sticky">Name</th>
+          <th @click="sort('Mentor')" class="cursor-pointer sticky">Mentor</th>
+          <th @click="sort('LastContact')" class="cursor-pointer sticky">Last Contact</th>
+          <th @click="sort('LastAction')" class="cursor-pointer sticky">Last Action</th>
+          <th @click="sort('LastFBEvent')" class="cursor-pointer sticky">Last FB Event</th>
+          <th @click="sort('LastFBSync')" class="cursor-pointer sticky">FB Sync Status</th>
         </tr>
       </thead>
       <tbody id="working-group-list-body">
@@ -964,11 +964,10 @@ export default Vue.extend({
 .cursor-pointer {
   cursor: pointer;
 }
-th {
+th.sticky {
   position: sticky;
   top: 50px;
   background-color: white;
   z-index: 1000;
-  border-bottom: 2px solid black;
 }
 </style>
