@@ -1,7 +1,18 @@
 <template>
   <adb-page :title="title" :description="description" wide>
     <div class="activist-list-filters form-inline">
-      <button class="btn-link" @click="toggleShowOptions('filters')" v-if="view != 'none'">
+      <input
+        v-on:input="debounceSearchInput"
+        class="form-control filter-margin"
+        type="text"
+        placeholder="Search Name"
+      />
+
+      <button
+        class="btn-link"
+        @click="toggleShowOptions('filters')"
+        v-if="view !== 'none' && (view === 'all_activists' || view === 'community_prospects')"
+      >
         <span v-if="showOptions !== 'filters'">+</span
         ><span v-if="showOptions === 'filters'">-</span> Filters
       </button>
@@ -28,11 +39,11 @@
       </span>
 
       <div v-if="showOptions === 'filters'">
-        <div v-if="view == 'all_activists' || view == 'activist_pool'">
+        <div v-if="view === 'all_activists'">
           <label>Last Event From:</label>
           <input v-model="lastEventDateFrom" class="form-control filter-margin" type="date" />
         </div>
-        <div v-if="view == 'all_activists' || view == 'activist_pool'">
+        <div v-if="view === 'all_activists'">
           <label>Last Event To:</label>
           <input v-model="lastEventDateTo" class="form-control filter-margin" type="date" />
         </div>
@@ -72,9 +83,6 @@
           </div>
           <div class="modal-body">
             <ul class="activist-options-body">
-              <!-- <li>
-                <a @click="showModal('connection-modal', currentActivist, activistIndex)">Add Maintenance Connection</a>
-              </li> -->
               <li>
                 <a @click="showModal('merge-activist-modal', currentActivist, activistIndex)"
                   >Merge Activist</a
@@ -131,39 +139,6 @@
       </div>
     </modal>
     <modal
-      name="hide-activist-modal"
-      :height="400"
-      classes="no-background-color"
-      @opened="modalOpened"
-      @closed="modalClosed"
-    >
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header"><h2 class="modal-title">Hide activist</h2></div>
-          <div class="modal-body">
-            <p>Are you sure you want to hide {{ currentActivist.name }}?</p>
-            <p>
-              Hiding an activist hides them from the activist list page but does not delete any
-              event data associated with them. If this activist is a duplicate of another activist,
-              you should merge them instead.
-            </p>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" @click="hideModal">Close</button>
-            <button
-              type="button"
-              v-bind:disabled="disableConfirmButton"
-              class="btn btn-danger"
-              @click="confirmHideActivistModal"
-              v-focus
-            >
-              Hide activist
-            </button>
-          </div>
-        </div>
-      </div>
-    </modal>
-    <modal
       name="columns-modal"
       height="auto"
       :scrollable="true"
@@ -194,32 +169,6 @@
         </div>
       </div>
     </modal>
-    <!-- <modal
-       name="connection-modal"
-       :height="400"
-       classes="no-background-color"
-       @opened="modalOpened"
-       @closed="modalClosed"
-       >
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h2 class="modal-title">Add maintenance connection</h2>
-          </div>
-          <div class="modal-body">
-            <p><b>WARNING: This feature is not yet available!</b></p>
-            <br />
-            <p>Activist ID: {{currentActivist.id}}</p>
-            <p>Activist Name: {{currentActivist.name}}</p>
-            <p>Connector: {{currentActivist.connector}}</p>
-            <p>Date: <input id="connection-date" type="date"></p>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" @click="hideModal">Cancel</button>
-          </div>
-        </div>
-      </div>
-    </modal> -->
   </adb-page>
 </template>
 
@@ -234,6 +183,7 @@ import { flashMessage } from './flash_message';
 import { EventBus } from './EventBus';
 import { initActivistSelect } from './chosen_utils';
 import debounce from 'debounce';
+import moment from 'moment';
 
 Vue.use(vmodal);
 
@@ -272,15 +222,11 @@ function emailValidator(value: string, callback: Function) {
   // to the invalid column; the timeout here makes for a smoother
   // UI transition whichever the result of the validation.
   setTimeout(function() {
-    if (
+    return callback(
       /^([0-9a-zA-Z]([-.\w]*[0-9a-zA-Z])*@(([0-9a-zA-Z])+([-\w]*[0-9a-zA-Z])*\.)+[a-zA-Z]{2,9})$/.test(
         value,
-      )
-    ) {
-      callback(true);
-    } else {
-      callback(false);
-    }
+      ),
+    );
   }, 250);
 }
 
@@ -355,8 +301,6 @@ function getDefaultColumns(view: string): Column[] {
       },
       enabled:
         view === 'all_activists' ||
-        view === 'activist_pool' ||
-        view === 'activist_recruitment' ||
         view === 'chapter_member_prospects' ||
         view === 'chapter_member_development' ||
         view === 'community_prospects',
@@ -392,8 +336,7 @@ function getDefaultColumns(view: string): Column[] {
       data: {
         data: 'facebook',
       },
-      enabled:
-        view === 'all_activists' || view === 'activist_recruitment' || view === 'activist_pool',
+      enabled: view === 'all_activists',
     },
     {
       header: 'Level',
@@ -407,9 +350,7 @@ function getDefaultColumns(view: string): Column[] {
       },
       enabled:
         view === 'all_activists' ||
-        view === 'activist_recruitment' ||
         view === 'leaderboard' ||
-        view === 'action_team' ||
         view === 'organizer_prospects' ||
         view === 'chapter_member_prospects' ||
         view === 'chapter_member_development',
@@ -614,12 +555,7 @@ function getDefaultColumns(view: string): Column[] {
         readOnly: true,
         colWidths: 200,
       },
-      enabled:
-        view === 'activist_pool' ||
-        view === 'activist_recruitment' ||
-        view === 'leaderboard' ||
-        view === 'community_prospects' ||
-        view === 'study',
+      enabled: view === 'leaderboard' || view === 'community_prospects' || view === 'study',
     },
     {
       header: 'Last Event',
@@ -630,7 +566,7 @@ function getDefaultColumns(view: string): Column[] {
         readOnly: true,
         colWidths: 200,
       },
-      enabled: view === 'activist_recruitment' || view === 'leaderboard' || view === 'study',
+      enabled: view === 'leaderboard' || view === 'study',
     },
     {
       header: 'Total Events',
@@ -654,7 +590,7 @@ function getDefaultColumns(view: string): Column[] {
         readOnly: true,
         colWidths: 50,
       },
-      enabled: view === 'leaderboard' || view === 'action_team',
+      enabled: view === 'leaderboard',
     },
     {
       header: 'MPI',
@@ -667,9 +603,6 @@ function getDefaultColumns(view: string): Column[] {
         colWidths: 30,
       },
       enabled:
-        view === 'action_team' ||
-        view === 'activist_pool' ||
-        view === 'activist_recruitment' ||
         view === 'all_activists' ||
         view === 'leaderboard' ||
         view === 'development' ||
@@ -701,10 +634,7 @@ function getDefaultColumns(view: string): Column[] {
         correctFormat: true,
         colWidths: 100,
       },
-      enabled:
-        view === 'action_team' ||
-        view === 'chapter_member_prospects' ||
-        view === 'organizer_prospects',
+      enabled: view === 'chapter_member_prospects' || view === 'organizer_prospects',
     },
     {
       header: 'Consent & Oppress',
@@ -806,7 +736,7 @@ function getDefaultColumns(view: string): Column[] {
         data: 'connector',
         colWidths: 125,
       },
-      enabled: view === 'activist_pool' || view === 'action_team' || view === 'development',
+      enabled: view === 'development',
     },
     {
       header: 'Last Coaching',
@@ -913,10 +843,10 @@ function getDefaultColumns(view: string): Column[] {
 
 // Constants related to list ordering
 // Corresponds to the constants DescOrder and AscOrder in model/activist.go
-const DescOrder = 2;
 const AscOrder = 1;
+const DescOrder = 2;
 
-var previousSortData = {
+let previousSortData = {
   field: '',
   ascending: false,
 };
@@ -931,10 +861,7 @@ function shouldSortByAscending(field: string, sortByDate: boolean) {
     return !previousSortData.ascending;
   }
 
-  if (sortByDate) {
-    return false;
-  }
-  return true;
+  return !sortByDate;
 }
 
 // Call this after every sort.
@@ -942,20 +869,6 @@ function setPreviousSortData(field: string, ascending: boolean) {
   previousSortData.field = field;
   previousSortData.ascending = ascending;
 }
-
-// Must be kept in sync with the list in model/model.go
-// var statusOrder = {
-//   "Current": 1,
-//   "New": 2,
-//   "Former": 3,
-//   "No attendance": 4,
-// };
-
-// var activistLevelOrder = {
-//   "activist" : 3,
-//   "core_activist" : 2,
-//   "organizer" : 1,
-// };
 
 (window as any).showOptionsModal = function(row: number) {
   EventBus.$emit('activist-show-options-modal', row);
@@ -970,48 +883,30 @@ function optionsButtonRenderer(
   value: any,
   cellProperties: any,
 ) {
-  td.innerHTML =
-    '<button ' +
-    'data-role="trigger" ' +
-    'class="activist-options-btn btn btn-default btn-xs dropdown-toggle glyphicon glyphicon-option-horizontal" ' +
-    'type="button" ' +
-    'onclick="window.showOptionsModal(' +
-    row +
-    ')"></button>';
+  td.innerHTML = `<button
+      data-role="trigger"
+      class="activist-options-btn btn btn-default btn-xs dropdown-toggle glyphicon glyphicon-option-horizontal"
+      type="button"
+      onclick="window.showOptionsModal(${row})"></button>`;
   return td;
 }
 
+// Returns the first of the previous month.
 function initialDateFromValue() {
-  var d = new Date();
-  var rawYear = d.getFullYear();
-  var rawMonth = d.getMonth() + 1;
-
-  var monthOffset = 2;
-  rawMonth -= monthOffset;
-  if (rawMonth <= 0) {
-    // 12 + rawMonth will be the correct month from the previous year
-    // because rawMonth is either 0 or negative at this point.
-    rawMonth = 12 + rawMonth;
-    rawYear -= 1;
-  }
-
-  var year = '' + rawYear;
-  var month = rawMonth > 9 ? '' + rawMonth : '0' + rawMonth;
-
-  var fromDate = year + '-' + month + '-01';
-  return fromDate;
+  return moment()
+    .subtract(1, 'months')
+    .startOf('month')
+    .format('YYYY-MM-DD');
 }
 
+// Returns the current date.
 function initialDateToValue() {
-  var d = new Date();
-  // An ISO date looks like "2017-11-01T23:21:50.377Z", so we cut off
-  // everything after the date.
-  return d.toISOString().slice(0, 10);
+  return moment().format('YYYY-MM-DD');
 }
 
 function generateBooleanSortFn(field: string, ascending: boolean) {
   return function(a: Activist, b: Activist) {
-    var order = a[field] === b[field] ? 0 : Number(a[field]) - Number(b[field]);
+    const order = a[field] === b[field] ? 0 : Number(a[field]) - Number(b[field]);
     if (ascending) {
       return order;
     }
@@ -1021,7 +916,7 @@ function generateBooleanSortFn(field: string, ascending: boolean) {
 
 function generateStringSortFn(field: string, ascending: boolean) {
   return function(a: Activist, b: Activist) {
-    var order = a[field].toLowerCase() < b[field].toLowerCase() ? -1 : 1;
+    const order = a[field].toLowerCase() < b[field].toLowerCase() ? -1 : 1;
     if (ascending) {
       return order;
     }
@@ -1031,7 +926,7 @@ function generateStringSortFn(field: string, ascending: boolean) {
 
 function generateGenericSortFn(field: string, ascending: boolean) {
   return function(a: Activist, b: Activist) {
-    var order = a[field] < b[field] ? -1 : 1;
+    const order = a[field] < b[field] ? -1 : 1;
     if (ascending) {
       return order;
     }
@@ -1050,10 +945,10 @@ function generateDateSortFn(field: string, ascending: boolean) {
       return -1;
     }
 
-    var valueA = new Date(a[field]).getTime();
-    var valueB = new Date(b[field]).getTime();
+    const valueA = new Date(a[field]).getTime();
+    const valueB = new Date(b[field]).getTime();
 
-    var order = valueA < valueB ? -1 : 1;
+    const order = valueA < valueB ? -1 : 1;
 
     if (ascending) {
       return order;
@@ -1074,7 +969,7 @@ export default Vue.extend({
   },
   methods: {
     showOptionsModal(row: number) {
-      var activist = this.activists[row];
+      const activist = this.activists[row];
       this.showModal('activist-options-modal', activist, row);
     },
     showColumnsModal() {
@@ -1121,8 +1016,8 @@ export default Vue.extend({
         // there. Vue.nextTick doesn't work for some reason, so we're
         // just going to keep calling setTimeout until the modal shows
         // up.
-        var interval: number;
-        var fn = () => {
+        let interval: number;
+        const fn = () => {
           if ($('#merge-target-activist')[0]) {
             clearInterval(interval);
             initActivistSelect('#merge-target-activist', this.currentActivist.name);
@@ -1137,28 +1032,23 @@ export default Vue.extend({
       window.scrollTo(0, 0);
     },
     removeActivist(id: number) {
-      var activistIndex;
-      for (var i = 0; i < this.allActivists.length; i++) {
-        if (this.allActivists[i].id === id) {
-          activistIndex = i;
-        }
-      }
-      if (!activistIndex) {
+      const activistIndex = this.allActivists.findIndex((a) => {
+        return a.id === id;
+      });
+      if (activistIndex === -1) {
         throw new Error("Couldn't find activist index for activist with id: " + id);
       }
-      this.allActivists = this.allActivists
-        .slice(0, activistIndex)
-        .concat(this.allActivists.slice(activistIndex + 1));
+      this.allActivists.splice(activistIndex, 1);
     },
     confirmMergeActivistModal() {
-      var targetActivistName = $('#merge-target-activist').val();
+      const targetActivistName = $('#merge-target-activist').val();
       if (!targetActivistName) {
         flashMessage('Must choose an activist to merge into', true);
         return;
       }
 
       this.disableConfirmButton = true;
-      var currentActivistID = this.currentActivist.id;
+      const currentActivistID = this.currentActivist.id;
 
       $.ajax({
         url: '/activist/merge',
@@ -1171,19 +1061,14 @@ export default Vue.extend({
         success: (data) => {
           this.disableConfirmButton = false;
 
-          var parsed = JSON.parse(data);
+          const parsed = JSON.parse(data);
           if (parsed.status === 'error') {
             flashMessage('Error: ' + parsed.message, true);
             return;
           }
           flashMessage(this.currentActivist.name + ' was merged into ' + targetActivistName);
 
-          // Remove activist from list.
-          //this.removeActivist(currentActivistID);
-
-          //this.hideModal();
-
-          // Force view to refresh in order to pick
+          // Force page to refresh in order to pick
           // up changes to target activist data.
           // TOOD: Handle this better. Perhaps return updated
           // activist from backend call.
@@ -1191,38 +1076,6 @@ export default Vue.extend({
           // the Vue.js component is handling data refreshing
           // properly; e.g. the "facebook" field is not updated.
           location.reload();
-        },
-        error: (err) => {
-          this.disableConfirmButton = false;
-
-          console.warn(err.responseText);
-          flashMessage('Server error: ' + err.responseText, true);
-        },
-      });
-    },
-    confirmHideActivistModal() {
-      this.disableConfirmButton = true;
-      var currentActivistID = this.currentActivist.id;
-
-      $.ajax({
-        url: '/activist/hide',
-        method: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({ id: currentActivistID }),
-        success: (data) => {
-          this.disableConfirmButton = false;
-
-          var parsed = JSON.parse(data);
-          if (parsed.status === 'error') {
-            flashMessage('Error: ' + parsed.message, true);
-            return;
-          }
-          flashMessage(this.currentActivist.name + ' was hidden');
-
-          // Remove activist from list.
-          this.removeActivist(currentActivistID);
-
-          this.hideModal();
         },
         error: (err) => {
           this.disableConfirmButton = false;
@@ -1240,7 +1093,7 @@ export default Vue.extend({
         method: 'POST',
         data: JSON.stringify(this.listActivistsParameters()),
         success: (data) => {
-          var parsed = JSON.parse(data);
+          const parsed = JSON.parse(data);
 
           if (parsed.status === 'error') {
             flashMessage('Error: ' + parsed.message, true);
@@ -1248,18 +1101,18 @@ export default Vue.extend({
           }
 
           // status === "success"
-          var activistList = parsed.activist_list;
+          let activistList = parsed.activist_list;
 
           // frontend filtering
-
           if (this.view === 'community_prospects') {
-            var selectedInterest = $('#filterInterest :selected').text();
+            // TODO: handle this w/ Vue instead of jquery
+            const selectedInterest = $('#filterInterest :selected').text();
 
             // only need to filer if an interest is selected
             if (selectedInterest != 'All' && selectedInterest != '' && selectedInterest != null) {
-              var activistListFiltered;
-              activistListFiltered = activistList.filter((el: Activist) => {
-                return el.dev_interest.toLowerCase().indexOf(selectedInterest.toLowerCase()) != -1;
+              let activistListFiltered: Activist[];
+              activistListFiltered = activistList.filter((a: Activist) => {
+                return a.dev_interest.toLowerCase().indexOf(selectedInterest.toLowerCase()) != -1;
               });
               activistList = activistListFiltered;
             }
@@ -1288,14 +1141,14 @@ export default Vue.extend({
       ) {
         return;
       }
-      for (var i = 0; i < changes.length; i++) {
-        var change = changes[i];
-        var columnIndex = change[0];
-        var columnName = change[1];
-        var previousData = change[2];
-        var newData = change[3];
+      for (let i = 0; i < changes.length; i++) {
+        const change = changes[i];
+        const columnIndex = change[0];
+        const columnName = change[1];
+        const previousData = change[2];
+        const newData = change[3];
 
-        var activist = this.activists[columnIndex];
+        const activist = this.activists[columnIndex];
         (function(change) {
           // TODO: use change?
           $.ajax({
@@ -1304,7 +1157,7 @@ export default Vue.extend({
             contentType: 'application/json',
             data: JSON.stringify(activist),
             success: (data) => {
-              var parsed = JSON.parse(data);
+              const parsed = JSON.parse(data);
               if (parsed.status === 'error') {
                 flashMessage('Error: ' + parsed.message, true);
                 return;
@@ -1319,23 +1172,25 @@ export default Vue.extend({
       }
     },
     setHOTHeight() {
-      var hotContainer = document.getElementById('hot-table-container');
+      const hotContainer = document.getElementById('hot-table-container');
       if (!hotContainer) {
         this.height = 500;
         return;
       }
-      var y = (hotContainer.getBoundingClientRect() as DOMRect).y;
+      const y = (hotContainer.getBoundingClientRect() as DOMRect).y;
       this.height = window.innerHeight - y;
     },
     listActivistsParameters() {
-      var order_field = 'last_event';
-
-      if (this.view === 'leaderboard') {
-        order_field = 'total_points';
-      } else if (this.view === 'community_prospects') {
-        order_field = 'interest_date';
-      } else {
-        order_field = 'last_event';
+      let order_field: string;
+      switch (this.view) {
+        case 'leaderboard':
+          order_field = 'total_points';
+          break;
+        case 'community_prospects':
+          order_field = 'interest_date';
+          break;
+        default:
+          order_field = 'last_event';
       }
 
       return {
@@ -1353,35 +1208,40 @@ export default Vue.extend({
         this.showOptions = optionsType;
       }
       Vue.nextTick(() => {
-        this.setHOTHeight(); // Resize the spreadsheet.
+        this.setHOTHeight(); // Resize the table.
       });
     },
     refreshHOTData() {
-      var table = this.hotTable;
-      var newSettings = {
+      const table = this.hotTable;
+      const newSettings = {
         data: rewriteSettings(this.activists),
       };
       table.updateSettings(newSettings, false);
     },
     sortColumn(col: Column) {
-      var field = col.data.data;
+      const field = col.data.data;
       if (!field) {
-        // Don't sort columsn with no data field (e.g. the first
+        // Don't sort columns with no data field (e.g. the first
         // column).
         return;
       }
 
-      var type = col.data.type;
-      var sortFunction;
-      var ascending = shouldSortByAscending(field, type === 'date');
-      if (type === 'date') {
-        sortFunction = generateDateSortFn(field, ascending);
-      } else if (type === 'numeric') {
-        sortFunction = generateGenericSortFn(field, ascending);
-      } else if (type === 'checkbox') {
-        sortFunction = generateBooleanSortFn(field, ascending);
-      } else {
-        sortFunction = generateStringSortFn(field, ascending);
+      const type = col.data.type;
+      const ascending = shouldSortByAscending(field, type === 'date');
+
+      let sortFunction;
+      switch (type) {
+        case 'date':
+          sortFunction = generateDateSortFn(field, ascending);
+          break;
+        case 'numeric':
+          sortFunction = generateGenericSortFn(field, ascending);
+          break;
+        case 'checkbox':
+          sortFunction = generateBooleanSortFn(field, ascending);
+          break;
+        default:
+          sortFunction = generateStringSortFn(field, ascending);
       }
 
       this.allActivists.sort(sortFunction);
@@ -1394,10 +1254,10 @@ export default Vue.extend({
       // If the row is -1, then the user clicked on a column header.
       if (coords.row === -1) {
         // To find the column this maps to, we iterate through all the enabled columns.
-        var visibleColIndex = coords.col;
-        var foundCol;
-        for (var i = 0; i < this.columns.length; i++) {
-          var col = this.columns[i];
+        let visibleColIndex = coords.col;
+        let foundCol;
+        for (let i = 0; i < this.columns.length; i++) {
+          let col = this.columns[i];
           if (col.enabled) {
             if (visibleColIndex === 0) {
               foundCol = col;
@@ -1418,12 +1278,11 @@ export default Vue.extend({
     }, 500),
   },
   data() {
+    let initDateFrom = '';
+    let initDateTo = '';
     if (this.view === ('all_activists' || 'leaderboard')) {
-      var initDateFrom = initialDateFromValue();
-      var initDateTo = initialDateToValue();
-    } else {
-      var initDateFrom = '';
-      var initDateTo = '';
+      initDateFrom = initialDateFromValue();
+      initDateTo = initialDateToValue();
     }
 
     return {
@@ -1448,8 +1307,8 @@ export default Vue.extend({
     hotSettings(): object {
       const columns: Handsontable.GridSettings[] = [];
       const columnHeaders: string[] = [];
-      for (var i = 0; i < this.columns.length; i++) {
-        var col = this.columns[i];
+      for (let i = 0; i < this.columns.length; i++) {
+        const col = this.columns[i];
         if (!col.enabled) {
           continue;
         }
@@ -1457,11 +1316,7 @@ export default Vue.extend({
         columnHeaders.push(this.columns[i].header);
       }
 
-      if (this.view === 'development' || this.view === 'organizer_prospects') {
-        var fixedCol = 3;
-      } else {
-        var fixedCol = 0;
-      }
+      const fixedCol = this.view === 'development' || this.view === 'organizer_prospects' ? 3 : 0;
 
       return {
         columns: columns,
@@ -1492,7 +1347,7 @@ export default Vue.extend({
     activists(): Activist[] {
       // This search implementation is slow when we have lots of data.
       // Make it faster when that becomes an issue.
-      if (this.search.length > 3) {
+      if (this.search.length > 2) {
         const searchNameNormalized = this.search.trim().toLowerCase();
         return this.allActivists.filter((a) => {
           return a.name.toLowerCase().includes(searchNameNormalized);
@@ -1526,8 +1381,8 @@ export default Vue.extend({
     this.setHOTHeight();
   },
   updated() {
-    var rowCount = this.hotTable.countRows();
-    if (rowCount == 0) {
+    const rowCount = this.hotTable.countRows();
+    if (rowCount === 0) {
       $('#rowCount').html(String('No data'));
     } else {
       $('#rowCount').html(String(rowCount));

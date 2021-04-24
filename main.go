@@ -194,9 +194,6 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/list_connections", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListConnectionsHandler))
 	router.Handle("/list_activists", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListActivistsHandler))
 	router.Handle("/community_prospects", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListCommunityProspectsHandler))
-	router.Handle("/activist_pool", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListActivistsPoolHandler))
-	router.Handle("/activist_recruitment", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListActivistsRecruitmentHandler))
-	router.Handle("/activist_actionteam", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListActivistsActionTeamHandler))
 	router.Handle("/activist_development", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListActivistsDevelopmentHandler))
 	router.Handle("/organizer_prospects", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListOrganizerProspectsHandler))
 	router.Handle("/chapter_member_prospects", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListChapterMemberProspectsHandler))
@@ -520,39 +517,6 @@ func (c MainController) ListCommunityProspectsHandler(w http.ResponseWriter, r *
 			Title:       "Community Prospects",
 			Description: "Everyone whose Level is Supporter whose Source is a Petition or Form (excluding Application Forms) that was submitted within the last 3 months",
 			View:        "community_prospects",
-		},
-	})
-}
-
-func (c MainController) ListActivistsPoolHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, r, "activist_list", PageData{
-		PageName: "ActivistPool",
-		Data: ActivistListData{
-			Title:       "Recruitment Connections",
-			Description: "Inactive page",
-			View:        "activist_pool",
-		},
-	})
-}
-
-func (c MainController) ListActivistsRecruitmentHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, r, "activist_list", PageData{
-		PageName: "ActivistRecruitment",
-		Data: ActivistListData{
-			Title:       "Activist Recruitment",
-			Description: "Inactive page",
-			View:        "activist_recruitment",
-		},
-	})
-}
-
-func (c MainController) ListActivistsActionTeamHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, r, "activist_list", PageData{
-		PageName: "ActivistActionTeam",
-		Data: ActivistListData{
-			Title:       "Action Team",
-			Description: "Inactive page",
-			View:        "action_team",
 		},
 	})
 }
