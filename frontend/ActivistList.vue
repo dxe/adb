@@ -1,7 +1,6 @@
 <template>
   <adb-page :title="title" :description="description" wide>
     <div class="activist-list-filters form-inline">
-
       <button class="btn-link" @click="toggleShowOptions('filters')" v-if="view != 'none'">
         <span v-if="showOptions !== 'filters'">+</span
         ><span v-if="showOptions === 'filters'">-</span> Filters
@@ -1495,9 +1494,9 @@ export default Vue.extend({
       // Make it faster when that becomes an issue.
       if (this.search.length > 3) {
         const searchNameNormalized = this.search.trim().toLowerCase();
-        return this.allActivists.filter(a => {
-          return a.name.toLowerCase().includes(searchNameNormalized)
-        })
+        return this.allActivists.filter((a) => {
+          return a.name.toLowerCase().includes(searchNameNormalized);
+        });
       }
 
       return this.allActivists;
