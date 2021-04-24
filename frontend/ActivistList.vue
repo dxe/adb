@@ -1,12 +1,6 @@
 <template>
   <adb-page :title="title" :description="description" wide>
     <div class="activist-list-filters form-inline">
-      <input
-        v-on:input="debounceSearchInput"
-        class="form-control filter-margin"
-        type="text"
-        placeholder="Search Name"
-      />
 
       <button class="btn-link" @click="toggleShowOptions('filters')" v-if="view != 'none'">
         <span v-if="showOptions !== 'filters'">+</span
@@ -35,34 +29,6 @@
       </span>
 
       <div v-if="showOptions === 'filters'">
-        <div>
-          <label>Zip Code:</label>
-
-          <input
-            v-on:input="debounceSearchLocationInput"
-            class="form-control filter-margin"
-            type="text"
-            placeholder="Zipcode"
-          />
-
-          <label>Radius:</label>
-          <select
-            id="filterRadius"
-            v-model="filterRadius"
-            class="form-control filter-margin"
-            v-on:input="debounceLocationRadiusInput"
-          >
-            <option value="1">1 mile</option>
-            <option value="2">2 miles</option>
-            <option value="3">3 miles</option>
-            <option value="4">4 miles</option>
-            <option value="5">5 miles</option>
-            <option value="10">10 miles</option>
-            <option value="25">25 miles</option>
-            <option value="50">50 miles</option>
-          </select>
-        </div>
-
         <div v-if="view == 'all_activists' || view == 'activist_pool'">
           <label>Last Event From:</label>
           <input v-model="lastEventDateFrom" class="form-control filter-margin" type="date" />
@@ -269,7 +235,6 @@ import { flashMessage } from './flash_message';
 import { EventBus } from './EventBus';
 import { initActivistSelect } from './chosen_utils';
 import debounce from 'debounce';
-import zipcodes from 'zipcodes';
 
 Vue.use(vmodal);
 
@@ -318,31 +283,6 @@ function emailValidator(value: string, callback: Function) {
       callback(false);
     }
   }, 250);
-}
-
-function zipcodeRadius(zip: string[], radius: any) {
-  // radius to check
-
-  var allZipsInRadius: any[] = [];
-
-  for (var i = 0; i < zip.length; i++) {
-    var zipsInRadius = zipcodes.radius(zip[i], radius, false);
-    allZipsInRadius = allZipsInRadius.concat(zipsInRadius); // need to add arr to arr
-  }
-  return allZipsInRadius;
-}
-
-function lookupZipcodes(input: string) {
-  var hasNumber = /\d/;
-  if (hasNumber.test(input)) {
-    // probably a zip
-    return [input];
-  } else {
-    // try to lookup zipcodes for city name
-    var cityData = zipcodes.lookupByName(input, 'CA');
-    let zips = cityData.map((a) => a.zip);
-    return zips;
-  }
 }
 
 function getDefaultColumns(view: string): Column[] {
@@ -1477,12 +1417,6 @@ export default Vue.extend({
     debounceSearchInput: debounce(function(this: any, e: Event) {
       this.search = (e.target as HTMLInputElement).value;
     }, 500),
-    debounceSearchLocationInput: debounce(function(this: any, e: Event) {
-      this.searchLocation = (e.target as HTMLInputElement).value;
-    }, 500),
-    debounceLocationRadiusInput: debounce(function(this: any, e: Event) {
-      this.filterRadius = (e.target as HTMLInputElement).value;
-    }, 500),
   },
   data() {
     if (this.view === ('all_activists' || 'leaderboard')) {
@@ -1508,7 +1442,6 @@ export default Vue.extend({
       filterRadius: '5',
       showOptions: '',
       search: '',
-      searchLocation: '',
       loading: false,
     };
   },
@@ -1560,58 +1493,14 @@ export default Vue.extend({
     activists(): Activist[] {
       // This search implementation is slow when we have lots of data.
       // Make it faster when that becomes an issue.
-
-      if (this.search.length < 3 && this.searchLocation.length < 4) {
-        // show all
-        return this.allActivists;
-      } else {
-        // prepare for searching
-        var searchNameNormalized = this.search.trim().toLowerCase();
-        var searchLocNormalized = this.searchLocation.trim();
-        var activists: Activist[] = [];
-        var filterName = false;
-        var filterLoc = false;
-
-        if (this.search.length >= 3) {
-          var filterName = true;
-        }
-
-        if (this.searchLocation.length >= 4) {
-          var filterLoc = true;
-          var zipsToCheck = lookupZipcodes(searchLocNormalized);
-          var zipcodeRange: any = zipcodeRadius(zipsToCheck, this.filterRadius);
-        }
-
-        for (var i = 0; i < this.allActivists.length; i++) {
-          var activist = this.allActivists[i];
-
-          // if filterName & filterLoc true, filter by both
-          if (filterName && filterLoc) {
-            if (
-              activist.name.toLowerCase().includes(searchNameNormalized) &&
-              zipcodeRange.indexOf(activist.location) !== -1
-            ) {
-              activists.push(activist);
-            }
-          }
-
-          // else if filterName is true, filter by it
-          else if (filterName) {
-            if (activist.name.toLowerCase().includes(searchNameNormalized)) {
-              activists.push(activist);
-            }
-          }
-
-          // else filter by location only
-          else {
-            if (zipcodeRange.indexOf(activist.location) !== -1) {
-              activists.push(activist);
-            }
-          }
-        }
-
-        return activists;
+      if (this.search.length > 3) {
+        const searchNameNormalized = this.search.trim().toLowerCase();
+        return this.allActivists.filter(a => {
+          return a.name.toLowerCase().includes(searchNameNormalized)
+        })
       }
+
+      return this.allActivists;
     },
   },
   watch: {
