@@ -51,8 +51,8 @@
     </nav>
 
     <b-table :data="filteredChapters" striped hoverable default-sort="Name">
-      <b-table-column v-slot="props" class="now">
-        <div style="width: 140px;">
+      <b-table-column v-slot="props">
+        <div style="width: 130px;">
           <b-button @click="showModal('edit-chapter-modal', props.row)">
             <b-icon icon="pencil" type="is-primary"></b-icon>
           </b-button>
@@ -150,7 +150,10 @@
           </p>
         </header>
         <section class="modal-card-body">
-          <div class="columns">
+          <div class="columns is-multiline">
+            <div class="column is-full">
+              <b-field label="Basic Info" custom-class="has-text-primary"></b-field>
+            </div>
             <div class="column is-one-quarter">
               <b-field label="Flag" label-position="on-border">
                 <b-input
@@ -163,7 +166,7 @@
                 </b-input>
               </b-field>
             </div>
-            <div class="column">
+            <div class="column is-half">
               <b-field label="Name" label-position="on-border">
                 <b-input
                   type="text"
@@ -176,7 +179,7 @@
                 </b-input>
               </b-field>
             </div>
-            <div class="column">
+            <div class="column is-one-quarter">
               <b-field label="Mentor" label-position="on-border">
                 <b-input
                   type="text"
@@ -187,11 +190,17 @@
                 </b-input>
               </b-field>
             </div>
-          </div>
-          <div class="columns">
             <div class="column">
+              <b-field label="Notes" label-position="on-border">
+                <b-input type="textarea" maxlength="512" v-model.trim="currentChapter.Notes" />
+              </b-field>
+            </div>
+            <div class="column is-full">
+              <b-field label="Location" custom-class="has-text-primary"></b-field>
+            </div>
+            <div class="column is-one-quarter">
               <b-field label="Region" label-position="on-border">
-                <b-select v-model="currentChapter.Region" icon="earth" expanded>
+                <b-select v-model="currentChapter.Region" icon="earth" expanded required>
                   <option
                     v-for="region in [
                       'North America',
@@ -209,7 +218,7 @@
                 </b-select>
               </b-field>
             </div>
-            <div class="column">
+            <div class="column is-one-quarter">
               <b-field label="Country" label-position="on-border">
                 <b-input
                   type="text"
@@ -220,7 +229,7 @@
                 />
               </b-field>
             </div>
-            <div class="column">
+            <div class="column is-one-quarter">
               <b-field label="Lat" label-position="on-border">
                 <b-input
                   type="number"
@@ -234,7 +243,7 @@
                 />
               </b-field>
             </div>
-            <div class="column">
+            <div class="column is-one-quarter">
               <b-field label="Lng" label-position="on-border">
                 <b-input
                   type="number"
@@ -248,79 +257,72 @@
                 />
               </b-field>
             </div>
-          </div>
-          <div class="columns">
-            <div class="column">
+            <div class="column is-full">
+              <b-field label="Social Links" custom-class="has-text-primary"></b-field>
+            </div>
+            <div class="column is-one-quarter">
               <b-field label="Facebook" label-position="on-border">
                 <b-input
                   type="text"
                   maxlength="100"
                   v-model.trim="currentChapter.FbURL"
-                  required
                   icon="facebook"
                 />
               </b-field>
             </div>
-            <div class="column">
+            <div class="column is-one-quarter">
               <b-field label="Twitter" label-position="on-border">
                 <b-input
                   type="text"
                   maxlength="100"
                   v-model.trim="currentChapter.TwitterURL"
-                  required
                   icon="twitter"
                 />
               </b-field>
             </div>
-            <div class="column">
+            <div class="column is is-one-quarter">
               <b-field label="Instagram" label-position="on-border">
                 <b-input
                   type="text"
                   maxlength="100"
                   v-model.trim="currentChapter.InstaURL"
-                  required
                   icon="instagram"
                 />
               </b-field>
             </div>
-            <div class="column">
+            <div class="column is-one-quarter">
               <b-field label="Email (Public)" label-position="on-border">
                 <b-input
                   type="email"
                   maxlength="100"
                   v-model.trim="currentChapter.Email"
-                  required
                   icon="email"
                 />
               </b-field>
             </div>
           </div>
-          <div class="columns">
-            <div class="column">
-              <b-field label="Notes" label-position="on-border">
-                <b-input type="textarea" maxlength="512" v-model.trim="currentChapter.Notes" />
-              </b-field>
-            </div>
-          </div>
 
-          <div class="columns" v-if="showMoreOptions">
-            <div class="column">
-              <b-field label="FB ID" label-position="on-border">
+          <div class="columns is-multiline" v-if="showMoreOptions">
+            <div class="column is-full">
+              <b-field label="Advanced Options" custom-class="has-text-primary"></b-field>
+            </div>
+            <div class="column is-one-quarter">
+              <b-field label="Facebook ID" label-position="on-border">
                 <b-input type="number" maxlength="16" v-model.number="currentChapter.ID" />
               </b-field>
             </div>
-            <div class="column">
-              <b-field label="FB Token" label-position="on-border">
+            <div class="column is-one-quarter">
+              <b-field label="Facebook Token" label-position="on-border">
                 <b-input type="text" maxlength="200" v-model.trim="currentChapter.Token" />
               </b-field>
             </div>
-            <div class="column">
-              <b-field label="EB ID" label-position="on-border">
+            <div class="column is-one-quarter">
+              <b-field label="Eventbrite ID" label-position="on-border">
                 <b-input type="number" maxlength="16" v-model.trim="currentChapter.EventbriteID" />
               </b-field>
             </div>
-            <div class="column">
-              <b-field label="EB Token" label-position="on-border">
+            <div class="column is-one-quarter">
+              <b-field label="Eventbrite Token" label-position="on-border">
                 <b-input
                   type="text"
                   maxlength="200"
@@ -328,9 +330,7 @@
                 />
               </b-field>
             </div>
-          </div>
-          <div class="columns" v-if="showMoreOptions">
-            <div class="column">
+            <div class="column is-one-third">
               <b-field label="Mailing List Type" label-position="on-border">
                 <b-select v-model="currentChapter.MailingListType" expanded>
                   <option
@@ -347,12 +347,12 @@
                 </b-select>
               </b-field>
             </div>
-            <div class="column">
+            <div class="column is-one-third">
               <b-field label="Mailing List ID" label-position="on-border">
                 <b-input type="text" maxlength="100" v-model.trim="currentChapter.MailingListID" />
               </b-field>
             </div>
-            <div class="column">
+            <div class="column is-one-third">
               <b-field label="Mailing List Radius" label-position="on-border">
                 <b-input
                   type="number"
@@ -364,22 +364,42 @@
             </div>
           </div>
 
-          <b-field label="Organizers">
+          <b-field label="Organizers" custom-class="has-text-primary">
             <b-table :data="currentChapter.Organizers">
               <template #empty>
                 <div class="has-text-centered">No organizers found. Add one below.</div>
               </template>
               <b-table-column field="Name" label="Name" v-slot="props">
-                <b-input type="text" v-model="props.row.Name"></b-input>
+                <b-input
+                  type="text"
+                  v-model="props.row.Name"
+                  placeholder="Name"
+                  icon="human"
+                ></b-input>
               </b-table-column>
               <b-table-column field="Email" label="Email" v-slot="props">
-                <b-input type="email" v-model="props.row.Email"></b-input>
+                <b-input
+                  type="email"
+                  v-model="props.row.Email"
+                  placeholder="Email"
+                  icon="email"
+                ></b-input>
               </b-table-column>
               <b-table-column field="Phone" label="Phone" v-slot="props">
-                <b-input type="text" v-model="props.row.Phone"></b-input>
+                <b-input
+                  type="text"
+                  v-model="props.row.Phone"
+                  placeholder="Phone"
+                  icon="phone"
+                ></b-input>
               </b-table-column>
               <b-table-column field="Facebook" label="Facebook" v-slot="props">
-                <b-input type="text" v-model="props.row.Facebook"></b-input>
+                <b-input
+                  type="text"
+                  v-model="props.row.Facebook"
+                  placeholder="Facebook"
+                  icon="facebook"
+                ></b-input>
               </b-table-column>
               <b-table-column v-slot="props">
                 <b-button @click="deleteOrganizer(props.row)">
@@ -492,16 +512,11 @@
 </template>
 
 <script lang="ts">
-import vmodal from 'vue-js-modal';
 import Vue from 'vue';
 import AdbPage from './AdbPage.vue';
 import { flashMessage } from './flash_message';
-//@ts-ignore
-import { Dropdown } from 'uiv';
 import { focus } from './directives/focus';
 import moment from 'moment';
-
-Vue.use(vmodal);
 
 interface Chapter {
   ChapterID: number;
@@ -612,9 +627,6 @@ export default Vue.extend({
       window.open(emailLink);
     },
     hideModal() {
-      if (this.currentModalName) {
-        this.$modal.hide(this.currentModalName);
-      }
       this.currentModalName = '';
       this.currentChapter = {} as Chapter;
       this.currentChapterIndex = -1;
@@ -857,7 +869,6 @@ export default Vue.extend({
   },
   components: {
     AdbPage,
-    Dropdown,
   },
   directives: {
     focus,

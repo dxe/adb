@@ -53,18 +53,18 @@
         <b-field :label="connections ? 'Coachees' : 'Attendees'" id="attendee-rows">
           <div v-for="(attendee, index) in attendees" class="control has-icons-right">
             <input
-                class="attendee-input input"
-                :key="index"
-                v-model="attendees[index]"
-                v-on:input="changed('input', index)"
-                v-on:keyup.9="changed('tab', index)"
-                v-on:awesomplete-selectcomplete="changed('select', index)"
+              class="attendee-input input"
+              :key="index"
+              v-model="attendees[index]"
+              v-on:input="changed('input', index)"
+              v-on:keyup.9="changed('tab', index)"
+              v-on:awesomplete-selectcomplete="changed('select', index)"
             />
             <b-icon
-                v-if="attendee && shouldShowIndicator(attendee) && hasEmailAndPhone(attendee)"
-                icon="check"
-                type="is-success"
-                class="is-right"
+              v-if="attendee && shouldShowIndicator(attendee) && hasEmailAndPhone(attendee)"
+              icon="check"
+              type="is-success"
+              class="is-right"
             ></b-icon>
             <b-icon
               v-if="attendee && shouldShowIndicator(attendee) && !hasEmailAndPhone(attendee)"
@@ -74,27 +74,25 @@
             ></b-icon>
           </div>
         </b-field>
-
       </fieldset>
     </form>
 
     <div class="is-flex is-justify-content-space-evenly">
-        <b-button
-            class="is-large is-primary my-5"
-            v-on:click="save"
-            :disabled="saving"
-            icon-left="floppy"
-        >
-          Save
-        </b-button>
-        <div class="level-item has-text-centered">
-          <div>
-            <p class="heading">Total attendees</p>
-            <p class="title">{{ attendeeCount }}</p>
-          </div>
+      <b-button
+        class="is-large is-primary my-5"
+        v-on:click="save"
+        :disabled="saving"
+        icon-left="floppy"
+      >
+        Save
+      </b-button>
+      <div class="level-item has-text-centered">
+        <div>
+          <p class="heading">Total attendees</p>
+          <p class="title">{{ attendeeCount }}</p>
         </div>
+      </div>
     </div>
-
   </adb-page>
 </template>
 
@@ -242,9 +240,7 @@ export default Vue.extend({
 
   updated() {
     this.$nextTick(() => {
-      for (let row of $(
-        '#attendee-rows > div > input',
-      )) {
+      for (let row of $('#attendee-rows > div > input')) {
         new Awesomplete(row, {
           filter: nameFilter,
           list: this.allActivists,
@@ -258,7 +254,7 @@ export default Vue.extend({
 
   methods: {
     setDateToToday() {
-      this.date = moment().format("YYYY-MM-DD");
+      this.date = moment().format('YYYY-MM-DD');
     },
 
     dirty() {

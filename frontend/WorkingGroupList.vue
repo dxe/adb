@@ -512,8 +512,9 @@ export default Vue.extend({
       workingGroupIndex: -1,
       disableConfirmButton: false,
       currentModalName: '',
-      activistOptions: [],
+      allActivists: [],
       organizerOptions: [],
+      activistOptions: [],
     };
   },
   computed: {
