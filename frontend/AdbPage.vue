@@ -1,15 +1,12 @@
 <template>
-  <div :class="wrapperClass">
-    <div class="title">
-      <h1>{{ title }}</h1>
+  <section :class="wrapperClass">
+    <div class="container mb-5">
+      <h1 class="title">{{ title }}</h1>
+      <p v-if="description" class="description">{{ description }}</p>
     </div>
 
-    <div class="description">{{ description }}</div>
-
-    <br />
-
-    <div class="main"><slot></slot></div>
-  </div>
+    <div class="container main"><slot></slot></div>
+  </section>
 </template>
 
 <script lang="ts">

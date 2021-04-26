@@ -1,578 +1,493 @@
 <template>
-  <adb-page title="Chapters" class="body-wrapper-wide">
-    <div class="form-inline">
-      <button class="btn btn-default" @click="showModal('edit-chapter-modal')">
-        <span class="glyphicon glyphicon-plus"></span>&nbsp;&nbsp;Add New Chapter
-      </button>
+  <adb-page title="Chapters" class="body-wrapper-extra-wide">
+    <b-loading :is-full-page="true" v-model="loading"></b-loading>
 
-      &nbsp;&nbsp;
+    <nav class="level">
+      <div class="level-left">
+        <div class="level-item">
+          <b-button icon-left="plus" @click="showModal('edit-chapter-modal')">
+            New chapter
+          </b-button>
+        </div>
+        <div class="level-item">
+          <b-field label-position="on-border" label="Mentor">
+            <b-select v-model="mentorFilter">
+              <option v-for="mentor in mentors" :value="mentor" :key="mentor">
+                {{ mentor }}
+              </option>
+            </b-select>
+          </b-field>
+        </div>
+        <div class="level-item">
+          <b-button
+            icon-left="help"
+            class="is-hidden-mobile"
+            onclick="alert('Help feature coming soon.')"
+          >
+          </b-button>
+        </div>
+      </div>
 
-      <button
-        class="btn btn-default glyphicon glyphicon-question-sign"
-        onclick="alert('Help feature coming soon.')"
-      ></button>
-
-      &nbsp;&nbsp;
-
-      <label for="region">Filter by mentor: </label>
-      <select
-        id="mentor-filter"
-        class="form-control form-inline"
-        style="width: 125px"
-        v-model="mentorFilter"
-      >
-        <option v-for="mentor in mentors" v-bind:value="mentor">{{ mentor }}</option>
-      </select>
-
-      &nbsp;&nbsp;
-
-      <span>Total chapters: {{ sortedChapters.length }}</span>
-      &nbsp;&nbsp;
-      <span
-        >Active chapters:
-        {{
-          sortedChapters.filter((c) => {
-            return dateInLastThreeMonths(c.LastAction);
-          }).length
-        }}</span
-      >
-    </div>
-
-    <br />
-
-    <table id="working-group-list" class="adb-table table table-hover table-striped">
-      <thead>
-        <tr>
-          <th class="sticky"></th>
-          <th class="sticky"></th>
-          <th class="sticky"></th>
-          <th @click="sort('Name')" class="cursor-pointer sticky">Name</th>
-          <th @click="sort('Mentor')" class="cursor-pointer sticky">Mentor</th>
-          <th @click="sort('LastContact')" class="cursor-pointer sticky">Last Contact</th>
-          <th @click="sort('LastAction')" class="cursor-pointer sticky">Last Action</th>
-          <th @click="sort('LastFBEvent')" class="cursor-pointer sticky">Last FB Event</th>
-          <th @click="sort('LastFBSync')" class="cursor-pointer sticky">FB Sync Status</th>
-        </tr>
-      </thead>
-      <tbody id="working-group-list-body">
-        <tr v-for="chapter in sortedChapters">
-          <td style="width: 1px; padding: 8px 2px 8px 5px;">
-            <button
-              class="btn btn-default glyphicon glyphicon-pencil"
-              @click="showModal('edit-chapter-modal', chapter)"
-            ></button>
-          </td>
-          <td style="width: 1px; padding: 8px 2px;">
-            <button
-              class="btn btn-default glyphicon glyphicon-envelope"
-              @click="composeEmail(chapter)"
-            ></button>
-          </td>
-          <td style="width: 1px; padding: 8px 5px 8px 2px">
-            <dropdown>
-              <button
-                data-role="trigger"
-                class="btn btn-default dropdown-toggle glyphicon glyphicon-option-horizontal"
-                type="button"
-              ></button>
-              <template slot="dropdown">
-                <li>
-                  <a @click="showModal('delete-chapter-modal', chapter)">Delete Chapter</a>
-                </li>
-              </template>
-            </dropdown>
-          </td>
-          <td>{{ chapter.Flag }} {{ chapter.Name }}</td>
-          <td>{{ chapter.Mentor }}</td>
-          <td class="cursor-pointer" @click="showModal('chapter-last-contact-modal', chapter)">
-            <a style="text-decoration: none; color: black; font-weight: normal">
-              <small>{{ chapter.LastContact || 'None' }}</small>
-            </a>
-          </td>
-          <td
-            class="cursor-pointer"
-            @click="showModal('chapter-last-action-modal', chapter)"
-            v-html="colorQuarterlyGoal(chapter.LastAction)"
-          ></td>
-          <td v-html="colorQuarterlyGoal(chapter.LastFBEvent)"></td>
-          <td v-html="colorFBSyncStatus(chapter.LastFBSync)"></td>
-        </tr>
-      </tbody>
-    </table>
-    <modal
-      name="delete-chapter-modal"
-      height="auto"
-      classes="no-background-color no-top"
-      @opened="modalOpened"
-      @closed="modalClosed"
-    >
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header"><h2 class="modal-title">Delete chapter</h2></div>
-          <div class="modal-body">
-            <p>
-              Are you sure you want to delete {{ currentChapter.Flag }}
-              <strong>{{ currentChapter.Name }}</strong
-              >?
+      <div class="level-right">
+        <div class="level-item has-text-centered">
+          <div>
+            <p class="heading">Total Chapters</p>
+            <p class="title">{{ filteredChapters.length }}</p>
+          </div>
+        </div>
+        <div class="level-item has-text-centered">
+          <div>
+            <p class="heading">Active Chapters</p>
+            <p class="title">
+              {{
+                filteredChapters.filter((c) => {
+                  return dateInLastThreeMonths(c.LastAction);
+                }).length
+              }}
             </p>
           </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" @click="hideModal">Cancel</button>
-            <button
-              type="button"
-              v-bind:disabled="disableConfirmButton"
-              class="btn btn-danger"
-              @click="confirmDeleteChapterModal"
-            >
-              Delete chapter
-            </button>
-          </div>
         </div>
       </div>
-    </modal>
-    <modal
-      name="edit-chapter-modal"
-      height="auto"
-      width="1000"
-      classes="no-background-color no-top"
-      @opened="modalOpened"
-      @closed="modalClosed"
-      :clickToClose="false"
-    >
-      <div class="modal-dialog" style="width: 1000px;">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h2 class="modal-title" v-if="currentChapter.ChapterID">
-              {{ currentChapter.Flag }} {{ currentChapter.Name }}
-            </h2>
-            <h2 class="modal-title" v-if="!currentChapter.ChapterID">New chapter</h2>
-          </div>
-          <div class="modal-body">
-            <form action="" id="editChapterForm">
-              <div class="form-row">
-                <div class="col-xs-2" style="margin-top: 10px;">
-                  <label for="flag">Flag: </label
-                  ><input
-                    class="form-control"
-                    type="text"
-                    v-model.trim="currentChapter.Flag"
-                    id="flag"
-                    maxlength="2"
-                  />
-                </div>
+    </nav>
 
-                <div class="col-xs-6" style="margin-top: 10px;">
-                  <label for="flag">Name: </label
-                  ><input
-                    class="form-control"
-                    type="text"
-                    v-model.trim="currentChapter.Name"
-                    id="chapter-name"
-                    maxlength="100"
-                    :readonly="currentChapter.ChapterID"
-                  />
-                </div>
-
-                <div class="col-xs-4" style="margin-top: 10px;">
-                  <label for="mentor">Mentor: </label
-                  ><input
-                    class="form-control"
-                    type="text"
-                    v-model.trim="currentChapter.Mentor"
-                    id="mentor"
-                    maxlength="100"
-                  />
-                </div>
-              </div>
-
-              <div class="form-row">
-                <div class="col-xs-6" style="margin-top: 10px;">
-                  <label for="facebook">Facebook: </label
-                  ><input
-                    class="form-control"
-                    type="text"
-                    v-model.trim="currentChapter.FbURL"
-                    id="facebook"
-                    maxlength="100"
-                  />
-                </div>
-                <div class="col-xs-6" style="margin-top: 10px;">
-                  <label for="twitter">Twitter: </label
-                  ><input
-                    class="form-control"
-                    type="text"
-                    v-model.trim="currentChapter.TwitterURL"
-                    id="twitter"
-                    maxlength="100"
-                  />
-                </div>
-              </div>
-              <div class="form-row">
-                <div class="col-xs-6" style="margin-top: 10px;">
-                  <label for="instagram">Instagram: </label
-                  ><input
-                    class="form-control"
-                    type="text"
-                    v-model.trim="currentChapter.InstaURL"
-                    id="instagram"
-                    maxlength="100"
-                  />
-                </div>
-                <div class="col-xs-6" style="margin-top: 10px;">
-                  <label for="email">Email (Public): </label
-                  ><input
-                    class="form-control"
-                    type="text"
-                    v-model.trim="currentChapter.Email"
-                    id="email"
-                    maxlength="100"
-                  />
-                </div>
-              </div>
-              <div class="form-row">
-                <div class="col-xs-4" style="margin-top: 10px;">
-                  <label for="region">Region: </label
-                  ><select id="region" class="form-control" v-model="currentChapter.Region">
-                    <option value="North America">North America</option>
-                    <option value="Central & South America">Central & South America</option>
-                    <option value="Europe">Europe</option>
-                    <option value="Middle East & Africa">Middle East & Africa</option>
-                    <option value="Asia-Pacific">Asia-Pacific</option>
-                    <option value="Online">Online</option>
-                  </select>
-                </div>
-
-                <div class="col-xs-4" style="margin-top: 10px;">
-                  <label for="country">Country: </label
-                  ><input
-                    class="form-control"
-                    type="text"
-                    maxlength="128"
-                    v-model.trim="currentChapter.Country"
-                    id="country"
-                  />
-                </div>
-
-                <div class="col-xs-2" style="margin-top: 10px;">
-                  <label for="lat">Lat: </label
-                  ><input
-                    class="form-control"
-                    type="number"
-                    v-model.number="currentChapter.Lat"
-                    id="lat"
-                    placeholder="00.000000"
-                    step="0.000001"
-                    min="-90"
-                    max="90"
-                  />
-                </div>
-                <div class="col-xs-2" style="margin-top: 10px;">
-                  <label for="lng">Lng: </label
-                  ><input
-                    class="form-control"
-                    type="number"
-                    v-model.number="currentChapter.Lng"
-                    id="lng"
-                    placeholder="000.000000"
-                    step="0.000001"
-                    min="-180"
-                    max="180"
-                  />
-                </div>
-              </div>
-
-              <!-- TODO: decide whether to show this row or modal or remove it -->
-              <div class="form-row">
-                <div class="col-xs-6" style="margin-top: 10px;">
-                  <label for="last-contact">Last Contact: </label
-                  ><input
-                    class="form-control"
-                    type="text"
-                    v-model.trim="currentChapter.LastContact"
-                    id="last-contact"
-                  />
-                </div>
-                <div class="col-xs-6" style="margin-top: 10px;">
-                  <label for="last-action">Last Action: </label
-                  ><input
-                    class="form-control"
-                    type="text"
-                    v-model.trim="currentChapter.LastAction"
-                    id="last-action"
-                  />
-                </div>
-              </div>
-              <div class="form-row">
-                <div class="col-xs-12" style="margin-top: 10px;">
-                  <label for="notes">Notes: </label
-                  ><textarea
-                    class="form-control"
-                    maxlength="512"
-                    v-model.trim="currentChapter.Notes"
-                    id="notes"
-                  />
-                </div>
-              </div>
-
-              <div class="form-row" v-if="currentChapter.ChapterID">
-                <div class="col-xs-12" style="margin-top: 10px;">
-                  <label>Organizers: </label>
-                </div>
-
-                <div class="form-row" v-for="(organizer, index) in currentChapter.Organizers">
-                  <div class="col-xs-3" style="margin-top: 5px;">
-                    <input
-                      class="form-control"
-                      type="text"
-                      placeholder="Name"
-                      v-model.trim="organizer.Name"
-                    />
-                  </div>
-
-                  <div class="col-xs-3" style="margin-top: 5px;">
-                    <input
-                      class="form-control"
-                      type="text"
-                      placeholder="Email"
-                      v-model.trim="organizer.Email"
-                    />
-                  </div>
-
-                  <div class="col-xs-2" style="margin-top: 5px;">
-                    <input
-                      class="form-control"
-                      type="text"
-                      placeholder="Phone"
-                      v-model.trim="organizer.Phone"
-                    />
-                  </div>
-
-                  <div class="col-xs-3" style="margin-top: 5px;">
-                    <input
-                      class="form-control"
-                      type="text"
-                      placeholder="Facebook"
-                      v-model.trim="organizer.Facebook"
-                    />
-                  </div>
-
-                  <div class="col-xs-1" style="margin-top: 5px; padding: 0px;">
-                    <a
-                      class="form-control btn btn-danger cursor-pointer"
-                      @click="deleteOrganizer(index)"
-                      style="color: white"
-                      ><span class="glyphicon glyphicon-trash"></span
-                    ></a>
-                  </div>
-                </div>
-                <div class="col-xs-12" style="margin-top: 10px;">
-                  <a class="btn btn-primary btn-sm" @click="addOrganizer">Add</a>
-                </div>
-              </div>
-
-              <div v-if="showMoreOptions">
-                <div class="form-row">
-                  <div class="col-xs-6" style="margin-top: 10px;">
-                    <label for="id">Facebook ID: </label
-                    ><input
-                      class="form-control"
-                      type="number"
-                      maxlength="16"
-                      v-model.number="currentChapter.ID"
-                      id="id"
-                    />
-                  </div>
-                  <div class="col-xs-6" style="margin-top: 10px;">
-                    <label for="token">Facebook Token: </label
-                    ><input
-                      class="form-control"
-                      type="text"
-                      maxlength="200"
-                      v-model.trim="currentChapter.Token"
-                      id="token"
-                    />
-                  </div>
-                </div>
-
-                <div class="form-row">
-                  <div class="col-xs-6" style="margin-top: 10px;">
-                    <label for="eventbrite-id">Eventbrite ID: </label
-                    ><input
-                      class="form-control"
-                      type="number"
-                      maxlength="16"
-                      v-model.trim="currentChapter.EventbriteID"
-                      id="eventbrite-id"
-                    />
-                  </div>
-                  <div class="col-xs-6" style="margin-top: 10px;">
-                    <label for="eventbrite-token">Eventbrite Token: </label
-                    ><input
-                      class="form-control"
-                      type="text"
-                      maxlength="200"
-                      v-model.trim="currentChapter.EventbriteToken"
-                      id="eventbrite-token"
-                    />
-                  </div>
-                </div>
-
-                <div class="form-row">
-                  <div class="col-xs-4" style="margin-top: 10px;">
-                    <label for="ml-type">Mailing List Type: </label
-                    ><select
-                      id="ml-type"
-                      class="form-control"
-                      v-model="currentChapter.MailingListType"
-                    >
-                      <option value="">None</option>
-                      <option value="Sendy">Sendy</option>
-                      <option value="Google Groups">Google Groups</option>
-                    </select>
-                  </div>
-                  <div class="col-xs-4" style="margin-top: 10px;">
-                    <label for="ml-id">Mailing List ID: </label
-                    ><input
-                      class="form-control"
-                      type="text"
-                      maxlength="100"
-                      v-model.trim="currentChapter.MailingListID"
-                      id="ml-id"
-                    />
-                  </div>
-                  <div class="col-xs-4" style="margin-top: 10px;">
-                    <label for="ml-rad">Mailing List Radius: </label
-                    ><input
-                      class="form-control"
-                      type="number"
-                      min="0"
-                      max="500"
-                      v-model.number="currentChapter.MailingListRadius"
-                      id="ml-rad"
-                    />
-                  </div>
-                </div>
-              </div>
-              <!-- This p is needed to make the modal footer's top border display properly. -->
-              <p>&nbsp;</p>
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-warning" @click="toggleShowMoreOptions">
-              Advanced options
-            </button>
-            &nbsp;&nbsp;
-            <button type="button" class="btn btn-secondary" @click="hideModal">Cancel</button>
-            <button
-              type="button"
-              v-bind:disabled="disableConfirmButton"
-              class="btn btn-success"
-              @click="confirmEditChapterModal"
-            >
-              Save changes
-            </button>
-          </div>
+    <b-table :data="filteredChapters" striped hoverable default-sort="Name">
+      <b-table-column v-slot="props" class="now">
+        <div style="width: 140px;">
+          <b-button @click="showModal('edit-chapter-modal', props.row)">
+            <b-icon icon="pencil" type="is-primary"></b-icon>
+          </b-button>
+          <b-button @click="composeEmail(props.row)">
+            <b-icon icon="email" type="is-info"></b-icon>
+          </b-button>
+          <b-button @click="showModal('delete-chapter-modal', props.row)">
+            <b-icon icon="delete" type="is-danger"></b-icon>
+          </b-button>
         </div>
-      </div>
-    </modal>
-    <modal
-      name="chapter-last-contact-modal"
-      height="auto"
-      classes="no-background-color no-top"
-      @opened="modalOpened"
-      @closed="modalClosed"
+      </b-table-column>
+
+      <b-table-column field="Name" label="Name" v-slot="props" sortable>
+        {{ props.row.Flag }} {{ props.row.Name }}
+      </b-table-column>
+
+      <b-table-column field="Mentor" label="Mentor" v-slot="props" sortable>
+        {{ props.row.Mentor }}
+      </b-table-column>
+
+      <b-table-column field="LastContact" label="Last Contact" v-slot="props" centered sortable>
+        <span
+          @click="showModal('chapter-last-contact-modal', props.row)"
+          class="is-clickable tag"
+          :class="colorQuarterlyGoal(props.row.LastContact)"
+          >{{ props.row.LastContact || 'None' }}</span
+        >
+      </b-table-column>
+
+      <b-table-column field="LastAction" label="Last Action" v-slot="props" centered sortable>
+        <span
+          @click="showModal('chapter-last-action-modal', props.row)"
+          class="is-clickable tag"
+          :class="colorQuarterlyGoal(props.row.LastAction)"
+          >{{ props.row.LastAction || 'None' }}</span
+        >
+      </b-table-column>
+
+      <b-table-column field="LastFBEvent" label="Last FB Event" v-slot="props" centered sortable>
+        <span class="tag" :class="colorQuarterlyGoal(props.row.LastFBEvent)">{{
+          props.row.LastFBEvent || 'None'
+        }}</span>
+      </b-table-column>
+
+      <b-table-column field="FBSyncStatus" label="FB Sync Status" v-slot="props" centered sortable>
+        <b-icon icon="circle" :type="colorFBSyncStatus(props.row.LastFBSync)"></b-icon>
+      </b-table-column>
+    </b-table>
+
+    <b-modal
+      :active="currentModalName === 'delete-chapter-modal'"
+      has-modal-card
+      :destroy-on-hide="true"
+      scroll="keep"
+      :can-cancel="true"
+      :on-cancel="hideModal"
     >
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h2 class="modal-title">Update Last Contact</h2>
-            <h4>{{ currentChapter.Flag }} {{ currentChapter.Name }}</h4>
-          </div>
-          <div class="modal-body">
-            <form action="" id="updateLastContactForm">
-              <p>
-                <input
-                  class="form-control"
-                  type="date"
-                  v-model.trim="currentChapter.LastContact"
-                  id="last-contact-picker"
-                  v-focus
-                />
-              </p>
-              <p>
-                <button
-                  class="btn btn-xs btn-primary"
-                  style="margin: 0px 10px"
-                  v-on:click.prevent="setDateToToday('LastContact')"
+      <div class="modal-card" style="width: auto">
+        <header class="modal-card-head">
+          <p class="modal-card-title">Delete chapter</p>
+        </header>
+        <section class="modal-card-body">
+          Are you sure you want to delete {{ currentChapter.Flag }}
+          <strong>{{ currentChapter.Name }}</strong
+          >?
+        </section>
+        <footer class="modal-card-foot">
+          <b-button label="Cancel" @click="hideModal" />
+          <b-button
+            label="Delete"
+            type="is-danger"
+            v-bind:disabled="disableConfirmButton"
+            @click="confirmDeleteChapterModal"
+          />
+        </footer>
+      </div>
+    </b-modal>
+
+    <b-modal
+      :active="currentModalName === 'edit-chapter-modal'"
+      has-modal-card
+      :destroy-on-hide="true"
+      scroll="keep"
+      :can-cancel="false"
+      :on-cancel="hideModal"
+    >
+      <div class="modal-card" style="width: auto">
+        <header class="modal-card-head">
+          <p class="modal-card-title">
+            {{
+              currentChapter.ChapterID
+                ? `${currentChapter.Flag} ${currentChapter.Name}`
+                : 'New chapter'
+            }}
+          </p>
+        </header>
+        <section class="modal-card-body">
+          <div class="columns">
+            <div class="column is-one-quarter">
+              <b-field label="Flag" label-position="on-border">
+                <b-input
+                  type="text"
+                  v-model.trim="currentChapter.Flag"
+                  required
+                  maxlength="4"
+                  icon="flag"
                 >
-                  today
-                </button>
-              </p>
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" @click="hideModal">Cancel</button>
-            <button
-              type="button"
-              v-bind:disabled="disableConfirmButton"
-              class="btn btn-success"
-              @click="confirmEditChapterModal"
-            >
-              Save changes
-            </button>
-          </div>
-        </div>
-      </div>
-    </modal>
-    <modal
-      name="chapter-last-action-modal"
-      height="auto"
-      classes="no-background-color no-top"
-      @opened="modalOpened"
-      @closed="modalClosed"
-    >
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h2 class="modal-title">Update Last Action</h2>
-            <h4>{{ currentChapter.Flag }} {{ currentChapter.Name }}</h4>
-          </div>
-          <div class="modal-body">
-            <form action="" id="updateLastActionForm">
-              <p>
-                <input
-                  class="form-control"
-                  type="date"
-                  v-model.trim="currentChapter.LastAction"
-                  id="last-action-picker"
-                  v-focus
-                />
-              </p>
-              <p>
-                <button
-                  class="btn btn-xs btn-primary"
-                  style="margin: 0px 10px"
-                  v-on:click.prevent="setDateToToday('LastAction')"
+                </b-input>
+              </b-field>
+            </div>
+            <div class="column">
+              <b-field label="Name" label-position="on-border">
+                <b-input
+                  type="text"
+                  v-model.trim="currentChapter.Name"
+                  required
+                  maxlength="100"
+                  icon="city"
+                  :disabled="currentChapter.ChapterID"
                 >
-                  today
-                </button>
-              </p>
-            </form>
+                </b-input>
+              </b-field>
+            </div>
+            <div class="column">
+              <b-field label="Mentor" label-position="on-border">
+                <b-input
+                  type="text"
+                  v-model.trim="currentChapter.Mentor"
+                  maxlength="100"
+                  icon="school"
+                >
+                </b-input>
+              </b-field>
+            </div>
           </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" @click="hideModal">Cancel</button>
-            <button
-              type="button"
+          <div class="columns">
+            <div class="column">
+              <b-field label="Region" label-position="on-border">
+                <b-select v-model="currentChapter.Region" icon="earth" expanded>
+                  <option
+                    v-for="region in [
+                      'North America',
+                      'Central & South America',
+                      'Europe',
+                      'Middle East & Africa',
+                      'Asia-Pacific',
+                      'Online',
+                    ]"
+                    :value="region"
+                    :key="region"
+                  >
+                    {{ region }}
+                  </option>
+                </b-select>
+              </b-field>
+            </div>
+            <div class="column">
+              <b-field label="Country" label-position="on-border">
+                <b-input
+                  type="text"
+                  maxlength="128"
+                  v-model.trim="currentChapter.Country"
+                  required
+                  icon="map"
+                />
+              </b-field>
+            </div>
+            <div class="column">
+              <b-field label="Lat" label-position="on-border">
+                <b-input
+                  type="number"
+                  v-model.number="currentChapter.Lat"
+                  placeholder="00.000000"
+                  step="0.000001"
+                  min="-90"
+                  max="90"
+                  required
+                  icon="ruler"
+                />
+              </b-field>
+            </div>
+            <div class="column">
+              <b-field label="Lng" label-position="on-border">
+                <b-input
+                  type="number"
+                  v-model.number="currentChapter.Lng"
+                  placeholder="000.000000"
+                  step="0.000001"
+                  min="-180"
+                  max="180"
+                  required
+                  icon="ruler"
+                />
+              </b-field>
+            </div>
+          </div>
+          <div class="columns">
+            <div class="column">
+              <b-field label="Facebook" label-position="on-border">
+                <b-input
+                  type="text"
+                  maxlength="100"
+                  v-model.trim="currentChapter.FbURL"
+                  required
+                  icon="facebook"
+                />
+              </b-field>
+            </div>
+            <div class="column">
+              <b-field label="Twitter" label-position="on-border">
+                <b-input
+                  type="text"
+                  maxlength="100"
+                  v-model.trim="currentChapter.TwitterURL"
+                  required
+                  icon="twitter"
+                />
+              </b-field>
+            </div>
+            <div class="column">
+              <b-field label="Instagram" label-position="on-border">
+                <b-input
+                  type="text"
+                  maxlength="100"
+                  v-model.trim="currentChapter.InstaURL"
+                  required
+                  icon="instagram"
+                />
+              </b-field>
+            </div>
+            <div class="column">
+              <b-field label="Email (Public)" label-position="on-border">
+                <b-input
+                  type="email"
+                  maxlength="100"
+                  v-model.trim="currentChapter.Email"
+                  required
+                  icon="email"
+                />
+              </b-field>
+            </div>
+          </div>
+          <div class="columns">
+            <div class="column">
+              <b-field label="Notes" label-position="on-border">
+                <b-input type="textarea" maxlength="512" v-model.trim="currentChapter.Notes" />
+              </b-field>
+            </div>
+          </div>
+
+          <div class="columns" v-if="showMoreOptions">
+            <div class="column">
+              <b-field label="FB ID" label-position="on-border">
+                <b-input type="number" maxlength="16" v-model.number="currentChapter.ID" />
+              </b-field>
+            </div>
+            <div class="column">
+              <b-field label="FB Token" label-position="on-border">
+                <b-input type="text" maxlength="200" v-model.trim="currentChapter.Token" />
+              </b-field>
+            </div>
+            <div class="column">
+              <b-field label="EB ID" label-position="on-border">
+                <b-input type="number" maxlength="16" v-model.trim="currentChapter.EventbriteID" />
+              </b-field>
+            </div>
+            <div class="column">
+              <b-field label="EB Token" label-position="on-border">
+                <b-input
+                  type="text"
+                  maxlength="200"
+                  v-model.trim="currentChapter.EventbriteToken"
+                />
+              </b-field>
+            </div>
+          </div>
+          <div class="columns" v-if="showMoreOptions">
+            <div class="column">
+              <b-field label="Mailing List Type" label-position="on-border">
+                <b-select v-model="currentChapter.MailingListType" expanded>
+                  <option
+                    v-for="t in [
+                      { value: '', text: 'None' },
+                      { value: 'Sendy', text: 'Sendy' },
+                      { value: 'Google Groups', text: 'Google Groups' },
+                    ]"
+                    :value="t.value"
+                    :key="t.value"
+                  >
+                    {{ t.text }}
+                  </option>
+                </b-select>
+              </b-field>
+            </div>
+            <div class="column">
+              <b-field label="Mailing List ID" label-position="on-border">
+                <b-input type="text" maxlength="100" v-model.trim="currentChapter.MailingListID" />
+              </b-field>
+            </div>
+            <div class="column">
+              <b-field label="Mailing List Radius" label-position="on-border">
+                <b-input
+                  type="number"
+                  min="0"
+                  max="300"
+                  v-model.number="currentChapter.MailingListRadius"
+                />
+              </b-field>
+            </div>
+          </div>
+
+          <b-field label="Organizers">
+            <b-table :data="currentChapter.Organizers">
+              <template #empty>
+                <div class="has-text-centered">No organizers found. Add one below.</div>
+              </template>
+              <b-table-column field="Name" label="Name" v-slot="props">
+                <b-input type="text" v-model="props.row.Name"></b-input>
+              </b-table-column>
+              <b-table-column field="Email" label="Email" v-slot="props">
+                <b-input type="email" v-model="props.row.Email"></b-input>
+              </b-table-column>
+              <b-table-column field="Phone" label="Phone" v-slot="props">
+                <b-input type="text" v-model="props.row.Phone"></b-input>
+              </b-table-column>
+              <b-table-column field="Facebook" label="Facebook" v-slot="props">
+                <b-input type="text" v-model="props.row.Facebook"></b-input>
+              </b-table-column>
+              <b-table-column v-slot="props">
+                <b-button @click="deleteOrganizer(props.row)">
+                  <b-icon icon="delete" type="is-danger"></b-icon>
+                </b-button>
+              </b-table-column>
+            </b-table>
+          </b-field>
+          <b-button label="Add new organizer" icon-left="plus" @click="addOrganizer"></b-button>
+        </section>
+        <footer class="modal-card-foot is-flex is-justify-content-space-between">
+          <div>
+            <b-button label="Cancel" @click="hideModal" icon-left="cancel" />
+            <b-button
+              label="Save"
+              type="is-primary"
+              native-type="submit"
               v-bind:disabled="disableConfirmButton"
-              class="btn btn-success"
               @click="confirmEditChapterModal"
-            >
-              Save changes
-            </button>
+              icon-left="floppy"
+            />
           </div>
-        </div>
+          <div>
+            <b-button
+              label="Advanced options"
+              type="is-warning"
+              @click="toggleShowMoreOptions"
+              class="right"
+              icon-left="wrench"
+            />
+          </div>
+        </footer>
       </div>
-    </modal>
+    </b-modal>
+
+    <b-modal
+      :active="currentModalName === 'chapter-last-contact-modal'"
+      has-modal-card
+      :destroy-on-hide="true"
+      scroll="keep"
+      :can-cancel="true"
+      :on-cancel="hideModal"
+    >
+      <div class="modal-card" style="width: auto">
+        <header class="modal-card-head">
+          <p class="modal-card-title">Last Contact</p>
+          <h4>{{ currentChapter.Flag }} {{ currentChapter.Name }}</h4>
+        </header>
+        <section class="modal-card-body">
+          <b-datepicker v-model="currentChapter.LastContactParsed" inline></b-datepicker>
+          <p class="mt-2 is-flex is-justify-content-center">
+            <b-button class="is-success is-small mx-1" @click="setDateToToday('LastContact')">
+              Today
+            </b-button>
+            <b-button class="is-danger is-small mx-1" @click="resetDate('LastContact')">
+              Reset
+            </b-button>
+          </p>
+        </section>
+        <footer class="modal-card-foot">
+          <b-button label="Cancel" icon-left="cancel" @click="hideModal" />
+          <b-button
+            label="Save"
+            icon-left="floppy"
+            type="is-primary"
+            v-bind:disabled="disableConfirmButton"
+            @click="confirmEditChapterModal"
+          />
+        </footer>
+      </div>
+    </b-modal>
+
+    <b-modal
+      :active="currentModalName === 'chapter-last-action-modal'"
+      has-modal-card
+      :destroy-on-hide="true"
+      scroll="keep"
+      :can-cancel="true"
+      :on-cancel="hideModal"
+    >
+      <div class="modal-card" style="width: auto">
+        <header class="modal-card-head">
+          <p class="modal-card-title">Last Action</p>
+          <h4>{{ currentChapter.Flag }} {{ currentChapter.Name }}</h4>
+        </header>
+        <section class="modal-card-body">
+          <b-datepicker v-model="currentChapter.LastActionParsed" inline></b-datepicker>
+          <p class="mt-2 is-flex is-justify-content-center">
+            <b-button class="is-success is-small mx-1" @click="setDateToToday('LastAction')">
+              Today
+            </b-button>
+            <b-button class="is-danger is-small mx-1" @click="resetDate('LastAction')">
+              Reset
+            </b-button>
+          </p>
+        </section>
+        <footer class="modal-card-foot">
+          <b-button label="Cancel" icon-left="cancel" @click="hideModal" />
+          <b-button
+            label="Save"
+            icon-left="floppy"
+            type="is-primary"
+            v-bind:disabled="disableConfirmButton"
+            @click="confirmEditChapterModal"
+          />
+        </footer>
+      </div>
+    </b-modal>
   </adb-page>
 </template>
 
@@ -604,15 +519,17 @@ interface Chapter {
   MailingListID: string;
   ID: number; // Facebook ID
   Token: string;
-  LastFBSync: string; // TODO: use string or Date here?
-  LastFBEvent: string; // TODO: use string or Date here?
+  LastFBSync: string;
+  LastFBEvent: string;
   EventbriteID: string;
   EventbriteToken: string;
   Mentor: string;
   Country: string;
   Notes: string;
-  LastContact: string; // TODO: use string or Date here?
-  LastAction: string; // TODO: use string or Date here?
+  LastContact: string; // TODO: just get Dates from the backend instead of parsing strings.
+  LastContactParsed: Date | null;
+  LastAction: string;
+  LastActionParsed: Date | null;
   Organizers: Organizer[];
 }
 
@@ -626,16 +543,9 @@ interface Organizer {
 export default Vue.extend({
   name: 'chapter-list',
   computed: {
-    sortedChapters: function(): Chapter[] {
-      const sorted = this.chapters.sort((a: any, b: any) => {
-        let modifier = 1;
-        if (this.currentSortDir === 'desc') modifier = -1;
-        if (a[this.currentSort] < b[this.currentSort]) return -1 * modifier;
-        if (a[this.currentSort] > b[this.currentSort]) return modifier;
-        return 0;
-      });
+    filteredChapters: function(): Chapter[] {
       if (this.mentorFilter === 'All') {
-        return sorted;
+        return this.chapters;
       }
       return this.chapters.filter((c) => {
         return c.Mentor === this.mentorFilter;
@@ -661,12 +571,21 @@ export default Vue.extend({
 
       this.currentChapter = { ...chapter };
 
+      console.log('Organizers:');
+      console.log(this.currentChapter.Organizers);
+
+      // Parse strings to dates.
+      const c = moment(this.currentChapter.LastContact);
+      this.currentChapter.LastContactParsed = c.isValid() ? c.toDate() : null;
+      const a = moment(this.currentChapter.LastAction);
+      this.currentChapter.LastActionParsed = a.isValid() ? a.toDate() : null;
+
+      // Get the index for updating the view w/o refreshing the whole page.
       this.currentChapterIndex = this.chapters.findIndex((c) => {
         return c.ChapterID === this.currentChapter.ChapterID;
       });
 
       this.currentModalName = modalName;
-      this.$modal.show(modalName);
     },
     composeEmail(chapter: Chapter) {
       let orgEmails = [] as string[];
@@ -699,6 +618,7 @@ export default Vue.extend({
       this.currentModalName = '';
       this.currentChapter = {} as Chapter;
       this.currentChapterIndex = -1;
+      this.showMoreOptions = false;
     },
     confirmEditChapterModal() {
       if (!this.currentChapter.Name) {
@@ -725,6 +645,19 @@ export default Vue.extend({
         alert('Lng is required and must be a number!');
         return;
       }
+
+      // Format dates as strings.
+      if (this.currentChapter.LastContactParsed) {
+        this.currentChapter.LastContact = moment(this.currentChapter.LastContactParsed).format(
+          'YYYY-MM-DD',
+        );
+      }
+      if (this.currentChapter.LastActionParsed) {
+        this.currentChapter.LastAction = moment(this.currentChapter.LastActionParsed).format(
+          'YYYY-MM-DD',
+        );
+      }
+
       if (
         this.currentChapter.LastContact &&
         !this.currentChapter.LastContact.match(/^\d{4}-\d{2}-\d{2}$/)
@@ -821,70 +754,65 @@ export default Vue.extend({
         },
       });
     },
-    modalOpened() {
-      $(document.body).addClass('noscroll');
-      this.disableConfirmButton = false;
-    },
-    modalClosed() {
-      $(document.body).removeClass('noscroll');
-    },
     addOrganizer() {
       this.currentChapter.Organizers = this.currentChapter.Organizers
         ? this.currentChapter.Organizers
         : [];
       this.currentChapter.Organizers.push({} as Organizer);
     },
-    deleteOrganizer(index: number) {
+    deleteOrganizer(o: Organizer) {
+      const index = this.currentChapter.Organizers.indexOf(o);
       this.currentChapter.Organizers.splice(index, 1);
     },
     toggleShowMoreOptions() {
       this.showMoreOptions = !this.showMoreOptions;
     },
-    sort(s: string) {
-      if (s === this.currentSort) {
-        this.currentSortDir = this.currentSortDir === 'asc' ? 'desc' : 'asc';
-      }
-      this.currentSort = s;
-    },
     setDateToToday(field: string) {
       if (field === 'LastContact') {
-        this.currentChapter.LastContact = moment()
+        this.currentChapter.LastContactParsed = moment()
           .local()
-          .format('YYYY-MM-DD');
-        return;
-      }
-      if (field === 'LastAction') {
-        this.currentChapter.LastAction = moment()
+          .toDate();
+      } else if (field === 'LastAction') {
+        this.currentChapter.LastActionParsed = moment()
           .local()
-          .format('YYYY-MM-DD');
+          .toDate();
       }
+      this.confirmEditChapterModal();
+    },
+    resetDate(field: string) {
+      if (field === 'LastContact') {
+        this.currentChapter.LastContactParsed = null;
+        this.currentChapter.LastContact = '';
+      } else if (field === 'LastAction') {
+        this.currentChapter.LastActionParsed = null;
+        this.currentChapter.LastAction = '';
+      }
+      this.confirmEditChapterModal();
     },
     colorFBSyncStatus(text: string) {
       const time = moment(text).add(8, 'hour'); // this converts our DB time for this field to UTC
-      let color = 'grey';
+      let c = 'is-grey';
       if (time.isValid()) {
-        color = 'red';
+        c = 'is-danger';
       }
       if (time.isAfter(moment().add(-1, 'day'))) {
-        color = 'yellow';
+        c = 'is-warning';
       }
       if (time.isAfter(moment().add(-1, 'hour'))) {
-        color = 'green';
+        c = 'is-success';
       }
-      return `<div class="dot bg-${color}"><div>`;
+      return c;
     },
     colorQuarterlyGoal(text: string) {
       const time = moment(text);
-      let color = 'grey';
-      let timeStr = 'None';
+      let c = '';
       if (time.isValid()) {
-        timeStr = time.format('YYYY-MM-DD');
-        color = 'red';
+        c = 'is-danger';
       }
       if (time.isAfter(moment().add(-3, 'month'))) {
-        color = 'green';
+        c = 'is-success';
       }
-      return `<div class="${color}"><small>${timeStr}</small></div>`;
+      return c;
     },
     dateInLastThreeMonths(text: string): boolean {
       return moment(text).isAfter(moment().add(-3, 'month'));
@@ -898,9 +826,8 @@ export default Vue.extend({
       disableConfirmButton: false,
       currentModalName: '',
       showMoreOptions: false,
-      currentSort: 'Name',
-      currentSortDir: 'asc',
       mentorFilter: 'All',
+      loading: true,
     };
   },
 
@@ -918,9 +845,11 @@ export default Vue.extend({
           return;
         }
         // status === "success"
+        this.loading = false;
         this.chapters = parsed.chapters;
       },
       error: (err) => {
+        this.loading = false;
         console.warn(err.responseText);
         flashMessage('Server error: ' + err.responseText, true);
       },
@@ -937,37 +866,8 @@ export default Vue.extend({
 </script>
 
 <style>
-.dot {
-  height: 25px;
-  width: 25px;
-  border-radius: 50%;
-  display: inline-block;
-}
-.bg-green {
-  background-color: green;
-}
-.bg-yellow {
-  background-color: yellow;
-}
-.bg-red {
-  background-color: red;
-}
-.bg-grey {
-  background-color: grey;
-}
-.green {
-  color: green;
-}
-.red {
-  color: red;
-}
-.cursor-pointer {
-  cursor: pointer;
-}
-th.sticky {
-  position: sticky;
-  top: 50px;
-  background-color: white;
-  z-index: 1000;
+/* Don't display buefy tbale sorting options on mobile. */
+.table-mobile-sort {
+  display: none;
 }
 </style>

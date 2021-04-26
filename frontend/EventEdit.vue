@@ -1,109 +1,100 @@
 <template>
   <adb-page :title="connections ? 'Coaching' : 'Event'" narrow class="event-new-content">
+    <b-loading :is-full-page="true" v-model="loading"></b-loading>
     <form action id="eventForm" v-on:change="changed('change', -1)" autocomplete="off">
       <fieldset :disabled="loading">
-        <div style="margin-bottom: 10px">
-          <label for="eventName" id="nameLabel">
-            <b>{{ connections ? 'Coach' : 'Event' }} name</b>
-          </label>
-          <input id="eventName" class="form-control" v-model="name" />
+        <b-field :label="connections ? 'Coach' : 'Event' + ' name'">
+          <b-input type="text" v-model="name" required />
+        </b-field>
+
+        <div v-if="!connections">
+          <b-field label="Event type">
+            <b-select v-model="type" expanded :required="!connections">
+              <option
+                v-for="eventType in [
+                  'Action',
+                  'Campaign Action',
+                  'Community',
+                  'Frontline Surveillance',
+                  'Meeting',
+                  'Outreach',
+                  'Sanctuary',
+                  'Training',
+                ]"
+                :value="eventType"
+                :key="eventType"
+              >
+                {{ eventType }}
+              </option>
+            </b-select>
+          </b-field>
+          <b-field label="Circle (optional)">
+            <b-select v-model="selectedCircleID" expanded>
+              <option v-for="circle in allCircles" :value="circle.id" :key="circle.id">
+                {{ circle.name }}
+              </option>
+            </b-select>
+          </b-field>
         </div>
 
-        <div v-if="!connections" style="margin-bottom: 10px">
-          <div style="margin-bottom: 10px">
-            <label for="eventType"> <b>Event type</b> <br /> </label>
-            <select id="eventType" class="form-control" v-model="type">
-              <option disabled selected value>-- select an option --</option>
-              <option value="Action">Action</option>
-              <option value="Campaign Action">Campaign Action</option>
-              <option value="Community">Community</option>
-              <option value="Frontline Surveillance">Frontline Surveillance</option>
-              <option value="Meeting">Meeting</option>
-              <option value="Outreach">Outreach</option>
-              <option value="Sanctuary">Sanctuary</option>
-              <option value="Training">Training</option>
-            </select>
-          </div>
-          <div style="margin-bottom: 10px">
-            <label for="circle" style="font-weight: normal">
-              <b>Circle</b> <i>(optional)</i> <br />
-            </label>
-            <select id="circle" class="form-control" v-model="selectedCircleID">
-              <option v-for="circle in allCircles" v-bind:value="circle.id">{{
-                circle.name
-              }}</option>
-            </select>
-          </div>
-        </div>
+        <b-field label="Date" class="mt-3">
+          <b-input type="date" v-model="date" expanded />
+          <p class="control">
+            <b-button v-on:click.prevent="setDateToToday">today</b-button>
+          </p>
+        </b-field>
 
-        <div style="margin-bottom: 10px">
-          <label for="eventDate">
-            <b>{{ connections ? 'Coaching' : 'Event' }} date</b>
-            <button
-              class="btn btn-xs btn-primary"
-              style="margin: 0px 10px"
-              v-on:click.prevent="setDateToToday"
-            >
-              today
-            </button>
-          </label>
-          <input id="eventDate" class="form-control" type="date" v-model="date" />
-        </div>
+        <b-field class="my-4" v-if="shouldShowSuppressSurveyCheckbox()">
+          <b-switch v-model="suppressSurvey" type="is-info">
+            Don't send survey
+          </b-switch>
+        </b-field>
 
-        <div class="checkbox" v-if="shouldShowSuppressSurveyCheckbox()">
-          <span>
-            <strong>Survey</strong><br />
-            <label><input type="checkbox" v-model="suppressSurvey" />Don't send survey</label>
-          </span>
-        </div>
-
-        <label for="attendee1" id="attendeeLabel">
-          <b>{{ connections ? 'Coachees' : 'Attendees' }}</b> <br />
-        </label>
-        <div id="attendee-rows">
-          <div class="row-container form-group row" v-for="(attendee, index) in attendees">
-            <div class="col-xs-10 col-sm-11">
-              <input
-                class="attendee-input form-control"
-                name="attendee-input-field"
+        <b-field :label="connections ? 'Coachees' : 'Attendees'" id="attendee-rows">
+          <div v-for="(attendee, index) in attendees" class="control has-icons-right">
+            <input
+                class="attendee-input input"
                 :key="index"
                 v-model="attendees[index]"
                 v-on:input="changed('input', index)"
                 v-on:keyup.9="changed('tab', index)"
                 v-on:awesomplete-selectcomplete="changed('select', index)"
-              />
-            </div>
-            <span
-              v-if="attendee && shouldShowIndicator(attendee) && hasEmailAndPhone(attendee)"
-              class="glyphicon glyphicon-check col-form-label col-xs-1 indicator-padding green"
-              title="Contact info found"
-            ></span>
-            <span
+            />
+            <b-icon
+                v-if="attendee && shouldShowIndicator(attendee) && hasEmailAndPhone(attendee)"
+                icon="check"
+                type="is-success"
+                class="is-right"
+            ></b-icon>
+            <b-icon
               v-if="attendee && shouldShowIndicator(attendee) && !hasEmailAndPhone(attendee)"
-              class="glyphicon glyphicon-asterisk col-form-label col-xs-1 indicator-padding red"
-              title="Missing email or phone number"
-            ></span>
+              icon="asterisk"
+              type="is-danger"
+              class="is-right"
+            ></b-icon>
           </div>
-        </div>
+        </b-field>
 
-        <br />
-
-        <label for="attendeeTotal"> <b>Total attendance:</b> </label>
-        <span id="attendeeTotal">{{ attendeeCount }}</span> <br />
       </fieldset>
     </form>
-    <br />
-    <center>
-      <button
-        class="btn btn-success btn-lg"
-        id="submit-button"
-        v-on:click="save"
-        :disabled="saving"
-      >
-        <span>Save {{ connections ? 'coaching' : 'event' }}</span>
-      </button>
-    </center>
-    <br />
+
+    <div class="is-flex is-justify-content-space-evenly">
+        <b-button
+            class="is-large is-primary my-5"
+            v-on:click="save"
+            :disabled="saving"
+            icon-left="floppy"
+        >
+          Save
+        </b-button>
+        <div class="level-item has-text-centered">
+          <div>
+            <p class="heading">Total attendees</p>
+            <p class="title">{{ attendeeCount }}</p>
+          </div>
+        </div>
+    </div>
+
   </adb-page>
 </template>
 
@@ -112,6 +103,7 @@ import Vue from 'vue';
 import AdbPage from './AdbPage.vue';
 import * as Awesomplete from 'awesomplete';
 import { flashMessage, setFlashMessageSuccessCookie } from './flash_message';
+import moment from 'moment';
 
 // Like Awesomplete.FILTER_CONTAINS, but internal whitespace matches anything.
 function nameFilter(text: string, input: string) {
@@ -251,7 +243,7 @@ export default Vue.extend({
   updated() {
     this.$nextTick(() => {
       for (let row of $(
-        '#attendee-rows > div.row-container > div.col-xs-10 > input.attendee-input',
+        '#attendee-rows > div > input',
       )) {
         new Awesomplete(row, {
           filter: nameFilter,
@@ -266,17 +258,7 @@ export default Vue.extend({
 
   methods: {
     setDateToToday() {
-      // Calculate today's date in the local time zone.
-      // TODO(mdempsky): Find a cleaner way to do this.
-      var d = new Date();
-      var year = '' + d.getFullYear();
-      var rawMonth = d.getMonth() + 1;
-      var month = rawMonth > 9 ? '' + rawMonth : '0' + rawMonth;
-      var rawDate = d.getDate();
-      var date = rawDate > 9 ? '' + rawDate : '0' + rawDate;
-      var validDateString = year + '-' + month + '-' + date;
-
-      this.date = validDateString;
+      this.date = moment().format("YYYY-MM-DD");
     },
 
     dirty() {
@@ -322,7 +304,7 @@ export default Vue.extend({
     },
 
     changed(x: string, y: number) {
-      const inputs = $('#attendee-rows input.attendee-input');
+      const inputs = $('#attendee-rows input');
 
       // Add more rows if there are less than 3,
       // or if the last row isn't empty.
@@ -418,7 +400,7 @@ export default Vue.extend({
         if (attendee != '' && !attendeesSet.has(attendee)) {
           // check that attendee has first & last name
           if (attendee.indexOf(' ') == -1) {
-            flashMessage('Error: New activists must have first and last name.', true);
+            flashMessage('Error: Attendees must have first and last name.', true);
             return;
           }
           attendees.push(attendee);

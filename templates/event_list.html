@@ -1,6 +1,7 @@
 {{template "header.html" .}}
 
 <div id="app">
+  <adb-nav page="{{ .PageName }}" user="{{ .UserName }}" role="{{ .MainRole }}"></adb-nav>
   <event-list></event-list>
 </div>
 <script src="/dist/adb.js?{{ .StaticResourcesHash }}"></script>
