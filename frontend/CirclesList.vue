@@ -69,10 +69,10 @@
       </b-table-column>
 
       <b-table-column
-          label="Members"
-          field="members"
-          v-slot="props"
-          v-if="title === 'GeoCirclesList' && membersVisible"
+        label="Members"
+        field="members"
+        v-slot="props"
+        v-if="title === 'GeoCirclesList' && membersVisible"
       >
         <ul v-for="member in props.row.members">
           <template v-if="!member.point_person">
@@ -80,25 +80,25 @@
           </template>
         </ul>
       </b-table-column>
-
     </b-table>
 
     <b-modal
-        :active="currentModalName === 'delete-circle-modal'"
-        has-modal-card
-        :destroy-on-hide="true"
-        scroll="keep"
-        :can-cancel="true"
-        :on-cancel="hideModal"
+      :active="currentModalName === 'delete-circle-modal'"
+      has-modal-card
+      :destroy-on-hide="true"
+      scroll="keep"
+      :can-cancel="true"
+      :on-cancel="hideModal"
     >
       <div class="modal-card" style="width: auto">
         <header class="modal-card-head">
           <p class="modal-card-title">Delete circle</p>
         </header>
         <section class="modal-card-body">
-          <p>Are you sure you want to delete
-          <strong>{{ currentCircleGroup.name }}</strong
-          >?</p>
+          <p>
+            Are you sure you want to delete <strong>{{ currentCircleGroup.name }}</strong
+            >?
+          </p>
           <b-message type="is-warning" has-icon class="mt-3">
             Before deleting a circle, be sure to remove all members of that circle.
           </b-message>
@@ -106,98 +106,135 @@
         <footer class="modal-card-foot">
           <b-button label="Cancel" @click="hideModal" />
           <b-button
-              label="Delete"
-              type="is-danger"
-              v-bind:disabled="disableConfirmButton"
-              @click="confirmDeleteCircleGroupModal"
+            label="Delete"
+            type="is-danger"
+            v-bind:disabled="disableConfirmButton"
+            @click="confirmDeleteCircleGroupModal"
           />
         </footer>
       </div>
     </b-modal>
 
     <b-modal
-        :active="currentModalName === 'edit-circle-modal'"
-        has-modal-card
-        :destroy-on-hide="true"
-        scroll="keep"
-        :can-cancel="false"
-        :width="400"
+      :active="currentModalName === 'edit-circle-modal'"
+      has-modal-card
+      :destroy-on-hide="true"
+      scroll="keep"
+      :can-cancel="false"
+      :width="400"
     >
       <div class="modal-card" style="width: auto">
         <header class="modal-card-head">
-          <p class="modal-card-title">{{ currentCircleGroup.id ? 'Edit' : 'New' }} {{ title === 'CirclesList' ? 'Circle' : 'Geo-Circle' }}</p>
+          <p class="modal-card-title">
+            {{ currentCircleGroup.id ? 'Edit' : 'New' }}
+            {{ title === 'CirclesList' ? 'Circle' : 'Geo-Circle' }}
+          </p>
         </header>
         <section class="modal-card-body">
           <b-field label="Name" label-position="on-border">
-            <b-input type="text" v-model.trim="currentCircleGroup.name" icon="circle-slice-8" required></b-input>
+            <b-input
+              type="text"
+              v-model.trim="currentCircleGroup.name"
+              icon="circle-slice-8"
+              required
+            ></b-input>
           </b-field>
 
           <b-field label="Type" label-position="on-border" hidden>
             <b-input type="text" v-model.trim="currentCircleGroup.type" required></b-input>
           </b-field>
 
-          <b-field :label="'Description' + (title === 'GeoCirclesList' ? ' or Notes' : '')" label-position="on-border">
-            <b-input type="text" v-model.trim="currentCircleGroup.description" icon="text-box"></b-input>
+          <b-field
+            :label="'Description' + (title === 'GeoCirclesList' ? ' or Notes' : '')"
+            label-position="on-border"
+          >
+            <b-input
+              type="text"
+              v-model.trim="currentCircleGroup.description"
+              icon="text-box"
+            ></b-input>
           </b-field>
 
-          <b-field label="Meeting Day & Time" label-position="on-border" v-if="title === 'CirclesList'">
-            <b-input type="text" v-model.trim="currentCircleGroup.meeting_time" icon="calendar-blank"></b-input>
+          <b-field
+            label="Meeting Day & Time"
+            label-position="on-border"
+            v-if="title === 'CirclesList'"
+          >
+            <b-input
+              type="text"
+              v-model.trim="currentCircleGroup.meeting_time"
+              icon="calendar-blank"
+            ></b-input>
           </b-field>
 
-          <b-field label="Meeting Location" label-position="on-border" v-if="title === 'CirclesList'">
-            <b-input type="text" v-model.trim="currentCircleGroup.meeting_location" icon="map-marker"></b-input>
+          <b-field
+            label="Meeting Location"
+            label-position="on-border"
+            v-if="title === 'CirclesList'"
+          >
+            <b-input
+              type="text"
+              v-model.trim="currentCircleGroup.meeting_location"
+              icon="map-marker"
+            ></b-input>
           </b-field>
 
           <b-field label="Coordinates" label-position="on-border">
-            <b-input type="text" v-model.trim="currentCircleGroup.coords" icon="ruler" :disabled="title === 'GeoCirclesList'"></b-input>
+            <b-input
+              type="text"
+              v-model.trim="currentCircleGroup.coords"
+              icon="ruler"
+              :disabled="title === 'GeoCirclesList'"
+            ></b-input>
           </b-field>
 
           <b-field>
-            <b-switch v-model="currentCircleGroup.visible" type="is-success">Visible to public</b-switch>
+            <b-switch v-model="currentCircleGroup.visible" type="is-success"
+              >Visible to public</b-switch
+            >
           </b-field>
 
           <b-field label="Host">
             <b-taginput
-                v-model="currentCircleHost"
-                :data="filteredActivists"
-                autocomplete
-                :allow-new="false"
-                icon="crown"
-                placeholder="Search by name..."
-                @typing="getFilteredActivists"
-                maxtags="1"
-                type="is-info"
+              v-model="currentCircleHost"
+              :data="filteredActivists"
+              autocomplete
+              :allow-new="false"
+              icon="crown"
+              placeholder="Search by name..."
+              @typing="getFilteredActivists"
+              maxtags="1"
+              type="is-info"
+              dropdown-position="top"
             ></b-taginput>
           </b-field>
 
           <b-field label="Members" v-if="title === 'GeoCirclesList'">
             <b-taginput
-                v-model="currentCircleMembers"
-                :data="filteredActivists"
-                autocomplete
-                :allow-new="false"
-                icon="account-multiple"
-                placeholder="Search by name..."
-                @typing="getFilteredActivists"
-                type="is-info"
-                dropdown-position="top"
+              v-model="currentCircleMembers"
+              :data="filteredActivists"
+              autocomplete
+              :allow-new="false"
+              icon="account-multiple"
+              placeholder="Search by name..."
+              @typing="getFilteredActivists"
+              type="is-info"
+              dropdown-position="top"
             ></b-taginput>
           </b-field>
-
         </section>
         <footer class="modal-card-foot">
           <b-button label="Cancel" icon-left="cancel" @click="hideModal" />
           <b-button
-              label="Save"
-              icon-left="floppy"
-              type="is-primary"
-              v-bind:disabled="disableConfirmButton"
-              @click="confirmEditCircleGroupModal"
+            label="Save"
+            icon-left="floppy"
+            type="is-primary"
+            v-bind:disabled="disableConfirmButton"
+            @click="confirmEditCircleGroupModal"
           />
         </footer>
       </div>
     </b-modal>
-
   </adb-page>
 </template>
 
@@ -233,13 +270,11 @@ export default Vue.extend({
   },
   methods: {
     getFilteredActivists(text: string) {
-      console.log("getting filtered activists")
+      console.log('getting filtered activists');
       this.filteredActivists = this.allActivists.filter((a: string) => {
-        return a
-            .toLowerCase()
-            .startsWith(text.toLowerCase())
-      })
-      console.log(this.filteredActivists)
+        return a.toLowerCase().startsWith(text.toLowerCase());
+      });
+      console.log(this.filteredActivists);
     },
     toggleMembers() {
       this.membersVisible = !this.membersVisible;
@@ -253,17 +288,21 @@ export default Vue.extend({
       this.currentCircleGroup = { ...circleGroup };
 
       if (this.currentCircleGroup.members && this.currentCircleGroup.members.length > 0) {
-        this.currentCircleHost = this.currentCircleGroup.members.filter((a: Activist) => {
-          return a.point_person
-        }).map((a: Activist) => {
-          return a.name
-        })
+        this.currentCircleHost = this.currentCircleGroup.members
+          .filter((a: Activist) => {
+            return a.point_person;
+          })
+          .map((a: Activist) => {
+            return a.name;
+          });
 
-        this.currentCircleMembers = this.currentCircleGroup.members.filter((a: Activist) => {
-          return !a.point_person
-        }).map((a: Activist) => {
-          return a.name
-        })
+        this.currentCircleMembers = this.currentCircleGroup.members
+          .filter((a: Activist) => {
+            return !a.point_person;
+          })
+          .map((a: Activist) => {
+            return a.name;
+          });
       }
 
       // always set the type based on the page we are on
@@ -287,17 +326,18 @@ export default Vue.extend({
     },
     confirmEditCircleGroupModal() {
       // Rebuild the members array based on current data.
-      let members = [] as Activist[]
+      let members = [] as Activist[];
       if (this.currentCircleHost.length > 0) {
-        members.push({name: this.currentCircleHost[0], point_person: true})
+        members.push({ name: this.currentCircleHost[0], point_person: true });
       }
       if (this.currentCircleMembers.length > 0) {
         this.currentCircleMembers.forEach((m: string) => {
-          const memberSameAsHost = this.currentCircleHost.length > 0 && this.currentCircleHost[0] === m
+          const memberSameAsHost =
+            this.currentCircleHost.length > 0 && this.currentCircleHost[0] === m;
           if (!memberSameAsHost) {
-            members.push({name: m})
+            members.push({ name: m });
           }
-        })
+        });
       }
       this.currentCircleGroup.members = members;
 
@@ -398,8 +438,7 @@ export default Vue.extend({
       currentCircleMembers: [] as string[],
     };
   },
-  computed: {
-  },
+  computed: {},
   created() {
     $.ajax({
       url: '/circle/list',
@@ -412,7 +451,7 @@ export default Vue.extend({
         }
         // status === "success"
         this.circleGroups = parsed.circle_groups.filter((c: Circle) => {
-          return this.title === 'GeoCirclesList' ? c.type === 'geo-circle' : c.type === 'circle'
+          return this.title === 'GeoCirclesList' ? c.type === 'geo-circle' : c.type === 'circle';
         });
         this.loadingCircles = false;
       },
@@ -429,7 +468,7 @@ export default Vue.extend({
       method: 'GET',
       success: (data) => {
         const parsed = JSON.parse(data);
-        this.allActivists = parsed.activist_names
+        this.allActivists = parsed.activist_names;
         this.loadingActivists = false;
       },
       error: (err) => {
