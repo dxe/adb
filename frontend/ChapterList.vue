@@ -1,5 +1,5 @@
 <template>
-  <adb-page title="Chapters" class="body-wrapper-wide">
+  <adb-page title="Chapters" class="body-wrapper-extra-wide">
     <div class="form-inline">
       <button class="btn btn-default" @click="showModal('edit-chapter-modal')">
         <span class="glyphicon glyphicon-plus"></span>&nbsp;&nbsp;Add New Chapter
@@ -23,6 +23,12 @@
       >
         <option v-for="mentor in mentors" v-bind:value="mentor">{{ mentor }}</option>
       </select>
+
+      &nbsp;&nbsp;
+
+      <a class="btn btn-default" href="/csv/international_organizers">
+        <span class="glyphicon glyphicon-download-alt"></span>&nbsp;&nbsp;Export CSV
+      </a>
 
       &nbsp;&nbsp;
 
