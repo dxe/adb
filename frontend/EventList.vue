@@ -1,56 +1,83 @@
 <template>
   <adb-page :title="connections ? 'All Coachings' : 'Events'">
-    <form class="form-inline hidden-xs" v-on:submit.prevent="eventListRequest">
-      <label for="event-name">{{ connections ? 'Coach' : 'Event Name' }}:</label>
-      <input
-        id="event-name"
-        class="form-control filter-margin"
-        style="width: 100%"
-        v-model="search.name"
-      />
+    <b-loading :is-full-page="true" v-model="loading"></b-loading>
 
-      <label for="event-activist">{{ connections ? 'Coachees' : 'Activist' }}:</label>
-      <select id="event-activist" class="filter-margin" style="width: 100%"></select>
+    <nav class="level">
+      <div class="level-left">
+        <div class="level-item">
+          <b-field>
+            <b-switch v-model="showFilters" type="is-primary"
+            >Show filters</b-switch
+            >
+          </b-field>
+        </div>
+      </div>
+    </nav>
 
-      <label for="event-date-start">From:</label>
-      <input
-        id="event-date-start"
-        class="form-control filter-margin"
-        type="date"
-        v-model="search.start"
-      />
+    <nav class="level" v-if="showFilters">
+      <div class="level-left">
+        <div class="level-item">
+          <b-field label-position="on-border" :label="connections ? 'Coach' : 'Event Name'">
+            <b-input v-model="search.name" type="text">
+            </b-input>
+          </b-field>
+        </div>
+        <div class="level-item">
+          <b-field label-position="on-border" :label="connections ? 'Coachees' : 'Activist'">
+            <b-select v-model="search.activist">
+              <option v-for="name in activistFilterOptions" :value="name" :key="name">
+                {{ name }}
+              </option>
+            </b-select>
+          </b-field>
+        </div>
 
-      <label for="event-date-end">To:</label>
-      <input
-        id="event-date-end"
-        class="form-control filter-margin"
-        type="date"
-        v-model="search.end"
-      />
+        <div class="level-item" v-if="!connections">
+          <b-field label="Type" label-position="on-border">
+            <b-select v-model="search.type">
+              <option v-for="interest in [
+                  {value: 'noConnections', display: 'All'},
+                  {value: 'Action', display: 'Action'},
+                  {value: 'Campaign Action', display: 'Campaign Action'},
+                  {value: 'Community', display: 'Community'},
+                  {value: 'Frontline Surveillance', display: 'Frontline Surveillance'},
+                  {value: 'Meeting', display: 'Meeting'},
+                  {value: 'Outreach', display: 'Outreach'},
+                  {value: 'Sanctuary', display: 'Sanctuary'},
+                  {value: 'Training', display: 'Training'},
+                  {value: 'mpiDA', display: 'MPI: Direct Action'},
+                  {value: 'mpiCOM', display: 'MPI: Community'},
+                ]" :value="interest.value" :key="interest.value">
+                {{ interest.display }}
+              </option>
+            </b-select>
+          </b-field>
+        </div>
 
-      <template v-if="!connections">
-        <label for="event-type">Type:</label>
-        <select id="event-type" class="form-control filter-margin" v-model="search.type">
-          <option value="noConnections">All</option>
-          <option value="Action">Action</option>
-          <option value="Campaign Action">Campaign Action</option>
-          <option value="Circle">Circle</option>
-          <option value="Community">Community</option>
-          <option value="Frontline Surveillance">Frontline Surveillance</option>
-          <option value="Meeting">Meeting</option>
-          <option value="Outreach">Outreach</option>
-          <option value="Sanctuary">Sanctuary</option>
-          <option value="Training">Training</option>
-          <option value="mpiDA">MPI: Direct Action</option>
-          <option value="mpiCOM">MPI: Community</option>
-        </select>
-      </template>
+      </div>
+    </nav>
 
-      <button type="submit" id="event-date-filter" class="btn btn-primary filter-margin">
-        Filter
-      </button>
-    </form>
-    <br />
+    <nav class="level" v-if="showFilters">
+      <div class="level-left">
+        <div class="level-item">
+          <b-field label="From" label-position="on-border">
+            <b-input v-model="search.start" type="date" ></b-input>
+          </b-field>
+        </div>
+        <div class="level-item">
+          <b-field label="To" label-position="on-border">
+            <b-input v-model="search.end" type="date" ></b-input>
+          </b-field>
+        </div>
+
+        <div class="level-item">
+          <b-button type="is-primary" label="Filter" @click="eventListRequest"></b-button>
+        </div>
+
+      </div>
+    </nav>
+
+    <!-- TODO: build table -->
 
     <table class="adb-table table table-hover table-striped">
       <thead>
@@ -89,7 +116,7 @@
 
         <tr v-if="!loading && events.length == 0">
           <td></td>
-          <td><i>No data</i></td>
+          <td><i>No events found</i></td>
           <td></td>
           <td class="hidden-xs"></td>
           <td class="hidden-xs"></td>
@@ -150,7 +177,6 @@
 import Vue from 'vue';
 import AdbPage from './AdbPage.vue';
 import { flashMessage } from './flash_message';
-import { initActivistSelect } from './chosen_utils';
 
 interface Event {
   // Supplied by server.
@@ -181,30 +207,50 @@ export default Vue.extend({
     return {
       search: {
         name: '',
+        activist: '',
         start: start.toISOString().slice(0, 10),
         end: today.toISOString().slice(0, 10),
         type: 'noConnections',
       },
+
+      showFilters: false,
+      activistFilterOptions: [] as string[],
 
       loading: false,
       events: [] as Event[],
     };
   },
   mounted() {
-    initActivistSelect('#event-activist');
     this.eventListRequest();
+    this.getActivistFilterOptions();
   },
   methods: {
+    getActivistFilterOptions() {
+      // TODO: add loading spinner for this method
+      $.ajax({
+        url: '/activist_names/get',
+        method: 'GET',
+        dataType: 'json',
+        success: (data) => {
+          this.activistFilterOptions = data.activist_names as string[];
+        },
+        error: () => {
+          flashMessage('Error: could not load activist names', true);
+        },
+      });
+    },
     eventListRequest() {
       // Always show the loading screen when the button is clicked.
       this.loading = true;
+
+      console.log(this.search)
 
       $.ajax({
         url: '/event/list',
         method: 'POST',
         data: {
           event_name: this.search.name,
-          event_activist: $('#event-activist').val(),
+          event_activist: this.search.activist,
           event_date_start: this.search.start,
           event_date_end: this.search.end,
           event_type: this.connections ? 'Connection' : this.search.type,

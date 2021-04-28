@@ -24,13 +24,7 @@
         </div>
       </div>
       <div class="level-right">
-        <div class="level-item has-text-centered">
-          <div>
-            <p class="heading">Total</p>
-            <p class="title">{{ rowCount }}</p>
-          </div>
-        </div>
-        <div class="level-item" v-if="view === 'chapter_member_development'">
+        <div class="level-item px-1" v-if="view === 'chapter_member_development'">
           <b-button
               label="Export CSV for Spoke"
               type="is-info"
@@ -39,7 +33,7 @@
               href="/csv/chapter_member_spoke"
           ></b-button>
         </div>
-        <div class="level-item" v-if="view === 'community_prospects'">
+        <div class="level-item px-1" v-if="view === 'community_prospects'">
           <b-button
               label="Export CSV for HubSpot"
               type="is-info"
@@ -47,6 +41,12 @@
               tag="a"
               href="/csv/community_prospects_hubspot"
           ></b-button>
+        </div>
+        <div class="level-item has-text-centered px-1">
+          <div>
+            <p class="heading">Total</p>
+            <p class="title">{{ rowCount }}</p>
+          </div>
         </div>
       </div>
     </nav>
@@ -148,7 +148,7 @@
           <b-button label="Cancel" @click="hideModal" />
           <b-button
               type="is-danger"
-              v-bind:disabled="disableConfirmButton"
+              :disabled="disableConfirmButton"
               @click="confirmMergeActivistModal"
           >
             Merge activist
@@ -1268,6 +1268,7 @@ export default Vue.extend({
       this.search = text;
     }, 500),
     getActivistMergeOptions(ignoreActivistName?: string) {
+      this.loading = true;
       $.ajax({
         url: '/activist_names/get',
         method: 'GET',
@@ -1278,9 +1279,11 @@ export default Vue.extend({
           this.activistMergeOptions = activistNames.filter(a => {
             return a != ignoreActivistName
           })
+          this.loading = false;
         },
         error: () => {
           flashMessage('Error: could not load activist names', true);
+          this.loading = false;
         },
       });
     }
@@ -1405,6 +1408,10 @@ export default Vue.extend({
 </script>
 
 <style>
+.modal {
+  /* To make sure it's on top of HoT */
+  z-index: 200;
+}
 #activists-root {
   overflow: scroll;
 }

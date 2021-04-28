@@ -111,7 +111,7 @@
           <b-button
             label="Delete"
             type="is-danger"
-            v-bind:disabled="disableConfirmButton"
+            :disabled="disableConfirmButton"
             @click="confirmDeleteCircleGroupModal"
           />
         </footer>
@@ -232,7 +232,7 @@
             label="Save"
             icon-left="floppy"
             type="is-primary"
-            v-bind:disabled="disableConfirmButton"
+            :disabled="disableConfirmButton"
             @click="confirmEditCircleGroupModal"
           />
         </footer>

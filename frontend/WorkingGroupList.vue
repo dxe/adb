@@ -107,7 +107,7 @@
           <b-button
               label="Delete"
               type="is-danger"
-              v-bind:disabled="disableConfirmButton"
+              :disabled="disableConfirmButton"
               @click="confirmDeleteWorkingGroupModal"
           />
         </footer>
@@ -244,7 +244,7 @@
               label="Save"
               icon-left="floppy"
               type="is-primary"
-              v-bind:disabled="disableConfirmButton"
+              :disabled="disableConfirmButton"
               @click="confirmEditWorkingGroupModal"
           />
         </footer>

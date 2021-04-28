@@ -125,7 +125,7 @@
           <b-button
             label="Delete"
             type="is-danger"
-            v-bind:disabled="disableConfirmButton"
+            :disabled="disableConfirmButton"
             @click="confirmDeleteChapterModal"
           />
         </footer>
@@ -420,7 +420,7 @@
               label="Save"
               type="is-primary"
               native-type="submit"
-              v-bind:disabled="disableConfirmButton"
+              :disabled="disableConfirmButton"
               @click="confirmEditChapterModal"
               icon-left="floppy"
             />
@@ -469,7 +469,7 @@
             label="Save"
             icon-left="floppy"
             type="is-primary"
-            v-bind:disabled="disableConfirmButton"
+            :disabled="disableConfirmButton"
             @click="confirmEditChapterModal"
           />
         </footer>
@@ -507,7 +507,7 @@
             label="Save"
             icon-left="floppy"
             type="is-primary"
-            v-bind:disabled="disableConfirmButton"
+            :disabled="disableConfirmButton"
             @click="confirmEditChapterModal"
           />
         </footer>

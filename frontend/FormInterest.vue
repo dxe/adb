@@ -8,7 +8,7 @@
 </style>
 
 <template>
-  <adb-page v-bind:title="formOptions.formTitle" v-bind:description="formOptions.formDescription">
+  <adb-page :title="formOptions.formTitle" :description="formOptions.formDescription">
     <transition name="fade">
       <div v-if="submitSuccess">
         <h2>Thank you!</h2>
@@ -173,7 +173,7 @@
               class="form-check-input"
               name="circleInterests"
               v-model="circleInterests"
-              v-bind:value="circle.name"
+              :value="circle.name"
             />
             <strong>{{ circle.name }}<span v-if="circle.description">:</span></strong>
             <small>{{ circle.description }}</small>

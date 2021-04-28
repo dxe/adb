@@ -94,7 +94,7 @@
             label="Save"
             icon-left="floppy"
             type="is-primary"
-            v-bind:disabled="disableConfirmButton"
+            :disabled="disableConfirmButton"
             @click="confirmEditUserModal"
           />
         </footer>
