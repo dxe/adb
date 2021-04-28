@@ -1,5 +1,5 @@
 <template>
-  <b-navbar fixed-top shadow>
+  <b-navbar fixed-top shadow id="mainNav">
     <template #brand>
       <b-navbar-item tag="div">
         <img src="/static/img/logo1.png" alt="DxE" />

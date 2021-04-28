@@ -138,8 +138,3 @@ h1.title {
     font-weight: normal;
 }
 
-/* buefy modal overrides to prevent going behind by the nav bar */
-.modal-card {
-    top: 40px !important;
-    padding-bottom: 15px !important;
-}

@@ -60,3 +60,4 @@ export function initActivistSelect(selector: string, ignoreActivistName?: string
     },
   });
 }
+

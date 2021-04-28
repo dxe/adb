@@ -109,6 +109,7 @@
       scroll="keep"
       :can-cancel="true"
       :on-cancel="hideModal"
+      :full-screen="isMobile()"
     >
       <div class="modal-card" style="width: auto">
         <header class="modal-card-head">
@@ -138,6 +139,7 @@
       scroll="keep"
       :can-cancel="false"
       :on-cancel="hideModal"
+      :full-screen="isMobile()"
     >
       <div class="modal-card" style="width: auto">
         <header class="modal-card-head">
@@ -365,7 +367,8 @@
           </div>
 
           <b-field label="Organizers" custom-class="has-text-primary">
-            <b-table :data="currentChapter.Organizers">
+            <p v-if="!currentChapter.ChapterID">Please save the new chapter before adding organizers.</p>
+            <b-table :data="currentChapter.Organizers" v-if="currentChapter.ChapterID">
               <template #empty>
                 <div class="has-text-centered">No organizers found. Add one below.</div>
               </template>
@@ -408,11 +411,11 @@
               </b-table-column>
             </b-table>
           </b-field>
-          <b-button label="Add new organizer" icon-left="plus" @click="addOrganizer"></b-button>
+          <b-button label="Add new organizer" icon-left="plus" @click="addOrganizer" v-if="currentChapter.ChapterID"></b-button>
         </section>
         <footer class="modal-card-foot is-flex is-justify-content-space-between">
           <div>
-            <b-button label="Cancel" @click="hideModal" icon-left="cancel" />
+            <b-button label="Cancel" @click="hideModal" icon-left="cancel" class="mb-2" />
             <b-button
               label="Save"
               type="is-primary"
@@ -442,6 +445,7 @@
       scroll="keep"
       :can-cancel="true"
       :on-cancel="hideModal"
+      :full-screen="isMobile()"
     >
       <div class="modal-card" style="width: auto">
         <header class="modal-card-head">
@@ -479,6 +483,7 @@
       scroll="keep"
       :can-cancel="true"
       :on-cancel="hideModal"
+      :full-screen="isMobile()"
     >
       <div class="modal-card" style="width: auto">
         <header class="modal-card-head">
@@ -578,16 +583,21 @@ export default Vue.extend({
     },
   },
   methods: {
+    isMobile() {
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    },
     showModal(modalName: string, chapter: Chapter) {
+      // Hide the navbar so that the model doesn't go behind it.
+      const mainNav = document.getElementById("mainNav");
+      if (mainNav) mainNav.style.visibility = "hidden";
+
+
       // Check to see if there's a modal open, and close it if so.
       if (this.currentModalName) {
         this.hideModal();
       }
 
       this.currentChapter = { ...chapter };
-
-      console.log('Organizers:');
-      console.log(this.currentChapter.Organizers);
 
       // Parse strings to dates.
       const c = moment(this.currentChapter.LastContact);
@@ -627,6 +637,9 @@ export default Vue.extend({
       window.open(emailLink);
     },
     hideModal() {
+      const mainNav = document.getElementById("mainNav");
+      if (mainNav) mainNav.style.visibility = "visible";
+
       this.currentModalName = '';
       this.currentChapter = {} as Chapter;
       this.currentChapterIndex = -1;

@@ -56,7 +56,9 @@
         sortable
         v-if="title === 'CirclesList'"
       >
-        {{ props.row.last_meeting }}
+        <span class="tag" :class="colorLastMeeting(props.row.last_meeting)">
+          {{ props.row.last_meeting || 'None' }}
+        </span>
       </b-table-column>
 
       <b-table-column
@@ -89,6 +91,7 @@
       scroll="keep"
       :can-cancel="true"
       :on-cancel="hideModal"
+      :full-screen="isMobile()"
     >
       <div class="modal-card" style="width: auto">
         <header class="modal-card-head">
@@ -122,6 +125,7 @@
       scroll="keep"
       :can-cancel="false"
       :width="400"
+      :full-screen="isMobile()"
     >
       <div class="modal-card" style="width: auto">
         <header class="modal-card-head">
@@ -216,7 +220,6 @@
               autocomplete
               :allow-new="false"
               icon="account-multiple"
-              placeholder="Search by name..."
               @typing="getFilteredActivists"
               type="is-info"
               dropdown-position="top"
@@ -243,6 +246,7 @@ import Vue from 'vue';
 import AdbPage from './AdbPage.vue';
 import { flashMessage } from './flash_message';
 import { focus } from './directives/focus';
+import moment from "moment";
 
 interface Activist {
   name: string;
@@ -269,17 +273,36 @@ export default Vue.extend({
     title: String,
   },
   methods: {
+    isMobile() {
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    },
+    colorLastMeeting(text: string) {
+      const time = moment(text);
+      let c = '';
+      if (time.isValid()) {
+        c = 'is-danger';
+      }
+      if (time.isAfter(moment().add(-32, 'day'))) {
+        c = 'is-warning';
+      }
+      if (time.isAfter(moment().add(-8, 'day'))) {
+        c = 'is-success';
+      }
+      return c;
+    },
     getFilteredActivists(text: string) {
-      console.log('getting filtered activists');
       this.filteredActivists = this.allActivists.filter((a: string) => {
         return a.toLowerCase().startsWith(text.toLowerCase());
       });
-      console.log(this.filteredActivists);
     },
     toggleMembers() {
       this.membersVisible = !this.membersVisible;
     },
     showModal(modalName: string, circleGroup: Circle) {
+      // Hide the navbar so that the model doesn't go behind it.
+      const mainNav = document.getElementById("mainNav");
+      if (mainNav) mainNav.style.visibility = "hidden";
+
       // Check to see if there's a modal open, and close it if so.
       if (this.currentModalName) {
         this.hideModal();
@@ -318,6 +341,10 @@ export default Vue.extend({
       this.disableConfirmButton = false;
     },
     hideModal() {
+      // Show the navbar.
+      const mainNav = document.getElementById("mainNav");
+      if (mainNav) mainNav.style.visibility = "visible";
+
       this.currentModalName = '';
       this.circleGroupIndex = -1;
       this.currentCircleGroup = {} as Circle;
@@ -361,7 +388,7 @@ export default Vue.extend({
           flashMessage(this.currentCircleGroup.name + ' saved');
 
           if (this.circleGroupIndex === -1) {
-            // New working group, insert at the top
+            // New circle, insert at the top
             this.circleGroups = [parsed.circle].concat(this.circleGroups);
           } else {
             // We edited an existing circle, replace their row.
@@ -440,6 +467,7 @@ export default Vue.extend({
   },
   computed: {},
   created() {
+    // Get circles.
     $.ajax({
       url: '/circle/list',
       method: 'POST',

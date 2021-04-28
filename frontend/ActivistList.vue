@@ -1,66 +1,81 @@
 <template>
   <adb-page :title="title" :description="description" wide>
-    <div class="activist-list-filters form-inline">
-      <input
-        v-on:input="debounceSearchInput"
-        class="form-control filter-margin"
-        type="text"
-        placeholder="Search Name"
-      />
+    <b-loading :is-full-page="true" v-model="loading"></b-loading>
 
-      <button
-        class="btn-link"
-        @click="toggleShowOptions('filters')"
-        v-if="view !== 'none' && (view === 'all_activists' || view === 'community_prospects')"
-      >
-        <span v-if="showOptions !== 'filters'">+</span
-        ><span v-if="showOptions === 'filters'">-</span> Filters
-      </button>
-      <button class="btn-link" id="colFilterBtn" @click="showColumnsModal">
-        Choose visible columns
-      </button>
-
-      <span>&nbsp;&nbsp;&nbsp;&nbsp;<b>Total rows: </b></span>
-
-      <span v-if="!loading" id="rowCount">0</span>
-
-      <span v-if="loading"><i>Loading...</i></span>
-
-      <span v-if="view === 'chapter_member_development'" style="margin-left: 20px;">
-        <a class="btn btn-default" href="/csv/chapter_member_spoke">
-          <span class="glyphicon glyphicon-download-alt"></span>&nbsp;&nbsp;Export CSV for Spoke
-        </a>
-      </span>
-
-      <span v-if="view === 'community_prospects'" style="margin-left: 20px;">
-        <a class="btn btn-default" href="/csv/community_prospects_hubspot">
-          <span class="glyphicon glyphicon-download-alt"></span>&nbsp;&nbsp;Export CSV for HubSpot
-        </a>
-      </span>
-
-      <div v-if="showOptions === 'filters'">
-        <div v-if="view === 'all_activists'">
-          <label>Last Event From:</label>
-          <input v-model="lastEventDateFrom" class="form-control filter-margin" type="date" />
+    <nav class="level">
+      <div class="level-left">
+        <div class="level-item">
+          <b-field label-position="on-border" label="Search by name">
+            <b-input v-on:input="debounceSearchInput" type="text">
+            </b-input>
+          </b-field>
         </div>
-        <div v-if="view === 'all_activists'">
-          <label>Last Event To:</label>
-          <input v-model="lastEventDateTo" class="form-control filter-margin" type="date" />
+        <div class="level-item">
+          <b-button @click="showColumnsModal" type="is-primary" icon-left="table-headers-eye">
+            Choose visible columns
+          </b-button>
         </div>
-        <div v-if="view === 'community_prospects'">
-          <label>Interest:</label>
-          <select id="filterInterest" v-model="filterInterest" class="form-control filter-margin">
-            <option>All</option>
-            <option>Sanctuary</option>
-            <option>Community</option>
-            <option>Outreach</option>
-            <option>Protest</option>
-            <option>Trainings</option>
-          </select>
+        <div class="level-item" v-if="view === 'all_activists' || view === 'community_prospects'">
+          <b-field>
+            <b-switch v-model="showFilters" type="is-primary"
+            >Show filters</b-switch
+            >
+          </b-field>
         </div>
       </div>
-    </div>
-    <div id="hot-table-container">
+      <div class="level-right">
+        <div class="level-item has-text-centered">
+          <div>
+            <p class="heading">Total</p>
+            <p class="title">{{ rowCount }}</p>
+          </div>
+        </div>
+        <div class="level-item" v-if="view === 'chapter_member_development'">
+          <b-button
+              label="Export CSV for Spoke"
+              type="is-info"
+              icon-left="download"
+              tag="a"
+              href="/csv/chapter_member_spoke"
+          ></b-button>
+        </div>
+        <div class="level-item" v-if="view === 'community_prospects'">
+          <b-button
+              label="Export CSV for HubSpot"
+              type="is-info"
+              icon-left="download"
+              tag="a"
+              href="/csv/community_prospects_hubspot"
+          ></b-button>
+        </div>
+      </div>
+    </nav>
+
+    <nav class="level mb-6">
+      <div class="level-left">
+        <div class="level-item" v-if="showFilters && view === 'all_activists'">
+          <b-field label="Last Event From" label-position="on-border">
+            <b-input v-model="lastEventDateFrom" type="date" ></b-input>
+          </b-field>
+        </div>
+        <div class="level-item" v-if="showFilters && view === 'all_activists'">
+          <b-field label="Last Event To" label-position="on-border">
+            <b-input v-model="lastEventDateTo" type="date" ></b-input>
+          </b-field>
+        </div>
+        <div class="level-item" v-if="showFilters && view === 'community_prospects'">
+          <b-field label="Interest" label-position="on-border">
+            <b-select v-model="filterInterest">
+              <option v-for="interest in ['All', 'Sanctuary', 'Community', 'Outreach', 'Protest', 'Trainings']" :value="interest" :key="interest">
+                {{ interest }}
+              </option>
+            </b-select>
+          </b-field>
+        </div>
+      </div>
+    </nav>
+
+    <div id="container hot-table-container">
       <HotTable
         ref="hot"
         :root="root"
@@ -69,123 +84,124 @@
         :height="height"
       ></HotTable>
     </div>
-    <modal
-      name="activist-options-modal"
-      height="auto"
-      classes="no-background-color no-top"
-      @opened="modalOpened"
-      @closed="modalClosed"
+
+
+    <b-modal
+        :active="currentModalName === 'activist-options-modal'"
+        has-modal-card
+        :destroy-on-hide="true"
+        scroll="keep"
+        :can-cancel="true"
+        :on-cancel="hideModal"
+        :full-screen="isMobile()"
     >
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h2 class="modal-title">{{ currentActivist.name }}</h2>
-          </div>
-          <div class="modal-body">
-            <ul class="activist-options-body">
-              <li>
-                <a @click="showModal('merge-activist-modal', currentActivist, activistIndex)"
-                  >Merge Activist</a
-                >
-              </li>
-            </ul>
-          </div>
-        </div>
+      <div class="modal-card" style="width: auto">
+        <header class="modal-card-head">
+          <p class="modal-card-title">{{ currentActivist.name }}</p>
+        </header>
+        <section class="modal-card-body">
+          <b-button @click="showModal('merge-activist-modal', currentActivist, activistIndex)"
+                    label="Merge Activist"
+                    type="is-primary"
+          ></b-button>
+        </section>
+        <footer class="modal-card-foot">
+          <b-button label="Close" @click="hideModal" />
+        </footer>
       </div>
-    </modal>
-    <modal
-      name="merge-activist-modal"
-      :height="650"
-      classes="no-background-color"
-      @opened="modalOpened"
-      @closed="modalClosed"
+    </b-modal>
+
+    <b-modal
+        :active="currentModalName === 'merge-activist-modal'"
+        has-modal-card
+        :destroy-on-hide="true"
+        scroll="keep"
+        :can-cancel="true"
+        :on-cancel="hideModal"
+        :full-screen="isMobile()"
     >
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header"><h2 class="modal-title">Merge activist</h2></div>
-          <div class="modal-body">
-            <p>Merging activists is used to combine redundant activist entries</p>
-            <p>Merging this activist does two things:</p>
-            <ul>
-              <li>
-                all of this activist&#39;s attendance data will be merged into the target activist
-              </li>
-              <li>this activist will be hidden</li>
-            </ul>
-            <p>Non-attendance data (e.g. email, location, etc) is <strong>NOT</strong> merged.</p>
-            <p>Merge {{ currentActivist.name }} into another activist:</p>
-            <p>
-              Target activist:
-              <select
-                id="merge-target-activist"
-                class="filter-margin"
-                style="min-width: 200px"
-              ></select>
-            </p>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" @click="hideModal">Close</button>
-            <button
-              type="button"
+      <div class="modal-card" style="width: auto">
+        <header class="modal-card-head">
+          <p class="modal-card-title">Merge activist</p>
+        </header>
+        <section class="modal-card-body">
+          <p class="mb-2">Merging activists is used to combine redundant activist entries.</p>
+          <p>Merging this activist does two things:</p>
+          <ul class="mb-2">
+            <li>
+              - All of {{ currentActivist.name }}'s attendance data will be merged into the target activist.
+            </li>
+            <li>- {{ currentActivist.name }} will be hidden.</li>
+          </ul>
+          <p class="mb-5">Non-attendance data (e.g. email, location, etc) is <strong>NOT</strong> merged.</p>
+          <p class="mb-2"><strong>Merge {{ currentActivist.name }} into another activist:</strong></p>
+          <p>
+            Target activist:
+            <b-select v-model="mergeTarget">
+              <option v-for="name in activistMergeOptions" :value="name" :key="name">
+                {{ name }}
+              </option>
+            </b-select>
+          </p>
+        </section>
+        <footer class="modal-card-foot">
+          <b-button label="Cancel" @click="hideModal" />
+          <b-button
+              type="is-danger"
               v-bind:disabled="disableConfirmButton"
-              class="btn btn-danger"
               @click="confirmMergeActivistModal"
-              v-focus
-            >
-              Merge activist
-            </button>
-          </div>
-        </div>
+          >
+            Merge activist
+          </b-button>
+        </footer>
       </div>
-    </modal>
-    <modal
-      name="columns-modal"
-      height="auto"
-      :scrollable="true"
-      classes="no-background-color"
-      @opened="modalOpened"
-      @closed="modalClosed"
+    </b-modal>
+
+    <b-modal
+        :active="currentModalName === 'columns-modal'"
+        has-modal-card
+        :destroy-on-hide="true"
+        scroll="keep"
+        :can-cancel="true"
+        :on-cancel="hideModal"
+        :full-screen="isMobile()"
     >
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header"><h2 class="modal-title">Choose columns to display</h2></div>
-          <div class="modal-body">
-            <div v-for="(column, idx) in columns">
+      <div class="modal-card" style="width: auto">
+        <header class="modal-card-head">
+          <p class="modal-card-title">Choose columns to display</p>
+        </header>
+        <section class="modal-card-body">
+          <div v-for="(column, idx) in columns">
               <span v-if="column.header !== ''">
                 <span v-if="columns[idx].category !== columns[idx - 1].category"
-                  ><strong><br />{{ column.category }}</strong
-                  ><br
-                /></span>
-                <input type="checkbox" :id="column.header" v-model="column.enabled" />
-                <label style="font-weight: normal;" :for="column.header">{{
-                  column.longHeader
-                }}</label>
+                ><p class="mt-3 mb-1"><strong class="has-text-primary">{{ column.category }}</strong></p
+                ></span>
+                <b-field>
+                  <b-switch :id="column.header" v-model="column.enabled" type="is-primary" />
+                  {{column.longHeader}}
+                </b-field>
               </span>
-            </div>
           </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" @click="hideModal">OK</button>
-          </div>
-        </div>
+        </section>
+        <footer class="modal-card-foot">
+          <b-button label="Close" @click="hideModal" />
+        </footer>
       </div>
-    </modal>
+    </b-modal>
+
   </adb-page>
 </template>
 
 <script lang="ts">
 import Vue from 'vue';
-import vmodal from 'vue-js-modal';
 import HotTable from './external/vue-handsontable-official/HotTable.vue';
 import { rewriteSettings } from './external/vue-handsontable-official/helpers';
 import AdbPage from './AdbPage.vue';
 import { focus } from './directives/focus';
 import { flashMessage } from './flash_message';
 import { EventBus } from './EventBus';
-import { initActivistSelect } from './chosen_utils';
 import debounce from 'debounce';
 import moment from 'moment';
-
-Vue.use(vmodal);
 
 interface Activist {
   id: number;
@@ -885,7 +901,7 @@ function optionsButtonRenderer(
 ) {
   td.innerHTML = `<button
       data-role="trigger"
-      class="activist-options-btn btn btn-default btn-xs dropdown-toggle glyphicon glyphicon-option-horizontal"
+      class="mdi mdi-dots-horizontal activist-options-btn"
       type="button"
       onclick="window.showOptionsModal(${row})"></button>`;
   return td;
@@ -968,14 +984,21 @@ export default Vue.extend({
     },
   },
   methods: {
+    isMobile() {
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    },
     showOptionsModal(row: number) {
       const activist = this.activists[row];
       this.showModal('activist-options-modal', activist, row);
     },
     showColumnsModal() {
-      this.showModal('columns-modal', {} as Activist, 0);
+      this.showModal('columns-modal');
     },
-    showModal(modalName: string, activist: Activist, index: number) {
+    showModal(modalName: string, activist: Activist = {} as Activist, index: number = 0) {
+      // Hide the navbar so that the model doesn't go behind it.
+      const mainNav = document.getElementById("mainNav");
+      if (mainNav) mainNav.style.visibility = "hidden";
+
       // Check to see if there's a modal open, and close it if so.
       if (this.currentModalName) {
         this.hideModal();
@@ -994,54 +1017,31 @@ export default Vue.extend({
 
         this.currentModalName = modalName;
         this.$modal.show(modalName);
+
+        if (this.currentModalName == 'merge-activist-modal') {
+          this.getActivistMergeOptions(this.currentActivist.name)
+        }
+
+        this.disableConfirmButton = false;
+
       });
     },
     hideModal() {
+      // Show the navbar.
+      const mainNav = document.getElementById("mainNav");
+      if (mainNav) mainNav.style.visibility = "visible";
+
       if (this.currentModalName) {
         this.$modal.hide(this.currentModalName);
       }
       this.currentModalName = '';
       this.activistIndex = -1;
       this.currentActivist = {} as Activist;
-    },
-    modalOpened() {
-      // Add noscroll to body tag so it doesn't scroll while the modal
-      // is shown.
-      $(document.body).addClass('noscroll');
-      this.disableConfirmButton = false;
-
-      if (this.currentModalName == 'merge-activist-modal') {
-        // For some reason, even though this function is supposed to
-        // fire after the modal is visible on the dom, the modal isn't
-        // there. Vue.nextTick doesn't work for some reason, so we're
-        // just going to keep calling setTimeout until the modal shows
-        // up.
-        let interval: number;
-        const fn = () => {
-          if ($('#merge-target-activist')[0]) {
-            clearInterval(interval);
-            initActivistSelect('#merge-target-activist', this.currentActivist.name);
-          }
-        };
-        interval = setInterval(fn, 50);
-      }
-    },
-    modalClosed() {
-      // Allow body to scroll after modal is closed.
-      $(document.body).removeClass('noscroll');
-      window.scrollTo(0, 0);
-    },
-    removeActivist(id: number) {
-      const activistIndex = this.allActivists.findIndex((a) => {
-        return a.id === id;
-      });
-      if (activistIndex === -1) {
-        throw new Error("Couldn't find activist index for activist with id: " + id);
-      }
-      this.allActivists.splice(activistIndex, 1);
+      this.mergeTarget = '';
+      this.activistMergeOptions = [];
     },
     confirmMergeActivistModal() {
-      const targetActivistName = $('#merge-target-activist').val();
+      const targetActivistName = this.mergeTarget
       if (!targetActivistName) {
         flashMessage('Must choose an activist to merge into', true);
         return;
@@ -1120,8 +1120,9 @@ export default Vue.extend({
 
           if (activistList !== null) {
             this.allActivists = activistList;
-            this.loading = false;
           }
+
+          this.loading = false
         },
         error: (err) => {
           console.warn(err.responseText);
@@ -1201,16 +1202,6 @@ export default Vue.extend({
         filter: this.view, // this passes view to the backend, where filtering will now take place
       };
     },
-    toggleShowOptions(optionsType: string) {
-      if (this.showOptions === optionsType) {
-        this.showOptions = '';
-      } else {
-        this.showOptions = optionsType;
-      }
-      Vue.nextTick(() => {
-        this.setHOTHeight(); // Resize the table.
-      });
-    },
     refreshHOTData() {
       const table = this.hotTable;
       const newSettings = {
@@ -1273,9 +1264,26 @@ export default Vue.extend({
       }
     },
     // TODO(mdempsky): Remove "this: any".
-    debounceSearchInput: debounce(function(this: any, e: Event) {
-      this.search = (e.target as HTMLInputElement).value;
+    debounceSearchInput: debounce(function(this: any, text: string) {
+      this.search = text;
     }, 500),
+    getActivistMergeOptions(ignoreActivistName?: string) {
+      $.ajax({
+        url: '/activist_names/get',
+        method: 'GET',
+        dataType: 'json',
+        success: (data) => {
+          const activistNames = data.activist_names as string[];
+          // TODO: maybe just check that it doesn't match before merging if this is slow to filter?
+          this.activistMergeOptions = activistNames.filter(a => {
+            return a != ignoreActivistName
+          })
+        },
+        error: () => {
+          flashMessage('Error: could not load activist names', true);
+        },
+      });
+    }
   },
   data() {
     let initDateFrom = '';
@@ -1298,9 +1306,12 @@ export default Vue.extend({
       lastEventDateTo: initDateTo,
       filterInterest: 'All',
       filterRadius: '5',
-      showOptions: '',
+      showFilters: false,
       search: '',
       loading: false,
+      rowCount: 0,
+      mergeTarget: '',
+      activistMergeOptions: [] as string[],
     };
   },
   computed: {
@@ -1381,12 +1392,7 @@ export default Vue.extend({
     this.setHOTHeight();
   },
   updated() {
-    const rowCount = this.hotTable.countRows();
-    if (rowCount === 0) {
-      $('#rowCount').html(String('No data'));
-    } else {
-      $('#rowCount').html(String(rowCount));
-    }
+    this.rowCount = this.hotTable.countRows();
   },
   components: {
     AdbPage,
@@ -1399,20 +1405,12 @@ export default Vue.extend({
 </script>
 
 <style>
-.activist-options-body a {
-  color: #337ab7;
-  cursor: pointer;
-}
 #activists-root {
   overflow: scroll;
 }
 .activist-options-btn {
   border: 0;
-}
-.activist-list-filters {
-  margin: 10px 25px;
-}
-.v--modal-box {
-  top: 50px !important;
+  background-color: white;
+  font-size: 14px;
 }
 </style>

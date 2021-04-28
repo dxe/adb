@@ -8,7 +8,7 @@
         </b-field>
 
         <div v-if="!connections">
-          <b-field label="Event type">
+          <b-field label="Type">
             <b-select v-model="type" expanded :required="!connections">
               <option
                 v-for="eventType in [

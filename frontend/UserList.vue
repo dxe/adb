@@ -38,6 +38,7 @@
       :destroy-on-hide="true"
       scroll="keep"
       :can-cancel="false"
+      :full-screen="isMobile()"
     >
       <div class="modal-card" style="width: auto">
         <header class="modal-card-head">
@@ -117,7 +118,15 @@ interface User {
 export default Vue.extend({
   name: 'user-list',
   methods: {
+    isMobile() {
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    },
     showModal(modalName: string, user: User) {
+      // Hide the navbar so that the model doesn't go behind it.
+      const mainNav = document.getElementById("mainNav");
+      if (mainNav) mainNav.style.visibility = "hidden";
+
+
       // Check to see if there's a modal open, and close it if so.
       if (this.currentModalName) {
         this.hideModal();
@@ -142,6 +151,10 @@ export default Vue.extend({
       this.currentUserRoleSelections = $.extend([], this.currentUser.roles);
     },
     hideModal() {
+      // Show the navbar.
+      const mainNav = document.getElementById("mainNav");
+      if (mainNav) mainNav.style.visibility = "visible";
+
       // Make sure we update the main user list instance of
       // this current user to match the roles.
       // Only when we're not creating a new User.
