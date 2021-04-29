@@ -1,182 +1,139 @@
-<style>
-.fade-enter-active {
-  transition: opacity 0.5s;
-}
-.fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
-  opacity: 0;
-}
-legend {
-  font-size: 1.25em;
-}
-</style>
-
 <template>
   <adb-page title="Sign up to join our International Network">
     <transition name="fade">
-      <div v-if="submitSuccess">
+      <div v-if="submitSuccess" class="content">
         <h2>Thank you!</h2>
         <p>
-          An organizer will reach out to you within the next week.
+          An organizer will reach out to you shortly.
         </p>
       </div>
     </transition>
 
-    <form id="form" @submit.prevent="submitForm" autocomplete="off" v-if="!submitSuccess">
-      <p>
+    <div class="columns is-multiline" v-if="!submitSuccess">
+      <div class="column is-full mb-4">
         Interested in getting involved with Direct Action Everywhere? Fill out this form and we'll
         contact you with opportunities!
-      </p>
-      <br />
-
-      <div class="form-group">
-        <div class="row">
-          <div class="form-group col-sm-6">
-            <label>First Name</label>
-            <input
-              type="text"
-              class="form-control"
-              v-model="firstName"
-              name="firstName"
-              maxlength="35"
-              required
-            />
-          </div>
-
-          <div class="form-group col-sm-6">
-            <label>Last Name</label>
-            <input
-              type="text"
-              class="form-control"
-              v-model="lastName"
-              name="lastName"
-              maxlength="35"
-              required
-            />
-          </div>
-        </div>
       </div>
 
-      <div class="form-group">
-        <div class="row">
-          <div class="form-group col-sm-6">
-            <label>Email address</label>
-            <input
-              type="email"
-              class="form-control"
-              v-model="email"
-              name="email"
-              maxlength="60"
-              required
-            />
-          </div>
-
-          <div class="form-group col-sm-6">
-            <label>Phone number</label>
-            <input
-              type="text"
-              class="form-control"
-              v-model="phone"
-              name="phone"
-              maxlength="35"
-              required
-            />
-          </div>
-        </div>
+      <div class="column is-half">
+        <b-field label="First Name" label-position="on-border">
+          <b-input
+            type="text"
+            v-model.trim="firstName"
+            required
+            maxlength="35"
+            ref="firstName"
+          ></b-input>
+        </b-field>
       </div>
 
-      <!-- Note that the name of this element MUST contain "search" to prevent Safari autofill from getting in the way. -->
-      <div class="form-group">
-        <label>City</label>
-        <vue-google-autocomplete
-          id="map"
-          name="citySearch"
-          classname="form-control"
-          placeholder="Enter your city & country"
-          v-on:placechanged="this.citySelected"
-          types="(cities)"
-          :fields="['address_components', 'geometry']"
-          required
-        >
-        </vue-google-autocomplete>
+      <div class="column is-half">
+        <b-field label="Last Name" label-position="on-border">
+          <b-input
+            type="text"
+            v-model.trim="lastName"
+            required
+            maxlength="35"
+            ref="lastName"
+          ></b-input>
+        </b-field>
       </div>
 
-      <br />
+      <div class="column is-half">
+        <b-field label="Email" label-position="on-border">
+          <b-input type="email" v-model.trim="email" required maxlength="60" ref="email"></b-input>
+        </b-field>
+      </div>
 
-      <div>
-        <label>What are you most interested in?</label>
-        <div class="radio">
-          <label
-            ><input
-              type="radio"
-              name="interest"
-              v-model="interest"
-              value="participate"
-              required
-            />I'd like to participate</label
+      <div class="column is-half">
+        <b-field label="Phone" label-position="on-border">
+          <b-input type="text" v-model.trim="phone" required maxlength="35" ref="phone"></b-input>
+        </b-field>
+      </div>
+
+      <div class="column is-full">
+        <b-field label="City" label-position="on-border">
+          <vue-google-autocomplete
+            id="map"
+            name="citySearch"
+            classname="input"
+            placeholder="Enter your city & country"
+            v-on:placechanged="this.citySelected"
+            types="(cities)"
+            :fields="['address_components', 'geometry']"
+            required
           >
-        </div>
-        <div class="radio">
-          <label
-            ><input type="radio" name="interest" v-model="interest" value="organize" required />I'd
-            like to organize or start a chapter</label
-          >
-        </div>
+          </vue-google-autocomplete>
+        </b-field>
       </div>
 
-      <br />
+      <div class="column is-full">
+        <b-field label="What are you most interested in?" class="mt-4">
+          <b-radio-button v-model="interest" native-value="participate" type="is-primary" required>
+            <span>I'd like to participate</span>
+          </b-radio-button>
+          <b-radio-button v-model="interest" native-value="organize" type="is-primary" required>
+            <span>I'd like to organize or start a chapter</span>
+          </b-radio-button>
+        </b-field>
+      </div>
 
-      <div>
-        <label
-          >I am not law enforcement and my motive for expressing interest is a desire to help end
+      <div class="column is-full">
+        <p class="mt-4">
+          I am not law enforcement and my motive for expressing interest is a desire to help end
           animal exploitation. From this point forward, I commit to upholding DxE's
           <a href="http://dxe.io/values" target="_blank">values</a> and
           <a href="http://dxe.io/conduct" target="_blank">code of conduct</a> and understand that I
-          may be removed if I fail to do so.</label
+          may be removed if I fail to do so.
+        </p>
+
+        <b-field class="mt-3">
+          <b-radio-button v-model="terms" native-value="agree" type="is-success" required>
+            <b-icon icon="check"></b-icon>
+            <span>Yes, I agree with the above statement.</span>
+          </b-radio-button>
+        </b-field>
+      </div>
+
+      <div class="column is-full mt-4">
+        <b-field label="What special skills or talents do you have?" label-position="on-border">
+          <b-input
+            type="textarea"
+            maxlength="500"
+            v-model.trim="skills"
+            placeholder="Let us know where we can get you plugged in by telling us what skills or talents you have."
+          />
+        </b-field>
+      </div>
+
+      <div class="column is-full">
+        <b-field
+          label="Is there anything specific you'd like to get involved with?"
+          label-position="on-border"
         >
-        <div class="radio">
-          <label
-            ><input type="radio" name="terms" v-model="terms" value="agree" required />Yes, I agree
-            with the above statement.</label
-          >
-        </div>
+          <b-input type="textarea" maxlength="500" v-model.trim="involvement" />
+        </b-field>
       </div>
 
-      <br />
-
-      <div class="form-group">
-        <label>What special skills or talents do you have?</label>
-        <textarea
-          class="form-control"
-          v-model="skills"
-          name="skills"
-          maxlength="500"
-          placeholder="Let us know where we can get you plugged in by telling us what skills or talents you have."
-        />
+      <div class="column is-full">
+        <b-button
+          type="is-primary"
+          label="Submit"
+          @click="submitForm"
+          :disabled="submitting"
+        ></b-button>
       </div>
-
-      <br />
-
-      <div class="form-group">
-        <label>Is there anything specific you'd like to get involved with?</label>
-        <textarea class="form-control" v-model="involvement" name="involvement" maxlength="500" />
-      </div>
-
-      <br />
-      <input type="submit" class="btn btn-primary" value="Submit" :disabled="submitting" />
-    </form>
+    </div>
   </adb-page>
 </template>
 
 <script lang="ts">
 // Library from here: https://github.com/euvl/vue-js-modal
-import vmodal from 'vue-js-modal';
 import Vue from 'vue';
 //@ts-ignore
 import VueGoogleAutocomplete from './external/vue-google-autocomplete';
 import AdbPage from './AdbPage.vue';
-import { flashMessage } from './flash_message';
-
-Vue.use(vmodal);
+import { flashMessage, initializeFlashMessage } from './flash_message';
 
 interface locationData {
   locality: string;
@@ -189,6 +146,14 @@ interface locationData {
 export default Vue.extend({
   name: 'form-international',
   methods: {
+    validate: function() {
+      type VueFormInput = Vue & { checkHtml5Validity: () => boolean };
+      const refsToValidate = ['firstName', 'lastName', 'email', 'phone'];
+      const results = refsToValidate.map((ref) => {
+        return (this.$refs[ref] as VueFormInput).checkHtml5Validity();
+      });
+      return results.indexOf(false) === -1;
+    },
     citySelected: function(loc: locationData) {
       this.city = loc.locality;
       this.state = loc.administrative_area_level_1;
@@ -198,8 +163,17 @@ export default Vue.extend({
       this.locationChosen = true;
     },
     submitForm: function() {
+      if (!this.validate()) return;
       if (!this.locationChosen) {
-        alert('Please choose your city from the dropdown list.');
+        flashMessage('Please choose your city from the dropdown list.', true);
+        return;
+      }
+      if (!this.interest) {
+        flashMessage("Please choose whether you'd like to participate or organize.", true);
+        return;
+      }
+      if (!this.terms) {
+        flashMessage('You must agree to the terms.', true);
         return;
       }
       this.submitting = true;
@@ -263,6 +237,7 @@ export default Vue.extend({
   },
   created() {
     document.title = 'Join DxE';
+    initializeFlashMessage();
   },
   components: {
     AdbPage,
@@ -270,3 +245,12 @@ export default Vue.extend({
   },
 });
 </script>
+
+<style>
+.fade-enter-active {
+  transition: opacity 0.5s;
+}
+.fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
+  opacity: 0;
+}
+</style>

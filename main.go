@@ -689,7 +689,7 @@ type PageData struct {
 	StaticResourcesHash string
 	// Used on International & Discord Form pages
 	GooglePlacesAPIKey string
-	// Used on Discord Form page
+	// Used on Discord Form page - TODO: handle this differently
 	DiscordUser model.DiscordUser
 }
 

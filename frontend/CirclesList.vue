@@ -1,283 +1,252 @@
 <template>
   <adb-page :title="title === 'CirclesList' ? 'Circles' : 'Geo-Circles'">
-    <button class="btn btn-default" @click="showModal('edit-circle-modal')">
-      <span class="glyphicon glyphicon-plus"></span>&nbsp;&nbsp;Add New
-      {{ title === 'CirclesList' ? 'Circle' : 'Geo-Circle' }}
-    </button>
-
-    <button
-      v-if="title === 'GeoCirclesList'"
-      id="showMem"
-      class="btn btn-default"
-      onclick="$('.cirMembers').show(); $('#showMem').hide(); $('#hideMem').show(); $('.memCount').hide();"
-    >
-      <span class="glyphicon glyphicon-eye-open"></span>&nbsp;&nbsp;Show members
-    </button>
-    <button
-      id="hideMem"
-      class="btn btn-default"
-      onclick="$('.cirMembers').hide(); $('#showMem').show(); $('#hideMem').hide(); $('.memCount').show();"
-      style="display: none;"
-    >
-      <span class="glyphicon glyphicon-eye-close"></span>&nbsp;&nbsp;Hide members
-    </button>
-
-    <table id="working-group-list" class="adb-table table table-hover table-striped">
-      <thead>
-        <tr>
-          <th style="width: 1px; white-space: nowrap;"></th>
-          <th style="width: 1px; white-space: nowrap;"></th>
-          <th>Name</th>
-          <th>Host</th>
-          <th v-if="title === 'GeoCirclesList'" class="memCount">Total Members</th>
-          <th v-if="title === 'CirclesList'">Last Event</th>
-          <th class="cirMembers">Members</th>
-        </tr>
-      </thead>
-      <tbody id="working-group-list-body">
-        <tr v-for="(circleGroup, index) in circleGroups">
-          <td>
-            <button
-              class="btn btn-default glyphicon glyphicon-pencil"
-              @click="showModal('edit-circle-modal', circleGroup, index)"
-            ></button>
-          </td>
-          <td>
-            <dropdown>
-              <button
-                data-role="trigger"
-                class="btn btn-default dropdown-toggle glyphicon glyphicon-option-horizontal"
-                type="button"
-              ></button>
-              <template slot="dropdown">
-                <li>
-                  <a @click="showModal('delete-circle-modal', circleGroup, index)">Delete Circle</a>
-                </li>
-              </template>
-            </dropdown>
-          </td>
-          <td>{{ circleGroup.name }}</td>
-          <td>
-            <!-- There should only ever be one point person -->
-            <template v-for="member in circleGroup.members">
-              <template v-if="member.point_person">
-                <p>{{ member.name }}</p>
-              </template>
-            </template>
-          </td>
-          <td v-if="title === 'GeoCirclesList'" class="memCount">
-            {{ numberOfCircleGroupMembers(circleGroup) }}
-          </td>
-          <td v-if="title === 'CirclesList'">{{ circleGroup.last_meeting }}</td>
-          <td>
-            <ul class="cirMembers" v-for="member in circleGroup.members">
-              <template v-if="!member.point_person">
-                <li>{{ member.name }}</li>
-              </template>
-            </ul>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-    <modal
-      name="delete-circle-modal"
-      height="auto"
-      classes="no-background-color no-top"
-      @opened="modalOpened"
-      @closed="modalClosed"
-    >
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header"><h2 class="modal-title">Delete Circle</h2></div>
-          <div class="modal-body">
-            <p>Are you sure you want to delete the Circle, {{ currentCircleGroup.name }}?</p>
-            <p>Before you delete a Circle, you need to remove all members of that Circle.</p>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" @click="hideModal">Close</button>
-            <button
-              type="button"
-              v-bind:disabled="disableConfirmButton"
-              class="btn btn-danger"
-              @click="confirmDeleteCircleGroupModal"
-            >
-              Delete Circle
-            </button>
-          </div>
+    <b-loading :is-full-page="true" v-model="loadingActivists"></b-loading>
+    <b-loading :is-full-page="true" v-model="loadingCircles"></b-loading>
+    <nav class="level">
+      <div class="level-left">
+        <div class="level-item">
+          <b-button icon-left="plus" type="is-primary" @click="showModal('edit-circle-modal')">
+            New {{ title === 'CirclesList' ? 'Circle' : 'Geo-Circle' }}
+          </b-button>
         </div>
       </div>
-    </modal>
-    <modal
-      name="edit-circle-modal"
-      height="auto"
-      classes="no-background-color no-top"
-      @opened="modalOpened"
-      @closed="modalClosed"
-    >
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h2 class="modal-title" v-if="currentCircleGroup.id">
-              Edit {{ title === 'CirclesList' ? 'Circle' : 'Geo-Circle' }}
-            </h2>
-            <h2 class="modal-title" v-if="!currentCircleGroup.id">
-              New {{ title === 'CirclesList' ? 'Circle' : 'Geo-Circle' }}
-            </h2>
-          </div>
-          <div class="modal-body">
-            <form action="" id="editCircleGroupForm">
-              <p>
-                <label for="name">Name: </label
-                ><input
-                  class="form-control"
-                  type="text"
-                  v-model.trim="currentCircleGroup.name"
-                  id="name"
-                  v-focus
-                />
-              </p>
-
-              <p hidden>
-                <label for="type">Type: </label>
-                <select id="type" class="form-control" v-model="currentCircleGroup.type">
-                  <option value="circle">Circle</option>
-                  <option value="geo-circle">Geo-Circle</option>
-                </select>
-              </p>
-
-              <p>
-                <label for="description" v-if="title === 'CirclesList'">Description: </label>
-                <label for="description" v-if="title === 'GeoCirclesList'"
-                  >Description or Notes:
-                </label>
-                <input
-                  class="form-control"
-                  type="text"
-                  v-model.trim="currentCircleGroup.description"
-                  id="description"
-                />
-              </p>
-              <p v-if="title === 'CirclesList'">
-                <label for="meeting_time">Meeting Day & Time: </label
-                ><input
-                  class="form-control"
-                  type="text"
-                  v-model.trim="currentCircleGroup.meeting_time"
-                  id="meeting_time"
-                />
-              </p>
-              <p v-if="title === 'CirclesList'">
-                <label for="meeting_location">Meeting Location: </label
-                ><input
-                  class="form-control"
-                  type="text"
-                  v-model.trim="currentCircleGroup.meeting_location"
-                  id="meeting_location"
-                />
-              </p>
-              <p>
-                <label for="coords">Coordinates: </label
-                ><input
-                  class="form-control"
-                  type="text"
-                  v-model.trim="currentCircleGroup.coords"
-                  id="coords"
-                  :disabled="title === 'GeoCirclesList'"
-                />
-              </p>
-              <p>
-                <label for="visible">Visible to public: </label
-                ><input
-                  class="form-control"
-                  type="checkbox"
-                  v-model.trim="currentCircleGroup.visible"
-                  id="visible"
-                />
-              </p>
-
-              <hr />
-
-              <p><label>Host: </label></p>
-              <div class="select-row" v-for="(member, index) in currentCircleGroup.members">
-                <template v-if="member.point_person">
-                  <basic-select
-                    :options="activistOptions"
-                    :selected-option="memberOption(member)"
-                    :extra-data="{ index: index, pointPerson: true }"
-                    inheritStyle="min-width: 500px"
-                    @select="onMemberSelect"
-                  >
-                  </basic-select>
-                  <button
-                    type="button"
-                    class="select-row-btn btn btn-sm btn-danger"
-                    @click="removeMember(index)"
-                  >
-                    -
-                  </button>
-                </template>
-              </div>
-              <button
-                v-if="showAddPointPerson"
-                type="button"
-                class="btn btn-sm"
-                @click="addPointPerson"
-              >
-                Add host
-              </button>
-              <div v-if="title === 'GeoCirclesList'">
-                <p><label>Members: </label></p>
-                <div class="select-row" v-for="(member, index) in currentCircleGroup.members">
-                  <template v-if="!member.point_person && !member.non_member_on_mailing_list">
-                    <basic-select
-                      :options="activistOptions"
-                      :selected-option="memberOption(member)"
-                      :extra-data="{ index: index }"
-                      inheritStyle="min-width: 500px"
-                      @select="onMemberSelect"
-                    >
-                    </basic-select>
-                    <button
-                      type="button"
-                      class="select-row-btn btn btn-sm btn-danger"
-                      @click="removeMember(index)"
-                    >
-                      -
-                    </button>
-                  </template>
-                </div>
-                <button type="button" class="btn btn-sm" @click="addMember">Add member</button>
-              </div>
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" @click="hideModal">Close</button>
-            <button
-              type="button"
-              v-bind:disabled="disableConfirmButton"
-              class="btn btn-success"
-              @click="confirmEditCircleGroupModal"
-            >
-              Save changes
-            </button>
-          </div>
+      <div class="level-right">
+        <div class="level-item">
+          <b-button
+            v-if="title === 'GeoCirclesList'"
+            @click="toggleMembers"
+            :icon-left="membersVisible ? 'eye-off' : 'eye'"
+          >
+            {{ membersVisible ? 'Hide' : 'Show' }} members
+          </b-button>
         </div>
       </div>
-    </modal>
+    </nav>
+
+    <b-table :data="circleGroups" striped hoverable default-sort="name">
+      <b-table-column v-slot="props" width="1px">
+        <div style="width: 85px;">
+          <b-button @click="showModal('edit-circle-modal', props.row)">
+            <b-icon icon="pencil" type="is-primary"></b-icon>
+          </b-button>
+          <b-button @click="showModal('delete-circle-modal', props.row)">
+            <b-icon icon="delete" type="is-danger"></b-icon>
+          </b-button>
+        </div>
+      </b-table-column>
+
+      <b-table-column field="name" label="Name" v-slot="props" sortable>
+        {{ props.row.name }}
+      </b-table-column>
+
+      <b-table-column field="members" label="Host" v-slot="props">
+        <!-- There should only ever be one point person -->
+        <!-- TODO: calculate this somewhere else so column can be sortable -->
+        <template v-for="member in props.row.members">
+          <template v-if="member.point_person">
+            {{ member.name }}
+          </template>
+        </template>
+      </b-table-column>
+
+      <b-table-column
+        field="last_meeting"
+        label="Last Event"
+        v-slot="props"
+        sortable
+        v-if="title === 'CirclesList'"
+      >
+        <span class="tag" :class="colorLastMeeting(props.row.last_meeting)">
+          {{ props.row.last_meeting || 'None' }}
+        </span>
+      </b-table-column>
+
+      <b-table-column
+        label="Total Members"
+        v-slot="props"
+        v-if="title === 'GeoCirclesList' && !membersVisible"
+      >
+        <!-- TODO: calculate this somewhere else so column can be sortable -->
+        {{ numberOfCircleGroupMembers(props.row) }}
+      </b-table-column>
+
+      <b-table-column
+        label="Members"
+        field="members"
+        v-slot="props"
+        v-if="title === 'GeoCirclesList' && membersVisible"
+      >
+        <ul v-for="member in props.row.members">
+          <template v-if="!member.point_person">
+            <li>{{ member.name }}</li>
+          </template>
+        </ul>
+      </b-table-column>
+    </b-table>
+
+    <b-modal
+      :active="currentModalName === 'delete-circle-modal'"
+      has-modal-card
+      :destroy-on-hide="true"
+      scroll="keep"
+      :can-cancel="true"
+      :on-cancel="hideModal"
+      :full-screen="isMobile()"
+    >
+      <div class="modal-card" style="width: auto">
+        <header class="modal-card-head">
+          <p class="modal-card-title">Delete circle</p>
+        </header>
+        <section class="modal-card-body">
+          <p>
+            Are you sure you want to delete <strong>{{ currentCircleGroup.name }}</strong
+            >?
+          </p>
+          <b-message type="is-warning" has-icon class="mt-3">
+            Before deleting a circle, be sure to remove all members of that circle.
+          </b-message>
+        </section>
+        <footer class="modal-card-foot">
+          <b-button label="Cancel" @click="hideModal" />
+          <b-button
+            label="Delete"
+            type="is-danger"
+            :disabled="disableConfirmButton"
+            @click="confirmDeleteCircleGroupModal"
+          />
+        </footer>
+      </div>
+    </b-modal>
+
+    <b-modal
+      :active="currentModalName === 'edit-circle-modal'"
+      has-modal-card
+      :destroy-on-hide="true"
+      scroll="keep"
+      :can-cancel="false"
+      :width="400"
+      :full-screen="isMobile()"
+    >
+      <div class="modal-card" style="width: auto">
+        <header class="modal-card-head">
+          <p class="modal-card-title">
+            {{ currentCircleGroup.id ? 'Edit' : 'New' }}
+            {{ title === 'CirclesList' ? 'Circle' : 'Geo-Circle' }}
+          </p>
+        </header>
+        <section class="modal-card-body">
+          <b-field label="Name" label-position="on-border">
+            <b-input
+              type="text"
+              v-model.trim="currentCircleGroup.name"
+              icon="circle-slice-8"
+              required
+            ></b-input>
+          </b-field>
+
+          <b-field label="Type" label-position="on-border" hidden>
+            <b-input type="text" v-model.trim="currentCircleGroup.type" required></b-input>
+          </b-field>
+
+          <b-field
+            :label="'Description' + (title === 'GeoCirclesList' ? ' or Notes' : '')"
+            label-position="on-border"
+          >
+            <b-input
+              type="text"
+              v-model.trim="currentCircleGroup.description"
+              icon="text-box"
+            ></b-input>
+          </b-field>
+
+          <b-field
+            label="Meeting Day & Time"
+            label-position="on-border"
+            v-if="title === 'CirclesList'"
+          >
+            <b-input
+              type="text"
+              v-model.trim="currentCircleGroup.meeting_time"
+              icon="calendar-blank"
+            ></b-input>
+          </b-field>
+
+          <b-field
+            label="Meeting Location"
+            label-position="on-border"
+            v-if="title === 'CirclesList'"
+          >
+            <b-input
+              type="text"
+              v-model.trim="currentCircleGroup.meeting_location"
+              icon="map-marker"
+            ></b-input>
+          </b-field>
+
+          <b-field label="Coordinates" label-position="on-border">
+            <b-input
+              type="text"
+              v-model.trim="currentCircleGroup.coords"
+              icon="ruler"
+              :disabled="title === 'GeoCirclesList'"
+            ></b-input>
+          </b-field>
+
+          <b-field>
+            <b-switch v-model="currentCircleGroup.visible" type="is-success"
+              >Visible to public</b-switch
+            >
+          </b-field>
+
+          <b-field label="Host">
+            <b-taginput
+              v-model="currentCircleHost"
+              :data="filteredActivists"
+              autocomplete
+              :allow-new="false"
+              icon="crown"
+              placeholder="Search by name..."
+              @typing="getFilteredActivists"
+              maxtags="1"
+              type="is-info"
+              dropdown-position="top"
+            ></b-taginput>
+          </b-field>
+
+          <b-field label="Members" v-if="title === 'GeoCirclesList'">
+            <b-taginput
+              v-model="currentCircleMembers"
+              :data="filteredActivists"
+              autocomplete
+              :allow-new="false"
+              icon="account-multiple"
+              @typing="getFilteredActivists"
+              type="is-info"
+              dropdown-position="top"
+            ></b-taginput>
+          </b-field>
+        </section>
+        <footer class="modal-card-foot">
+          <b-button label="Cancel" icon-left="cancel" @click="hideModal" />
+          <b-button
+            label="Save"
+            icon-left="floppy"
+            type="is-primary"
+            :disabled="disableConfirmButton"
+            @click="confirmEditCircleGroupModal"
+          />
+        </footer>
+      </div>
+    </b-modal>
   </adb-page>
 </template>
 
 <script lang="ts">
-import vmodal from 'vue-js-modal';
 import Vue from 'vue';
 import AdbPage from './AdbPage.vue';
 import { flashMessage } from './flash_message';
-import { Dropdown } from 'uiv';
-import { initActivistSelect } from './chosen_utils';
 import { focus } from './directives/focus';
-import BasicSelect from './external/search-select/BasicSelect.vue';
-
-Vue.use(vmodal);
+import moment from 'moment';
 
 interface Activist {
   name: string;
@@ -288,6 +257,11 @@ interface Activist {
 interface Circle {
   id: number;
   name: string;
+  description: string;
+  meeting_time: string;
+  meeting_location: string;
+  coords: string;
+  visible: boolean;
   members: Activist[];
   last_meeting: string;
   type: string;
@@ -299,7 +273,38 @@ export default Vue.extend({
     title: String,
   },
   methods: {
-    showModal(modalName: string, circleGroup: Circle, index: number) {
+    isMobile() {
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent,
+      );
+    },
+    colorLastMeeting(text: string) {
+      const time = moment(text);
+      let c = '';
+      if (time.isValid()) {
+        c = 'is-danger';
+      }
+      if (time.isAfter(moment().add(-32, 'day'))) {
+        c = 'is-warning';
+      }
+      if (time.isAfter(moment().add(-8, 'day'))) {
+        c = 'is-success';
+      }
+      return c;
+    },
+    getFilteredActivists(text: string) {
+      this.filteredActivists = this.allActivists.filter((a: string) => {
+        return a.toLowerCase().startsWith(text.toLowerCase());
+      });
+    },
+    toggleMembers() {
+      this.membersVisible = !this.membersVisible;
+    },
+    showModal(modalName: string, circleGroup: Circle) {
+      // Hide the navbar so that the model doesn't go behind it.
+      const mainNav = document.getElementById('mainNav');
+      if (mainNav) mainNav.style.visibility = 'hidden';
+
       // Check to see if there's a modal open, and close it if so.
       if (this.currentModalName) {
         this.hideModal();
@@ -307,55 +312,63 @@ export default Vue.extend({
 
       this.currentCircleGroup = { ...circleGroup };
 
+      if (this.currentCircleGroup.members && this.currentCircleGroup.members.length > 0) {
+        this.currentCircleHost = this.currentCircleGroup.members
+          .filter((a: Activist) => {
+            return a.point_person;
+          })
+          .map((a: Activist) => {
+            return a.name;
+          });
+
+        this.currentCircleMembers = this.currentCircleGroup.members
+          .filter((a: Activist) => {
+            return !a.point_person;
+          })
+          .map((a: Activist) => {
+            return a.name;
+          });
+      }
+
       // always set the type based on the page we are on
       this.currentCircleGroup.type = this.title === 'CirclesList' ? 'circle' : 'geo-circle';
 
-      if (index != undefined) {
-        this.circleGroupIndex = index;
-      } else {
-        this.circleGroupIndex = -1;
-      }
+      // Get the index for updating the view w/o refreshing the whole page.
+      this.circleGroupIndex = this.circleGroups.findIndex((c) => {
+        return c.id === this.currentCircleGroup.id;
+      });
 
       this.currentModalName = modalName;
-      this.$modal.show(modalName);
+
+      this.disableConfirmButton = false;
     },
     hideModal() {
-      if (this.currentModalName) {
-        this.$modal.hide(this.currentModalName);
-      }
+      // Show the navbar.
+      const mainNav = document.getElementById('mainNav');
+      if (mainNav) mainNav.style.visibility = 'visible';
+
       this.currentModalName = '';
       this.circleGroupIndex = -1;
       this.currentCircleGroup = {} as Circle;
-
-      // Sort cirlce group list
-      this.sortListByName();
-    },
-    sortListByName() {
-      if (!this.circleGroups) {
-        return;
-      }
-
-      this.circleGroups.sort((a, b) => {
-        let nameA = a.name.toLowerCase();
-        let nameB = b.name.toLowerCase();
-
-        return nameA < nameB ? -1 : nameA > nameB ? 1 : 0;
-      });
+      this.currentCircleHost = [] as string[];
+      this.currentCircleMembers = [] as string[];
     },
     confirmEditCircleGroupModal() {
-      // First, check for duplicate activists because that's the most
-      // likely error.
-      if (this.currentCircleGroup.members) {
-        var members = this.currentCircleGroup.members;
-        var memberNameMap = new Set<string>();
-        for (var i = 0; i < members.length; i++) {
-          if (members[i].name in memberNameMap) {
-            flashMessage('Error: Cannot have duplicate members: ' + members[i].name, true);
-            return;
-          }
-          memberNameMap.add(members[i].name);
-        }
+      // Rebuild the members array based on current data.
+      let members = [] as Activist[];
+      if (this.currentCircleHost.length > 0) {
+        members.push({ name: this.currentCircleHost[0], point_person: true });
       }
+      if (this.currentCircleMembers.length > 0) {
+        this.currentCircleMembers.forEach((m: string) => {
+          const memberSameAsHost =
+            this.currentCircleHost.length > 0 && this.currentCircleHost[0] === m;
+          if (!memberSameAsHost) {
+            members.push({ name: m });
+          }
+        });
+      }
+      this.currentCircleGroup.members = members;
 
       // Save working group
       this.disableConfirmButton = true;
@@ -368,7 +381,7 @@ export default Vue.extend({
         success: (data) => {
           this.disableConfirmButton = false;
 
-          var parsed = JSON.parse(data);
+          const parsed = JSON.parse(data);
           if (parsed.status === 'error') {
             flashMessage('Error: ' + parsed.message, true);
             return;
@@ -377,7 +390,7 @@ export default Vue.extend({
           flashMessage(this.currentCircleGroup.name + ' saved');
 
           if (this.circleGroupIndex === -1) {
-            // New working group, insert at the top
+            // New circle, insert at the top
             this.circleGroups = [parsed.circle].concat(this.circleGroups);
           } else {
             // We edited an existing circle, replace their row.
@@ -406,7 +419,7 @@ export default Vue.extend({
         success: (data) => {
           this.disableConfirmButton = false;
 
-          var parsed = JSON.parse(data);
+          const parsed = JSON.parse(data);
           if (parsed.status === 'error') {
             flashMessage('Error: ' + parsed.message, true);
             return;
@@ -423,125 +436,54 @@ export default Vue.extend({
         },
       });
     },
-    modalOpened() {
-      $(document.body).addClass('noscroll');
-      this.disableConfirmButton = false;
-    },
-    modalClosed() {
-      $(document.body).removeClass('noscroll');
-    },
-    displayCircleGroupType(type: string) {
-      switch (type) {
-        case 'circle':
-          return 'Circle';
-        case 'geo-circle':
-          return 'Geo-Circle';
-      }
-      return '';
-    },
-    addMember() {
-      if (this.currentCircleGroup.members === undefined) {
-        Vue.set(this.currentCircleGroup, 'members', []);
-      }
-      this.currentCircleGroup.members.push({ name: '' });
-    },
-    addPointPerson() {
-      if (this.currentCircleGroup.members === undefined) {
-        Vue.set(this.currentCircleGroup, 'members', []);
-      }
-      this.currentCircleGroup.members.push({ name: '', point_person: true });
-    },
-    addNonMember() {
-      if (this.currentCircleGroup.members === undefined) {
-        Vue.set(this.currentCircleGroup, 'members', []);
-      }
-      this.currentCircleGroup.members.push({ name: '', non_member_on_mailing_list: true });
-    },
-    removeMember(index: number) {
-      this.currentCircleGroup.members.splice(index, 1);
-    },
-    memberOption(member: Circle) {
-      return { text: member.name };
-    },
-    onMemberSelect(selected: any, extraData: any) {
-      var index = extraData.index;
-      Vue.set(this.currentCircleGroup.members, index, {
-        name: selected.text,
-        point_person: !!extraData.pointPerson,
-        non_member_on_mailing_list: !!extraData.nonMemberOnMailingList,
-      });
-    },
     numberOfCircleGroupMembers(circleGroup: Circle) {
       if (!circleGroup.members) {
         return 0;
       }
 
-      var count = 0;
-      for (var i = 0; i < circleGroup.members.length; i++) {
-        if (!circleGroup.members[i].non_member_on_mailing_list) {
-          count++;
-        }
-      }
-
-      return count;
+      return circleGroup.members.filter((m) => {
+        return m.non_member_on_mailing_list === false;
+      }).length;
     },
   },
   data() {
     return {
+      loadingCircles: true,
+      loadingActivists: true,
       currentCircleGroup: {} as Circle,
       circleGroups: [] as Circle[],
       circleGroupIndex: -1,
       disableConfirmButton: false,
       currentModalName: '',
-      activistOptions: [],
+      membersVisible: false,
+      allActivists: [],
+      filteredActivists: [],
+      currentCircleHost: [] as string[],
+      currentCircleMembers: [] as string[],
     };
   },
-  computed: {
-    showAddPointPerson() {
-      if (!this.currentCircleGroup) {
-        return false; // doesn't matter
-      }
-      if (this.currentCircleGroup && !this.currentCircleGroup.members) {
-        return true;
-      }
-
-      var members = this.currentCircleGroup.members;
-      var numPointPeople = 0;
-      for (var i = 0; i < members.length; i++) {
-        if (members[i].point_person) {
-          numPointPeople++;
-        }
-      }
-
-      return numPointPeople < 1;
-    },
-  },
+  computed: {},
   created() {
-    // Get circles
+    // Get circles.
     $.ajax({
       url: '/circle/list',
       method: 'POST',
       success: (data) => {
-        var parsed = JSON.parse(data);
+        const parsed = JSON.parse(data);
         if (parsed.status === 'error') {
           flashMessage('Error: ' + parsed.message, true);
           return;
         }
         // status === "success"
-        if (this.title === 'GeoCirclesList') {
-          this.circleGroups = parsed.circle_groups.filter((c: any) => {
-            return c.type === 'geo-circle';
-          });
-          return;
-        }
-        this.circleGroups = parsed.circle_groups.filter((c: any) => {
-          return c.type === 'circle';
+        this.circleGroups = parsed.circle_groups.filter((c: Circle) => {
+          return this.title === 'GeoCirclesList' ? c.type === 'geo-circle' : c.type === 'circle';
         });
-        return;
+        this.loadingCircles = false;
       },
       error: (err) => {
         console.warn(err.responseText);
         flashMessage('Server error: ' + err.responseText, true);
+        this.loadingCircles = false;
       },
     });
 
@@ -550,38 +492,22 @@ export default Vue.extend({
       url: '/activist_names/get_chaptermembers',
       method: 'GET',
       success: (data) => {
-        var parsed = JSON.parse(data);
-
-        // Convert activist_names to a format usable by basic-select.
-        this.activistOptions = parsed.activist_names.map((name: string) => ({ text: name }));
+        const parsed = JSON.parse(data);
+        this.allActivists = parsed.activist_names;
+        this.loadingActivists = false;
       },
       error: (err) => {
         console.warn(err.responseText);
         flashMessage('Server error: ' + err.responseText, true);
+        this.loadingActivists = false;
       },
     });
   },
   components: {
     AdbPage,
-    Dropdown,
-    BasicSelect,
   },
   directives: {
     focus,
   },
 });
 </script>
-
-<style>
-.select-row {
-  margin: 5px 0;
-}
-
-.select-row-btn {
-  margin: 0 5px;
-}
-
-.cirMembers {
-  display: none;
-}
-</style>

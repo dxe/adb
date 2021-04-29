@@ -11,85 +11,9 @@
     <link rel="icon" type="image/png"
      href="/static/img/favicon.png" />
 
-    <link href="/static/external/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@5.8.55/css/materialdesignicons.min.css">
     <link rel="stylesheet" type="text/css" href="/static/css/style.css?{{ .StaticResourcesHash }}">
-    <link rel="stylesheet" type="text/css" href="/static/css/flash_message.css">
+    <link rel="stylesheet" type="text/css" href="/static/external/buefy.min.css">
     <script src="/static/external/jquery-3.2.1.js"></script>
-    <!-- for collapsed navbar -->
-    <script src="/static/external/bootstrap/js/bootstrap.min.js"></script>
-
-    <script src="/dist/flash_message.js"></script>
   </head>
   <body>
-    <div id="flash" role="alert"></div>
-    <script>flash_message.initializeFlashMessage();</script>
-    <nav class="navbar navbar-inverse navbar-fixed-top">
-      <div class="container">
-        <div class="navbar-header">
-          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
-          <span class="navbar-brand" href="#"><img src="/static/img/logo2.png" style="margin-top: -10px;" alt="DxE" width="40"></a>
-        </div>
-        <div id="navbar" class="collapse navbar-collapse">
-          <ul class="nav navbar-nav">
-            <li class="{{if and (ne .MainRole "admin") (ne .MainRole "organizer") (ne .MainRole "attendance")}}hide{{end}} dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#">Events <span class="caret"></span></a>
-              <ul class="dropdown-menu">
-                <li class="{{if (eq .PageName "NewEvent")}}active{{end}}"><a href="/">New Event</a></li>
-                <li class="{{if (eq .PageName "EventList")}}active{{end}}"><a href="/list_events">All Events</a></li>
-              </ul>
-            </li>
-            <li class="{{if and (ne .MainRole "admin") (ne .MainRole "organizer")}}hide{{end}} dropdown"><a class="dropdown-toggle" data-toggle="dropdown" href="#">Coaching <span class="caret"></span></a>
-              <ul class="dropdown-menu">
-                <li class="{{if (eq .PageName "NewConnection")}}active{{end}}"><a href="/new_connection">New Coaching</a></li>
-                <li class="{{if (eq .PageName "ConnectionsList")}}active{{end}}"><a href="/list_connections">All Coachings</a></li>
-              </ul>
-            </li>
-            <li class="{{if and (ne .MainRole "admin") (ne .MainRole "organizer")}}hide{{end}} dropdown hidden-xs"><a class="dropdown-toggle" data-toggle="dropdown" href="#">Circles <span class="caret"></span></a>
-              <ul class="dropdown-menu">
-                <li class="{{if (eq .PageName "CirclesList")}}active{{end}}"><a href="/list_circles">Circles</a></li>
-                <li class="{{if (eq .PageName "GeoCirclesList")}}active{{end}}"><a href="/list_geocircles">Geo-Circles</a></li>
-              </ul>
-            </li>
-            <li class="{{if and (ne .MainRole "admin") (ne .MainRole "organizer")}}hide{{end}} dropdown hidden-xs"><a class="dropdown-toggle" data-toggle="dropdown" href="#">Chapter Members <span class="caret"></span></a>
-              <ul class="dropdown-menu">
-                <li class="{{if (eq .PageName "ChapterMemberProspects")}}active{{end}}"><a href="/chapter_member_prospects">Chapter Member Prospects</a></li>
-                <li class="{{if (eq .PageName "ChapterMemberDevelopment")}}active{{end}}"><a href="/chapter_member_development">Chapter Members</a></li>
-              </ul>
-            </li>
-            <li class="{{if and (ne .MainRole "admin") (ne .MainRole "organizer")}}hide{{end}} dropdown hidden-xs"><a class="dropdown-toggle" data-toggle="dropdown" href="#">Organizers <span class="caret"></span></a>
-              <ul class="dropdown-menu">
-                <li class="{{if (eq .PageName "OrganizerProspects")}}active{{end}}"><a href="/organizer_prospects">Organizer Prospects</a></li>
-                <li class="{{if (eq .PageName "OrganizerDevelopment")}}active{{end}}"><a href="/activist_development">Organizer Development</a></li>
-                <li class="{{if (eq .PageName "WorkingGroupList")}}active{{end}}"><a href="/list_working_groups">Working Groups</a></li>
-              </ul>
-            </li>
-            <li class="{{if and (ne .MainRole "admin") (ne .MainRole "organizer")}}hide{{end}} dropdown hidden-xs"><a class="dropdown-toggle" data-toggle="dropdown" href="#">All <span class="caret"></span></a>
-              <ul class="dropdown-menu">
-                <li class="{{if (eq .PageName "ActivistList")}}active{{end}}"><a href="/list_activists">All Activists</a></li>
-                <li class="{{if (eq .PageName "CommunityProspects")}}active{{end}}"><a href="/community_prospects">Community Prospects</a></li>
-                <li class="{{if (eq .PageName "Leaderboard")}}active{{end}}"><a href="/leaderboard">Leaderboard</a></li>
-                <li class="{{if (ne .MainRole "admin")}}hide{{end}} {{if (eq .PageName "UserList")}}active{{end}}"><a href="/admin/users">Users</a></li>
-                <li class="{{if (ne .MainRole "admin")}}hide{{end}} {{if (eq .PageName "ChaptersList")}}active{{end}}"><a href="/list_chapters">Chapters</a></li>
-              </ul>
-            </li>
-
-            <li class="{{if and (ne .MainRole "admin") (ne .MainRole "organizer") (ne .MainRole "attendance")}}hide{{end}} hidden-sm hidden-md hidden-lg hidden-xl"><a href="/logout">Logout</a></li>
-
-            <li style="position:fixed; right: 20px;" class="{{if or (eq .PageName "Login") (eq .PageName "Logout") (eq .PageName "FormApplication") (eq .PageName "FormInterest") (eq .PageName "FormInternational") (eq .PageName "FormDiscord") }}hide{{end}} dropdown navbar-right hidden-xs hidden-sm"><a class="dropdown-toggle" data-toggle="dropdown" href="#"><span class="glyphicon glyphicon-user"></span><span class="caret"></span></a>
-              <ul class="dropdown-menu">
-                <div style="padding-left: 5px; padding-right: 5px;">
-                  <b>Current user:</b> <br /> {{ .UserName }} <br /> {{ .UserEmail }}<br /><br />
-                  <a href="/logout" class="logout-link">Logout</a>
-                </div>
-              </ul>
-            </li>
-
-          </ul>
-
-        </div><!--/.nav-collapse -->
-      </div>
-    </nav>

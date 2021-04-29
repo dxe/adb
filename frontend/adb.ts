@@ -10,6 +10,7 @@ import FormInterest from './FormInterest.vue';
 import FormInternational from './FormInternational.vue';
 import FormDiscord from './FormDiscord.vue';
 import ChapterList from './ChapterList.vue';
+import AdbNav from './AdbNav.vue';
 
 new Vue({
   el: '#app',
@@ -25,5 +26,6 @@ new Vue({
     FormInternational,
     FormDiscord,
     ChapterList,
+    AdbNav,
   },
 });
