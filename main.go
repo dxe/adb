@@ -239,6 +239,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/circle/delete", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.CircleGroupDeleteHandler))
 	router.Handle("/csv/chapter_member_spoke", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.ChapterMemberSpokeCSVHandler))
 	router.Handle("/csv/community_prospects_hubspot", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.CommunityProspectHubSpotCSVHandler))
+	router.Handle("/csv/international_organizers", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.InternationalOrganizersCSVHandler))
 
 	// Authed Admin API
 	admin.Handle("/user/list", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserListHandler))
@@ -1275,6 +1276,42 @@ func (c MainController) CommunityProspectHubSpotCSVHandler(w http.ResponseWriter
 	}
 	writer.Flush()
 
+}
+
+func (c MainController) InternationalOrganizersCSVHandler(w http.ResponseWriter, r *http.Request) {
+	chapters, err := model.GetAllChapters(c.db)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Disposition", "attachment; filename=international_organizers.csv")
+	w.Header().Set("Content-Type", "text/csv")
+	w.Header().Set("Transfer-Encoding", "chunked")
+
+	writer := csv.NewWriter(w)
+	err = writer.Write([]string{"chapter", "country", "email", "mentor", "organizer_name", "organizer_email", "organizer_fb", "organizer_phone"})
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+	for _, chap := range chapters {
+		if len(chap.Organizers) == 0 {
+			err := writer.Write([]string{chap.Name, chap.Country, chap.Email, chap.Mentor, "", "", "", ""})
+			if err != nil {
+				sendErrorMessage(w, err)
+				return
+			}
+		}
+		for _, org := range chap.Organizers {
+			err := writer.Write([]string{chap.Name, chap.Country, chap.Email, chap.Mentor, org.Name, org.Email, org.Facebook, org.Phone})
+			if err != nil {
+				sendErrorMessage(w, err)
+				return
+			}
+		}
+	}
+	writer.Flush()
 }
 
 func (c MainController) UserListHandler(w http.ResponseWriter, r *http.Request) {
