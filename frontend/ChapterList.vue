@@ -29,6 +29,15 @@
       </div>
 
       <div class="level-right">
+        <div class="level-item px-1">
+          <b-button
+            label="Export CSV"
+            type="is-info"
+            icon-left="download"
+            tag="a"
+            href="/csv/international_organizers"
+          ></b-button>
+        </div>
         <div class="level-item has-text-centered">
           <div>
             <p class="heading">Total Chapters</p>
