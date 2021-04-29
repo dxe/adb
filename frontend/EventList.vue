@@ -24,10 +24,10 @@
             </b-input>
           </b-field>
         </div>
-        <div class="level-item">
+        <div class="level-item" v-if="false">
           <b-field label-position="on-border" :label="connections ? 'Coachees' : 'Activist'">
             <!-- TODO: replace this select w/ something that works better -->
-            <b-select v-model="search.activist" icon="account-outline" disabled>
+            <b-select v-model="search.activist" icon="account-outline">
               <option v-for="name in activistFilterOptions" :value="name" :key="name">
                 {{ name }}
               </option>
