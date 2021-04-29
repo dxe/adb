@@ -26,7 +26,8 @@
         </div>
         <div class="level-item">
           <b-field label-position="on-border" :label="connections ? 'Coachees' : 'Activist'">
-            <b-select v-model="search.activist" icon="account-outline">
+            <!-- TODO: replace this select w/ something that works better -->
+            <b-select v-model="search.activist" icon="account-outline" disabled>
               <option v-for="name in activistFilterOptions" :value="name" :key="name">
                 {{ name }}
               </option>
@@ -127,7 +128,7 @@
 
       <b-table-column
         field="attendees.length"
-        label="Total attendees"
+        label="Total Attendees"
         v-slot="props"
         sortable
         v-if="!connections"

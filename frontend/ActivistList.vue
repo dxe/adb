@@ -14,7 +14,7 @@
             Choose visible columns
           </b-button>
         </div>
-        <div class="level-item" v-if="view === 'all_activists' || view === 'community_prospects'">
+        <div class="level-item" v-if="view === 'all_activists'">
           <b-field>
             <b-switch v-model="showFilters" type="is-primary">Show filters</b-switch>
           </b-field>
@@ -58,26 +58,6 @@
         <div class="level-item" v-if="showFilters && view === 'all_activists'">
           <b-field label="Last Event To" label-position="on-border">
             <b-input v-model="lastEventDateTo" type="date" icon="calendar-end"></b-input>
-          </b-field>
-        </div>
-        <div class="level-item" v-if="showFilters && view === 'community_prospects'">
-          <b-field label="Interest" label-position="on-border">
-            <b-select v-model="filterInterest" icon="filter">
-              <option
-                v-for="interest in [
-                  'All',
-                  'Sanctuary',
-                  'Community',
-                  'Outreach',
-                  'Protest',
-                  'Trainings',
-                ]"
-                :value="interest"
-                :key="interest"
-              >
-                {{ interest }}
-              </option>
-            </b-select>
           </b-field>
         </div>
       </div>
@@ -150,7 +130,8 @@
           </p>
           <p>
             Target activist:
-            <b-select v-model="mergeTarget">
+            <!-- TODO: replace this select w/ something that works better -->
+            <b-select v-model="mergeTarget" disabled="">
               <option v-for="name in activistMergeOptions" :value="name" :key="name">
                 {{ name }}
               </option>
@@ -1120,21 +1101,6 @@ export default Vue.extend({
           // status === "success"
           let activistList = parsed.activist_list;
 
-          // frontend filtering
-          if (this.view === 'community_prospects') {
-            // TODO: handle this w/ Vue instead of jquery
-            const selectedInterest = $('#filterInterest :selected').text();
-
-            // only need to filer if an interest is selected
-            if (selectedInterest != 'All' && selectedInterest != '' && selectedInterest != null) {
-              let activistListFiltered: Activist[];
-              activistListFiltered = activistList.filter((a: Activist) => {
-                return a.dev_interest.toLowerCase().indexOf(selectedInterest.toLowerCase()) != -1;
-              });
-              activistList = activistListFiltered;
-            }
-          }
-
           if (activistList !== null) {
             this.allActivists = activistList;
           }
@@ -1324,8 +1290,6 @@ export default Vue.extend({
       columns: getDefaultColumns(this.view),
       lastEventDateFrom: initDateFrom,
       lastEventDateTo: initDateTo,
-      filterInterest: 'All',
-      filterRadius: '5',
       showFilters: false,
       search: '',
       loading: false,
@@ -1394,9 +1358,6 @@ export default Vue.extend({
     },
     lastEventDateTo() {
       this.debounceLoadActivists();
-    },
-    filterInterest() {
-      this.loadActivists();
     },
   },
   created() {
