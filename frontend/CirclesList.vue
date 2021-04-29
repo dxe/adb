@@ -5,7 +5,7 @@
     <nav class="level">
       <div class="level-left">
         <div class="level-item">
-          <b-button icon-left="plus" @click="showModal('edit-circle-modal')">
+          <b-button icon-left="plus" type="is-primary" @click="showModal('edit-circle-modal')">
             New {{ title === 'CirclesList' ? 'Circle' : 'Geo-Circle' }}
           </b-button>
         </div>
@@ -246,7 +246,7 @@ import Vue from 'vue';
 import AdbPage from './AdbPage.vue';
 import { flashMessage } from './flash_message';
 import { focus } from './directives/focus';
-import moment from "moment";
+import moment from 'moment';
 
 interface Activist {
   name: string;
@@ -274,7 +274,9 @@ export default Vue.extend({
   },
   methods: {
     isMobile() {
-      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent,
+      );
     },
     colorLastMeeting(text: string) {
       const time = moment(text);
@@ -300,8 +302,8 @@ export default Vue.extend({
     },
     showModal(modalName: string, circleGroup: Circle) {
       // Hide the navbar so that the model doesn't go behind it.
-      const mainNav = document.getElementById("mainNav");
-      if (mainNav) mainNav.style.visibility = "hidden";
+      const mainNav = document.getElementById('mainNav');
+      if (mainNav) mainNav.style.visibility = 'hidden';
 
       // Check to see if there's a modal open, and close it if so.
       if (this.currentModalName) {
@@ -342,8 +344,8 @@ export default Vue.extend({
     },
     hideModal() {
       // Show the navbar.
-      const mainNav = document.getElementById("mainNav");
-      if (mainNav) mainNav.style.visibility = "visible";
+      const mainNav = document.getElementById('mainNav');
+      if (mainNav) mainNav.style.visibility = 'visible';
 
       this.currentModalName = '';
       this.circleGroupIndex = -1;
@@ -439,14 +441,9 @@ export default Vue.extend({
         return 0;
       }
 
-      let count = 0;
-      for (let i = 0; i < circleGroup.members.length; i++) {
-        if (!circleGroup.members[i].non_member_on_mailing_list) {
-          count++;
-        }
-      }
-
-      return count;
+      return circleGroup.members.filter((m) => {
+        return m.non_member_on_mailing_list === false;
+      }).length;
     },
   },
   data() {

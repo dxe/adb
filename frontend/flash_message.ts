@@ -1,25 +1,19 @@
 import { getCookie, deleteCookie } from './cookie';
 
-export function flashMessage(content: string, isError?: boolean) {
-  var flash = $('#flash');
-  if (isError) {
-    flash[0].className = 'alert alert-danger';
-  } else {
-    flash[0].className = 'alert alert-success';
-  }
-  flash.text(content);
-  flash.show();
+import { ToastProgrammatic as Toast } from 'buefy';
 
-  setTimeout(function() {
-    flash.hide();
-  }, 5 * 1000);
+export function flashMessage(content: string, isError?: boolean) {
+  const toastType = isError ? 'is-danger' : 'is-success';
+  const duration = 3000;
+  const position = 'is-bottom-right';
+  Toast.open({ type: toastType, position: position, duration: duration, message: content });
 }
 
 export function initializeFlashMessage() {
   // First, get any potential messages. Will be undefined if the
   // cookie isn't set.
-  var error = getCookie('flash_message_error');
-  var success = getCookie('flash_message_success');
+  const error = getCookie('flash_message_error');
+  const success = getCookie('flash_message_success');
 
   // Clear cookies that exist
   if (error) {

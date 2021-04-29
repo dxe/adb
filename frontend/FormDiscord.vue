@@ -1,82 +1,82 @@
 <template>
-  <adb-page title="Confirm your account">
-    <div v-if="submitSuccess">
+  <adb-page title="Confirm your account" narrow>
+    <div v-if="submitSuccess" class="content">
       <h2>Thank you!</h2>
-      <p>Your account has been confirmed.</p>
-      <a class="btn btn-primary" style="color: white" type="submit" href="https://discord.com/login"
-        >Return to Discord</a
-      >
+      <p class="mb-5">Your account has been confirmed.</p>
+      <b-button
+        tag="a"
+        href="https://discord.com/login"
+        target="_blank"
+        type="is-info"
+        label="Return to Discord"
+        icon-left="discord"
+      ></b-button>
     </div>
 
-    <form id="form" @submit.prevent="submitForm" autocomplete="off" v-if="!submitSuccess">
-      <p>
+    <div class="columns is-multiline" v-if="!submitSuccess">
+      <div class="column is-full mb-4">
         Please fill out this form to confirm your account on DxE's Discord server.
-      </p>
-      <br />
-
-      <div class="form-group">
-        <div class="row">
-          <div class="form-group col-sm-6">
-            <label>First Name</label>
-            <input
-              type="text"
-              class="form-control"
-              v-model="firstName"
-              name="firstName"
-              maxlength="35"
-              required
-            />
-          </div>
-
-          <div class="form-group col-sm-6">
-            <label>Last Name</label>
-            <input
-              type="text"
-              class="form-control"
-              v-model="lastName"
-              name="lastName"
-              maxlength="35"
-              required
-            />
-          </div>
-        </div>
       </div>
 
-      <div class="form-group">
-        <div class="row">
-          <div class="form-group col-sm-12">
-            <label>City</label>
-            <vue-google-autocomplete
-              id="map"
-              name="citySearch"
-              classname="form-control"
-              placeholder="Enter your city & country"
-              v-on:placechanged="this.citySelected"
-              types="(cities)"
-              :fields="['address_components', 'geometry']"
-              required
-            >
-            </vue-google-autocomplete>
-          </div>
-        </div>
+      <div class="column is-half">
+        <b-field label="First Name" label-position="on-border">
+          <b-input
+            type="text"
+            v-model.trim="firstName"
+            required
+            maxlength="35"
+            ref="firstName"
+          ></b-input>
+        </b-field>
       </div>
 
-      <br />
-      <input type="submit" class="btn btn-primary" value="Submit" :disabled="submitting" />
-    </form>
+      <div class="column is-half">
+        <b-field label="Last Name" label-position="on-border">
+          <b-input
+            type="text"
+            v-model.trim="lastName"
+            required
+            maxlength="35"
+            ref="lastName"
+          ></b-input>
+        </b-field>
+      </div>
+
+      <div class="column is-full">
+        <b-field label="City" label-position="on-border">
+          <vue-google-autocomplete
+            id="map"
+            name="citySearch"
+            classname="input"
+            placeholder="Enter your city & country"
+            v-on:placechanged="this.citySelected"
+            types="(cities)"
+            :fields="['address_components', 'geometry']"
+            required
+          >
+          </vue-google-autocomplete>
+        </b-field>
+      </div>
+
+      <div class="column is-full">
+        <b-button
+          class="my-5"
+          type="is-primary"
+          label="Submit"
+          @click="submitForm"
+          :disabled="submitting"
+        ></b-button>
+      </div>
+    </div>
   </adb-page>
 </template>
 
 <script lang="ts">
-// Library from here: https://github.com/euvl/vue-js-modal
-import vmodal from 'vue-js-modal';
 import Vue from 'vue';
 //@ts-ignore
 import VueGoogleAutocomplete from './external/vue-google-autocomplete';
 import AdbPage from './AdbPage.vue';
-import { flashMessage } from './flash_message';
-
-Vue.use(vmodal);
+import { flashMessage, initializeFlashMessage } from './flash_message';
 
 interface locationData {
   locality: string;
@@ -93,6 +93,14 @@ export default Vue.extend({
     token: String,
   },
   methods: {
+    validate: function() {
+      type VueFormInput = Vue & { checkHtml5Validity: () => boolean };
+      const refsToValidate = ['firstName', 'lastName'];
+      const results = refsToValidate.map((ref) => {
+        return (this.$refs[ref] as VueFormInput).checkHtml5Validity();
+      });
+      return results.indexOf(false) === -1;
+    },
     citySelected: function(loc: locationData) {
       this.city = loc.locality;
       this.state = loc.administrative_area_level_1;
@@ -102,8 +110,9 @@ export default Vue.extend({
       this.locationChosen = true;
     },
     submitForm: function() {
+      if (!this.validate()) return;
       if (!this.locationChosen) {
-        alert('Please choose your city from the dropdown list.');
+        flashMessage('Please choose your city from the dropdown list.', true);
         return;
       }
       this.submitting = true;
@@ -163,6 +172,7 @@ export default Vue.extend({
   },
   created() {
     document.title = 'Confirm your account';
+    initializeFlashMessage();
   },
   components: {
     AdbPage,

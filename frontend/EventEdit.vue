@@ -4,12 +4,17 @@
     <form action id="eventForm" v-on:change="changed('change', -1)" autocomplete="off">
       <fieldset :disabled="loading">
         <b-field :label="connections ? 'Coach' : 'Event' + ' name'">
-          <b-input type="text" v-model="name" required />
+          <b-input
+            type="text"
+            v-model="name"
+            :icon="connections ? 'clipboard-account' : 'alphabetical-variant'"
+            required
+          />
         </b-field>
 
         <div v-if="!connections">
           <b-field label="Type">
-            <b-select v-model="type" expanded :required="!connections">
+            <b-select icon="shape" v-model="type" expanded :required="!connections">
               <option
                 v-for="eventType in [
                   'Action',
@@ -29,7 +34,7 @@
             </b-select>
           </b-field>
           <b-field label="Circle (optional)">
-            <b-select v-model="selectedCircleID" expanded>
+            <b-select v-model="selectedCircleID" expanded icon="account-supervisor-circle">
               <option v-for="circle in allCircles" :value="circle.id" :key="circle.id">
                 {{ circle.name }}
               </option>
@@ -38,7 +43,7 @@
         </div>
 
         <b-field label="Date" class="mt-3">
-          <b-input type="date" v-model="date" expanded />
+          <b-input type="date" v-model="date" expanded icon="calendar" />
           <p class="control">
             <b-button v-on:click.prevent="setDateToToday">today</b-button>
           </p>
@@ -100,7 +105,11 @@
 import Vue from 'vue';
 import AdbPage from './AdbPage.vue';
 import * as Awesomplete from 'awesomplete';
-import { flashMessage, setFlashMessageSuccessCookie } from './flash_message';
+import {
+  flashMessage,
+  initializeFlashMessage,
+  setFlashMessageSuccessCookie,
+} from './flash_message';
 import moment from 'moment';
 
 // Like Awesomplete.FILTER_CONTAINS, but internal whitespace matches anything.
@@ -236,6 +245,8 @@ export default Vue.extend({
         e.returnValue = '';
       }
     });
+
+    initializeFlashMessage();
   },
 
   updated() {
@@ -591,5 +602,19 @@ export default Vue.extend({
 
 .attendee-input[data-warning='unknown'] {
   border: 2px solid yellow;
+}
+
+#attendee-rows {
+  width: 100%;
+}
+.event-new-content input {
+  width: 100%;
+  margin-bottom: 2px;
+}
+.event-new-content select {
+  width: 100%;
+}
+.awesomplete > ul {
+  font-size: 18px;
 }
 </style>

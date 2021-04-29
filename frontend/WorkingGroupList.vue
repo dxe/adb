@@ -1,22 +1,23 @@
 <template>
-  <adb-page title="Working Groups" class="working-group-list-content">
+  <adb-page title="Working Groups" class="body-wrapper-extra-wide">
     <b-loading :is-full-page="true" v-model="loadingActivists"></b-loading>
     <b-loading :is-full-page="true" v-model="loadingOrganizers"></b-loading>
     <b-loading :is-full-page="true" v-model="loadingWorkingGroups"></b-loading>
     <nav class="level">
       <div class="level-left">
         <div class="level-item">
-          <b-button icon-left="plus" @click="showModal('edit-working-group-modal')">
+          <b-button
+            icon-left="plus"
+            type="is-primary"
+            @click="showModal('edit-working-group-modal')"
+          >
             New Working Group
           </b-button>
         </div>
       </div>
       <div class="level-right">
         <div class="level-item">
-          <b-button
-              @click="toggleMembers"
-              :icon-left="membersVisible ? 'eye-off' : 'eye'"
-          >
+          <b-button @click="toggleMembers" :icon-left="membersVisible ? 'eye-off' : 'eye'">
             {{ membersVisible ? 'Hide' : 'Show' }} members
           </b-button>
         </div>
@@ -57,21 +58,12 @@
         </template>
       </b-table-column>
 
-      <b-table-column
-          label="Total Members"
-          v-slot="props"
-          v-if="!membersVisible"
-      >
+      <b-table-column label="Total Members" v-slot="props" v-if="!membersVisible">
         <!-- TODO: calculate this somewhere else so column can be sortable -->
         {{ numberOfWorkingGroupMembers(props.row) }}
       </b-table-column>
 
-      <b-table-column
-          label="Members"
-          field="members"
-          v-slot="props"
-          v-if="membersVisible"
-      >
+      <b-table-column label="Members" field="members" v-slot="props" v-if="membersVisible">
         <ul v-for="member in props.row.members">
           <template v-if="!member.point_person">
             <li>{{ member.name }}</li>
@@ -81,13 +73,13 @@
     </b-table>
 
     <b-modal
-        :active="currentModalName === 'delete-working-group-modal'"
-        has-modal-card
-        :destroy-on-hide="true"
-        scroll="keep"
-        :can-cancel="true"
-        :on-cancel="hideModal"
-        :full-screen="isMobile()"
+      :active="currentModalName === 'delete-working-group-modal'"
+      has-modal-card
+      :destroy-on-hide="true"
+      scroll="keep"
+      :can-cancel="true"
+      :on-cancel="hideModal"
+      :full-screen="isMobile()"
     >
       <div class="modal-card" style="width: auto">
         <header class="modal-card-head">
@@ -96,7 +88,7 @@
         <section class="modal-card-body">
           <p>
             Are you sure you want to delete <strong>{{ currentWorkingGroup.name }}</strong
-          >?
+            >?
           </p>
           <b-message type="is-warning" has-icon class="mt-3">
             Before deleting a working group, be sure to remove all members of that group.
@@ -105,23 +97,23 @@
         <footer class="modal-card-foot">
           <b-button label="Cancel" @click="hideModal" />
           <b-button
-              label="Delete"
-              type="is-danger"
-              :disabled="disableConfirmButton"
-              @click="confirmDeleteWorkingGroupModal"
+            label="Delete"
+            type="is-danger"
+            :disabled="disableConfirmButton"
+            @click="confirmDeleteWorkingGroupModal"
           />
         </footer>
       </div>
     </b-modal>
 
     <b-modal
-        :active="currentModalName === 'edit-working-group-modal'"
-        has-modal-card
-        :destroy-on-hide="true"
-        scroll="keep"
-        :can-cancel="false"
-        :width="400"
-        :full-screen="isMobile()"
+      :active="currentModalName === 'edit-working-group-modal'"
+      has-modal-card
+      :destroy-on-hide="true"
+      scroll="keep"
+      :can-cancel="false"
+      :width="400"
+      :full-screen="isMobile()"
     >
       <div class="modal-card" style="width: auto">
         <header class="modal-card-head">
@@ -133,131 +125,125 @@
         <section class="modal-card-body">
           <b-field label="Name" label-position="on-border">
             <b-input
-                type="text"
-                v-model.trim="currentWorkingGroup.name"
-                icon="hammer-screwdriver"
-                required
+              type="text"
+              v-model.trim="currentWorkingGroup.name"
+              icon="hammer-screwdriver"
+              required
             ></b-input>
           </b-field>
 
           <b-field label="Email" label-position="on-border">
             <b-input
-                type="email"
-                v-model.trim="currentWorkingGroup.email"
-                icon="email"
-                required
+              type="email"
+              v-model.trim="currentWorkingGroup.email"
+              icon="email"
+              required
             ></b-input>
           </b-field>
 
           <b-field label="Type" label-position="on-border">
             <b-select v-model="currentWorkingGroup.type" required expanded icon="shape">
-              <option v-for="type in [{name: 'working_group', display: 'Working Group'},{name: 'committee', display: 'Committee'}]" :value="type.name" :key="type.name">
+              <option
+                v-for="type in [
+                  { name: 'working_group', display: 'Working Group' },
+                  { name: 'committee', display: 'Committee' },
+                ]"
+                :value="type.name"
+                :key="type.name"
+              >
                 {{ type.display }}
               </option>
             </b-select>
           </b-field>
 
-          <b-field
-              label="Description"
-              label-position="on-border"
-          >
+          <b-field label="Description" label-position="on-border">
             <b-input
-                type="text"
-                v-model.trim="currentWorkingGroup.description"
-                icon="text-box"
+              type="text"
+              v-model.trim="currentWorkingGroup.description"
+              icon="text-box"
             ></b-input>
           </b-field>
 
-          <b-field
-              label="Meeting Day & Time"
-              label-position="on-border"
-          >
+          <b-field label="Meeting Day & Time" label-position="on-border">
             <b-input
-                type="text"
-                v-model.trim="currentWorkingGroup.meeting_time"
-                icon="calendar-blank"
+              type="text"
+              v-model.trim="currentWorkingGroup.meeting_time"
+              icon="calendar-blank"
             ></b-input>
           </b-field>
 
-          <b-field
-              label="Meeting Location"
-              label-position="on-border"
-          >
+          <b-field label="Meeting Location" label-position="on-border">
             <b-input
-                type="text"
-                v-model.trim="currentWorkingGroup.meeting_location"
-                icon="map-marker"
+              type="text"
+              v-model.trim="currentWorkingGroup.meeting_location"
+              icon="map-marker"
             ></b-input>
           </b-field>
 
           <b-field>
-            <b-switch v-model="currentWorkingGroup.visible" type="is-success"
-            >Visible</b-switch
-            >
+            <b-switch v-model="currentWorkingGroup.visible" type="is-success">Visible</b-switch>
           </b-field>
 
           <b-field label="Point Person">
             <b-taginput
-                v-model="currentPointPerson"
-                :data="filteredOrganizers"
-                autocomplete
-                :allow-new="false"
-                icon="crown"
-                placeholder="Search by name..."
-                @typing="getFilteredOrganizers"
-                maxtags="1"
-                type="is-info"
-                dropdown-position="top"
+              v-model="currentPointPerson"
+              :data="filteredOrganizers"
+              autocomplete
+              :allow-new="false"
+              icon="crown"
+              placeholder="Search by name..."
+              @typing="getFilteredOrganizers"
+              maxtags="1"
+              type="is-info"
+              dropdown-position="top"
             ></b-taginput>
           </b-field>
 
           <b-field label="Members">
             <b-taginput
-                v-model="currentMembers"
-                :data="filteredOrganizers"
-                autocomplete
-                :allow-new="false"
-                icon="account-multiple"
-                @typing="getFilteredOrganizers"
-                type="is-info"
-                dropdown-position="top"
+              v-model="currentMembers"
+              :data="filteredOrganizers"
+              autocomplete
+              :allow-new="false"
+              icon="account-multiple"
+              @typing="getFilteredOrganizers"
+              type="is-info"
+              dropdown-position="top"
             ></b-taginput>
           </b-field>
 
           <b-field label="Non-members on Mailing List">
             <b-taginput
-                v-model="currentNonMembers"
-                :data="filteredActivists"
-                autocomplete
-                :allow-new="false"
-                icon="account-multiple"
-                @typing="getFilteredActivists"
-                type="is-info"
-                dropdown-position="top"
+              v-model="currentNonMembers"
+              :data="filteredActivists"
+              autocomplete
+              :allow-new="false"
+              icon="account-multiple"
+              @typing="getFilteredActivists"
+              type="is-info"
+              dropdown-position="top"
             ></b-taginput>
           </b-field>
-
         </section>
         <footer class="modal-card-foot">
           <b-button label="Cancel" icon-left="cancel" @click="hideModal" />
           <b-button
-              label="Save"
-              icon-left="floppy"
-              type="is-primary"
-              :disabled="disableConfirmButton"
-              @click="confirmEditWorkingGroupModal"
+            label="Save"
+            icon-left="floppy"
+            type="is-primary"
+            :disabled="disableConfirmButton"
+            @click="confirmEditWorkingGroupModal"
           />
         </footer>
       </div>
     </b-modal>
-
   </adb-page>
 </template>
 
 <script lang="ts">
 import Vue from 'vue';
 import AdbPage from './AdbPage.vue';
-import { flashMessage } from './flash_message';
+import { flashMessage, initializeFlashMessage } from './flash_message';
 import { focus } from './directives/focus';
 
 interface Activist {
@@ -309,12 +295,14 @@ export default Vue.extend({
       return count;
     },
     isMobile() {
-      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent,
+      );
     },
     showModal(modalName: string, workingGroup: WorkingGroup) {
       // Hide the navbar so that the model doesn't go behind it.
-      const mainNav = document.getElementById("mainNav");
-      if (mainNav) mainNav.style.visibility = "hidden";
+      const mainNav = document.getElementById('mainNav');
+      if (mainNav) mainNav.style.visibility = 'hidden';
 
       // Check to see if there's a modal open, and close it if so.
       if (this.currentModalName) {
@@ -325,28 +313,28 @@ export default Vue.extend({
 
       if (this.currentWorkingGroup.members && this.currentWorkingGroup.members.length > 0) {
         this.currentPointPerson = this.currentWorkingGroup.members
-            .filter((a: Activist) => {
-              return a.point_person;
-            })
-            .map((a: Activist) => {
-              return a.name;
-            });
+          .filter((a: Activist) => {
+            return a.point_person;
+          })
+          .map((a: Activist) => {
+            return a.name;
+          });
 
         this.currentMembers = this.currentWorkingGroup.members
-            .filter((a: Activist) => {
-              return !a.point_person && !a.non_member_on_mailing_list;
-            })
-            .map((a: Activist) => {
-              return a.name;
-            });
+          .filter((a: Activist) => {
+            return !a.point_person && !a.non_member_on_mailing_list;
+          })
+          .map((a: Activist) => {
+            return a.name;
+          });
 
         this.currentNonMembers = this.currentWorkingGroup.members
-            .filter((a: Activist) => {
-              return a.non_member_on_mailing_list;
-            })
-            .map((a: Activist) => {
-              return a.name;
-            });
+          .filter((a: Activist) => {
+            return a.non_member_on_mailing_list;
+          })
+          .map((a: Activist) => {
+            return a.name;
+          });
       }
 
       // Get the index for updating the view w/o refreshing the whole page.
@@ -360,8 +348,8 @@ export default Vue.extend({
     },
     hideModal() {
       // Show the navbar.
-      const mainNav = document.getElementById("mainNav");
-      if (mainNav) mainNav.style.visibility = "visible";
+      const mainNav = document.getElementById('mainNav');
+      if (mainNav) mainNav.style.visibility = 'visible';
 
       this.currentModalName = '';
       this.workingGroupIndex = -1;
@@ -379,7 +367,7 @@ export default Vue.extend({
       if (this.currentMembers.length > 0) {
         this.currentMembers.forEach((m: string) => {
           const memberSameAsHost =
-              this.currentPointPerson.length > 0 && this.currentPointPerson[0] === m;
+            this.currentPointPerson.length > 0 && this.currentPointPerson[0] === m;
           if (!memberSameAsHost) {
             members.push({ name: m });
           }
@@ -388,7 +376,7 @@ export default Vue.extend({
       if (this.currentNonMembers.length > 0) {
         this.currentNonMembers.forEach((m: string) => {
           const memberSameAsHost =
-              this.currentPointPerson.length > 0 && this.currentPointPerson[0] === m;
+            this.currentPointPerson.length > 0 && this.currentPointPerson[0] === m;
           if (!memberSameAsHost) {
             members.push({ name: m, non_member_on_mailing_list: true });
           }
@@ -492,8 +480,7 @@ export default Vue.extend({
       membersVisible: false,
     };
   },
-  computed: {
-  },
+  computed: {},
   created() {
     // Get working groups
     $.ajax({
@@ -547,6 +534,7 @@ export default Vue.extend({
         this.loadingActivists = false;
       },
     });
+    initializeFlashMessage();
   },
   components: {
     AdbPage,

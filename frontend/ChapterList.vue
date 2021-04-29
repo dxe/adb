@@ -5,7 +5,7 @@
     <nav class="level">
       <div class="level-left">
         <div class="level-item">
-          <b-button icon-left="plus" @click="showModal('edit-chapter-modal')">
+          <b-button icon-left="plus" type="is-primary" @click="showModal('edit-chapter-modal')">
             New chapter
           </b-button>
         </div>
@@ -367,7 +367,9 @@
           </div>
 
           <b-field label="Organizers" custom-class="has-text-primary">
-            <p v-if="!currentChapter.ChapterID">Please save the new chapter before adding organizers.</p>
+            <p v-if="!currentChapter.ChapterID">
+              Please save the new chapter before adding organizers.
+            </p>
             <b-table :data="currentChapter.Organizers" v-if="currentChapter.ChapterID">
               <template #empty>
                 <div class="has-text-centered">No organizers found. Add one below.</div>
@@ -411,7 +413,12 @@
               </b-table-column>
             </b-table>
           </b-field>
-          <b-button label="Add new organizer" icon-left="plus" @click="addOrganizer" v-if="currentChapter.ChapterID"></b-button>
+          <b-button
+            label="Add new organizer"
+            icon-left="plus"
+            @click="addOrganizer"
+            v-if="currentChapter.ChapterID"
+          ></b-button>
         </section>
         <footer class="modal-card-foot is-flex is-justify-content-space-between">
           <div>
@@ -584,13 +591,14 @@ export default Vue.extend({
   },
   methods: {
     isMobile() {
-      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent,
+      );
     },
     showModal(modalName: string, chapter: Chapter) {
       // Hide the navbar so that the model doesn't go behind it.
-      const mainNav = document.getElementById("mainNav");
-      if (mainNav) mainNav.style.visibility = "hidden";
-
+      const mainNav = document.getElementById('mainNav');
+      if (mainNav) mainNav.style.visibility = 'hidden';
 
       // Check to see if there's a modal open, and close it if so.
       if (this.currentModalName) {
@@ -637,8 +645,8 @@ export default Vue.extend({
       window.open(emailLink);
     },
     hideModal() {
-      const mainNav = document.getElementById("mainNav");
-      if (mainNav) mainNav.style.visibility = "visible";
+      const mainNav = document.getElementById('mainNav');
+      if (mainNav) mainNav.style.visibility = 'visible';
 
       this.currentModalName = '';
       this.currentChapter = {} as Chapter;

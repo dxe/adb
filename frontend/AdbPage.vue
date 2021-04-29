@@ -1,7 +1,7 @@
 <template>
   <section :class="wrapperClass">
     <div class="container mb-5">
-      <h1 class="title">{{ title }}</h1>
+      <h1 class="title" id="mainTitle">{{ title }}</h1>
       <p v-if="description" class="description">{{ description }}</p>
     </div>
 

@@ -1,284 +1,196 @@
-<style>
-.fade-enter-active {
-  transition: opacity 0.5s;
-}
-.fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
-  opacity: 0;
-}
-</style>
-
 <template>
   <adb-page :title="formOptions.formTitle" :description="formOptions.formDescription">
     <transition name="fade">
-      <div v-if="submitSuccess">
-        <h2>Thank you!</h2>
-        <p v-if="formOptions.formName === 'Circle Interest'">
-          Thank you for applying. An organizer will reach out to you soon to help you pick a Circle.
+      <div v-if="submitSuccess" class="content">
+        <p v-if="formOptions.formName === 'Check-in'">
+          Thank you, {{ firstName + ' ' + lastName }}!
         </p>
-        <p v-else-if="formOptions.formName === 'Check-in'">
-          Thank you, {{ firstName + ' ' + lastName }}.
-        </p>
-        <p v-else>Thank you for your submission.</p>
+        <p v-else>Thank you for your submission!</p>
         <br />
-        <input
+        <b-button
           v-if="formOptions.formName === 'Check-in'"
-          type="button"
+          type="is-info"
           @click="reloadPage"
-          class="btn"
-          value="Submit another form"
+          label="Submit another form"
           :disabled="submitting"
         />
       </div>
     </transition>
 
-    <form id="form" @submit.prevent="submitForm" autocomplete="off" v-if="!submitSuccess">
-      <div class="form-group">
-        <label>Email address</label>
-        <input
-          type="email"
-          class="form-control"
-          v-model="email"
-          name="email"
-          maxlength="80"
-          required
-        />
+    <div class="columns is-multiline" v-if="!submitSuccess">
+      <div class="column is-half">
+        <b-field label="First Name" label-position="on-border">
+          <b-input
+            type="text"
+            v-model.trim="firstName"
+            icon="alphabetical"
+            required
+            maxlength="35"
+            ref="firstName"
+          ></b-input>
+        </b-field>
       </div>
 
-      <div class="row">
-        <div class="form-group col-sm-6">
-          <label>First Name</label>
-          <input
+      <div class="column is-half">
+        <b-field label="Last Name" label-position="on-border">
+          <b-input
             type="text"
-            class="form-control"
-            v-model="firstName"
-            name="firstName"
-            maxlength="35"
+            v-model.trim="lastName"
+            icon="alphabetical"
             required
-          />
-        </div>
-
-        <div class="form-group col-sm-6">
-          <label>Last Name</label>
-          <input
-            type="text"
-            class="form-control"
-            v-model="lastName"
-            name="lastName"
             maxlength="35"
-            required
-          />
-        </div>
+            ref="lastName"
+          ></b-input>
+        </b-field>
       </div>
 
-      <div class="row">
-        <div class="form-group col-sm-8">
-          <label>Phone number</label>
-          <input
-            type="tel"
-            class="form-control"
-            v-model="phone"
-            name="phone"
+      <div class="column is-full">
+        <b-field label="Email" label-position="on-border">
+          <b-input
+            type="email"
+            v-model.trim="email"
+            icon="email"
+            required
+            maxlength="80"
+            ref="email"
+          ></b-input>
+        </b-field>
+      </div>
+
+      <div class="column is-half">
+        <b-field label="Phone Number" label-position="on-border">
+          <b-input
+            type="text"
+            v-model.trim="phone"
+            icon="phone"
+            required
             maxlength="20"
-            required
-          />
-        </div>
-        <div class="form-group col-sm-4">
-          <label>Zip code</label>
-          <input type="text" class="form-control" v-model="zip" name="zip" maxlength="5" required />
-        </div>
+            ref="phone"
+          ></b-input>
+        </b-field>
       </div>
 
-      <br />
+      <div class="column is-half">
+        <b-field label="Zip Code" label-position="on-border">
+          <b-input
+            type="text"
+            v-model.trim="zip"
+            icon="city"
+            required
+            maxlength="5"
+            ref="zip"
+          ></b-input>
+        </b-field>
+      </div>
 
-      <div class="form-group" v-if="formOptions.formName !== 'Circle Interest'">
-        <label>What are your activism interests, if any?</label>
-        <div class="form-check">
-          <label class="form-check-label">
-            <input
-              type="checkbox"
-              class="form-check-input"
-              name="activismInterests"
-              value="Sanctuary"
-              v-model="activismInterests"
-            />
+      <div class="column full">
+        <p class="mb-3">What are your activism interests, if any?</p>
+
+        <div class="block">
+          <b-checkbox v-model="activismInterests" native-value="Sanctuary">
             <strong>Sanctuary Days:</strong>
             <small>Work with and spend time with rescued animals</small>
-          </label>
-        </div>
-        <div class="form-check">
-          <label class="form-check-label">
-            <input
-              type="checkbox"
-              class="form-check-input"
-              name="activismInterests"
-              value="Community"
-              v-model="activismInterests"
-            />
+          </b-checkbox>
+          <b-checkbox v-model="activismInterests" native-value="Community">
             <strong>Community Events:</strong>
             <small>Make friends and create connections in the animal rights community</small>
-          </label>
-        </div>
-        <div class="form-check">
-          <label class="form-check-label">
-            <input
-              type="checkbox"
-              class="form-check-input"
-              name="activismInterests"
-              value="Outreach"
-              v-model="activismInterests"
-            />
-            <strong>Outreach:</strong> <small>Educate the public about animal cruelty</small>
-          </label>
-        </div>
-        <div class="form-check">
-          <label class="form-check-label">
-            <input
-              type="checkbox"
-              class="form-check-input"
-              name="activismInterests"
-              value="Protest"
-              v-model="activismInterests"
-            />
+          </b-checkbox>
+          <b-checkbox v-model="activismInterests" native-value="Outreach">
+            <strong>Outreach:</strong>
+            <small>Educate the public about animal cruelty</small>
+          </b-checkbox>
+          <b-checkbox v-model="activismInterests" native-value="Protest">
             <strong>Demonstrations:</strong>
             <small
               >Challenge corporations and other institutions to make change for animals via
               non-violent protests or marches</small
             >
-          </label>
-        </div>
-        <div class="form-check">
-          <label class="form-check-label">
-            <input
-              type="checkbox"
-              class="form-check-input"
-              name="activismInterests"
-              value="Trainings"
-              v-model="activismInterests"
-            />
+          </b-checkbox>
+          <b-checkbox v-model="activismInterests" native-value="Trainings">
             <strong>Trainings:</strong>
             <small
               >Learn how to talk to people effectively, stay legally safe as an activist, and
               organize protests</small
             >
-          </label>
+          </b-checkbox>
         </div>
       </div>
 
-      <div class="form-group" v-if="formOptions.formName === 'Circle Interest'">
-        <label>Which Circle(s) would you like to visit?</label>
-        <div v-for="circle in circleOptions" :key="circle.id" class="form-check">
-          <label class="form-check-label">
-            <input
-              type="checkbox"
-              class="form-check-input"
-              name="circleInterests"
-              v-model="circleInterests"
-              :value="circle.name"
-            />
-            <strong>{{ circle.name }}<span v-if="circle.description">:</span></strong>
-            <small>{{ circle.description }}</small>
-          </label>
-        </div>
+      <div class="column is-full mt-5" v-if="formOptions.showReferralFriends">
+        <b-field
+          label="List any existing DxE activists who you are close friends with"
+          label-position="on-border"
+        >
+          <b-input
+            type="text"
+            v-model.trim="referralFriends"
+            icon="account-multiple"
+            maxlength="200"
+          ></b-input>
+        </b-field>
       </div>
 
-      <br />
-
-      <div class="form-group" v-if="formOptions.showReferralFriends">
-        <label>List any existing DxE activists who you are close friends with:</label>
-        <input
-          type="text"
-          class="form-control"
-          v-model="referralFriends"
-          name="referralFriends"
-          maxlength="200"
-        />
-        <br />
+      <div class="column is-full" v-if="formOptions.showReferralApply">
+        <b-field label="Who encouraged you to sign up?" label-position="on-border">
+          <b-input
+            type="text"
+            v-model.trim="referralApply"
+            icon="account"
+            maxlength="200"
+          ></b-input>
+        </b-field>
       </div>
 
-      <div class="form-group" v-if="formOptions.showReferralApply">
-        <label>Who encouraged you to sign up?</label>
-        <input
-          type="text"
-          class="form-control"
-          v-model="referralApply"
-          name="referralApply"
-          maxlength="200"
-        />
-        <br />
-      </div>
+      <div class="column is-full" v-if="formOptions.showReferralOutlet">
+        <p class="mb-3">Where did you hear about this opportunity to get involved in DxE?</p>
 
-      <div class="form-group" v-if="formOptions.showReferralOutlet">
-        <label>Where did you hear about this opportunity to get involved in DxE?</label>
-        <div class="form-check">
-          <label class="form-check-label">
-            <input
-              type="radio"
-              class="form-check-input"
-              name="referralOutlet"
-              value="Social Media"
-              v-model="referralOutlet"
-            />
+        <div class="block">
+          <b-radio v-model="referralOutlet" native-value="Social Media">
             Social Media
-          </label>
-        </div>
-        <div class="form-check">
-          <label class="form-check-label">
-            <input
-              type="radio"
-              class="form-check-input"
-              name="referralOutlet"
-              value="Email"
-              v-model="referralOutlet"
-            />
+          </b-radio>
+          <b-radio v-model="referralOutlet" native-value="Email">
             Email
-          </label>
-        </div>
-        <div class="form-check">
-          <label class="form-check-label">
-            <input
-              type="radio"
-              class="form-check-input"
-              name="referralOutlet"
-              value="Meetup"
-              v-model="referralOutlet"
-            />
-            Saturday morning Meetup
-          </label>
-        </div>
-        <div class="form-check">
-          <label class="form-check-label">
-            <input
-              type="radio"
-              class="form-check-input"
-              name="referralOutlet"
-              value="In-person Invite"
-              v-model="referralOutlet"
-            />
+          </b-radio>
+          <b-radio v-model="referralOutlet" native-value="Meetup">
+            Saturday morning meetup
+          </b-radio>
+          <b-radio v-model="referralOutlet" native-value="In-person Invite">
             Someone invited me in person
-          </label>
+          </b-radio>
         </div>
       </div>
 
-      <br />
-
-      <input type="submit" class="btn btn-primary" value="Submit" :disabled="submitting" />
-    </form>
+      <div class="column is-full">
+        <b-button
+          class="my-4"
+          type="is-primary"
+          label="Submit"
+          @click="submitForm"
+          :disabled="submitting"
+        ></b-button>
+      </div>
+    </div>
   </adb-page>
 </template>
 
 <script lang="ts">
-// Library from here: https://github.com/euvl/vue-js-modal
-import vmodal from 'vue-js-modal';
 import Vue from 'vue';
 import AdbPage from './AdbPage.vue';
-import { flashMessage } from './flash_message';
-
-Vue.use(vmodal);
+import { flashMessage, initializeFlashMessage } from './flash_message';
 
 export default Vue.extend({
   name: 'form-interest',
   methods: {
+    validate: function() {
+      type VueFormInput = Vue & { checkHtml5Validity: () => boolean };
+      const refsToValidate = ['firstName', 'lastName', 'email', 'phone', 'zip'];
+      const results = refsToValidate.map((ref) => {
+        return (this.$refs[ref] as VueFormInput).checkHtml5Validity();
+      });
+      return results.indexOf(false) === -1;
+    },
     submitForm: function() {
+      if (!this.validate()) return;
       this.submitting = true;
       $.ajax({
         url: '/interest',
@@ -386,9 +298,19 @@ export default Vue.extend({
         flashMessage('Server error: ' + err.responseText, true);
       },
     });
+    initializeFlashMessage();
   },
   components: {
     AdbPage,
   },
 });
 </script>
+
+<style>
+.fade-enter-active {
+  transition: opacity 0.5s;
+}
+.fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
+  opacity: 0;
+}
+</style>

@@ -3,7 +3,11 @@
     <nav class="level">
       <div class="level-left">
         <div class="level-item">
-          <b-button icon-left="account-plus" @click="showModal('edit-user-modal')">
+          <b-button
+            icon-left="account-plus"
+            type="is-primary"
+            @click="showModal('edit-user-modal')"
+          >
             New user
           </b-button>
         </div>
@@ -106,7 +110,7 @@
 <script lang="ts">
 import Vue from 'vue';
 import AdbPage from './AdbPage.vue';
-import { flashMessage } from './flash_message';
+import { flashMessage, initializeFlashMessage } from './flash_message';
 
 interface User {
   id: number;
@@ -119,13 +123,14 @@ export default Vue.extend({
   name: 'user-list',
   methods: {
     isMobile() {
-      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent,
+      );
     },
     showModal(modalName: string, user: User) {
       // Hide the navbar so that the model doesn't go behind it.
-      const mainNav = document.getElementById("mainNav");
-      if (mainNav) mainNav.style.visibility = "hidden";
-
+      const mainNav = document.getElementById('mainNav');
+      if (mainNav) mainNav.style.visibility = 'hidden';
 
       // Check to see if there's a modal open, and close it if so.
       if (this.currentModalName) {
@@ -152,8 +157,8 @@ export default Vue.extend({
     },
     hideModal() {
       // Show the navbar.
-      const mainNav = document.getElementById("mainNav");
-      if (mainNav) mainNav.style.visibility = "visible";
+      const mainNav = document.getElementById('mainNav');
+      if (mainNav) mainNav.style.visibility = 'visible';
 
       // Make sure we update the main user list instance of
       // this current user to match the roles.
@@ -317,6 +322,7 @@ export default Vue.extend({
         flashMessage('Error connecting to server.', true);
       },
     });
+    initializeFlashMessage();
   },
   components: {
     AdbPage,
