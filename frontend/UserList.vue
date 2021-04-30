@@ -1,5 +1,6 @@
 <template>
   <adb-page title="Users">
+    <b-loading :is-full-page="true" v-model="loading"></b-loading>
     <nav class="level">
       <div class="level-left">
         <div class="level-item">
@@ -298,6 +299,7 @@ export default Vue.extend({
   },
   data() {
     return {
+      loading: false,
       currentUser: {} as User,
       users: [] as User[],
       userIndex: -1,
@@ -307,6 +309,7 @@ export default Vue.extend({
     };
   },
   created() {
+    this.loading = true;
     $.ajax({
       url: '/user/list',
       success: (data) => {
@@ -317,9 +320,11 @@ export default Vue.extend({
         }
         // status === "success"
         this.setUsers(parsed);
+        this.loading = false;
       },
       error: () => {
         flashMessage('Error connecting to server.', true);
+        this.loading = false;
       },
     });
     initializeFlashMessage();

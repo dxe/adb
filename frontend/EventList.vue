@@ -286,10 +286,11 @@ export default Vue.extend({
             flashMessage('No events from server', true);
           }
 
-          this.loading = false;
           this.events = events;
+          this.loading = false;
         },
         error: () => {
+          this.loading = false;
           flashMessage('Error connecting to server.', true);
         },
       });

@@ -1,6 +1,8 @@
 <template>
   <adb-page :title="connections ? 'Coaching' : 'Event'" narrow class="event-new-content">
     <b-loading :is-full-page="true" v-model="loading"></b-loading>
+    <b-loading :is-full-page="true" v-model="loadingCircles"></b-loading>
+    <b-loading :is-full-page="true" v-model="loadingActivists"></b-loading>
     <form action id="eventForm" v-on:change="changed('change', -1)" autocomplete="off">
       <fieldset :disabled="loading">
         <b-field :label="connections ? 'Coach' : 'Event' + ' name'">
@@ -129,6 +131,8 @@ export default Vue.extend({
   data() {
     return {
       loading: false,
+      loadingCircles: false,
+      loadingActivists: false,
       saving: false,
 
       name: '',
@@ -502,12 +506,13 @@ export default Vue.extend({
 
     // TODO(mdempsky): Move into utility file.
     updateAutocompleteNames() {
+      this.loadingActivists = true;
       $.ajax({
         url: '/activist/list_basic',
         method: 'GET',
         dataType: 'json',
         success: (data) => {
-          var activistData = data.activists;
+          const activistData = data.activists;
           // Clear current activist name array and set before re-adding
           this.allActivists.length = 0;
           this.allActivistsSet.clear();
@@ -519,13 +524,16 @@ export default Vue.extend({
           }
 
           this.changed('autocomplete', -1);
+          this.loadingActivists = false;
         },
         error: () => {
           flashMessage('Error: could not load activist names', true);
+          this.loadingActivists = false;
         },
       });
     },
     getCircleNames() {
+      this.loadingCircles = true;
       $.ajax({
         url: '/circle/list',
         method: 'GET',
@@ -535,9 +543,11 @@ export default Vue.extend({
             return c.type === 'circle'; // only include classic circles, not geo-circles
           });
           this.allCircles.unshift({ id: 0, name: 'N/A' });
+          this.loadingCircles = false;
         },
         error: () => {
           flashMessage('Error: could not load circles', true);
+          this.loadingCircles = false;
         },
       });
     },
