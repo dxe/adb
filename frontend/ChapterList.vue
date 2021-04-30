@@ -617,10 +617,14 @@ export default Vue.extend({
       this.currentChapter = { ...chapter };
 
       // Parse strings to dates.
-      const c = moment(this.currentChapter.LastContact);
-      this.currentChapter.LastContactParsed = c.isValid() ? c.toDate() : null;
-      const a = moment(this.currentChapter.LastAction);
-      this.currentChapter.LastActionParsed = a.isValid() ? a.toDate() : null;
+      if (this.currentChapter.LastContact != undefined) {
+        const m = moment(this.currentChapter.LastContact)
+        this.currentChapter.LastContactParsed = m.isValid() ? m.toDate() : null;
+      }
+      if (this.currentChapter.LastAction != undefined) {
+        const m = moment(this.currentChapter.LastAction)
+        this.currentChapter.LastActionParsed = m.isValid() ? m.toDate() : null;
+      }
 
       // Get the index for updating the view w/o refreshing the whole page.
       this.currentChapterIndex = this.chapters.findIndex((c) => {
@@ -690,6 +694,8 @@ export default Vue.extend({
 
       // Format dates as strings.
       if (this.currentChapter.LastContactParsed) {
+        console.log("last contact parsed TRUE")
+        console.log(this.currentChapter.LastContactParsed)
         this.currentChapter.LastContact = moment(this.currentChapter.LastContactParsed).format(
           'YYYY-MM-DD',
         );
