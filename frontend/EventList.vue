@@ -188,6 +188,7 @@ import Vue from 'vue';
 import AdbPage from './AdbPage.vue';
 import { flashMessage, initializeFlashMessage } from './flash_message';
 import moment from 'moment';
+import debounce from 'debounce';
 
 interface Event {
   // Supplied by server.
@@ -257,6 +258,7 @@ export default Vue.extend({
         },
       });
     },
+    // TODO: consider debouncing this if it feels laggy
     getFilteredActivists(text: string) {
       this.filteredActivists = this.activistFilterOptions.filter((a: string) => {
         return a.toLowerCase().startsWith(text.toLowerCase());
@@ -265,8 +267,6 @@ export default Vue.extend({
     eventListRequest() {
       // Always show the loading screen when the button is clicked.
       this.loading = true;
-
-      console.log(this.search);
 
       $.ajax({
         url: '/event/list',
