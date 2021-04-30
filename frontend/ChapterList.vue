@@ -59,6 +59,16 @@
       </div>
     </nav>
 
+    <nav class="level">
+      <div class="level-left">
+        <div class="level-item">
+          <b-field label-position="on-border" label="Filter by name">
+            <b-input v-model="filterName" type="text" icon="filter"></b-input>
+          </b-field>
+        </div>
+      </div>
+    </nav>
+
     <b-table :data="filteredChapters" striped hoverable default-sort="Name">
       <b-table-column v-slot="props">
         <div style="width: 130px;">
@@ -580,12 +590,18 @@ export default Vue.extend({
   name: 'chapter-list',
   computed: {
     filteredChapters: function(): Chapter[] {
-      if (this.mentorFilter === 'All') {
-        return this.chapters;
+      let chapters = this.chapters;
+      if (this.mentorFilter != 'All') {
+        chapters = chapters.filter((c) => {
+          return c.Mentor === this.mentorFilter;
+        });
       }
-      return this.chapters.filter((c) => {
-        return c.Mentor === this.mentorFilter;
-      });
+      if (this.filterName != '') {
+        chapters = chapters.filter((c) => {
+          return c.Name.toLowerCase().startsWith(this.filterName.toLowerCase());
+        });
+      }
+      return chapters;
     },
     mentors: function(): string[] {
       let mentors: string[];
@@ -878,6 +894,7 @@ export default Vue.extend({
       currentModalName: '',
       showMoreOptions: false,
       mentorFilter: 'All',
+      filterName: '',
       loading: true,
     };
   },
@@ -916,7 +933,7 @@ export default Vue.extend({
 </script>
 
 <style>
-/* Don't display buefy tbale sorting options on mobile. */
+/* Don't display buefy table sorting options on mobile. */
 .table-mobile-sort {
   display: none;
 }
