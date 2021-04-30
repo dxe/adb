@@ -29,7 +29,7 @@
             <!-- TODO: experimenting -->
             <b-taginput
               v-model="search.activist"
-              :data="activistFilterOptions"
+              :data="filteredActivists"
               autocomplete
               :allow-new="false"
               icon="account-outline"
