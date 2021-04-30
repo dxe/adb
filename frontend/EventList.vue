@@ -24,14 +24,21 @@
             </b-input>
           </b-field>
         </div>
-        <div class="level-item" v-if="false">
+        <div class="level-item">
           <b-field label-position="on-border" :label="connections ? 'Coachees' : 'Activist'">
-            <!-- TODO: replace this select w/ something that works better -->
-            <b-select v-model="search.activist" icon="account-outline">
-              <option v-for="name in activistFilterOptions" :value="name" :key="name">
-                {{ name }}
-              </option>
-            </b-select>
+            <!-- TODO: experimenting -->
+            <b-taginput
+              v-model="search.activist"
+              :data="activistFilterOptions"
+              autocomplete
+              :allow-new="false"
+              icon="account-outline"
+              @typing="getFilteredActivists"
+              maxtags="1"
+              type="is-info"
+              dropdown-position="bottom"
+              :has-counter="false"
+            ></b-taginput>
           </b-field>
         </div>
 
@@ -217,7 +224,7 @@ export default Vue.extend({
     return {
       search: {
         name: '',
-        activist: '',
+        activist: [] as string[],
         start: start,
         end: today,
         type: 'noConnections',
@@ -225,6 +232,7 @@ export default Vue.extend({
 
       showFilters: false,
       activistFilterOptions: [] as string[],
+      filteredActivists: [] as string[],
 
       loading: false,
       events: [] as Event[],
@@ -249,16 +257,23 @@ export default Vue.extend({
         },
       });
     },
+    getFilteredActivists(text: string) {
+      this.filteredActivists = this.activistFilterOptions.filter((a: string) => {
+        return a.toLowerCase().startsWith(text.toLowerCase());
+      });
+    },
     eventListRequest() {
       // Always show the loading screen when the button is clicked.
       this.loading = true;
+
+      console.log(this.search);
 
       $.ajax({
         url: '/event/list',
         method: 'POST',
         data: {
           event_name: this.search.name,
-          event_activist: this.search.activist,
+          event_activist: this.search.activist[0],
           event_date_start: this.search.start,
           event_date_end: this.search.end,
           event_type: this.connections ? 'Connection' : this.search.type,

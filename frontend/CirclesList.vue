@@ -287,7 +287,7 @@ export default Vue.extend({
       if (time.isAfter(moment().add(-32, 'day'))) {
         c = 'is-warning';
       }
-      if (time.isAfter(moment().add(-8, 'day'))) {
+      if (time.isAfter(moment().add(-15, 'day'))) {
         c = 'is-success';
       }
       return c;
