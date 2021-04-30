@@ -618,11 +618,11 @@ export default Vue.extend({
 
       // Parse strings to dates.
       if (this.currentChapter.LastContact != undefined) {
-        const m = moment(this.currentChapter.LastContact)
+        const m = moment(this.currentChapter.LastContact);
         this.currentChapter.LastContactParsed = m.isValid() ? m.toDate() : null;
       }
       if (this.currentChapter.LastAction != undefined) {
-        const m = moment(this.currentChapter.LastAction)
+        const m = moment(this.currentChapter.LastAction);
         this.currentChapter.LastActionParsed = m.isValid() ? m.toDate() : null;
       }
 
@@ -647,7 +647,7 @@ export default Vue.extend({
       });
 
       if (!orgEmails.length) {
-        alert(`There are no email addresses listed for ${chapter.Name}!`);
+        flashMessage(`There are no email addresses listed for ${chapter.Name}!`, true);
         return;
       }
 
@@ -668,34 +668,34 @@ export default Vue.extend({
     },
     confirmEditChapterModal() {
       if (!this.currentChapter.Name) {
-        alert('Chapter name is required!');
+        flashMessage('Chapter name is required!', true);
         return;
       }
       if (!this.currentChapter.Flag) {
-        alert('Flag emoji is required!');
+        flashMessage('Flag emoji is required!', true);
         return;
       }
       if (!this.currentChapter.Region) {
-        alert('Region is required!');
+        flashMessage('Region is required!', true);
         return;
       }
       if (!this.currentChapter.Country) {
-        alert('Country is required!');
+        flashMessage('Country is required!', true);
         return;
       }
       if (!this.currentChapter.Lat) {
-        alert('Lat is required and must be a number!');
+        flashMessage('Lat is required and must be a number!', true);
         return;
       }
       if (!this.currentChapter.Lng) {
-        alert('Lng is required and must be a number!');
+        flashMessage('Lng is required and must be a number!', true);
         return;
       }
 
       // Format dates as strings.
       if (this.currentChapter.LastContactParsed) {
-        console.log("last contact parsed TRUE")
-        console.log(this.currentChapter.LastContactParsed)
+        console.log('last contact parsed TRUE');
+        console.log(this.currentChapter.LastContactParsed);
         this.currentChapter.LastContact = moment(this.currentChapter.LastContactParsed).format(
           'YYYY-MM-DD',
         );
@@ -710,14 +710,14 @@ export default Vue.extend({
         this.currentChapter.LastContact &&
         !this.currentChapter.LastContact.match(/^\d{4}-\d{2}-\d{2}$/)
       ) {
-        alert('Last Contact date must be in YYYY-MM-DD format!');
+        flashMessage('Last Contact date must be in YYYY-MM-DD format!', true);
         return;
       }
       if (
         this.currentChapter.LastAction &&
         !this.currentChapter.LastAction.match(/^\d{4}-\d{2}-\d{2}$/)
       ) {
-        alert('Last Action date must be in YYYY-MM-DD format!');
+        flashMessage('Last Action date must be in YYYY-MM-DD format!', true);
         return;
       }
 
@@ -730,7 +730,10 @@ export default Vue.extend({
         }
       });
       if (organizersUnclean) {
-        alert('All organizers must have a name. Please delete any blank organizer rows.');
+        flashMessage(
+          'All organizers must have a name. Please delete any blank organizer rows.',
+          true,
+        );
         return;
       }
 

@@ -281,14 +281,14 @@ export default Vue.extend({
         return true;
       }
 
-      var newSet = new Set<string>();
+      const newSet = new Set<string>();
       for (let attendee of this.attendees) {
         attendee = attendee.trim();
         if (attendee != '') {
           newSet.add(attendee);
         }
       }
-      var oldSet = new Set<string>();
+      const oldSet = new Set<string>();
       for (let attendee of this.oldAttendees) {
         attendee = attendee.trim();
         if (attendee != '') {
