@@ -196,7 +196,7 @@ func internationalActionMailerWrapper(db *sqlx.DB) {
 	if now.Day() != 1 && now.Day() != 8 {
 		return
 	}
-	if now.Hour() < 4 || now.Hour() > 11 {
+	if now.Hour() < 16 || now.Hour() > 23 {
 		return
 	}
 
