@@ -1,6 +1,7 @@
 package international_mailer
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"strings"
@@ -110,6 +111,31 @@ func internationalMailerWrapper(db *sqlx.DB) {
 	for _, rec := range records {
 		processFormSubmission(db, rec)
 	}
+
+	// TODO: only run this on the 1st and 8th of the month.
+	// TODO: don't email chapters on the 8th if last sent time was not the 1st of current month, since they are probably a brand new chapter.
+	// Get chapters to email the monthly "international action" form to.
+	chapters, err := model.GetAllChapters(db)
+	if err != nil {
+		panic("Failed to get chapters for int'l action mailer " + err.Error())
+	}
+	for _, chap := range chapters {
+		// TODO: also check if the last email was sent last month
+		// TODO: also check if an email was sent this month but it's been over 8 days and no reply
+		if !chap.LastCheckinEmailSent.Valid {
+			fmt.Println("SHOULD SEND EMAIL TO", chap.ChapterID, chap.Name, chap.EmailToken)
+		}
+		// update LastCheckinEmailSent time
+		chap.LastCheckinEmailSent = sql.NullTime{
+			Time:  time.Now(),
+			Valid: true,
+		}
+		_, err := model.UpdateChapter(db, chap)
+		if err != nil {
+			panic("Failed to update chapter last check-in email sent time " + err.Error())
+		}
+	}
+
 }
 
 // Sends emails every 60 minutes.

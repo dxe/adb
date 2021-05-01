@@ -180,6 +180,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.HandleFunc("/apply", main.ApplicationFormHandler)
 	router.HandleFunc("/interest", main.InterestFormHandler)
 	router.HandleFunc("/international", main.InternationalFormHandler)
+	router.HandleFunc("/international_actions/{id:[0-9]+}/{token:[a-zA-Z0-9]+}", main.InternationalActionsFormHandler)
 
 	// Error pages
 	router.HandleFunc("/403", main.ForbiddenHandler)
@@ -215,6 +216,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.HandleFunc("/chapters", main.ListAllChapters)
 	router.HandleFunc("/circles", main.CircleGroupNormalListHandler) // TODO: maybe the public endpoints should return less info
 	router.HandleFunc("/geocircles", main.CircleGroupGeoListHandler) // TODO: maybe the public endpoints should return less info
+	router.HandleFunc("/international_actions", main.InternationalActionsFormHandler)
 
 	// Authed API
 	router.Handle("/activist_names/get", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteActivistsHandler))
@@ -692,6 +694,7 @@ type PageData struct {
 	GooglePlacesAPIKey string
 	// Used on Discord Form page - TODO: handle this differently
 	DiscordUser model.DiscordUser
+	Chapter     model.ChapterWithToken
 }
 
 // Render a page. All templates that load a header expect a PageData
@@ -2134,6 +2137,67 @@ func (c MainController) InternationalFormHandler(w http.ResponseWriter, r *http.
 		}
 
 		err = model.SubmitInternationalForm(c.db, formData)
+
+		if err != nil {
+			fmt.Println(err.Error())
+			fmt.Println(formData)
+			writeJSON(w, map[string]interface{}{
+				"status":  "error",
+				"message": err.Error(),
+			})
+			return
+		}
+
+		writeJSON(w, map[string]interface{}{
+			"status": "success",
+		})
+	}
+}
+
+func (c MainController) InternationalActionsFormHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "GET" {
+		vars := mux.Vars(r)
+		token := vars["token"]
+		chapID, err := strconv.Atoi(vars["id"])
+		if err != nil {
+			panic(err)
+		}
+
+		// TODO: check that the token and ID match a chapter in the database
+		chapFromDB, err := model.GetChapterByID(c.db, chapID)
+		if err != nil {
+			writeJSON(w, map[string]interface{}{
+				"status":  "error",
+				"message": "Invalid chapter.",
+			})
+			return
+		}
+
+		if chapFromDB.EmailToken != token {
+			writeJSON(w, map[string]interface{}{
+				"status":  "error",
+				"message": "Invalid token.",
+			})
+			return
+		}
+
+		renderPage(w, r, "form_international_actions", PageData{
+			PageName: "FormInternationalActions",
+			Chapter:  chapFromDB,
+		})
+	}
+
+	if r.Method == "POST" {
+		var formData model.InternationalActionFormData
+
+		err := json.NewDecoder(r.Body).Decode(&formData)
+		if err != nil {
+			fmt.Println(err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		err = model.SubmitInternationalActionForm(c.db, formData)
 
 		if err != nil {
 			fmt.Println(err.Error())

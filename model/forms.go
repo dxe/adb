@@ -63,6 +63,14 @@ type DiscordFormData struct {
 	Lng       float64 `json:"lng" db:"lng"`
 }
 
+type InternationalActionFormData struct {
+	ChapterID     int    `json:"chapterID" db:"chapter_id"`
+	OrganizerName string `json:"organizerName" db:"organizer_name"`
+	LastAction    string `json:"lastAction" db:"last_action"`
+	Needs         string `json:"needs" db:"needs"`
+	Token         string `json:"token"`
+}
+
 func SubmitApplicationForm(db *sqlx.DB, formData ApplicationFormData) error {
 	_, err := db.NamedExec(`INSERT INTO form_application
 		(email, name, phone, address, city, zip, birthday, application_type, referral_apply)
@@ -201,6 +209,29 @@ func SubmitDiscordForm(db *sqlx.DB, formData DiscordFormData) error {
 	if err != nil {
 		// Don't return this error because we still want to successfully update the database.
 		fmt.Println("ERROR adding discord form submission to mailing list:", err.Error())
+	}
+
+	return nil
+}
+
+func SubmitInternationalActionForm(db *sqlx.DB, formData InternationalActionFormData) error {
+
+	chapFromDB, err := GetChapterByID(db, formData.ChapterID)
+	if err != nil {
+		return err
+	}
+	if chapFromDB.EmailToken != formData.Token {
+		return errors.New("Token is invalid!")
+	}
+
+	_, err = db.NamedExec(`INSERT INTO form_international_actions
+		(chapter_id, organizer_name, last_action, needs)
+		VALUES
+		(:chapter_id, :organizer_name, :last_action, :needs)
+		`, formData)
+
+	if err != nil {
+		return errors.Wrap(err, "failed to insert int'l action form data")
 	}
 
 	return nil

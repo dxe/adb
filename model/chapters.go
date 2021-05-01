@@ -143,7 +143,7 @@ func GetAllChapters(db *sqlx.DB) ([]ChapterWithToken, error) {
 
 // for the chapter management admin page on the ADB itself
 func GetChapterByID(db *sqlx.DB, id int) (ChapterWithToken, error) {
-	query := `SELECT id, chapter_id, name, flag, fb_url, twitter_url, insta_url, email, region, lat, lng, token, eventbrite_id, eventbrite_token, ml_type, ml_radius, ml_id, mentor, country, notes, last_contact, last_action, organizers, last_checkin_email_sent
+	query := `SELECT id, chapter_id, name, flag, fb_url, twitter_url, insta_url, email, region, lat, lng, token, eventbrite_id, eventbrite_token, ml_type, ml_radius, ml_id, mentor, country, notes, last_contact, last_action, organizers, last_checkin_email_sent, IFNULL(email_token,"") as email_token
 		FROM fb_pages
 		WHERE chapter_id = ?`
 	var pages []ChapterWithToken
@@ -185,7 +185,8 @@ func UpdateChapter(db *sqlx.DB, page ChapterWithToken) (int, error) {
 		last_contact = :last_contact,
 		last_action = :last_action,
 		organizers = :organizers,
-		email_token = :email_token
+		email_token = :email_token,
+		last_checkin_email_sent = :last_checkin_email_sent
 		WHERE chapter_id = :chapter_id`, page)
 	if err != nil {
 		return 0, errors.Wrapf(err, "failed to update chapter %d", page.ID)
