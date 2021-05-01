@@ -212,7 +212,6 @@ func internationalActionMailerWrapper(db *sqlx.DB) {
 	y, m, _ := now.Date()
 	startOfCurrentMonth := time.Date(y, m, 1, 0, 0, 0, 0, now.Location())
 
-	// Get chapters to email the monthly "international action" form to.
 	chapters, err := model.GetAllChapters(db)
 	if err != nil {
 		panic("Failed to get chapters for int'l action mailer " + err.Error())
@@ -220,7 +219,7 @@ func internationalActionMailerWrapper(db *sqlx.DB) {
 	for _, chap := range chapters {
 		neverSentEmail := !chap.LastCheckinEmailSent.Valid
 		sentEmailBeforeCurrentMonth := chap.LastCheckinEmailSent.Valid && chap.LastCheckinEmailSent.Time.Before(startOfCurrentMonth)
-		sentEmailToday := chap.LastCheckinEmailSent.Valid && chap.LastCheckinEmailSent.Time.Month() == now.Month() && chap.LastCheckinEmailSent.Time.Day() == now.Day()
+		sentEmailToday := chap.LastCheckinEmailSent.Valid && chap.LastCheckinEmailSent.Time.Year() == now.Year() && chap.LastCheckinEmailSent.Time.YearDay() == now.YearDay()
 
 		switch now.Day() {
 		case 1:
