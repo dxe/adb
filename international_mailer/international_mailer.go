@@ -97,12 +97,6 @@ Direct Action Everywhere Organizer</p>
 
 func sendInternationalActionEmail(chapter model.ChapterWithToken) {
 
-	// TODO: remove this
-	// This is here to test for three chapters before deploying globally
-	if !(chapter.ChapterID == 47 || chapter.ChapterID == 48) {
-		return
-	}
-
 	subject := "PLEASE READ - New database of DxE chapters and May Global Strategy Call"
 	body := `
 	<p>Hi all!</p>
@@ -191,6 +185,12 @@ func internationalMailerWrapper(db *sqlx.DB) {
 }
 
 func internationalActionMailerWrapper(db *sqlx.DB) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("Recovered from panic in int'l action mailer", r)
+		}
+	}()
+
 	// Only run on the 1st or 8th of the month b/w 4pm and midnight UTC (9am-5pm PT).
 	now := time.Now()
 	if now.Day() != 1 && now.Day() != 8 {
@@ -200,6 +200,10 @@ func internationalActionMailerWrapper(db *sqlx.DB) {
 		return
 	}
 
+	// Calculate first day of current month.
+	y, m, _ := now.Date()
+	startOfCurrentMonth := time.Date(y, m, 1, 0, 0, 0, 0, now.Location())
+
 	// Get chapters to email the monthly "international action" form to.
 	chapters, err := model.GetAllChapters(db)
 	if err != nil {
@@ -207,25 +211,17 @@ func internationalActionMailerWrapper(db *sqlx.DB) {
 	}
 	for _, chap := range chapters {
 
+		neverSentEmail := !chap.LastCheckinEmailSent.Valid
+		sentEmailBeforeCurrentMonth := chap.LastCheckinEmailSent.Valid && chap.LastCheckinEmailSent.Time.Before(startOfCurrentMonth)
+		sentEmailToday := chap.LastCheckinEmailSent.Valid && chap.LastCheckinEmailSent.Time.Month() == now.Month() && chap.LastCheckinEmailSent.Time.Day() == now.Day()
+
 		switch now.Day() {
 		case 1:
-			// If they've never been sent an email, send it.
-			if !chap.LastCheckinEmailSent.Valid {
-				sendInternationalActionEmail(chap)
-				break
-			}
-			// If they have been sent an email, only send if the last email was not this month.
-			if chap.LastCheckinEmailSent.Time.Month() < now.Month() {
+			if neverSentEmail || sentEmailBeforeCurrentMonth {
 				sendInternationalActionEmail(chap)
 			}
 		case 8:
-			if !chap.LastCheckinEmailSent.Valid {
-				// Chapter didn't receive an email on the 1st (or ever), so they are probably a new chapter that
-				// was created this month. So we do not want to send an email to them this month.
-				continue
-			}
-			if chap.LastCheckinEmailSent.Time.Month() == now.Month() && chap.LastCheckinEmailSent.Time.Day() == now.Day() {
-				// We already sent them an email today, so don't email them again.
+			if neverSentEmail || sentEmailToday {
 				continue
 			}
 			dateLayout := "2006-01-02"
@@ -234,16 +230,13 @@ func internationalActionMailerWrapper(db *sqlx.DB) {
 				fmt.Printf("Error parsing last contact date for chapter %v", chap.Name)
 				return
 			}
-			if lastContactDate.Month() < now.Month() {
+			if lastContactDate.Before(startOfCurrentMonth) {
 				// Chapter hasn't responded this month, so send the email again.
 				sendInternationalActionEmail(chap)
 			}
 		default:
-			// This should never be reached since we have a guard clause at the beginning of the function
-			// that checks if they day of the month is the 1st or 8th.
 			continue
 		}
-		// update LastCheckinEmailSent time
 		chap.LastCheckinEmailSent = sql.NullTime{
 			Time:  time.Now(),
 			Valid: true,
