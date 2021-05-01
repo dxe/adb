@@ -20,7 +20,7 @@ func processFormSubmission(db *sqlx.DB, formData model.InternationalFormData) {
 	}
 	nearestChapter := nearestChapters[0]
 
-	cc := []string{"jake@dxe.io", "vanas@umich.edu"}
+	var cc []string
 	if nearestChapter.Email != "" {
 		cc = append(cc, nearestChapter.Email)
 	}

@@ -130,12 +130,18 @@
           </p>
           <p>
             Target activist:
-            <!-- TODO: replace this select w/ something that works better -->
-            <b-select v-model="mergeTarget" disabled="">
-              <option v-for="name in activistMergeOptions" :value="name" :key="name">
-                {{ name }}
-              </option>
-            </b-select>
+            <b-taginput
+              v-model="mergeTarget"
+              :data="filteredActivistMergeOptions"
+              autocomplete
+              :allow-new="false"
+              icon="account-outline"
+              @typing="getFilteredActivistMergeOptions"
+              maxtags="1"
+              type="is-info"
+              dropdown-position="top"
+              :has-counter="false"
+            ></b-taginput>
           </p>
         </section>
         <footer class="modal-card-foot">
@@ -545,20 +551,6 @@ function getDefaultColumns(view: string): Column[] {
         colWidths: 100,
       },
       enabled: view === 'chapter_member_development',
-    },
-    {
-      header: 'Last Circle',
-      longHeader: 'Last Circle Attended',
-      category: 'Circle Info',
-      data: {
-        data: 'last_circle',
-        type: 'date',
-        dateFormat: 'YYYY-MM-DD',
-        correctFormat: true,
-        readOnly: true,
-        colWidths: 100,
-      },
-      enabled: false,
     },
     // Event Attendance
     {
@@ -1033,15 +1025,15 @@ export default Vue.extend({
       this.currentModalName = '';
       this.activistIndex = -1;
       this.currentActivist = {} as Activist;
-      this.mergeTarget = '';
+      this.mergeTarget = [] as Activist[];
       this.activistMergeOptions = [];
     },
     confirmMergeActivistModal() {
-      const targetActivistName = this.mergeTarget;
-      if (!targetActivistName) {
+      if (this.mergeTarget.length === 0) {
         flashMessage('Must choose an activist to merge into', true);
         return;
       }
+      const targetActivistName = this.mergeTarget[0];
 
       this.disableConfirmButton = true;
       const currentActivistID = this.currentActivist.id;
@@ -1081,6 +1073,11 @@ export default Vue.extend({
           console.warn(err.responseText);
           flashMessage('Server error: ' + err.responseText, true);
         },
+      });
+    },
+    getFilteredActivistMergeOptions(text: string) {
+      this.filteredActivistMergeOptions = this.activistMergeOptions.filter((a: string) => {
+        return a.toLowerCase().startsWith(text.toLowerCase());
       });
     },
     loadActivists() {
@@ -1294,8 +1291,9 @@ export default Vue.extend({
       search: '',
       loading: false,
       rowCount: 0,
-      mergeTarget: '',
+      mergeTarget: [] as Activist[],
       activistMergeOptions: [] as string[],
+      filteredActivistMergeOptions: [] as string[],
     };
   },
   computed: {

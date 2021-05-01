@@ -94,14 +94,6 @@ SELECT
     WHERE inner_a.id = a.id
   ) AS last_event,
 
-  @last_circle := (
-    SELECT max(e.date) AS max_date
-    FROM event_attendance ea
-    JOIN activists inner_a ON inner_a.id = ea.activist_id
-    JOIN events e ON e.id = ea.event_id
-    WHERE inner_a.id = a.id and e.event_type = 'Circle'
-  ) AS last_circle,
-
   IFNULL(
     concat(@first_event, ' ', (
       SELECT name
@@ -261,7 +253,6 @@ type Activist struct {
 type ActivistEventData struct {
 	FirstEvent     mysql.NullTime `db:"first_event"`
 	LastEvent      mysql.NullTime `db:"last_event"`
-	LastCircle     mysql.NullTime `db:"last_circle"`
 	FirstEventName string         `db:"first_event_name"`
 	LastEventName  string         `db:"last_event_name"`
 	TotalEvents    int            `db:"total_events"`
@@ -335,7 +326,6 @@ type ActivistJSON struct {
 
 	FirstEvent     string `json:"first_event"`
 	LastEvent      string `json:"last_event"`
-	LastCircle     string `json:"last_circle"`
 	FirstEventName string `json:"first_event_name"`
 	LastEventName  string `json:"last_event_name"`
 	TotalEvents    int    `json:"total_events"`
@@ -459,10 +449,6 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 		if a.ActivistEventData.LastEvent.Valid {
 			lastEvent = a.ActivistEventData.LastEvent.Time.Format(EventDateLayout)
 		}
-		lastCircle := ""
-		if a.ActivistEventData.LastCircle.Valid {
-			lastCircle = a.ActivistEventData.LastCircle.Time.Format(EventDateLayout)
-		}
 		applicationDate := ""
 		if a.ActivistConnectionData.ApplicationDate.Valid {
 			applicationDate = a.ActivistConnectionData.ApplicationDate.Time.Format(EventDateLayout)
@@ -545,7 +531,6 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 
 			FirstEvent:     firstEvent,
 			LastEvent:      lastEvent,
-			LastCircle:     lastCircle,
 			FirstEventName: a.FirstEventName,
 			LastEventName:  a.LastEventName,
 			Status:         a.Status,

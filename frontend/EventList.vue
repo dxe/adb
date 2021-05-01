@@ -26,7 +26,6 @@
         </div>
         <div class="level-item">
           <b-field label-position="on-border" :label="connections ? 'Coachees' : 'Activist'">
-            <!-- TODO: experimenting -->
             <b-taginput
               v-model="search.activist"
               :data="filteredActivists"

@@ -18,14 +18,6 @@
             </b-select>
           </b-field>
         </div>
-        <div class="level-item">
-          <b-button
-            icon-left="help"
-            class="is-hidden-mobile"
-            onclick="alert('Help feature coming soon.')"
-          >
-          </b-button>
-        </div>
       </div>
 
       <div class="level-right">
@@ -175,7 +167,7 @@
             <div class="column is-full">
               <b-field label="Basic Info" custom-class="has-text-primary"></b-field>
             </div>
-            <div class="column is-one-quarter">
+            <div class="column is-one-quarter" v-if="false">
               <b-field label="Flag" label-position="on-border">
                 <b-input
                   type="text"
@@ -183,11 +175,12 @@
                   required
                   maxlength="4"
                   icon="flag"
+                  readonly
                 >
                 </b-input>
               </b-field>
             </div>
-            <div class="column is-half">
+            <div class="column is-three-quarters">
               <b-field label="Name" label-position="on-border">
                 <b-input
                   type="text"
@@ -241,13 +234,11 @@
             </div>
             <div class="column is-one-quarter">
               <b-field label="Country" label-position="on-border">
-                <b-input
-                  type="text"
-                  maxlength="128"
-                  v-model.trim="currentChapter.Country"
-                  required
-                  icon="map"
-                />
+                <b-select v-model.trim="currentChapter.Country" @input="updateCountryFlag">
+                  <option v-for="country in allCountries" :value="country.Name" :key="country.Name">
+                    {{ country.Name }}
+                  </option>
+                </b-select>
               </b-field>
             </div>
             <div class="column is-one-quarter">
@@ -615,6 +606,12 @@ export default Vue.extend({
     },
   },
   methods: {
+    updateCountryFlag(name: string) {
+      console.log(name);
+      this.currentChapter.Flag = this.allCountries.filter((c) => {
+        return c.Name === name;
+      })[0].Flag;
+    },
     isMobile() {
       return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
         navigator.userAgent,
@@ -685,10 +682,6 @@ export default Vue.extend({
     confirmEditChapterModal() {
       if (!this.currentChapter.Name) {
         flashMessage('Chapter name is required!', true);
-        return;
-      }
-      if (!this.currentChapter.Flag) {
-        flashMessage('Flag emoji is required!', true);
         return;
       }
       if (!this.currentChapter.Region) {
@@ -896,6 +889,258 @@ export default Vue.extend({
       mentorFilter: 'All',
       filterName: '',
       loading: true,
+      allCountries: [
+        { Name: 'N/A', Flag: '🌎' },
+        { Name: 'Andorra', Flag: '🇦🇩' },
+        { Name: 'United Arab Emirates', Flag: '🇦🇪' },
+        { Name: 'Afghanistan', Flag: '🇦🇫' },
+        { Name: 'Antigua and Barbuda', Flag: '🇦🇬' },
+        { Name: 'Anguilla', Flag: '🇦🇮' },
+        { Name: 'Albania', Flag: '🇦🇱' },
+        { Name: 'Armenia', Flag: '🇦🇲' },
+        { Name: 'Angola', Flag: '🇦🇴' },
+        { Name: 'Antarctica', Flag: '🇦🇶' },
+        { Name: 'Argentina', Flag: '🇦🇷' },
+        { Name: 'American Samoa', Flag: '🇦🇸' },
+        { Name: 'Austria', Flag: '🇦🇹' },
+        { Name: 'Australia', Flag: '🇦🇺' },
+        { Name: 'Aruba', Flag: '🇦🇼' },
+        { Name: 'Åland Islands', Flag: '🇦🇽' },
+        { Name: 'Azerbaijan', Flag: '🇦🇿' },
+        { Name: 'Bosnia and Herzegovina', Flag: '🇧🇦' },
+        { Name: 'Barbados', Flag: '🇧🇧' },
+        { Name: 'Bangladesh', Flag: '🇧🇩' },
+        { Name: 'Belgium', Flag: '🇧🇪' },
+        { Name: 'Burkina Faso', Flag: '🇧🇫' },
+        { Name: 'Bulgaria', Flag: '🇧🇬' },
+        { Name: 'Bahrain', Flag: '🇧🇭' },
+        { Name: 'Burundi', Flag: '🇧🇮' },
+        { Name: 'Benin', Flag: '🇧🇯' },
+        { Name: 'Saint Barthélemy', Flag: '🇧🇱' },
+        { Name: 'Bermuda', Flag: '🇧🇲' },
+        { Name: 'Brunei Darussalam', Flag: '🇧🇳' },
+        { Name: 'Bolivia', Flag: '🇧🇴' },
+        { Name: 'Bonaire, Sint Eustatius and Saba', Flag: '🇧🇶' },
+        { Name: 'Brazil', Flag: '🇧🇷' },
+        { Name: 'Bahamas', Flag: '🇧🇸' },
+        { Name: 'Bhutan', Flag: '🇧🇹' },
+        { Name: 'Bouvet Island', Flag: '🇧🇻' },
+        { Name: 'Botswana', Flag: '🇧🇼' },
+        { Name: 'Belarus', Flag: '🇧🇾' },
+        { Name: 'Belize', Flag: '🇧🇿' },
+        { Name: 'Canada', Flag: '🇨🇦' },
+        { Name: 'Cocos (Keeling) Islands', Flag: '🇨🇨' },
+        { Name: 'Congo', Flag: '🇨🇩' },
+        { Name: 'Central African Republic', Flag: '🇨🇫' },
+        { Name: 'Congo - Brazzaville', Flag: '🇨🇬' },
+        { Name: 'Switzerland', Flag: '🇨🇭' },
+        { Name: "Côte D'Ivoire", Flag: '🇨🇮' },
+        { Name: 'Cook Islands', Flag: '🇨🇰' },
+        { Name: 'Chile', Flag: '🇨🇱' },
+        { Name: 'Cameroon', Flag: '🇨🇲' },
+        { Name: 'China', Flag: '🇨🇳' },
+        { Name: 'Colombia', Flag: '🇨🇴' },
+        { Name: 'Costa Rica', Flag: '🇨🇷' },
+        { Name: 'Cuba', Flag: '🇨🇺' },
+        { Name: 'Cape Verde', Flag: '🇨🇻' },
+        { Name: 'Curaçao', Flag: '🇨🇼' },
+        { Name: 'Christmas Island', Flag: '🇨🇽' },
+        { Name: 'Cyprus', Flag: '🇨🇾' },
+        { Name: 'Czech Republic', Flag: '🇨🇿' },
+        { Name: 'Germany', Flag: '🇩🇪' },
+        { Name: 'Djibouti', Flag: '🇩🇯' },
+        { Name: 'Denmark', Flag: '🇩🇰' },
+        { Name: 'Dominica', Flag: '🇩🇲' },
+        { Name: 'Dominican Republic', Flag: '🇩🇴' },
+        { Name: 'Algeria', Flag: '🇩🇿' },
+        { Name: 'Ecuador', Flag: '🇪🇨' },
+        { Name: 'Estonia', Flag: '🇪🇪' },
+        { Name: 'Egypt', Flag: '🇪🇬' },
+        { Name: 'Western Sahara', Flag: '🇪🇭' },
+        { Name: 'Eritrea', Flag: '🇪🇷' },
+        { Name: 'Spain', Flag: '🇪🇸' },
+        { Name: 'Ethiopia', Flag: '🇪🇹' },
+        { Name: 'Finland', Flag: '🇫🇮' },
+        { Name: 'Fiji', Flag: '🇫🇯' },
+        { Name: 'Falkland Islands (Malvinas)', Flag: '🇫🇰' },
+        { Name: 'Micronesia', Flag: '🇫🇲' },
+        { Name: 'Faroe Islands', Flag: '🇫🇴' },
+        { Name: 'France', Flag: '🇫🇷' },
+        { Name: 'Gabon', Flag: '🇬🇦' },
+        { Name: 'United Kingdom', Flag: '🇬🇧' },
+        { Name: 'Grenada', Flag: '🇬🇩' },
+        { Name: 'Georgia', Flag: '🇬🇪' },
+        { Name: 'French Guiana', Flag: '🇬🇫' },
+        { Name: 'Guernsey', Flag: '🇬🇬' },
+        { Name: 'Ghana', Flag: '🇬🇭' },
+        { Name: 'Gibraltar', Flag: '🇬🇮' },
+        { Name: 'Greenland', Flag: '🇬🇱' },
+        { Name: 'Gambia', Flag: '🇬🇲' },
+        { Name: 'Guinea', Flag: '🇬🇳' },
+        { Name: 'Guadeloupe', Flag: '🇬🇵' },
+        { Name: 'Equatorial Guinea', Flag: '🇬🇶' },
+        { Name: 'Greece', Flag: '🇬🇷' },
+        { Name: 'South Georgia', Flag: '🇬🇸' },
+        { Name: 'Guatemala', Flag: '🇬🇹' },
+        { Name: 'Guam', Flag: '🇬🇺' },
+        { Name: 'Guinea-Bissau', Flag: '🇬🇼' },
+        { Name: 'Guyana', Flag: '🇬🇾' },
+        { Name: 'Hong Kong', Flag: '🇭🇰' },
+        { Name: 'Heard Island and Mcdonald Islands', Flag: '🇭🇲' },
+        { Name: 'Honduras', Flag: '🇭🇳' },
+        { Name: 'Croatia', Flag: '🇭🇷' },
+        { Name: 'Haiti', Flag: '🇭🇹' },
+        { Name: 'Hungary', Flag: '🇭🇺' },
+        { Name: 'Indonesia', Flag: '🇮🇩' },
+        { Name: 'Ireland', Flag: '🇮🇪' },
+        { Name: 'Israel', Flag: '🇮🇱' },
+        { Name: 'Isle of Man', Flag: '🇮🇲' },
+        { Name: 'India', Flag: '🇮🇳' },
+        { Name: 'British Indian Ocean Territory', Flag: '🇮🇴' },
+        { Name: 'Iraq', Flag: '🇮🇶' },
+        { Name: 'Iran', Flag: '🇮🇷' },
+        { Name: 'Iceland', Flag: '🇮🇸' },
+        { Name: 'Italy', Flag: '🇮🇹' },
+        { Name: 'Jersey', Flag: '🇯🇪' },
+        { Name: 'Jamaica', Flag: '🇯🇲' },
+        { Name: 'Jordan', Flag: '🇯🇴' },
+        { Name: 'Japan', Flag: '🇯🇵' },
+        { Name: 'Kenya', Flag: '🇰🇪' },
+        { Name: 'Kyrgyzstan', Flag: '🇰🇬' },
+        { Name: 'Cambodia', Flag: '🇰🇭' },
+        { Name: 'Kiribati', Flag: '🇰🇮' },
+        { Name: 'Comoros', Flag: '🇰🇲' },
+        { Name: 'Saint Kitts and Nevis', Flag: '🇰🇳' },
+        { Name: 'North Korea', Flag: '🇰🇵' },
+        { Name: 'South Korea', Flag: '🇰🇷' },
+        { Name: 'Kuwait', Flag: '🇰🇼' },
+        { Name: 'Cayman Islands', Flag: '🇰🇾' },
+        { Name: 'Kazakhstan', Flag: '🇰🇿' },
+        { Name: "Lao People's Democratic Republic", Flag: '🇱🇦' },
+        { Name: 'Lebanon', Flag: '🇱🇧' },
+        { Name: 'Saint Lucia', Flag: '🇱🇨' },
+        { Name: 'Liechtenstein', Flag: '🇱🇮' },
+        { Name: 'Sri Lanka', Flag: '🇱🇰' },
+        { Name: 'Liberia', Flag: '🇱🇷' },
+        { Name: 'Lesotho', Flag: '🇱🇸' },
+        { Name: 'Lithuania', Flag: '🇱🇹' },
+        { Name: 'Luxembourg', Flag: '🇱🇺' },
+        { Name: 'Latvia', Flag: '🇱🇻' },
+        { Name: 'Libya', Flag: '🇱🇾' },
+        { Name: 'Morocco', Flag: '🇲🇦' },
+        { Name: 'Monaco', Flag: '🇲🇨' },
+        { Name: 'Moldova', Flag: '🇲🇩' },
+        { Name: 'Montenegro', Flag: '🇲🇪' },
+        { Name: 'Saint Martin (French Part)', Flag: '🇲🇫' },
+        { Name: 'Madagascar', Flag: '🇲🇬' },
+        { Name: 'Marshall Islands', Flag: '🇲🇭' },
+        { Name: 'Macedonia', Flag: '🇲🇰' },
+        { Name: 'Mali', Flag: '🇲🇱' },
+        { Name: 'Myanmar', Flag: '🇲🇲' },
+        { Name: 'Mongolia', Flag: '🇲🇳' },
+        { Name: 'Macao', Flag: '🇲🇴' },
+        { Name: 'Northern Mariana Islands', Flag: '🇲🇵' },
+        { Name: 'Martinique', Flag: '🇲🇶' },
+        { Name: 'Mauritania', Flag: '🇲🇷' },
+        { Name: 'Montserrat', Flag: '🇲🇸' },
+        { Name: 'Malta', Flag: '🇲🇹' },
+        { Name: 'Mauritius', Flag: '🇲🇺' },
+        { Name: 'Maldives', Flag: '🇲🇻' },
+        { Name: 'Malawi', Flag: '🇲🇼' },
+        { Name: 'Mexico', Flag: '🇲🇽' },
+        { Name: 'Malaysia', Flag: '🇲🇾' },
+        { Name: 'Mozambique', Flag: '🇲🇿' },
+        { Name: 'Namibia', Flag: '🇳🇦' },
+        { Name: 'New Caledonia', Flag: '🇳🇨' },
+        { Name: 'Niger', Flag: '🇳🇪' },
+        { Name: 'Norfolk Island', Flag: '🇳🇫' },
+        { Name: 'Nigeria', Flag: '🇳🇬' },
+        { Name: 'Nicaragua', Flag: '🇳🇮' },
+        { Name: 'Netherlands', Flag: '🇳🇱' },
+        { Name: 'Norway', Flag: '🇳🇴' },
+        { Name: 'Nepal', Flag: '🇳🇵' },
+        { Name: 'Nauru', Flag: '🇳🇷' },
+        { Name: 'Niue', Flag: '🇳🇺' },
+        { Name: 'New Zealand', Flag: '🇳🇿' },
+        { Name: 'Oman', Flag: '🇴🇲' },
+        { Name: 'Panama', Flag: '🇵🇦' },
+        { Name: 'Peru', Flag: '🇵🇪' },
+        { Name: 'French Polynesia', Flag: '🇵🇫' },
+        { Name: 'Papua New Guinea', Flag: '🇵🇬' },
+        { Name: 'Philippines', Flag: '🇵🇭' },
+        { Name: 'Pakistan', Flag: '🇵🇰' },
+        { Name: 'Poland', Flag: '🇵🇱' },
+        { Name: 'Saint Pierre and Miquelon', Flag: '🇵🇲' },
+        { Name: 'Pitcairn', Flag: '🇵🇳' },
+        { Name: 'Puerto Rico', Flag: '🇵🇷' },
+        { Name: 'Palestinian Territory', Flag: '🇵🇸' },
+        { Name: 'Portugal', Flag: '🇵🇹' },
+        { Name: 'Palau', Flag: '🇵🇼' },
+        { Name: 'Paraguay', Flag: '🇵🇾' },
+        { Name: 'Qatar', Flag: '🇶🇦' },
+        { Name: 'Réunion', Flag: '🇷🇪' },
+        { Name: 'Romania', Flag: '🇷🇴' },
+        { Name: 'Serbia', Flag: '🇷🇸' },
+        { Name: 'Russia', Flag: '🇷🇺' },
+        { Name: 'Rwanda', Flag: '🇷🇼' },
+        { Name: 'Saudi Arabia', Flag: '🇸🇦' },
+        { Name: 'Solomon Islands', Flag: '🇸🇧' },
+        { Name: 'Seychelles', Flag: '🇸🇨' },
+        { Name: 'Sudan', Flag: '🇸🇩' },
+        { Name: 'Sweden', Flag: '🇸🇪' },
+        { Name: 'Singapore', Flag: '🇸🇬' },
+        { Name: 'Saint Helena, Ascension and Tristan Da Cunha', Flag: '🇸🇭' },
+        { Name: 'Slovenia', Flag: '🇸🇮' },
+        { Name: 'Svalbard and Jan Mayen', Flag: '🇸🇯' },
+        { Name: 'Slovakia', Flag: '🇸🇰' },
+        { Name: 'Sierra Leone', Flag: '🇸🇱' },
+        { Name: 'San Marino', Flag: '🇸🇲' },
+        { Name: 'Senegal', Flag: '🇸🇳' },
+        { Name: 'Somalia', Flag: '🇸🇴' },
+        { Name: 'Suriname', Flag: '🇸🇷' },
+        { Name: 'South Sudan', Flag: '🇸🇸' },
+        { Name: 'Sao Tome and Principe', Flag: '🇸🇹' },
+        { Name: 'El Salvador', Flag: '🇸🇻' },
+        { Name: 'Sint Maarten (Dutch Part)', Flag: '🇸🇽' },
+        { Name: 'Syrian Arab Republic', Flag: '🇸🇾' },
+        { Name: 'Swaziland', Flag: '🇸🇿' },
+        { Name: 'Turks and Caicos Islands', Flag: '🇹🇨' },
+        { Name: 'Chad', Flag: '🇹🇩' },
+        { Name: 'French Southern Territories', Flag: '🇹🇫' },
+        { Name: 'Togo', Flag: '🇹🇬' },
+        { Name: 'Thailand', Flag: '🇹🇭' },
+        { Name: 'Tajikistan', Flag: '🇹🇯' },
+        { Name: 'Tokelau', Flag: '🇹🇰' },
+        { Name: 'Timor-Leste', Flag: '🇹🇱' },
+        { Name: 'Turkmenistan', Flag: '🇹🇲' },
+        { Name: 'Tunisia', Flag: '🇹🇳' },
+        { Name: 'Tonga', Flag: '🇹🇴' },
+        { Name: 'Turkey', Flag: '🇹🇷' },
+        { Name: 'Trinidad and Tobago', Flag: '🇹🇹' },
+        { Name: 'Tuvalu', Flag: '🇹🇻' },
+        { Name: 'Taiwan', Flag: '🇹🇼' },
+        { Name: 'Tanzania', Flag: '🇹🇿' },
+        { Name: 'Ukraine', Flag: '🇺🇦' },
+        { Name: 'Uganda', Flag: '🇺🇬' },
+        { Name: 'United States Minor Outlying Islands', Flag: '🇺🇲' },
+        { Name: 'United States', Flag: '🇺🇸' },
+        { Name: 'Uruguay', Flag: '🇺🇾' },
+        { Name: 'Uzbekistan', Flag: '🇺🇿' },
+        { Name: 'Vatican City', Flag: '🇻🇦' },
+        { Name: 'Saint Vincent and The Grenadines', Flag: '🇻🇨' },
+        { Name: 'Venezuela', Flag: '🇻🇪' },
+        { Name: 'Virgin Islands, British', Flag: '🇻🇬' },
+        { Name: 'Virgin Islands, U.S.', Flag: '🇻🇮' },
+        { Name: 'Viet Nam', Flag: '🇻🇳' },
+        { Name: 'Vanuatu', Flag: '🇻🇺' },
+        { Name: 'Wallis and Futuna', Flag: '🇼🇫' },
+        { Name: 'Samoa', Flag: '🇼🇸' },
+        { Name: 'Yemen', Flag: '🇾🇪' },
+        { Name: 'Mayotte', Flag: '🇾🇹' },
+        { Name: 'South Africa', Flag: '🇿🇦' },
+        { Name: 'Zambia', Flag: '🇿🇲' },
+        { Name: 'Zimbabwe', Flag: '🇿🇼' },
+      ],
     };
   },
 
