@@ -2236,6 +2236,7 @@ func main() {
 		go google_groups_sync.StartMailingListsSync(db)
 		go survey_mailer.StartSurveyMailer(db)
 		go international_mailer.StartInternationalMailer(db)
+		go international_mailer.StartInternationalActionFormProcessor(db)
 		go event_sync.StartExternalEventSync(db)
 		go form_processor.StartFormProcessor(db)
 	}

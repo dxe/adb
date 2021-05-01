@@ -892,7 +892,6 @@ export default Vue.extend({
       allCountries: [
         { Name: 'N/A', Flag: '🌎' },
         { Name: 'Andorra', Flag: '🇦🇩' },
-        { Name: 'United Arab Emirates', Flag: '🇦🇪' },
         { Name: 'Afghanistan', Flag: '🇦🇫' },
         { Name: 'Antigua and Barbuda', Flag: '🇦🇬' },
         { Name: 'Anguilla', Flag: '🇦🇮' },
@@ -1122,6 +1121,7 @@ export default Vue.extend({
         { Name: 'Tanzania', Flag: '🇹🇿' },
         { Name: 'Ukraine', Flag: '🇺🇦' },
         { Name: 'Uganda', Flag: '🇺🇬' },
+        { Name: 'United Arab Emirates', Flag: '🇦🇪' },
         { Name: 'United States Minor Outlying Islands', Flag: '🇺🇲' },
         { Name: 'United States', Flag: '🇺🇸' },
         { Name: 'Uruguay', Flag: '🇺🇾' },

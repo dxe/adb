@@ -1,6 +1,7 @@
 package model
 
 import (
+	"database/sql"
 	"fmt"
 
 	"github.com/dxe/adb/mailing_list_signup"
@@ -64,11 +65,13 @@ type DiscordFormData struct {
 }
 
 type InternationalActionFormData struct {
-	ChapterID     int    `json:"chapterID" db:"chapter_id"`
-	OrganizerName string `json:"organizerName" db:"organizer_name"`
-	LastAction    string `json:"lastAction" db:"last_action"`
-	Needs         string `json:"needs" db:"needs"`
-	Token         string `json:"token"`
+	ID            int          `db:"id"`
+	ChapterID     int          `json:"chapterID" db:"chapter_id"`
+	OrganizerName string       `json:"organizerName" db:"organizer_name"`
+	LastAction    string       `json:"lastAction" db:"last_action"`
+	Needs         string       `json:"needs" db:"needs"`
+	Token         string       `json:"token"`
+	SubmittedAt   sql.NullTime `db:"submitted_at"`
 }
 
 func SubmitApplicationForm(db *sqlx.DB, formData ApplicationFormData) error {
@@ -215,7 +218,6 @@ func SubmitDiscordForm(db *sqlx.DB, formData DiscordFormData) error {
 }
 
 func SubmitInternationalActionForm(db *sqlx.DB, formData InternationalActionFormData) error {
-
 	chapFromDB, err := GetChapterByID(db, formData.ChapterID)
 	if err != nil {
 		return err
@@ -232,6 +234,32 @@ func SubmitInternationalActionForm(db *sqlx.DB, formData InternationalActionForm
 
 	if err != nil {
 		return errors.Wrap(err, "failed to insert int'l action form data")
+	}
+
+	return nil
+}
+
+func GetUnprocessedInternationalActionFormResponses(db *sqlx.DB) ([]InternationalActionFormData, error) {
+	query := `SELECT id, chapter_id, organizer_name, last_action, needs, submitted_at
+from form_international_actions WHERE processed = 0`
+
+	var submissions []InternationalActionFormData
+	err := db.Select(&submissions, query)
+	if err != nil {
+		return nil, err
+	}
+
+	return submissions, nil
+}
+
+func MarkInternationalActionFormProcessed(db *sqlx.DB, id int) error {
+	_, err := db.Exec(`UPDATE form_international_actions
+		SET processed = 1
+		WHERE id = ?
+		`, id)
+
+	if err != nil {
+		return err
 	}
 
 	return nil

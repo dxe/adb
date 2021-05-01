@@ -246,6 +246,48 @@ func internationalActionMailerWrapper(db *sqlx.DB) {
 	}
 }
 
+func internationalActionFormProcessor(db *sqlx.DB) {
+	newResponses, err := model.GetUnprocessedInternationalActionFormResponses(db)
+	if err != nil {
+		fmt.Println("Error getting new int'l action form responses to process", err.Error())
+		return
+	}
+	for _, form := range newResponses {
+		chap, err := model.GetChapterByID(db, form.ChapterID)
+		if err != nil {
+			fmt.Println("Error looking up chapter for int'l action form response", form.ID, err.Error())
+			continue
+		}
+		chap.LastContact = form.SubmittedAt.Time.Format("2006-01-02")
+		chap.LastAction = form.LastAction
+		_, err = model.UpdateChapter(db, chap)
+		if err != nil {
+			fmt.Println("Failed to update chapter with int'l action form response data", form.ID, err.Error())
+			continue
+		}
+		if form.Needs != "" {
+			err = mailer.Send(mailer.Message{
+				FromName:       "DxE International Action Form",
+				FromAddress:    "noreply@directactioneverywhere.com",
+				ToName:         "International Coordination",
+				ToAddress:      "internationalcoordination@directactioneverywhere.com",
+				ReplyToAddress: "tech@dxe.io",
+				Subject:        fmt.Sprintf("Assistance needed for %v (%v)", chap.Name, form.OrganizerName),
+				BodyHTML:       fmt.Sprintf("<p>%v</p>", form.Needs),
+				CC:             []string{"jake@dxe.io"},
+			})
+			if err != nil {
+				log.Println("Failed to send email to int'l coordination for int'l action form", form.ID)
+			}
+		}
+		err = model.MarkInternationalActionFormProcessed(db, form.ID)
+		if err != nil {
+			fmt.Println("Failed to mark int'l action form as processed", form.ID, err.Error())
+			continue
+		}
+	}
+}
+
 // Sends emails every 60 minutes.
 // Should be run in a goroutine.
 func StartInternationalMailer(db *sqlx.DB) {
@@ -259,5 +301,16 @@ func StartInternationalMailer(db *sqlx.DB) {
 		log.Println("Finished international action mailer")
 
 		time.Sleep(60 * time.Minute)
+	}
+}
+
+// Process International Action form responses every 5 minutes.
+// Should be run in a goroutine.
+func StartInternationalActionFormProcessor(db *sqlx.DB) {
+	for {
+		log.Println("Starting international action form processor")
+		internationalActionFormProcessor(db)
+		log.Println("Finished international action form processor")
+		time.Sleep(5 * time.Minute)
 	}
 }
