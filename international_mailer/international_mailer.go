@@ -95,7 +95,7 @@ Direct Action Everywhere Organizer</p>
 
 }
 
-func sendInternationalActionEmail(chapter model.ChapterWithToken) {
+func sendInternationalActionEmail(db *sqlx.DB, chapter model.ChapterWithToken) {
 
 	subject := "PLEASE READ - New database of DxE chapters and May Global Strategy Call"
 	body := `
@@ -164,6 +164,14 @@ func sendInternationalActionEmail(chapter model.ChapterWithToken) {
 		}
 	}
 
+	chapter.LastCheckinEmailSent = sql.NullTime{
+		Time:  time.Now(),
+		Valid: true,
+	}
+	_, err := model.UpdateChapter(db, chapter)
+	if err != nil {
+		panic("Failed to update chapter last check-in email sent time " + err.Error())
+	}
 }
 
 func internationalMailerWrapper(db *sqlx.DB) {
@@ -210,7 +218,6 @@ func internationalActionMailerWrapper(db *sqlx.DB) {
 		panic("Failed to get chapters for int'l action mailer " + err.Error())
 	}
 	for _, chap := range chapters {
-
 		neverSentEmail := !chap.LastCheckinEmailSent.Valid
 		sentEmailBeforeCurrentMonth := chap.LastCheckinEmailSent.Valid && chap.LastCheckinEmailSent.Time.Before(startOfCurrentMonth)
 		sentEmailToday := chap.LastCheckinEmailSent.Valid && chap.LastCheckinEmailSent.Time.Month() == now.Month() && chap.LastCheckinEmailSent.Time.Day() == now.Day()
@@ -218,9 +225,9 @@ func internationalActionMailerWrapper(db *sqlx.DB) {
 		switch now.Day() {
 		case 1:
 			if neverSentEmail || sentEmailBeforeCurrentMonth {
-				sendInternationalActionEmail(chap)
+				sendInternationalActionEmail(db, chap)
 			}
-		case 8:
+		case 7:
 			if neverSentEmail || sentEmailToday {
 				continue
 			}
@@ -228,22 +235,14 @@ func internationalActionMailerWrapper(db *sqlx.DB) {
 			lastContactDate, err := time.Parse(dateLayout, chap.LastContact)
 			if err != nil {
 				fmt.Printf("Error parsing last contact date for chapter %v", chap.Name)
-				return
+				continue
 			}
 			if lastContactDate.Before(startOfCurrentMonth) {
 				// Chapter hasn't responded this month, so send the email again.
-				sendInternationalActionEmail(chap)
+				sendInternationalActionEmail(db, chap)
 			}
 		default:
 			continue
-		}
-		chap.LastCheckinEmailSent = sql.NullTime{
-			Time:  time.Now(),
-			Valid: true,
-		}
-		_, err := model.UpdateChapter(db, chap)
-		if err != nil {
-			panic("Failed to update chapter last check-in email sent time " + err.Error())
 		}
 	}
 }
