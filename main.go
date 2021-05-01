@@ -619,6 +619,7 @@ func (c MainController) ChapterSaveHandler(w http.ResponseWriter, r *http.Reques
 
 	var chapID int
 	if chap.ChapterID == 0 {
+		chap.EmailToken = generateToken()
 		chapID, err = model.InsertChapter(c.db, chap)
 	} else {
 		chapID, err = model.UpdateChapter(c.db, chap)
@@ -2173,6 +2174,22 @@ func main() {
 		go international_mailer.StartInternationalMailer(db)
 		go event_sync.StartExternalEventSync(db)
 		go form_processor.StartFormProcessor(db)
+	}
+
+	// TEMPORARY: GENERATE TOKENS (TODO: remove this after running once)
+	chapters, err := model.GetAllChapters(db)
+	if err != nil {
+		fmt.Println("error getting all chapters")
+	}
+	for _, chap := range chapters {
+		if chap.EmailToken == "" {
+			chap.EmailToken = generateToken()
+			_, err = model.UpdateChapter(db, chap)
+			if err != nil {
+				fmt.Println(err)
+				fmt.Println("error adding email_token to chapter")
+			}
+		}
 	}
 
 	fmt.Println("Listening on localhost:" + config.Port)

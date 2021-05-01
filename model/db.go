@@ -38,6 +38,7 @@ func WipeDatabase(db *sqlx.DB) {
 	db.MustExec(`DROP TABLE IF EXISTS form_interest`)
 	db.MustExec(`DROP TABLE IF EXISTS form_international`)
 	db.MustExec(`DROP TABLE IF EXISTS form_discord`)
+	db.MustExec(`DROP TABLE IF EXISTS form_international_actions`)
 
 	db.MustExec(`
 CREATE TABLE activists (
@@ -256,6 +257,7 @@ CREATE TABLE fb_pages (
   last_contact VARCHAR(10) DEFAULT '',
   last_action VARCHAR(10) DEFAULT '',
   organizers JSON,
+  email_token VARCHAR(64) DEFAULT NULL,
   last_checkin_email_sent TIMESTAMP DEFAULT NULL
 )
 `)
@@ -385,6 +387,19 @@ CREATE TABLE form_discord (
   country varchar(256) NOT NULL DEFAULT '',
   lat float(10,6) DEFAULT NULL,
   lng float(10,6) DEFAULT NULL,
+  PRIMARY KEY (id)
+)
+`)
+
+	db.MustExec(`
+CREATE TABLE form_international_actions (
+  id int(11) NOT NULL AUTO_INCREMENT,
+  chapter_id int(11) NOT NULL,
+  organizer_name varchar(128) NOT NULL,
+  submitted_at timestamp DEFAULT CURRENT_TIMESTAMP,
+  last_action VARCHAR(10) DEFAULT '',
+  needs TEXT,
+  processed BOOLEAN DEFAULT FALSE,
   PRIMARY KEY (id)
 )
 `)

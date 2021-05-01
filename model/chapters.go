@@ -58,6 +58,7 @@ type ChapterWithToken struct {
 	LastAction           string       `db:"last_action"`
 	Organizers           Organizers   `db:"organizers"`
 	LastCheckinEmailSent sql.NullTime `db:"last_checkin_email_sent"`
+	EmailToken           string       `db:"email_token"`
 }
 
 type Organizer struct {
@@ -126,7 +127,7 @@ func GetAllChapters(db *sqlx.DB) ([]ChapterWithToken, error) {
 		  AND fb_events.start_time < NOW()
 		), "") AS last_fb_event,
 
-		mentor, country, notes, last_contact, last_action, organizers, last_checkin_email_sent
+		mentor, country, notes, last_contact, last_action, organizers, last_checkin_email_sent, IFNULL(email_token,"") as email_token
 		
 		FROM fb_pages
 		ORDER BY name`
@@ -183,7 +184,8 @@ func UpdateChapter(db *sqlx.DB, page ChapterWithToken) (int, error) {
 		notes = :notes,
 		last_contact = :last_contact,
 		last_action = :last_action,
-		organizers = :organizers
+		organizers = :organizers,
+		email_token = :email_token
 		WHERE chapter_id = :chapter_id`, page)
 	if err != nil {
 		return 0, errors.Wrapf(err, "failed to update chapter %d", page.ID)
@@ -203,8 +205,8 @@ func DeleteChapter(db *sqlx.DB, chapter int) error {
 
 // for the chapter management admin page on the ADB itself
 func InsertChapter(db *sqlx.DB, page ChapterWithToken) (int, error) {
-	res, err := db.NamedExec(`INSERT INTO fb_pages ( id, name, flag, fb_url, insta_url, twitter_url, email, region, lat, lng, mentor, country, notes, last_contact, last_action, organizers )
-		VALUES ( :id, :name, :flag, :fb_url, :insta_url, :twitter_url, :email, :region, :lat, :lng, :mentor, :country, :notes, :last_contact, :last_action, :organizers )`, page)
+	res, err := db.NamedExec(`INSERT INTO fb_pages ( id, name, flag, fb_url, insta_url, twitter_url, email, region, lat, lng, mentor, country, notes, last_contact, last_action, organizers, email_token )
+		VALUES ( :id, :name, :flag, :fb_url, :insta_url, :twitter_url, :email, :region, :lat, :lng, :mentor, :country, :notes, :last_contact, :last_action, :organizers, :email_token )`, page)
 	if err != nil {
 		return 0, errors.Wrapf(err, "failed to insert chapter %d", page.ID)
 	}
