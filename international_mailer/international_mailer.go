@@ -104,13 +104,13 @@ func sendInternationalActionEmail(chapter model.ChapterWithToken) {
 	International Coordination Working Group’s messaging and tasks and will automatically track international actions that
 	have facebook event pages if you are just able to make our tech team lead <a href="https://www.facebook.com/jhobbs91">Jake Hobbs</a> an admin of your chapter’s facebook
 	page. He won’t read your messages or interact with your page at all except to create and maintain an automated portal
-	that puts your upcoming event pages on <a href="http://dxe.io/events">"DxE’s website</a> so they can be found by visitors who are looking for events in
+	that puts your upcoming event pages on <a href="http://dxe.io/events">DxE’s website</a> so they can be found by visitors who are looking for events in
 	your area. If you haven’t already, please add <a href="https://www.facebook.com/jhobbs91">Jake</a> as an admin now.</p>
 	
 	<p>Also, with the new ADB, we’ll be better able to keep track of assuring that all chapters are organizing actions
 	(online or in person) each quarter in order to remain as an active chapter in the DxE International Organizers Network.
 	In place of the monthly report forms that we’ve used lately, your chapter will automatically receive this email on the
-	first and seventh of each month with <a href="">a link to a short form to report your previous last actions or ask for any assistance</a>.
+	first and seventh of each month with <a href="` + fmt.Sprintf("https://adb.dxe.io/international_actions/%d/%v", chapter.ID, chapter.EmailToken) + `">a link to a short form to report your previous last actions or ask for any assistance</a>.
 	Please keep an eye out for the email on the 1st of the month so we can be sure of any actions that you did the previous
 	month. Actions need not be an elaborate protest, especially during the pandemic, and can simply just be a social media
 	challenge or organizing your community members to email representatives or businesses with an ask.</p>
@@ -118,7 +118,7 @@ func sendInternationalActionEmail(chapter model.ChapterWithToken) {
 	<p>If you aren't able to do an action in a quarter, we will remove your chapter and invite you to return later if you
 	like or we can adjust your chapter’s status to “Hiatus” temporarily, but ideally, we’d just love for you to take some
 	form of action even if it’s online. Of course, In-person actions are great so if conditions permit, please consider
-	organizing a <a href="https://www.facebook.com/events/276596890763352"Let Dairy Die protest</a> on or around Mothers Day
+	organizing a <a href="https://www.facebook.com/events/276596890763352">Let Dairy Die protest</a> on or around Mothers Day
 	this month or <a href="https://docs.google.com/spreadsheets/d/1-y_r8BgepiHpnOYyzoJISn30gNHuChUTBYxSUGWFSMg/edit?usp=sharing">list your address here</a> if you’d like to be
 	sent materials to do postering or a banner drop promoting Netflix’s Seaspiracy in your city. As always, also
 	please just consider organising whatever action works for your chapter’s goals. Thank you!</p>
@@ -222,6 +222,7 @@ func internationalMailerWrapper(db *sqlx.DB) {
 
 }
 
+// TODO: separate the internal organizer mailer functionality from the external new signup mailer
 // Sends emails every 60 minutes.
 // Should be run in a goroutine.
 func StartInternationalMailer(db *sqlx.DB) {
