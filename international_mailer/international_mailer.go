@@ -110,7 +110,7 @@ func sendInternationalActionEmail(chapter model.ChapterWithToken) {
 	<p>Also, with the new ADB, we’ll be better able to keep track of assuring that all chapters are organizing actions
 	(online or in person) each quarter in order to remain as an active chapter in the DxE International Organizers Network.
 	In place of the monthly report forms that we’ve used lately, your chapter will automatically receive this email on the
-	first and seventh of each month with <a href="` + fmt.Sprintf("https://adb.dxe.io/international_actions/%d/%v", chapter.ID, chapter.EmailToken) + `">a link to a short form to report your previous last actions or ask for any assistance</a>.
+	first and seventh of each month with <a href="` + fmt.Sprintf("https://adb.dxe.io/international_actions/%d/%v", chapter.ChapterID, chapter.EmailToken) + `">a link to a short form to report your previous last actions or ask for any assistance</a>.
 	Please keep an eye out for the email on the 1st of the month so we can be sure of any actions that you did the previous
 	month. Actions need not be an elaborate protest, especially during the pandemic, and can simply just be a social media
 	challenge or organizing your community members to email representatives or businesses with an ask.</p>
