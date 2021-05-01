@@ -96,6 +96,13 @@ Direct Action Everywhere Organizer</p>
 }
 
 func sendInternationalActionEmail(chapter model.ChapterWithToken) {
+
+	// TODO: remove this
+	// This is here to test for three chapters before deploying globally
+	if !(chapter.ChapterID == 47 || chapter.ChapterID == 48) {
+		return
+	}
+
 	subject := "PLEASE READ - New database of DxE chapters and May Global Strategy Call"
 	body := `
 	<p>Hi all!</p>
@@ -148,29 +155,15 @@ func sendInternationalActionEmail(chapter model.ChapterWithToken) {
 
 	// send to each person in the chapter
 	for _, e := range toEmails {
-		fmt.Printf("Should send email to %v\n", e)
-		//err := mailer.Send(mailer.Message{
-		//	FromName:    "Paul Darwin Picklesimer",
-		//	FromAddress: "paul@directactioneverywhere.com",
-		//	ToName:      "DxE " + chapter.Name,
-		//	ToAddress:   e,
-		//	Subject:     subject,
-		//	BodyHTML:    body,
-		//})
-		//if err != nil {
-		//	log.Println("Failed to send email for international form submission")
-		//}
-	}
-
-	// TODO: remove these test emails once you uncomment the above
-	if chapter.ChapterID == 20 || chapter.ChapterID == 47 || chapter.ChapterID == 48 {
+		fmt.Printf("Sending int'l action email to %v\n", e)
 		err := mailer.Send(mailer.Message{
 			FromName:    "Paul Darwin Picklesimer",
 			FromAddress: "paul@directactioneverywhere.com",
 			ToName:      "DxE " + chapter.Name,
-			ToAddress:   "jake@dxe.io",
+			ToAddress:   e,
 			Subject:     subject,
 			BodyHTML:    body,
+			CC:          []string{"jake@directactioneverywhere.com"},
 		})
 		if err != nil {
 			log.Println("Failed to send email for international form submission")
@@ -195,19 +188,60 @@ func internationalMailerWrapper(db *sqlx.DB) {
 	for _, rec := range records {
 		processFormSubmission(db, rec)
 	}
+}
 
-	// TODO: only run this on the 1st and 8th of the month.
-	// TODO: don't email chapters on the 8th if last sent time was not the 1st of current month, since they are probably a brand new chapter.
+func internationalActionMailerWrapper(db *sqlx.DB) {
+	// Only run on the 1st or 8th of the month b/w 4pm and midnight UTC (9am-5pm PT).
+	now := time.Now()
+	if now.Day() != 1 && now.Day() != 8 {
+		return
+	}
+	if now.Hour() < 4 || now.Hour() > 11 {
+		return
+	}
+
 	// Get chapters to email the monthly "international action" form to.
 	chapters, err := model.GetAllChapters(db)
 	if err != nil {
 		panic("Failed to get chapters for int'l action mailer " + err.Error())
 	}
 	for _, chap := range chapters {
-		// TODO: also check if the last email was sent last month
-		// TODO: also check if an email was sent this month but it's been over 8 days and no reply
-		if !chap.LastCheckinEmailSent.Valid {
-			sendInternationalActionEmail(chap)
+
+		switch now.Day() {
+		case 1:
+			// If they've never been sent an email, send it.
+			if !chap.LastCheckinEmailSent.Valid {
+				sendInternationalActionEmail(chap)
+				break
+			}
+			// If they have been sent an email, only send if the last email was not this month.
+			if chap.LastCheckinEmailSent.Time.Month() < now.Month() {
+				sendInternationalActionEmail(chap)
+			}
+		case 8:
+			if !chap.LastCheckinEmailSent.Valid {
+				// Chapter didn't receive an email on the 1st (or ever), so they are probably a new chapter that
+				// was created this month. So we do not want to send an email to them this month.
+				continue
+			}
+			if chap.LastCheckinEmailSent.Time.Month() == now.Month() && chap.LastCheckinEmailSent.Time.Day() == now.Day() {
+				// We already sent them an email today, so don't email them again.
+				continue
+			}
+			dateLayout := "2006-01-02"
+			lastContactDate, err := time.Parse(dateLayout, chap.LastContact)
+			if err != nil {
+				fmt.Printf("Error parsing last contact date for chapter %v", chap.Name)
+				return
+			}
+			if lastContactDate.Month() < now.Month() {
+				// Chapter hasn't responded this month, so send the email again.
+				sendInternationalActionEmail(chap)
+			}
+		default:
+			// This should never be reached since we have a guard clause at the beginning of the function
+			// that checks if they day of the month is the 1st or 8th.
+			continue
 		}
 		// update LastCheckinEmailSent time
 		chap.LastCheckinEmailSent = sql.NullTime{
@@ -219,10 +253,8 @@ func internationalMailerWrapper(db *sqlx.DB) {
 			panic("Failed to update chapter last check-in email sent time " + err.Error())
 		}
 	}
-
 }
 
-// TODO: separate the internal organizer mailer functionality from the external new signup mailer
 // Sends emails every 60 minutes.
 // Should be run in a goroutine.
 func StartInternationalMailer(db *sqlx.DB) {
@@ -230,6 +262,11 @@ func StartInternationalMailer(db *sqlx.DB) {
 		log.Println("Starting international mailer")
 		internationalMailerWrapper(db)
 		log.Println("Finished international mailer")
+
+		log.Println("Starting international action mailer")
+		internationalActionMailerWrapper(db)
+		log.Println("Finished international action mailer")
+
 		time.Sleep(60 * time.Minute)
 	}
 }
