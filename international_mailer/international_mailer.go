@@ -259,7 +259,9 @@ func internationalActionFormProcessor(db *sqlx.DB) {
 			continue
 		}
 		chap.LastContact = form.SubmittedAt.Time.Format("2006-01-02")
-		chap.LastAction = form.LastAction
+		if form.LastAction != "" {
+			chap.LastAction = form.LastAction
+		}
 		_, err = model.UpdateChapter(db, chap)
 		if err != nil {
 			fmt.Println("Failed to update chapter with int'l action form response data", form.ID, err.Error())
