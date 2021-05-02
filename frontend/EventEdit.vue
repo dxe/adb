@@ -67,16 +67,11 @@
               v-on:keyup.9="changed('tab', index)"
               v-on:awesomplete-selectcomplete="changed('select', index)"
             />
+            <!-- TODO: clean up this logic and move it to a method -->
             <b-icon
-              v-if="attendee && shouldShowIndicator(attendee) && hasEmailAndPhone(attendee)"
-              icon="check"
-              type="is-success"
-              class="is-right"
-            ></b-icon>
-            <b-icon
-              v-if="attendee && shouldShowIndicator(attendee) && !hasEmailAndPhone(attendee)"
-              icon="asterisk"
-              type="is-danger"
+              v-if="attendee"
+              :icon="getAttendeeStatusIcon(attendee).name"
+              :type="getAttendeeStatusIcon(attendee).color"
               class="is-right"
             ></b-icon>
           </div>
@@ -117,6 +112,11 @@ import moment from 'moment';
 // Like Awesomplete.FILTER_CONTAINS, but internal whitespace matches anything.
 function nameFilter(text: string, input: string) {
   return RegExp(Awesomplete.$.regExpEscape(input.trim()).replace(/ +/g, '.*'), 'i').test(text);
+}
+
+interface Icon {
+  name: string;
+  color: string;
 }
 
 export default Vue.extend({
@@ -268,6 +268,25 @@ export default Vue.extend({
   },
 
   methods: {
+    getAttendeeStatusIcon(attendee: string): Icon {
+      if (this.checkForDuplicate(attendee)) {
+        return { name: 'numeric-2-box-outline', color: 'is-danger' };
+      }
+      if (!this.allActivistsSet.has(attendee)) {
+        return { name: 'account-plus', color: 'is-primary' };
+      }
+      if (this.hasEmail(attendee) && this.hasPhone(attendee)) {
+        return { name: 'check', color: 'is-success' };
+      }
+      if (!this.hasEmail(attendee)) {
+        return { name: 'email-off', color: 'is-info' };
+      }
+      if (!this.hasPhone(attendee)) {
+        return { name: 'phone-off', color: 'is-info' };
+      }
+      return {} as Icon;
+    },
+
     setDateToToday() {
       this.date = moment().format('YYYY-MM-DD');
     },
@@ -356,34 +375,13 @@ export default Vue.extend({
         // TODO(mdempsky): Figure out how to handle this properly.
         this.attendees[y] = (inputs.get(y) as HTMLInputElement).value;
       }
+    },
 
-      // Update attendee warnings.
-      // TODO(mdempsky): Let vue handle this.
-      let seen = new Set();
-      for (let i = 0; i < this.attendees.length; i++) {
-        const name = this.attendees[i].trim();
-
-        let warning = '';
-        if (name != '') {
-          if (!this.allActivistsSet.has(name)) {
-            warning = 'unknown';
-          } else if (seen.has(name)) {
-            warning = 'duplicate';
-          } else {
-            seen.add(name);
-          }
-        }
-
-        if (i < inputs.length) {
-          inputs.get(i).dataset.warning = warning;
-
-          if (name && (x === 'select' || x === 'tab') && warning !== 'duplicate') {
-            // keep track of activists actually added to event after a selection.
-            this.showIndicatorForAttendee[JSON.stringify(name)] = true;
-            this.$forceUpdate();
-          }
-        }
-      }
+    checkForDuplicate(value: string) {
+      const found = this.attendees.filter((a) => {
+        return a === value;
+      });
+      return found.length > 1;
     },
 
     save() {
@@ -551,20 +549,7 @@ export default Vue.extend({
         },
       });
     },
-    shouldShowIndicator(name: string) {
-      if (!name) {
-        return;
-      }
-
-      name = JSON.stringify(name);
-
-      if (this.showIndicatorForAttendee[name]) {
-        return true;
-      }
-
-      return;
-    },
-    hasEmailAndPhone(name: string) {
+    hasEmail(name: string) {
       if (!name) {
         return;
       }
@@ -575,7 +560,20 @@ export default Vue.extend({
 
       let activistFull = this.allActivistsFull[name];
 
-      return activistFull && activistFull.email && activistFull.phone;
+      return activistFull && activistFull.email;
+    },
+    hasPhone(name: string) {
+      if (!name) {
+        return;
+      }
+
+      if (!this.allActivistsFull) {
+        return;
+      }
+
+      let activistFull = this.allActivistsFull[name];
+
+      return activistFull && activistFull.phone;
     },
     shouldShowSuppressSurveyCheckbox() {
       // only show checkbox if a survey will be sent for this event
@@ -604,14 +602,6 @@ export default Vue.extend({
 
 .awesomplete mark {
   padding: 0;
-}
-
-.attendee-input[data-warning='duplicate'] {
-  border: 2px solid red;
-}
-
-.attendee-input[data-warning='unknown'] {
-  border: 2px solid yellow;
 }
 
 #attendee-rows {

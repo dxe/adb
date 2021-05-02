@@ -63,7 +63,7 @@
         <b-navbar-item href="/leaderboard" :active="page === 'Leaderboard'">
           Leaderboard
         </b-navbar-item>
-        <b-navbar-item href="list_activists" :active="page === 'ActivistList'">
+        <b-navbar-item href="/list_activists" :active="page === 'ActivistList'">
           All Activists
         </b-navbar-item>
       </b-navbar-dropdown>
