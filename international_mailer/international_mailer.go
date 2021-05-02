@@ -217,6 +217,11 @@ func internationalActionMailerWrapper(db *sqlx.DB) {
 		panic("Failed to get chapters for int'l action mailer " + err.Error())
 	}
 	for _, chap := range chapters {
+
+		if chap.Region == "Online" {
+			continue
+		}
+
 		neverSentEmail := !chap.LastCheckinEmailSent.Valid
 		sentEmailBeforeCurrentMonth := chap.LastCheckinEmailSent.Valid && chap.LastCheckinEmailSent.Time.Before(startOfCurrentMonth)
 		sentEmailToday := chap.LastCheckinEmailSent.Valid && chap.LastCheckinEmailSent.Time.Year() == now.Year() && chap.LastCheckinEmailSent.Time.YearDay() == now.YearDay()
