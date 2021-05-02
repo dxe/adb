@@ -143,7 +143,23 @@ func GetAllChapters(db *sqlx.DB) ([]ChapterWithToken, error) {
 
 // for the chapter management admin page on the ADB itself
 func GetChapterByID(db *sqlx.DB, id int) (ChapterWithToken, error) {
-	query := `SELECT id, chapter_id, name, flag, fb_url, twitter_url, insta_url, email, region, lat, lng, token, eventbrite_id, eventbrite_token, ml_type, ml_radius, ml_id, mentor, country, notes, last_contact, last_action, organizers, last_checkin_email_sent, IFNULL(email_token,"") as email_token
+	query := `SELECT fb_pages.id, chapter_id, fb_pages.name, flag, fb_url, twitter_url, insta_url, email, region, fb_pages.lat, fb_pages.lng, token, fb_pages.eventbrite_id, eventbrite_token, ml_type, ml_radius, ml_id,
+	
+		@last_update := IFNULL((
+		  SELECT MAX(last_update) AS last_update
+		  FROM fb_events
+		  WHERE fb_pages.id = fb_events.page_id    
+		), "") AS last_update,
+		
+		@last_fb_event := IFNULL((
+		  SELECT DATE(MAX(fb_events.start_time)) AS start_time
+		  FROM fb_events
+		  WHERE fb_pages.id = fb_events.page_id
+		  AND fb_events.start_time < NOW()
+		), "") AS last_fb_event,
+
+		mentor, country, notes, last_contact, last_action, organizers, last_checkin_email_sent, IFNULL(email_token,"") as email_token
+		
 		FROM fb_pages
 		WHERE chapter_id = ?`
 	var pages []ChapterWithToken
