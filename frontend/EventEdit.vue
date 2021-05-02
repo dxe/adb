@@ -67,7 +67,6 @@
               v-on:keyup.9="changed('tab', index)"
               v-on:awesomplete-selectcomplete="changed('select', index)"
             />
-            <!-- TODO: clean up this logic and move it to a method -->
             <b-icon
               v-if="attendee"
               :icon="getAttendeeStatusIcon(attendee).name"
