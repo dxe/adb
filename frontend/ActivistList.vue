@@ -206,7 +206,7 @@ import {
 } from './flash_message';
 import { EventBus } from './EventBus';
 import debounce from 'debounce';
-import moment from 'moment';
+import * as dayjs from 'dayjs';
 
 interface Activist {
   id: number;
@@ -900,7 +900,7 @@ function optionsButtonRenderer(
 
 // Returns the first of the previous month.
 function initialDateFromValue() {
-  return moment()
+  return dayjs()
     .subtract(1, 'months')
     .startOf('month')
     .format('YYYY-MM-DD');
@@ -908,7 +908,7 @@ function initialDateFromValue() {
 
 // Returns the current date.
 function initialDateToValue() {
-  return moment().format('YYYY-MM-DD');
+  return dayjs().format('YYYY-MM-DD');
 }
 
 function generateBooleanSortFn(field: string, ascending: boolean) {

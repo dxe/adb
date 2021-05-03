@@ -72,7 +72,7 @@
 import Vue from 'vue';
 import AdbPage from './AdbPage.vue';
 import { flashMessage, initializeFlashMessage } from './flash_message';
-import moment from 'moment';
+import * as dayjs from 'dayjs';
 
 export default Vue.extend({
   name: 'form-international-actions',
@@ -100,9 +100,10 @@ export default Vue.extend({
         flashMessage('Please select the date of your last action from the calendar.', true);
         return;
       }
-      const lastAction = moment(this.lastAction).isValid()
-        ? moment(this.lastAction).format('YYYY-MM-DD')
-        : '';
+      const lastAction =
+        this.lastAction && dayjs(this.lastAction || '').isValid()
+          ? dayjs(this.lastAction || '').format('YYYY-MM-DD')
+          : '';
       this.submitting = true;
       const data = JSON.stringify({
         chapterID: this.chapterId,
@@ -142,7 +143,7 @@ export default Vue.extend({
       organizerName: '',
       lastAction: null,
       needs: '',
-      month: moment()
+      month: dayjs()
         .subtract(1, 'month')
         .startOf('month')
         .toDate(),

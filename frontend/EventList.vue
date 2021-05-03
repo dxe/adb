@@ -186,8 +186,7 @@
 import Vue from 'vue';
 import AdbPage from './AdbPage.vue';
 import { flashMessage, initializeFlashMessage } from './flash_message';
-import moment from 'moment';
-import debounce from 'debounce';
+import * as dayjs from 'dayjs';
 
 interface Event {
   // Supplied by server.
@@ -215,8 +214,8 @@ export default Vue.extend({
   },
   data() {
     // Default search from the 1st of last month to today.
-    const today = moment().format('YYYY-MM-DD');
-    const start = moment()
+    const today = dayjs().format('YYYY-MM-DD');
+    const start = dayjs()
       .subtract(1, 'months')
       .startOf('month')
       .format('YYYY-MM-DD');

@@ -106,7 +106,7 @@ import {
   initializeFlashMessage,
   setFlashMessageSuccessCookie,
 } from './flash_message';
-import moment from 'moment';
+import * as dayjs from 'dayjs';
 
 // Like Awesomplete.FILTER_CONTAINS, but internal whitespace matches anything.
 function nameFilter(text: string, input: string) {
@@ -287,7 +287,8 @@ export default Vue.extend({
     },
 
     setDateToToday() {
-      this.date = moment().format('YYYY-MM-DD');
+      console.log(dayjs());
+      this.date = dayjs().format('YYYY-MM-DD');
     },
 
     dirty() {

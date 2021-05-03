@@ -538,7 +538,7 @@ import Vue from 'vue';
 import AdbPage from './AdbPage.vue';
 import { flashMessage } from './flash_message';
 import { focus } from './directives/focus';
-import moment from 'moment';
+import * as dayjs from 'dayjs';
 
 interface Chapter {
   ChapterID: number;
@@ -631,11 +631,11 @@ export default Vue.extend({
 
       // Parse strings to dates.
       if (this.currentChapter.LastContact != undefined) {
-        const m = moment(this.currentChapter.LastContact);
+        const m = dayjs(this.currentChapter.LastContact);
         this.currentChapter.LastContactParsed = m.isValid() ? m.toDate() : null;
       }
       if (this.currentChapter.LastAction != undefined) {
-        const m = moment(this.currentChapter.LastAction);
+        const m = dayjs(this.currentChapter.LastAction);
         this.currentChapter.LastActionParsed = m.isValid() ? m.toDate() : null;
       }
 
@@ -705,12 +705,12 @@ export default Vue.extend({
       if (this.currentChapter.LastContactParsed) {
         console.log('last contact parsed TRUE');
         console.log(this.currentChapter.LastContactParsed);
-        this.currentChapter.LastContact = moment(this.currentChapter.LastContactParsed).format(
+        this.currentChapter.LastContact = dayjs(this.currentChapter.LastContactParsed).format(
           'YYYY-MM-DD',
         );
       }
       if (this.currentChapter.LastActionParsed) {
-        this.currentChapter.LastAction = moment(this.currentChapter.LastActionParsed).format(
+        this.currentChapter.LastAction = dayjs(this.currentChapter.LastActionParsed).format(
           'YYYY-MM-DD',
         );
       }
@@ -829,13 +829,9 @@ export default Vue.extend({
     },
     setDateToToday(field: string) {
       if (field === 'LastContact') {
-        this.currentChapter.LastContactParsed = moment()
-          .local()
-          .toDate();
+        this.currentChapter.LastContactParsed = dayjs().toDate();
       } else if (field === 'LastAction') {
-        this.currentChapter.LastActionParsed = moment()
-          .local()
-          .toDate();
+        this.currentChapter.LastActionParsed = dayjs().toDate();
       }
       this.confirmEditChapterModal();
     },
@@ -850,32 +846,32 @@ export default Vue.extend({
       this.confirmEditChapterModal();
     },
     colorFBSyncStatus(text: string) {
-      const time = moment(text).add(8, 'hour'); // this converts our DB time for this field to UTC
+      const time = dayjs(text).add(8, 'hour'); // this converts our DB time for this field to UTC
       let c = 'is-grey';
       if (time.isValid()) {
         c = 'is-danger';
       }
-      if (time.isAfter(moment().add(-1, 'day'))) {
+      if (time.isAfter(dayjs().add(-1, 'day'))) {
         c = 'is-warning';
       }
-      if (time.isAfter(moment().add(-1, 'hour'))) {
+      if (time.isAfter(dayjs().add(-1, 'hour'))) {
         c = 'is-success';
       }
       return c;
     },
     colorQuarterlyGoal(text: string) {
-      const time = moment(text);
+      const time = dayjs(text);
       let c = '';
       if (time.isValid()) {
         c = 'is-danger';
       }
-      if (time.isAfter(moment().add(-3, 'month'))) {
+      if (time.isAfter(dayjs().add(-3, 'month'))) {
         c = 'is-success';
       }
       return c;
     },
     dateInLastThreeMonths(text: string): boolean {
-      return moment(text).isAfter(moment().add(-3, 'month'));
+      return dayjs(text).isAfter(dayjs().add(-3, 'month'));
     },
   },
   data() {

@@ -246,7 +246,7 @@ import Vue from 'vue';
 import AdbPage from './AdbPage.vue';
 import { flashMessage } from './flash_message';
 import { focus } from './directives/focus';
-import moment from 'moment';
+import * as dayjs from 'dayjs';
 
 interface Activist {
   name: string;
@@ -279,15 +279,15 @@ export default Vue.extend({
       );
     },
     colorLastMeeting(text: string) {
-      const time = moment(text);
+      const time = dayjs(text);
       let c = '';
       if (time.isValid()) {
         c = 'is-danger';
       }
-      if (time.isAfter(moment().add(-32, 'day'))) {
+      if (time.isAfter(dayjs().add(-32, 'day'))) {
         c = 'is-warning';
       }
-      if (time.isAfter(moment().add(-15, 'day'))) {
+      if (time.isAfter(dayjs().add(-15, 'day'))) {
         c = 'is-success';
       }
       return c;

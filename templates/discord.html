@@ -7,31 +7,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
     <meta name="csrf-token" content="{{ .CsrfField }}">
-    <title>Activist Database</title>
+    <title>DxE Discord</title>
     <link rel="icon" type="image/png"
      href="/static/img/favicon.png" />
 
-    <link href="/static/external/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="/static/css/style.css?{{ .StaticResourcesHash }}">
-    <script src="/static/external/jquery-3.2.1.js"></script>
-    <script src="/static/external/bootstrap/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="/static/external/buefy.min.css">
 
-    <style>
-      a {
-        color: black;
-      }
-      a:hover {
-        color: blue;
-      }
-    </style>
   </head>
   <body>
 
-    <div class="body-wrapper">
+    <div class="body-wrapper content">
       <h1>{{ .PageName }}</h1>
-      <div>{{ .Data.message }}</div>
+      <div><p>{{ .Data.message }}</p></div>
       <br />
-      <a class="btn btn-primary" style="color: white" type="submit" href="https://discord.com/login">Return to Discord</a>
+        <a class="button is-info" href="https://discord.com/login" target="_blank">
+            Return to Discord
+        </a>
       <br />
     </div>
 
