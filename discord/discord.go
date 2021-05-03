@@ -12,8 +12,33 @@ import (
 	"github.com/dxe/adb/config"
 )
 
-func GetUserRoles(userID int) map[int]string {
+func discordPostRequest(url string, body map[string]string) error {
+	requestBody, err := json.Marshal(body)
+	if err != nil {
+		return errors.New(fmt.Sprintf("ERROR marshalling Discord POST request: %v\n", err.Error()))
+	}
 
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return errors.New(fmt.Sprintf("ERROR creating Discord POST request %v\n", err.Error()))
+	}
+	defer req.Body.Close()
+	req.Header.Add("Bearer", config.DiscordSecret)
+	req.Header.Add("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return errors.New(fmt.Sprintf("ERROR making Discord POST request to %v %v\n", url, err.Error()))
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return errors.New(fmt.Sprintf("ERROR from Discord: status code %v", strconv.Itoa(resp.StatusCode)))
+	}
+
+	return nil
+}
+
+func GetUserRoles(userID int) map[int]string {
 	url := config.DiscordBotBaseUrl + "/roles/get?user=" + strconv.Itoa(userID)
 
 	resp, err := http.Get(url)
@@ -53,56 +78,32 @@ func AddUserRoles(userID int, roles []string) error {
 }
 
 func AddUserRole(userID int, role string) error {
-
 	url := config.DiscordBotBaseUrl + "/roles/add"
 
-	requestBody, err := json.Marshal(map[string]string{
+	body := map[string]string{
 		"user": strconv.Itoa(userID),
 		"role": role,
-	})
-	if err != nil {
-		errText := fmt.Sprintf("ERROR adding Discord role %v to %v: %v", role, userID, err.Error())
-		return errors.New(errText)
 	}
 
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(requestBody))
-	if err != nil {
-		errText := fmt.Sprintf("ERROR adding Discord role %v to %v: %v", role, userID, err.Error())
-		return errors.New(errText)
+	if err := discordPostRequest(url, body); err != nil {
+		return errors.New("error adding discord user role: " + err.Error())
 	}
 
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		errText := fmt.Sprintf("ERROR adding Discord role %v to %v: Status %v", role, userID, strconv.Itoa(resp.StatusCode))
-		return errors.New(errText)
-	}
 	return nil
 }
 
 func UpdateNickname(userID int, nickname string) error {
-
 	url := config.DiscordBotBaseUrl + "/update_nickname"
 
-	requestBody, err := json.Marshal(map[string]string{
+	body := map[string]string{
 		"user": strconv.Itoa(userID),
 		"name": nickname,
-	})
-	if err != nil {
-		return err
 	}
 
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(requestBody))
-	if err != nil {
-		return err
+	if err := discordPostRequest(url, body); err != nil {
+		return errors.New("error updating discord user nickname: " + err.Error())
 	}
 
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		log.Println("ERROR updating Discord nickname", userID, err)
-		return errors.New("Error updating Discord nickname.")
-	}
 	return nil
 }
 
@@ -110,24 +111,14 @@ func SendMessage(userID int, role string) error {
 
 	url := config.DiscordBotBaseUrl + "/send_message"
 
-	requestBody, err := json.Marshal(map[string]string{
+	body := map[string]string{
 		"recipient": strconv.Itoa(userID),
 		"message":   role,
-	})
-	if err != nil {
-		return err
 	}
 
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(requestBody))
-	if err != nil {
-		return err
+	if err := discordPostRequest(url, body); err != nil {
+		return errors.New("error sending discord message: " + err.Error())
 	}
 
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		log.Println("ERROR sending Discord message", userID, err)
-		return errors.New("ERROR sending Discord message.")
-	}
 	return nil
 }
