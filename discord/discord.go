@@ -23,7 +23,7 @@ func discordPostRequest(url string, body map[string]string) error {
 		return errors.New(fmt.Sprintf("ERROR creating Discord POST request %v\n", err.Error()))
 	}
 	defer req.Body.Close()
-	req.Header.Add("Bearer", config.DiscordSecret)
+	req.Header.Add("Auth", config.DiscordSecret)
 	req.Header.Add("Content-Type", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
