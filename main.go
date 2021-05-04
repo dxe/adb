@@ -2258,11 +2258,16 @@ func main() {
 		go form_processor.StartFormProcessor(db)
 	}
 
-	membersRouter := mux.NewRouter()
-	members.Route(membersRouter, db)
 	go func() {
+		// Set up a second router on a different port for Members.
+		membersRouter := mux.NewRouter()
+		mn := negroni.New()
+		mn.Use(negroni.NewRecovery())
+		mn.Use(negroni.NewLogger())
+		members.Route(membersRouter, db)
+		mn.UseHandler(membersRouter)
 		fmt.Println("Members webserver listening on localhost:" + config.MembersPort)
-		log.Fatal(http.ListenAndServe(":"+config.MembersPort, membersRouter))
+		log.Fatal(http.ListenAndServe(":"+config.MembersPort, mn))
 	}()
 
 	fmt.Println("Main webserver listening on localhost:" + config.Port)
