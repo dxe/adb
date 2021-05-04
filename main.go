@@ -170,7 +170,6 @@ func router() (*mux.Router, *sqlx.DB) {
 	)
 
 	router := mux.NewRouter()
-	//members.Route(router.PathPrefix("/members").Subrouter(), db)
 
 	admin := router.PathPrefix("").Subrouter()
 	admin.Use(csrfMiddleware)
@@ -2244,9 +2243,12 @@ func main() {
 
 	membersRouter := mux.NewRouter()
 	members.Route(membersRouter, db)
-	go http.ListenAndServe(":6061", membersRouter)
+	go func() {
+		fmt.Println("Members webserver listening on localhost:" + config.MembersPort)
+		log.Fatal(http.ListenAndServe(":"+config.MembersPort, membersRouter))
+	}()
 
-	fmt.Println("Listening on localhost:" + config.Port)
+	fmt.Println("Main webserver listening on localhost:" + config.Port)
 	log.Fatal(http.ListenAndServe(":"+config.Port, n))
 
 }

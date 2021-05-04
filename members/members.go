@@ -61,5 +61,5 @@ func absURL(path string) string {
 	if config.IsProd {
 		return "https://members.dxesf.org" + path
 	}
-	return "http://localhost:6061" + path
+	return "http://localhost:" + config.MembersPort + path
 }

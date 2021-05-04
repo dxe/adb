@@ -58,6 +58,7 @@ be built as you edit them.
 
 - ADB_URL_PATH: For example, "http://adb.domain.com"
 - PORT: The port to run the webserver on
+- MEMBERS_PORT: Port to run the Members webserver on
 - DB_USER
 - DB_PASSWORD
 - DB_NAME
