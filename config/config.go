@@ -15,7 +15,7 @@ var (
 	DBProtocol = mustGetenv("DB_PROTOCOL", "", true)
 
 	Port        = mustGetenv("PORT", "8080", true)
-	MembersPort = mustGetenv("PORT", "8081", true)
+	MembersPort = mustGetenv("MEMBERS_PORT", "8081", true)
 	UrlPath     = mustGetenv("ADB_URL_PATH", "http://localhost:"+Port, true)
 
 	IsProd            = mustGetenvAsBool("PROD")
