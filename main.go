@@ -159,6 +159,14 @@ func noCacheHandler(h http.Handler) http.Handler {
 	})
 }
 
+func (c MainController) corsAllowGetMiddleware(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Access-Control-Allow-Origin", "*")
+		w.Header().Add("Access-Control-Allow-Methods", "GET")
+		h.ServeHTTP(w, r)
+	})
+}
+
 func router() (*mux.Router, *sqlx.DB) {
 	db := model.NewDB(config.DBDataSource())
 	main := MainController{db: db}
@@ -208,15 +216,18 @@ func router() (*mux.Router, *sqlx.DB) {
 	admin.Handle("/admin/users", alice.New(main.authAdminMiddleware).ThenFunc(main.ListUsersHandler))
 	admin.Handle("/list_chapters", alice.New(main.authAdminMiddleware).ThenFunc(main.ListChaptersHandler))
 
-	// Unauthed API
+	// Unauthed API (internal)
 	router.HandleFunc("/tokensignin", main.TokenSignInHandler)
-	router.HandleFunc("/external_events/{page_id:[0-9]+}", main.ListFBEventsHandler)
-	router.HandleFunc("/chapters/{lat:[0-9.\\-]+},{lng:[0-9.\\-]+}", main.FindNearestChaptersHandler)
-	router.HandleFunc("/regions", main.ListAllChaptersByRegion)
-	router.HandleFunc("/chapters", main.ListAllChapters)
-	router.HandleFunc("/circles", main.CircleGroupNormalListHandler) // TODO: maybe the public endpoints should return less info
-	router.HandleFunc("/geocircles", main.CircleGroupGeoListHandler) // TODO: maybe the public endpoints should return less info
 	router.HandleFunc("/international_actions", main.InternationalActionsFormHandler)
+
+	// Unauthed API (public)
+	router.Handle("/health", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.HealthStatusHandler))
+	router.Handle("/external_events/{page_id:[0-9]+}", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.ListFBEventsHandler))
+	router.Handle("/chapters/{lat:[0-9.\\-]+},{lng:[0-9.\\-]+}", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.FindNearestChaptersHandler))
+	router.Handle("/regions", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.ListAllChaptersByRegion))
+	router.Handle("/chapters", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.ListAllChapters))
+	router.Handle("/circles", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.CircleGroupNormalListHandler)) // TODO: maybe the public endpoints should return less info
+	router.Handle("/geocircles", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.CircleGroupGeoListHandler)) // TODO: maybe the public endpoints should return less info
 
 	// Authed API
 	router.Handle("/activist_names/get", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteActivistsHandler))
@@ -1446,6 +1457,12 @@ func (c MainController) UsersRolesRemoveHandler(w http.ResponseWriter, r *http.R
 	writeJSON(w, map[string]interface{}{
 		"status":  "success",
 		"user_id": userId,
+	})
+}
+
+func (c MainController) HealthStatusHandler(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, map[string]string{
+		"status": "healthy",
 	})
 }
 
