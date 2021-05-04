@@ -14,8 +14,9 @@ var (
 	DBName     = mustGetenv("DB_NAME", "adb_db", true)
 	DBProtocol = mustGetenv("DB_PROTOCOL", "", true)
 
-	Port    = mustGetenv("PORT", "8080", true)
-	UrlPath = mustGetenv("ADB_URL_PATH", "http://localhost:"+Port, true)
+	Port        = mustGetenv("PORT", "8080", true)
+	MembersPort = mustGetenv("MEMBERS_PORT", "8081", true)
+	UrlPath     = mustGetenv("ADB_URL_PATH", "http://localhost:"+Port, true)
 
 	IsProd            = mustGetenvAsBool("PROD")
 	RunBackgroundJobs = mustGetenvAsBool("RUN_BACKGROUND_JOBS")

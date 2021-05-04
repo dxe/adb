@@ -19,6 +19,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dxe/adb/members"
+
 	"github.com/dxe/adb/international_mailer"
 
 	oidc "github.com/coreos/go-oidc"
@@ -28,7 +30,6 @@ import (
 	"github.com/dxe/adb/form_processor"
 	"github.com/dxe/adb/google_groups_sync"
 	"github.com/dxe/adb/mailer"
-	"github.com/dxe/adb/members"
 	"github.com/dxe/adb/model"
 	"github.com/dxe/adb/survey_mailer"
 	"github.com/gorilla/csrf"
@@ -177,7 +178,6 @@ func router() (*mux.Router, *sqlx.DB) {
 	)
 
 	router := mux.NewRouter()
-	members.Route(router.PathPrefix("/members").Subrouter(), db)
 
 	admin := router.PathPrefix("").Subrouter()
 	admin.Use(csrfMiddleware)
@@ -2258,7 +2258,14 @@ func main() {
 		go form_processor.StartFormProcessor(db)
 	}
 
-	fmt.Println("Listening on localhost:" + config.Port)
+	membersRouter := mux.NewRouter()
+	members.Route(membersRouter, db)
+	go func() {
+		fmt.Println("Members webserver listening on localhost:" + config.MembersPort)
+		log.Fatal(http.ListenAndServe(":"+config.MembersPort, membersRouter))
+	}()
+
+	fmt.Println("Main webserver listening on localhost:" + config.Port)
 	log.Fatal(http.ListenAndServe(":"+config.Port, n))
 
 }
