@@ -22,6 +22,7 @@ func Route(r *mux.Router, db *sqlx.DB) {
 	handle("/", (*server).index)
 	handle("/login", (*server).login)
 	handle("/auth", (*server).auth)
+	handle("/health", (*server).health)
 }
 
 type server struct {
@@ -62,4 +63,9 @@ func absURL(path string) string {
 		return "https://members.dxesf.org" + path
 	}
 	return "http://localhost:" + config.MembersPort + path
+}
+
+func (s *server) health() {
+	s.w.WriteHeader(http.StatusOK)
+	s.w.Write([]byte("OK"))
 }
