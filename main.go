@@ -1011,6 +1011,14 @@ func (c MainController) ConnectionSaveHandler(w http.ResponseWriter, r *http.Req
 }
 
 func (c MainController) EventListHandler(w http.ResponseWriter, r *http.Request) {
+	user := getUserFromContext(r.Context())
+	fmt.Println(user)
+	fmt.Printf("Event list handler called. Should get events for chapter %d\n", user.ChapterID)
+
+	user2, _ := getAuthedADBUser(c.db, r)
+	fmt.Println(user2)
+	fmt.Printf("Event list handler called. Should get events for chapter %d\n", user2.ChapterID)
+
 	err := r.ParseForm()
 	if err != nil {
 		sendErrorMessage(w, err)
