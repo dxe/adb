@@ -87,9 +87,9 @@
             <b-field>
               <b-checkbox
                 v-model="currentUserRoleSelections"
-                native-value="user"
-                @click.native="updateUserRoleModal('user')"
-                >User</b-checkbox
+                native-value="organizer"
+                @click.native="updateUserRoleModal('organizer')"
+                >Organizer</b-checkbox
               >
             </b-field>
 
