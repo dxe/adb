@@ -237,12 +237,12 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/connection/save", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.ConnectionSaveHandler))
 	router.Handle("/event/list", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.EventListHandler))
 	router.Handle("/event/delete", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.EventDeleteHandler))
-	router.Handle("/activist/list", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.ActivistListHandler))
+	router.Handle("/activist/list", alice.New(main.apiOrganizerOrNonSFBayAuthMiddleware).ThenFunc(main.ActivistListHandler))
 	router.Handle("/activist/list_basic", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.ActivistListBasicHandler))
 	router.Handle("/activist/list_range", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.ActivistInfiniteScrollHandler))
-	router.Handle("/activist/save", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.ActivistSaveHandler))
+	router.Handle("/activist/save", alice.New(main.apiOrganizerOrNonSFBayAuthMiddleware).ThenFunc(main.ActivistSaveHandler))
 	router.Handle("/activist/hide", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.ActivistHideHandler))
-	router.Handle("/activist/merge", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.ActivistMergeHandler))
+	router.Handle("/activist/merge", alice.New(main.apiOrganizerOrNonSFBayAuthMiddleware).ThenFunc(main.ActivistMergeHandler))
 	router.Handle("/working_group/save", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.WorkingGroupSaveHandler))
 	router.Handle("/working_group/list", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.WorkingGroupListHandler))
 	router.Handle("/working_group/delete", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.WorkingGroupDeleteHandler))
@@ -339,12 +339,6 @@ func (c MainController) authAdminMiddleware(h http.Handler) http.Handler {
 }
 
 func userIsAllowed(roles []string, user model.ADBUser) bool {
-	// TODO: remove this after testing in prod
-	log.Println("allowed roles: " + strings.Join(roles, ", "))
-	for _, role := range user.Roles {
-		log.Println("current user's role: " + role.Role)
-	}
-
 	for i := 0; i < len(roles); i++ {
 		for _, r := range user.Roles {
 			if r.Role == roles[i] {
@@ -389,11 +383,6 @@ func (c MainController) apiRoleMiddleware(h http.Handler, allowedRoles []string)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, authed := getAuthedADBUser(c.db, r)
 
-		fmt.Println("user: " + user.Name)
-		fmt.Println("user chapter: " + user.ChapterName)
-		fmt.Println("user chapter id: " + strconv.Itoa(user.ChapterID))
-		fmt.Println("authed: " + strconv.FormatBool(authed))
-
 		if !authed {
 			http.Error(w, http.StatusText(400), 400)
 			return
@@ -410,7 +399,11 @@ func (c MainController) apiRoleMiddleware(h http.Handler, allowedRoles []string)
 }
 
 func (c MainController) apiAttendanceAuthMiddleware(h http.Handler) http.Handler {
-	return c.apiRoleMiddleware(h, []string{"admin", "organizer", "attendance"})
+	return c.apiRoleMiddleware(h, []string{"admin", "organizer", "attendance", "non-sfbay"})
+}
+
+func (c MainController) apiOrganizerOrNonSFBayAuthMiddleware(h http.Handler) http.Handler {
+	return c.authRoleMiddleware(h, []string{"admin", "organizer", "non-sfbay"})
 }
 
 func (c MainController) apiOrganizerAuthMiddleware(h http.Handler) http.Handler {

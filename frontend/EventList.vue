@@ -139,7 +139,7 @@
         sortable
         v-if="!connections"
       >
-        {{ props.row.attendees.length }}
+        {{ props.row.attendees ? props.row.attendees.length : 0 }}
       </b-table-column>
 
       <b-table-column
