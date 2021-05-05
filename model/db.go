@@ -148,6 +148,7 @@ CREATE TABLE adb_users (
   email VARCHAR(60) NOT NULL,
   name VARCHAR(150) NOT NULL DEFAULT '',
   admin TINYINT(1) NOT NULL DEFAULT '0',
+  chapter_id int(11) DEFAULT '0',
   disabled TINYINT(1) NOT NULL DEFAULT '0'
 )
 `)

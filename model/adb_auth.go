@@ -17,7 +17,8 @@ SELECT
   email,
   name,
   admin,
-  disabled
+  disabled,
+  chapter_id
 FROM adb_users
 `
 
@@ -31,21 +32,23 @@ FROM users_roles ur
 /** Type Definitions */
 
 type ADBUser struct {
-	ID       int    `db:"id"`
-	Email    string `db:"email"`
-	Name     string `db:"name"`
-	Admin    bool   `db:"admin"`
-	Disabled bool   `db:"disabled"`
-	Roles    []UserRole
+	ID        int    `db:"id"`
+	Email     string `db:"email"`
+	Name      string `db:"name"`
+	Admin     bool   `db:"admin"`
+	Disabled  bool   `db:"disabled"`
+	Roles     []UserRole
+	ChapterID int `db:"chapter_id"`
 }
 
 type UserJSON struct {
-	ID       int      `json:"id"`
-	Email    string   `json:"email"`
-	Name     string   `json:"name"`
-	Admin    bool     `json:"admin"`
-	Disabled bool     `json:"disabled"`
-	Roles    []string `json:"roles"`
+	ID        int      `json:"id"`
+	Email     string   `json:"email"`
+	Name      string   `json:"name"`
+	Admin     bool     `json:"admin"`
+	Disabled  bool     `json:"disabled"`
+	Roles     []string `json:"roles"`
+	ChapterID int      `json:"chapter_id"`
 }
 
 type GetUserOptions struct {
@@ -58,11 +61,12 @@ type GetUsersRolesOptions struct {
 }
 
 var DevTestUser = ADBUser{
-	ID:       1,
-	Email:    "test@test.com",
-	Name:     "Test User",
-	Disabled: false,
-	Roles:    []UserRole{{UserID: 1, Role: "admin"}},
+	ID:        1,
+	Email:     "test@test.com",
+	Name:      "Test User",
+	Disabled:  false,
+	Roles:     []UserRole{{UserID: 1, Role: "admin"}},
+	ChapterID: 1,
 }
 
 type UserRole struct {
@@ -84,7 +88,8 @@ SELECT
   email,
   name,
   admin,
-  disabled
+  disabled,
+  chapter_id
 FROM adb_users
 `
 	var queryArgs []interface{}
@@ -247,12 +252,13 @@ func buildUserJSONArray(users []ADBUser) []UserJSON {
 		}
 
 		usersJSON = append(usersJSON, UserJSON{
-			ID:       u.ID,
-			Email:    u.Email,
-			Name:     u.Name,
-			Admin:    u.Admin,
-			Disabled: u.Disabled,
-			Roles:    roles,
+			ID:        u.ID,
+			Email:     u.Email,
+			Name:      u.Name,
+			Admin:     u.Admin,
+			Disabled:  u.Disabled,
+			Roles:     roles,
+			ChapterID: u.ChapterID,
 		})
 	}
 
@@ -268,11 +274,12 @@ func CleanUserData(body io.Reader) (ADBUser, error) {
 	}
 
 	user := ADBUser{
-		ID:       userJSON.ID,
-		Email:    userJSON.Email,
-		Name:     userJSON.Name,
-		Admin:    userJSON.Admin,
-		Disabled: userJSON.Disabled,
+		ID:        userJSON.ID,
+		Email:     userJSON.Email,
+		Name:      userJSON.Name,
+		Admin:     userJSON.Admin,
+		Disabled:  userJSON.Disabled,
+		ChapterID: userJSON.ChapterID,
 	}
 
 	return user, nil
@@ -313,12 +320,14 @@ INSERT INTO adb_users (
   email,
   name,
   admin,
-  disabled
+  disabled,
+  chapter_id
 ) VALUES (
   :email,
   :name,
   :admin,
-  :disabled
+  :disabled,
+  :chapter_id
 )`, user)
 
 	if err != nil {
@@ -351,7 +360,8 @@ SET
   email = :email,
   name  = :name,
   admin = :admin,
-  disabled = :disabled
+  disabled = :disabled,
+  chapter_id = :chapter_id
 WHERE
 id = :id`, user)
 

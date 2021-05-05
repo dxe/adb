@@ -29,6 +29,9 @@
       <b-table-column field="email" label="Email" v-slot="props" sortable>
         {{ props.row.email }}
       </b-table-column>
+      <b-table-column field="chapter_id" label="Chapter" v-slot="props" sortable>
+        {{ chapterName(props.row.chapter_id) }}
+      </b-table-column>
       <b-table-column field="roles" label="Roles" v-slot="props" sortable>
         {{ (props.row.roles || []).join(', ') }}
       </b-table-column>
@@ -55,6 +58,13 @@
           </b-field>
           <b-field label="Email" label-position="on-border">
             <b-input type="email" v-model.trim="currentUser.email" icon="email" required></b-input>
+          </b-field>
+          <b-field label="Chapter" label-position="on-border">
+            <b-select v-model.number="currentUser.chapter_id" expanded>
+              <option v-for="chap in chapters" :value="chap.ID" :key="chap.ID">
+                {{ chap.Name }}
+              </option>
+            </b-select>
           </b-field>
           <b-field>
             <b-switch v-model="currentUser.disabled" type="is-danger">Disabled</b-switch>
@@ -118,6 +128,12 @@ interface User {
   name: string;
   email: string;
   roles: string[];
+  chapter_id: number;
+}
+
+interface Chapter {
+  ID: number;
+  Name: string;
 }
 
 export default Vue.extend({
@@ -127,6 +143,11 @@ export default Vue.extend({
       return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
         navigator.userAgent,
       );
+    },
+    chapterName(id: number) {
+      return this.chapters.filter((c) => {
+        return c.ID === id;
+      })[0].Name;
     },
     showModal(modalName: string, user: User) {
       // Hide the navbar so that the model doesn't go behind it.
@@ -300,12 +321,14 @@ export default Vue.extend({
   data() {
     return {
       loading: false,
+      loadingChapters: false,
       currentUser: {} as User,
       users: [] as User[],
       userIndex: -1,
       disableConfirmButton: false,
       currentModalName: '',
       currentUserRoleSelections: [] as string[],
+      chapters: [] as Chapter[],
     };
   },
   created() {
@@ -325,6 +348,22 @@ export default Vue.extend({
       error: () => {
         flashMessage('Error connecting to server.', true);
         this.loading = false;
+      },
+    });
+    this.loadingChapters = true;
+    $.ajax({
+      url: '/chapters',
+      method: 'GET',
+      dataType: 'json',
+      success: (data) => {
+        this.chapters = data;
+        this.chapters.unshift({ ID: 0, Name: 'None' });
+        this.loadingChapters = false;
+        console.log(this.chapters);
+      },
+      error: () => {
+        flashMessage('Error: could not load chapters', true);
+        this.loadingChapters = false;
       },
     });
     initializeFlashMessage();
