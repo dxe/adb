@@ -97,7 +97,7 @@ SELECT
     FROM fb_pages
     WHERE fb_pages.chapter_id = adb_users.chapter_id
   ),"") AS chapter_name
-FROM adb_users;
+FROM adb_users
 `
 	var queryArgs []interface{}
 	if id != 0 {

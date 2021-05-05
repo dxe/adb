@@ -463,10 +463,10 @@ func (c MainController) TokenSignInHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	adbUser, err := model.GetADBUser(c.db, 0, claims.Email)
-	// TODO: remove this after figuring out what's going on
 	if err != nil {
 		log.Println(err.Error())
 	}
+
 	if err != nil || adbUser.Disabled {
 		writeJSON(w, map[string]interface{}{
 			"redirect": false,
