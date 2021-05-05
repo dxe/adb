@@ -389,6 +389,11 @@ func (c MainController) apiRoleMiddleware(h http.Handler, allowedRoles []string)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, authed := getAuthedADBUser(c.db, r)
 
+		fmt.Println("user: " + user.Name)
+		fmt.Println("user chapter: " + user.ChapterName)
+		fmt.Println("user chapter id: " + strconv.Itoa(user.ChapterID))
+		fmt.Println("authed: " + strconv.FormatBool(authed))
+
 		if !authed {
 			http.Error(w, http.StatusText(400), 400)
 			return
@@ -458,6 +463,10 @@ func (c MainController) TokenSignInHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	adbUser, err := model.GetADBUser(c.db, 0, claims.Email)
+	// TODO: remove this after figuring out what's going on
+	if err != nil {
+		log.Println(err.Error())
+	}
 	if err != nil || adbUser.Disabled {
 		writeJSON(w, map[string]interface{}{
 			"redirect": false,
