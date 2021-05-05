@@ -50,17 +50,26 @@
           Organizer Prospects
         </b-navbar-item>
       </b-navbar-dropdown>
-      <b-navbar-dropdown label="Activists" collapsible v-if="isOrganizer(role)">
+      <b-navbar-dropdown label="Activists" collapsible v-if="isOrganizer(role) || isNonSFBay(role)">
         <b-navbar-item
           href="/chapter_member_development"
           :active="page === 'ChapterMemberDevelopment'"
+          v-if="!isNonSFBay(role)"
         >
           Chapter Members
         </b-navbar-item>
-        <b-navbar-item href="/activist_development" :active="page === 'OrganizerDevelopment'">
+        <b-navbar-item
+          href="/activist_development"
+          :active="page === 'OrganizerDevelopment'"
+          v-if="!isNonSFBay(role)"
+        >
           Organizers
         </b-navbar-item>
-        <b-navbar-item href="/leaderboard" :active="page === 'Leaderboard'">
+        <b-navbar-item
+          href="/leaderboard"
+          :active="page === 'Leaderboard'"
+          v-if="!isNonSFBay(role)"
+        >
           Leaderboard
         </b-navbar-item>
         <b-navbar-item href="/list_activists" :active="page === 'ActivistList'">
@@ -81,7 +90,7 @@
       <b-navbar-item tag="div">
         <div class="mx-2">
           <b-icon icon="account" size="is-small"></b-icon>
-          {{ user }}
+          {{ user }} ({{ chapter }})
         </div>
         <div class="buttons">
           <a href="/logout" class="button is-light">
@@ -105,6 +114,7 @@ export default Vue.extend({
     page: String,
     user: String,
     role: String,
+    chapter: String,
   },
   created() {},
   methods: {
@@ -115,7 +125,12 @@ export default Vue.extend({
       return role === 'admin' || role === 'organizer';
     },
     isAttendance(role: string) {
-      return role === 'admin' || role === 'organizer' || role === 'attendance';
+      return (
+        role === 'admin' || role === 'organizer' || role === 'attendance' || role === 'non-sfbay'
+      );
+    },
+    isNonSFBay(role: string) {
+      return role === 'non-sfbay';
     },
   },
 });

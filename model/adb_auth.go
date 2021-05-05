@@ -32,13 +32,14 @@ FROM users_roles ur
 /** Type Definitions */
 
 type ADBUser struct {
-	ID        int    `db:"id"`
-	Email     string `db:"email"`
-	Name      string `db:"name"`
-	Admin     bool   `db:"admin"`
-	Disabled  bool   `db:"disabled"`
-	Roles     []UserRole
-	ChapterID int `db:"chapter_id"`
+	ID          int    `db:"id"`
+	Email       string `db:"email"`
+	Name        string `db:"name"`
+	Admin       bool   `db:"admin"`
+	Disabled    bool   `db:"disabled"`
+	Roles       []UserRole
+	ChapterID   int    `db:"chapter_id"`
+	ChapterName string `db:"chapter_name"`
 }
 
 type UserJSON struct {
@@ -61,12 +62,13 @@ type GetUsersRolesOptions struct {
 }
 
 var DevTestUser = ADBUser{
-	ID:        1,
-	Email:     "test@test.com",
-	Name:      "Test User",
-	Disabled:  false,
-	Roles:     []UserRole{{UserID: 1, Role: "admin"}},
-	ChapterID: 1,
+	ID:          1,
+	Email:       "test@test.com",
+	Name:        "Test User",
+	Disabled:    false,
+	Roles:       []UserRole{{UserID: 1, Role: "admin"}},
+	ChapterID:   1,
+	ChapterName: "SF Bay Area",
 }
 
 type UserRole struct {
@@ -89,8 +91,13 @@ SELECT
   name,
   admin,
   disabled,
-  chapter_id
-FROM adb_users
+  chapter_id,
+  @chapter_name := IFNULL((
+    SELECT name
+    FROM fb_pages
+    WHERE fb_pages.chapter_id = adb_users.chapter_id
+  ),"") AS chapter_name
+FROM adb_users;
 `
 	var queryArgs []interface{}
 	if id != 0 {
@@ -113,6 +120,13 @@ FROM adb_users
 	}
 
 	usersRoles, err := getUsersRoles(db, usersRolesOptions)
+
+	if adbUser.ChapterName != "SF Bay Area" {
+		usersRoles = append(usersRoles, UserRole{
+			UserID: adbUser.ID,
+			Role:   "non-sfbay",
+		})
+	}
 
 	if err != nil || len(usersRoles) == 0 {
 		return *adbUser, nil
@@ -174,9 +188,7 @@ func GetUsers(db *sqlx.DB, options GetUserOptions) ([]ADBUser, error) {
 	}
 
 	for _, r := range usersRoles {
-		a, ok := userIDToIndex[r.UserID]
-
-		if ok {
+		if a, ok := userIDToIndex[r.UserID]; ok {
 			users[a].Roles = append(users[a].Roles, r)
 		}
 	}
@@ -206,28 +218,7 @@ func getUsers(db *sqlx.DB, options GetUserOptions) ([]ADBUser, error) {
 
 func getUsersRoles(db *sqlx.DB, options GetUsersRolesOptions) ([]UserRole, error) {
 	query := selectUsersRolesBaseQuery
-	/*
-	  var queryArgs []interface{}
-	  var whereClause []string
 
-	  if len(options.Users) != 0 {
-	    var userIds = []int{4, 6, 7}
-	    //for _, user := range options.Users {
-	    //  userIds = append(userIds, strconv.Itoa(user.ID))
-	    //}
-	    whereClause = append(whereClause, "ur.user_id IN (?)")
-	    queryArgs = append(queryArgs, userIds)
-	  }
-
-	  if len(options.Roles) != 0 {
-	    whereClause = append(whereClause, "ur.role IN (?)")
-	    queryArgs = append(queryArgs, options.Roles)
-	  }
-
-	  if len(whereClause) != 0 {
-	    query += ` WHERE ` + strings.Join(whereClause, " AND ")
-	  }
-	*/
 	var userRoles []UserRole
 	err := db.Select(&userRoles, query)
 

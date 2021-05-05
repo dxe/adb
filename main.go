@@ -119,7 +119,6 @@ func getAuthedADBUser(db *sqlx.DB, r *http.Request) (adbUser model.ADBUser, auth
 
 	// Then, check that the user is still authed.
 	adbUser, err = model.GetADBUser(db, adbUserID, "")
-
 	if err != nil {
 		return model.ADBUser{}, false
 	}
@@ -201,7 +200,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/update_event/{event_id:[0-9]+}", alice.New(main.authAttendanceMiddleware).ThenFunc(main.UpdateEventHandler))
 	router.Handle("/list_events", alice.New(main.authAttendanceMiddleware).ThenFunc(main.ListEventsHandler))
 	router.Handle("/list_connections", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListConnectionsHandler))
-	router.Handle("/list_activists", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListActivistsHandler))
+	router.Handle("/list_activists", alice.New(main.authOrganizerOrNonSFBayMiddleware).ThenFunc(main.ListActivistsHandler))
 	router.Handle("/community_prospects", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListCommunityProspectsHandler))
 	router.Handle("/activist_development", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListActivistsDevelopmentHandler))
 	router.Handle("/organizer_prospects", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListOrganizerProspectsHandler))
@@ -324,7 +323,11 @@ func (c MainController) authRoleMiddleware(h http.Handler, allowedRoles []string
 }
 
 func (c MainController) authAttendanceMiddleware(h http.Handler) http.Handler {
-	return c.authRoleMiddleware(h, []string{"admin", "organizer", "attendance"})
+	return c.authRoleMiddleware(h, []string{"admin", "organizer", "attendance", "non-sfbay"})
+}
+
+func (c MainController) authOrganizerOrNonSFBayMiddleware(h http.Handler) http.Handler {
+	return c.authRoleMiddleware(h, []string{"admin", "organizer", "non-sfbay"})
 }
 
 func (c MainController) authOrganizerMiddleware(h http.Handler) http.Handler {
@@ -336,6 +339,15 @@ func (c MainController) authAdminMiddleware(h http.Handler) http.Handler {
 }
 
 func userIsAllowed(roles []string, user model.ADBUser) bool {
+	if user.ChapterID == 0 {
+		return false
+	}
+
+	// TODO: remove this after testing in prod
+	log.Println("allowed roles: " + strings.Join(roles, ", "))
+	for _, role := range user.Roles {
+		log.Println("current user's role: " + role.Role)
+	}
 
 	for i := 0; i < len(roles); i++ {
 		for _, r := range user.Roles {
@@ -355,6 +367,11 @@ func getUserMainRole(user model.ADBUser) string {
 
 	var mainRole string
 	for _, r := range user.Roles {
+		if r.Role == "non-sfbay" {
+			mainRole = "non-sfbay"
+			break
+		}
+
 		if r.Role == "admin" {
 			mainRole = "admin"
 			break
@@ -370,24 +387,6 @@ func getUserMainRole(user model.ADBUser) string {
 	}
 
 	return mainRole
-}
-
-func getUserName(user model.ADBUser) string {
-
-	var userName string
-
-	userName = user.Name
-
-	return userName
-}
-
-func getUserEmail(user model.ADBUser) string {
-
-	var userEmail string
-
-	userEmail = user.Email
-
-	return userEmail
 }
 
 func (c MainController) apiRoleMiddleware(h http.Handler, allowedRoles []string) http.Handler {
@@ -692,20 +691,27 @@ var templates = template.Must(template.New("").Funcs(
 		},
 	}).ParseGlob("templates/*.html"))
 
+type UserChapter struct {
+	ID   int
+	Name string
+}
+
 type PageData struct {
-	PageName  string
-	Data      interface{}
-	CsrfField string
-	MainRole  string
-	UserName  string
-	UserEmail string
+	PageName    string
+	Data        interface{}
+	CsrfField   string
+	MainRole    string
+	UserName    string
+	UserEmail   string
+	UserChapter UserChapter
 	// Filled in by renderPage.
 	StaticResourcesHash string
 	// Used on International & Discord Form pages
 	GooglePlacesAPIKey string
 	// Used on Discord Form page - TODO: handle this differently
 	DiscordUser model.DiscordUser
-	Chapter     model.ChapterWithToken
+	// Used on Int'l Actions form page
+	Chapter model.ChapterWithToken
 }
 
 // Render a page. All templates that load a header expect a PageData
@@ -714,8 +720,12 @@ func renderPage(w io.Writer, r *http.Request, name string, pageData PageData) {
 	pageData.CsrfField = csrf.Token(r)
 	pageData.StaticResourcesHash = config.StaticResourcesHash()
 	pageData.MainRole = getUserMainRole(getUserFromContext(r.Context()))
-	pageData.UserName = getUserName(getUserFromContext(r.Context()))
-	pageData.UserEmail = getUserEmail(getUserFromContext(r.Context()))
+	pageData.UserName = getUserFromContext(r.Context()).Name
+	pageData.UserEmail = getUserFromContext(r.Context()).Email
+	pageData.UserChapter = UserChapter{
+		ID:   getUserFromContext(r.Context()).ChapterID,
+		Name: getUserFromContext(r.Context()).ChapterName,
+	}
 	renderTemplate(w, name, pageData)
 }
 

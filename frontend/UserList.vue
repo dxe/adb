@@ -1,6 +1,7 @@
 <template>
   <adb-page title="Users">
     <b-loading :is-full-page="true" v-model="loading"></b-loading>
+    <b-loading :is-full-page="true" v-model="loadingChapters"></b-loading>
     <nav class="level">
       <div class="level-left">
         <div class="level-item">
@@ -70,38 +71,40 @@
             <b-switch v-model="currentUser.disabled" type="is-danger">Disabled</b-switch>
           </b-field>
 
-          <b-field label="Roles" custom-class="has-text-primary"></b-field>
-          <template v-if="!currentUser.id">
-            Please save the new user before adding roles.
-          </template>
-          <template v-if="currentUser.id">
-            <b-field>
-              <b-checkbox
-                v-model="currentUserRoleSelections"
-                native-value="admin"
-                @click.native="updateUserRoleModal('admin')"
-                >Admin</b-checkbox
-              >
-            </b-field>
+          <div v-if="chapterName(currentUser.chapter_id) === 'SF Bay Area'">
+            <b-field label="Roles" custom-class="has-text-primary"></b-field>
+            <template v-if="!currentUser.id">
+              Please save the new user before adding roles.
+            </template>
+            <template v-if="currentUser.id">
+              <b-field>
+                <b-checkbox
+                  v-model="currentUserRoleSelections"
+                  native-value="admin"
+                  @click.native="updateUserRoleModal('admin')"
+                  >Admin</b-checkbox
+                >
+              </b-field>
 
-            <b-field>
-              <b-checkbox
-                v-model="currentUserRoleSelections"
-                native-value="organizer"
-                @click.native="updateUserRoleModal('organizer')"
-                >Organizer</b-checkbox
-              >
-            </b-field>
+              <b-field>
+                <b-checkbox
+                  v-model="currentUserRoleSelections"
+                  native-value="organizer"
+                  @click.native="updateUserRoleModal('organizer')"
+                  >Organizer</b-checkbox
+                >
+              </b-field>
 
-            <b-field>
-              <b-checkbox
-                v-model="currentUserRoleSelections"
-                native-value="attendance"
-                @click.native="updateUserRoleModal('attendance')"
-                >Attendance</b-checkbox
-              >
-            </b-field>
-          </template>
+              <b-field>
+                <b-checkbox
+                  v-model="currentUserRoleSelections"
+                  native-value="attendance"
+                  @click.native="updateUserRoleModal('attendance')"
+                  >Attendance</b-checkbox
+                >
+              </b-field>
+            </template>
+          </div>
         </section>
         <footer class="modal-card-foot">
           <b-button label="Cancel" icon-left="cancel" @click="hideModal" />
@@ -145,9 +148,13 @@ export default Vue.extend({
       );
     },
     chapterName(id: number) {
-      return this.chapters.filter((c) => {
+      const chapters = this.chapters.filter((c) => {
         return c.ID === id;
-      })[0].Name;
+      });
+      if (chapters.length > 0) {
+        return chapters[0].Name;
+      }
+      return '';
     },
     showModal(modalName: string, user: User) {
       // Hide the navbar so that the model doesn't go behind it.
@@ -220,10 +227,12 @@ export default Vue.extend({
 
           if (this.userIndex === -1) {
             // We're saving a new user. Insert them at the top,
-            // then open the modal again for adding roles.
+            // then open the modal again for adding roles if SF Bay.
             this.users = [parsed.user].concat(this.users);
             this.hideModal();
-            this.showModal('edit-user-modal', parsed.user);
+            if (this.chapterName(parsed.user.chapter_id) === 'SF Bay Area') {
+              this.showModal('edit-user-modal', parsed.user);
+            }
           } else {
             // We edited an existing user, replace their row in
             // `users` & close the modal.
@@ -359,7 +368,6 @@ export default Vue.extend({
         this.chapters = data;
         this.chapters.unshift({ ID: 0, Name: 'None' });
         this.loadingChapters = false;
-        console.log(this.chapters);
       },
       error: () => {
         flashMessage('Error: could not load chapters', true);

@@ -212,7 +212,18 @@ func UpdateChapter(db *sqlx.DB, page ChapterWithToken) (int, error) {
 
 // for the chapter management admin page on the ADB itself
 func DeleteChapter(db *sqlx.DB, chapter int) error {
-	_, err := db.Exec(`DELETE FROM fb_pages
+	// first make sure that there are no users associated w/ the chapter
+	var userCount int
+	err := db.QueryRow(`SELECT COUNT(*) from adb_users
+		WHERE chapter_id = ?`, chapter).Scan(&userCount)
+	if err != nil {
+		return errors.Wrapf(err, "failed to count users for chapter %d", chapter)
+	}
+	if userCount > 0 {
+		return errors.New("cannot delete chapter because users are associated with it")
+	}
+
+	_, err = db.Exec(`DELETE FROM fb_pages
 		WHERE chapter_id = ?`, chapter)
 	if err != nil {
 		return errors.Wrapf(err, "failed to delete chapter %d", chapter)
