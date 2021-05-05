@@ -339,10 +339,6 @@ func (c MainController) authAdminMiddleware(h http.Handler) http.Handler {
 }
 
 func userIsAllowed(roles []string, user model.ADBUser) bool {
-	if user.ChapterID == 0 {
-		return false
-	}
-
 	// TODO: remove this after testing in prod
 	log.Println("allowed roles: " + strings.Join(roles, ", "))
 	for _, role := range user.Roles {
