@@ -731,7 +731,8 @@ func writeJSON(w io.Writer, v interface{}) {
 	enc := json.NewEncoder(w)
 	err := enc.Encode(v)
 	if err != nil {
-		panic(err)
+		log.Printf("Error writing JSON! %v", err.Error())
+		//panic(err)
 	}
 }
 
@@ -740,7 +741,7 @@ func sendErrorMessage(w io.Writer, err error) {
 	if err == nil {
 		panic(errors.Wrap(err, "Cannot send error message if error is nil"))
 	}
-	fmt.Printf("ERROR: %+v\n", err.Error())
+	log.Printf("ERROR: %+v\n", err.Error())
 	writeJSON(w, map[string]string{
 		"status":  "error",
 		"message": err.Error(),
@@ -2083,8 +2084,8 @@ func (c MainController) ApplicationFormHandler(w http.ResponseWriter, r *http.Re
 		err = model.SubmitApplicationForm(c.db, formData)
 
 		if err != nil {
-			fmt.Println(err.Error())
-			fmt.Println(formData)
+			log.Println(err.Error())
+			log.Println(formData)
 			writeJSON(w, map[string]interface{}{
 				"status":  "error",
 				"message": err.Error(),
@@ -2119,8 +2120,8 @@ func (c MainController) InterestFormHandler(w http.ResponseWriter, r *http.Reque
 		err = model.SubmitInterestForm(c.db, formData)
 
 		if err != nil {
-			fmt.Println(err.Error())
-			fmt.Println(formData)
+			log.Println(err.Error())
+			log.Println(formData)
 			writeJSON(w, map[string]interface{}{
 				"status":  "error",
 				"message": err.Error(),
@@ -2156,8 +2157,8 @@ func (c MainController) InternationalFormHandler(w http.ResponseWriter, r *http.
 		err = model.SubmitInternationalForm(c.db, formData)
 
 		if err != nil {
-			fmt.Println(err.Error())
-			fmt.Println(formData)
+			log.Println(err.Error())
+			log.Println(formData)
 			writeJSON(w, map[string]interface{}{
 				"status":  "error",
 				"message": err.Error(),
@@ -2209,7 +2210,7 @@ func (c MainController) InternationalActionsFormHandler(w http.ResponseWriter, r
 
 		err := json.NewDecoder(r.Body).Decode(&formData)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -2217,8 +2218,8 @@ func (c MainController) InternationalActionsFormHandler(w http.ResponseWriter, r
 		err = model.SubmitInternationalActionForm(c.db, formData)
 
 		if err != nil {
-			fmt.Println(err.Error())
-			fmt.Println(formData)
+			log.Println(err.Error())
+			log.Println(formData)
 			writeJSON(w, map[string]interface{}{
 				"status":  "error",
 				"message": err.Error(),
@@ -2241,7 +2242,7 @@ func main() {
 	)
 	flag.Parse()
 	config.SetCommandLineFlags(*isProdArgument, *logLevel)
-	fmt.Println("IsProd =", config.IsProd)
+	log.Println("IsProd =", config.IsProd)
 
 	n := negroni.New()
 	n.Use(negroni.NewRecovery())
@@ -2266,11 +2267,11 @@ func main() {
 		mn.Use(negroni.NewLogger())
 		members.Route(membersRouter, db)
 		mn.UseHandler(membersRouter)
-		fmt.Println("Members webserver listening on localhost:" + config.MembersPort)
+		log.Println("Members webserver listening on localhost:" + config.MembersPort)
 		log.Fatal(http.ListenAndServe(":"+config.MembersPort, mn))
 	}()
 
-	fmt.Println("Main webserver listening on localhost:" + config.Port)
+	log.Println("Main webserver listening on localhost:" + config.Port)
 	log.Fatal(http.ListenAndServe(":"+config.Port, n))
 
 }
