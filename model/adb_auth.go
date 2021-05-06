@@ -121,11 +121,12 @@ FROM adb_users
 
 	usersRoles, err := getUsersRoles(db, usersRolesOptions)
 
+	// We don't want non-SF Bay users to have access to any of the other roles, so just replace it.
 	if adbUser.ChapterName != "SF Bay Area" {
-		usersRoles = append(usersRoles, UserRole{
+		usersRoles = []UserRole{{
 			UserID: adbUser.ID,
 			Role:   "non-sfbay",
-		})
+		}}
 	}
 
 	if err != nil || len(usersRoles) == 0 {
