@@ -11,9 +11,9 @@ func TestGetEvents(t *testing.T) {
 	db := newTestDB()
 	defer db.Close()
 
-	a1, err := GetOrCreateActivist(db, "Hello")
+	a1, err := GetOrCreateActivist(db, "Hello", 1)
 	require.NoError(t, err)
-	a2, err := GetOrCreateActivist(db, "Hi")
+	a2, err := GetOrCreateActivist(db, "Hi", 1)
 	require.NoError(t, err)
 
 	d1, err := time.Parse("2006-01-02", "2017-01-15")
@@ -80,7 +80,7 @@ func TestGetEvents_orderBy(t *testing.T) {
 	db := newTestDB()
 	defer db.Close()
 
-	a1, err := GetOrCreateActivist(db, "Hello")
+	a1, err := GetOrCreateActivist(db, "Hello", 1)
 	require.NoError(t, err)
 
 	d1, err := time.Parse("2006-01-02", "2017-01-15")
@@ -130,9 +130,9 @@ func TestInsertUpdateEvent(t *testing.T) {
 	db := newTestDB()
 	defer db.Close()
 
-	a1, err := GetOrCreateActivist(db, "Hello")
+	a1, err := GetOrCreateActivist(db, "Hello", 1)
 	require.NoError(t, err)
-	a2, err := GetOrCreateActivist(db, "Hi")
+	a2, err := GetOrCreateActivist(db, "Hi", 1)
 	require.NoError(t, err)
 
 	event := Event{
@@ -181,7 +181,7 @@ func TestInsertUpdateEvent_noDuplicateAttendees(t *testing.T) {
 	db := newTestDB()
 	defer db.Close()
 
-	a1, err := GetOrCreateActivist(db, "Hello")
+	a1, err := GetOrCreateActivist(db, "Hello", 1)
 	require.NoError(t, err)
 
 	event := Event{
@@ -207,9 +207,9 @@ func TestDeleteEvents(t *testing.T) {
 	defer db.Close()
 
 	// Set up two events
-	a1, err := GetOrCreateActivist(db, "Hello")
+	a1, err := GetOrCreateActivist(db, "Hello", 1)
 	require.NoError(t, err)
-	a2, err := GetOrCreateActivist(db, "Hi")
+	a2, err := GetOrCreateActivist(db, "Hi", 1)
 	require.NoError(t, err)
 
 	d1, err := time.Parse("2006-01-02", "2017-01-15")
@@ -278,7 +278,7 @@ func TestCleanEventAttendanceData(t *testing.T) {
 
 	testAttendees := []string{"New Person", "Another person", "A third person"}
 
-	gotActivists, err := cleanEventAttendanceData(db, testAttendees)
+	gotActivists, err := cleanEventAttendanceData(db, testAttendees, 1)
 	require.NoError(t, err)
 
 	gotActivistNames := map[string]struct{}{}

@@ -179,7 +179,7 @@ func insertWorkingGroupMembers(tx *sqlx.Tx, workingGroup WorkingGroup) error {
 	return nil
 }
 
-func CleanWorkingGroupData(db *sqlx.DB, body io.Reader) (WorkingGroup, error) {
+func CleanWorkingGroupData(db *sqlx.DB, body io.Reader, chapterID int) (WorkingGroup, error) {
 	var workingGroupJSON WorkingGroupJSON
 	err := json.NewDecoder(body).Decode(&workingGroupJSON)
 	if err != nil {
@@ -209,7 +209,7 @@ func CleanWorkingGroupData(db *sqlx.DB, body io.Reader) (WorkingGroup, error) {
 		if trimName == "" {
 			return WorkingGroup{}, errors.New("Member name cannot be empty")
 		}
-		activist, err := GetActivist(db, strings.TrimSpace(m.Name))
+		activist, err := GetActivist(db, strings.TrimSpace(m.Name), chapterID)
 		if err != nil {
 			return WorkingGroup{}, err
 		}

@@ -21,17 +21,17 @@ func TestAutocompleteActivistsHandler(t *testing.T) {
 	db := newTestDB()
 	defer db.Close()
 
-	_, err := GetOrCreateActivist(db, "Activist One")
+	_, err := GetOrCreateActivist(db, "Activist One", 1)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = GetOrCreateActivist(db, "Activist Two")
+	_, err = GetOrCreateActivist(db, "Activist Two", 1)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	gotNames := GetAutocompleteNames(db)
+	gotNames := GetAutocompleteNames(db, 1)
 	wantNames := []string{"Activist One", "Activist Two"}
 
 	if len(gotNames) != len(wantNames) {
@@ -46,7 +46,7 @@ func TestGetActivistEventData(t *testing.T) {
 	db := newTestDB()
 	defer db.Close()
 
-	a1, err := GetOrCreateActivist(db, "Test Activist")
+	a1, err := GetOrCreateActivist(db, "Test Activist", 1)
 	require.NoError(t, err)
 
 	d1, err := time.Parse("2006-01-02", "2017-04-15")
@@ -98,7 +98,7 @@ func TestGetActivistEventData_noEvents(t *testing.T) {
 	db := newTestDB()
 	defer db.Close()
 
-	a1, err := GetOrCreateActivist(db, "Test Activist")
+	a1, err := GetOrCreateActivist(db, "Test Activist", 1)
 	require.NoError(t, err)
 
 	d, err := a1.GetActivistEventData(db)
@@ -129,13 +129,13 @@ func TestGetActivistsJSON_RestrictDates(t *testing.T) {
 	db := newTestDB()
 	defer db.Close()
 
-	a1, err := GetOrCreateActivist(db, "A")
+	a1, err := GetOrCreateActivist(db, "A", 1)
 	require.NoError(t, err)
 
-	a2, err := GetOrCreateActivist(db, "B")
+	a2, err := GetOrCreateActivist(db, "B", 1)
 	require.NoError(t, err)
 
-	a3, err := GetOrCreateActivist(db, "C")
+	a3, err := GetOrCreateActivist(db, "C", 1)
 	require.NoError(t, err)
 
 	d1, err := time.Parse("2006-01-02", "2017-04-15")
@@ -192,13 +192,13 @@ func TestGetActivistsJSON_OrderField(t *testing.T) {
 	db := newTestDB()
 	defer db.Close()
 
-	a1, err := GetOrCreateActivist(db, "A")
+	a1, err := GetOrCreateActivist(db, "A", 1)
 	require.NoError(t, err)
 
-	a2, err := GetOrCreateActivist(db, "B")
+	a2, err := GetOrCreateActivist(db, "B", 1)
 	require.NoError(t, err)
 
-	a3, err := GetOrCreateActivist(db, "C")
+	a3, err := GetOrCreateActivist(db, "C", 1)
 	require.NoError(t, err)
 
 	d1, err := time.Parse("2006-01-02", "2017-04-15")
@@ -248,7 +248,7 @@ func TestGetActivistsJSON_FirstAndLastEvent(t *testing.T) {
 	db := newTestDB()
 	defer db.Close()
 
-	a1, err := GetOrCreateActivist(db, "A")
+	a1, err := GetOrCreateActivist(db, "A", 1)
 	require.NoError(t, err)
 
 	d1, err := time.Parse("2006-01-02", "2017-04-15")
@@ -302,10 +302,10 @@ func TestHideActivist(t *testing.T) {
 	defer db.Close()
 
 	// Test that deleting activists works
-	a1, err := GetOrCreateActivist(db, "Test Activist")
+	a1, err := GetOrCreateActivist(db, "Test Activist", 1)
 	require.NoError(t, err)
 
-	a2, err := GetOrCreateActivist(db, "Another Test Activist")
+	a2, err := GetOrCreateActivist(db, "Another Test Activist", 1)
 	require.NoError(t, err)
 
 	d1, err := time.Parse("2006-01-02", "2017-01-15")
@@ -321,7 +321,7 @@ func TestHideActivist(t *testing.T) {
 	require.NoError(t, HideActivist(db, a1.ID))
 
 	// Hidden activists should not show up in the autocompleted names
-	names := GetAutocompleteNames(db)
+	names := GetAutocompleteNames(db, 1)
 	require.Equal(t, len(names), 1)
 	require.Equal(t, names[0], a2.Name)
 
@@ -357,13 +357,13 @@ func TestMergeActivist(t *testing.T) {
 	defer db.Close()
 
 	// Test that deleting activists works
-	a1, err := GetOrCreateActivist(db, "Test Activist")
+	a1, err := GetOrCreateActivist(db, "Test Activist", 1)
 	require.NoError(t, err)
 
-	a2, err := GetOrCreateActivist(db, "Another Test Activist")
+	a2, err := GetOrCreateActivist(db, "Another Test Activist", 1)
 	require.NoError(t, err)
 
-	a3, err := GetOrCreateActivist(db, "A Third Test Activist")
+	a3, err := GetOrCreateActivist(db, "A Third Test Activist", 1)
 	require.NoError(t, err)
 
 	d1, err := time.Parse("2006-01-02", "2017-04-15")
@@ -646,7 +646,7 @@ func assertActivistJSONSliceContainsOrderedNames(t *testing.T, activists []Activ
 func insertTestActivists(t *testing.T, db *sqlx.DB, names []string) []Activist {
 	var activists []Activist = make([]Activist, len(names))
 	for idx, name := range names {
-		activist, err := GetOrCreateActivist(db, name)
+		activist, err := GetOrCreateActivist(db, name, 1)
 		require.NoError(t, err)
 		activists[idx] = activist
 	}

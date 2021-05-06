@@ -114,8 +114,9 @@ CREATE TABLE activists (
   city varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   state varchar(40) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   discord_id bigint(18) DEFAULT NULL,
+  chapter_id int(11) DEFAULT '0',
   PRIMARY KEY (id),
-  UNIQUE KEY name_ukey (name),
+  UNIQUE KEY name_ukey (name, chapter_id),
   KEY activists_email (email),
   KEY activist_level (activist_level),
   KEY hidden (hidden),
@@ -147,7 +148,7 @@ CREATE TABLE form_interest (
 
 /* Common queries */
 const insertActivistQuery = `
-INSERT INTO activists (id, email, name) VALUES (NULL, "email1", ?);
+INSERT INTO activists (id, email, name, chapter_id) VALUES (NULL, "email1", ?, 47);
 `
 
 const getActivistsQuery = `SELECT id FROM activists;`

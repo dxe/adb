@@ -99,7 +99,8 @@ CREATE TABLE activists (
   discord_id BIGINT(18) DEFAULT NULL,
   lat FLOAT(10,6) NULL DEFAULT '0',
   lng FLOAT(10,6) NULL DEFAULT '0',
-  UNIQUE (name)
+  chapter_id int(11) DEFAULT '0',
+  UNIQUE (name, chapter_id)
 )
 `)
 

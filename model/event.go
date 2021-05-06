@@ -448,7 +448,7 @@ func insertEventAttendance(tx *sqlx.Tx, event Event) error {
 	return nil
 }
 
-func CleanEventData(db *sqlx.DB, body io.Reader) (Event, error) {
+func CleanEventData(db *sqlx.DB, body io.Reader, chapterID int) (Event, error) {
 	var eventJSON EventJSON
 	err := json.NewDecoder(body).Decode(&eventJSON)
 	if err != nil {
@@ -475,12 +475,12 @@ func CleanEventData(db *sqlx.DB, body io.Reader) (Event, error) {
 	}
 	e.EventType = eventType
 
-	addedAttendees, err := cleanEventAttendanceData(db, eventJSON.AddedAttendees)
+	addedAttendees, err := cleanEventAttendanceData(db, eventJSON.AddedAttendees, chapterID)
 	if err != nil {
 		return Event{}, err
 	}
 
-	deletedAttendees, err := cleanEventAttendanceData(db, eventJSON.DeletedAttendees)
+	deletedAttendees, err := cleanEventAttendanceData(db, eventJSON.DeletedAttendees, chapterID)
 	if err != nil {
 		return Event{}, err
 	}
@@ -492,10 +492,12 @@ func CleanEventData(db *sqlx.DB, body io.Reader) (Event, error) {
 
 	e.CircleID = eventJSON.CircleID
 
+	e.ChapterID = chapterID
+
 	return e, nil
 }
 
-func cleanEventAttendanceData(db *sqlx.DB, attendees []string) ([]Activist, error) {
+func cleanEventAttendanceData(db *sqlx.DB, attendees []string, chapterID int) ([]Activist, error) {
 	activists := make([]Activist, len(attendees))
 
 	for idx, attendee := range attendees {
@@ -503,7 +505,7 @@ func cleanEventAttendanceData(db *sqlx.DB, attendees []string) ([]Activist, erro
 			return []Activist{}, err
 		}
 		cleanAttendee := strings.Title(strings.TrimSpace(attendee))
-		activist, err := GetOrCreateActivist(db, cleanAttendee)
+		activist, err := GetOrCreateActivist(db, cleanAttendee, chapterID)
 		if err != nil {
 			return []Activist{}, err
 		}

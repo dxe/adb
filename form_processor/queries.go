@@ -30,7 +30,8 @@ SET
 	# mark as processed
 	form_application.processed = 1
 WHERE
-	form_application.id = ?
+    chapter_id = 47
+	and form_application.id = ?
 	and form_application.name <> ''
 	and form_application.processed = 0
 	and activists.hidden = 0
@@ -67,7 +68,8 @@ SET
 	# mark as processed
 	form_application.processed = 1
 WHERE
-	form_application.id = ?
+    chapter_id = 47
+	and form_application.id = ?
 	and form_application.name <> ''
 	and form_application.processed = 0
 	and activists.hidden = 0
@@ -124,7 +126,8 @@ INSERT INTO activists (
 	dev_application_type,
 	study_group,
 	study_activator,
-	study_conversation
+	study_conversation,
+    chapter_id
 )
 select
         NULL,
@@ -175,7 +178,8 @@ select
         form_application.application_type,
         '',
         '', 
-        NULL
+        NULL,
+        '47'
 from
 	form_application
 WHERE
@@ -198,7 +202,8 @@ WHERE
 	form_application.id = ?
 	and activists.dev_application_date = cast(form_application.timestamp as date)
 	and form_application.processed = 0
-	and activists.hidden < 1;
+	and activists.hidden < 1
+    and activists.chapter_id = 47;
 `
 
 /* Form interest query */
@@ -230,7 +235,8 @@ SET
 	form_interest.processed = 1
 
 WHERE
-	form_interest.id = ?
+    chapter_id = 47
+	and form_interest.id = ?
 	and form_interest.processed = 0
 	and activists.hidden = 0
 	and form_interest.name <> '';
@@ -264,7 +270,8 @@ SET
 	# mark as processed
 	form_interest.processed = 1
 WHERE
-	form_interest.id = ?
+    chapter_id = 47
+	and form_interest.id = ?
 	AND form_interest.processed = 0
 	AND activists.hidden = 0
 	AND form_interest.email <> ''
@@ -321,7 +328,8 @@ INSERT INTO activists (
     study_group,
     study_activator,
     study_conversation,
-	discord_id
+	discord_id,
+    chapter_id
 )
 SELECT
     NULL,
@@ -371,7 +379,8 @@ SELECT
     '',
     '',
     NULL,
-	IF(LENGTH(form_interest.discord_id),form_interest.discord_id,NULL)
+	IF(LENGTH(form_interest.discord_id),form_interest.discord_id,NULL),
+    '47'
 FROM
 	form_interest
 WHERE
@@ -391,11 +400,12 @@ INNER JOIN
 SET
 	form_interest.processed = 1
 WHERE
-	form_interest.id = ?
+    activists.chapter_id = 47
+	AND form_interest.id = ?
 	AND activists.interest_date = timestamp
 	AND form_interest.processed = 0
 	AND activists.hidden < 1;
 `
 
 /* Common queries */
-const countActivistsForEmailQuery = "SELECT count(id) AS amount FROM activists WHERE hidden = 0 and email = ?"
+const countActivistsForEmailQuery = "SELECT count(id) AS amount FROM activists WHERE hidden = 0 and email = ? and chapter_id = 47"

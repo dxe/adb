@@ -152,6 +152,14 @@ func setAuthSession(w http.ResponseWriter, r *http.Request, adbUser model.ADBUse
 	return sessionStore.Save(r, w, authSession)
 }
 
+func getAuthedADBChapter(db *sqlx.DB, r *http.Request) int {
+	user, authed := getAuthedADBUser(db, r)
+	if !authed {
+		panic("Tried getting chapter for unauthorized user.")
+	}
+	return user.ChapterID
+}
+
 func noCacheHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Cache-Control", "no-cache, no-store, must-revalidate")
@@ -795,21 +803,27 @@ func (c MainController) UpdateConnectionHandler(w http.ResponseWriter, r *http.R
 }
 
 func (c MainController) AutocompleteActivistsHandler(w http.ResponseWriter, r *http.Request) {
-	names := model.GetAutocompleteNames(c.db)
+	chapter := getAuthedADBChapter(c.db, r)
+
+	names := model.GetAutocompleteNames(c.db, chapter)
 	writeJSON(w, map[string][]string{
 		"activist_names": names,
 	})
 }
 
 func (c MainController) AutocompleteOrganizersHandler(w http.ResponseWriter, r *http.Request) {
-	names := model.GetAutocompleteOrganizerNames(c.db)
+	chapter := getAuthedADBChapter(c.db, r)
+
+	names := model.GetAutocompleteOrganizerNames(c.db, chapter)
 	writeJSON(w, map[string][]string{
 		"activist_names": names,
 	})
 }
 
 func (c MainController) AutocompleteChapterMembersHandler(w http.ResponseWriter, r *http.Request) {
-	names := model.GetAutocompleteChapterMembersNames(c.db)
+	chapter := getAuthedADBChapter(c.db, r)
+
+	names := model.GetAutocompleteChapterMembersNames(c.db, chapter)
 	writeJSON(w, map[string][]string{
 		"activist_names": names,
 	})
@@ -848,6 +862,7 @@ func (c MainController) ActivistSaveHandler(w http.ResponseWriter, r *http.Reque
 	// activist.
 	var activistID int
 	if activistExtra.ID == 0 {
+		activistExtra.ChapterID = user.ChapterID
 		activistID, err = model.CreateActivist(c.db, activistExtra)
 	} else {
 		activistID, err = model.UpdateActivistData(c.db, activistExtra, user.Email)
@@ -894,6 +909,8 @@ func (c MainController) ActivistHideHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (c MainController) ActivistMergeHandler(w http.ResponseWriter, r *http.Request) {
+	chapter := getAuthedADBChapter(c.db, r)
+
 	var activistMergeData struct {
 		CurrentActivistID  int    `json:"current_activist_id"`
 		TargetActivistName string `json:"target_activist_name"`
@@ -906,7 +923,7 @@ func (c MainController) ActivistMergeHandler(w http.ResponseWriter, r *http.Requ
 
 	// First, we need to get the activist ID for the target
 	// activist.
-	mergedActivist, err := model.GetActivist(c.db, activistMergeData.TargetActivistName)
+	mergedActivist, err := model.GetActivist(c.db, activistMergeData.TargetActivistName, chapter)
 	if err != nil {
 		sendErrorMessage(w, errors.Wrapf(err, "Could not fetch data for: %s", activistMergeData.TargetActivistName))
 		return
@@ -925,8 +942,7 @@ func (c MainController) ActivistMergeHandler(w http.ResponseWriter, r *http.Requ
 }
 
 func (c MainController) EventGetHandler(w http.ResponseWriter, r *http.Request) {
-	user, _ := getAuthedADBUser(c.db, r)
-	chapter := user.ChapterID
+	chapter := getAuthedADBChapter(c.db, r)
 
 	eventID, err := strconv.Atoi(mux.Vars(r)["event_id"])
 	if err != nil {
@@ -949,7 +965,9 @@ func (c MainController) EventGetHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (c MainController) EventSaveHandler(w http.ResponseWriter, r *http.Request) {
-	event, err := model.CleanEventData(c.db, r.Body)
+	chapter := getAuthedADBChapter(c.db, r)
+
+	event, err := model.CleanEventData(c.db, r.Body, chapter)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
@@ -957,8 +975,6 @@ func (c MainController) EventSaveHandler(w http.ResponseWriter, r *http.Request)
 
 	// Events with no event ID are new events.
 	isNewEvent := event.ID == 0
-	user, _ := getAuthedADBUser(c.db, r)
-	event.ChapterID = user.ChapterID
 
 	eventID, err := model.InsertUpdateEvent(c.db, event)
 	if err != nil {
@@ -984,7 +1000,9 @@ func (c MainController) EventSaveHandler(w http.ResponseWriter, r *http.Request)
 }
 
 func (c MainController) ConnectionSaveHandler(w http.ResponseWriter, r *http.Request) {
-	event, err := model.CleanEventData(c.db, r.Body)
+	chapter := getAuthedADBChapter(c.db, r)
+
+	event, err := model.CleanEventData(c.db, r.Body, chapter)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
@@ -992,8 +1010,6 @@ func (c MainController) ConnectionSaveHandler(w http.ResponseWriter, r *http.Req
 
 	// Events with no event ID are new events.
 	isNewEvent := event.ID == 0
-	user, _ := getAuthedADBUser(c.db, r)
-	event.ChapterID = user.ChapterID
 
 	eventID, err := model.InsertUpdateEvent(c.db, event)
 	if err != nil {
@@ -1019,8 +1035,7 @@ func (c MainController) ConnectionSaveHandler(w http.ResponseWriter, r *http.Req
 }
 
 func (c MainController) EventListHandler(w http.ResponseWriter, r *http.Request) {
-	user, _ := getAuthedADBUser(c.db, r)
-	chapter := user.ChapterID
+	chapter := getAuthedADBChapter(c.db, r)
 
 	err := r.ParseForm()
 	if err != nil {
@@ -1062,8 +1077,7 @@ func (c MainController) EventDeleteHandler(w http.ResponseWriter, r *http.Reques
 		panic(err)
 	}
 
-	user, _ := getAuthedADBUser(c.db, r)
-	chapter := user.ChapterID
+	chapter := getAuthedADBChapter(c.db, r)
 
 	// We pass in the chapter ID to make sure people don't delete event that don't belong to their chapter.
 	if err := model.DeleteEvent(c.db, eventID, chapter); err != nil {
@@ -1077,7 +1091,9 @@ func (c MainController) EventDeleteHandler(w http.ResponseWriter, r *http.Reques
 }
 
 func (c MainController) WorkingGroupSaveHandler(w http.ResponseWriter, r *http.Request) {
-	wg, err := model.CleanWorkingGroupData(c.db, r.Body)
+	chapter := getAuthedADBChapter(c.db, r)
+
+	wg, err := model.CleanWorkingGroupData(c.db, r.Body, chapter)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
@@ -1142,7 +1158,9 @@ func (c MainController) WorkingGroupDeleteHandler(w http.ResponseWriter, r *http
 
 //start circle
 func (c MainController) CircleGroupSaveHandler(w http.ResponseWriter, r *http.Request) {
-	cir, err := model.CleanCircleGroupData(c.db, r.Body)
+	chapter := getAuthedADBChapter(c.db, r)
+
+	cir, err := model.CleanCircleGroupData(c.db, r.Body, chapter)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
@@ -1239,6 +1257,10 @@ func (c MainController) ActivistListHandler(w http.ResponseWriter, r *http.Reque
 		sendErrorMessage(w, err)
 		return
 	}
+
+	user, _ := getAuthedADBUser(c.db, r)
+	options.ChapterID = user.ChapterID
+
 	activists, err := model.GetActivistsJSON(c.db, options)
 	if err != nil {
 		sendErrorMessage(w, err)
@@ -1252,7 +1274,9 @@ func (c MainController) ActivistListHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (c MainController) ActivistListBasicHandler(w http.ResponseWriter, r *http.Request) {
-	activists := model.GetActivistListBasicJSON(c.db)
+	chapter := getAuthedADBChapter(c.db, r)
+
+	activists := model.GetActivistListBasicJSON(c.db, chapter)
 
 	out := map[string]interface{}{
 		"status":    "success",
@@ -1263,7 +1287,9 @@ func (c MainController) ActivistListBasicHandler(w http.ResponseWriter, r *http.
 }
 
 func (c MainController) ChapterMemberSpokeCSVHandler(w http.ResponseWriter, r *http.Request) {
-	activists, err := model.GetActivistSpokeInfo(c.db)
+	chapter := getAuthedADBChapter(c.db, r)
+
+	activists, err := model.GetActivistSpokeInfo(c.db, chapter)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
@@ -1291,7 +1317,9 @@ func (c MainController) ChapterMemberSpokeCSVHandler(w http.ResponseWriter, r *h
 }
 
 func (c MainController) CommunityProspectHubSpotCSVHandler(w http.ResponseWriter, r *http.Request) {
-	activists, err := model.GetCommunityProspectHubSpotInfo(c.db)
+	chapter := getAuthedADBChapter(c.db, r)
+
+	activists, err := model.GetCommunityProspectHubSpotInfo(c.db, chapter)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return

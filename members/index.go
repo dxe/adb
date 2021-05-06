@@ -74,6 +74,7 @@ func (s *server) index() {
 	// of the two-level aggregation, we'd actually need a
 	// sub-subquery; and subqueries can only access variables from
 	// the immediately outer context.
+	// TODO: consider not hard-coding the SF Bay chapter ID in the WHERE clause
 	const q = `
 select json_object(
   'Name',          x.name,
@@ -141,6 +142,7 @@ from (
           from events
         ) e on (e.id = ea.event_id)
   where a.email = ?
+    and a.chapter_id = 47
     and not a.hidden
   group by a.id, e.month
 ) x

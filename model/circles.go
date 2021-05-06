@@ -208,7 +208,7 @@ func insertCircleGroupMembers(tx *sqlx.Tx, circleGroup CircleGroup) error {
 	return nil
 }
 
-func CleanCircleGroupData(db *sqlx.DB, body io.Reader) (CircleGroup, error) {
+func CleanCircleGroupData(db *sqlx.DB, body io.Reader, chapterID int) (CircleGroup, error) {
 	var circleGroupJSON CircleGroupJSON
 	err := json.NewDecoder(body).Decode(&circleGroupJSON)
 	if err != nil {
@@ -234,7 +234,7 @@ func CleanCircleGroupData(db *sqlx.DB, body io.Reader) (CircleGroup, error) {
 		if trimName == "" {
 			return CircleGroup{}, errors.New("Member name cannot be empty")
 		}
-		activist, err := GetActivist(db, strings.TrimSpace(m.Name))
+		activist, err := GetActivist(db, strings.TrimSpace(m.Name), chapterID)
 		if err != nil {
 			return CircleGroup{}, err
 		}

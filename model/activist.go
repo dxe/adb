@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 	"time"
 
@@ -31,7 +32,8 @@ SELECT
   name,
   phone,
   lat,
-  lng
+  lng,
+  chapter_id
 FROM activists
 `
 
@@ -46,6 +48,7 @@ SELECT
   lower(email) as email,
   facebook,
   a.id,
+  a.chapter_id,
   location,
   a.name,
   preferred_name,
@@ -248,6 +251,7 @@ type Activist struct {
 	Birthday      sql.NullString `db:"dob"`
 	Lat           float64        `json:"lat"`
 	Lng           float64        `json:"lng"`
+	ChapterID     int            `db:"chapter_id"`
 }
 
 type ActivistEventData struct {
@@ -323,6 +327,7 @@ type ActivistJSON struct {
 	PreferredName string `json:"preferred_name"`
 	Phone         string `json:"phone"`
 	Birthday      string `json:"dob"`
+	ChapterID     int    `json:"chapter_id"`
 
 	FirstEvent     string `json:"first_event"`
 	LastEvent      string `json:"last_event"`
@@ -381,6 +386,7 @@ type GetActivistOptions struct {
 	LastEventDateFrom string `json:"last_event_date_from"`
 	LastEventDateTo   string `json:"last_event_date_to"`
 	Filter            string `json:"filter"`
+	ChapterID         int    `json:"chapter_id"`
 }
 
 var validOrderFields = map[string]struct{}{
@@ -391,9 +397,10 @@ var validOrderFields = map[string]struct{}{
 }
 
 type ActivistRangeOptionsJSON struct {
-	Name  string `json:"name"`
-	Limit int    `json:"limit"`
-	Order int    `json:"order"`
+	Name      string `json:"name"`
+	Limit     int    `json:"limit"`
+	Order     int    `json:"order"`
+	ChapterID int    `json:"chapter_id"`
 }
 
 /** Functions and Methods */
@@ -523,6 +530,7 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			Email:         a.Email,
 			Facebook:      a.Facebook,
 			ID:            a.ID,
+			ChapterID:     a.ChapterID,
 			Location:      location,
 			Name:          a.Name,
 			PreferredName: a.PreferredName,
@@ -580,8 +588,8 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 	return activistsJSON
 }
 
-func GetActivist(db *sqlx.DB, name string) (Activist, error) {
-	activists, err := getActivists(db, name)
+func GetActivist(db *sqlx.DB, name string, chapterID int) (Activist, error) {
+	activists, err := getActivists(db, name, chapterID)
 	if err != nil {
 		return Activist{}, err
 	} else if len(activists) == 0 {
@@ -592,16 +600,19 @@ func GetActivist(db *sqlx.DB, name string) (Activist, error) {
 	return activists[0], nil
 }
 
-func GetActivists(db *sqlx.DB) ([]Activist, error) {
-	return getActivists(db, "")
+func GetActivists(db *sqlx.DB, chapterID int) ([]Activist, error) {
+	return getActivists(db, "", chapterID)
 }
 
-func getActivists(db *sqlx.DB, name string) ([]Activist, error) {
+func getActivists(db *sqlx.DB, name string, chapterID int) ([]Activist, error) {
 	var queryArgs []interface{}
 	query := selectActivistBaseQuery
 
+	query += " WHERE chapter_id = ? "
+	queryArgs = append(queryArgs, chapterID)
+
 	if name != "" {
-		query += " WHERE name = ? "
+		query += " AND name = ? "
 		queryArgs = append(queryArgs, name)
 	}
 
@@ -643,14 +654,14 @@ func GetActivistsWithDiscordID(db *sqlx.DB) ([]ActivistDiscord, error) {
 	return activists, nil
 }
 
-func GetChapterMembers(db *sqlx.DB) ([]Activist, error) {
+func GetSFBayChapterMembers(db *sqlx.DB) ([]Activist, error) {
 	query := `
 SELECT
   id,
   name,
   email
 FROM activists
-WHERE hidden = 0 AND activist_level IN('Organizer', 'Chapter Member')
+WHERE hidden = 0 AND activist_level IN('Organizer', 'Chapter Member') AND chapter_id = 47
 `
 
 	var activists []Activist
@@ -662,14 +673,14 @@ WHERE hidden = 0 AND activist_level IN('Organizer', 'Chapter Member')
 	return activists, nil
 }
 
-func GetOrganizers(db *sqlx.DB) ([]Activist, error) {
+func GetSFBayOrganizers(db *sqlx.DB) ([]Activist, error) {
 	query := `
 SELECT
   id,
   name,
   email
 FROM activists
-WHERE hidden = 0 AND activist_level = 'Organizer'
+WHERE hidden = 0 AND activist_level = 'Organizer' AND chapter_id = 47
 `
 
 	var activists []Activist
@@ -698,7 +709,11 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 		query += " WHERE a.id = ? "
 		queryArgs = append(queryArgs, options.ID)
 	} else {
-		whereClause := []string{}
+		var whereClause []string
+
+		if options.ChapterID != 0 {
+			whereClause = append(whereClause, "a.chapter_id = "+strconv.Itoa(options.ChapterID))
+		}
 
 		if options.Hidden == true {
 			whereClause = append(whereClause, "a.hidden = true")
@@ -779,8 +794,6 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 	return activists, nil
 }
 
-// TODO Make sure you only fetch non-hidden members
-// THAT is not currently the case
 func getActivistRange(db *sqlx.DB, options ActivistRangeOptionsJSON) ([]ActivistExtra, error) {
 	// Redundant options validation
 	var err error
@@ -797,6 +810,11 @@ func getActivistRange(db *sqlx.DB, options ActivistRangeOptionsJSON) ([]Activist
 
 	query += " WHERE a.hidden = false "
 
+	if options.ChapterID != 0 {
+		query += " AND a.chapter_id = ? "
+		queryArgs = append(queryArgs, options.ChapterID)
+	}
+
 	if name != "" {
 		if order == DescOrder {
 			query += " AND a.name < ? "
@@ -806,7 +824,7 @@ func getActivistRange(db *sqlx.DB, options ActivistRangeOptionsJSON) ([]Activist
 		queryArgs = append(queryArgs, name)
 	}
 
-	query += " GROUP BY a.name "
+	query += " GROUP BY a.id "
 
 	query += " ORDER BY a.name "
 	if order == DescOrder {
@@ -850,8 +868,8 @@ WHERE
 	return data, nil
 }
 
-func GetOrCreateActivist(db *sqlx.DB, name string) (Activist, error) {
-	activist, err := GetActivist(db, name)
+func GetOrCreateActivist(db *sqlx.DB, name string, chapterID int) (Activist, error) {
+	activist, err := GetActivist(db, name, chapterID)
 	if err == nil {
 		// We got a valid activist, return them.
 		return activist, nil
@@ -867,16 +885,16 @@ func GetOrCreateActivist(db *sqlx.DB, name string) (Activist, error) {
 		return Activist{}, errors.Wrap(err, "Failed to create transaction")
 	}
 
-	_, err = tx.Exec("INSERT INTO activists (name) VALUES (?)", name)
+	_, err = tx.Exec("INSERT INTO activists (name, chapter_id) VALUES (?, ?)", name, chapterID)
 	if err != nil {
 		tx.Rollback()
 		return Activist{}, errors.Wrapf(err, "failed to insert activist %s", name)
 	}
 
-	query := selectActivistBaseQuery + " WHERE name = ? "
+	query := selectActivistBaseQuery + " WHERE name = ? AND chapter_id = ?"
 
 	var newActivist Activist
-	err = tx.Get(&newActivist, query, name)
+	err = tx.Get(&newActivist, query, name, chapterID)
 
 	if err != nil {
 		tx.Rollback()
@@ -909,6 +927,7 @@ INSERT INTO activists (
   preferred_name,
   phone,
   dob,
+  chapter_id,
 
   activist_level,
   source,
@@ -951,6 +970,7 @@ INSERT INTO activists (
   :preferred_name,
   :phone,
   :dob,
+  :chapter_id,
 
   :activist_level,
   :source,
@@ -1009,26 +1029,31 @@ func UpdateActivistData(db *sqlx.DB, activist ActivistExtra, userEmail string) (
 	})
 	origActivist := orig[0]
 
-	if (activist.Name != origActivist.Name ||
-		activist.Email != origActivist.Email ||
-		activist.Phone != origActivist.Phone ||
-		activist.Location != origActivist.Location ||
-		activist.City != origActivist.City ||
-		activist.State != origActivist.State) &&
-		activist.Email != "" {
-		signup := mailing_list_signup.Signup{
-			Source: "adb",
-			Name:   activist.Name,
-			Email:  activist.Email,
-			Phone:  activist.Phone,
-			City:   activist.City,
-			State:  activist.State,
-			Zip:    activist.Location.String,
-		}
-		err := mailing_list_signup.Enqueue(signup)
-		if err != nil {
-			// Don't return this error because we still want to successfully update the activist in the database.
-			fmt.Println("ERROR updating activist on mailing list:", err.Error())
+	// if in the Bay Area, add to mailing list if needed
+	// TODO: make this work for other chapters too, maybe based on Chapters table mailing list info?
+	// or maybe just passing chapter Name or ID to the signup service?
+	if origActivist.ChapterID == 47 {
+		activistInfoChanged := activist.Name != origActivist.Name ||
+			activist.Email != origActivist.Email ||
+			activist.Phone != origActivist.Phone ||
+			activist.Location != origActivist.Location ||
+			activist.City != origActivist.City ||
+			activist.State != origActivist.State
+		if activistInfoChanged && activist.Email != "" {
+			signup := mailing_list_signup.Signup{
+				Source: "adb",
+				Name:   activist.Name,
+				Email:  activist.Email,
+				Phone:  activist.Phone,
+				City:   activist.City,
+				State:  activist.State,
+				Zip:    activist.Location.String,
+			}
+			err := mailing_list_signup.Enqueue(signup)
+			if err != nil {
+				// Don't return this error because we still want to successfully update the activist in the database.
+				fmt.Println("ERROR updating activist on mailing list:", err.Error())
+			}
 		}
 	}
 
@@ -1390,7 +1415,7 @@ func updateMergedActivistDataDetails(tx *sqlx.Tx, originalActivistID int, target
 	return nil
 }
 
-func GetAutocompleteNames(db *sqlx.DB) []string {
+func GetAutocompleteNames(db *sqlx.DB, chapterID int) []string {
 	type Name struct {
 		Name string `db:"name"`
 	}
@@ -1400,9 +1425,9 @@ func GetAutocompleteNames(db *sqlx.DB) []string {
 SELECT a.name FROM activists a
 LEFT OUTER JOIN event_attendance ea ON a.id = ea.activist_id
 LEFT OUTER JOIN events e ON e.id = ea.event_id
-WHERE a.hidden = 0
+WHERE a.hidden = 0 AND a.chapter_id = ?
 GROUP BY a.name
-ORDER BY MAX(e.date) DESC`)
+ORDER BY MAX(e.date) DESC`, chapterID)
 	if err != nil {
 		// TODO: return error
 		panic(err)
@@ -1415,7 +1440,7 @@ ORDER BY MAX(e.date) DESC`)
 	return ret
 }
 
-func GetAutocompleteOrganizerNames(db *sqlx.DB) []string {
+func GetAutocompleteOrganizerNames(db *sqlx.DB, chapterID int) []string {
 	// includes non-local activist level for ppl to be added to working groups
 	type Name struct {
 		Name string `db:"name"`
@@ -1423,8 +1448,8 @@ func GetAutocompleteOrganizerNames(db *sqlx.DB) []string {
 	var names []Name
 	err := db.Select(&names, `
 SELECT a.name FROM activists a
-WHERE a.hidden = 0 and a.activist_level in ('non-local', 'organizer')
-GROUP BY a.name`)
+WHERE a.hidden = 0 and a.activist_level in ('non-local', 'organizer') AND a.chapter_id = ?
+GROUP BY a.name`, chapterID)
 	if err != nil {
 		// TODO: return error
 		panic(err)
@@ -1437,15 +1462,15 @@ GROUP BY a.name`)
 	return ret
 }
 
-func GetAutocompleteChapterMembersNames(db *sqlx.DB) []string {
+func GetAutocompleteChapterMembersNames(db *sqlx.DB, chapterID int) []string {
 	type Name struct {
 		Name string `db:"name"`
 	}
 	var names []Name
 	err := db.Select(&names, `
 SELECT a.name FROM activists a
-WHERE a.hidden = 0 and a.activist_level in ('chapter member', 'organizer')
-GROUP BY a.name`)
+WHERE a.hidden = 0 and a.activist_level in ('chapter member', 'organizer') AND a.chapter_id = ?
+GROUP BY a.name`, chapterID)
 	if err != nil {
 		// TODO: return error
 		panic(err)
@@ -1481,17 +1506,17 @@ func (activist *ActivistBasicInfo) ToJSON() ActivistBasicInfoJSON {
 	}
 }
 
-func GetActivistListBasicJSON(db *sqlx.DB) []ActivistBasicInfoJSON {
-	activists := []ActivistBasicInfo{}
+func GetActivistListBasicJSON(db *sqlx.DB, chapterID int) []ActivistBasicInfoJSON {
+	var activists []ActivistBasicInfo
 
 	// Order the activists by the last even they've been to.
 	err := db.Select(&activists, `
 SELECT a.name, a.email, a.phone, a.preferred_name FROM activists a
 LEFT OUTER JOIN event_attendance ea ON a.id = ea.activist_id
 LEFT OUTER JOIN events e ON e.id = ea.event_id
-WHERE a.hidden = 0
-GROUP BY a.name
-ORDER BY MAX(e.date) DESC`)
+WHERE a.hidden = 0 AND a.chapter_id = ?
+GROUP BY a.id
+ORDER BY MAX(e.date) DESC`, chapterID)
 	if err != nil {
 		// TODO: return error
 		panic(err)
@@ -1512,7 +1537,7 @@ type ChapterMemberSpokeInfo struct {
 	Cell      string `db:"cell"`
 }
 
-func GetActivistSpokeInfo(db *sqlx.DB) ([]ChapterMemberSpokeInfo, error) {
+func GetActivistSpokeInfo(db *sqlx.DB, chapterID int) ([]ChapterMemberSpokeInfo, error) {
 	var activists []ChapterMemberSpokeInfo
 
 	// Order the activists by the last even they've been to.
@@ -1523,8 +1548,9 @@ func GetActivistSpokeInfo(db *sqlx.DB) ([]ChapterMemberSpokeInfo, error) {
 			phone as cell
 		FROM activists
 		WHERE
+		    chapter_id = ?
 			activist_level in ('chapter member', 'organizer')
-			and hidden = 0`)
+			and hidden = 0`, chapterID)
 	if err != nil {
 		return []ChapterMemberSpokeInfo{}, err
 	}
@@ -1542,7 +1568,7 @@ type CommunityProspectHubSpotInfo struct {
 	InterestDate string `db:"interest_date"`
 }
 
-func GetCommunityProspectHubSpotInfo(db *sqlx.DB) ([]CommunityProspectHubSpotInfo, error) {
+func GetCommunityProspectHubSpotInfo(db *sqlx.DB, chapterID int) ([]CommunityProspectHubSpotInfo, error) {
 	var activists []CommunityProspectHubSpotInfo
 
 	// Order the activists by the last even they've been to.
@@ -1558,8 +1584,9 @@ func GetCommunityProspectHubSpotInfo(db *sqlx.DB) ([]CommunityProspectHubSpotInf
 		and interest_date >= DATE_SUB(now(), INTERVAL 3 MONTH)
 		and activists.id not in (select distinct activist_id from event_attendance)
 		and hidden = 0
+		and chapter_id = ?
 		ORDER BY interest_date desc
-`)
+`, chapterID)
 	if err != nil {
 		return []CommunityProspectHubSpotInfo{}, err
 	}
@@ -1659,6 +1686,7 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			Email:         strings.TrimSpace(activistJSON.Email),
 			Facebook:      strings.TrimSpace(activistJSON.Facebook),
 			ID:            activistJSON.ID,
+			ChapterID:     activistJSON.ChapterID,
 			Location:      sql.NullString{String: strings.TrimSpace(activistJSON.Location), Valid: validLoc},
 			Name:          strings.TrimSpace(activistJSON.Name),
 			PreferredName: strings.TrimSpace(activistJSON.PreferredName),

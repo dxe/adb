@@ -191,7 +191,7 @@ func syncChapterMemberMailingList(db *sqlx.DB, adminService *admin.Service) {
 	// activists that are considered a Chapter Member; i.e. Activists that
 	// that have activist_level of "Chapter Member".
 
-	members, err := model.GetChapterMembers(db)
+	members, err := model.GetSFBayChapterMembers(db)
 	if err != nil {
 		log.Printf("Failed to query activists: %v", err)
 		return
@@ -215,7 +215,7 @@ func syncOrganizersMailingList(db *sqlx.DB, adminService *admin.Service) {
 	// Sync sfbay-organizers@directactioneverywhere.com to contain all
 	// activists that have activist_level of "Organizer"
 
-	members, err := model.GetOrganizers(db)
+	members, err := model.GetSFBayOrganizers(db)
 	if err != nil {
 		log.Printf("Failed to query activists: %v", err)
 		return
