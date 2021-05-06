@@ -34,7 +34,11 @@
         {{ chapterName(props.row.chapter_id) }}
       </b-table-column>
       <b-table-column field="roles" label="Roles" v-slot="props" sortable>
-        {{ (props.row.roles || []).join(', ') }}
+        {{
+          chapterName(props.row.chapter_id) === 'SF Bay Area'
+            ? (props.row.roles || []).join(', ')
+            : 'user'
+        }}
       </b-table-column>
       <b-table-column field="disabled" label="Disabled" v-slot="props" sortable>
         <b-icon icon="check" type="is-danger" v-if="props.row.disabled"></b-icon>
