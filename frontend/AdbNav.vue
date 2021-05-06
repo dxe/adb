@@ -88,8 +88,8 @@
 
     <template #end>
       <b-navbar-item tag="div">
-        <div class="mx-2">
-          <b-icon icon="account" size="is-small"></b-icon>
+        <div class="mx-2 has-text-grey-dark">
+          <b-icon icon="account" size="is-small" class="mx-1"></b-icon>
           {{ user }} ({{ chapter }})
         </div>
         <div class="buttons">

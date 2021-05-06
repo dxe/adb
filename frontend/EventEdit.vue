@@ -577,6 +577,7 @@ export default Vue.extend({
       return activistFull && activistFull.phone;
     },
     shouldShowSuppressSurveyCheckbox() {
+      console.log('chapter: ' + this.chapter);
       if (this.chapter != 'SF Bay Area') return false;
       // only show checkbox if a survey will be sent for this event
       if (
