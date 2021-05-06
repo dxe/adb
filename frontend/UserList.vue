@@ -33,7 +33,15 @@
       <b-table-column field="chapter_id" label="Chapter" v-slot="props" sortable>
         {{ chapterName(props.row.chapter_id) }}
       </b-table-column>
-      <b-table-column field="roles" label="Roles" v-slot="props" sortable>
+      <b-table-column
+        field="
+          chapterName(props.row.chapter_id) === 'SF Bay Area'
+            ? (props.row.roles || []).join(', ')
+            : 'user'"
+        label="Roles"
+        v-slot="props"
+        sortable
+      >
         {{
           chapterName(props.row.chapter_id) === 'SF Bay Area'
             ? (props.row.roles || []).join(', ')
@@ -141,6 +149,7 @@ interface User {
 interface Chapter {
   ID: number;
   Name: string;
+  Region?: string;
 }
 
 export default Vue.extend({
@@ -369,7 +378,9 @@ export default Vue.extend({
       method: 'GET',
       dataType: 'json',
       success: (data) => {
-        this.chapters = data;
+        this.chapters = data.filter((c: Chapter) => {
+          return c.Region !== 'Online';
+        });
         this.chapters.unshift({ ID: 0, Name: 'None' });
         this.loadingChapters = false;
       },
