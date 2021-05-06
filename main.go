@@ -468,10 +468,34 @@ func (c MainController) TokenSignInHandler(w http.ResponseWriter, r *http.Reques
 		log.Println(err.Error())
 	}
 
-	if err != nil || adbUser.Disabled {
+	if err != nil {
 		writeJSON(w, map[string]interface{}{
 			"redirect": false,
 			"message":  "Email is not valid",
+		})
+		return
+	}
+
+	if adbUser.Disabled {
+		writeJSON(w, map[string]interface{}{
+			"redirect": false,
+			"message":  "Account is disabled",
+		})
+		return
+	}
+
+	if adbUser.ChapterID == 0 {
+		writeJSON(w, map[string]interface{}{
+			"redirect": false,
+			"message":  "No chapter assigned",
+		})
+		return
+	}
+
+	if len(adbUser.Roles) == 0 {
+		writeJSON(w, map[string]interface{}{
+			"redirect": false,
+			"message":  "No roles assigned",
 		})
 		return
 	}
