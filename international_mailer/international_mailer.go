@@ -96,38 +96,27 @@ Direct Action Everywhere Organizer</p>
 }
 
 func sendInternationalActionEmail(db *sqlx.DB, chapter model.ChapterWithToken) {
-
-	subject := "PLEASE READ - New database of DxE chapters and May Global Strategy Call"
+	subject := "Please report your last action & let us know how we can assist you"
 	body := `
 	<p>Hi all!</p>
-	
-	<p>Exciting news from our tech team! They have created an ADB (activist database) that will help automate some of the
-	International Coordination Working Group’s messaging and tasks and will automatically track international actions that
-	have facebook event pages if you are just able to make our tech team lead <a href="https://www.facebook.com/jhobbs91">Jake Hobbs</a> an admin of your chapter’s facebook
-	page. He won’t read your messages or interact with your page at all except to create and maintain an automated portal
-	that puts your upcoming event pages on <a href="http://dxe.io/events">DxE’s website</a> so they can be found by visitors who are looking for events in
-	your area. If you haven’t already, please add <a href="https://www.facebook.com/jhobbs91">Jake</a> as an admin now.</p>
-	
-	<p>Also, with the new ADB, we’ll be better able to keep track of assuring that all chapters are organizing actions
-	(online or in person) each quarter in order to remain as an active chapter in the DxE International Organizers Network.
-	In place of the monthly report forms that we’ve used lately, your chapter will automatically receive this email on the
-	first and seventh of each month with <a href="` + fmt.Sprintf("https://adb.dxe.io/international_actions/%d/%v", chapter.ChapterID, chapter.EmailToken) + `">a link to a short form to report your previous last actions or ask for any assistance</a>.
-	Please keep an eye out for the email on the 1st of the month so we can be sure of any actions that you did the previous
-	month. Actions need not be an elaborate protest, especially during the pandemic, and can simply just be a social media
-	challenge or organizing your community members to email representatives or businesses with an ask.</p>
-	
-	<p>If you aren't able to do an action in a quarter, we will remove your chapter and invite you to return later if you
-	like or we can adjust your chapter’s status to “Hiatus” temporarily, but ideally, we’d just love for you to take some
-	form of action even if it’s online. Of course, In-person actions are great so if conditions permit, please consider
-	organizing a <a href="https://www.facebook.com/events/276596890763352">Let Dairy Die protest</a> on or around Mothers Day
-	this month or <a href="https://docs.google.com/spreadsheets/d/1-y_r8BgepiHpnOYyzoJISn30gNHuChUTBYxSUGWFSMg/edit?usp=sharing">list your address here</a> if you’d like to be
-	sent materials to do postering or a banner drop promoting Netflix’s Seaspiracy in your city. As always, also
-	please just consider organising whatever action works for your chapter’s goals. Thank you!</p>
-	
-	<p>We can discuss and share more during the <a href="https://www.facebook.com/events/126551249410206">May Global Strategy Call</a> tomorrow, Sunday, May 2nd at 10am Pacific.
-	We hope to see you there!</p>
-	
-	<p>Thank you for all that you do,</p>
+
+	<p>We are using a new system to keep track of which chapters are organizing actions each quarter (either online
+	or in person).
+    <a href="` + fmt.Sprintf("https://adb.dxe.io/international_actions/%d/%v", chapter.ChapterID, chapter.EmailToken) + `">
+    <strong>Please click here to provide your chapter's update for last month.</strong></a> Actions need not be an
+    elaborate protest, especially during the pandemic, and can simply just be a social media
+	challenge or organizing your community members to email representatives or businesses with an ask.</p>`
+
+	if chapter.Token == "" {
+		body += `<p>Also note that we now have the ability to showcase your chapter's events on
+		<a href="http://dxe.io/events">DxE's main website</a>, so they can be found by visitors who are looking for
+		events in your area. In order for this to happen, please make
+		<a href="https://www.facebook.com/jhobbs91">Jake Hobbs</a> (our Tech team lead) an admin on your Facebook page.
+        He won't read your messages or interact with your page at all, other than setting up an automated system that will 
+		read the public events from your Facebook page. Feel free to reach out if you have any questions or concerns.</p>`
+	}
+
+	body += `<p>Thank you for all that you do,</p>
 	
 	<p>Paul Darwin Picklesimer<br />
 	Direct Action Everywhere<br />
@@ -147,28 +136,31 @@ func sendInternationalActionEmail(db *sqlx.DB, chapter model.ChapterWithToken) {
 		}
 	}
 
-	// send to each person in the chapter
-	for _, e := range toEmails {
-		fmt.Printf("Sending int'l action email to %v\n", e)
-		err := mailer.Send(mailer.Message{
-			FromName:    "Paul Darwin Picklesimer",
-			FromAddress: "paul@directactioneverywhere.com",
-			ToName:      "DxE " + chapter.Name,
-			ToAddress:   e,
-			Subject:     subject,
-			BodyHTML:    body,
-			CC:          []string{"jake@directactioneverywhere.com"},
-		})
-		if err != nil {
-			log.Println("Failed to send email for international form submission")
-		}
+	if len(toEmails) == 0 {
+		log.Printf("Can't send international actions email to %v due to missing email address\n", chapter.Name)
+		return
+	}
+
+	fmt.Printf("Sending int'l action email to %v: %v\n", chapter.Name, strings.Join(toEmails, ","))
+	err := mailer.Send(mailer.Message{
+		FromName:    "Paul Darwin Picklesimer",
+		FromAddress: "paul@directactioneverywhere.com",
+		ToName:      "DxE " + chapter.Name,
+		ToAddress:   toEmails[0],
+		Subject:     subject,
+		BodyHTML:    body,
+		CC:          append(toEmails[1:], "jake@directactioneverywhere.com"),
+	})
+	if err != nil {
+		log.Println("Failed to send email for international actions email")
+		return
 	}
 
 	chapter.LastCheckinEmailSent = sql.NullTime{
 		Time:  time.Now(),
 		Valid: true,
 	}
-	_, err := model.UpdateChapter(db, chapter)
+	_, err = model.UpdateChapter(db, chapter)
 	if err != nil {
 		panic("Failed to update chapter last check-in email sent time " + err.Error())
 	}
@@ -199,9 +191,9 @@ func internationalActionMailerWrapper(db *sqlx.DB) {
 		}
 	}()
 
-	// Only run on the 1st or 8th of the month b/w 4pm and midnight UTC (9am-5pm PT).
+	// Only run on the 1st or 7th of the month b/w 4pm and midnight UTC (9am-5pm PT).
 	now := time.Now()
-	if now.Day() != 1 && now.Day() != 8 {
+	if now.Day() != 1 && now.Day() != 7 {
 		return
 	}
 	if now.Hour() < 16 || now.Hour() > 23 {
