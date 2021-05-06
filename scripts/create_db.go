@@ -33,19 +33,19 @@ func createCurrentDateString(day int) string {
 func createEventsDevDB() string {
 	days := []int{15, 16, 17, 18, 19, 13}
 	eventFormatStrings := []string{
-		"(1, 'Event One', '%s', 'Working Group', '0', '0', '0'),",
-		"(2, 'Event Two', '%s', 'Protest', '0', '0', '0'),",
-		"(3, 'Event Three', '%s', 'Community', '0', '0', '0'),",
-		"(4, 'Event Four', '%s', 'Outreach', '0', '0', '0'),",
-		"(5, 'Event Five', '%s', 'Key Event', '0', '0', '0'),",
-		"(6, 'Event Six', '%s', 'Key Event', '0', '0', '0');"}
+		"(1, 'Event One', '%s', 'Working Group', '0', '0', '0', '1'),",
+		"(2, 'Event Two', '%s', 'Protest', '0', '0', '0', '1'),",
+		"(3, 'Event Three', '%s', 'Community', '0', '0', '0', '1'),",
+		"(4, 'Event Four', '%s', 'Outreach', '0', '0', '0', '1'),",
+		"(5, 'Event Five', '%s', 'Key Event', '0', '0', '0', '1'),",
+		"(6, 'Event Six', '%s', 'Key Event', '0', '0', '0', '1');"}
 
 	//assert
 	if len(days) != len(eventFormatStrings) {
 		panic("Fake data lengths do not match")
 	}
 
-	eventStrings := []string{}
+	var eventStrings []string
 	for i, d := range days {
 		eventStrings = append(eventStrings, fmt.Sprintf(eventFormatStrings[i], createCurrentDateString(d)))
 	}

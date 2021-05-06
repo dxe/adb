@@ -925,13 +925,17 @@ func (c MainController) ActivistMergeHandler(w http.ResponseWriter, r *http.Requ
 }
 
 func (c MainController) EventGetHandler(w http.ResponseWriter, r *http.Request) {
+	user, _ := getAuthedADBUser(c.db, r)
+	chapter := user.ChapterID
+
 	eventID, err := strconv.Atoi(mux.Vars(r)["event_id"])
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
 	}
 
-	event, err := model.GetEvent(c.db, model.GetEventOptions{EventID: eventID})
+	// We pass in the chapter ID to make sure people don't get events that don't belong to their chapter.
+	event, err := model.GetEvent(c.db, model.GetEventOptions{EventID: eventID, ChapterID: chapter})
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
@@ -953,6 +957,8 @@ func (c MainController) EventSaveHandler(w http.ResponseWriter, r *http.Request)
 
 	// Events with no event ID are new events.
 	isNewEvent := event.ID == 0
+	user, _ := getAuthedADBUser(c.db, r)
+	event.ChapterID = user.ChapterID
 
 	eventID, err := model.InsertUpdateEvent(c.db, event)
 	if err != nil {
@@ -1011,13 +1017,8 @@ func (c MainController) ConnectionSaveHandler(w http.ResponseWriter, r *http.Req
 }
 
 func (c MainController) EventListHandler(w http.ResponseWriter, r *http.Request) {
-	user := getUserFromContext(r.Context())
-	fmt.Println(user)
-	fmt.Printf("Event list handler called. Should get events for chapter %d\n", user.ChapterID)
-
-	user2, _ := getAuthedADBUser(c.db, r)
-	fmt.Println(user2)
-	fmt.Printf("Event list handler called. Should get events for chapter %d\n", user2.ChapterID)
+	user, _ := getAuthedADBUser(c.db, r)
+	chapter := user.ChapterID
 
 	err := r.ParseForm()
 	if err != nil {
@@ -1038,6 +1039,7 @@ func (c MainController) EventListHandler(w http.ResponseWriter, r *http.Request)
 		EventType:      eventType,
 		EventNameQuery: eventName,
 		EventActivist:  eventActivist,
+		ChapterID:      chapter,
 	})
 
 	if err != nil {
@@ -1058,7 +1060,11 @@ func (c MainController) EventDeleteHandler(w http.ResponseWriter, r *http.Reques
 		panic(err)
 	}
 
-	if err := model.DeleteEvent(c.db, eventID); err != nil {
+	user, _ := getAuthedADBUser(c.db, r)
+	chapter := user.ChapterID
+
+	// We pass in the chapter ID to make sure people don't delete event that don't belong to their chapter.
+	if err := model.DeleteEvent(c.db, eventID, chapter); err != nil {
 		sendErrorMessage(w, err)
 		return
 	}

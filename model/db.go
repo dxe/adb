@@ -137,6 +137,7 @@ CREATE TABLE events (
   survey_sent TINYINT(1) NOT NULL DEFAULT '0',
   suppress_survey TINYINT(1) NOT NULL DEFAULT '0',
   circle_id INTEGER NOT NULL DEFAULT '0',
+  chapter_id INT(11) DEFAULT '0',
   INDEX (date, name),
   FULLTEXT (name)
 )

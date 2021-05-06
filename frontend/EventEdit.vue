@@ -35,7 +35,7 @@
               </option>
             </b-select>
           </b-field>
-          <b-field label="Circle (optional)">
+          <b-field label="Circle (optional)" v-if="chapter === 'SF Bay Area'">
             <b-select v-model="selectedCircleID" expanded icon="account-supervisor-circle">
               <option v-for="circle in allCircles" :value="circle.id" :key="circle.id">
                 {{ circle.name }}
@@ -126,6 +126,7 @@ export default Vue.extend({
     connections: Boolean,
     // TODO(mdempsky): Change id to Number.
     id: String,
+    chapter: String,
   },
   data() {
     return {
@@ -138,7 +139,7 @@ export default Vue.extend({
       date: '',
       type: '',
       attendees: [] as string[],
-      suppressSurvey: false,
+      suppressSurvey: this.chapter != 'SF Bay Area',
 
       oldName: '',
       oldDate: '',
@@ -169,7 +170,7 @@ export default Vue.extend({
 
   created() {
     this.updateAutocompleteNames();
-    this.getCircleNames();
+    if (this.chapter === 'SF Bay Area') this.getCircleNames();
 
     // If we're editing an existing event, fetch the data.
     if (Number(this.id) != 0) {
@@ -576,6 +577,7 @@ export default Vue.extend({
       return activistFull && activistFull.phone;
     },
     shouldShowSuppressSurveyCheckbox() {
+      if (this.chapter != 'SF Bay Area') return false;
       // only show checkbox if a survey will be sent for this event
       if (
         this.type === 'Action' ||

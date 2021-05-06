@@ -28,6 +28,7 @@ func TestGetEvents(t *testing.T) {
 		Attendees:      []string{a1.Name},
 		AttendeeEmails: []string{a1.Email},
 		AttendeeIDs:    []int{a1.ID},
+		ChapterID:      1,
 	}, {
 		ID:             2,
 		EventName:      "event two",
@@ -36,6 +37,7 @@ func TestGetEvents(t *testing.T) {
 		Attendees:      []string{a1.Name, a2.Name},
 		AttendeeEmails: []string{a1.Email, a2.Email},
 		AttendeeIDs:    []int{a1.ID, a2.ID},
+		ChapterID:      1,
 	}}
 
 	for _, e := range wantEvents {
@@ -43,6 +45,7 @@ func TestGetEvents(t *testing.T) {
 			EventName: e.EventName,
 			EventDate: e.EventDate,
 			EventType: e.EventType,
+			ChapterID: 1,
 		}
 		if e.ID == 1 {
 			insert.AddedAttendees = []Activist{a1}
@@ -90,12 +93,14 @@ func TestGetEvents_orderBy(t *testing.T) {
 		EventDate:      d1,
 		EventType:      "Working Group",
 		AddedAttendees: []Activist{a1},
+		ChapterID:      1,
 	}, {
 		ID:             2,
 		EventName:      "later event",
 		EventDate:      d2,
 		EventType:      "Protest",
 		AddedAttendees: []Activist{a1},
+		ChapterID:      1,
 	}}
 
 	for _, e := range wantEvents {
@@ -104,6 +109,7 @@ func TestGetEvents_orderBy(t *testing.T) {
 			EventDate:      e.EventDate,
 			EventType:      e.EventType,
 			AddedAttendees: e.AddedAttendees,
+			ChapterID:      1,
 		})
 		require.NoError(t, err)
 	}
@@ -134,6 +140,7 @@ func TestInsertUpdateEvent(t *testing.T) {
 		EventDate:      time.Now(),
 		EventType:      "Working Group",
 		AddedAttendees: []Activist{a1},
+		ChapterID:      1,
 	}
 
 	eventID, err := InsertUpdateEvent(db, event)
@@ -182,6 +189,7 @@ func TestInsertUpdateEvent_noDuplicateAttendees(t *testing.T) {
 		EventDate:      time.Now(),
 		EventType:      "Working Group",
 		AddedAttendees: []Activist{a1, a1},
+		ChapterID:      1,
 	}
 
 	eventID, err := InsertUpdateEvent(db, event)
@@ -214,12 +222,14 @@ func TestDeleteEvents(t *testing.T) {
 		EventDate:      d1,
 		EventType:      "Working Group",
 		AddedAttendees: []Activist{a1},
+		ChapterID:      1,
 	}, {
 		ID:             2,
 		EventName:      "event two",
 		EventDate:      d2,
 		EventType:      "Protest",
 		AddedAttendees: []Activist{a1, a2},
+		ChapterID:      1,
 	}}
 
 	for _, e := range wantEvents {
@@ -228,6 +238,7 @@ func TestDeleteEvents(t *testing.T) {
 			EventDate:      e.EventDate,
 			EventType:      e.EventType,
 			AddedAttendees: e.AddedAttendees,
+			ChapterID:      1,
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -235,7 +246,7 @@ func TestDeleteEvents(t *testing.T) {
 	}
 
 	// Delete the first event
-	err = DeleteEvent(db, 1)
+	err = DeleteEvent(db, 1, 1)
 	require.NoError(t, err)
 
 	gotEvents, err := GetEvents(db, GetEventOptions{})

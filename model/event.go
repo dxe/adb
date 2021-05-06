@@ -44,6 +44,7 @@ type EventJSON struct {
 	DeletedAttendees []string `json:"deleted_attendees"` // Used for Updating Events
 	SuppressSurvey   bool     `json:"suppress_survey"`
 	CircleID         int      `json:"circle_id"`
+	ChapterID        int      `json:"chapter_id"`
 }
 
 /* TODO Restructure this Struct */
@@ -61,6 +62,7 @@ type Event struct {
 	AddedAttendees        []Activist // Used for Updating Events
 	DeletedAttendees      []Activist // Used for Updating Events
 	CircleID              int        `db:"circle_id"`
+	ChapterID             int        `db:"chapter_id"`
 }
 
 func (event *Event) ToJSON() EventJSON {
@@ -74,11 +76,13 @@ func (event *Event) ToJSON() EventJSON {
 		AttendeeIDs:    event.AttendeeIDs,
 		SuppressSurvey: event.SuppressSurvey,
 		CircleID:       event.CircleID,
+		ChapterID:      event.ChapterID,
 	}
 }
 
 type GetEventOptions struct {
-	EventID int
+	EventID   int
+	ChapterID int
 	// NOTE: don't pass user input to OrderBy, cause that could
 	// cause a SQL injection.
 	OrderBy        string
@@ -127,7 +131,7 @@ func GetEvent(db *sqlx.DB, options GetEventOptions) (Event, error) {
 }
 
 func getEvents(db *sqlx.DB, options GetEventOptions) ([]Event, error) {
-	query := `SELECT e.id, e.name, e.date, e.event_type, e.survey_sent, e.suppress_survey, e.circle_id FROM events e `
+	query := `SELECT e.id, e.name, e.date, e.event_type, e.survey_sent, e.suppress_survey, e.circle_id, chapter_id FROM events e `
 
 	// Items in whereClause are added to the query in order, separated by ' AND '.
 	var whereClause []string
@@ -151,6 +155,9 @@ ON (e.id = ea.event_id AND ea.activist_id = a.id)
 
 	if options.EventID != 0 {
 		where("e.id = ?", options.EventID)
+	}
+	if options.ChapterID != 0 {
+		where("e.chapter_id = ?", options.ChapterID)
 	}
 	if options.DateFrom != "" {
 		where("e.date >= ?", options.DateFrom)
@@ -258,7 +265,7 @@ func GetEventAttendance(db *sqlx.DB, eventID int) ([]string, error) {
 	return attendees, nil
 }
 
-func DeleteEvent(db *sqlx.DB, eventID int) error {
+func DeleteEvent(db *sqlx.DB, eventID int, chapterID int) error {
 	tx, err := db.Beginx()
 	if err != nil {
 		return errors.Wrap(err, "failed to create transaction")
@@ -271,7 +278,7 @@ WHERE event_id = ?`, eventID)
 	}
 
 	_, err = tx.Exec(`DELETE FROM events
-WHERE id = ?`, eventID)
+WHERE id = ? AND chapter_id = ?`, eventID, chapterID)
 	if err != nil {
 		tx.Rollback()
 		return errors.Wrapf(err, "failed to delete event %d", eventID)
@@ -317,8 +324,8 @@ func insertEvent(db *sqlx.DB, event Event) (eventID int, err error) {
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to create transaction")
 	}
-	res, err := tx.NamedExec(`INSERT INTO events (name, date, event_type, suppress_survey, circle_id)
-VALUES (:name, :date, :event_type, :suppress_survey, :circle_id)`, event)
+	res, err := tx.NamedExec(`INSERT INTO events (name, date, event_type, suppress_survey, circle_id, chapter_id)
+VALUES (:name, :date, :event_type, :suppress_survey, :circle_id, :chapter_id)`, event)
 	if err != nil {
 		tx.Rollback()
 		return 0, errors.Wrap(err, "failed to insert event")
@@ -346,9 +353,9 @@ func updateEvent(db *sqlx.DB, event Event) (eventID int, err error) {
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to update event")
 	}
-	// Error out if the event doesn't exist.
+	// Error out if the event doesn't exist for this chapter.
 	var eventCount int
-	err = tx.Get(&eventCount, `SELECT count(*) FROM events WHERE id = ?`, event.ID)
+	err = tx.Get(&eventCount, `SELECT count(*) FROM events WHERE id = ? AND chapter_id = ?`, event.ID, event.ChapterID)
 	if err != nil {
 		tx.Rollback()
 		return 0, errors.Wrap(err, "failed to get event count")
