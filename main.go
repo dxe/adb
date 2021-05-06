@@ -992,6 +992,8 @@ func (c MainController) ConnectionSaveHandler(w http.ResponseWriter, r *http.Req
 
 	// Events with no event ID are new events.
 	isNewEvent := event.ID == 0
+	user, _ := getAuthedADBUser(c.db, r)
+	event.ChapterID = user.ChapterID
 
 	eventID, err := model.InsertUpdateEvent(c.db, event)
 	if err != nil {
