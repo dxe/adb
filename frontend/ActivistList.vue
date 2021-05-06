@@ -171,18 +171,14 @@
           <p class="modal-card-title">Choose columns to display</p>
         </header>
         <section class="modal-card-body">
-          <div v-for="(column, idx) in columns">
-            <span v-if="column.header !== ''">
-              <span v-if="columns[idx].category !== columns[idx - 1].category"
-                ><p class="mt-3 mb-1">
-                  <strong class="has-text-primary">{{ column.category }}</strong>
-                </p></span
-              >
-              <b-field>
+          <div v-for="(columns, category) in groupBy(columns, 'category')" class="mb-3">
+            <div class="has-text-primary mb-1 has-text-weight-bold">{{ category }}</div>
+            <div v-for="column in columns">
+              <b-field class="mb-1">
                 <b-switch :id="column.header" v-model="column.enabled" type="is-primary" />
                 {{ column.longHeader }}
               </b-field>
-            </span>
+            </div>
           </div>
         </section>
         <footer class="modal-card-foot">
@@ -233,6 +229,7 @@ interface Column {
   category?: string;
   data: Handsontable.GridSettings;
   enabled: boolean;
+  showForAllChapters?: boolean;
 }
 
 function emailValidator(value: string, callback: Function) {
@@ -251,7 +248,15 @@ function emailValidator(value: string, callback: Function) {
   }, 250);
 }
 
-function getDefaultColumns(view: string): Column[] {
+function getColumnsForChapter(chapter: string, view: string): Column[] {
+  const cols = getDefaultColumns(chapter, view);
+  if (chapter === 'SF Bay Area') return cols;
+  return cols.filter((c) => {
+    return !!c.showForAllChapters && c.showForAllChapters;
+  });
+}
+
+function getDefaultColumns(chapter: string, view: string): Column[] {
   return [
     {
       header: '',
@@ -275,6 +280,7 @@ function getDefaultColumns(view: string): Column[] {
         colWidths: 50,
       },
       enabled: false,
+      showForAllChapters: true,
     },
     {
       header: 'Name',
@@ -285,6 +291,7 @@ function getDefaultColumns(view: string): Column[] {
         colWidths: 150,
       },
       enabled: true,
+      showForAllChapters: true,
     },
     {
       header: 'SMS Name',
@@ -325,6 +332,7 @@ function getDefaultColumns(view: string): Column[] {
         view === 'chapter_member_prospects' ||
         view === 'chapter_member_development' ||
         view === 'community_prospects',
+      showForAllChapters: true,
     },
     {
       header: 'Phone',
@@ -339,6 +347,7 @@ function getDefaultColumns(view: string): Column[] {
         view === 'all_activists' ||
         view === 'chapter_member_prospects' ||
         view === 'chapter_member_development',
+      showForAllChapters: true,
     },
     {
       header: 'Discord ID',
@@ -358,6 +367,7 @@ function getDefaultColumns(view: string): Column[] {
         data: 'facebook',
       },
       enabled: view === 'all_activists',
+      showForAllChapters: true,
     },
     {
       header: 'Level',
@@ -387,7 +397,8 @@ function getDefaultColumns(view: string): Column[] {
         dateFormat: 'YYYY-MM-DD',
         correctFormat: true,
       },
-      enabled: view === 'all_activists',
+      enabled: view === 'all_activists' && chapter === 'SF Bay Area',
+      showForAllChapters: true,
     },
     // Location
     {
@@ -399,6 +410,7 @@ function getDefaultColumns(view: string): Column[] {
         colWidths: 100,
       },
       enabled: false,
+      showForAllChapters: true,
     },
     {
       header: 'City',
@@ -409,6 +421,7 @@ function getDefaultColumns(view: string): Column[] {
         colWidths: 100,
       },
       enabled: false,
+      showForAllChapters: true,
     },
     {
       header: 'State',
@@ -419,6 +432,7 @@ function getDefaultColumns(view: string): Column[] {
         colWidths: 100,
       },
       enabled: false,
+      showForAllChapters: true,
     },
     {
       header: 'Zip Code',
@@ -428,7 +442,8 @@ function getDefaultColumns(view: string): Column[] {
         data: 'location',
         colWidths: 100,
       },
-      enabled: view === 'all_activists',
+      enabled: view === 'all_activists' && chapter === 'SF Bay Area',
+      showForAllChapters: true,
     },
     // Referral Info
     {
@@ -562,7 +577,12 @@ function getDefaultColumns(view: string): Column[] {
         readOnly: true,
         colWidths: 200,
       },
-      enabled: view === 'leaderboard' || view === 'community_prospects' || view === 'study',
+      enabled:
+        view === 'leaderboard' ||
+        view === 'community_prospects' ||
+        view === 'study' ||
+        chapter !== 'SF Bay Area',
+      showForAllChapters: true,
     },
     {
       header: 'Last Event',
@@ -573,7 +593,8 @@ function getDefaultColumns(view: string): Column[] {
         readOnly: true,
         colWidths: 200,
       },
-      enabled: view === 'leaderboard' || view === 'study',
+      enabled: view === 'leaderboard' || view === 'study' || chapter !== 'SF Bay Area',
+      showForAllChapters: true,
     },
     {
       header: 'Total Events',
@@ -585,7 +606,12 @@ function getDefaultColumns(view: string): Column[] {
         readOnly: true,
         colWidths: 90,
       },
-      enabled: view === 'leaderboard' || view === 'community_prospects' || view === 'study',
+      enabled:
+        view === 'leaderboard' ||
+        view === 'community_prospects' ||
+        view === 'study' ||
+        chapter !== 'SF Bay Area',
+      showForAllChapters: true,
     },
     {
       header: 'Points',
@@ -823,6 +849,7 @@ function getDefaultColumns(view: string): Column[] {
         view === 'development' ||
         view === 'chapter_member_development' ||
         view === 'chapter_member_prospects',
+      showForAllChapters: true,
     },
     {
       header: 'Interests',
@@ -973,8 +1000,21 @@ export default Vue.extend({
     view: {
       type: String,
     },
+    chapter: String,
   },
   methods: {
+    groupBy(objectArray: Column[], property: any) {
+      // TODO: don't use "any"
+      return objectArray.reduce((acc: any, obj: any) => {
+        const key = obj[property];
+        if (!acc[key]) {
+          acc[key] = [];
+        }
+        // Add object to list for given key's value
+        acc[key].push(obj);
+        return acc;
+      }, {});
+    },
     isMobile() {
       return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
         navigator.userAgent,
@@ -1284,7 +1324,7 @@ export default Vue.extend({
       disableConfirmButton: false,
       allActivists: [] as Activist[],
       height: 500,
-      columns: getDefaultColumns(this.view),
+      columns: getColumnsForChapter(this.chapter, this.view),
       lastEventDateFrom: initDateFrom,
       lastEventDateTo: initDateTo,
       showFilters: false,
@@ -1359,6 +1399,7 @@ export default Vue.extend({
     },
   },
   created() {
+    console.log(this.columns);
     this.loadActivists();
     EventBus.$on('activist-show-options-modal', (row: number) => {
       this.showOptionsModal(row);

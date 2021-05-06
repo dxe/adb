@@ -2,7 +2,7 @@
 
 <div id="app">
   <adb-nav page="{{ .PageName }}" user="{{ .UserName }}" role="{{ .MainRole }}" chapter="{{ .UserChapter.Name }}"></adb-nav>
-  <activist-list title="{{ .Data.Title }}" description="{{ .Data.Description }}" view="{{ .Data.View }}"></activist-list>
+  <activist-list title="{{ .Data.Title }}" description="{{ .Data.Description }}" view="{{ .Data.View }}" chapter="{{ .UserChapter.Name }}"></activist-list>
 </div>
 <script src="/dist/adb.js?{{ .StaticResourcesHash }}"></script>
 

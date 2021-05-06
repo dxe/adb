@@ -68,7 +68,7 @@ var DevTestUser = ADBUser{
 	Disabled:    false,
 	Roles:       []UserRole{{UserID: 1, Role: "admin"}},
 	ChapterID:   1,
-	ChapterName: "SF Bay Area",
+	ChapterName: "St. Louis",
 }
 
 type UserRole struct {
