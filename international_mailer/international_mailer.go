@@ -227,10 +227,14 @@ func internationalActionMailerWrapper(db *sqlx.DB) {
 			if neverSentEmail || sentEmailToday {
 				continue
 			}
+			if chap.LastContact == "" {
+				sendInternationalActionEmail(db, chap)
+				continue
+			}
 			dateLayout := "2006-01-02"
 			lastContactDate, err := time.Parse(dateLayout, chap.LastContact)
 			if err != nil {
-				fmt.Printf("Error parsing last contact date for chapter %v", chap.Name)
+				fmt.Printf("Error parsing last contact date for chapter %v\n", chap.Name)
 				continue
 			}
 			if lastContactDate.Before(startOfCurrentMonth) {
