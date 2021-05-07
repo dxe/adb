@@ -141,7 +141,7 @@ func sendInternationalActionEmail(db *sqlx.DB, chapter model.ChapterWithToken) {
 		return
 	}
 
-	fmt.Printf("Sending int'l action email to %v: %v\n", chapter.Name, strings.Join(toEmails, ","))
+	log.Printf("Sending int'l action email to %v: %v\n", chapter.Name, strings.Join(toEmails, ","))
 	err := mailer.Send(mailer.Message{
 		FromName:    "Paul Darwin Picklesimer",
 		FromAddress: "paul@directactioneverywhere.com",
@@ -234,7 +234,7 @@ func internationalActionMailerWrapper(db *sqlx.DB) {
 			dateLayout := "2006-01-02"
 			lastContactDate, err := time.Parse(dateLayout, chap.LastContact)
 			if err != nil {
-				fmt.Printf("Error parsing last contact date for chapter %v\n", chap.Name)
+				log.Printf("Error parsing last contact date for chapter %v\n", chap.Name)
 				continue
 			}
 			if lastContactDate.Before(startOfCurrentMonth) {
@@ -250,13 +250,13 @@ func internationalActionMailerWrapper(db *sqlx.DB) {
 func internationalActionFormProcessor(db *sqlx.DB) {
 	newResponses, err := model.GetUnprocessedInternationalActionFormResponses(db)
 	if err != nil {
-		fmt.Println("Error getting new int'l action form responses to process", err.Error())
+		log.Println("Error getting new int'l action form responses to process", err.Error())
 		return
 	}
 	for _, form := range newResponses {
 		chap, err := model.GetChapterByID(db, form.ChapterID)
 		if err != nil {
-			fmt.Println("Error looking up chapter for int'l action form response", form.ID, err.Error())
+			log.Println("Error looking up chapter for int'l action form response", form.ID, err.Error())
 			continue
 		}
 		chap.LastContact = form.SubmittedAt.Time.Format("2006-01-02")
@@ -265,7 +265,7 @@ func internationalActionFormProcessor(db *sqlx.DB) {
 		}
 		_, err = model.UpdateChapter(db, chap)
 		if err != nil {
-			fmt.Println("Failed to update chapter with int'l action form response data", form.ID, err.Error())
+			log.Println("Failed to update chapter with int'l action form response data", form.ID, err.Error())
 			continue
 		}
 		if form.Needs != "" {
@@ -285,7 +285,7 @@ func internationalActionFormProcessor(db *sqlx.DB) {
 		}
 		err = model.MarkInternationalActionFormProcessed(db, form.ID)
 		if err != nil {
-			fmt.Println("Failed to mark int'l action form as processed", form.ID, err.Error())
+			log.Println("Failed to mark int'l action form as processed", form.ID, err.Error())
 			continue
 		}
 	}
