@@ -124,8 +124,8 @@
               <a
                 href="https://docs.google.com/document/d/e/2PACX-1vSTt4SXGl-eARvOpTzOM8Nzcs9uo1ZVkCuqD0doRkE6zCpx6NgMbVqYwCh691GLKZ5-hklnsaPfHlfa/pub"
                 target="_blank"
-                >code of conduct.</a
-              >
+                >code of conduct</a
+              >.
             </p>
 
             <b-field class="mt-3">
@@ -141,7 +141,7 @@
               I support DxE’s
               <a href="https://www.directactioneverywhere.com/core-values" target="_blank"
                 >mission and values</a
-              >
+              >.
             </p>
 
             <b-field class="mt-3">
