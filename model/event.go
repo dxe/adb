@@ -131,7 +131,7 @@ func GetEvent(db *sqlx.DB, options GetEventOptions) (Event, error) {
 }
 
 func getEvents(db *sqlx.DB, options GetEventOptions) ([]Event, error) {
-	query := `SELECT e.id, e.name, e.date, e.event_type, e.survey_sent, e.suppress_survey, e.circle_id, chapter_id FROM events e `
+	query := `SELECT e.id, e.name, e.date, e.event_type, e.survey_sent, e.suppress_survey, e.circle_id, e.chapter_id FROM events e `
 
 	// Items in whereClause are added to the query in order, separated by ' AND '.
 	var whereClause []string

@@ -53,6 +53,7 @@
         <ul>
           <li>Voting rights (after sustained participation in the chapter)</li>
           <li>Access to chapter member mailing lists, Discord server, and Facebook group</li>
+          <li>Discounts at local and online businesses</li>
           <li>
             Added to a small community group with other chapter members in your neighborhood/area
           </li>
