@@ -269,6 +269,22 @@ func internationalActionFormProcessor(db *sqlx.DB) {
 			continue
 		}
 		if form.Needs != "" {
+			var chapEmails []string
+			if chap.Email != "" {
+				chapEmails = append(chapEmails, chap.Email)
+			}
+			if len(chap.Organizers) > 0 {
+				for _, o := range chap.Organizers {
+					if o.Email != "" {
+						chapEmails = append(chapEmails, o.Email)
+					}
+				}
+			}
+			emailLink := fmt.Sprintf(`https://mail.google.com/mail/?view=cm&fs=1&su=%v&to=%v`, chap.Name, strings.Join(chapEmails, ","))
+
+			body := fmt.Sprintf("<p>%v</p>", form.Needs)
+			body += fmt.Sprintf(`<p><a href="%v">Click here to reply to %v</a></p>`, emailLink, chap.Name)
+
 			err = mailer.Send(mailer.Message{
 				FromName:       "DxE International Action Form",
 				FromAddress:    "noreply@directactioneverywhere.com",
@@ -276,7 +292,7 @@ func internationalActionFormProcessor(db *sqlx.DB) {
 				ToAddress:      "internationalcoordination@directactioneverywhere.com",
 				ReplyToAddress: "tech@dxe.io",
 				Subject:        fmt.Sprintf("Assistance needed for %v (%v)", chap.Name, form.OrganizerName),
-				BodyHTML:       fmt.Sprintf("<p>%v</p>", form.Needs),
+				BodyHTML:       body,
 				CC:             []string{"jake@dxe.io"},
 			})
 			if err != nil {
