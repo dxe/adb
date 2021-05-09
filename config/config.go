@@ -86,11 +86,6 @@ var (
 		"output/FORM_PROCESSOR_LOG_FILE",
 		false,
 	)
-	FormProcessorLogEmailToAddress = mustGetenv(
-		"FORM_PROCESSOR_LOG_EMAIL_TO_ADDRESS",
-		"",
-		false,
-	)
 )
 
 func SetCommandLineFlags(isProdArgument bool, logLevel int) {
