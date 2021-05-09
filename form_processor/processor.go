@@ -2,22 +2,19 @@ package form_processor
 
 import (
 	"context"
-	"io"
-	"os"
-	"path/filepath"
-
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/robfig/cron/v3"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"os"
 )
 
 // Should be run in a goroutine.
 func StartFormProcessor(db *sqlx.DB) {
 	/* Set default log level */
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	log.Info().Msg("starting go processor; logging to default location before opening log file")
+	log.Info().Msg("starting go processor; logging to default location")
 
 	/* Get config */
 	mainEnv, ok := getMainEnv()
@@ -25,47 +22,12 @@ func StartFormProcessor(db *sqlx.DB) {
 		log.Error().Msg("failed to get ENV variables; will exit main program")
 		return
 	}
-
-	/* Open the log file */
-	logFile, openLogFileErr := os.OpenFile(
-		mainEnv.logFilePath,
-		os.O_RDWR|os.O_CREATE|os.O_APPEND,
-		0666,
-	)
-	if os.IsNotExist(openLogFileErr) {
-		mkdirErr := os.MkdirAll(filepath.Dir(mainEnv.logFilePath), 0700)
-		if mkdirErr != nil {
-			log.Error().Msgf(
-				"failed to create directories recusrively; will exit main program; %s",
-				mkdirErr,
-			)
-			return
-		}
-		logFile, openLogFileErr = os.OpenFile(
-			mainEnv.logFilePath,
-			os.O_RDWR|os.O_CREATE|os.O_APPEND,
-			0666,
-		)
-	}
-	if openLogFileErr != nil {
-		log.Error().Msgf("error opening log file; will exit main program; %s", openLogFileErr)
-		return
-	}
-	defer logFile.Close()
-	var writers []io.Writer
-	writers = append(writers, zerolog.ConsoleWriter{Out: os.Stderr})
-	writers = append(writers, logFile)
-	multiWriter := zerolog.MultiLevelWriter(writers...)
-	log.Logger = zerolog.New(multiWriter).With().Timestamp().Logger()
-	log.Debug().Msg("successfully opened log file; proceeding")
-
 	/* Set defined log level */
 	log.Info().Msgf("setting log level to %d", mainEnv.logLevel)
 	zerolog.SetGlobalLevel(zerolog.Level(mainEnv.logLevel))
 
 	/* Start tasks on a scheduule */
 	cron := cron.New()
-	cron.AddFunc(mainEnv.sendLogByEmailCronExpression, sendLogByEmail)
 	cron.AddFunc(mainEnv.processFormsCronExpression, func() { process(db) })
 	cron.Run()
 }
