@@ -15,11 +15,6 @@ type processEnv struct {
 	lockFilePath string
 }
 
-type sendLogByEmailEnv struct {
-	logFilePath string
-	toAddress   string
-}
-
 func getMainEnv() (mainEnv, bool) {
 	return mainEnv{
 			logLevel:                     config.LogLevel,
