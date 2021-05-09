@@ -43,7 +43,7 @@ func process(db *sqlx.DB) {
 	/* Try to acquire the lock file */
 	_, getLockFileErr := os.Stat(processEnv.lockFilePath)
 	if !os.IsNotExist(getLockFileErr) {
-		log.Error().Msg("PROCESSOR_RUNNING flag found; exiting.")
+		log.Error().Msg("PROCESSOR_RUNNING flag found; exiting")
 		return
 	}
 	log.Debug().Msg("did not find lock file; will create lock file")

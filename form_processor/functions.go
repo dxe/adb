@@ -9,7 +9,7 @@ import (
 func getResponsesToProcess(db *sqlx.DB, query string) ([]int, bool) {
 	rawApplicationIds, getApplicationIdsErr := db.Query(query)
 	if getApplicationIdsErr != nil {
-		log.Error().Msgf("failde to get applicationIds: %s", getApplicationIdsErr)
+		log.Error().Msgf("failed to get applicationIds: %s", getApplicationIdsErr)
 		return nil, false
 	}
 	defer rawApplicationIds.Close()
@@ -44,8 +44,7 @@ func getEmail(db *sqlx.DB, query string, id int) (string, bool) {
 	var email string
 	err := db.QueryRow(query, id).Scan(&email)
 	if err != nil {
-		log.Error().Msg("failed to find requested ID in requested table")
-		log.Error().Msgf("failed to get email for %d; %s", id, err)
+		log.Error().Msgf("failed to get email for %d; (failed to find requested ID in requested table) %s", id, err)
 		return "", false
 	}
 	return email, true
