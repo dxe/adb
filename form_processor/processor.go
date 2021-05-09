@@ -2,12 +2,12 @@ package form_processor
 
 import (
 	"context"
-	"os"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/robfig/cron/v3"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"os"
 )
 
 // Should be run in a goroutine.

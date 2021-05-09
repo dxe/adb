@@ -5,9 +5,9 @@ import (
 )
 
 type mainEnv struct {
-	logLevel                     int // Use command-line argument value if it exists. Use ENV value otherwise.
-	logFilePath                  string
-	processFormsCronExpression   string
+	logLevel                   int // Use command-line argument value if it exists. Use ENV value otherwise.
+	logFilePath                string
+	processFormsCronExpression string
 }
 
 type processEnv struct {
@@ -17,9 +17,9 @@ type processEnv struct {
 
 func getMainEnv() (mainEnv, bool) {
 	return mainEnv{
-			logLevel:                     config.LogLevel,
-			logFilePath:                  config.FormProcessorLogFilePath,
-			processFormsCronExpression:   config.FormProcessorProcessFormsCronExpression,
+			logLevel:                   config.LogLevel,
+			logFilePath:                config.FormProcessorLogFilePath,
+			processFormsCronExpression: config.FormProcessorProcessFormsCronExpression,
 		},
 		true
 
