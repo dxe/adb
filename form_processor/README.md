@@ -1,12 +1,7 @@
-# Development
-### Setup
-1. Duplicate `<project root>/adb-forms/dev.env` to `<project root>/.env`
-2. Set a value for `MYSQL_CONNECTION_STRING` in `<project root>/.env` (e.g. by using a local MySQL instance)
-
-### Commands
-- Test: From `adb-forms.`: `go test ./adb-forms/... -v`
-	- Run specific test: `go test ./adb-forms/... -v -run <test name>`
-
+# Local development
+Testing:
+- `go test ./form_processor -v`
+- Specific test: `go test ./form_processor -v TestProcessFormApplicationForNoMatchingActivist`
 
 # ADB Form Processor Overview
 Various forms for getting data into the ADB.
