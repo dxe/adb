@@ -171,7 +171,11 @@
           <p class="modal-card-title">Choose columns to display</p>
         </header>
         <section class="modal-card-body">
-          <div v-for="(columns, category) in groupBy(columns, 'category')" class="mb-3">
+          <div
+            v-for="(columns, category) in groupBy(columns, 'category')"
+            class="mb-3"
+            v-if="category !== 'Options'"
+          >
             <div class="has-text-primary mb-1 has-text-weight-bold">{{ category }}</div>
             <div v-for="column in columns">
               <b-field class="mb-1">
@@ -260,6 +264,7 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
   return [
     {
       header: '',
+      category: 'Options',
       data: {
         renderer: optionsButtonRenderer,
         readOnly: true,
@@ -267,6 +272,7 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
         colWidths: 35,
       },
       enabled: true,
+      showForAllChapters: true,
     },
     // Basic Info
     {

@@ -108,7 +108,7 @@
         }}</span>
       </b-table-column>
 
-      <b-table-column field="FBSyncStatus" label="FB Sync Status" v-slot="props" centered sortable>
+      <b-table-column field="LastFBSync" label="FB Sync Status" v-slot="props" centered sortable>
         <b-icon icon="circle" :type="colorFBSyncStatus(props.row.LastFBSync)"></b-icon>
       </b-table-column>
     </b-table>
