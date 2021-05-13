@@ -1548,7 +1548,7 @@ func GetActivistSpokeInfo(db *sqlx.DB, chapterID int) ([]ChapterMemberSpokeInfo,
 			phone as cell
 		FROM activists
 		WHERE
-		    chapter_id = ?
+		    chapter_id = ? and
 			activist_level in ('chapter member', 'organizer')
 			and hidden = 0`, chapterID)
 	if err != nil {
