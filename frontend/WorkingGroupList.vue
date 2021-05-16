@@ -26,7 +26,7 @@
 
     <b-table :data="workingGroups" striped hoverable default-sort="name">
       <b-table-column v-slot="props" width="1px">
-        <div style="width: 85px;">
+        <div style="width: 85px">
           <b-button @click="showModal('edit-working-group-modal', props.row)">
             <b-icon icon="pencil" type="is-primary"></b-icon>
           </b-button>

@@ -82,7 +82,7 @@ export default Vue.extend({
     token: String,
   },
   methods: {
-    validate: function() {
+    validate: function () {
       type VueFormInput = Vue & { checkHtml5Validity: () => boolean };
       const refsToValidate = ['organizerName'];
       const results = refsToValidate.map((ref) => {
@@ -90,7 +90,7 @@ export default Vue.extend({
       });
       return results.indexOf(false) === -1;
     },
-    submitForm: function() {
+    submitForm: function () {
       if (!this.validate()) return;
       if (this.actionLastMonth === null) {
         flashMessage('Please choose "Yes" or "No" for the second question.', true);
@@ -143,10 +143,7 @@ export default Vue.extend({
       organizerName: '',
       lastAction: null,
       needs: '',
-      month: dayjs()
-        .subtract(1, 'month')
-        .startOf('month')
-        .toDate(),
+      month: dayjs().subtract(1, 'month').startOf('month').toDate(),
       actionLastMonth: null,
     };
   },

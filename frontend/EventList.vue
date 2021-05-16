@@ -102,7 +102,7 @@
       </template>
 
       <b-table-column v-slot="props" width="1px">
-        <div style="width: 85px;">
+        <div style="width: 85px">
           <b-button
             tag="a"
             :href="(connections ? '/update_connection/' : '/update_event/') + props.row.event_id"
@@ -215,10 +215,7 @@ export default Vue.extend({
   data() {
     // Default search from the 1st of last month to today.
     const today = dayjs().format('YYYY-MM-DD');
-    const start = dayjs()
-      .subtract(1, 'months')
-      .startOf('month')
-      .format('YYYY-MM-DD');
+    const start = dayjs().subtract(1, 'months').startOf('month').format('YYYY-MM-DD');
 
     return {
       search: {
