@@ -1,5 +1,6 @@
 # Local development
-Testing:
+### Testing
+From project root:
 - `go test ./form_processor -v`
 - Specific test: `go test ./form_processor -v TestProcessFormApplicationForNoMatchingActivist`
 
