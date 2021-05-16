@@ -1917,7 +1917,7 @@ func (c MainController) DiscordConfirmNewHandler(w http.ResponseWriter, r *http.
 				log.Println("Error updating Discord nickname!", err)
 			}
 
-			err = discord.AddUserRole(user.ID, "Verified")
+			err = discord.AddUserRole(user.ID, "New user")
 			if err != nil {
 				log.Println(err)
 			}
