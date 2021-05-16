@@ -4,7 +4,7 @@
 # Keep in sync with "make fmt".
 
 gofiles=$(gofmt -l $(find . -name "*.go"))
-webfiles=$(npx prettier -l frontend/*.{js,ts,vue})
+webfiles=$(npx prettier -l frontend/*.{ts,vue})
 [ -z "$gofiles" -a -z "$webfiles" ] && exit 0
 
 echo >&2 "Misformatted files:"
