@@ -58,16 +58,12 @@ func process(db *sqlx.DB) {
 	processForms(db)
 
 	/* Remove lock file */
-	removeLockFile(processEnv.lockFilePath)
-
-	log.Debug().Msg("finished processing run")
-}
-
-func removeLockFile(lockFilePath string) {
-	removeLockFilErr := os.Remove(lockFilePath)
+	removeLockFilErr := os.Remove(processEnv.lockFilePath)
 	if removeLockFilErr != nil {
 		log.Error().Msgf("failed to remove lock file: %s", removeLockFilErr)
 	}
+
+	log.Debug().Msg("finished processing run")
 }
 
 func processForms(db *sqlx.DB) {
