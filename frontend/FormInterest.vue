@@ -145,12 +145,8 @@
         <p class="mb-3">Where did you hear about this opportunity to get involved in DxE?</p>
 
         <div class="block">
-          <b-radio v-model="referralOutlet" native-value="Social Media">
-            Social Media
-          </b-radio>
-          <b-radio v-model="referralOutlet" native-value="Email">
-            Email
-          </b-radio>
+          <b-radio v-model="referralOutlet" native-value="Social Media"> Social Media </b-radio>
+          <b-radio v-model="referralOutlet" native-value="Email"> Email </b-radio>
           <b-radio v-model="referralOutlet" native-value="Meetup">
             Saturday morning meetup
           </b-radio>
@@ -181,7 +177,7 @@ import { flashMessage, initializeFlashMessage } from './flash_message';
 export default Vue.extend({
   name: 'form-interest',
   methods: {
-    validate: function() {
+    validate: function () {
       type VueFormInput = Vue & { checkHtml5Validity: () => boolean };
       const refsToValidate = ['firstName', 'lastName', 'email', 'phone', 'zip'];
       const results = refsToValidate.map((ref) => {
@@ -189,7 +185,7 @@ export default Vue.extend({
       });
       return results.indexOf(false) === -1;
     },
-    submitForm: function() {
+    submitForm: function () {
       if (!this.validate()) return;
       this.submitting = true;
       $.ajax({
@@ -228,7 +224,7 @@ export default Vue.extend({
         },
       });
     },
-    reloadPage: function() {
+    reloadPage: function () {
       if (this.$options.data) {
         location.reload();
       }

@@ -7,9 +7,7 @@
     </template>
     <template #start>
       <b-navbar-dropdown label="Attendance" collapsible v-if="isAttendance(role)">
-        <b-navbar-item href="/" :active="page === 'NewEvent'">
-          New Event
-        </b-navbar-item>
+        <b-navbar-item href="/" :active="page === 'NewEvent'"> New Event </b-navbar-item>
         <b-navbar-item href="/list_events" :active="page === 'EventList'" class="mb-2">
           All Events
         </b-navbar-item>
@@ -80,9 +78,7 @@
         <b-navbar-item href="/list_chapters" :active="page === 'ChaptersList'">
           Chapters
         </b-navbar-item>
-        <b-navbar-item href="/admin/users" :active="page === 'UserList'">
-          Users
-        </b-navbar-item>
+        <b-navbar-item href="/admin/users" :active="page === 'UserList'"> Users </b-navbar-item>
       </b-navbar-dropdown>
     </template>
 
@@ -93,9 +89,7 @@
           {{ user }} ({{ chapter }})
         </div>
         <div class="buttons">
-          <a href="/logout" class="button is-light">
-            Log out
-          </a>
+          <a href="/logout" class="button is-light"> Log out </a>
         </div>
       </b-navbar-item>
     </template>
