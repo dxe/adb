@@ -36,20 +36,20 @@ func process(db *sqlx.DB) {
 	log.Debug().Msg("starting processing run")
 	processEnv, ok := getProcessEnv()
 	if !ok {
-		log.Error().Msg("failed to get ENV variables; will no start processing run")
+		log.Error().Msg("failed to get ENV variables; will not start processing run")
 		return
 	}
 
 	/* Try to acquire the lock file */
 	_, getLockFileErr := os.Stat(processEnv.lockFilePath)
 	if !os.IsNotExist(getLockFileErr) {
-		log.Error().Msg("ERROR: PROCESSOR_RUNNING flag found. Exiting.")
+		log.Error().Msg("PROCESSOR_RUNNING flag found; exiting")
 		return
 	}
 	log.Debug().Msg("did not find lock file; will create lock file")
 	_, createLockFileErr := os.Create(processEnv.lockFilePath)
 	if createLockFileErr != nil {
-		log.Error().Msgf("error creating lock file; exiting; %s", createLockFileErr)
+		log.Error().Msgf("failed to create lock file; exiting; %s", createLockFileErr)
 		return
 	}
 	log.Debug().Msg("successfully created lock file; proceeding")
@@ -58,16 +58,12 @@ func process(db *sqlx.DB) {
 	processForms(db)
 
 	/* Remove lock file */
-	removeLockFile(processEnv.lockFilePath)
-
-	log.Debug().Msg("finished processing run")
-}
-
-func removeLockFile(lockFilePath string) {
-	removeLockFilErr := os.Remove(lockFilePath)
+	removeLockFilErr := os.Remove(processEnv.lockFilePath)
 	if removeLockFilErr != nil {
 		log.Error().Msgf("failed to remove lock file: %s", removeLockFilErr)
 	}
+
+	log.Debug().Msg("finished processing run")
 }
 
 func processForms(db *sqlx.DB) {
@@ -78,16 +74,16 @@ func processForms(db *sqlx.DB) {
 		return
 	}
 	if len(applicationIds) == 0 {
-		log.Debug().Msg("No new form_application submissions to process")
+		log.Debug().Msg("no new form_application submissions to process")
 	}
 	for _, id := range applicationIds {
 		log.Info().Msgf("Processing Application row %d", id)
 		_, processErr := db.Exec(processApplicationOnNameQuery, id)
 		if processErr != nil {
-			log.Error().Msgf("error processing application on name; exiting; %s", processErr)
+			log.Error().Msgf("failed to prrocess application on name; exiting; %s", processErr)
 			return
 		}
-		log.Info().Msg("Executed sql command to process Application based on name")
+		log.Info().Msg("executed sql command to process Application based on name")
 
 		processed, isSuccess := getProcessingStatus(db, applicationProcessingStatusQuery, id)
 		if !isSuccess {
@@ -117,7 +113,7 @@ func processForms(db *sqlx.DB) {
 					log.Error().Msgf("failed to processApplicationOnEmailQuery; exiting; %s", err)
 					return
 				}
-				log.Info().Msg("Executed sql command to process Application based on email")
+				log.Info().Msg("executed sql command to process Application based on email")
 			case 0:
 				// insert new record
 				ctx := context.Background()
@@ -126,14 +122,14 @@ func processForms(db *sqlx.DB) {
 					log.Error().Msgf("failed to BeginTx for processApplicationByInsertQuery; exiting; %s", txErr)
 					return
 				} else {
-					log.Info().Msg("successfully began transaction; will continue")
+					log.Info().Msg("successfully began transaction; proceeding")
 				}
 				_, processErr := tx.ExecContext(ctx, processApplicationByInsertQuery, id)
 				if processErr != nil {
 					log.Error().Msgf("failed to processApplicationByInsertQuery; exiting; %s", processErr)
 					return
 				}
-				log.Info().Msg("Executed sql command to insert new activist record from Application")
+				log.Info().Msg("executed sql command to insert new activist record from Application")
 				res, updateErr := tx.ExecContext(ctx, processApplicationByInsertUpdateQuery, id)
 				if updateErr != nil {
 					log.Error().Msgf("failed to processApplicationByInsertUpdateQuery; exiting; %s", updateErr)
@@ -152,19 +148,19 @@ func processForms(db *sqlx.DB) {
 					log.Error().Msg("the activist was not updated (application date in activists table does not match the" +
 						" date in application?); please correct")
 				} else {
-					log.Info().Msg("Executed sql command to mark as processed")
+					log.Info().Msg("executed sql command to mark Application as processed")
 				}
 				commitErr := tx.Commit()
 				if commitErr != nil {
 					log.Error().Msgf("failed to commit transaction; exiting; %s", commitErr)
 					return
 				} else {
-					log.Info().Msg("successfully committed transaction; will continue")
+					log.Info().Msg("successfully committed transaction; proceeding")
 				}
 			default:
 				// email count is > 1, so send email to tech
 				log.Error().Msgf(
-					"ERROR: %d non-hidden activists associated with email address %s for"+
+					"%d non-hidden activists associated with email address %s for"+
 						" Application response %d Please correct.",
 					count,
 					email,
@@ -181,17 +177,17 @@ func processForms(db *sqlx.DB) {
 		return
 	}
 	if len(interestIds) == 0 {
-		log.Debug().Msg("No new form_interest submissions to process")
+		log.Debug().Msg("no new form_interest submissions to process")
 	}
 	for _, id := range interestIds {
-		log.Info().Msgf("Processing Interest row %d", id)
+		log.Info().Msgf("processing Interest row %d", id)
 
 		_, processErr := db.Exec(processInterestOnNameQuery, id)
 		if processErr != nil {
-			log.Error().Msgf("error processing interest on name; exiting; %s", processErr)
+			log.Error().Msgf("failed to process interest on name; exiting; %s", processErr)
 			return
 		}
-		log.Info().Msg("Executed sql command to process Interest based on name")
+		log.Info().Msg("executed sql command to process Interest based on name")
 
 		processed, isSuccess := getProcessingStatus(db, interestProcessingStatusQuery, id)
 		if !isSuccess {
@@ -220,7 +216,7 @@ func processForms(db *sqlx.DB) {
 					log.Error().Msgf("failed to processInterestOnEmailQuery; exiting; %s", err)
 					return
 				}
-				log.Info().Msg("Executed sql command to process Interest based on email")
+				log.Info().Msg("executed sql command to process Interest based on email")
 			case 0:
 				// insert new record
 				ctx := context.Background()
@@ -229,14 +225,14 @@ func processForms(db *sqlx.DB) {
 					log.Error().Msgf("failed to BeginTx for processInterestByInsertQuery; exiting; %s", txErr)
 					return
 				} else {
-					log.Info().Msg("successfully began transaction; will continue")
+					log.Info().Msg("successfully began transaction; proceeding")
 				}
 				_, processErr := db.ExecContext(ctx, processInterestByInsertQuery, id)
 				if processErr != nil {
 					log.Error().Msgf("failed to processInterestByInsertQuery; exiting; %s", processErr)
 					return
 				}
-				log.Info().Msg("Executed sql command to insert new activist record from Interest")
+				log.Info().Msg("executed sql command to insert new activist record from Interest")
 				res, updateErr := db.ExecContext(ctx, processInsertByInsertUpdateQuery, id)
 				if updateErr != nil {
 					log.Error().Msgf("failed to processInsertByInsertUpdateQuery; exiting; %s", updateErr)
@@ -255,19 +251,19 @@ func processForms(db *sqlx.DB) {
 					log.Error().Msg("the activist was not updated (application date in activists table" +
 						" does not match the date in interest?); please correct")
 				} else {
-					log.Info().Msg("Successfully executed sql command to mark as processed")
+					log.Info().Msg("successfully executed sql command to mark Intereest as processed")
 				}
 				commitErr := tx.Commit()
 				if commitErr != nil {
 					log.Error().Msgf("failed to commit transaction; exiting; %s", commitErr)
 					return
 				} else {
-					log.Info().Msg("successfully committed transaction; will continue")
+					log.Info().Msg("successfully committed transaction; proceeding")
 				}
 			default:
 				// email count is > 1, so send email to tech
 				log.Error().Msgf(
-					"ERROR: %d non-hidden activists associated with email address %s for Interest"+
+					"%d non-hidden activists associated with email address %s for Interest"+
 						" response %d Please correct.",
 					count,
 					email,

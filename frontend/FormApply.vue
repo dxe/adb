@@ -81,9 +81,7 @@
 
         <br />
 
-        <b-button class="is-primary" @click="applyButtonClicked">
-          Apply now
-        </b-button>
+        <b-button class="is-primary" @click="applyButtonClicked"> Apply now </b-button>
       </div>
 
       <div v-if="showForm && !submitSuccess" class="content">
@@ -275,7 +273,7 @@ import { flashMessage, initializeFlashMessage } from './flash_message';
 export default Vue.extend({
   name: 'form-apply',
   methods: {
-    validate: function() {
+    validate: function () {
       type VueFormInput = Vue & { checkHtml5Validity: () => boolean };
       const refsToValidate = [
         'firstName',
@@ -292,14 +290,14 @@ export default Vue.extend({
       });
       return results.indexOf(false) === -1;
     },
-    applyButtonClicked: function() {
+    applyButtonClicked: function () {
       this.showForm = true;
       window.scrollTo(0, 0);
     },
-    notLocal: function() {
+    notLocal: function () {
       window.location.href = '/international';
     },
-    submitForm: function() {
+    submitForm: function () {
       if (!this.validate()) return;
       if (!this.conduct) {
         flashMessage('You must agree to the code of conduct.', true);

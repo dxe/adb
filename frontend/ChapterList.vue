@@ -63,7 +63,7 @@
 
     <b-table :data="filteredChapters" striped hoverable default-sort="Name">
       <b-table-column v-slot="props">
-        <div style="width: 130px;">
+        <div style="width: 130px">
           <b-button @click="showModal('edit-chapter-modal', props.row)">
             <b-icon icon="pencil" type="is-primary"></b-icon>
           </b-button>
@@ -580,7 +580,7 @@ interface Organizer {
 export default Vue.extend({
   name: 'chapter-list',
   computed: {
-    filteredChapters: function(): Chapter[] {
+    filteredChapters: function (): Chapter[] {
       let chapters = this.chapters;
       if (this.mentorFilter != 'All') {
         chapters = chapters.filter((c) => {
@@ -594,7 +594,7 @@ export default Vue.extend({
       }
       return chapters;
     },
-    mentors: function(): string[] {
+    mentors: function (): string[] {
       let mentors: string[];
       mentors = ['All'];
       this.chapters.forEach((c) => {
