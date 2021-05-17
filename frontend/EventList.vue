@@ -215,10 +215,7 @@ export default Vue.extend({
   data() {
     // Default search from the 1st of last month to today.
     const today = dayjs().format('YYYY-MM-DD');
-    const start = dayjs()
-      .subtract(1, 'months')
-      .startOf('month')
-      .format('YYYY-MM-DD');
+    const start = dayjs().subtract(1, 'months').startOf('month').format('YYYY-MM-DD');
 
     return {
       search: {

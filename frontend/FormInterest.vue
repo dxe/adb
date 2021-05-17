@@ -177,7 +177,7 @@ import { flashMessage, initializeFlashMessage } from './flash_message';
 export default Vue.extend({
   name: 'form-interest',
   methods: {
-    validate: function() {
+    validate: function () {
       type VueFormInput = Vue & { checkHtml5Validity: () => boolean };
       const refsToValidate = ['firstName', 'lastName', 'email', 'phone', 'zip'];
       const results = refsToValidate.map((ref) => {
@@ -185,7 +185,7 @@ export default Vue.extend({
       });
       return results.indexOf(false) === -1;
     },
-    submitForm: function() {
+    submitForm: function () {
       if (!this.validate()) return;
       this.submitting = true;
       $.ajax({
@@ -224,7 +224,7 @@ export default Vue.extend({
         },
       });
     },
-    reloadPage: function() {
+    reloadPage: function () {
       if (this.$options.data) {
         location.reload();
       }

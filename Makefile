@@ -54,4 +54,4 @@ prod_build: clean set_git_hooks
 # Keep in sync with hooks/pre-commit.
 fmt:
 	gofmt -w `find . -name '*.go'`
-	npx prettier --write frontend/*.{js,ts,vue}
+	npx prettier --write frontend/*.{ts,vue}
