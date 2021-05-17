@@ -18,7 +18,7 @@
 
     <b-table :data="users" striped hoverable default-sort="name">
       <b-table-column v-slot="props">
-        <div style="width: 30px;">
+        <div style="width: 30px">
           <b-button @click="showModal('edit-user-modal', props.row)">
             <b-icon icon="pencil" type="is-primary"></b-icon>
           </b-button>
