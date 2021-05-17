@@ -144,7 +144,7 @@ interface locationData {
 export default Vue.extend({
   name: 'form-international',
   methods: {
-    validate: function () {
+    validate: function() {
       type VueFormInput = Vue & { checkHtml5Validity: () => boolean };
       const refsToValidate = ['firstName', 'lastName', 'email', 'phone'];
       const results = refsToValidate.map((ref) => {
@@ -152,7 +152,7 @@ export default Vue.extend({
       });
       return results.indexOf(false) === -1;
     },
-    citySelected: function (loc: locationData) {
+    citySelected: function(loc: locationData) {
       this.city = loc.locality;
       this.state = loc.administrative_area_level_1;
       this.country = loc.country;
@@ -160,7 +160,7 @@ export default Vue.extend({
       this.lng = loc.longitude;
       this.locationChosen = true;
     },
-    submitForm: function () {
+    submitForm: function() {
       if (!this.validate()) return;
       if (!this.locationChosen) {
         flashMessage('Please choose your city from the dropdown list.', true);

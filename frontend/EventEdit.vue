@@ -423,10 +423,10 @@ export default Vue.extend({
 
       // TODO(mdempsky): Fix API backend so we don't have to compute diffs manually.
       const oldAttendeesSet = new Set(this.oldAttendees);
-      let addedActivists = attendees.filter(function (activist) {
+      let addedActivists = attendees.filter(function(activist) {
         return !oldAttendeesSet.has(activist);
       });
-      let deletedActivists = this.oldAttendees.filter(function (activist) {
+      let deletedActivists = this.oldAttendees.filter(function(activist) {
         return !attendeesSet.has(activist);
       });
 

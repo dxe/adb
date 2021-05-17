@@ -243,7 +243,7 @@ function emailValidator(value: string, callback: Function) {
   // will be saved if valid, or the focus will be sent back
   // to the invalid column; the timeout here makes for a smoother
   // UI transition whichever the result of the validation.
-  setTimeout(function () {
+  setTimeout(function() {
     return callback(
       /^([0-9a-zA-Z]([-.\w]*[0-9a-zA-Z])*@(([0-9a-zA-Z])+([-\w]*[0-9a-zA-Z])*\.)+[a-zA-Z]{2,9})$/.test(
         value,
@@ -910,7 +910,7 @@ function setPreviousSortData(field: string, ascending: boolean) {
   previousSortData.ascending = ascending;
 }
 
-(window as any).showOptionsModal = function (row: number) {
+(window as any).showOptionsModal = function(row: number) {
   EventBus.$emit('activist-show-options-modal', row);
 };
 
@@ -933,7 +933,10 @@ function optionsButtonRenderer(
 
 // Returns the first of the previous month.
 function initialDateFromValue() {
-  return dayjs().subtract(1, 'months').startOf('month').format('YYYY-MM-DD');
+  return dayjs()
+    .subtract(1, 'months')
+    .startOf('month')
+    .format('YYYY-MM-DD');
 }
 
 // Returns the current date.
@@ -942,7 +945,7 @@ function initialDateToValue() {
 }
 
 function generateBooleanSortFn(field: string, ascending: boolean) {
-  return function (a: Activist, b: Activist) {
+  return function(a: Activist, b: Activist) {
     const order = a[field] === b[field] ? 0 : Number(a[field]) - Number(b[field]);
     if (ascending) {
       return order;
@@ -952,7 +955,7 @@ function generateBooleanSortFn(field: string, ascending: boolean) {
 }
 
 function generateStringSortFn(field: string, ascending: boolean) {
-  return function (a: Activist, b: Activist) {
+  return function(a: Activist, b: Activist) {
     const order = a[field].toLowerCase() < b[field].toLowerCase() ? -1 : 1;
     if (ascending) {
       return order;
@@ -962,7 +965,7 @@ function generateStringSortFn(field: string, ascending: boolean) {
 }
 
 function generateGenericSortFn(field: string, ascending: boolean) {
-  return function (a: Activist, b: Activist) {
+  return function(a: Activist, b: Activist) {
     const order = a[field] < b[field] ? -1 : 1;
     if (ascending) {
       return order;
@@ -972,7 +975,7 @@ function generateGenericSortFn(field: string, ascending: boolean) {
 }
 
 function generateDateSortFn(field: string, ascending: boolean) {
-  return function (a: Activist, b: Activist) {
+  return function(a: Activist, b: Activist) {
     // Always sort empty values to the bottom, no matter the
     // order.
     if (!a[field]) {
@@ -1153,7 +1156,7 @@ export default Vue.extend({
         },
       });
     },
-    debounceLoadActivists: debounce(function (this: any) {
+    debounceLoadActivists: debounce(function(this: any) {
       this.loadActivists();
     }, 500),
     afterChangeCallback(changes: any[], source: string) {
@@ -1173,7 +1176,7 @@ export default Vue.extend({
         const newData = change[3];
 
         const activist = this.activists[columnIndex];
-        (function (change) {
+        (function(change) {
           // TODO: use change?
           $.ajax({
             url: '/activist/save',
@@ -1287,7 +1290,7 @@ export default Vue.extend({
       }
     },
     // TODO(mdempsky): Remove "this: any".
-    debounceSearchInput: debounce(function (this: any, text: string) {
+    debounceSearchInput: debounce(function(this: any, text: string) {
       this.search = text;
     }, 500),
     getActivistMergeOptions(ignoreActivistName?: string) {
