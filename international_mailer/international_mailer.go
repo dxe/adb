@@ -21,23 +21,6 @@ func processFormSubmission(db *sqlx.DB, formData model.InternationalFormData) {
 	nearestChapter := nearestChapters[0]
 
 	var cc []string
-	if nearestChapter.Email != "" {
-		cc = append(cc, nearestChapter.Email)
-	}
-	nearestChapterDetails, err := model.GetChapterByID(db, nearestChapter.ChapterID)
-	if err != nil {
-		panic(err)
-	}
-	organizers := nearestChapterDetails.Organizers
-	if len(organizers) > 0 {
-		for _, o := range organizers {
-			if o.Email != "" {
-				cc = append(cc, o.Email)
-			}
-		}
-	}
-
-	// Send an email to the person who submitted the form.
 	subject := "Getting involved with Direct Action Everywhere"
 	body := `<p>Hey ` + strings.Title(strings.TrimSpace(formData.FirstName)) + `!</p>
 <p>My name is Anastasia and I’m an organizer with Direct Action Everywhere. I wanted to reach out about your inquiry to get involved in our international network.</p>
@@ -49,6 +32,22 @@ Anastasia Rogers<br/>
 Direct Action Everywhere Organizer</p>
 `
 	if nearestChapter.Distance < 150 {
+		if nearestChapter.Email != "" {
+			cc = append(cc, nearestChapter.Email)
+		}
+		nearestChapterDetails, err := model.GetChapterByID(db, nearestChapter.ChapterID)
+		if err != nil {
+			panic(err)
+		}
+		organizers := nearestChapterDetails.Organizers
+		if len(organizers) > 0 {
+			for _, o := range organizers {
+				if o.Email != "" {
+					cc = append(cc, o.Email)
+				}
+			}
+		}
+
 		var contactInfo string
 		if nearestChapter.FbURL != "" {
 			contactInfo += fmt.Sprintf(`<a href="%v">%v Facebook page</a><br />`, nearestChapter.FbURL, nearestChapter.Name)
