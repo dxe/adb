@@ -23,7 +23,8 @@ const (
 var conf, verifier = func() (*oauth2.Config, *oidc.IDTokenVerifier) {
 	provider, err := oidc.NewProvider(context.Background(), "https://accounts.google.com")
 	if err != nil {
-		log.Fatal(err)
+		log.Println("failed to construct OIDC provider (no Internet connection)?: ", err)
+		return nil, nil
 	}
 	conf := &oauth2.Config{
 		ClientID:     config.MembersClientID,
