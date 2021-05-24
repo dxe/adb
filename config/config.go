@@ -11,7 +11,7 @@ import (
 var (
 	DBUser     = mustGetenv("DB_USER", "adb_user", true)
 	DBPassword = mustGetenv("DB_PASSWORD", "adbpassword", true)
-	DBName     = mustGetenv("DB_NAME", "adb_testing_1", true)
+	DBName     = mustGetenv("DB_NAME", "adb_db", true)
 	DBProtocol = mustGetenv("DB_PROTOCOL", "", true)
 
 	Port        = mustGetenv("PORT", "8080", true)
