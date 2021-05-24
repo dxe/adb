@@ -440,7 +440,7 @@ func getUserFromContext(ctx context.Context) model.ADBUser {
 var verifier = func() *oidc.IDTokenVerifier {
 	provider, err := oidc.NewProvider(context.Background(), "https://accounts.google.com")
 	if err != nil {
-		log.Println("WARNING: failed to construct OIDC provider (no Internet connection?). Some features may not work: ", err)
+		log.Println("WARNING: failed to construct OIDC provider (no Internet connection?). Some features may not work. Error: ", err)
 		return nil
 	}
 	return provider.Verifier(&oidc.Config{
