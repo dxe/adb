@@ -7,7 +7,6 @@ import (
 	"github.com/robfig/cron/v3"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"os"
 )
 
 // Should be run in a goroutine.
@@ -28,45 +27,13 @@ func StartFormProcessor(db *sqlx.DB) {
 
 	/* Start tasks on a scheduule */
 	cron := cron.New()
-	cron.AddFunc(mainEnv.processFormsCronExpression, func() { process(db) })
+	cron.AddFunc(mainEnv.processFormsCronExpression, func() { processForms(db) })
 	cron.Run()
 }
 
-func process(db *sqlx.DB) {
-	log.Debug().Msg("starting processing run")
-	processEnv, ok := getProcessEnv()
-	if !ok {
-		log.Error().Msg("failed to get ENV variables; will not start processing run")
-		return
-	}
-
-	/* Try to acquire the lock file */
-	_, getLockFileErr := os.Stat(processEnv.lockFilePath)
-	if !os.IsNotExist(getLockFileErr) {
-		log.Error().Msg("PROCESSOR_RUNNING flag found; exiting")
-		return
-	}
-	log.Debug().Msg("did not find lock file; will create lock file")
-	_, createLockFileErr := os.Create(processEnv.lockFilePath)
-	if createLockFileErr != nil {
-		log.Error().Msgf("failed to create lock file; exiting; %s", createLockFileErr)
-		return
-	}
-	log.Debug().Msg("successfully created lock file; proceeding")
-
-	/* Process form applications */
-	processForms(db)
-
-	/* Remove lock file */
-	removeLockFilErr := os.Remove(processEnv.lockFilePath)
-	if removeLockFilErr != nil {
-		log.Error().Msgf("failed to remove lock file: %s", removeLockFilErr)
-	}
-
-	log.Debug().Msg("finished processing run")
-}
-
 func processForms(db *sqlx.DB) {
+	log.Debug().Msg("starting processing run")
+
 	/* Get form applications to process */
 	applicationIds, isSuccess := getResponsesToProcess(db, applicationResponsesToProcessQuery)
 	if !isSuccess {
@@ -272,4 +239,6 @@ func processForms(db *sqlx.DB) {
 			}
 		}
 	}
+
+	log.Debug().Msg("finished processing run")
 }
