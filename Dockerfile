@@ -42,8 +42,6 @@ COPY static static/
 COPY templates templates/
 COPY --from=build-api /src/adb ./
 COPY --from=build-ui /src/dist dist/
-RUN mkdir output/
-RUN chown -R adb output/
 
 USER adb
 

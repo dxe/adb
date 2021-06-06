@@ -56,7 +56,3 @@ Various forms for getting data into the ADB.
 ### Inserting a new activist from the application or interest form
 - All data from the form submission should be added to the new activist record.
 - " (inserted by application, check for duplicate)" should be appended to the activist's name so that someone can merge the record later if it is a duplicate of someone else whose name or email didn't match.
-
-### Logging
-- The form processor keeps a log that we can check.
-- Currently, the log is emailed daily to check for errors. It would be better if it only sent an email if an error occurs. Lately, there have been approx 2 errors per month (usually duplicate key issues).
