@@ -87,14 +87,36 @@
           <p class="modal-card-title">{{ currentActivist.name }}</p>
         </header>
         <section class="modal-card-body">
-          <b-button
-            @click="showModal('merge-activist-modal', currentActivist, activistIndex)"
-            label="Merge Activist"
-            type="is-primary"
-          ></b-button>
+          <h1 class="subtitle has-text-primary" style="font-weight: 500">Interactions</h1>
+
+          <!-- TODO: get data dynamically -->
+          <template>
+            <strong>User: </strong>Test User<br />
+            <strong>Timestamp: </strong>2020-01-01 13:00<br />
+            <strong>Method: </strong>SMS<br />
+            <strong>Outcome: </strong>No answer<br />
+            <strong>Notes: </strong>Blah, blah, blah...<br />
+            <!-- TODO: also pass in the interaction id or just set it in the state? -->
+            <b-button
+              class="is-small is-rounded is-info is-light mt-1"
+              @click="showModal('edit-interaction-modal', currentActivist, activistIndex)"
+              >Edit</b-button
+            >
+          </template>
         </section>
         <footer class="modal-card-foot">
           <b-button label="Close" @click="hideModal" />
+          <!-- TODO: also pass in the interaction id or just set it in the state? -->
+          <b-button
+            @click="showModal('edit-interaction-modal', currentActivist, activistIndex)"
+            label="Add interaction"
+            type="is-primary"
+          ></b-button>
+          <b-button
+            @click="showModal('merge-activist-modal', currentActivist, activistIndex)"
+            label="Merge Activist"
+            type="is-warning"
+          ></b-button>
         </footer>
       </div>
     </b-modal>
@@ -152,6 +174,63 @@
             @click="confirmMergeActivistModal"
           >
             Merge activist
+          </b-button>
+        </footer>
+      </div>
+    </b-modal>
+
+    <b-modal
+      :active="currentModalName === 'edit-interaction-modal'"
+      has-modal-card
+      :destroy-on-hide="true"
+      scroll="keep"
+      :can-cancel="true"
+      :on-cancel="hideModal"
+      :full-screen="isMobile()"
+    >
+      <div class="modal-card" style="width: auto">
+        <header class="modal-card-head">
+          <p class="modal-card-title">Interaction: {{ currentActivist.name }}</p>
+        </header>
+        <section class="modal-card-body">
+          <!-- TODO: reset state when this modal opens, closes, or is hidden -->
+
+          <!-- TODO: just use activist id from state, user id from logged in user, timestamp from now -->
+
+          <b-field label="Method" label-position="on-border">
+            <b-select v-model.trim="currentInteraction.method" expanded>
+              <option v-for="x in ['SMS', 'Call', 'Email']" :value="x" :key="x">
+                {{ x }}
+              </option>
+            </b-select>
+          </b-field>
+
+          <b-field label="Outcome" label-position="on-border">
+            <b-select v-model.trim="currentInteraction.outcome" expanded>
+              <option
+                v-for="x in ['No answer', 'Had conversation', 'Wrong number', 'Left message']"
+                :value="x"
+                :key="x"
+              >
+                {{ x }}
+              </option>
+            </b-select>
+          </b-field>
+
+          <b-field label="Notes" label-position="on-border">
+            <b-input type="textarea" v-model.trim="currentInteraction.notes" expanded></b-input>
+          </b-field>
+
+          <!-- TODO: add checkbox to create follow-up task in X days if creating new interaction (but not if editing an existing interaction -->
+        </section>
+        <footer class="modal-card-foot">
+          <b-button label="Cancel" @click="hideModal" />
+          <b-button
+            type="is-primary"
+            :disabled="disableConfirmButton"
+            @click="confirmEditInteractionModal"
+          >
+            Save
           </b-button>
         </footer>
       </div>
@@ -1068,6 +1147,8 @@ export default Vue.extend({
       this.currentModalName = '';
       this.activistIndex = -1;
       this.currentActivist = {} as Activist;
+      // TODO: add Interaction type
+      this.currentInteraction = {};
       this.mergeTarget = [] as Activist[];
       this.activistMergeOptions = [];
     },
@@ -1117,6 +1198,13 @@ export default Vue.extend({
           flashMessage('Server error: ' + err.responseText, true);
         },
       });
+    },
+    confirmEditInteractionModal() {
+      this.disableConfirmButton = true;
+      console.log('Confirmed edit interaction modal!');
+      this.disableConfirmButton = false;
+      this.hideModal();
+      // TODO: do we need to reload the page to update the interaction data in the HoT?
     },
     getFilteredActivistMergeOptions(text: string) {
       this.filteredActivistMergeOptions = this.activistMergeOptions.filter((a: string) => {
@@ -1324,6 +1412,8 @@ export default Vue.extend({
       currentModalName: '',
       activistIndex: -1,
       currentActivist: {} as Activist,
+      // TODO: create Interaction type
+      currentInteraction: {} as any,
       disableConfirmButton: false,
       allActivists: [] as Activist[],
       height: 500,
