@@ -619,7 +619,7 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
 
               if (query.length > 0) {
                 users = users.filter((user: any) => {
-                  return user.startsWith(query);
+                  return user.toLowerCase().startsWith(query.toLowerCase());
                 });
               }
               process(users);
@@ -683,7 +683,7 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
         data: 'source',
         colWidths: 100,
       },
-      enabled: false,
+      enabled: view === 'community_prospects',
     },
     {
       header: 'Interest Date',
@@ -718,7 +718,7 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
         data: 'referral_apply',
         colWidths: 100,
       },
-      enabled: view === 'community_prospects',
+      enabled: false,
     },
 
     {
