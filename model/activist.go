@@ -136,7 +136,7 @@ SELECT
   	),"") AS last_connection,
 
     mpi,
-    notes,
+    a.notes,
     vision_wall,
     mpp_requirements,
     voting_agreement,
@@ -150,7 +150,27 @@ SELECT
       FROM circle_members cm
       JOIN circles c ON cm.circle_id = c.id
       WHERE cm.activist_id = a.id and c.type = 2
-  	),"") AS geo_circles
+  	),"") AS geo_circles,
+
+	IFNULL(@assigned_to := (
+		SELECT adb_users.name
+		FROM adb_users
+		WHERE adb_users.id = a.assigned_to
+	), "") AS assigned_to_name,
+
+	DATE_FORMAT(followup_date, "%Y-%m-%d") as followup_date,
+
+	@total_interactions := (
+		SELECT count(id)
+		FROM interactions
+		WHERE interactions.activist_id = a.id
+  	) AS total_interactions,
+
+	IFNULL(@last_interaction_date := (
+		SELECT DATE_FORMAT(max(interactions.timestamp), "%Y-%m-%d")
+		FROM interactions
+		WHERE interactions.activist_id = a.id
+	), "") AS last_interaction_date
 
 FROM activists a
 
@@ -229,7 +249,9 @@ SET
   street_address = :street_address,
   city = :city,
   state = :state,
-  discord_id = :discord_id
+  discord_id = :discord_id,
+  assigned_to = :assigned_to,
+  followup_date = :followup_date
 
 WHERE
   id = :id`
@@ -304,6 +326,11 @@ type ActivistConnectionData struct {
 	State                 string         `db:"state"`
 	DiscordID             sql.NullString `db:"discord_id"`
 	GeoCircles            string         `db:"geo_circles"`
+	AssignedTo            int            `db:"assigned_to"`
+	AssignedToName        string         `db:"assigned_to_name"`
+	FollowupDate          sql.NullString `db:"followup_date"`
+	TotalInteractions     int            `db:"total_interactions"`
+	LastInteractionDate   string         `db:"last_interaction_date"`
 }
 
 type ActivistExtra struct {
@@ -376,6 +403,11 @@ type ActivistJSON struct {
 	GeoCircles            string  `json:"geo_circles"`
 	Lat                   float64 `json:"lat"`
 	Lng                   float64 `json:"lng"`
+	AssignedTo            int     `json:"assigned_to"`
+	AssignedToName        string  `json:"assigned_to_name"`
+	FollowupDate          string  `json:"followup_date"`
+	TotalInteractions     int     `json:"total_interactions"`
+	LastInteractionDate   string  `json:"last_interaction_date"`
 }
 
 type GetActivistOptions struct {
@@ -525,6 +557,10 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 		if a.ActivistConnectionData.DiscordID.Valid {
 			discord_id = a.ActivistConnectionData.DiscordID.String
 		}
+		followup_date := ""
+		if a.ActivistConnectionData.FollowupDate.Valid {
+			followup_date = a.ActivistConnectionData.FollowupDate.String
+		}
 
 		activistsJSON = append(activistsJSON, ActivistJSON{
 			Email:         a.Email,
@@ -582,6 +618,10 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			State:                 a.State,
 			DiscordID:             discord_id,
 			GeoCircles:            a.GeoCircles,
+			AssignedToName:        a.AssignedToName,
+			FollowupDate:          followup_date,
+			TotalInteractions:     a.TotalInteractions,
+			LastInteractionDate:   a.LastInteractionDate,
 		})
 	}
 
@@ -959,7 +999,9 @@ INSERT INTO activists (
   street_address,
   city,
   state,
-  discord_id
+  discord_id,
+  assigned_to,
+  followup_date
 
 ) VALUES (
 
@@ -1002,7 +1044,9 @@ INSERT INTO activists (
   :street_address,
   :city,
   :state,
-  :discord_id
+  :discord_id,
+  :assigned_to,
+  :followup_date
 
 )`, activist)
 	if err != nil {
@@ -1097,7 +1141,9 @@ SET
   street_address = :street_address,
   city = :city,
   state = :state,
-  discord_id = :discord_id
+  discord_id = :discord_id,
+  assigned_to = :assigned_to,
+  followup_date = :followup_date
   
 WHERE
   id = :id`, activist)
@@ -1594,7 +1640,7 @@ func GetCommunityProspectHubSpotInfo(db *sqlx.DB, chapterID int) ([]CommunityPro
 	return activists, nil
 }
 
-func CleanActivistData(body io.Reader) (ActivistExtra, error) {
+func CleanActivistData(body io.Reader, db *sqlx.DB) (ActivistExtra, error) {
 	var activistJSON ActivistJSON
 	err := json.NewDecoder(body).Decode(&activistJSON)
 	if err != nil {
@@ -1680,6 +1726,23 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 	if activistJSON.DiscordID == "" {
 		validDiscordID = false
 	}
+	validFollowupDate := true
+	if activistJSON.FollowupDate == "" {
+		validFollowupDate = false
+	}
+
+	var assignedToInt int
+	assignedToName := strings.TrimSpace(activistJSON.AssignedToName)
+	if assignedToName != "" {
+		users, err := getUsers(db, GetUserOptions{Name: assignedToName})
+		if err != nil {
+			panic(err)
+		}
+		if len(users) == 0 {
+			return ActivistExtra{}, errors.New("invalid name for 'assigned to' field")
+		}
+		assignedToInt = users[0].ID
+	}
 
 	activistExtra := ActivistExtra{
 		Activist: Activist{
@@ -1727,6 +1790,8 @@ func CleanActivistData(body io.Reader) (ActivistExtra, error) {
 			City:                  strings.TrimSpace(activistJSON.City),
 			State:                 strings.TrimSpace(activistJSON.State),
 			DiscordID:             sql.NullString{String: strings.TrimSpace(activistJSON.DiscordID), Valid: validDiscordID},
+			AssignedTo:            assignedToInt,
+			FollowupDate:          sql.NullString{String: strings.TrimSpace(activistJSON.FollowupDate), Valid: validFollowupDate},
 		},
 	}
 

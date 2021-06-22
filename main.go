@@ -263,9 +263,9 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/csv/chapter_member_spoke", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.ChapterMemberSpokeCSVHandler))
 	router.Handle("/csv/community_prospects_hubspot", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.CommunityProspectHubSpotCSVHandler))
 	router.Handle("/csv/international_organizers", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.InternationalOrganizersCSVHandler))
+	router.Handle("/user/list", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.UserListHandler))
 
 	// Authed Admin API
-	admin.Handle("/user/list", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserListHandler))
 	admin.Handle("/user/save", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserSaveHandler))
 	admin.Handle("/user/delete", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserDeleteHandler))
 	admin.Handle("/chapter/list", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.ChapterListHandler))
@@ -883,7 +883,7 @@ func (c MainController) ActivistSaveHandler(w http.ResponseWriter, r *http.Reque
 	// get requesting user's (for logging)
 	user, _ := getAuthedADBUser(c.db, r)
 
-	activistExtra, err := model.CleanActivistData(r.Body)
+	activistExtra, err := model.CleanActivistData(r.Body, c.db)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return

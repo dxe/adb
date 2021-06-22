@@ -87,33 +87,63 @@
           <p class="modal-card-title">{{ currentActivist.name }}</p>
         </header>
         <section class="modal-card-body">
-          <h1 class="subtitle has-text-primary" style="font-weight: 500">Interactions</h1>
-
-          <div v-if="currentActivist.interactions && currentActivist.interactions.length === 0">
-            None
+          <div class="mb-5">
+            <h1 class="subtitle has-text-primary mb-2" style="font-weight: 500">Info</h1>
+            <p v-if="currentActivist.email"><strong>Email:</strong> {{ currentActivist.email }}</p>
+            <p v-if="currentActivist.phone"><strong>Phone:</strong> {{ currentActivist.phone }}</p>
+            <p v-if="currentActivist.source">
+              <strong>Source:</strong> {{ currentActivist.source }}
+            </p>
+            <p v-if="currentActivist.interest_date">
+              <strong>Interest Date:</strong> {{ currentActivist.interest_date }}
+            </p>
           </div>
 
-          <div v-for="interaction in currentActivist.interactions" class="mb-5">
-            <strong>Timestamp: </strong>{{ interaction.timestamp }}<br />
-            <strong>User: </strong>{{ interaction.user_name }}<br />
-            <strong>Method: </strong>{{ interaction.method }}<br />
-            <strong>Outcome: </strong>{{ interaction.outcome }}<br />
-            <strong>Notes: </strong>{{ interaction.notes }}<br />
-            <b-button
-              icon-left="pencil"
-              class="is-small is-rounded is-info is-light mt-1"
-              @click="
-                showModal('edit-interaction-modal', currentActivist, activistIndex, interaction)
-              "
-              >Edit</b-button
-            >
-            &nbsp;
-            <b-button
-              icon-left="delete"
-              class="is-small is-rounded is-danger is-light mt-1"
-              @click="deleteInteraction(interaction)"
-              >Delete</b-button
-            >
+          <div class="mb-5">
+            <h1 class="subtitle has-text-primary mb-4" style="font-weight: 500">Interactions</h1>
+
+            <div v-if="currentActivist.interactions && currentActivist.interactions.length === 0">
+              None
+            </div>
+
+            <div class="card mb-5" v-for="interaction in currentActivist.interactions">
+              <header class="card-header">
+                <p class="card-header-title" style="width: 100%">
+                  {{ interaction.method ? interaction.method : 'Interaction' }} by
+                  {{ interaction.user_name }}
+                </p>
+                <p class="has-text-grey pt-3" style="font-size: 0.8em; width: 120px">
+                  {{ formatInteractionDate(interaction.timestamp) }}
+                </p>
+              </header>
+
+              <div class="card-content">
+                <div class="content">
+                  <p>{{ interaction.notes }}</p>
+                  <p v-if="interaction.outcome">
+                    <span class="tag is-info">Outcome: {{ interaction.outcome }}</span>
+                  </p>
+                </div>
+              </div>
+
+              <footer class="card-footer">
+                <b-button
+                  icon-left="pencil"
+                  class="is-small is-primary is-inverted mt-1 card-footer-item"
+                  @click="
+                    showModal('edit-interaction-modal', currentActivist, activistIndex, interaction)
+                  "
+                  >Edit</b-button
+                >
+                &nbsp;
+                <b-button
+                  icon-left="delete"
+                  class="is-small is-danger is-inverted mt-1 card-footer-item"
+                  @click="deleteInteraction(interaction)"
+                  >Delete</b-button
+                >
+              </footer>
+            </div>
           </div>
         </section>
         <footer class="modal-card-foot">
@@ -207,13 +237,12 @@
           <p class="modal-card-title">Interaction: {{ currentActivist.name }}</p>
         </header>
         <section class="modal-card-body">
-          <b-field label="Timestamp" label-position="on-border">
-            <!-- TODO: let users edit the timestamp-->
+          <b-field label="Timestamp" label-position="on-border" v-if="currentInteraction.timestamp">
             <b-input type="text" v-model="currentInteraction.timestamp" expanded disabled></b-input>
           </b-field>
 
           <b-field label="Method" label-position="on-border">
-            <b-select v-model.trim="currentInteraction.method" expanded>
+            <b-select v-model.trim="currentInteraction.method" expanded placeholder="Choose one">
               <option v-for="x in ['SMS', 'Call', 'Email']" :value="x" :key="x">
                 {{ x }}
               </option>
@@ -306,6 +335,8 @@ import * as dayjs from 'dayjs';
 interface Activist {
   id: number;
   name: string;
+  email: string;
+  phone: string;
   activist_level: string;
   active: number;
   prospect_organizer: number;
@@ -557,6 +588,79 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
       },
       enabled: view === 'all_activists' && chapter === 'SF Bay Area',
       showForAllChapters: true,
+    },
+    // Prospect Info
+    {
+      header: 'Assigned To',
+      longHeader: 'Assigned To',
+      category: 'Prospect Info',
+      data: {
+        type: 'dropdown',
+        // TODO: try to only get the user list only on page load instead of everytime the dropdown is clicked
+        //@ts-ignore
+        source: function (query: any, process: any) {
+          $.ajax({
+            url: '/user/list',
+            success: (data) => {
+              const parsed = JSON.parse(data);
+              const filteredUsers = parsed.filter((user: any) => {
+                // TODO: also need to check chapter? can we on backend?
+                return user.roles.includes('admin') || user.roles.includes('organizer');
+              });
+              const userNames = filteredUsers.map((user: any) => {
+                return user.name;
+              });
+              process(userNames);
+            },
+            error: () => {
+              flashMessage('Error getting user names from server.', true);
+            },
+          });
+        },
+        mode: 'strict',
+        data: 'assigned_to_name',
+        colWidths: 100,
+      },
+      enabled: view === 'community_prospects',
+    },
+    {
+      header: 'Follow-up',
+      longHeader: 'Date to Follow-up',
+      category: 'Prospect Info',
+      data: {
+        data: 'followup_date',
+        colWidths: 110,
+        type: 'date',
+        dateFormat: 'YYYY-MM-DD',
+        correctFormat: true,
+      },
+      enabled: view === 'community_prospects',
+    },
+    {
+      header: 'Interactions',
+      longHeader: 'Total Number of Interactions',
+      category: 'Prospect Info',
+      data: {
+        data: 'total_interactions',
+        colWidths: 80,
+        type: 'numeric',
+        readOnly: true,
+      },
+      enabled: view === 'community_prospects',
+    },
+    {
+      header: 'Last Interaction',
+      longHeader: 'Last Interaction Date',
+      category: 'Prospect Info',
+      data: {
+        data: 'last_interaction_date',
+        colWidths: 100,
+        type: 'date',
+        dateFormat: 'YYYY-MM-DD',
+        correctFormat: true,
+        readOnly: true,
+      },
+      enabled: view === 'community_prospects',
     },
     // Referral Info
     {
@@ -1517,6 +1621,9 @@ export default Vue.extend({
         },
       });
     },
+    formatInteractionDate(s: string) {
+      return dayjs(s).format('YYYY-MM-DD');
+    },
   },
   data() {
     let initDateFrom = '';
@@ -1647,6 +1754,9 @@ export default Vue.extend({
   border: 0;
   background-color: white;
   font-size: 14px;
+}
+.activist-options-btn:active {
+  color: black;
 }
 .colHeader {
   font-size: 0.8em;

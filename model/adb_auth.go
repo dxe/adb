@@ -53,7 +53,8 @@ type UserJSON struct {
 }
 
 type GetUserOptions struct {
-	ID int
+	ID   int
+	Name string
 }
 
 type GetUsersRolesOptions struct {
@@ -202,9 +203,18 @@ func getUsers(db *sqlx.DB, options GetUserOptions) ([]ADBUser, error) {
 
 	var queryArgs []interface{}
 
+	if options.ID != 0 && options.Name != "" {
+		return nil, errors.New("You may provide ID or Name but not both.")
+	}
+
 	if options.ID != 0 {
 		query += " WHERE id = ? "
 		queryArgs = append(queryArgs, options.ID)
+	}
+
+	if options.Name != "" {
+		query += " WHERE name = ? "
+		queryArgs = append(queryArgs, options.Name)
 	}
 
 	query += " ORDER BY email "

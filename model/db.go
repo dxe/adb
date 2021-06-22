@@ -101,6 +101,8 @@ CREATE TABLE activists (
   lat FLOAT(10,6) NULL DEFAULT '0',
   lng FLOAT(10,6) NULL DEFAULT '0',
   chapter_id int(11) DEFAULT '0',
+  assigned_to int(11) DEFAULT '0',
+  followup_date date DEFAULT NULL,
   UNIQUE (name, chapter_id)
 )
 `)
