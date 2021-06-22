@@ -798,6 +798,23 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
     },
     // Event Attendance
     {
+      header: 'Total Events',
+      longHeader: 'Total Events',
+      category: 'Event Attendance',
+      data: {
+        type: 'numeric',
+        data: 'total_events',
+        readOnly: true,
+        colWidths: 90,
+      },
+      enabled:
+        view === 'leaderboard' ||
+        view === 'community_prospects' ||
+        view === 'study' ||
+        chapter !== 'SF Bay Area',
+      showForAllChapters: true,
+    },
+    {
       header: 'First Event',
       longHeader: 'First Event',
       category: 'Event Attendance',
@@ -823,23 +840,6 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
         colWidths: 200,
       },
       enabled: view === 'leaderboard' || view === 'study' || chapter !== 'SF Bay Area',
-      showForAllChapters: true,
-    },
-    {
-      header: 'Total Events',
-      longHeader: 'Total Events',
-      category: 'Event Attendance',
-      data: {
-        type: 'numeric',
-        data: 'total_events',
-        readOnly: true,
-        colWidths: 90,
-      },
-      enabled:
-        view === 'leaderboard' ||
-        view === 'community_prospects' ||
-        view === 'study' ||
-        chapter !== 'SF Bay Area',
       showForAllChapters: true,
     },
     {
