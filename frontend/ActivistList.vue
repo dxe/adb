@@ -683,7 +683,7 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
         data: 'source',
         colWidths: 100,
       },
-      enabled: view === 'community_prospects',
+      enabled: false,
     },
     {
       header: 'Interest Date',
@@ -1088,7 +1088,7 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
         data: 'dev_interest',
         colWidths: 100,
       },
-      enabled: view === 'organizer_prospects' || view === 'community_prospects',
+      enabled: view === 'organizer_prospects',
     },
     {
       header: 'Hiatus',
