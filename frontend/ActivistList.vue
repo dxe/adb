@@ -605,7 +605,9 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
               const parsed = JSON.parse(data);
               const filteredUsers = parsed.filter((user: any) => {
                 // TODO: also need to check chapter? can we on backend?
-                return user.roles.includes('admin') || user.roles.includes('organizer');
+                return (
+                  user.roles && (user.roles.includes('admin') || user.roles.includes('organizer'))
+                );
               });
               const userNames = filteredUsers.map((user: any) => {
                 return user.name;
