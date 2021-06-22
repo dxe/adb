@@ -257,6 +257,9 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/circle/save", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.CircleGroupSaveHandler))
 	router.Handle("/circle/list", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.CircleGroupListHandler))
 	router.Handle("/circle/delete", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.CircleGroupDeleteHandler))
+	router.Handle("/interaction/save", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.InteractionSaveHandler))
+	router.Handle("/interaction/list", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.InteractionListHandler))
+	router.Handle("/interaction/delete", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.InteractionDeleteHandler))
 	router.Handle("/csv/chapter_member_spoke", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.ChapterMemberSpokeCSVHandler))
 	router.Handle("/csv/community_prospects_hubspot", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.CommunityProspectHubSpotCSVHandler))
 	router.Handle("/csv/international_organizers", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.InternationalOrganizersCSVHandler))
@@ -1184,7 +1187,6 @@ func (c MainController) WorkingGroupDeleteHandler(w http.ResponseWriter, r *http
 	})
 }
 
-//start circle
 func (c MainController) CircleGroupSaveHandler(w http.ResponseWriter, r *http.Request) {
 	chapter := getAuthedADBChapter(c.db, r)
 
@@ -1276,8 +1278,6 @@ func (c MainController) CircleGroupDeleteHandler(w http.ResponseWriter, r *http.
 		"status": "success",
 	})
 }
-
-//end circle
 
 func (c MainController) ActivistListHandler(w http.ResponseWriter, r *http.Request) {
 	options, err := model.CleanGetActivistOptions(r.Body)
@@ -2311,6 +2311,69 @@ func (c MainController) InternationalActionsFormHandler(w http.ResponseWriter, r
 			"status": "success",
 		})
 	}
+}
+
+func (c MainController) InteractionSaveHandler(w http.ResponseWriter, r *http.Request) {
+	var interaction model.Interaction
+	if err := json.NewDecoder(r.Body).Decode(&interaction); err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	if interaction.UserID == 0 {
+		// new interaction, so create it using the current user's id
+		user, _ := getAuthedADBUser(c.db, r)
+		interaction.UserID = user.ID
+	}
+
+	if err := model.SaveInteraction(c.db, interaction); err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	writeJSON(w, map[string]interface{}{
+		"status": "success",
+	})
+}
+
+func (c MainController) InteractionListHandler(w http.ResponseWriter, r *http.Request) {
+	var reqData struct {
+		ActivistID int `json:"activist_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&reqData); err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	interactions, err := model.ListActivistInteractions(c.db, reqData.ActivistID)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	writeJSON(w, map[string]interface{}{
+		"status":       "success",
+		"interactions": interactions,
+	})
+}
+
+func (c MainController) InteractionDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	var reqData struct {
+		ID int `json:"id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&reqData); err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	if err := model.DeleteInteraction(c.db, reqData.ID); err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	writeJSON(w, map[string]string{
+		"status": "success",
+	})
 }
 
 func main() {

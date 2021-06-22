@@ -87,14 +87,49 @@
           <p class="modal-card-title">{{ currentActivist.name }}</p>
         </header>
         <section class="modal-card-body">
-          <b-button
-            @click="showModal('merge-activist-modal', currentActivist, activistIndex)"
-            label="Merge Activist"
-            type="is-primary"
-          ></b-button>
+          <h1 class="subtitle has-text-primary" style="font-weight: 500">Interactions</h1>
+
+          <div v-if="currentActivist.interactions && currentActivist.interactions.length === 0">
+            None
+          </div>
+
+          <div v-for="interaction in currentActivist.interactions" class="mb-5">
+            <strong>Timestamp: </strong>{{ interaction.timestamp }}<br />
+            <strong>User: </strong>{{ interaction.user_name }}<br />
+            <strong>Method: </strong>{{ interaction.method }}<br />
+            <strong>Outcome: </strong>{{ interaction.outcome }}<br />
+            <strong>Notes: </strong>{{ interaction.notes }}<br />
+            <b-button
+              icon-left="pencil"
+              class="is-small is-rounded is-info is-light mt-1"
+              @click="
+                showModal('edit-interaction-modal', currentActivist, activistIndex, interaction)
+              "
+              >Edit</b-button
+            >
+            &nbsp;
+            <b-button
+              icon-left="delete"
+              class="is-small is-rounded is-danger is-light mt-1"
+              @click="deleteInteraction(interaction)"
+              >Delete</b-button
+            >
+          </div>
         </section>
         <footer class="modal-card-foot">
-          <b-button label="Close" @click="hideModal" />
+          <b-button icon-left="close" label="Close" @click="hideModal" />
+          <b-button
+            icon-left="plus"
+            @click="showModal('edit-interaction-modal', currentActivist, activistIndex)"
+            label="Add interaction"
+            type="is-primary"
+          ></b-button>
+          <b-button
+            icon-left="merge"
+            @click="showModal('merge-activist-modal', currentActivist, activistIndex)"
+            label="Merge Activist"
+            type="is-warning"
+          ></b-button>
         </footer>
       </div>
     </b-modal>
@@ -145,13 +180,73 @@
           </p>
         </section>
         <footer class="modal-card-foot">
-          <b-button label="Cancel" @click="hideModal" />
+          <b-button icon-left="cancel" label="Cancel" @click="hideModal" />
           <b-button
+            icon-left="alert"
             type="is-danger"
             :disabled="disableConfirmButton"
             @click="confirmMergeActivistModal"
           >
             Merge activist
+          </b-button>
+        </footer>
+      </div>
+    </b-modal>
+
+    <b-modal
+      :active="currentModalName === 'edit-interaction-modal'"
+      has-modal-card
+      :destroy-on-hide="true"
+      scroll="keep"
+      :can-cancel="true"
+      :on-cancel="hideModal"
+      :full-screen="isMobile()"
+    >
+      <div class="modal-card" style="width: auto">
+        <header class="modal-card-head">
+          <p class="modal-card-title">Interaction: {{ currentActivist.name }}</p>
+        </header>
+        <section class="modal-card-body">
+          <b-field label="Timestamp" label-position="on-border">
+            <!-- TODO: let users edit the timestamp-->
+            <b-input type="text" v-model="currentInteraction.timestamp" expanded disabled></b-input>
+          </b-field>
+
+          <b-field label="Method" label-position="on-border">
+            <b-select v-model.trim="currentInteraction.method" expanded>
+              <option v-for="x in ['SMS', 'Call', 'Email']" :value="x" :key="x">
+                {{ x }}
+              </option>
+            </b-select>
+          </b-field>
+
+          <b-field label="Outcome" label-position="on-border">
+            <b-select v-model.trim="currentInteraction.outcome" expanded>
+              <option
+                v-for="x in ['No answer', 'Had conversation', 'Wrong number', 'Left message']"
+                :value="x"
+                :key="x"
+              >
+                {{ x }}
+              </option>
+            </b-select>
+          </b-field>
+
+          <b-field label="Notes" label-position="on-border">
+            <b-input type="textarea" v-model.trim="currentInteraction.notes" expanded></b-input>
+          </b-field>
+
+          <!-- TODO: add checkbox to create follow-up task in X days if creating new interaction (but not if editing an existing interaction -->
+        </section>
+        <footer class="modal-card-foot">
+          <b-button icon-left="cancel" label="Cancel" @click="hideModal" />
+          <b-button
+            icon-left="floppy"
+            type="is-primary"
+            :disabled="disableConfirmButton"
+            @click="confirmEditInteractionModal"
+          >
+            Save
           </b-button>
         </footer>
       </div>
@@ -221,10 +316,22 @@ interface Activist {
   source: string;
   interest_date: string;
   facebook: string;
+  interactions: Interaction[];
 
   // To appease our clunky sorting functions.
   // TODO(mdempsky): Remove.
   [key: string]: any;
+}
+
+interface Interaction {
+  id: number;
+  activist_id: number;
+  user_id: number;
+  user_name: string;
+  timestamp: string;
+  method: string;
+  outcome: string;
+  notes: string;
 }
 
 interface Column {
@@ -1026,11 +1133,41 @@ export default Vue.extend({
     showOptionsModal(row: number) {
       const activist = this.activists[row];
       this.showModal('activist-options-modal', activist, row);
+      this.loading = true;
+
+      $.ajax({
+        url: '/interaction/list',
+        method: 'POST',
+        data: JSON.stringify({ activist_id: activist.id }),
+        success: (data) => {
+          const parsed = JSON.parse(data);
+
+          if (parsed.status === 'error') {
+            flashMessage('Error: ' + parsed.message, true);
+            this.loading = false;
+            return;
+          }
+
+          // status === "success"
+          this.currentActivist.interactions = parsed.interactions;
+          this.loading = false;
+        },
+        error: (err) => {
+          console.warn(err.responseText);
+          flashMessage('Server error: ' + err.responseText, true);
+          this.loading = false;
+        },
+      });
     },
     showColumnsModal() {
       this.showModal('columns-modal');
     },
-    showModal(modalName: string, activist: Activist = {} as Activist, index: number = 0) {
+    showModal(
+      modalName: string,
+      activist: Activist = {} as Activist,
+      index: number = 0,
+      interaction: Interaction = {} as Interaction,
+    ) {
       // Hide the navbar so that the model doesn't go behind it.
       const mainNav = document.getElementById('mainNav');
       if (mainNav) mainNav.style.visibility = 'hidden';
@@ -1051,6 +1188,11 @@ export default Vue.extend({
           this.activistIndex = -1;
         }
 
+        // TODO: make sure this is okay
+        if (interaction) {
+          this.currentInteraction = interaction;
+        }
+
         this.currentModalName = modalName;
 
         if (this.currentModalName == 'merge-activist-modal') {
@@ -1068,6 +1210,7 @@ export default Vue.extend({
       this.currentModalName = '';
       this.activistIndex = -1;
       this.currentActivist = {} as Activist;
+      this.currentInteraction = {} as Interaction;
       this.mergeTarget = [] as Activist[];
       this.activistMergeOptions = [];
     },
@@ -1117,6 +1260,70 @@ export default Vue.extend({
           flashMessage('Server error: ' + err.responseText, true);
         },
       });
+    },
+    confirmEditInteractionModal() {
+      this.loading = true;
+      this.disableConfirmButton = true;
+
+      const interactionData = this.currentInteraction;
+      interactionData.activist_id = this.currentActivist.id;
+
+      $.ajax({
+        url: '/interaction/save',
+        method: 'POST',
+        data: JSON.stringify(interactionData),
+        success: (data) => {
+          const parsed = JSON.parse(data);
+
+          if (parsed.status === 'error') {
+            flashMessage('Error: ' + parsed.message, true);
+            this.loading = false;
+            return;
+          }
+
+          // status === "success"
+          flashMessage('Saved interaction!', false);
+          this.loading = false;
+        },
+        error: (err) => {
+          console.warn(err.responseText);
+          flashMessage('Server error: ' + err.responseText, true);
+          this.loading = false;
+        },
+      });
+
+      this.disableConfirmButton = false;
+      this.hideModal();
+      // TODO: do we need to reload the page to update the interaction data in the HoT? or can we do it dynamically using activist index?
+    },
+    deleteInteraction(interaction: Interaction) {
+      this.loading = true;
+      $.ajax({
+        url: '/interaction/delete',
+        method: 'POST',
+        data: JSON.stringify({ id: interaction.id }),
+        success: (data) => {
+          const parsed = JSON.parse(data);
+
+          if (parsed.status === 'error') {
+            flashMessage('Error: ' + parsed.message, true);
+            this.loading = false;
+            return;
+          }
+
+          // status === "success"
+          flashMessage('Deleted interaction!', false);
+          this.loading = false;
+        },
+        error: (err) => {
+          console.warn(err.responseText);
+          flashMessage('Server error: ' + err.responseText, true);
+          this.loading = false;
+        },
+      });
+
+      this.hideModal();
+      // TODO: do we need to reload the page to update the interaction data in the HoT? or can we do it dynamically using activist index?
     },
     getFilteredActivistMergeOptions(text: string) {
       this.filteredActivistMergeOptions = this.activistMergeOptions.filter((a: string) => {
@@ -1324,6 +1531,7 @@ export default Vue.extend({
       currentModalName: '',
       activistIndex: -1,
       currentActivist: {} as Activist,
+      currentInteraction: {} as Interaction,
       disableConfirmButton: false,
       allActivists: [] as Activist[],
       height: 500,
@@ -1402,7 +1610,6 @@ export default Vue.extend({
     },
   },
   created() {
-    console.log(this.columns);
     this.loadActivists();
     EventBus.$on('activist-show-options-modal', (row: number) => {
       this.showOptionsModal(row);
