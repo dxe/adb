@@ -603,16 +603,26 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
             url: '/user/list',
             success: (data) => {
               const parsed = JSON.parse(data);
-              const filteredUsers = parsed.filter((user: any) => {
-                // TODO: also need to check chapter? can we on backend?
-                return (
-                  user.roles && (user.roles.includes('admin') || user.roles.includes('organizer'))
-                );
-              });
-              const userNames = filteredUsers.map((user: any) => {
-                return user.name;
-              });
-              process(userNames);
+
+              let users = parsed
+                .filter((user: any) => {
+                  return (
+                    user.roles && (user.roles.includes('admin') || user.roles.includes('organizer'))
+                  );
+                })
+                .map((user: any) => {
+                  return user.name;
+                })
+                .sort();
+
+              users.unshift('');
+
+              if (query.length > 0) {
+                users = users.filter((user: any) => {
+                  return user.startsWith(query);
+                });
+              }
+              process(users);
             },
             error: () => {
               flashMessage('Error getting user names from server.', true);
