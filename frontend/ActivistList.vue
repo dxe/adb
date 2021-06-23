@@ -607,7 +607,9 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
               let users = parsed
                 .filter((user: any) => {
                   return (
-                    user.roles && (user.roles.includes('admin') || user.roles.includes('organizer'))
+                    user.disabled === false &&
+                    user.roles &&
+                    (user.roles.includes('admin') || user.roles.includes('organizer'))
                   );
                 })
                 .map((user: any) => {
