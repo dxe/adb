@@ -783,8 +783,9 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 		if options.Filter == "community_prospects" {
 			whereClause = append(whereClause, "(source like '%form%' or source like 'petition%' or source like 'eventbrite%' or source='dxe-signup' or source='arc-signup') and source not like '%application%'")
 			whereClause = append(whereClause, "activist_level = 'supporter'")
-			whereClause = append(whereClause, "interest_date >= DATE_SUB(now(), INTERVAL 3 MONTH)")
-			whereClause = append(whereClause, "a.id not in (select distinct activist_id from event_attendance)")
+			//whereClause = append(whereClause, "interest_date >= DATE_SUB(now(), INTERVAL 3 MONTH)")
+			//whereClause = append(whereClause, "a.id not in (select distinct activist_id from event_attendance)")
+			// TODO: consider hiding people if they have attended 3+ events?
 		}
 		if options.Filter == "leaderboard" {
 			whereClause = append(whereClause, "a.id in (select distinct activist_id  from event_attendance ea  where ea.event_id in (select id from events e where e.date >= (now() - interval 30 day)))")
