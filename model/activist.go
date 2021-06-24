@@ -768,27 +768,26 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 			whereClause = append(whereClause, "a.hidden = false")
 		}
 
-		// WHERE clause filters based on view
-		if options.Filter == "development" {
+		switch options.Filter {
+		case "development":
 			whereClause = append(whereClause, "a.activist_level like '%organizer'")
-		}
-		if options.Filter == "chapter_member_prospects" {
+		case "chapter_member_prospects":
 			whereClause = append(whereClause, "prospect_chapter_member = true AND a.activist_level <> 'chapter member' and a.activist_level not like '%organizer'")
-		}
-		if options.Filter == "organizer_prospects" {
+		case "organizer_prospects":
 			whereClause = append(whereClause, "prospect_organizer = true AND a.activist_level not like '%organizer'")
-		}
-		if options.Filter == "chapter_member_development" {
+		case "chapter_member_development":
 			whereClause = append(whereClause, "(a.activist_level like '%organizer' OR a.activist_level = 'chapter member')")
-		}
-		if options.Filter == "community_prospects" {
+		case "community_prospects":
 			whereClause = append(whereClause, "(source like '%form%' or source like 'petition%' or source like 'eventbrite%' or source='dxe-signup' or source='arc-signup') and source not like '%application%'")
 			whereClause = append(whereClause, "activist_level = 'supporter'")
 			//whereClause = append(whereClause, "interest_date >= DATE_SUB(now(), INTERVAL 3 MONTH)")
 			//whereClause = append(whereClause, "a.id not in (select distinct activist_id from event_attendance)")
 			// TODO: consider hiding people if they have attended 3+ events?
-		}
-		if options.Filter == "leaderboard" {
+		case "community_prospects_followup":
+			// TODO: should we check for null or blanks?
+			whereClause = append(whereClause, "followup_date is not null")
+			whereClause = append(whereClause, "assigned_to <> 0")
+		case "leaderboard":
 			whereClause = append(whereClause, "a.id in (select distinct activist_id  from event_attendance ea  where ea.event_id in (select id from events e where e.date >= (now() - interval 30 day)))")
 		}
 

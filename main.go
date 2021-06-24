@@ -577,7 +577,7 @@ func (c MainController) ListCommunityProspectsFollowupHandler(w http.ResponseWri
 		PageName: "CommunityProspectsFollowup",
 		Data: ActivistListData{
 			Title:       "Community Prospects Follow-up",
-			Description: "Everyone who needs following up with",
+			Description: "Everyone who is assigned to someone and has a follow-up date",
 			View:        "community_prospects_followup",
 		},
 	})
