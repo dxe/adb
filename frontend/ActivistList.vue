@@ -475,7 +475,8 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
         view === 'all_activists' ||
         view === 'chapter_member_prospects' ||
         view === 'chapter_member_development' ||
-        view === 'community_prospects',
+        view === 'community_prospects' ||
+        view === 'community_prospects_followup',
       showForAllChapters: true,
     },
     {
@@ -488,6 +489,7 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
       },
       enabled:
         view === 'community_prospects' ||
+          view === 'community_prospects_followup' ||
         view === 'all_activists' ||
         view === 'chapter_member_prospects' ||
         view === 'chapter_member_development',
@@ -635,7 +637,7 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
         data: 'assigned_to_name',
         colWidths: 100,
       },
-      enabled: view === 'community_prospects',
+      enabled: view === 'community_prospects' || view === 'community_prospects_followup',
     },
     {
       header: 'Follow-up',
@@ -648,7 +650,7 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
         dateFormat: 'YYYY-MM-DD',
         correctFormat: true,
       },
-      enabled: view === 'community_prospects',
+      enabled: view === 'community_prospects' || view === 'community_prospects_followup',
     },
     {
       header: 'Interactions',
@@ -660,7 +662,7 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
         type: 'numeric',
         readOnly: true,
       },
-      enabled: view === 'community_prospects',
+      enabled: view === 'community_prospects' || view === 'community_prospects_followup',
     },
     {
       header: 'Last Interaction',
@@ -674,7 +676,7 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
         correctFormat: true,
         readOnly: true,
       },
-      enabled: view === 'community_prospects',
+      enabled: view === 'community_prospects' || view === 'community_prospects_followup',
     },
     // Referral Info
     {
@@ -685,7 +687,7 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
         data: 'source',
         colWidths: 100,
       },
-      enabled: view === 'community_prospects',
+      enabled: view === 'community_prospects' || view === 'community_prospects_followup',
     },
     {
       header: 'Interest Date',
@@ -699,7 +701,7 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
         colWidths: 100,
         readOnly: true,
       },
-      enabled: view === 'community_prospects',
+      enabled: view === 'community_prospects' || view === 'community_prospects_followup',
     },
     {
       header: 'Close Ties',
@@ -812,6 +814,7 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
       enabled:
         view === 'leaderboard' ||
         view === 'community_prospects' ||
+        view === 'community_prospects_followup' ||
         view === 'study' ||
         chapter !== 'SF Bay Area',
       showForAllChapters: true,
@@ -828,6 +831,7 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
       enabled:
         view === 'leaderboard' ||
         view === 'community_prospects' ||
+        view === 'community_prospects_followup' ||
         view === 'study' ||
         chapter !== 'SF Bay Area',
       showForAllChapters: true,
