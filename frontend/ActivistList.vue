@@ -1486,13 +1486,12 @@ export default Vue.extend({
           }
 
           // status === "success"
-          let activistList = parsed.activist_list;
-
-          if (activistList !== null) {
-            this.allActivists = activistList;
-          }
-
+          this.allActivists = parsed.activist_list ? parsed.activist_list : [];
           this.loading = false;
+
+          if (this.allActivists.length === 0) {
+            flashMessage('No activists found matching given criteria', true);
+          }
         },
         error: (err) => {
           console.warn(err.responseText);

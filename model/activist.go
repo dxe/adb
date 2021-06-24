@@ -820,11 +820,11 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 	}
 	if options.InterestDateFrom != "" {
 		havingClause = append(havingClause, "interest_date >= ?")
-		queryArgs = append(queryArgs, options.LastEventDateFrom)
+		queryArgs = append(queryArgs, options.InterestDateFrom)
 	}
 	if options.InterestDateTo != "" {
 		havingClause = append(havingClause, "interest_date <= ?")
-		queryArgs = append(queryArgs, options.LastEventDateTo)
+		queryArgs = append(queryArgs, options.InterestDateTo)
 	}
 
 	if len(havingClause) != 0 {
