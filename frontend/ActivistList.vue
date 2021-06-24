@@ -6,7 +6,7 @@
       <div class="level-left">
         <div class="level-item">
           <b-field label-position="on-border" label="Search by name">
-            <b-input v-on:input="debounceSearchInput" type="text" icon="account-outline"></b-input>
+            <b-input v-model="search" type="text" icon="account-outline"></b-input>
           </b-field>
         </div>
         <div class="level-item">
@@ -68,7 +68,7 @@
         ref="hot"
         :root="root"
         :settings="hotSettings"
-        :data="activists"
+        :data="allActivists"
         :height="height"
       ></HotTable>
     </div>
@@ -1249,7 +1249,7 @@ export default Vue.extend({
       );
     },
     showOptionsModal(row: number) {
-      const activist = this.activists[row];
+      const activist = this.allActivists[row];
       this.showModal('activist-options-modal', activist, row);
       this.loading = true;
 
@@ -1283,54 +1283,70 @@ export default Vue.extend({
     showModal(
       modalName: string,
       activist: Activist = {} as Activist,
-      index: number = 0,
+      index: number = -1,
       interaction: Interaction = {} as Interaction,
     ) {
       // Hide the navbar so that the model doesn't go behind it.
       const mainNav = document.getElementById('mainNav');
       if (mainNav) mainNav.style.visibility = 'hidden';
 
-      // Check to see if there's a modal open, and close it if so.
-      if (this.currentModalName) {
-        this.hideModal();
+      this.currentActivist = activist;
+
+      if (index != undefined) {
+        this.activistIndex = index; // needed for updating activist
+      } else {
+        this.activistIndex = -1;
       }
 
+      if (interaction) {
+        this.currentInteraction = interaction;
+      }
+
+      this.currentModalName = modalName;
+
+      if (this.currentModalName == 'merge-activist-modal') {
+        this.getActivistMergeOptions(this.currentActivist.name);
+      }
+
+      this.disableConfirmButton = false;
       // Show the modal in the next tick so that this code runs after
       // vue has hidden the previous modal.
-      Vue.nextTick(() => {
-        this.currentActivist = activist;
-
-        if (index != undefined) {
-          this.activistIndex = index; // needed for updating activist
-        } else {
-          this.activistIndex = -1;
-        }
-
-        // TODO: make sure this is okay
-        if (interaction) {
-          this.currentInteraction = interaction;
-        }
-
-        this.currentModalName = modalName;
-
-        if (this.currentModalName == 'merge-activist-modal') {
-          this.getActivistMergeOptions(this.currentActivist.name);
-        }
-
-        this.disableConfirmButton = false;
-      });
+      // Vue.nextTick(() => {
+      //   // Hide the navbar so that the model doesn't go behind it.
+      //   const mainNav = document.getElementById('mainNav');
+      //   if (mainNav) mainNav.style.visibility = 'hidden';
+      //
+      //   this.currentActivist = activist;
+      //
+      //   if (index != undefined) {
+      //     this.activistIndex = index; // needed for updating activist
+      //   } else {
+      //     this.activistIndex = -1;
+      //   }
+      //
+      //   if (interaction) {
+      //     this.currentInteraction = interaction;
+      //   }
+      //
+      //   this.currentModalName = modalName;
+      //
+      //   if (this.currentModalName == 'merge-activist-modal') {
+      //     this.getActivistMergeOptions(this.currentActivist.name);
+      //   }
+      //
+      //   this.disableConfirmButton = false;
+      // });
     },
     hideModal() {
-      // Show the navbar.
-      const mainNav = document.getElementById('mainNav');
-      if (mainNav) mainNav.style.visibility = 'visible';
-
       this.currentModalName = '';
       this.activistIndex = -1;
       this.currentActivist = {} as Activist;
       this.currentInteraction = {} as Interaction;
       this.mergeTarget = [] as Activist[];
       this.activistMergeOptions = [];
+
+      const mainNav = document.getElementById('mainNav');
+      if (mainNav) mainNav.style.visibility = 'visible';
     },
     confirmMergeActivistModal() {
       if (this.mergeTarget.length === 0) {
@@ -1364,7 +1380,7 @@ export default Vue.extend({
 
           // Force page to refresh in order to pick
           // up changes to target activist data.
-          // TOOD: Handle this better. Perhaps return updated
+          // TODO: Handle this better. Perhaps return updated
           // activist from backend call.
           // This is necessary because it doesn't appear that
           // the Vue.js component is handling data refreshing
@@ -1400,26 +1416,28 @@ export default Vue.extend({
           }
 
           // status === "success"
+          Vue.set(this.allActivists, this.activistIndex, parsed.activist)
+          this.refreshHOTData();
           flashMessage('Saved interaction!', false);
           this.loading = false;
+          this.disableConfirmButton = false;
+          this.hideModal();
         },
         error: (err) => {
           console.warn(err.responseText);
           flashMessage('Server error: ' + err.responseText, true);
           this.loading = false;
+          this.disableConfirmButton = false;
         },
       });
-
-      this.disableConfirmButton = false;
-      this.hideModal();
-      // TODO: do we need to reload the page to update the interaction data in the HoT? or can we do it dynamically using activist index?
     },
     deleteInteraction(interaction: Interaction) {
       this.loading = true;
+
       $.ajax({
         url: '/interaction/delete',
         method: 'POST',
-        data: JSON.stringify({ id: interaction.id }),
+        data: JSON.stringify({ id: interaction.id, activist_id: interaction.activist_id }),
         success: (data) => {
           const parsed = JSON.parse(data);
 
@@ -1430,8 +1448,11 @@ export default Vue.extend({
           }
 
           // status === "success"
+          Vue.set(this.allActivists, this.activistIndex, parsed.activist)
+          this.refreshHOTData();
           flashMessage('Deleted interaction!', false);
           this.loading = false;
+          this.hideModal();
         },
         error: (err) => {
           console.warn(err.responseText);
@@ -1439,9 +1460,6 @@ export default Vue.extend({
           this.loading = false;
         },
       });
-
-      this.hideModal();
-      // TODO: do we need to reload the page to update the interaction data in the HoT? or can we do it dynamically using activist index?
     },
     getFilteredActivistMergeOptions(text: string) {
       this.filteredActivistMergeOptions = this.activistMergeOptions.filter((a: string) => {
@@ -1497,7 +1515,7 @@ export default Vue.extend({
         const previousData = change[2];
         const newData = change[3];
 
-        const activist = this.activists[columnIndex];
+        const activist = this.allActivists[columnIndex];
         (function (change) {
           // TODO: use change?
           $.ajax({
@@ -1547,13 +1565,15 @@ export default Vue.extend({
         order_field: order_field,
         last_event_date_to: this.lastEventDateTo,
         last_event_date_from: this.lastEventDateFrom,
-        filter: this.view, // this passes view to the backend, where filtering will now take place
+        name: this.search,
+        filter: this.view,
       };
+
     },
     refreshHOTData() {
       const table = this.hotTable;
       const newSettings = {
-        data: rewriteSettings(this.activists),
+        data: rewriteSettings(this.allActivists),
       };
       table.updateSettings(newSettings, false);
     },
@@ -1611,10 +1631,6 @@ export default Vue.extend({
         this.sortColumn(foundCol);
       }
     },
-    // TODO(mdempsky): Remove "this: any".
-    debounceSearchInput: debounce(function (this: any, text: string) {
-      this.search = text;
-    }, 500),
     getActivistMergeOptions(ignoreActivistName?: string) {
       this.loading = true;
       $.ajax({
@@ -1709,18 +1725,6 @@ export default Vue.extend({
     hotTable(): Handsontable {
       return (this.$refs.hot as any).table as Handsontable;
     },
-    activists(): Activist[] {
-      // This search implementation is slow when we have lots of data.
-      // Make it faster when that becomes an issue.
-      if (this.search.length > 2) {
-        const searchNameNormalized = this.search.trim().toLowerCase();
-        return this.allActivists.filter((a) => {
-          return a.name.toLowerCase().includes(searchNameNormalized);
-        });
-      }
-
-      return this.allActivists;
-    },
   },
   watch: {
     lastEventDateFrom() {
@@ -1729,6 +1733,15 @@ export default Vue.extend({
     lastEventDateTo() {
       this.debounceLoadActivists();
     },
+    search() {
+      this.debounceLoadActivists();
+    },
+    // if (this.search.length > 2) {
+    //   const searchNameNormalized = this.search.trim().toLowerCase();
+    //   return this.allActivists.filter((a) => {
+    //     return a.name.toLowerCase().includes(searchNameNormalized);
+    //   });
+    // }
   },
   created() {
     this.loadActivists();

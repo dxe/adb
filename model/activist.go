@@ -412,6 +412,7 @@ type ActivistJSON struct {
 
 type GetActivistOptions struct {
 	ID                int    `json:"id"`
+	Name              string `json:"name"`
 	Hidden            bool   `json:"hidden"`
 	Order             int    `json:"order"`
 	OrderField        string `json:"order_field"`
@@ -750,6 +751,11 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 		queryArgs = append(queryArgs, options.ID)
 	} else {
 		var whereClause []string
+
+		if options.Name != "" {
+			// TODO: do we need to escape quotes? just remove anything that's not a letter or space or period?
+			whereClause = append(whereClause, "a.name like '"+options.Name+"%'")
+		}
 
 		if options.ChapterID != 0 {
 			whereClause = append(whereClause, "a.chapter_id = "+strconv.Itoa(options.ChapterID))

@@ -2331,8 +2331,18 @@ func (c MainController) InteractionSaveHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	// get the updated activist record
+	activist, err := model.GetActivistJSON(c.db, model.GetActivistOptions{
+		ID: interaction.ActivistID,
+	})
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
 	writeJSON(w, map[string]interface{}{
-		"status": "success",
+		"status":   "success",
+		"activist": activist,
 	})
 }
 
@@ -2359,7 +2369,8 @@ func (c MainController) InteractionListHandler(w http.ResponseWriter, r *http.Re
 
 func (c MainController) InteractionDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	var reqData struct {
-		ID int `json:"id"`
+		ID         int `json:"id"`
+		ActivistID int `json:"activist_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&reqData); err != nil {
 		sendErrorMessage(w, err)
@@ -2371,8 +2382,18 @@ func (c MainController) InteractionDeleteHandler(w http.ResponseWriter, r *http.
 		return
 	}
 
-	writeJSON(w, map[string]string{
-		"status": "success",
+	// get the updated activist record
+	activist, err := model.GetActivistJSON(c.db, model.GetActivistOptions{
+		ID: reqData.ActivistID,
+	})
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	writeJSON(w, map[string]interface{}{
+		"status":   "success",
+		"activist": activist,
 	})
 }
 
