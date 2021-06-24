@@ -14,7 +14,7 @@
             Choose visible columns
           </b-button>
         </div>
-        <div class="level-item" v-if="view === 'all_activists'">
+        <div class="level-item" v-if="view === 'all_activists' || view === 'community_prospects'">
           <b-field>
             <b-switch v-model="showFilters" type="is-primary">Show filters</b-switch>
           </b-field>
@@ -58,6 +58,17 @@
         <div class="level-item" v-if="showFilters && view === 'all_activists'">
           <b-field label="Last Event To" label-position="on-border">
             <b-input v-model="lastEventDateTo" type="date" icon="calendar-end"></b-input>
+          </b-field>
+        </div>
+
+        <div class="level-item" v-if="showFilters && view === 'community_prospects'">
+          <b-field label="Interest Date From" label-position="on-border">
+            <b-input v-model="interestDateFrom" type="date" icon="calendar-start"></b-input>
+          </b-field>
+        </div>
+        <div class="level-item" v-if="showFilters && view === 'community_prospects'">
+          <b-field label="Interest Date To" label-position="on-border">
+            <b-input v-model="interestDateTo" type="date" icon="calendar-end"></b-input>
           </b-field>
         </div>
       </div>
@@ -1161,8 +1172,8 @@ function optionsButtonRenderer(
 }
 
 // Returns the first of the previous month.
-function initialDateFromValue() {
-  return dayjs().subtract(1, 'months').startOf('month').format('YYYY-MM-DD');
+function initialDateFromValue(months: number = 1) {
+  return dayjs().subtract(months, 'months').startOf('month').format('YYYY-MM-DD');
 }
 
 // Returns the current date.
@@ -1536,6 +1547,8 @@ export default Vue.extend({
         order_field: order_field,
         last_event_date_to: this.lastEventDateTo,
         last_event_date_from: this.lastEventDateFrom,
+        interest_date_from: this.interestDateFrom,
+        interest_date_to: this.interestDateTo,
         name: this.search,
         filter: this.view,
       };
@@ -1632,6 +1645,10 @@ export default Vue.extend({
       initDateFrom = initialDateFromValue();
       initDateTo = initialDateToValue();
     }
+    if (this.view === 'community_prospects') {
+      initDateFrom = initialDateFromValue(6);
+      initDateTo = initialDateToValue();
+    }
 
     return {
       root: 'activists-root',
@@ -1645,6 +1662,8 @@ export default Vue.extend({
       columns: getColumnsForChapter(this.chapter, this.view),
       lastEventDateFrom: initDateFrom,
       lastEventDateTo: initDateTo,
+      interestDateFrom: initDateFrom,
+      interestDateTo: initDateTo,
       showFilters: false,
       search: '',
       loading: false,
@@ -1701,6 +1720,12 @@ export default Vue.extend({
       this.debounceLoadActivists();
     },
     lastEventDateTo() {
+      this.debounceLoadActivists();
+    },
+    interestDateFrom() {
+      this.debounceLoadActivists();
+    },
+    interestDateTo() {
       this.debounceLoadActivists();
     },
     search() {

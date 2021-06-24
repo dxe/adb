@@ -419,6 +419,8 @@ type GetActivistOptions struct {
 	OrderField        string `json:"order_field"`
 	LastEventDateFrom string `json:"last_event_date_from"`
 	LastEventDateTo   string `json:"last_event_date_to"`
+	InterestDateFrom  string `json:"interest_date_from"`
+	InterestDateTo    string `json:"interest_date_to"`
 	Filter            string `json:"filter"`
 	ChapterID         int    `json:"chapter_id"`
 }
@@ -803,6 +805,14 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 	}
 	if options.LastEventDateTo != "" {
 		havingClause = append(havingClause, "last_event <= ?")
+		queryArgs = append(queryArgs, options.LastEventDateTo)
+	}
+	if options.InterestDateFrom != "" {
+		havingClause = append(havingClause, "interest_date >= ?")
+		queryArgs = append(queryArgs, options.LastEventDateFrom)
+	}
+	if options.InterestDateTo != "" {
+		havingClause = append(havingClause, "interest_date <= ?")
 		queryArgs = append(queryArgs, options.LastEventDateTo)
 	}
 
@@ -1882,6 +1892,8 @@ func validateGetActivistOptions(a GetActivistOptions) (GetActivistOptions, error
 	}
 	a.LastEventDateFrom = reg.ReplaceAllString(a.LastEventDateFrom, "")
 	a.LastEventDateTo = reg.ReplaceAllString(a.LastEventDateTo, "")
+	a.InterestDateFrom = reg.ReplaceAllString(a.InterestDateFrom, "")
+	a.InterestDateTo = reg.ReplaceAllString(a.InterestDateTo, "")
 
 	return a, nil
 }
