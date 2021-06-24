@@ -77,7 +77,7 @@
             <a href="https://www.directactioneverywhere.com/core-values" target="_blank">values</a>
           </li>
           <li>Uphold the Movement Power Pledge (attend one action every month)</li>
-          <li class="has-text-danger">
+          <li>
             Failure to uphold our code of conduct, values, or the Movement Power Pledge may result
             in being removed as a chapter member
           </li>
