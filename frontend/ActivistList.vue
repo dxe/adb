@@ -489,7 +489,7 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
       },
       enabled:
         view === 'community_prospects' ||
-          view === 'community_prospects_followup' ||
+        view === 'community_prospects_followup' ||
         view === 'all_activists' ||
         view === 'chapter_member_prospects' ||
         view === 'chapter_member_development',
