@@ -1290,52 +1290,16 @@ export default Vue.extend({
       const mainNav = document.getElementById('mainNav');
       if (mainNav) mainNav.style.visibility = 'hidden';
 
-      this.currentActivist = activist;
-
-      if (index != undefined) {
-        this.activistIndex = index; // needed for updating activist
-      } else {
-        this.activistIndex = -1;
-      }
-
-      if (interaction) {
-        this.currentInteraction = interaction;
-      }
-
       this.currentModalName = modalName;
+      this.currentActivist = activist;
+      this.activistIndex = index; // needed for updating activist
+      this.currentInteraction = interaction;
 
       if (this.currentModalName == 'merge-activist-modal') {
         this.getActivistMergeOptions(this.currentActivist.name);
       }
 
       this.disableConfirmButton = false;
-      // Show the modal in the next tick so that this code runs after
-      // vue has hidden the previous modal.
-      // Vue.nextTick(() => {
-      //   // Hide the navbar so that the model doesn't go behind it.
-      //   const mainNav = document.getElementById('mainNav');
-      //   if (mainNav) mainNav.style.visibility = 'hidden';
-      //
-      //   this.currentActivist = activist;
-      //
-      //   if (index != undefined) {
-      //     this.activistIndex = index; // needed for updating activist
-      //   } else {
-      //     this.activistIndex = -1;
-      //   }
-      //
-      //   if (interaction) {
-      //     this.currentInteraction = interaction;
-      //   }
-      //
-      //   this.currentModalName = modalName;
-      //
-      //   if (this.currentModalName == 'merge-activist-modal') {
-      //     this.getActivistMergeOptions(this.currentActivist.name);
-      //   }
-      //
-      //   this.disableConfirmButton = false;
-      // });
     },
     hideModal() {
       this.currentModalName = '';
@@ -1421,7 +1385,7 @@ export default Vue.extend({
           flashMessage('Saved interaction!', false);
           this.loading = false;
           this.disableConfirmButton = false;
-          this.hideModal();
+          this.showOptionsModal(this.activistIndex);
         },
         error: (err) => {
           console.warn(err.responseText);
@@ -1452,7 +1416,7 @@ export default Vue.extend({
           this.refreshHOTData();
           flashMessage('Deleted interaction!', false);
           this.loading = false;
-          this.hideModal();
+          this.showOptionsModal(this.activistIndex);
         },
         error: (err) => {
           console.warn(err.responseText);
