@@ -16,7 +16,30 @@
         </div>
         <div class="level-item" v-if="view === 'all_activists' || view === 'community_prospects'">
           <b-field>
-            <b-switch v-model="showFilters" type="is-primary">Show filters</b-switch>
+            <b-switch v-model="showFilters" type="is-primary">Show date filters</b-switch>
+          </b-field>
+        </div>
+        <div class="level-item" v-if="view === 'community_prospects_followup'">
+          <b-field label="Due Date" label-position="on-border">
+            <b-select v-model="upcomingFollowupsOnly">
+              <option
+                v-for="t in [
+                  { value: false, text: 'Today or Overdue' },
+                  { value: true, text: 'Upcoming' },
+                ]"
+                :value="t.value"
+                :key="t.value"
+              >
+                {{ t.text }}
+              </option>
+            </b-select>
+          </b-field>
+        </div>
+        <div class="level-item" v-if="view === 'community_prospects_followup'">
+          <b-field>
+            <b-switch v-model="assignedToCurrentUser" type="is-primary"
+              >Only show prospects assigned to me</b-switch
+            >
           </b-field>
         </div>
       </div>
@@ -1448,6 +1471,8 @@ export default Vue.extend({
     loadActivists() {
       this.loading = true;
 
+      console.log(this.listActivistsParameters());
+
       $.ajax({
         url: '/activist/list',
         method: 'POST',
@@ -1551,6 +1576,8 @@ export default Vue.extend({
         interest_date_to: this.interestDateTo,
         name: this.search,
         filter: this.view,
+        assigned_to_current_user: this.assignedToCurrentUser,
+        upcoming_followups_only: this.upcomingFollowupsOnly,
       };
     },
     refreshHOTData() {
@@ -1639,17 +1666,6 @@ export default Vue.extend({
     },
   },
   data() {
-    let initDateFrom = '';
-    let initDateTo = '';
-    if (this.view === ('all_activists' || 'leaderboard')) {
-      initDateFrom = initialDateFromValue();
-      initDateTo = initialDateToValue();
-    }
-    if (this.view === 'community_prospects') {
-      initDateFrom = initialDateFromValue(6);
-      initDateTo = initialDateToValue();
-    }
-
     return {
       root: 'activists-root',
       currentModalName: '',
@@ -1660,10 +1676,13 @@ export default Vue.extend({
       allActivists: [] as Activist[],
       height: 500,
       columns: getColumnsForChapter(this.chapter, this.view),
-      lastEventDateFrom: initDateFrom,
-      lastEventDateTo: initDateTo,
-      interestDateFrom: initDateFrom,
-      interestDateTo: initDateTo,
+      lastEventDateFrom:
+        this.view === ('all_activists' || 'leaderboard') ? initialDateFromValue() : '',
+      lastEventDateTo: this.view === ('all_activists' || 'leaderboard') ? initialDateToValue() : '',
+      interestDateFrom: this.view === 'community_prospects' ? initialDateFromValue(6) : '',
+      interestDateTo: this.view === 'community_prospects' ? initialDateToValue() : '',
+      assignedToCurrentUser: this.view === 'community_prospects_followup',
+      upcomingFollowupsOnly: false,
       showFilters: false,
       search: '',
       loading: false,
@@ -1729,6 +1748,12 @@ export default Vue.extend({
       this.debounceLoadActivists();
     },
     search() {
+      this.debounceLoadActivists();
+    },
+    assignedToCurrentUser() {
+      this.debounceLoadActivists();
+    },
+    upcomingFollowupsOnly() {
       this.debounceLoadActivists();
     },
     // if (this.search.length > 2) {

@@ -412,17 +412,20 @@ type ActivistJSON struct {
 }
 
 type GetActivistOptions struct {
-	ID                int    `json:"id"`
-	Name              string `json:"name"`
-	Hidden            bool   `json:"hidden"`
-	Order             int    `json:"order"`
-	OrderField        string `json:"order_field"`
-	LastEventDateFrom string `json:"last_event_date_from"`
-	LastEventDateTo   string `json:"last_event_date_to"`
-	InterestDateFrom  string `json:"interest_date_from"`
-	InterestDateTo    string `json:"interest_date_to"`
-	Filter            string `json:"filter"`
-	ChapterID         int    `json:"chapter_id"`
+	ID                    int    `json:"id"`
+	Name                  string `json:"name"`
+	Hidden                bool   `json:"hidden"`
+	Order                 int    `json:"order"`
+	OrderField            string `json:"order_field"`
+	LastEventDateFrom     string `json:"last_event_date_from"`
+	LastEventDateTo       string `json:"last_event_date_to"`
+	InterestDateFrom      string `json:"interest_date_from"`
+	InterestDateTo        string `json:"interest_date_to"`
+	Filter                string `json:"filter"`
+	ChapterID             int    `json:"chapter_id"`
+	AssignedToCurrentUser bool   `json:"assigned_to_current_user"`
+	AssignedTo            int    `json:"assigned_to"`
+	UpcomingFollowupsOnly bool   `json:"upcoming_followups_only"`
 }
 
 var validOrderFields = map[string]struct{}{
@@ -770,6 +773,11 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 			whereClause = append(whereClause, "a.hidden = false")
 		}
 
+		if options.AssignedToCurrentUser {
+			whereClause = append(whereClause, "assigned_to = ?")
+			queryArgs = append(queryArgs, options.AssignedTo)
+		}
+
 		switch options.Filter {
 		case "development":
 			whereClause = append(whereClause, "a.activist_level like '%organizer'")
@@ -786,8 +794,11 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 			//whereClause = append(whereClause, "a.id not in (select distinct activist_id from event_attendance)")
 			// TODO: consider hiding people if they have attended 3+ events?
 		case "community_prospects_followup":
-			// TODO: should we check for null or blanks?
-			whereClause = append(whereClause, "followup_date is not null")
+			if options.UpcomingFollowupsOnly {
+				whereClause = append(whereClause, "date(followup_date) > CURRENT_DATE")
+			} else {
+				whereClause = append(whereClause, "date(followup_date) <= CURRENT_DATE")
+			}
 			whereClause = append(whereClause, "assigned_to <> 0")
 		case "leaderboard":
 			whereClause = append(whereClause, "a.id in (select distinct activist_id  from event_attendance ea  where ea.event_id in (select id from events e where e.date >= (now() - interval 30 day)))")

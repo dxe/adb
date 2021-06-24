@@ -1301,6 +1301,10 @@ func (c MainController) ActivistListHandler(w http.ResponseWriter, r *http.Reque
 	user, _ := getAuthedADBUser(c.db, r)
 	options.ChapterID = user.ChapterID
 
+	if options.AssignedToCurrentUser {
+		options.AssignedTo = user.ID
+	}
+
 	activists, err := model.GetActivistsJSON(c.db, options)
 	if err != nil {
 		sendErrorMessage(w, err)
