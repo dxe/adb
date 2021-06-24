@@ -1520,6 +1520,9 @@ export default Vue.extend({
         case 'community_prospects':
           order_field = 'interest_date';
           break;
+        case 'community_prospects_followup':
+          order_field = 'followup_date';
+          break;
         default:
           order_field = 'last_event';
       }

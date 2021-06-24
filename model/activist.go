@@ -428,6 +428,7 @@ var validOrderFields = map[string]struct{}{
 	"last_event":    struct{}{},
 	"total_points":  struct{}{},
 	"interest_date": struct{}{},
+	"followup_date": struct{}{},
 }
 
 type ActivistRangeOptionsJSON struct {

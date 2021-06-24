@@ -41,6 +41,12 @@
         <b-navbar-item href="/community_prospects" :active="page === 'CommunityProspects'">
           Community Prospects
         </b-navbar-item>
+        <b-navbar-item
+          href="/community_prospects_followup"
+          :active="page === 'CommunityProspectsFollowup'"
+        >
+          Community Prospects Follow-up
+        </b-navbar-item>
         <b-navbar-item href="/chapter_member_prospects" :active="page === 'ChapterMemberProspects'">
           Chapter Member Prospects
         </b-navbar-item>

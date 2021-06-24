@@ -210,6 +210,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/list_connections", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListConnectionsHandler))
 	router.Handle("/list_activists", alice.New(main.authOrganizerOrNonSFBayMiddleware).ThenFunc(main.ListActivistsHandler))
 	router.Handle("/community_prospects", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListCommunityProspectsHandler))
+	router.Handle("/community_prospects_followup", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListCommunityProspectsFollowupHandler))
 	router.Handle("/activist_development", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListActivistsDevelopmentHandler))
 	router.Handle("/organizer_prospects", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListOrganizerProspectsHandler))
 	router.Handle("/chapter_member_prospects", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListChapterMemberProspectsHandler))
@@ -567,6 +568,17 @@ func (c MainController) ListCommunityProspectsHandler(w http.ResponseWriter, r *
 			Title:       "Community Prospects",
 			Description: "Everyone whose Level is Supporter whose Source is a Petition or Form (excluding Application Form)",
 			View:        "community_prospects",
+		},
+	})
+}
+
+func (c MainController) ListCommunityProspectsFollowupHandler(w http.ResponseWriter, r *http.Request) {
+	renderPage(w, r, "activist_list", PageData{
+		PageName: "CommunityProspectsFollowup",
+		Data: ActivistListData{
+			Title:       "Community Prospects Follow-up",
+			Description: "Everyone who needs following up with",
+			View:        "community_prospects_followup",
 		},
 	})
 }
