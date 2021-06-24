@@ -1487,6 +1487,7 @@ export default Vue.extend({
 
           // status === "success"
           this.allActivists = parsed.activist_list ? parsed.activist_list : [];
+          this.refreshHOTData();
           this.loading = false;
 
           if (this.allActivists.length === 0) {
@@ -1755,12 +1756,6 @@ export default Vue.extend({
     upcomingFollowupsOnly() {
       this.debounceLoadActivists();
     },
-    // if (this.search.length > 2) {
-    //   const searchNameNormalized = this.search.trim().toLowerCase();
-    //   return this.allActivists.filter((a) => {
-    //     return a.name.toLowerCase().includes(searchNameNormalized);
-    //   });
-    // }
   },
   created() {
     this.loadActivists();
