@@ -1416,7 +1416,7 @@ export default Vue.extend({
           }
 
           // status === "success"
-          Vue.set(this.allActivists, this.activistIndex, parsed.activist)
+          Vue.set(this.allActivists, this.activistIndex, parsed.activist);
           this.refreshHOTData();
           flashMessage('Saved interaction!', false);
           this.loading = false;
@@ -1448,7 +1448,7 @@ export default Vue.extend({
           }
 
           // status === "success"
-          Vue.set(this.allActivists, this.activistIndex, parsed.activist)
+          Vue.set(this.allActivists, this.activistIndex, parsed.activist);
           this.refreshHOTData();
           flashMessage('Deleted interaction!', false);
           this.loading = false;
@@ -1568,7 +1568,6 @@ export default Vue.extend({
         name: this.search,
         filter: this.view,
       };
-
     },
     refreshHOTData() {
       const table = this.hotTable;

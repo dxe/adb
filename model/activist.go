@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -753,7 +754,6 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 		var whereClause []string
 
 		if options.Name != "" {
-			// TODO: do we need to escape quotes? just remove anything that's not a letter or space or period?
 			whereClause = append(whereClause, "a.name like '"+options.Name+"%'")
 		}
 
@@ -1866,6 +1866,22 @@ func validateGetActivistOptions(a GetActivistOptions) (GetActivistOptions, error
 	if _, ok := validOrderFields[a.OrderField]; !ok {
 		return GetActivistOptions{}, errors.New("OrderField is not valid")
 	}
+
+	// remove anything from name field that isn't a character, space, number, or period
+	reg, err := regexp.Compile("[^a-zA-Z0-9. ]+")
+	if err != nil {
+		return GetActivistOptions{}, errors.New("Error validating activist name regex")
+	}
+	a.Name = reg.ReplaceAllString(a.Name, "")
+
+	// remove anything from date fields that aren't numbers or dashes
+	reg, err = regexp.Compile("[^0-9-]+")
+	if err != nil {
+		return GetActivistOptions{}, errors.New("Error validating activist date regex")
+	}
+	a.LastEventDateFrom = reg.ReplaceAllString(a.LastEventDateFrom, "")
+	a.LastEventDateTo = reg.ReplaceAllString(a.LastEventDateTo, "")
+
 	return a, nil
 }
 
