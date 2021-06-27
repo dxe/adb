@@ -48,7 +48,7 @@ func (s *server) rosterDownload(queryMonth int) {
 	// true/false.
 	type mysqlBool = int
 
-	var data []struct {
+	var members []struct {
 		ID            int
 		Name          string
 		Email         string
@@ -130,13 +130,13 @@ select json_arrayagg(json_object(
 from roster r
 `
 
-	if err := s.queryJSON(&data, q, queryMonth); err != nil {
+	if err := s.queryJSON(&members, q, queryMonth); err != nil {
 		s.error(err)
 		return
 	}
 
-	sort.Slice(data.Members, func(i, j int) bool {
-		return data.Members[i].Name < data.Members[j].Name
+	sort.Slice(members, func(i, j int) bool {
+		return members[i].Name < members[j].Name
 	})
 
 	extra := ""
@@ -159,7 +159,7 @@ from roster r
 
 	w := csv.NewWriter(s.w)
 	w.Write([]string{"ID", "Name", "Email", "Activist Level", "Eligible", "MPI (3 months)", "MPI (12 months)", "CM Approval", "Voting Agreement"})
-	for _, member := range data.Members {
+	for _, member := range members {
 		w.Write([]string{fmt.Sprint(member.ID), member.Name, member.Email, member.ActivistLevel, yesNo(member.Eligible != 0), fmt.Sprint(member.MPIPast3), fmt.Sprint(member.MPIPast12), member.CMApproval, yesNo(member.VotingAgreement != 0)})
 	}
 	w.Flush()
