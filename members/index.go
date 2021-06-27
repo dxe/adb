@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"html/template"
 	"sort"
+	"strings"
 )
 
-// TODO(mdempsky): Use adb_users instead?
-var adminEmails = map[string]bool{
-	"matthew@dempsky.org": true,
+func isAdmin(email string) bool {
+	// TODO(mdempsky): Use adb_users instead?
+	return email == "matthew@dempsky.org" ||
+		strings.HasSuffix(email, "@directactioneverywhere.com")
 }
 
 func (s *server) index() {
@@ -19,7 +21,7 @@ func (s *server) index() {
 		return
 	}
 
-	if adminEmails[email] {
+	if isAdmin(email) {
 		if q := s.r.URL.Query()["email"]; len(q) >= 1 && q[0] != "" {
 			email = q[0]
 		}
@@ -121,7 +123,7 @@ select json_object(
     )))
 )
 from (
-  select a.id, a.name, a.email, a.phone, a.location, a.facebook, a.activist_level, a.dob, a.date_organizer, a.cm_approval_email, a.voting_agreement,
+  select a.id, a.name, a.email, a.phone, a.location, a.facebook, a.activist_level, a.dob, a.cm_approval_email, a.voting_agreement,
     e.month, count(e.id) as subtotal,
     max(e.community) as community, max(e.direct_action) as direct_action,
     (max(e.direct_action) and (max(e.community) or e.month >= 202001)) as mpi,
