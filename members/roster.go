@@ -19,7 +19,7 @@ func (s *server) roster() {
 		return
 	}
 
-	if isAdmin(email) {
+	if !isAdmin(email) {
 		s.error(errors.New("unauthorized"))
 		return
 	}
