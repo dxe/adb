@@ -143,7 +143,7 @@ from roster r
 	if year, month, day := time.Now().Date(); queryMonth > year*100+int(month) {
 		extra = fmt.Sprintf(" (Tentative as of %04d-%02d-%02d)", year, month, day)
 	}
-	filename := fmt.Sprintf("%s %04d Roster%s.csv", time.Month(queryMonth%100), queryMonth/100, 0, extra)
+	filename := fmt.Sprintf("%s %04d Roster%s.csv", time.Month(queryMonth%100), queryMonth/100, extra)
 
 	h := s.w.Header()
 	h.Set("Content-Type", "text/csv")
