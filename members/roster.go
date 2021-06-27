@@ -38,7 +38,7 @@ func (s *server) roster() {
 		return
 	}
 
-	s.render(indexTmpl, nil)
+	s.render(rosterTmpl, nil)
 }
 
 func (s *server) rosterDownload(queryMonth int) {
@@ -48,30 +48,26 @@ func (s *server) rosterDownload(queryMonth int) {
 	// true/false.
 	type mysqlBool = int
 
-	var data struct {
-		ThisMonth string // "Month Year"
+	var data []struct {
+		ID            int
+		Name          string
+		Email         string
+		ActivistLevel string
 
-		Members []struct {
-			ID            int
-			Name          string
-			Email         string
-			ActivistLevel string
+		Eligible mysqlBool
 
-			Eligible mysqlBool
+		// Past3 and Past12 are how many of the past 3
+		// and 12 months, respectively, the activist
+		// fulfilled MPI requirements.
+		MPIPast3, MPIPast12 int
 
-			// Past3 and Past12 are how many of the past 3
-			// and 12 months, respectively, the activist
-			// fulfilled MPI requirements.
-			MPIPast3, MPIPast12 int
+		// CMApproved6 is the day the member was
+		// approved as a chapter member.
+		CMApproval string
 
-			// CMApproved6 is the day the member was
-			// approved as a chapter member.
-			CMApproval string
-
-			// VotingAgreement is whether the member has
-			// signing the voting agreement.
-			VotingAgreement mysqlBool
-		}
+		// VotingAgreement is whether the member has
+		// signing the voting agreement.
+		VotingAgreement mysqlBool
 	}
 
 	// This query would be more natural if attendance could be
@@ -114,27 +110,23 @@ roster as (
   from sfbay a left join raw_mpi x using (id)
   group by id
 )
-select
-  json_object(
-    'ThisMonth', date_format(now(), '%M %Y'),
-    'Members',   json_arrayagg(json_object(
-      'ID',            r.id,
-      'Name',          r.name,
-      'Email',         r.email,
-      'ActivistLevel', r.activist_level,
+select json_arrayagg(json_object(
+  'ID',            r.id,
+  'Name',          r.name,
+  'Email',         r.email,
+  'ActivistLevel', r.activist_level,
 
-      'Eligible', case r.activist_level
-        when 'Organizer'      then r.mpi_past3 >= 2
-        when 'Chapter Member' then r.mpi_past12 >= 8 and r.cm_approved6 and r.voting_agreement
-        else                       false
-      end,
+  'Eligible', case r.activist_level
+    when 'Organizer'      then r.mpi_past3 >= 2
+    when 'Chapter Member' then r.mpi_past12 >= 8 and r.cm_approved6 and r.voting_agreement
+    else                       false
+  end,
 
-      'VotingAgreement', r.voting_agreement,
-      'MPIPast3',        r.mpi_past3,
-      'MPIPast12',       r.mpi_past12,
-      'CMApproval',      r.cm_approval_email
-    ))
-  )
+  'VotingAgreement', r.voting_agreement,
+  'MPIPast3',        r.mpi_past3,
+  'MPIPast12',       r.mpi_past12,
+  'CMApproval',      r.cm_approval_email
+))
 from roster r
 `
 
@@ -151,7 +143,7 @@ from roster r
 	if year, month, day := time.Now().Date(); queryMonth > year*100+int(month) {
 		extra = fmt.Sprintf(" (Tentative as of %04d-%02d-%02d)", year, month, day)
 	}
-	filename := data.ThisMonth + " Roster" + extra + ".csv"
+	filename := fmt.Sprintf("%s %04d Roster%s.csv", time.Month(queryMonth%100), queryMonth/100, 0, extra)
 
 	h := s.w.Header()
 	h.Set("Content-Type", "text/csv")
