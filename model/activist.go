@@ -1955,25 +1955,19 @@ func resetFollowupDate(db *sqlx.DB, activistID int) error {
 }
 
 func setFollowupDate(db *sqlx.DB, activistID, days int) error {
-	res, err := db.Exec(`UPDATE activists SET followup_date = DATE_ADD(CURDATE(), INTERVAL ? DAY) WHERE id = ?
+	_, err := db.Exec(`UPDATE activists SET followup_date = DATE_ADD(CURDATE(), INTERVAL ? DAY) WHERE id = ?
 		`, days, activistID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update (set) activist follow-up date")
-	}
-	if rows, _ := res.RowsAffected(); rows != 1 {
-		return errors.New("failed to update (set) activist follow-up date (no rows affected)")
 	}
 	return nil
 }
 
 func assignActivistToUser(db *sqlx.DB, activistID, userID int) error {
-	res, err := db.Exec(`UPDATE activists SET assigned_to = ? WHERE id = ?
+	_, err := db.Exec(`UPDATE activists SET assigned_to = ? WHERE id = ?
 		`, userID, activistID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update activist assigned_to value")
-	}
-	if rows, _ := res.RowsAffected(); rows != 1 {
-		return errors.New("failed to update activist assigned_to value (no rows affected)")
 	}
 	return nil
 }
