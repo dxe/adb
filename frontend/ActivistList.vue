@@ -188,10 +188,17 @@
             label="Add interaction"
             type="is-primary"
           ></b-button>
+          <!--          TODO: display a warning before marking as uninterested & explain what will happen-->
+          <b-button
+            icon-left="eye-off-outline"
+            @click="confirmHideActivist(currentActivist.id)"
+            label="Hide"
+            type="is-danger"
+          ></b-button>
           <b-button
             icon-left="merge"
             @click="showModal('merge-activist-modal', currentActivist, activistIndex)"
-            label="Merge Activist"
+            label="Merge"
             type="is-warning"
           ></b-button>
         </footer>
@@ -300,6 +307,40 @@
           </b-field>
 
           <!-- TODO: add checkbox to create follow-up task in X days if creating new interaction (but not if editing an existing interaction -->
+          <div v-if="!currentInteraction.id">
+            <b-field>
+              <b-checkbox v-model.trim="currentInteraction.assign_self">Assign to me</b-checkbox>
+            </b-field>
+            <b-field label="Follow-up" custom-class="has-text-primary"> </b-field>
+            <b-field>
+              <b-checkbox
+                v-model.trim="currentInteraction.reset_followup"
+                :disabled="currentInteraction.set_followup"
+                >Clear follow-up date</b-checkbox
+              >
+            </b-field>
+            <b-field>
+              <b-checkbox
+                v-model.trim="currentInteraction.set_followup"
+                :disabled="currentInteraction.reset_followup"
+              >
+                <b-field>
+                  <p class="control">
+                    <b-button label="Follow-up in" class="is-static has-text-grey-dark" />
+                  </p>
+                  <b-numberinput
+                    v-model="currentInteraction.followup_days"
+                    controls-position="compact"
+                    min="1"
+                    max="365"
+                  />
+                  <p class="control">
+                    <b-button label="days" class="is-static has-text-grey-dark" />
+                  </p>
+                </b-field>
+              </b-checkbox>
+            </b-field>
+          </div>
         </section>
         <footer class="modal-card-foot">
           <b-button icon-left="cancel" label="Cancel" @click="hideModal" />
@@ -397,6 +438,10 @@ interface Interaction {
   method: string;
   outcome: string;
   notes: string;
+  reset_followup: boolean;
+  set_followup: boolean;
+  followup_days: number;
+  assign_self: boolean;
 }
 
 interface Column {
@@ -1333,6 +1378,11 @@ export default Vue.extend({
       this.activistIndex = index; // needed for updating activist
       this.currentInteraction = interaction;
 
+      if (this.currentModalName === 'edit-interaction-modal' && !this.currentInteraction.id) {
+        this.currentInteraction.followup_days = 3;
+        this.currentInteraction.assign_self = true;
+      }
+
       if (this.currentModalName == 'merge-activist-modal') {
         this.getActivistMergeOptions(this.currentActivist.name);
       }
@@ -1468,10 +1518,39 @@ export default Vue.extend({
         return a.toLowerCase().startsWith(text.toLowerCase());
       });
     },
+    confirmHideActivist(activistID: number) {
+      let confirm = window.confirm('Are you sure you want to hide this activist?');
+
+      if (confirm) {
+        $.ajax({
+          url: '/activist/hide',
+          method: 'POST',
+          data: JSON.stringify({ id: activistID }),
+          success: (data) => {
+            const parsed = JSON.parse(data);
+
+            if (parsed.status === 'error') {
+              flashMessage('Error: ' + parsed.message, true);
+              this.loading = false;
+              return;
+            }
+
+            // status === "success"
+            // TODO: hide the activist using their index in allActivist instead of reloading the page
+            this.hideModal();
+            location.reload();
+            this.loading = false;
+          },
+          error: (err) => {
+            console.warn(err.responseText);
+            flashMessage('Server error: ' + err.responseText, true);
+            this.loading = false;
+          },
+        });
+      }
+    },
     loadActivists() {
       this.loading = true;
-
-      console.log(this.listActivistsParameters());
 
       $.ajax({
         url: '/activist/list',

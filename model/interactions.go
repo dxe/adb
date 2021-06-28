@@ -9,14 +9,18 @@ import (
 )
 
 type Interaction struct {
-	ID         int       `db:"id" json:"id"`
-	ActivistID int       `db:"activist_id" json:"activist_id"`
-	UserID     int       `db:"user_id" json:"user_id"`
-	UserName   string    `db:"user_name" json:"user_name"`
-	Timestamp  time.Time `db:"timestamp" json:"timestamp"` // TODO: ensure this type works fine for our needs here
-	Method     string    `db:"method" json:"method"`
-	Outcome    string    `db:"outcome" json:"outcome"`
-	Notes      string    `db:"notes" json:"notes"`
+	ID            int       `db:"id" json:"id"`
+	ActivistID    int       `db:"activist_id" json:"activist_id"`
+	UserID        int       `db:"user_id" json:"user_id"`
+	UserName      string    `db:"user_name" json:"user_name"`
+	Timestamp     time.Time `db:"timestamp" json:"timestamp"` // TODO: ensure this type works fine for our needs here
+	Method        string    `db:"method" json:"method"`
+	Outcome       string    `db:"outcome" json:"outcome"`
+	Notes         string    `db:"notes" json:"notes"`
+	ResetFollowup bool      `json:"reset_followup"`
+	SetFollowup   bool      `json:"set_followup"`
+	FollowupDays  int       `json:"followup_days"`
+	AssignSelf    bool      `json:"assign_self"`
 }
 
 func ListActivistInteractions(db *sqlx.DB, activistID int) ([]Interaction, error) {
@@ -43,18 +47,48 @@ func ListActivistInteractions(db *sqlx.DB, activistID int) ([]Interaction, error
 }
 
 func SaveInteraction(db *sqlx.DB, interaction Interaction) error {
-	// if id == 0, insert new interaction
 	if interaction.ID == 0 {
-		_, err := db.NamedExec(`INSERT INTO interactions (activist_id, user_id, method, outcome, notes)
-			VALUES (:activist_id, :user_id, :method, :outcome, :notes)
-		`, interaction)
-		if err != nil {
-			return errors.Wrapf(err, "failed to insert interaction")
-		}
-		return nil
+		return processNewInteraction(db, interaction)
+	}
+	return updateInteraction(db, interaction)
+}
+
+func processNewInteraction(db *sqlx.DB, interaction Interaction) error {
+	if err := insertInteraction(db, interaction); err != nil {
+		return err
 	}
 
-	// otherwise, update existing interaction
+	if interaction.ResetFollowup {
+		if err := resetFollowupDate(db, interaction.ActivistID); err != nil {
+			return err
+		}
+	}
+	if interaction.SetFollowup {
+		if err := setFollowupDate(db, interaction.ActivistID, interaction.FollowupDays); err != nil {
+			return err
+		}
+	}
+
+	if interaction.AssignSelf {
+		if err := assignActivistToUser(db, interaction.ActivistID, interaction.UserID); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func insertInteraction(db *sqlx.DB, interaction Interaction) error {
+	_, err := db.NamedExec(`INSERT INTO interactions (activist_id, user_id, method, outcome, notes)
+			VALUES (:activist_id, :user_id, :method, :outcome, :notes)
+		`, interaction)
+	if err != nil {
+		return errors.Wrapf(err, "failed to insert interaction")
+	}
+	return nil
+}
+
+func updateInteraction(db *sqlx.DB, interaction Interaction) error {
 	_, err := db.NamedExec(`UPDATE interactions
 		SET 
 		    activist_id = :activist_id,
