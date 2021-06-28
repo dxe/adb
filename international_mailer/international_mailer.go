@@ -99,7 +99,7 @@ func sendInternationalActionEmail(db *sqlx.DB, chapter model.ChapterWithToken) {
 	body := `
 	<p>Hi all!</p>
 
-	<p>We are using a new system to keep track of which chapters are organizing actions each quarter (either online
+	<p>We are doing monthly check-ins to keep track of which chapters are organizing actions each quarter (either online
 	or in person).
     <a href="` + fmt.Sprintf("https://adb.dxe.io/international_actions/%d/%v", chapter.ChapterID, chapter.EmailToken) + `">
     <strong>Please click here to provide your chapter's update for last month.</strong></a> Actions need not be an
