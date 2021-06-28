@@ -7,23 +7,23 @@ import (
 )
 
 func getResponsesToProcess(db *sqlx.DB, query string) ([]int, bool) {
-	rawApplicationIds, getApplicationIdsErr := db.Query(query)
-	if getApplicationIdsErr != nil {
-		log.Error().Msgf("failed to get applicationIds: %s", getApplicationIdsErr)
+	rawIds, getIdsErr := db.Query(query)
+	if getIdsErr != nil {
+		log.Error().Msgf("failed to get responses to process: %s", getIdsErr)
 		return nil, false
 	}
-	defer rawApplicationIds.Close()
-	var applicationIds []int
-	for rawApplicationIds.Next() {
-		var applicationId int
-		err := rawApplicationIds.Scan(&applicationId)
+	defer rawIds.Close()
+	var ids []int
+	for rawIds.Next() {
+		var id int
+		err := rawIds.Scan(&id)
 		if err != nil {
-			log.Error().Msgf("failed to scan applicationIds: %s", err)
+			log.Error().Msgf("failed to scan responses to process: %s", err)
 			return nil, false
 		}
-		applicationIds = append(applicationIds, applicationId)
+		ids = append(ids, id)
 	}
-	return applicationIds, true
+	return ids, true
 }
 
 func getProcessingStatus(db *sqlx.DB, query string, id int) (bool, bool) {
