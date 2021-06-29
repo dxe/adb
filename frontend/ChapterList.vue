@@ -349,6 +349,7 @@
                     v-for="t in [
                       { value: '', text: 'None' },
                       { value: 'Sendy', text: 'Sendy' },
+                      { value: 'SendGrid', text: 'SendGrid' },
                       { value: 'Google Groups', text: 'Google Groups' },
                     ]"
                     :value="t.value"
