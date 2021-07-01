@@ -122,15 +122,51 @@
         </header>
         <section class="modal-card-body">
           <div class="mb-5">
-            <h1 class="subtitle has-text-primary mb-2" style="font-weight: 500">Info</h1>
-            <p v-if="currentActivist.email"><strong>Email:</strong> {{ currentActivist.email }}</p>
-            <p v-if="currentActivist.phone"><strong>Phone:</strong> {{ currentActivist.phone }}</p>
-            <p v-if="currentActivist.source">
-              <strong>Source:</strong> {{ currentActivist.source }}
-            </p>
-            <p v-if="currentActivist.interest_date">
-              <strong>Interest Date:</strong> {{ currentActivist.interest_date }}
-            </p>
+            <h1 class="subtitle has-text-primary mb-4" style="font-weight: 500">Info</h1>
+
+            <b-field label="Email" label-position="on-border" v-if="currentActivist.email">
+              <b-input
+                type="text"
+                custom-class="has-text-dark"
+                v-model="currentActivist.email"
+                expanded
+                disabled
+              ></b-input>
+            </b-field>
+
+            <b-field label="Phone" label-position="on-border" v-if="currentActivist.phone">
+              <b-input
+                type="text"
+                custom-class="has-text-dark"
+                v-model="currentActivist.phone"
+                expanded
+                disabled
+              ></b-input>
+            </b-field>
+
+            <b-field label="Source" label-position="on-border" v-if="currentActivist.source">
+              <b-input
+                type="text"
+                custom-class="has-text-dark"
+                v-model="currentActivist.source"
+                expanded
+                disabled
+              ></b-input>
+            </b-field>
+
+            <b-field
+              label="Interest Date"
+              label-position="on-border"
+              v-if="currentActivist.interest_date"
+            >
+              <b-input
+                type="text"
+                custom-class="has-text-dark"
+                v-model="currentActivist.interest_date"
+                expanded
+                disabled
+              ></b-input>
+            </b-field>
           </div>
 
           <div class="mb-5">
@@ -188,7 +224,6 @@
             label="Add interaction"
             type="is-primary"
           ></b-button>
-          <!--          TODO: display a warning before marking as uninterested & explain what will happen-->
           <b-button
             icon-left="eye-off-outline"
             @click="confirmHideActivist(currentActivist.id)"
@@ -306,7 +341,6 @@
             <b-input type="textarea" v-model.trim="currentInteraction.notes" expanded></b-input>
           </b-field>
 
-          <!-- TODO: add checkbox to create follow-up task in X days if creating new interaction (but not if editing an existing interaction -->
           <div v-if="!currentInteraction.id">
             <b-field>
               <b-checkbox v-model.trim="currentInteraction.assign_self">Assign to me</b-checkbox>
@@ -314,14 +348,14 @@
             <b-field label="Follow-up" custom-class="has-text-primary"> </b-field>
             <b-field>
               <b-checkbox
-                v-model.trim="currentInteraction.reset_followup"
+                v-model="currentInteraction.reset_followup"
                 :disabled="currentInteraction.set_followup"
                 >Clear follow-up date</b-checkbox
               >
             </b-field>
             <b-field>
               <b-checkbox
-                v-model.trim="currentInteraction.set_followup"
+                v-model="currentInteraction.set_followup"
                 :disabled="currentInteraction.reset_followup"
               >
                 <b-field>
@@ -422,6 +456,7 @@ interface Activist {
   source: string;
   interest_date: string;
   facebook: string;
+  followup_date: string;
   interactions: Interaction[];
 
   // To appease our clunky sorting functions.
@@ -1379,8 +1414,10 @@ export default Vue.extend({
       this.currentInteraction = interaction;
 
       if (this.currentModalName === 'edit-interaction-modal' && !this.currentInteraction.id) {
+        // default values for new interactions
         this.currentInteraction.followup_days = 3;
         this.currentInteraction.assign_self = true;
+        this.currentInteraction.method = 'SMS';
       }
 
       if (this.currentModalName == 'merge-activist-modal') {
@@ -1390,6 +1427,17 @@ export default Vue.extend({
       this.disableConfirmButton = false;
     },
     hideModal() {
+      // If we are only supposed to be showing activists with a past or current follow-up date, then hide them if their follow-up date is now in the future.
+      if (
+        this.view === 'community_prospects_followup' &&
+        this.currentModalName === 'activist-options-modal' &&
+        !this.upcomingFollowupsOnly &&
+        (this.currentActivist.followup_date === '' ||
+          this.currentActivist.followup_date > dayjs().format('YYYY-MM-DD'))
+      ) {
+        Vue.delete(this.allActivists, this.activistIndex);
+      }
+
       this.currentModalName = '';
       this.activistIndex = -1;
       this.currentActivist = {} as Activist;
@@ -1519,7 +1567,9 @@ export default Vue.extend({
       });
     },
     confirmHideActivist(activistID: number) {
-      let confirm = window.confirm('Are you sure you want to hide this activist?');
+      let confirm = window.confirm(
+        'WARNING: Hiding this activist will make them inaccessible unless they are unhidden by Tech. Are you sure you want to hide this activist?',
+      );
 
       if (confirm) {
         $.ajax({
@@ -1830,10 +1880,10 @@ export default Vue.extend({
       this.debounceLoadActivists();
     },
     assignedToCurrentUser() {
-      this.debounceLoadActivists();
+      this.loadActivists();
     },
     upcomingFollowupsOnly() {
-      this.debounceLoadActivists();
+      this.loadActivists();
     },
   },
   created() {
