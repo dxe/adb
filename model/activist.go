@@ -760,7 +760,7 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 		var whereClause []string
 
 		if options.Name != "" {
-			whereClause = append(whereClause, "a.name like '"+options.Name+"%'")
+			whereClause = append(whereClause, "a.name like '%"+options.Name+"%'")
 		}
 
 		if options.ChapterID != 0 {
