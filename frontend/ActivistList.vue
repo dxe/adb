@@ -167,6 +167,16 @@
                 disabled
               ></b-input>
             </b-field>
+
+            <b-field label="Notes" label-position="on-border" v-if="currentActivist.notes">
+              <b-input
+                type="textarea"
+                custom-class="has-text-dark"
+                v-model="currentActivist.notes"
+                expanded
+                disabled
+              ></b-input>
+            </b-field>
           </div>
 
           <div class="mb-5">
@@ -457,6 +467,7 @@ interface Activist {
   interest_date: string;
   facebook: string;
   followup_date: string;
+  notes: string;
   interactions: Interaction[];
 
   // To appease our clunky sorting functions.
@@ -659,6 +670,45 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
       },
       enabled: view === 'all_activists' && chapter === 'SF Bay Area',
       showForAllChapters: true,
+    },
+    // Other
+    {
+      header: 'Notes',
+      longHeader: 'Notes',
+      category: 'Other',
+      data: {
+        data: 'notes',
+        colWidths: 100,
+      },
+      enabled:
+        view === 'organizer_prospects' ||
+        view === 'development' ||
+        view === 'chapter_member_development' ||
+        view === 'chapter_member_prospects' ||
+        view === 'community_prospects' ||
+        view === 'community_prospects_followup',
+      showForAllChapters: true,
+    },
+    {
+      header: 'Interests',
+      longHeader: 'Interests',
+      category: 'Other',
+      data: {
+        data: 'dev_interest',
+        colWidths: 100,
+      },
+      enabled: view === 'organizer_prospects',
+    },
+    {
+      header: 'Hiatus',
+      longHeader: 'Hiatus',
+      category: 'Other',
+      data: {
+        type: 'checkbox',
+        data: 'hiatus',
+        colWidths: 50,
+      },
+      enabled: view === 'chapter_member_development',
     },
     // Location
     {
@@ -1184,43 +1234,6 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
       },
       enabled: view === 'chapter_member_development',
     },
-    // Other
-    {
-      header: 'Notes',
-      longHeader: 'Notes',
-      category: 'Other',
-      data: {
-        data: 'notes',
-        colWidths: 100,
-      },
-      enabled:
-        view === 'organizer_prospects' ||
-        view === 'development' ||
-        view === 'chapter_member_development' ||
-        view === 'chapter_member_prospects',
-      showForAllChapters: true,
-    },
-    {
-      header: 'Interests',
-      longHeader: 'Interests',
-      category: 'Other',
-      data: {
-        data: 'dev_interest',
-        colWidths: 100,
-      },
-      enabled: view === 'organizer_prospects',
-    },
-    {
-      header: 'Hiatus',
-      longHeader: 'Hiatus',
-      category: 'Other',
-      data: {
-        type: 'checkbox',
-        data: 'hiatus',
-        colWidths: 50,
-      },
-      enabled: view === 'chapter_member_development',
-    },
   ];
 }
 
@@ -1427,15 +1440,24 @@ export default Vue.extend({
       this.disableConfirmButton = false;
     },
     hideModal() {
-      // If we are only supposed to be showing activists with a past or current follow-up date, then hide them if their follow-up date is now in the future.
       if (
         this.view === 'community_prospects_followup' &&
-        this.currentModalName === 'activist-options-modal' &&
-        !this.upcomingFollowupsOnly &&
-        (this.currentActivist.followup_date === '' ||
-          this.currentActivist.followup_date > dayjs().format('YYYY-MM-DD'))
+        this.currentModalName === 'activist-options-modal'
       ) {
-        Vue.delete(this.allActivists, this.activistIndex);
+        // If we are only supposed to be showing activists with a past or current follow-up date,
+        // then hide them if their follow-up date is now in the future.
+        if (
+          !this.upcomingFollowupsOnly &&
+          (this.currentActivist.followup_date === '' ||
+            this.currentActivist.followup_date > dayjs().format('YYYY-MM-DD'))
+        ) {
+          Vue.delete(this.allActivists, this.activistIndex);
+        }
+        // If we are only supposed to be showing activists with a future follow-up date,
+        // then hide them if their follow-up date is blank.
+        if (this.upcomingFollowupsOnly && this.currentActivist.followup_date === '') {
+          Vue.delete(this.allActivists, this.activistIndex);
+        }
       }
 
       this.currentModalName = '';

@@ -826,6 +826,11 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 		havingClause = append(havingClause, "interest_date <= ?")
 		queryArgs = append(queryArgs, options.InterestDateTo)
 	}
+	if options.Filter == "community prospects" {
+		havingClause = append(havingClause, "total_interactions = 0")
+		havingClause = append(havingClause, "(last_event < DATE_SUB(NOW(), INTERVAL 12 MONTH) or last_event is NULL)")
+		queryArgs = append(queryArgs, options.LastEventDateTo)
+	}
 
 	if len(havingClause) != 0 {
 		query += " HAVING " + strings.Join(havingClause, " AND ")
@@ -1655,7 +1660,7 @@ func GetCommunityProspectHubSpotInfo(db *sqlx.DB, chapterID int) ([]CommunityPro
 			email, phone, IFNULL(location,'') as zip, source,
 			interest_date
 		FROM activists
-		WHERE (source like '%form%' or source like 'petition%' or source like 'eventbrite%' or source='dxe-signup' or source='arc-signup') and source not like '%application%'
+		WHERE (source like '%form%' or source like 'petition%' or source like 'eventbrite%' or source='dxe-signup' or source='arc-signup') and source not like '%application%' and source != "Check-in Form"
 		and activist_level = 'supporter'
 		and interest_date >= DATE_SUB(now(), INTERVAL 3 MONTH)
 		and activists.id not in (select distinct activist_id from event_attendance)

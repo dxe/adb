@@ -221,8 +221,8 @@ SET
 	activists.location = IF(activists.location = '', form_interest.zip, activists.location),
 	# check proper prospect boxes based on application type
 	activists.circle_interest = IF(form_interest.form = 'Circle Interest Form', 1, activists.circle_interest),
-	# update interest date
-	activists.interest_date = form_interest.timestamp,
+	# update interest date only if it's currently null
+	activists.interest_date = COALESCE(activists.interest_date, form_interest.timestamp),
 	# only update the following columns if the new values are not empty
 	activists.dev_interest = IFNULL(CONCAT_WS(', ', IF(LENGTH(dev_interest),dev_interest,NULL), IF(LENGTH(form_interest.interests),form_interest.interests,NULL)),''),
 	activists.referral_friends = IF(LENGTH(form_interest.referral_friends), form_interest.referral_friends, activists.referral_friends),
@@ -257,8 +257,8 @@ SET
 	activists.location = IF(activists.location = '', form_interest.zip, activists.location),
 	# check proper prospect boxes based on application type
 	activists.circle_interest = IF(form_interest.form = 'Circle Interest Form', 1, activists.circle_interest),
-	# update interest date
-	activists.interest_date = form_interest.timestamp,
+	# update interest date only if it's currently null
+	activists.interest_date = COALESCE(activists.interest_date, form_interest.timestamp),
 	# only update the following columns if the new values are not empty
 	activists.dev_interest = IFNULL(CONCAT_WS(', ', IF(LENGTH(dev_interest),dev_interest,NULL), IF(LENGTH(form_interest.interests),form_interest.interests,NULL)),''),
 	activists.referral_friends = IF(LENGTH(form_interest.referral_friends), form_interest.referral_friends, activists.referral_friends),
@@ -392,7 +392,6 @@ WHERE
 `
 
 const processInsertByInsertUpdateQuery = `
-# mark as processed if application date in activists table matches date in application
 UPDATE
 	form_interest
 INNER JOIN
@@ -402,7 +401,6 @@ SET
 WHERE
     activists.chapter_id = 47
 	AND form_interest.id = ?
-	AND activists.interest_date = timestamp
 	AND form_interest.processed = 0
 	AND activists.hidden < 1;
 `
