@@ -826,7 +826,7 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 		havingClause = append(havingClause, "interest_date <= ?")
 		queryArgs = append(queryArgs, options.InterestDateTo)
 	}
-	if options.Filter == "community prospects" {
+	if options.Filter == "community_prospects" {
 		havingClause = append(havingClause, "total_interactions = 0")
 		havingClause = append(havingClause, "(last_event < DATE_SUB(NOW(), INTERVAL 12 MONTH) or last_event is NULL)")
 		queryArgs = append(queryArgs, options.LastEventDateTo)
