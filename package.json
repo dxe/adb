@@ -16,7 +16,7 @@
     "trailingComma": "all"
   },
   "dependencies": {
-    "awesomplete": "1.1.5",
+    "awesomplete": "git://github.com/LeaVerou/awesomplete.git#c9a8600aefd0bff80a3d40da574e1fbdb893b4e9",
     "buefy": "0.9.7",
     "dayjs": "1.10.4",
     "debounce": "1.2.0",
