@@ -62,6 +62,7 @@
             Your photo posted at the Berkeley Animal Rights Center and on the virtual chapter member
             wall
           </li>
+          <li>Watch a video and take a quiz on consent</li>
         </ul>
 
         <h3>Expectations of Chapter Members</h3>
