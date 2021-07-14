@@ -67,12 +67,12 @@
 
       <div class="column is-full">
         <b-field label="What are you most interested in?" class="mt-4">
-          <b-radio-button v-model="interest" native-value="participate" type="is-primary" required>
+          <b-radio v-model="interest" native-value="participate" type="is-primary" required>
             <span>I'd like to participate</span>
-          </b-radio-button>
-          <b-radio-button v-model="interest" native-value="organize" type="is-primary" required>
+          </b-radio>
+          <b-radio v-model="interest" native-value="organize" type="is-primary" required>
             <span>I'd like to organize or start a chapter</span>
-          </b-radio-button>
+          </b-radio>
         </b-field>
       </div>
 

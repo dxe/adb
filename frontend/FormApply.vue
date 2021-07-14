@@ -47,6 +47,7 @@
             learn about our community and theory of change
           </li>
           <li>Take the Movement Power Pledge below (attend one action each month)</li>
+          <li>Watch a video and take a quiz on consent</li>
         </ul>
 
         <h3>Benefits of becoming a Chapter Member</h3>
@@ -62,7 +63,6 @@
             Your photo posted at the Berkeley Animal Rights Center and on the virtual chapter member
             wall
           </li>
-          <li>Watch a video and take a quiz on consent</li>
         </ul>
 
         <h3>Expectations of Chapter Members</h3>
