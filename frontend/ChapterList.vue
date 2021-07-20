@@ -33,7 +33,13 @@
         <div class="level-item has-text-centered">
           <div>
             <p class="heading">Total Chapters</p>
-            <p class="title">{{ filteredChapters.length }}</p>
+            <p class="title">
+              {{
+                filteredChapters.filter((x) => {
+                  return x.Region !== 'Online';
+                }).length
+              }}
+            </p>
           </div>
         </div>
         <div class="level-item has-text-centered">
@@ -41,8 +47,8 @@
             <p class="heading">Active Chapters</p>
             <p class="title">
               {{
-                filteredChapters.filter((c) => {
-                  return dateInLastThreeMonths(c.LastAction);
+                filteredChapters.filter((x) => {
+                  return dateInLastThreeMonths(x.LastAction) && x.Region !== 'Online';
                 }).length
               }}
             </p>
