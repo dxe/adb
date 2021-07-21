@@ -1669,6 +1669,7 @@ func (c MainController) FindNearestChaptersHandler(w http.ResponseWriter, r *htt
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != http.StatusOK {
+			log.Printf("Error status from IP Geolocation: %v\n", resp.Status)
 			panic(resp.StatusCode)
 		}
 		loc := latLng{}
