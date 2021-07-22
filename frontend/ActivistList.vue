@@ -1144,7 +1144,7 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
         correctFormat: true,
         colWidths: 100,
       },
-      enabled: false,
+      enabled: view === 'chapter_member_prospects',
     },
     // Development
     {
