@@ -264,6 +264,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/csv/chapter_member_spoke", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.ChapterMemberSpokeCSVHandler))
 	router.Handle("/csv/community_prospects_hubspot", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.CommunityProspectHubSpotCSVHandler))
 	router.Handle("/csv/international_organizers", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.InternationalOrganizersCSVHandler))
+	router.Handle("/csv/event_attendance/{event_id:[0-9]+}", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.EventAttendanceCSVHandler))
 	router.Handle("/user/list", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.UserListHandler))
 
 	// Authed Admin API
@@ -1421,6 +1422,45 @@ func (c MainController) InternationalOrganizersCSVHandler(w http.ResponseWriter,
 				sendErrorMessage(w, err)
 				return
 			}
+		}
+	}
+	writer.Flush()
+}
+
+func (c MainController) EventAttendanceCSVHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	var eventID int
+	if eventIDStr, ok := vars["event_id"]; ok {
+		var err error
+		eventID, err = strconv.Atoi(eventIDStr)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	event, err := model.GetEvent(c.db, model.GetEventOptions{
+		EventID: eventID,
+	})
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Disposition", "attachment; filename=international_organizers.csv")
+	w.Header().Set("Content-Type", "text/csv")
+	w.Header().Set("Transfer-Encoding", "chunked")
+
+	writer := csv.NewWriter(w)
+	err = writer.Write([]string{"name", "email"})
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+	for i, attendee := range event.Attendees {
+		err := writer.Write([]string{attendee, event.AttendeeEmails[i]})
+		if err != nil {
+			sendErrorMessage(w, err)
+			return
 		}
 	}
 	writer.Flush()

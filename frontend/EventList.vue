@@ -166,6 +166,16 @@
                 class="mb-3"
               ></b-button>
               <br />
+              <b-button
+                label="Export attendee CSV"
+                type="is-info"
+                icon-left="download"
+                tag="a"
+                :href="props.row.csvLink"
+                target="_blank"
+                class="mb-3"
+              ></b-button>
+              <br />
               <span v-if="!connections">
                 <strong class="has-text-primary">{{
                   connections ? 'Coachees' : 'Attendees'
@@ -199,6 +209,7 @@ interface Event {
 
   // Populated locally.
   emailLink: string;
+  csvLink: string;
   showAttendees: boolean;
 }
 
@@ -290,6 +301,7 @@ export default Vue.extend({
             event.emailLink =
               'https://mail.google.com/mail/?view=cm&fs=1&bcc=' +
               (event.attendee_emails || []).join(',');
+            event.csvLink = '/csv/event_attendance/' + event.event_id;
           }
 
           if (events.length === 0) {
