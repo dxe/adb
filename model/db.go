@@ -172,7 +172,6 @@ CREATE TABLE merged_activist_attendance (
 CREATE TABLE working_groups (
   id INTEGER PRIMARY KEY AUTO_INCREMENT,
   name VARCHAR(60) NOT NULL,
-  type TINYINT(1) NOT NULL,
   group_email VARCHAR(100) NOT NULL,
   visible TINYINT(1) NOT NULL DEFAULT '0',
   description TEXT NOT NULL,

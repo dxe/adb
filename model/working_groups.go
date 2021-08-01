@@ -9,33 +9,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-/** Constant and Variable Definitions */
-
-const (
-	working_group_db_value = 1
-	committee_db_value     = 2
-)
-
-var WorkingGroupTypes map[int]string = map[int]string{
-	working_group_db_value: "working_group",
-	committee_db_value:     "committee",
-}
-
-var WorkingGroupTypeStringToInt map[string]int
-
-func init() {
-	WorkingGroupTypeStringToInt = make(map[string]int)
-	for key := range WorkingGroupTypes {
-		WorkingGroupTypeStringToInt[WorkingGroupTypes[key]] = key
-	}
-}
-
 /** User-defined Types */
 
 type WorkingGroup struct {
 	ID              int    `db:"id"`
 	Name            string `db:"name"`
-	Type            int    `db:"type"`
 	GroupEmail      string `db:"group_email"`
 	Members         []WorkingGroupMember
 	Visible         bool   `db:"visible"`
@@ -60,7 +38,6 @@ type WorkingGroupMember struct {
 type WorkingGroupJSON struct {
 	ID              int                      `json:"id"`
 	Name            string                   `json:"name"`
-	Type            string                   `json:"type"`
 	Email           string                   `json:"email"`
 	Members         []WorkingGroupMemberJSON `json:"members"`
 	Visible         bool                     `json:"visible"`
@@ -98,16 +75,13 @@ func createOrUpdateWorkingGroup(db *sqlx.DB, workingGroup WorkingGroup) (int, er
 	if workingGroup.Name == "" {
 		return 0, errors.New("WorkingGroup name for CreateWorkingGroup must not be zero-value")
 	}
-	if workingGroup.Type != working_group_db_value && workingGroup.Type != committee_db_value {
-		return 0, errors.New("WorkingGroup type has to either be working group or committee")
-	}
 
 	var query string
 	if workingGroup.ID == 0 {
 		// Create working Group
 		query = `
-    INSERT INTO working_groups (name, type, group_email, visible, description, meeting_time, meeting_location, coords)
-    VALUES (:name, :type, :group_email, :visible, :description, :meeting_time, :meeting_location, :coords)
+    INSERT INTO working_groups (name, group_email, visible, description, meeting_time, meeting_location, coords)
+    VALUES (:name, :group_email, :visible, :description, :meeting_time, :meeting_location, :coords)
     `
 	} else {
 		// Update existing working group
@@ -115,7 +89,6 @@ func createOrUpdateWorkingGroup(db *sqlx.DB, workingGroup WorkingGroup) (int, er
 UPDATE working_groups
 SET
   name = :name,
-  type = :type,
   group_email = :group_email,
   visible = :visible,
   description = :description,
@@ -194,15 +167,6 @@ func CleanWorkingGroupData(db *sqlx.DB, body io.Reader, chapterID int) (WorkingG
 		return WorkingGroup{}, errors.Errorf("Working group email must contain @: %s", workingGroupJSON.Email)
 	}
 
-	if workingGroupJSON.Type == "" {
-		return WorkingGroup{}, errors.New("Working group type can't be empty")
-	}
-
-	wgType, ok := WorkingGroupTypeStringToInt[workingGroupJSON.Type]
-	if !ok {
-		return WorkingGroup{}, errors.Errorf("Working group type doesn't exist: %s", workingGroupJSON.Type)
-	}
-
 	members := make([]WorkingGroupMember, 0, len(workingGroupJSON.Members))
 	for _, m := range workingGroupJSON.Members {
 		trimName := strings.TrimSpace(m.Name)
@@ -225,7 +189,6 @@ func CleanWorkingGroupData(db *sqlx.DB, body io.Reader, chapterID int) (WorkingG
 	return WorkingGroup{
 		ID:              workingGroupJSON.ID,
 		Name:            strings.TrimSpace(workingGroupJSON.Name),
-		Type:            wgType,
 		GroupEmail:      strings.TrimSpace(workingGroupJSON.Email),
 		Members:         members,
 		Visible:         workingGroupJSON.Visible,
@@ -321,7 +284,6 @@ func getWorkingGroupsJSON(db *sqlx.DB, options WorkingGroupQueryOptions) ([]Work
 		wgsJSON = append(wgsJSON, WorkingGroupJSON{
 			ID:              wg.ID,
 			Name:            wg.Name,
-			Type:            WorkingGroupTypes[wg.Type],
 			Email:           wg.GroupEmail,
 			Members:         wgMembers,
 			Visible:         wg.Visible,
@@ -367,7 +329,7 @@ func GetWorkingGroup(db *sqlx.DB, options WorkingGroupQueryOptions) (WorkingGrou
 
 func getWorkingGroups(db *sqlx.DB, options WorkingGroupQueryOptions) ([]WorkingGroup, error) {
 	query := `
-SELECT w.id, w.name, w.type, lower(w.group_email) as group_email, w.visible, w.description, w.meeting_time, w.meeting_location, w.coords FROM working_groups w
+SELECT w.id, w.name, lower(w.group_email) as group_email, w.visible, w.description, w.meeting_time, w.meeting_location, w.coords FROM working_groups w
 `
 
 	var queryArgs []interface{}

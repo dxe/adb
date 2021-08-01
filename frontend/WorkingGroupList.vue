@@ -44,10 +44,6 @@
         {{ props.row.email }}
       </b-table-column>
 
-      <b-table-column field="type" label="Type" v-slot="props" sortable>
-        {{ displayWorkingGroupType(props.row.type) }}
-      </b-table-column>
-
       <b-table-column field="members" label="Point Person" v-slot="props">
         <!-- There should only ever be one point person -->
         <!-- TODO: calculate this somewhere else so column can be sortable -->
@@ -139,21 +135,6 @@
               icon="email"
               required
             ></b-input>
-          </b-field>
-
-          <b-field label="Type" label-position="on-border">
-            <b-select v-model="currentWorkingGroup.type" required expanded icon="shape">
-              <option
-                v-for="type in [
-                  { name: 'working_group', display: 'Working Group' },
-                  { name: 'committee', display: 'Committee' },
-                ]"
-                :value="type.name"
-                :key="type.name"
-              >
-                {{ type.display }}
-              </option>
-            </b-select>
           </b-field>
 
           <b-field label="Description" label-position="on-border">
@@ -256,7 +237,6 @@ interface WorkingGroup {
   id: number;
   name: string;
   email: string;
-  type: string;
   visible: boolean;
   description: string;
   meeting_time: string;
@@ -449,15 +429,6 @@ export default Vue.extend({
           flashMessage('Server error: ' + err.responseText, true);
         },
       });
-    },
-    displayWorkingGroupType(type: string) {
-      switch (type) {
-        case 'committee':
-          return 'Committee';
-        case 'working_group':
-          return 'Working Group';
-      }
-      return '';
     },
   },
   data() {

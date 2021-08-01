@@ -14,20 +14,9 @@ func TestCreateWorkingGroup_missingRequiredParameters_returnsError(t *testing.T)
 	workingGroup := WorkingGroup{
 		Name: "foo",
 	}
-	_, err := CreateWorkingGroup(db, workingGroup)
-	require.Error(t, err)
-
-	workingGroup.Type = 3 // Valid values = 1 or 2
-	_, err = CreateWorkingGroup(db, workingGroup)
-	require.Error(t, err)
-
-	workingGroup.Type = 1
-	workingGroup.Name = ""
-	_, err = CreateWorkingGroup(db, workingGroup)
-	require.Error(t, err)
 
 	workingGroup.ID = 2
-	_, err = CreateWorkingGroup(db, workingGroup)
+	_, err := CreateWorkingGroup(db, workingGroup)
 	require.Error(t, err)
 }
 
@@ -37,7 +26,6 @@ func TestCreateWorkingGroup_allRequiredParametersPresent_returnsNoError(t *testi
 
 	workingGroup := WorkingGroup{
 		Name: "Tech (Best by a longshot)",
-		Type: working_group_db_value,
 	}
 
 	_, err := CreateWorkingGroup(db, workingGroup)
@@ -50,7 +38,6 @@ func TestCreateWorkingGroup_insertAndFetchWorkingGroupNoMembers_returnsNoError(t
 
 	workingGroup := WorkingGroup{
 		Name: "Tech FTW",
-		Type: committee_db_value,
 	}
 
 	id, err := CreateWorkingGroup(db, workingGroup)
@@ -75,7 +62,6 @@ func TestCreateWorkingGroup_insertAndFetchWorkingGroupWithMembersByID(t *testing
 
 	workingGroup := WorkingGroup{
 		Name: "Emacs or Vim?",
-		Type: working_group_db_value,
 	}
 
 	activistsToInsert := []string{"A", "B", "C", "D"}
@@ -96,7 +82,6 @@ func TestCreateWorkingGroup_insertAndFetchWorkingGroupWithMembersByNameAndID(t *
 
 	workingGroup := WorkingGroup{
 		Name: "The Citadel",
-		Type: working_group_db_value,
 	}
 
 	activistsToInsert := []string{"Rick", "And", "Morty"}
@@ -116,7 +101,6 @@ func TestUpdateWorkingGroup_updatePointPersonAndGroupEmail(t *testing.T) {
 
 	workingGroup := WorkingGroup{
 		Name: "Sanguine Salesman",
-		Type: working_group_db_value,
 	}
 
 	id, err := CreateWorkingGroup(db, workingGroup)
@@ -132,7 +116,6 @@ func TestUpdateWorkingGroup_updatePointPersonAndGroupEmail(t *testing.T) {
 	updatedGroupExpected := WorkingGroup{
 		ID:         id,
 		Name:       "Sanguine Salesman",
-		Type:       working_group_db_value,
 		GroupEmail: "foo@bar.com",
 		Members:    members,
 	}
@@ -149,12 +132,10 @@ func TestUpdateWorkingGroup_updateMultipleGroups(t *testing.T) {
 
 	workingGroup1 := WorkingGroup{
 		Name: "WG 1",
-		Type: working_group_db_value,
 	}
 
 	workingGroup2 := WorkingGroup{
 		Name: "WG 2",
-		Type: working_group_db_value,
 	}
 
 	id1, err := CreateWorkingGroup(db, workingGroup1)
@@ -168,7 +149,6 @@ func TestUpdateWorkingGroup_updateMultipleGroups(t *testing.T) {
 	UpdatedExpected1 := WorkingGroup{
 		ID:         id1,
 		Name:       "WG 1",
-		Type:       working_group_db_value,
 		GroupEmail: "hello@hello.org",
 		Members:    members1,
 	}
@@ -176,7 +156,6 @@ func TestUpdateWorkingGroup_updateMultipleGroups(t *testing.T) {
 	UpdatedExpected2 := WorkingGroup{
 		ID:      id2,
 		Name:    "WG 2",
-		Type:    working_group_db_value,
 		Members: members2,
 	}
 
@@ -201,7 +180,6 @@ func TestUpdateWorkingGroup_updateMultipleGroups(t *testing.T) {
 func validateReturnedWorkingGroup(t *testing.T, inserted WorkingGroup, returned WorkingGroup) {
 	require.Equal(t, inserted.ID, returned.ID)
 	require.Equal(t, inserted.Name, returned.Name)
-	require.Equal(t, inserted.Type, returned.Type)
 	require.Equal(t, inserted.GroupEmail, returned.GroupEmail)
 	require.Equal(t, len(inserted.Members), len(returned.Members))
 
