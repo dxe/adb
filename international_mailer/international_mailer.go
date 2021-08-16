@@ -285,14 +285,14 @@ func internationalActionFormProcessor(db *sqlx.DB) {
 			body += fmt.Sprintf(`<p><a href="%v">Click here to reply to %v</a></p>`, emailLink, chap.Name)
 
 			err = mailer.Send(mailer.Message{
-				FromName:       "DxE International Action Form",
-				FromAddress:    "noreply@directactioneverywhere.com",
-				ToName:         "International Coordination",
-				ToAddress:      "internationalcoordination@directactioneverywhere.com",
-				ReplyToAddress: "tech@dxe.io",
-				Subject:        fmt.Sprintf("Assistance needed for %v (%v)", chap.Name, form.OrganizerName),
-				BodyHTML:       body,
-				CC:             []string{"jake@dxe.io"},
+				FromName:         "DxE International Action Form",
+				FromAddress:      "noreply@directactioneverywhere.com",
+				ToName:           "International Coordination",
+				ToAddress:        "internationalcoordination@directactioneverywhere.com",
+				ReplyToAddresses: chapEmails,
+				Subject:          fmt.Sprintf("Assistance needed for %v (%v)", chap.Name, form.OrganizerName),
+				BodyHTML:         body,
+				CC:               []string{"jake@dxe.io"},
 			})
 			if err != nil {
 				log.Println("Failed to send email to int'l coordination for int'l action form", form.ID)

@@ -10,14 +10,15 @@ import (
 )
 
 type Message struct {
-	FromName       string
-	FromAddress    string
-	ToName         string
-	ToAddress      string
-	Subject        string
-	BodyHTML       string
-	ReplyToAddress string
-	CC             []string
+	FromName         string
+	FromAddress      string
+	ToName           string
+	ToAddress        string
+	Subject          string
+	BodyHTML         string
+	ReplyToAddress   string
+	ReplyToAddresses []string
+	CC               []string
 }
 
 func smtpConfigSet() bool {
@@ -54,7 +55,10 @@ func Send(e Message) error {
 		headers += "CC: " + strings.Join(e.CC, ", ") + "\n"
 	}
 	if e.ReplyToAddress != "" {
-		headers += `Reply-To: ` + e.ReplyToAddress + "\n"
+		e.ReplyToAddresses = append(e.ReplyToAddresses, e.ReplyToAddress)
+	}
+	if len(e.ReplyToAddresses) > 0 {
+		headers += `Reply-To: ` + strings.Join(e.ReplyToAddresses, ", ") + "\n"
 	}
 	headers += `Subject: ` + e.Subject + "\n"
 	headers += "MIME-version: 1.0;\n"
