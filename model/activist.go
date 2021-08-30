@@ -823,7 +823,7 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 		queryArgs = append(queryArgs, options.InterestDateFrom)
 	}
 	if options.InterestDateTo != "" {
-		havingClause = append(havingClause, "interest_date <= ?")
+		havingClause = append(havingClause, "interest_date < DATE_FORMAT(?, '%Y-%m-%d 23:59:59')")
 		queryArgs = append(queryArgs, options.InterestDateTo)
 	}
 	if options.Filter == "community_prospects" {
@@ -852,6 +852,8 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 	if options.Order == DescOrder {
 		query += " desc "
 	}
+
+	fmt.Println(queryArgs)
 
 	var activists []ActivistExtra
 	if err := db.Select(&activists, query, queryArgs...); err != nil {
