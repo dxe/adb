@@ -853,8 +853,6 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 		query += " desc "
 	}
 
-	fmt.Println(queryArgs)
-
 	var activists []ActivistExtra
 	if err := db.Select(&activists, query, queryArgs...); err != nil {
 		return nil, errors.Wrapf(err, "failed to get activists extra for uid %d", options.ID)
