@@ -24,8 +24,8 @@ func processFormSubmission(db *sqlx.DB, formData model.InternationalFormData) {
 	subject := "Getting involved with Direct Action Everywhere"
 	body := `<p>Hey ` + strings.Title(strings.TrimSpace(formData.FirstName)) + `!</p>
 <p>My name is Anastasia and I’m an organizer with Direct Action Everywhere. I wanted to reach out about your inquiry to get involved in our international network.</p>
-<p>We don’t currently have a DxE chapter in your city, and at the moment, getting involved with a chapter is the main way we have for people around the world to get involved. However, we have some actions you could take to get started! First you can <a href="http://dxe.io/discord">join our Discord server</a>. Next you can <a href="http://nomorefactoryfarms.com">sign our petition to stop factory farms</a>. Most importantly you can <a href="http://dxe.io/workshop">attend our next Zoom workshop for new and aspiring activists</a>.</p>
-<p>In the meantime, I wanted to reach out and see if you want to chat about the possibility of starting a chapter. Sometimes, the thought of "organizing" or starting a chapter can feel really intimidating, but we have a team here to support all our organizers and help you mobilize your community. If you’re open to it, I’d love to give you more information about what’s involved – let me know!</p> 
+<p>We don’t currently have a DxE chapter in your city, and at the moment, getting involved with a chapter is the main way we have for people around the world to get involved. However, we have some actions you could take to get started! First you can <a href="http://dxe.io/discord">join our Discord server</a>. Next you can <a href="http://nomorefactoryfarms.com/?utm_source=intl%20welcome%20email">sign our petition to stop factory farms</a>.</p>
+<p>In the meantime, I wanted to reach out and see if you want to chat about the possibility of starting a chapter. Sometimes, the thought of "organizing" or starting a chapter can feel really intimidating, but we have a team here to support all our organizers and help you mobilize your community. If you’re open to it, I’d love to give you more information about what’s involved – let me know! For a little more information, please watch <a href="https://www.youtube.com/watch?v=I65LCZbGje4">this short video</a> to see if Direct Action Everywhere is a good fit for you.</p> 
 <p>Let me know if you have any questions!</p>
 <p>In Solidarity,<br/>
 Anastasia Rogers<br/>
@@ -61,8 +61,8 @@ Direct Action Everywhere Organizer</p>
 <p>My name is Anastasia and I’m an organizer with Direct Action Everywhere. I wanted to reach out about your inquiry to get involved in our international network. There is a DxE chapter near you, so I’ve included their information below so you can reach out and get involved with them!</p> 
 <p>` + contactInfo + `
 I’ve also cc’ed the organizers in your local chapter on this email so that they can reach out as well.</p> 
-<p>In the meantime there are a few actions you could take. First you can <a href="http://dxe.io/discord">join our Discord server</a>. Next you can <a href="http://nomorefactoryfarms.com">sign our petition to stop factory farms</a>. Most importantly you can <a href="http://dxe.io/workshop">attend our next Zoom workshop for new and aspiring activists</a>.</p>
-<p>Let me know if you have any questions or if you still have trouble connecting with your local chapter after attending the workshop!</p>
+<p>In the meantime there are a few actions you could take. First you can <a href="http://dxe.io/discord">join our Discord server</a>. Next you can <a href="http://nomorefactoryfarms.com">sign our petition to stop factory farms</a>.</p>
+<p>Let me know if you have any questions or if you still have trouble connecting with your local chapter!</p>
 <p>In Solidarity,<br/>
 Anastasia Rogers<br/>
 Direct Action Everywhere Organizer</p>
