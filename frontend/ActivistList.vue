@@ -1636,9 +1636,17 @@ export default Vue.extend({
             return;
           }
 
-          // status === "success"
+          // If the user makes multiple requests within a short timespan,
+          // it's possible that results will be returned from the server
+          // out of order. In order to always show date from the last
+          // request made, we check the timestamp.
+          if (parsed.request_timestamp < this.lastRequestTimestamp) {
+            this.loading = false;
+            return;
+          }
           this.allActivists = parsed.activist_list ? parsed.activist_list : [];
           this.refreshHOTData();
+          this.lastRequestTimestamp = parsed.request_timestamp;
           this.loading = false;
 
           if (this.allActivists.length === 0) {
@@ -1825,6 +1833,7 @@ export default Vue.extend({
       currentInteraction: {} as Interaction,
       disableConfirmButton: false,
       allActivists: [] as Activist[],
+      lastRequestTimestamp: 0,
       height: 500,
       columns: getColumnsForChapter(this.chapter, this.view),
       lastEventDateFrom:

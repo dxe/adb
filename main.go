@@ -1293,6 +1293,8 @@ func (c MainController) CircleGroupDeleteHandler(w http.ResponseWriter, r *http.
 }
 
 func (c MainController) ActivistListHandler(w http.ResponseWriter, r *http.Request) {
+	reqTimestamp := time.Now().UnixNano()
+
 	options, err := model.CleanGetActivistOptions(r.Body)
 	if err != nil {
 		sendErrorMessage(w, err)
@@ -1313,8 +1315,9 @@ func (c MainController) ActivistListHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	writeJSON(w, map[string]interface{}{
-		"status":        "success",
-		"activist_list": activists,
+		"status":            "success",
+		"request_timestamp": reqTimestamp,
+		"activist_list":     activists,
 	})
 }
 
