@@ -25,10 +25,10 @@ const Duration90Days = 90 * 24 * time.Hour
 const ACTIVIST_LEVEL_CHAPTER_MEMBER = "Chapter Member"
 
 const selectActivistBaseQuery string = `
-SELECT
+SELECT    
   email,
   facebook,
-  id,
+  id, 
   location,
   name,
   phone,

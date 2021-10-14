@@ -31,7 +31,7 @@ func processFormSubmission(db *sqlx.DB, formData model.InternationalFormData) {
 Anastasia Rogers<br/>
 Direct Action Everywhere Organizer</p>
 `
-	if nearestChapter.Distance < 150 {
+	if nearestChapter.Distance < 150 && formData.Country == nearestChapter.Country {
 		if nearestChapter.Email != "" {
 			cc = append(cc, nearestChapter.Email)
 		}
