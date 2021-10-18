@@ -21,6 +21,7 @@ func processFormSubmission(db *sqlx.DB, formData model.InternationalFormData) {
 	nearestChapter := nearestChapters[0]
 
 	var cc []string
+	cc = append(cc, "michelle@directactioneverywhere.com")
 	subject := "Getting involved with Direct Action Everywhere"
 	body := `<p>Hey ` + strings.Title(strings.TrimSpace(formData.FirstName)) + `!</p>
 <p>My name is Anastasia and I’m an organizer with Direct Action Everywhere. I wanted to reach out about your inquiry to get involved in our international network.</p>
