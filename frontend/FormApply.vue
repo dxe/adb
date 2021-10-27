@@ -47,7 +47,15 @@
             learn about our community and theory of change
           </li>
           <li>Take the Movement Power Pledge below (attend one action each month)</li>
-          <li>Watch a video and take a quiz on consent</li>
+          <li>
+            Watch a video and
+            <a
+              href="https://docs.google.com/forms/d/e/1FAIpQLSdc5Fe81BgNhn7vmC2rf1TAYx_ojberwJXh6DJLIZzeAyfdww/viewform"
+              target="_blank"
+              >take a quiz</a
+            >
+            on consent
+          </li>
         </ul>
 
         <h3>Benefits of becoming a Chapter Member</h3>
