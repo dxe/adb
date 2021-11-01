@@ -11,7 +11,6 @@ require (
 	github.com/gorilla/mux v1.7.3
 	github.com/gorilla/sessions v1.2.0
 	github.com/jmoiron/sqlx v1.2.0
-	github.com/joho/godotenv v1.3.0
 	github.com/justinas/alice v1.2.0
 	github.com/lestrrat-go/tcputil v0.0.0-20180223003554-d3c7f98154fb // indirect
 	github.com/lestrrat-go/test-mysqld v0.0.0-20190527004737-6c91be710371
@@ -30,6 +29,5 @@ require (
 	google.golang.org/appengine v1.6.5 // indirect
 	google.golang.org/genproto v0.0.0-20191115221424-83cc0476cb11 // indirect
 	google.golang.org/grpc v1.25.1 // indirect
-	gopkg.in/mail.v2 v2.3.1
 	gopkg.in/square/go-jose.v2 v2.4.0 // indirect
 )

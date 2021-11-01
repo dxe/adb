@@ -21,7 +21,7 @@ type Message struct {
 	CC               []string
 }
 
-func smtpConfigSet() bool {
+func smtpConfigValid() bool {
 	if config.SMTPHost == "" || config.SMTPUser == "" || config.SMTPPassword == "" || config.SMTPPort == "" {
 		return false
 	}
@@ -29,7 +29,7 @@ func smtpConfigSet() bool {
 }
 
 func Send(e Message) error {
-	if !smtpConfigSet() {
+	if !smtpConfigValid() {
 		return errors.New("failed to send email due to missing SMTP config")
 	}
 

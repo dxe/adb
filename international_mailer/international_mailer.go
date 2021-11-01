@@ -20,22 +20,34 @@ func processFormSubmission(db *sqlx.DB, formData model.InternationalFormData) {
 	}
 	nearestChapter := nearestChapters[0]
 
-	var cc []string
-	cc = append(cc, "michelle@directactioneverywhere.com")
-	cc = append(cc, "jake@directactioneverywhere.com") // TODO: remove after testing in prod
-	subject := "Getting involved with Direct Action Everywhere"
-	body := `<p>Hey ` + strings.Title(strings.TrimSpace(formData.FirstName)) + `!</p>
-<p>My name is Anastasia and I’m an organizer with Direct Action Everywhere. I wanted to reach out about your inquiry to get involved in our international network.</p>
-<p>We don’t currently have a DxE chapter in your city, and at the moment, getting involved with a chapter is the main way we have for people around the world to get involved. However, we have some actions you could take to get started! First you can <a href="http://dxe.io/discord">join our Discord server</a>. Next you can <a href="http://nomorefactoryfarms.com/?utm_source=intl%20welcome%20email">sign our petition to stop factory farms</a>.</p>
-<p>In the meantime, I wanted to reach out and see if you want to chat about the possibility of starting a chapter. Sometimes, the thought of "organizing" or starting a chapter can feel really intimidating, but we have a team here to support all our organizers and help you mobilize your community. If you’re open to it, I’d love to give you more information about what’s involved – let me know! For a little more information, please watch <a href="https://www.youtube.com/watch?v=I65LCZbGje4">this short video</a> to see if Direct Action Everywhere is a good fit for you.</p> 
-<p>Let me know if you have any questions!</p>
-<p>In Solidarity,<br/>
-Anastasia Rogers<br/>
-Direct Action Everywhere Organizer</p>
-`
-	if nearestChapter.Distance < 150 && formData.Country == nearestChapter.Country {
+	err = sendInternationalOnboardingEmail(db, formData, nearestChapter)
+	if err != nil {
+		panic(err)
+	}
+
+	err = model.UpdateInternationalFormSubmissionEmailStatus(db, formData.ID)
+	if err != nil {
+		log.Println("Error updating international form submission email status")
+	}
+}
+
+func sendInternationalOnboardingEmail(db *sqlx.DB, formData model.InternationalFormData, nearestChapter model.ChapterWithToken) error {
+	if nearestChapter.Name == "SF Bay Area" {
+		return nil
+	}
+
+	nearbyChapterExists := nearestChapter.Distance < 150 && formData.Country == nearestChapter.Country
+
+	var msg mailer.Message
+	msg.ToName = formData.FirstName + " " + formData.LastName
+	msg.ToAddress = formData.Email
+	msg.CC = append(msg.CC, "jake@directactioneverywhere.com") // TODO: remove after testing in prod
+
+	switch nearbyChapterExists {
+	case true:
+		// append CC list
 		if nearestChapter.Email != "" {
-			cc = append(cc, nearestChapter.Email)
+			msg.CC = append(msg.CC, nearestChapter.Email)
 		}
 		nearestChapterDetails, err := model.GetChapterByID(db, nearestChapter.ChapterID)
 		if err != nil {
@@ -45,11 +57,12 @@ Direct Action Everywhere Organizer</p>
 		if len(organizers) > 0 {
 			for _, o := range organizers {
 				if o.Email != "" {
-					cc = append(cc, o.Email)
+					msg.CC = append(msg.CC, o.Email)
 				}
 			}
 		}
 
+		// build contact info links
 		var contactInfo string
 		if nearestChapter.FbURL != "" {
 			contactInfo += fmt.Sprintf(`<a href="%v">%v Facebook page</a><br />`, nearestChapter.FbURL, nearestChapter.Name)
@@ -58,42 +71,75 @@ Direct Action Everywhere Organizer</p>
 			contactInfo += fmt.Sprintf(`Email address: <a href="mailto:%v">%v</a><br />`, nearestChapter.Email, nearestChapter.Email)
 		}
 
-		subject = "Join your local Direct Action Everywhere chapter!"
-		body = `<p>Hey ` + strings.Title(strings.TrimSpace(formData.FirstName)) + `!</p>
-<p>My name is Anastasia and I’m an organizer with Direct Action Everywhere. I wanted to reach out about your inquiry to get involved in our international network. There is a DxE chapter near you, so I’ve included their information below so you can reach out and get involved with them!</p> 
-<p>` + contactInfo + `
-I’ve also cc’ed the organizers in your local chapter on this email so that they can reach out as well.</p> 
-<p>In the meantime there are a few actions you could take. First you can <a href="http://dxe.io/discord">join our Discord server</a>. Next you can <a href="http://nomorefactoryfarms.com">sign our petition to stop factory farms</a>.</p>
-<p>Let me know if you have any questions or if you still have trouble connecting with your local chapter!</p>
-<p>In Solidarity,<br/>
-Anastasia Rogers<br/>
-Direct Action Everywhere Organizer</p>
-`
+		// assemble the message
+		msg.FromName = "Anastasia Rogers"
+		msg.FromAddress = "arogers@directactioneverywhere.com"
+		msg.ReplyToAddress = "vanas@umich.edu"
+		msg.Subject = "Join your local Direct Action Everywhere chapter!"
+		msg.BodyHTML = `
+			<p>Hey ` + strings.Title(strings.TrimSpace(formData.FirstName)) + `!</p>
+			<p>
+				My name is Anastasia and I’m an organizer with Direct Action Everywhere. I wanted to reach out about your
+				inquiry to get involved in our international network. There is a DxE chapter near you, so I’ve included
+				their information below so you can reach out and get involved with them!
+			</p> 
+			<p>
+				` + contactInfo + `
+				I’ve also cc’ed the organizers in your local chapter on this email so that they can reach out as well.
+			</p> 
+			<p>
+				In the meantime there are a few actions you could take. First you can
+				<a href="http://dxe.io/discord">join our Discord server</a>. Next you can
+				<a href="http://nomorefactoryfarms.com">sign our petition to stop factory farms</a>.
+			</p>
+			<p>Let me know if you have any questions or if you still have trouble connecting with your local chapter!</p>
+			<p>
+				In Solidarity,<br/>
+				Anastasia Rogers<br/>
+				Direct Action Everywhere Organizer
+			</p>
+		`
+
+	default:
+		msg.FromName = "Michelle Del Cueto"
+		msg.FromAddress = "michelle@directactioneverywhere.com"
+		msg.ReplyToAddress = "michelle@directactioneverywhere.com"
+		msg.Subject = "Getting involved with Direct Action Everywhere"
+		msg.BodyHTML = `
+			<p>Hey ` + strings.Title(strings.TrimSpace(formData.FirstName)) + `!</p>
+			<p>I saw that you showed interest in getting involved with our international network.</p>
+			<p>
+				Currently, there isn’t a DxE chapter in your city, but if you are interested in starting a chapter and
+				organizing actions or events that would help mobilize your community for animal rights, the international coordination
+				team can help you. Sometimes, the thought of "organizing" and starting a chapter from zero can feel really intimidating,
+				but we have multiple resources and a mentorship program to support you.
+			</p>
+			<p>
+				The next step is to watch
+				<a href="https://www.dropbox.com/s/4dusc12v35u5lfb/How%20to%20Change%20the%20World%20Nov%202020.mp4?dl=0">this training</a>
+				of our theory of change, so you can become more familiar with our mission and strategy.   
+			</p>
+			<p>
+				Next, please join our onboarding calls that are hosted on Zoom on the first and third Wednesday of every
+				month, at 11am Pacific Time (6pm GMT). This link will take you to the onboarding calls at that time:
+				<a href="https://dxe.io/ioonboarding">dxe.io/ioonboarding</a>.
+			</p>
+			<p>Hope that you can join us! Let me know if you have any questions.</p>
+			<p>
+				Michelle Del Cueto<br/>
+				Direct Action Everywhere International Coordinator
+			</p>
+		`
 	}
 
-	if nearestChapter.Name != "SF Bay Area" {
-		log.Printf("Int'l mailer sending email to %v\n", formData.Email)
+	log.Printf("Int'l mailer sending email to %v\n", formData.Email)
 
-		err = mailer.Send(mailer.Message{
-			FromName:       "Anastasia Rogers",
-			FromAddress:    "arogers@directactioneverywhere.com",
-			ToName:         formData.FirstName + " " + formData.LastName,
-			ToAddress:      formData.Email,
-			ReplyToAddress: "vanas@umich.edu",
-			Subject:        subject,
-			BodyHTML:       body,
-			CC:             cc,
-		})
-		if err != nil {
-			log.Println("Failed to send email for international form submission")
-		}
-	}
-
-	err = model.UpdateInternationalFormSubmissionEmailStatus(db, formData.ID)
+	err := mailer.Send(msg)
 	if err != nil {
-		log.Println("Error updating international for submission email status")
+		log.Println("Failed to send email for international form submission")
 	}
 
+	return nil
 }
 
 func sendInternationalActionEmail(db *sqlx.DB, chapter model.ChapterWithToken) {
