@@ -101,6 +101,7 @@ func sendInternationalOnboardingEmail(db *sqlx.DB, formData model.InternationalF
 		`
 
 	default:
+		msg.CC = append(msg.CC, "internationalcoordination@directactioneverywhere.com")
 		msg.FromName = "Michelle Del Cueto"
 		msg.FromAddress = "michelle@directactioneverywhere.com"
 		msg.ReplyToAddress = "michelle@directactioneverywhere.com"
