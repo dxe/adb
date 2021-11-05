@@ -1611,28 +1611,30 @@ ORDER BY MAX(e.date) DESC`, chapterID)
 	return activistsJSON
 }
 
-type ChapterMemberSpokeInfo struct {
+type ActivistSpokeInfo struct {
 	FirstName string `db:"first_name"`
 	LastName  string `db:"last_name"`
 	Cell      string `db:"cell"`
+	Level     string `db:"activist_level"`
 }
 
-func GetActivistSpokeInfo(db *sqlx.DB, chapterID int) ([]ChapterMemberSpokeInfo, error) {
-	var activists []ChapterMemberSpokeInfo
+func GetChapterMemberSpokeInfo(db *sqlx.DB, chapterID int) ([]ActivistSpokeInfo, error) {
+	var activists []ActivistSpokeInfo
 
 	// Order the activists by the last even they've been to.
 	err := db.Select(&activists, `
 		SELECT
 			IF(preferred_name <> '', preferred_name, substring_index(name, " ", 1)) as first_name,
 			SUBSTRING(name, LOCATE(' ', name)) as last_name,
-			phone as cell
+			phone as cell,
+		    activist_level
 		FROM activists
 		WHERE
 		    chapter_id = ? and
 			activist_level in ('chapter member', 'organizer')
 			and hidden = 0`, chapterID)
 	if err != nil {
-		return []ChapterMemberSpokeInfo{}, err
+		return []ActivistSpokeInfo{}, err
 	}
 
 	return activists, nil
