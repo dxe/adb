@@ -1366,32 +1366,7 @@ func (c MainController) ChapterMemberSpokeCSVHandler(w http.ResponseWriter, r *h
 }
 
 func (c MainController) AllActivistsSpokeCSVHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := getAuthedADBChapter(c.db, r)
-
-	activists, err := model.GetChapterMemberSpokeInfo(c.db, chapter)
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-
-	w.Header().Set("Content-Disposition", "attachment; filename=all_activists_spoke.csv")
-	w.Header().Set("Content-Type", "text/csv")
-	w.Header().Set("Transfer-Encoding", "chunked")
-
-	writer := csv.NewWriter(w)
-	err = writer.Write([]string{"first_name", "last_name", "cell"})
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-	for _, activist := range activists {
-		err := writer.Write([]string{activist.FirstName, activist.LastName, activist.Cell})
-		if err != nil {
-			sendErrorMessage(w, err)
-			return
-		}
-	}
-	writer.Flush()
+	// TODO
 }
 
 func (c MainController) CommunityProspectHubSpotCSVHandler(w http.ResponseWriter, r *http.Request) {
