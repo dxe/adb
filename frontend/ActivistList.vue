@@ -53,6 +53,16 @@
             href="/csv/chapter_member_spoke"
           ></b-button>
         </div>
+        <!--        TODO: add date params to url-->
+        <div class="level-item px-1" v-if="view === 'all_activists'">
+          <b-button
+            label="Export CSV for Spoke"
+            type="is-info"
+            icon-left="download"
+            tag="a"
+            :href="`/csv/all_activists_spoke?start_date=${lastEventDateFrom}&end_date=${lastEventDateTo}`"
+          ></b-button>
+        </div>
         <div class="level-item px-1" v-if="view === 'community_prospects'">
           <b-button
             label="Export CSV for HubSpot"

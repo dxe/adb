@@ -1616,13 +1616,11 @@ type ActivistSpokeInfo struct {
 	LastName  string `db:"last_name"`
 	Cell      string `db:"cell"`
 	Level     string `db:"activist_level"`
+	LastEvent string `db:"last_event"`
 }
 
 func GetChapterMemberSpokeInfo(db *sqlx.DB, chapterID int) ([]ActivistSpokeInfo, error) {
-	var activists []ActivistSpokeInfo
-
-	// Order the activists by the last even they've been to.
-	err := db.Select(&activists, `
+	const query = `
 		SELECT
 			IF(preferred_name <> '', preferred_name, substring_index(name, " ", 1)) as first_name,
 			SUBSTRING(name, LOCATE(' ', name)) as last_name,
@@ -1632,7 +1630,54 @@ func GetChapterMemberSpokeInfo(db *sqlx.DB, chapterID int) ([]ActivistSpokeInfo,
 		WHERE
 		    chapter_id = ? and
 			activist_level in ('chapter member', 'organizer')
-			and hidden = 0`, chapterID)
+			and hidden = 0
+	`
+
+	var activists []ActivistSpokeInfo
+	err := db.Select(&activists, query, chapterID)
+	if err != nil {
+		return []ActivistSpokeInfo{}, err
+	}
+
+	return activists, nil
+}
+
+func GetAllActivistSpokeInfo(db *sqlx.DB, chapterID int, startDate, endDate string) ([]ActivistSpokeInfo, error) {
+	query := `
+		SELECT
+			IF(preferred_name <> '', preferred_name, substring_index(name, " ", 1)) as first_name,
+			SUBSTRING(name, LOCATE(' ', name)) as last_name,
+			phone as cell,
+		    activist_level,
+		    @last_event := (
+				SELECT max(e.date) AS max_date
+				FROM event_attendance ea
+				JOIN activists inner_a ON inner_a.id = ea.activist_id
+				JOIN events e ON e.id = ea.event_id
+				WHERE inner_a.id = activists.id
+			) AS last_event
+		FROM activists
+		WHERE
+		    chapter_id = ?
+			and hidden = 0
+	`
+	args := []interface{}{chapterID}
+
+	var havingClause []string
+	if startDate != "" {
+		havingClause = append(havingClause, "last_event >= ?")
+		args = append(args, startDate)
+	}
+	if endDate != "" {
+		havingClause = append(havingClause, "last_event <= ?")
+		args = append(args, endDate)
+	}
+	if len(havingClause) != 0 {
+		query += " HAVING " + strings.Join(havingClause, " AND ")
+	}
+
+	var activists []ActivistSpokeInfo
+	err := db.Select(&activists, query, args...)
 	if err != nil {
 		return []ActivistSpokeInfo{}, err
 	}
