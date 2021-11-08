@@ -1623,7 +1623,7 @@ func GetChapterMemberSpokeInfo(db *sqlx.DB, chapterID int) ([]ActivistSpokeInfo,
 	const query = `
 		SELECT
 			IF(preferred_name <> '', preferred_name, substring_index(name, " ", 1)) as first_name,
-			SUBSTRING(name, LOCATE(' ', name)) as last_name,
+			SUBSTRING(name, LOCATE(' ', name)+1) as last_name,
 			phone as cell,
 		    activist_level
 		FROM activists
@@ -1646,7 +1646,7 @@ func GetAllActivistSpokeInfo(db *sqlx.DB, chapterID int, startDate, endDate stri
 	query := `
 		SELECT
 			IF(preferred_name <> '', preferred_name, substring_index(name, " ", 1)) as first_name,
-			SUBSTRING(name, LOCATE(' ', name)) as last_name,
+			SUBSTRING(name, LOCATE(' ', name)+1) as last_name,
 			phone as cell,
 		    activist_level,
 		    @last_event := (
