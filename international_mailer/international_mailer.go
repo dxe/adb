@@ -18,7 +18,17 @@ func processFormSubmission(db *sqlx.DB, formData model.InternationalFormData) {
 	if err != nil {
 		panic(err)
 	}
-	nearestChapter := nearestChapters[0]
+
+	var nearestChapter *model.ChapterWithToken
+	for _, chapter := range nearestChapters {
+		if chapter.Distance > 150 {
+			break
+		}
+		if chapter.Country == formData.Country {
+			nearestChapter = &chapter
+			break
+		}
+	}
 
 	err = sendInternationalOnboardingEmail(db, formData, nearestChapter)
 	if err != nil {
@@ -31,32 +41,28 @@ func processFormSubmission(db *sqlx.DB, formData model.InternationalFormData) {
 	}
 }
 
-func sendInternationalOnboardingEmail(db *sqlx.DB, formData model.InternationalFormData, nearestChapter model.ChapterWithToken) error {
-	if nearestChapter.Name == "SF Bay Area" {
-		return nil
-	}
-
-	// TODO: Improve this logic, as it could cause unexpected results if there is a chapter
-	// in the user's country that is further away than another chapter that is outside of the
-	// user's country, but still within 150 miles.
-	nearbyChapterExists := nearestChapter.Distance < 150 && formData.Country == nearestChapter.Country
-
+func sendInternationalOnboardingEmail(db *sqlx.DB, formData model.InternationalFormData, chapter *model.ChapterWithToken) error {
 	var msg mailer.Message
 	msg.ToName = formData.FirstName + " " + formData.LastName
 	msg.ToAddress = formData.Email
 	msg.CC = append(msg.CC, "jake@directactioneverywhere.com") // TODO: remove after testing in prod
+	msg.CC = append(msg.CC, "internationalcoordination@directactioneverywhere.com")
 
-	switch nearbyChapterExists {
+	switch chapter != nil {
 	case true:
-		// append CC list
-		if nearestChapter.Email != "" {
-			msg.CC = append(msg.CC, nearestChapter.Email)
+		if chapter.Name == "SF Bay Area" {
+			return nil
 		}
-		nearestChapterDetails, err := model.GetChapterByID(db, nearestChapter.ChapterID)
+
+		// append CC list
+		if chapter.Email != "" {
+			msg.CC = append(msg.CC, chapter.Email)
+		}
+		chapterDetails, err := model.GetChapterByID(db, chapter.ChapterID)
 		if err != nil {
 			panic(err)
 		}
-		organizers := nearestChapterDetails.Organizers
+		organizers := chapterDetails.Organizers
 		if len(organizers) > 0 {
 			for _, o := range organizers {
 				if o.Email != "" {
@@ -68,14 +74,14 @@ func sendInternationalOnboardingEmail(db *sqlx.DB, formData model.InternationalF
 		// build contact info links
 		var contactInfo string
 		socialLinks := map[string]string{
-			"Facebook page": nearestChapter.FbURL,
-			"Instagram":     nearestChapter.InstaURL,
-			"Twitter":       nearestChapter.TwitterURL,
-			"Email":         nearestChapter.Email,
+			"Facebook page": chapter.FbURL,
+			"Instagram":     chapter.InstaURL,
+			"Twitter":       chapter.TwitterURL,
+			"Email":         chapter.Email,
 		}
 		for k, v := range socialLinks {
 			if v != "" {
-				contactInfo += fmt.Sprintf(`<a href="%v">%v %v</a><br />`, v, nearestChapter.Name, k)
+				contactInfo += fmt.Sprintf(`<a href="%v">%v %v</a><br />`, v, chapter.Name, k)
 			}
 		}
 
@@ -109,7 +115,6 @@ func sendInternationalOnboardingEmail(db *sqlx.DB, formData model.InternationalF
 		`
 
 	default:
-		msg.CC = append(msg.CC, "internationalcoordination@directactioneverywhere.com")
 		msg.FromName = "Michelle Del Cueto"
 		msg.FromAddress = "michelle@directactioneverywhere.com"
 		msg.ReplyToAddress = "michelle@directactioneverywhere.com"
