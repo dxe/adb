@@ -272,7 +272,7 @@ func CleanChapterData(db *sqlx.DB, body io.Reader) (ChapterWithToken, error) {
 
 // TODO: update this function (and the website) to handle data in the normal Chapter struct instead of w/ Token
 func FindNearestChapters(db *sqlx.DB, lat float64, lng float64) ([]ChapterWithToken, error) {
-	query := `SELECT id, chapter_id, name, email, flag, fb_url, insta_url, twitter_url, region, ml_type, ml_radius, ml_id, (3959*acos(cos(radians(` + fmt.Sprintf("%f", lat) + `))*cos(radians(lat))* 
+	query := `SELECT id, chapter_id, name, email, flag, fb_url, insta_url, twitter_url, region, country, ml_type, ml_radius, ml_id, (3959*acos(cos(radians(` + fmt.Sprintf("%f", lat) + `))*cos(radians(lat))* 
 		cos(radians(lng)-radians(` + fmt.Sprintf("%f", lng) + `))+sin(radians(` + fmt.Sprintf("%f", lat) + `))* 
 		sin(radians(lat)))) AS distance
 		FROM fb_pages
