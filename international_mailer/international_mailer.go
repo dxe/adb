@@ -71,6 +71,11 @@ func sendInternationalOnboardingEmail(db *sqlx.DB, formData model.InternationalF
 			}
 		}
 
+		err = sendInternationalAlertEmail(formData, msg.CC)
+		if err != nil {
+			log.Printf("Error sending int'l alert email: %v\n", err.Error())
+		}
+
 		// build contact info links
 		var contactInfo string
 		socialLinks := map[string]string{
@@ -153,6 +158,39 @@ func sendInternationalOnboardingEmail(db *sqlx.DB, formData model.InternationalF
 		log.Println("Failed to send email for international form submission")
 	}
 
+	return nil
+}
+
+func sendInternationalAlertEmail(formData model.InternationalFormData, to []string) error {
+	if len(to) == 0 {
+		return nil
+	}
+
+	msg := mailer.Message{
+		FromName:    "DxE Join Form",
+		FromAddress: "noreply@directactioneverywhere.com",
+		ToAddress:   to[0],
+		Subject:     fmt.Sprintf("%v %v signed up to join your chapter", formData.FirstName, formData.LastName),
+	}
+
+	if len(to) > 1 {
+		msg.CC = to[1:]
+	}
+
+	msg.BodyHTML = fmt.Sprintf(`
+			<p>Name: %v %v</p>
+			<p>Email: %v</p>
+			<p>Phone: %v</p>
+			<p>City: %v</p>
+			<p>Interest: %v</p>
+			<p>Skills: %v</p>
+	`, formData.FirstName, formData.LastName, formData.Email, formData.Phone, formData.City, formData.Interest, formData.Skills)
+
+	log.Println("Int'l mailer sending alert email")
+	err := mailer.Send(msg)
+	if err != nil {
+		log.Println("Failed to send int'l alert email")
+	}
 	return nil
 }
 
