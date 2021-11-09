@@ -36,6 +36,9 @@ func sendInternationalOnboardingEmail(db *sqlx.DB, formData model.InternationalF
 		return nil
 	}
 
+	// TODO: Improve this logic, as it could cause unexpected results if there is a chapter
+	// in the user's country that is further away than another chapter that is outside of the
+	// user's country, but still within 150 miles.
 	nearbyChapterExists := nearestChapter.Distance < 150 && formData.Country == nearestChapter.Country
 
 	var msg mailer.Message
@@ -64,11 +67,16 @@ func sendInternationalOnboardingEmail(db *sqlx.DB, formData model.InternationalF
 
 		// build contact info links
 		var contactInfo string
-		if nearestChapter.FbURL != "" {
-			contactInfo += fmt.Sprintf(`<a href="%v">%v Facebook page</a><br />`, nearestChapter.FbURL, nearestChapter.Name)
+		socialLinks := map[string]string{
+			"Facebook page": nearestChapter.FbURL,
+			"Instagram":     nearestChapter.InstaURL,
+			"Twitter":       nearestChapter.TwitterURL,
+			"Email":         nearestChapter.Email,
 		}
-		if nearestChapter.Email != "" {
-			contactInfo += fmt.Sprintf(`Email address: <a href="mailto:%v">%v</a><br />`, nearestChapter.Email, nearestChapter.Email)
+		for k, v := range socialLinks {
+			if v != "" {
+				contactInfo += fmt.Sprintf(`<a href="%v">%v %v</a><br />`, v, nearestChapter.Name, k)
+			}
 		}
 
 		// assemble the message
@@ -117,7 +125,7 @@ func sendInternationalOnboardingEmail(db *sqlx.DB, formData model.InternationalF
 			</p>
 			<p>
 				The next step is to watch
-				<a href="https://www.dropbox.com/s/4dusc12v35u5lfb/How%20to%20Change%20the%20World%20Nov%202020.mp4?dl=0">this training</a>
+				<a href="https://www.dropbox.com/s/4dusc12v35u5lfb/How%20to%20Change%20the%20World%20Nov%202020.mp4?dl=0">this workshop</a>
 				of our theory of change, so you can become more familiar with our mission and strategy.   
 			</p>
 			<p>
