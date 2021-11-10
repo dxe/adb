@@ -199,9 +199,9 @@ func sendInternationalAlertEmail(formData model.InternationalFormData, to []stri
 			<p>Email: %v</p>
 			<p>Phone: %v</p>
 			<p>City: %v</p>
-			<p>Interest: %v</p>
+			<p>Involvement: %v</p>
 			<p>Skills: %v</p>
-	`, formData.FirstName, formData.LastName, formData.Email, formData.Phone, formData.City, formData.Interest, formData.Skills)
+	`, formData.FirstName, formData.LastName, formData.Email, formData.Phone, formData.City, formData.Involvement, formData.Skills)
 
 	log.Println("Int'l mailer sending alert email")
 	err := mailer.Send(msg)
