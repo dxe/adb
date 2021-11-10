@@ -197,14 +197,14 @@ func sendInternationalAlertEmail(formData model.InternationalFormData, to []stri
 func sendInternationalActionEmail(db *sqlx.DB, chapter model.ChapterWithToken) {
 	subject := "Please report your last action & let us know how we can assist you"
 	body := `
-	<p>Hi all!</p>
+	<p>Hi DxE ` + chapter.Name + `,</p>
 
-	<p>We are doing monthly check-ins to keep track of which chapters are organizing actions each quarter (either online
-	or in person).
+	<p>We are doing monthly check-ins to keep track of which chapters are organizing actions each quarter (either online or in person).
     <a href="` + fmt.Sprintf("https://adb.dxe.io/international_actions/%d/%v", chapter.ChapterID, chapter.EmailToken) + `">
-    <strong>Please click here to provide your chapter's update for last month.</strong></a> Actions need not be an
-    elaborate protest, especially during the pandemic, and can simply just be a social media
-	challenge or organizing your community members to email representatives or businesses with an ask.</p>`
+    <strong>Please click here to provide your chapter's update for last month.</strong></a> Actions can be community events,  protests,
+	campaigns, investigatory work, or any other type of nonviolent direct action that your chapter has decided to do. Please feel free to fill
+	out the information in Spanish, if that is easier for you.
+</p>`
 
 	if chapter.Token == "" {
 		body += `<p>Also note that we now have the ability to showcase your chapter's events on
@@ -215,12 +215,12 @@ func sendInternationalActionEmail(db *sqlx.DB, chapter model.ChapterWithToken) {
 		read the public events from your Facebook page. Feel free to reach out if you have any questions or concerns.</p>`
 	}
 
-	body += `<p>Thank you for all that you do,</p>
+	body += `<p>Thank you for all your hard work to create a better world for animals!</p>
 	
-	<p>Paul Darwin Picklesimer<br />
+	<p>Michelle Del Cueto<br />
 	Direct Action Everywhere<br />
-	International Coordination Working Group<br />
-	(304) 479-3366</p>
+	International Coordinator<br />
+	Direct Action Everywhere</p>
 	`
 
 	var toEmails []string
@@ -242,8 +242,8 @@ func sendInternationalActionEmail(db *sqlx.DB, chapter model.ChapterWithToken) {
 
 	log.Printf("Sending int'l action email to %v: %v\n", chapter.Name, strings.Join(toEmails, ","))
 	err := mailer.Send(mailer.Message{
-		FromName:    "Paul Darwin Picklesimer",
-		FromAddress: "paul@directactioneverywhere.com",
+		FromName:    "Michelle Del Cueto",
+		FromAddress: "michelle@directactioneverywhere.com",
 		ToName:      "DxE " + chapter.Name,
 		ToAddress:   toEmails[0],
 		Subject:     subject,
