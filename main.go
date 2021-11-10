@@ -265,7 +265,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/csv/community_prospects_hubspot", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.CommunityProspectHubSpotCSVHandler))
 	router.Handle("/csv/international_organizers", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.InternationalOrganizersCSVHandler))
 	router.Handle("/csv/event_attendance/{event_id:[0-9]+}", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.EventAttendanceCSVHandler))
-	router.Handle("/csv/all_activists_spoke", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.AllActivistsSpokeCSVHandler))
+	router.Handle("/csv/all_activists_spoke", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.SupporterSpokeCSVHandler))
 	router.Handle("/user/list", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.UserListHandler))
 
 	// Authed Admin API
@@ -1365,13 +1365,13 @@ func (c MainController) ChapterMemberSpokeCSVHandler(w http.ResponseWriter, r *h
 
 }
 
-func (c MainController) AllActivistsSpokeCSVHandler(w http.ResponseWriter, r *http.Request) {
+func (c MainController) SupporterSpokeCSVHandler(w http.ResponseWriter, r *http.Request) {
 	chapter := getAuthedADBChapter(c.db, r)
 
 	startDate := r.URL.Query().Get("start_date")
 	endDate := r.URL.Query().Get("end_date")
 
-	activists, err := model.GetAllActivistSpokeInfo(c.db, chapter, startDate, endDate)
+	activists, err := model.GetSupporterSpokeInfo(c.db, chapter, startDate, endDate)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
@@ -1382,13 +1382,13 @@ func (c MainController) AllActivistsSpokeCSVHandler(w http.ResponseWriter, r *ht
 	w.Header().Set("Transfer-Encoding", "chunked")
 
 	writer := csv.NewWriter(w)
-	err = writer.Write([]string{"first_name", "last_name", "cell", "level", "last_event"})
+	err = writer.Write([]string{"first_name", "last_name", "cell", "last_event"})
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
 	}
 	for _, activist := range activists {
-		err := writer.Write([]string{activist.FirstName, activist.LastName, activist.Cell, activist.Level, activist.LastEvent})
+		err := writer.Write([]string{activist.FirstName, activist.LastName, activist.Cell, activist.LastEvent})
 		if err != nil {
 			sendErrorMessage(w, err)
 			return

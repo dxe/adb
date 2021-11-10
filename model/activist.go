@@ -1615,7 +1615,6 @@ type ActivistSpokeInfo struct {
 	FirstName string `db:"first_name"`
 	LastName  string `db:"last_name"`
 	Cell      string `db:"cell"`
-	Level     string `db:"activist_level"`
 	LastEvent string `db:"last_event"`
 }
 
@@ -1625,7 +1624,6 @@ func GetChapterMemberSpokeInfo(db *sqlx.DB, chapterID int) ([]ActivistSpokeInfo,
 			IF(preferred_name <> '', preferred_name, substring_index(name, " ", 1)) as first_name,
 			SUBSTRING(name, LOCATE(' ', name)+1) as last_name,
 			phone as cell,
-		    activist_level
 		FROM activists
 		WHERE
 		    chapter_id = ? and
@@ -1642,13 +1640,12 @@ func GetChapterMemberSpokeInfo(db *sqlx.DB, chapterID int) ([]ActivistSpokeInfo,
 	return activists, nil
 }
 
-func GetAllActivistSpokeInfo(db *sqlx.DB, chapterID int, startDate, endDate string) ([]ActivistSpokeInfo, error) {
+func GetSupporterSpokeInfo(db *sqlx.DB, chapterID int, startDate, endDate string) ([]ActivistSpokeInfo, error) {
 	query := `
 		SELECT
 			IF(preferred_name <> '', preferred_name, substring_index(name, " ", 1)) as first_name,
 			SUBSTRING(name, LOCATE(' ', name)+1) as last_name,
 			phone as cell,
-		    activist_level,
 		    @last_event := (
 				SELECT max(e.date) AS max_date
 				FROM event_attendance ea
@@ -1659,6 +1656,7 @@ func GetAllActivistSpokeInfo(db *sqlx.DB, chapterID int, startDate, endDate stri
 		FROM activists
 		WHERE
 		    chapter_id = ?
+		    and activist_level = 'supporter'
 			and hidden = 0
 	`
 	args := []interface{}{chapterID}

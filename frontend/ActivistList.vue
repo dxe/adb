@@ -56,7 +56,7 @@
         <!--        TODO: add date params to url-->
         <div class="level-item px-1" v-if="view === 'all_activists'">
           <b-button
-            label="Export CSV for Spoke"
+            label="Export Supporter CSV for Spoke"
             type="is-info"
             icon-left="download"
             tag="a"
