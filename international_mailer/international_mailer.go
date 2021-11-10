@@ -43,6 +43,8 @@ func processFormSubmission(db *sqlx.DB, formData model.InternationalFormData) {
 
 func sendInternationalOnboardingEmail(db *sqlx.DB, formData model.InternationalFormData, chapter *model.ChapterWithToken) error {
 	var msg mailer.Message
+	msg.FromName = "Michelle Del Cueto"
+	msg.FromAddress = "michelle@directactioneverywhere.com"
 	msg.ToName = formData.FirstName + " " + formData.LastName
 	msg.ToAddress = formData.Email
 	msg.CC = append(msg.CC, "jake@directactioneverywhere.com") // TODO: remove after testing in prod
@@ -90,39 +92,54 @@ func sendInternationalOnboardingEmail(db *sqlx.DB, formData model.InternationalF
 			}
 		}
 
+		// check if chapter has an upcoming event
+		var nextEvent model.ExternalEvent
+		if chapter.ID != 0 {
+			startTime := time.Now()
+			endTime := time.Now().Add(60 * 24 * time.Hour)
+			events, _ := model.GetExternalEvents(db, chapter.ID, startTime, endTime, false)
+			if len(events) > 0 {
+				nextEvent = events[0]
+			}
+		}
+
 		// assemble the message
-		msg.FromName = "Anastasia Rogers"
-		msg.FromAddress = "arogers@directactioneverywhere.com"
-		msg.ReplyToAddress = "vanas@umich.edu"
 		msg.Subject = "Join your local Direct Action Everywhere chapter!"
 		msg.BodyHTML = `
 			<p>Hey ` + strings.Title(strings.TrimSpace(formData.FirstName)) + `!</p>
 			<p>
-				My name is Anastasia and I’m an organizer with Direct Action Everywhere. I wanted to reach out about your
-				inquiry to get involved in our international network. There is a DxE chapter near you, so I’ve included
-				their information below so you can reach out and get involved with them!
+				I wanted to reach out about your inquiry of getting involved with DxE’s international network. There is
+				currently a DxE chapter near you, so I’ve included their information and contact below so you can reach out,
+				get involved, and start taking action with them!
+
 			</p> 
 			<p>
 				` + contactInfo + `
-				I’ve also cc’ed the organizers in your local chapter on this email so that they can reach out as well.
-			</p> 
+			</p>
+			<p>I’ve also cc'd the organizers in your local chapter on this email, so you can both be in contact.</p>
+		`
+
+		if nextEvent.ID != 0 {
+			msg.BodyHTML += fmt.Sprintf(`
+				<p>You can also find details of their next event here: <a href="https://facebook.com/%v">%v</a>.</p>
+			`, nextEvent.ID, nextEvent.Name)
+		}
+
+		msg.BodyHTML += `
 			<p>
-				In the meantime there are a few actions you could take. First you can
-				<a href="http://dxe.io/discord">join our Discord server</a>. Next you can
+				In the meantime you can
 				<a href="http://nomorefactoryfarms.com">sign our petition to stop factory farms</a>.
 			</p>
-			<p>Let me know if you have any questions or if you still have trouble connecting with your local chapter!</p>
+			<p>Let me know if you have any questions or if you still haven't been able to connect with your local chapter.</p>
+			<p>Hope that you can join us!</p>
 			<p>
-				In Solidarity,<br/>
-				Anastasia Rogers<br/>
-				Direct Action Everywhere Organizer
+				Michelle Del Cueto<br/>
+				International Coordinator<br/>
+				Direct Action Everywhere
 			</p>
 		`
 
 	default:
-		msg.FromName = "Michelle Del Cueto"
-		msg.FromAddress = "michelle@directactioneverywhere.com"
-		msg.ReplyToAddress = "michelle@directactioneverywhere.com"
 		msg.Subject = "Getting involved with Direct Action Everywhere"
 		msg.BodyHTML = `
 			<p>Hey ` + strings.Title(strings.TrimSpace(formData.FirstName)) + `!</p>
