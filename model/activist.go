@@ -1623,7 +1623,7 @@ func GetChapterMemberSpokeInfo(db *sqlx.DB, chapterID int) ([]ActivistSpokeInfo,
 		SELECT
 			IF(preferred_name <> '', preferred_name, substring_index(name, " ", 1)) as first_name,
 			SUBSTRING(name, LOCATE(' ', name)+1) as last_name,
-			phone as cell,
+			phone as cell
 		FROM activists
 		WHERE
 		    chapter_id = ? and
