@@ -133,7 +133,7 @@
             <p>
               I support DxE’s
               <a href="https://www.directactioneverywhere.com/core-values" target="_blank"
-              >mission and values</a
+                >mission and values</a
               >.
             </p>
 
@@ -166,9 +166,12 @@
           <div class="column is-one-third">
             <p>
               I agree to watch a video and
-              <a href="https://docs.google.com/forms/d/e/1FAIpQLSdc5Fe81BgNhn7vmC2rf1TAYx_ojberwJXh6DJLIZzeAyfdww/viewform" target="_blank"
-              >take a quiz</a
-              > on consent.
+              <a
+                href="https://docs.google.com/forms/d/e/1FAIpQLSdc5Fe81BgNhn7vmC2rf1TAYx_ojberwJXh6DJLIZzeAyfdww/viewform"
+                target="_blank"
+                >take a quiz</a
+              >
+              on consent.
             </p>
 
             <b-field class="mt-3">
