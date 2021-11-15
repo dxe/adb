@@ -44,11 +44,9 @@ func processFormSubmission(db *sqlx.DB, formData model.InternationalFormData) {
 func sendInternationalOnboardingEmail(db *sqlx.DB, formData model.InternationalFormData, chapter *model.ChapterWithToken) error {
 	var msg mailer.Message
 	msg.FromName = "Michelle Del Cueto"
-	msg.FromAddress = "michelle@directactioneverywhere.com"
+	msg.FromAddress = "internationalcoordination@directactioneverywhere.com"
 	msg.ToName = formData.FirstName + " " + formData.LastName
 	msg.ToAddress = formData.Email
-	msg.CC = append(msg.CC, "jake@directactioneverywhere.com") // TODO: remove after testing in prod
-	msg.CC = append(msg.CC, "internationalcoordination@directactioneverywhere.com")
 
 	switch chapter != nil {
 	case true:
@@ -227,9 +225,8 @@ func sendInternationalActionEmail(db *sqlx.DB, chapter model.ChapterWithToken) {
 		body += `<p>Also note that we now have the ability to showcase your chapter's events on
 		<a href="http://dxe.io/events">DxE's main website</a>, so they can be found by visitors who are looking for
 		events in your area. In order for this to happen, please make
-		<a href="https://www.facebook.com/jhobbs91">Jake Hobbs</a> (our Tech team lead) an admin on your Facebook page.
-        He won't read your messages or interact with your page at all, other than setting up an automated system that will 
-		read the public events from your Facebook page. Feel free to reach out if you have any questions or concerns.</p>`
+		<a href="https://www.facebook.com/cassie.king.399">Cassie King</a> an admin on your Facebook page.
+        Feel free to reach out if you have any questions or concerns.</p>`
 	}
 
 	body += `<p>Thank you for all your hard work to create a better world for animals!</p>
@@ -260,7 +257,7 @@ func sendInternationalActionEmail(db *sqlx.DB, chapter model.ChapterWithToken) {
 	log.Printf("Sending int'l action email to %v: %v\n", chapter.Name, strings.Join(toEmails, ","))
 	err := mailer.Send(mailer.Message{
 		FromName:    "Michelle Del Cueto",
-		FromAddress: "michelle@directactioneverywhere.com",
+		FromAddress: "internationalcoordination@directactioneverywhere.com",
 		ToName:      "DxE " + chapter.Name,
 		ToAddress:   toEmails[0],
 		Subject:     subject,

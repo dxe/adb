@@ -129,7 +129,23 @@
             </b-field>
           </div>
 
-          <div class="column is-half">
+          <div class="column is-one-third">
+            <p>
+              I support DxE’s
+              <a href="https://www.directactioneverywhere.com/core-values" target="_blank"
+              >mission and values</a
+              >.
+            </p>
+
+            <b-field class="mt-3">
+              <b-radio-button v-model="mission" native-value="true" type="is-success" required>
+                <b-icon icon="check"></b-icon>
+                <span>Yes, I agree.</span>
+              </b-radio-button>
+            </b-field>
+          </div>
+
+          <div class="column is-one-third">
             <p>
               I will uphold DxE's
               <a
@@ -142,23 +158,23 @@
             <b-field class="mt-3">
               <b-radio-button v-model="conduct" native-value="true" type="is-success" required>
                 <b-icon icon="check"></b-icon>
-                <span>Yes, I agree with the above statement.</span>
+                <span>Yes, I agree.</span>
               </b-radio-button>
             </b-field>
           </div>
 
-          <div class="column is-half">
+          <div class="column is-one-third">
             <p>
-              I support DxE’s
-              <a href="https://www.directactioneverywhere.com/core-values" target="_blank"
-                >mission and values</a
-              >.
+              I agree to watch a video and
+              <a href="https://docs.google.com/forms/d/e/1FAIpQLSdc5Fe81BgNhn7vmC2rf1TAYx_ojberwJXh6DJLIZzeAyfdww/viewform" target="_blank"
+              >take a quiz</a
+              > on consent.
             </p>
 
             <b-field class="mt-3">
-              <b-radio-button v-model="mission" native-value="true" type="is-success" required>
+              <b-radio-button v-model="consent" native-value="true" type="is-success" required>
                 <b-icon icon="check"></b-icon>
-                <span>Yes, I agree with the above statement.</span>
+                <span>Yes, I agree.</span>
               </b-radio-button>
             </b-field>
           </div>
@@ -320,6 +336,10 @@ export default Vue.extend({
         flashMessage('Please must agree with our mission & values.', true);
         return;
       }
+      if (!this.consent) {
+        flashMessage('Please must agree to watch a video & take a quiz on consent.', true);
+        return;
+      }
       if (!this.applicationType) {
         flashMessage(
           'You must choose whether or not you are interested in becoming an organizer.',
@@ -373,6 +393,7 @@ export default Vue.extend({
       lastName: '',
       conduct: false,
       mission: false,
+      consent: false,
       email: '',
       address: '',
       city: '',
