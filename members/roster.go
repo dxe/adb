@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -38,7 +39,27 @@ func (s *server) roster() {
 		return
 	}
 
-	s.render(rosterTmpl, nil)
+	var data struct {
+		ThisURL, NextURL   *url.URL
+		ThisText, NextText string
+	}
+
+	year, month, _ := time.Now().Date()
+	link := func(adj time.Month) (*url.URL, string) {
+		// TODO(mdempsky): No better way to do month arithmetic?
+		year, month := year, month+adj
+		if month == time.December+1 {
+			year, month = year+1, time.January
+		}
+
+		addr := &url.URL{Path: fmt.Sprintf("/roster?month=%04d%02d", year, month)}
+		text := fmt.Sprintf("%s %d", month, year)
+		return addr, text
+	}
+	data.ThisURL, data.ThisText = link(0)
+	data.NextURL, data.NextText = link(1)
+
+	s.render(rosterTmpl, &data)
 }
 
 func (s *server) rosterDownload(queryMonth int) {
@@ -198,8 +219,8 @@ body {
 <p>Available rosters:</p>
 
 <ul>
-<li><a href="/roster?month=202106">June 2021</a></li>
-<li><a href="/roster?month=202107">July 2021</a> (tentative!)</li>
+<li><a href="{{.ThisURL}}">{{.ThisText}}</a></li>
+<li><a href="{{.NextURL}">{{.NextText}}</a> (tentative!)</li>
 </ul>
 
 </div>
