@@ -117,7 +117,7 @@ select json_arrayagg(json_object(
   'ActivistLevel', r.activist_level,
 
   'Eligible', case r.activist_level
-    when 'Organizer'      then r.mpi_past3 >= 2
+    when 'Organizer'      then r.mpi_past3 >= 2 or r.mpi_past12 >= 8
     when 'Chapter Member' then r.mpi_past12 >= 8 and r.cm_approved6 and r.voting_agreement
     else                       false
   end,

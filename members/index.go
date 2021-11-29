@@ -290,23 +290,25 @@ table.profile td:nth-child(1), table.election, td:nth-child(1) {
 <h2>Voter Eligibility</h2>
 
 {{if .Organizer}}
-<p>As an <a href="https://docs.dxesf.org/#33-organizers">Organizer</a>, you are eligible to vote if you've been on the Movement-Power Index for 2 of the past 3 full months at the time of the vote.</p>
-
+<p>As an <a href="https://docs.dxesf.org/#33-organizers">Organizer</a>, you are eligible to vote if you've been on the Movement-Power Index for 2 of the past 3 full months or 8 of the past 12 full months at the time of the vote.</p>
 <table class="elections">
 <tr>
   <th>Month</th>
   <th>MPI of past 3 months</th>
+  <th>MPI of past 12 months</th>
   <th>Eligible?</th>
 </tr>
 <tr>
   <td>{{.ThisMonth}}</td>
   <td>{{.ThisPast3}}</td>
-  <td>{{if ge .ThisPast3 2}}Yes{{else}}No{{end}}</td>
+  <td>{{.ThisPast12}}</td>
+  <td>{{if or (ge .ThisPast3 2) (ge .ThisPast12 8)}}Yes{{else}}No{{end}}</td>
 </tr>
 <tr>
   <td>{{.NextMonth}}</td>
   <td>{{.NextPast3}}</td>
-  <td>{{if ge .NextPast3 2}}Yes{{else}}No{{end}}</td>
+  <td>{{.NextPast12}}</td>
+  <td>{{if or (ge .NextPast3 2) (ge .NextPast12 8)}}Yes{{else}}No{{end}}</td>
 </tr>
 </table>
 {{else if .ChapterMember}}
