@@ -220,7 +220,7 @@ body {
 
 <ul>
 <li><a href="{{.ThisURL}}">{{.ThisText}}</a></li>
-<li><a href="{{.NextURL}">{{.NextText}}</a> (tentative!)</li>
+<li><a href="{{.NextURL}}">{{.NextText}}</a> (tentative!)</li>
 </ul>
 
 </div>
