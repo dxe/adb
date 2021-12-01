@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"html/template"
 	"log"
-	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -40,19 +39,19 @@ func (s *server) roster() {
 	}
 
 	var data struct {
-		ThisURL, NextURL   *url.URL
+		ThisURL, NextURL   string
 		ThisText, NextText string
 	}
 
 	year, month, _ := time.Now().Date()
-	link := func(adj time.Month) (*url.URL, string) {
+	link := func(adj time.Month) (string, string) {
 		// TODO(mdempsky): No better way to do month arithmetic?
 		year, month := year, month+adj
 		if month == time.December+1 {
 			year, month = year+1, time.January
 		}
 
-		addr := &url.URL{Path: fmt.Sprintf("/roster?month=%04d%02d", year, month)}
+		addr := fmt.Sprintf("/roster?month=%04d%02d", year, month)
 		text := fmt.Sprintf("%s %d", month, year)
 		return addr, text
 	}
