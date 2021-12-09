@@ -131,7 +131,7 @@ func sendInternationalOnboardingEmail(db *sqlx.DB, formData model.InternationalF
 			<p>Let me know if you have any questions or if you still haven't been able to connect with your local chapter.</p>
 			<p>Hope that you can join us!</p>
 			<p>
-				Michelle Del Cueto<br/>
+				<strong>Michelle Del Cueto</strong><br/>
 				International Coordinator<br/>
 				Direct Action Everywhere
 			</p>
@@ -144,24 +144,22 @@ func sendInternationalOnboardingEmail(db *sqlx.DB, formData model.InternationalF
 			<p>I saw that you showed interest in getting involved with our international network.</p>
 			<p>
 				Currently, there isn’t a DxE chapter in your city, but if you are interested in starting a chapter and
-				organizing actions or events that would help mobilize your community for animal rights, the international coordination
-				team can help you. Sometimes, the thought of "organizing" and starting a chapter from zero can feel really intimidating,
-				but we have multiple resources and a mentorship program to support you.
+				organizing actions or events that would help mobilize your community for animal rights, the international
+				coordination team is here to help you!
 			</p>
 			<p>
-				The next step is to watch
-				<a href="https://www.dropbox.com/s/4dusc12v35u5lfb/How%20to%20Change%20the%20World%20Nov%202020.mp4?dl=0">this workshop</a>
-				of our theory of change, so you can become more familiar with our mission and strategy.   
+				We just launched a Workshop on How to Organize a DxE Chapter. I highly encourage you to attend, so you
+				can learn about our mission, strategy and everything else you need to know to be involved with DxE. Here
+				is the event link, please RSVP:
+				<a href="https://dxe.io/organizedxechapter">dxe.io/organizedxechapter</a>.
 			</p>
 			<p>
-				Next, please join our onboarding calls that are hosted on Zoom on the first and third Wednesday of every
-				month, at 11am Pacific Time (6pm GMT). This link will take you to the onboarding calls at that time:
-				<a href="https://dxe.io/ioonboarding">dxe.io/ioonboarding</a>.
+				I really hope to see you there, and if you have any questions please let me know.
 			</p>
-			<p>Hope that you can join us! Let me know if you have any questions.</p>
 			<p>
-				Michelle Del Cueto<br/>
-				Direct Action Everywhere International Coordinator
+				<strong>Michelle Del Cueto</strong><br/>
+				International Coordinator<br/>
+				Direct Action Everywhere
 			</p>
 		`
 	}
