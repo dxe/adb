@@ -230,7 +230,6 @@ func sendInternationalActionEmail(db *sqlx.DB, chapter model.ChapterWithToken) {
 	body += `<p>Thank you for all your hard work to create a better world for animals!</p>
 	
 	<p>Michelle Del Cueto<br />
-	Direct Action Everywhere<br />
 	International Coordinator<br />
 	Direct Action Everywhere</p>
 	`
