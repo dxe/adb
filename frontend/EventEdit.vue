@@ -1,7 +1,6 @@
 <template>
   <adb-page :title="connections ? 'Coaching' : 'Event'" narrow class="event-new-content">
     <b-loading :is-full-page="true" v-model="loading"></b-loading>
-    <b-loading :is-full-page="true" v-model="loadingCircles"></b-loading>
     <b-loading :is-full-page="true" v-model="loadingActivists"></b-loading>
     <form action id="eventForm" v-on:change="changed('change', -1)" autocomplete="off">
       <fieldset :disabled="loading">
@@ -32,13 +31,6 @@
                 :key="eventType"
               >
                 {{ eventType }}
-              </option>
-            </b-select>
-          </b-field>
-          <b-field label="Circle (optional)" v-if="chapter === 'SF Bay Area'">
-            <b-select v-model="selectedCircleID" expanded icon="account-supervisor-circle">
-              <option v-for="circle in allCircles" :value="circle.id" :key="circle.id">
-                {{ circle.name }}
               </option>
             </b-select>
           </b-field>
@@ -129,7 +121,6 @@ export default Vue.extend({
   data() {
     return {
       loading: false,
-      loadingCircles: false,
       loadingActivists: false,
       saving: false,
 
@@ -149,9 +140,6 @@ export default Vue.extend({
       allActivistsSet: new Set<string>(),
       allActivistsFull: {} as { [name: string]: any },
       showIndicatorForAttendee: {} as any,
-
-      selectedCircleID: 0 as number,
-      allCircles: [] as any,
     };
   },
   computed: {
@@ -168,7 +156,6 @@ export default Vue.extend({
 
   created() {
     this.updateAutocompleteNames();
-    if (this.chapter === 'SF Bay Area') this.getCircleNames();
 
     // If we're editing an existing event, fetch the data.
     if (Number(this.id) != 0) {
@@ -184,17 +171,6 @@ export default Vue.extend({
           this.date = event.event_date || '';
           this.attendees = event.attendees || [];
           this.suppressSurvey = event.suppress_survey || false;
-
-          this.selectedCircleID = event.circle_id || 0;
-
-          // if circle_id is not in allCircles and id is not 0, add a dummy extra for the select field to display
-          if (
-            this.allCircles.filter((c: { id: any }) => c.id === event.circle_id).length === 0 &&
-            event.circle_id != 0
-          ) {
-            this.allCircles.push({ id: event.circle_id, name: '*Circle Deleted or Unknown*' });
-            this.selectedCircleID = event.circle_id;
-          }
 
           // ensure we show the indicators for each attendee
           for (let i = 0; i < this.attendees.length; i++) {
@@ -443,7 +419,6 @@ export default Vue.extend({
           added_attendees: addedActivists,
           deleted_attendees: deletedActivists,
           suppress_survey: suppressSurvey,
-          circle_id: this.selectedCircleID,
         }),
         success: (data) => {
           this.saving = false;
@@ -526,25 +501,6 @@ export default Vue.extend({
         error: () => {
           flashMessage('Error: could not load activist names', true);
           this.loadingActivists = false;
-        },
-      });
-    },
-    getCircleNames() {
-      this.loadingCircles = true;
-      $.ajax({
-        url: '/circle/list',
-        method: 'GET',
-        dataType: 'json',
-        success: (data) => {
-          this.allCircles = data.circle_groups.filter((c: { type: string }) => {
-            return c.type === 'circle'; // only include classic circles, not geo-circles
-          });
-          this.allCircles.unshift({ id: 0, name: 'N/A' });
-          this.loadingCircles = false;
-        },
-        error: () => {
-          flashMessage('Error: could not load circles', true);
-          this.loadingCircles = false;
         },
       });
     },
