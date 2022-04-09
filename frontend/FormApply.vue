@@ -77,9 +77,7 @@
         <ul>
           <li>
             Uphold our
-            <a
-              href="https://dxe.io/conduct?utm_source=adb&utm_campaign=apply"
-              target="_blank"
+            <a href="https://dxe.io/conduct?utm_source=adb&utm_campaign=apply" target="_blank"
               >code of conduct</a
             >
             and
