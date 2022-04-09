@@ -78,7 +78,7 @@
           <li>
             Uphold our
             <a
-              href="https://docs.google.com/document/d/e/2PACX-1vSTt4SXGl-eARvOpTzOM8Nzcs9uo1ZVkCuqD0doRkE6zCpx6NgMbVqYwCh691GLKZ5-hklnsaPfHlfa/pub"
+              href="https://dxe.io/conduct?utm_source=adb&utm_campaign=apply"
               target="_blank"
               >code of conduct</a
             >
