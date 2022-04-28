@@ -8,10 +8,14 @@ import (
 	"strings"
 )
 
+var admins = map[string]bool{
+	"antonelleracelis@gmail.com": true,
+	"matthew@dempsky.org":        true,
+}
+
 func isAdmin(email string) bool {
 	// TODO(mdempsky): Use adb_users instead?
-	return email == "matthew@dempsky.org" ||
-		strings.HasSuffix(email, "@directactioneverywhere.com")
+	return strings.HasSuffix(email, "@directactioneverywhere.com") || admins[email]
 }
 
 func (s *server) index() {
