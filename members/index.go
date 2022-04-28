@@ -10,7 +10,7 @@ import (
 
 var admins = map[string]bool{
 	"antonelleracelis@gmail.com": true,
-	"matthew@dempsky.org":.       true,
+	"matthew@dempsky.org":        true,
 }
 
 func isAdmin(email string) bool {
