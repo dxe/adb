@@ -384,7 +384,7 @@ export default Vue.extend({
         if (attendee != '' && !attendeesSet.has(attendee)) {
           // check that attendee has first & last name
           if (attendee.indexOf(' ') == -1) {
-            flashMessage('Error: Attendees must have first and last name.', true);
+            flashMessage(`Error: Attendees must have first and last name: "${attendee}"`, true);
             return;
           }
           attendees.push(attendee);
