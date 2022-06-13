@@ -148,13 +148,11 @@ func sendInternationalOnboardingEmail(db *sqlx.DB, formData model.InternationalF
 				coordination team is here to help you!
 			</p>
 			<p>
-				We just launched a Workshop on How to Organize a DxE Chapter. I highly encourage you to attend, so you
-				can learn about our mission, strategy and everything else you need to know to be involved with DxE. Here
-				is the event link, please RSVP:
-				<a href="https://dxe.io/organizedxechapter">dxe.io/organizedxechapter</a>.
+				If you are interested in starting a chapter, please email
+				<a href="mailto:internationalcoordination@directactioneverywhere.com">internationalcoordination@directactioneverywhere.com</a>.
 			</p>
 			<p>
-				I really hope to see you there, and if you have any questions please let me know.
+				If you have any questions, please let me know.
 			</p>
 			<p>
 				<strong>Michelle Del Cueto</strong><br/>
