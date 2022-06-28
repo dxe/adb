@@ -94,7 +94,7 @@ roster as (
 select json_arrayagg(json_object(
   'ID',            r.id,
   'Name',          r.name,
-  'Email',         r.email,
+  'Email',         r.email
 ))
 from roster r
 where r.activist_level = 'Chapter Member'
