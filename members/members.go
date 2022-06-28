@@ -23,6 +23,7 @@ func Route(r *mux.Router, db *sqlx.DB) {
 	handle("/login", (*server).login)
 	handle("/auth", (*server).auth)
 	handle("/roster", (*server).roster)
+	handle("/reminder", (*server).reminder)
 	handle("/health", (*server).health)
 }
 
