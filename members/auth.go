@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/coreos/go-oidc"
 	"github.com/dxe/adb/config"
@@ -69,7 +70,9 @@ func (s *server) googleEmail() (string, error) {
 	return claims.Email, nil
 }
 
-func (s *server) login() {
+func (s *server) login() { s.loginDest("") }
+
+func (s *server) loginDest(destPath string) {
 	state, err := nonce()
 	if err != nil {
 		s.error(err)
@@ -93,6 +96,9 @@ func (s *server) login() {
 		opts = append(opts, oauth2.SetAuthURLParam("prompt", "select_account"))
 	}
 
+	if destPath != "" {
+		state += "," + destPath
+	}
 	s.redirect(conf.AuthCodeURL(state, opts...))
 }
 
@@ -102,7 +108,8 @@ func (s *server) auth() {
 		s.error(err)
 		return
 	}
-	if c.Value != s.r.FormValue("state") {
+	state := strings.Split(s.r.FormValue("state"), ",")
+	if c.Value != state[0] {
 		s.error(errors.New("state mismatch"))
 		return
 	}
@@ -121,7 +128,12 @@ func (s *server) auth() {
 		SameSite: http.SameSiteLaxMode,
 		HttpOnly: true,
 	})
-	s.redirect(absURL("/"))
+
+	destPath := "/"
+	if len(state) >= 2 {
+		destPath = state[1]
+	}
+	s.redirect(absURL(destPath))
 }
 
 // nonce returns a 256-bit random hex string.

@@ -10,7 +10,7 @@ import (
 func (s *server) reminder() {
 	email, err := s.googleEmail()
 	if err != nil {
-		s.redirect(absURL("/login"))
+		s.loginDest("/reminder")
 		return
 	}
 

@@ -15,7 +15,7 @@ import (
 func (s *server) roster() {
 	email, err := s.googleEmail()
 	if err != nil {
-		s.redirect(absURL("/login"))
+		s.loginDest("/roster")
 		return
 	}
 
