@@ -136,12 +136,12 @@ body {
 <div class="wrap">
 <h1>DxE SF Bay Area Chapter Members</h1>
 
-<p>Chapter members who would be eligible to vote {{.Month}} {{.Year}},
-if they sign the voting agreement:</p>
+<p>The Chapter Members below would be eligible to vote in {{.Month}} {{.Year}},
+if they first sign the voting agreement:</p>
 
 <ul>
 {{range .Members}}
-<li>{{.Name}} &lt;{{.Email}}&gt;</li>
+<li>{{.Name}} <code>&lt;{{.Email}}&gt;</code></li>
 {{end}}
 </ul>
 
