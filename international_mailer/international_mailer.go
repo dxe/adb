@@ -259,7 +259,7 @@ func sendInternationalActionEmail(db *sqlx.DB, chapter model.ChapterWithToken) {
 		ToAddress:   toEmails[0],
 		Subject:     subject,
 		BodyHTML:    body,
-		CC:          append(toEmails[1:], "jake@directactioneverywhere.com"),
+		CC:          toEmails[1:],
 	})
 	if err != nil {
 		log.Println("Failed to send email for international actions email")
