@@ -12,6 +12,7 @@ INNER JOIN
 SET
 	activists.email = IF(activists.email = '', form_application.email, activists.email),
 	activists.phone = IF(activists.phone = '', form_application.phone, activists.phone),
+	activists.pronouns = IF(activists.pronouns = '', form_application.pronouns, activists.pronouns),
 	activists.location = IF(activists.location = '', form_application.zip, activists.location),
 	activists.dob = IF(activists.dob = '', form_application.birthday, activists.dob),
 	# check proper prospect boxes based on application type
@@ -50,6 +51,7 @@ INNER JOIN
 	form_application ON activists.email = form_application.email
 SET
 	activists.phone = IF(activists.phone = '', form_application.phone, activists.phone),
+	activists.pronouns = IF(activists.pronouns = '', form_application.pronouns, activists.pronouns),
 	activists.location = IF(activists.location = '', form_application.zip, activists.location),
 	activists.dob = IF(activists.dob = '', form_application.birthday, activists.dob),
 	# check proper prospect boxes based on application type
@@ -83,6 +85,7 @@ INSERT INTO activists (
 	name,
 	email,
 	phone,
+	pronouns,
 	location,
 	facebook,
 	activist_level, 
@@ -134,6 +137,7 @@ select
         concat(form_application.name,' (inserted by application, check for duplicate)'),
         form_application.email,
         form_application.phone,
+        form_application.pronouns,
         form_application.zip,
         '',
         'Supporter',

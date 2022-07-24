@@ -23,6 +23,7 @@ Various forms for getting data into the ADB.
 - We add data for the following fields to the record in the activists table ONLY if the field in the activists table is currently blank:
  - email
  - phone
+ - pronouns
  - location
  - dob
 - If new data is provided for these fields, it should be concated with the existing data in the activists table:

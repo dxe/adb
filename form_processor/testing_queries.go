@@ -59,6 +59,7 @@ CREATE TABLE activists (
   id int(11) NOT NULL AUTO_INCREMENT,
   name varchar(80) COLLATE utf8mb4_unicode_ci NOT NULL,
   preferred_name varchar(80) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+  pronouns VARCHAR(20) NOT NULL DEFAULT '',
   email varchar(80) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   phone varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   location varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT '',

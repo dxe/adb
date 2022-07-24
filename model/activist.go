@@ -32,6 +32,7 @@ SELECT
   location,
   name,
   phone,
+  pronouns,
   lat,
   lng,
   chapter_id
@@ -54,6 +55,7 @@ SELECT
   a.name,
   preferred_name,
   phone,
+  pronouns,
   dob,
 
   activist_level,
@@ -217,6 +219,7 @@ SET
   name = :name,
   preferred_name = :preferred_name,
   phone = :phone,
+  pronouns = :pronouns,
   dob = :dob,
 
   activist_level = :activist_level,
@@ -271,6 +274,7 @@ type Activist struct {
 	Name          string         `db:"name"`
 	PreferredName string         `db:"preferred_name"`
 	Phone         string         `db:"phone"`
+	Pronouns      string         `db:"pronouns"`
 	Birthday      sql.NullString `db:"dob"`
 	Lat           float64        `json:"lat"`
 	Lng           float64        `json:"lng"`
@@ -354,6 +358,7 @@ type ActivistJSON struct {
 	Name          string `json:"name"`
 	PreferredName string `json:"preferred_name"`
 	Phone         string `json:"phone"`
+	Pronouns      string `json:"pronouns"`
 	Birthday      string `json:"dob"`
 	ChapterID     int    `json:"chapter_id"`
 
@@ -579,6 +584,7 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			Name:          a.Name,
 			PreferredName: a.PreferredName,
 			Phone:         a.Phone,
+			Pronouns:      a.Pronouns,
 			Birthday:      dob,
 
 			FirstEvent:     firstEvent,
@@ -998,6 +1004,7 @@ INSERT INTO activists (
   name,
   preferred_name,
   phone,
+  pronouns,
   dob,
   chapter_id,
 
@@ -1043,6 +1050,7 @@ INSERT INTO activists (
   :name,
   :preferred_name,
   :phone,
+  :pronouns,
   :dob,
   :chapter_id,
 
@@ -1144,6 +1152,7 @@ SET
   name = :name,
   preferred_name = :preferred_name,
   phone = :phone,
+  pronouns = :pronouns,
   dob = :dob,
 
   activist_level = :activist_level,
@@ -1394,6 +1403,7 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 
 	target.Email = stringMerge(original.Email, target.Email)
 	target.Phone = stringMerge(original.Phone, target.Phone)
+	target.Pronouns = stringMerge(original.Pronouns, target.Pronouns)
 	target.Birthday = stringMergeSqlNullString(original.Birthday, target.Birthday)
 	target.Location = stringMergeSqlNullString(original.Location, target.Location)
 	target.Facebook = stringMerge(original.Facebook, target.Facebook)
@@ -1567,6 +1577,7 @@ type ActivistBasicInfoJSON struct {
 	Name          string `json:"name"`
 	Email         string `json:"email"`
 	Phone         string `json:"phone"`
+	Pronouns      string `json:"pronouns"`
 	PreferredName string `json:"preferred_name"`
 }
 
@@ -1574,6 +1585,7 @@ type ActivistBasicInfo struct {
 	Name          string `db:"name"`
 	Email         string `db:"email"`
 	Phone         string `db:"phone"`
+	Pronouns      string `db:"pronouns"`
 	PreferredName string `db:"preferred_name"`
 }
 
@@ -1582,6 +1594,7 @@ func (activist *ActivistBasicInfo) ToJSON() ActivistBasicInfoJSON {
 		Name:          activist.Name,
 		Email:         activist.Email,
 		Phone:         activist.Phone,
+		Pronouns:      activist.Pronouns,
 		PreferredName: activist.PreferredName,
 	}
 }
@@ -1591,7 +1604,7 @@ func GetActivistListBasicJSON(db *sqlx.DB, chapterID int) []ActivistBasicInfoJSO
 
 	// Order the activists by the last even they've been to.
 	err := db.Select(&activists, `
-SELECT a.name, a.email, a.phone, a.preferred_name FROM activists a
+SELECT a.name, a.email, a.phone, a.pronouns, a.preferred_name FROM activists a
 LEFT OUTER JOIN event_attendance ea ON a.id = ea.activist_id
 LEFT OUTER JOIN events e ON e.id = ea.event_id
 WHERE a.hidden = 0 AND a.chapter_id = ?
@@ -1833,6 +1846,7 @@ func CleanActivistData(body io.Reader, db *sqlx.DB) (ActivistExtra, error) {
 			Name:          strings.TrimSpace(activistJSON.Name),
 			PreferredName: strings.TrimSpace(activistJSON.PreferredName),
 			Phone:         strings.TrimSpace(activistJSON.Phone),
+			Pronouns:      strings.TrimSpace(activistJSON.Pronouns),
 			Birthday:      sql.NullString{String: strings.TrimSpace(activistJSON.Birthday), Valid: validBirthday},
 		},
 		ActivistMembershipData: ActivistMembershipData{
