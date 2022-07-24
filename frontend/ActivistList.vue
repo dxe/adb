@@ -588,8 +588,8 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
       longHeader: 'Pronouns',
       category: 'Basic Info',
       data: {
-        data: 'name',
-        colWidths: 20,
+        data: 'pronouns',
+        colWidths: 50,
       },
       enabled: true,
       showForAllChapters: true,
