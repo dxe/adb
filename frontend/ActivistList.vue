@@ -134,6 +134,16 @@
           <div class="mb-5">
             <h1 class="subtitle has-text-primary mb-4" style="font-weight: 500">Info</h1>
 
+            <b-field label="Pronouns" label-position="on-border" v-if="currentActivist.pronouns">
+              <b-input
+                type="text"
+                custom-class="has-text-dark"
+                v-model="currentActivist.pronouns"
+                expanded
+                disabled
+              ></b-input>
+            </b-field>
+
             <b-field label="Email" label-position="on-border" v-if="currentActivist.email">
               <b-input
                 type="text"
@@ -464,6 +474,7 @@ import * as dayjs from 'dayjs';
 interface Activist {
   id: number;
   name: string;
+  pronouns: string;
   email: string;
   phone: string;
   activist_level: string;
@@ -568,6 +579,17 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
       data: {
         data: 'name',
         colWidths: 150,
+      },
+      enabled: true,
+      showForAllChapters: true,
+    },
+    {
+      header: 'Pronouns',
+      longHeader: 'Pronouns',
+      category: 'Basic Info',
+      data: {
+        data: 'name',
+        colWidths: 20,
       },
       enabled: true,
       showForAllChapters: true,

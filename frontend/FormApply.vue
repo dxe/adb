@@ -127,6 +127,18 @@
             </b-field>
           </div>
 
+          <div class="column is-full">
+            <b-field label="Pronouns" label-position="on-border">
+              <b-input
+                type="text"
+                v-model.trim="pronouns"
+                required
+                maxlength="20"
+                ref="pronouns"
+              ></b-input>
+            </b-field>
+          </div>
+
           <div class="column is-one-third">
             <p>
               I support DxE’s
@@ -308,6 +320,7 @@ export default Vue.extend({
       const refsToValidate = [
         'firstName',
         'lastName',
+        'pronouns',
         'email',
         'address',
         'city',
@@ -357,6 +370,7 @@ export default Vue.extend({
           name: this.firstName + ' ' + this.lastName,
           firstName: this.firstName,
           lastName: this.lastName,
+          pronouns: this.pronouns,
           email: this.email,
           address: this.address,
           city: this.city,
@@ -392,6 +406,7 @@ export default Vue.extend({
       errorMessage: 'Sorry, there was an error submitting your form. Please try again.',
       firstName: '',
       lastName: '',
+      pronouns: '',
       conduct: false,
       mission: false,
       consent: false,

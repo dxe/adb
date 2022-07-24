@@ -37,6 +37,7 @@ func (s *server) index() {
 	// true/false.
 	var data struct {
 		Name          string
+		Pronouns      string
 		Email         string
 		Phone         string
 		Location      string
@@ -84,6 +85,7 @@ func (s *server) index() {
 	const q = `
 select json_object(
   'Name',          x.name,
+  'Pronouns',      x.pronouns,
   'Email',         x.email,
   'Phone',         x.phone,
   'Location',      x.location,
@@ -127,7 +129,7 @@ select json_object(
     )))
 )
 from (
-  select a.id, a.name, a.email, a.phone, a.location, a.facebook, a.activist_level, a.dob, a.cm_approval_email, a.voting_agreement,
+  select a.id, a.name, a.pronouns, a.email, a.phone, a.location, a.facebook, a.activist_level, a.dob, a.cm_approval_email, a.voting_agreement,
     e.month, count(e.id) as subtotal,
     max(e.community) as community, max(e.direct_action) as direct_action,
     (max(e.direct_action) and (max(e.community) or e.month >= 202001)) as mpi,
@@ -283,6 +285,7 @@ table.profile td:nth-child(1), table.election, td:nth-child(1) {
 
 <table class="profile">
 <tr><td>Name:</td><td>{{.Name}}</td></tr>
+<tr><td>Pronouns:</td><td>{{.Pronouns}}</td></tr>
 <tr><td>Email:</td><td>{{.Email}}</td></tr>
 <tr><td>Phone:</td><td>{{.Phone}}</td></tr>
 <tr><td>Location:</td><td>{{.Location}}</td></tr>

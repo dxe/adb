@@ -17,6 +17,7 @@ type ApplicationFormData struct {
 	Zip             string `json:"zip" db:"zip"`
 	Phone           string `json:"phone" db:"phone"`
 	Birthday        string `json:"birthday" db:"birthday"`
+	Pronouns        string `json:"pronouns" db:"pronouns"`
 	Referral        string `json:"referral" db:"referral_apply"`
 	ApplicationType string `json:"applicationType" db:"application_type"`
 }
@@ -76,9 +77,9 @@ type InternationalActionFormData struct {
 
 func SubmitApplicationForm(db *sqlx.DB, formData ApplicationFormData) error {
 	_, err := db.NamedExec(`INSERT INTO form_application
-		(email, name, phone, address, city, zip, birthday, application_type, referral_apply)
+		(email, name, pronouns, phone, address, city, zip, birthday, application_type, referral_apply)
 		VALUES
-		(:email, :name, :phone, :address, :city, :zip, :birthday, :application_type, :referral_apply)
+		(:email, :name, :pronouns, :phone, :address, :city, :zip, :birthday, :application_type, :referral_apply)
 		`, formData)
 
 	if err != nil {
