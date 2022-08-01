@@ -129,12 +129,7 @@
 
           <div class="column is-full">
             <b-field label="Pronouns" label-position="on-border">
-              <b-input
-                type="text"
-                v-model.trim="pronouns"
-                maxlength="20"
-                ref="pronouns"
-              ></b-input>
+              <b-input type="text" v-model.trim="pronouns" maxlength="20" ref="pronouns"></b-input>
             </b-field>
           </div>
 

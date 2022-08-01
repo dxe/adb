@@ -40,10 +40,10 @@ FROM activists
 `
 
 // Query perf tips:
-//  - Test changes to this query against production data to see
-//    how they effect performance
-//  - It seems like it's usually faster to use subqueries in the top
-//    part of the SELECT expression vs joining on a table.
+//   - Test changes to this query against production data to see
+//     how they effect performance
+//   - It seems like it's usually faster to use subqueries in the top
+//     part of the SELECT expression vs joining on a table.
 const selectActivistExtraBaseQuery string = `
 SELECT
 
@@ -1241,8 +1241,8 @@ func HideActivist(db *sqlx.DB, activistID int) error {
 }
 
 // Merge activistID into targetActivistID.
-//  - The original activist is hidden
-//  - All of the original activist's event attendance is updated to be the target activist.
+//   - The original activist is hidden
+//   - All of the original activist's event attendance is updated to be the target activist.
 func MergeActivist(db *sqlx.DB, originalActivistID, targetActivistID int) error {
 	if originalActivistID == 0 {
 		return errors.New("originalActivistID cannot be 0")
@@ -1988,10 +1988,11 @@ func CleanGetActivistOptions(body io.Reader) (GetActivistOptions, error) {
 }
 
 // Returns one of the following statuses:
-//  - Current
-//  - New
-//  - Former
-//  - No attendance
+//   - Current
+//   - New
+//   - Former
+//   - No attendance
+//
 // Must be kept in sync with the list in frontend/ActivistList.vue
 func getStatus(firstEvent mysql.NullTime, lastEvent mysql.NullTime, totalEvents int) string {
 	if !firstEvent.Valid || !lastEvent.Valid {
