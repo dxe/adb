@@ -132,7 +132,6 @@
               <b-input
                 type="text"
                 v-model.trim="pronouns"
-                required
                 maxlength="20"
                 ref="pronouns"
               ></b-input>
