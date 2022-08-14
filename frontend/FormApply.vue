@@ -128,8 +128,8 @@
           </div>
 
           <div class="column is-full">
-            <b-field label="Pronouns" label-position="on-border">
-              <b-input type="text" v-model.trim="pronouns" maxlength="20" ref="pronouns"></b-input>
+            <b-field label="Pronouns (optional)" label-position="on-border">
+              <b-input type="text" v-model.trim="pronouns" maxlength="20" ref="pronouns" placeholder="she/her, he/him, they/them, etc."></b-input>
             </b-field>
           </div>
 
