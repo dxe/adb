@@ -263,13 +263,21 @@
           </div>
 
           <div class="column is-half">
-            <b-field label="Primary language (optional)" label-position="on-border" message="We try to create materials and events in your primary language when possible.">
+            <b-field
+              label="Primary language (optional)"
+              label-position="on-border"
+              message="We try to create materials and events in your primary language when possible."
+            >
               <b-input type="text" v-model.trim="language" maxlength="40"></b-input>
             </b-field>
           </div>
 
           <div class="column is-full">
-            <b-field label="Accessibility needs (optional)" label-position="on-border" message="We do our best to accommodate our events to your needs.">
+            <b-field
+              label="Accessibility needs (optional)"
+              label-position="on-border"
+              message="We do our best to accommodate our events to your needs."
+            >
               <b-input type="text" v-model.trim="accessibility" maxlength="300"></b-input>
             </b-field>
           </div>
