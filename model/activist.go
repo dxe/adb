@@ -56,6 +56,8 @@ SELECT
   preferred_name,
   phone,
   pronouns,
+  language,
+  accessibility,
   dob,
 
   activist_level,
@@ -220,6 +222,8 @@ SET
   preferred_name = :preferred_name,
   phone = :phone,
   pronouns = :pronouns,
+  language = :language,
+  accessibility = :accessibility,
   dob = :dob,
 
   activist_level = :activist_level,
@@ -275,6 +279,8 @@ type Activist struct {
 	PreferredName string         `db:"preferred_name"`
 	Phone         string         `db:"phone"`
 	Pronouns      string         `db:"pronouns"`
+	Language      string         `db:"language"`
+	Accessibility string         `db:"accessibility"`
 	Birthday      sql.NullString `db:"dob"`
 	Lat           float64        `json:"lat"`
 	Lng           float64        `json:"lng"`
@@ -359,6 +365,8 @@ type ActivistJSON struct {
 	PreferredName string `json:"preferred_name"`
 	Phone         string `json:"phone"`
 	Pronouns      string `json:"pronouns"`
+	Language      string `json:"language"`
+	Accessibility string `json:"accessibility"`
 	Birthday      string `json:"dob"`
 	ChapterID     int    `json:"chapter_id"`
 
@@ -585,6 +593,8 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			PreferredName: a.PreferredName,
 			Phone:         a.Phone,
 			Pronouns:      a.Pronouns,
+			Language:      a.Language,
+			Accessibility: a.Accessibility,
 			Birthday:      dob,
 
 			FirstEvent:     firstEvent,
@@ -1005,6 +1015,8 @@ INSERT INTO activists (
   preferred_name,
   phone,
   pronouns,
+  language,
+  accessibility,
   dob,
   chapter_id,
 
@@ -1051,6 +1063,8 @@ INSERT INTO activists (
   :preferred_name,
   :phone,
   :pronouns,
+  :language,
+  :accessibility,
   :dob,
   :chapter_id,
 
@@ -1153,6 +1167,8 @@ SET
   preferred_name = :preferred_name,
   phone = :phone,
   pronouns = :pronouns,
+  language = :language,
+  accessibility = :accessibility,
   dob = :dob,
 
   activist_level = :activist_level,
@@ -1404,6 +1420,8 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 	target.Email = stringMerge(original.Email, target.Email)
 	target.Phone = stringMerge(original.Phone, target.Phone)
 	target.Pronouns = stringMerge(original.Pronouns, target.Pronouns)
+	target.Language = stringMerge(original.Language, target.Language)
+	target.Accessibility = stringMerge(original.Accessibility, target.Accessibility)
 	target.Birthday = stringMergeSqlNullString(original.Birthday, target.Birthday)
 	target.Location = stringMergeSqlNullString(original.Location, target.Location)
 	target.Facebook = stringMerge(original.Facebook, target.Facebook)
@@ -1847,6 +1865,8 @@ func CleanActivistData(body io.Reader, db *sqlx.DB) (ActivistExtra, error) {
 			PreferredName: strings.TrimSpace(activistJSON.PreferredName),
 			Phone:         strings.TrimSpace(activistJSON.Phone),
 			Pronouns:      strings.TrimSpace(activistJSON.Pronouns),
+			Language:      strings.TrimSpace(activistJSON.Language),
+			Accessibility: strings.TrimSpace(activistJSON.Accessibility),
 			Birthday:      sql.NullString{String: strings.TrimSpace(activistJSON.Birthday), Valid: validBirthday},
 		},
 		ActivistMembershipData: ActivistMembershipData{

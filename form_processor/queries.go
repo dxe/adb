@@ -28,6 +28,8 @@ SET
 	activists.referral_friends = IF(LENGTH(form_application.referral_friends), form_application.referral_friends, activists.referral_friends),
 	activists.referral_apply = IF(LENGTH(form_application.referral_apply), CONCAT_WS(', ', IF(LENGTH(activists.referral_apply),activists.referral_apply,NULL),form_application.referral_apply), activists.referral_apply),
 	activists.referral_outlet = IF(LENGTH(form_application.referral_outlet), form_application.referral_outlet, activists.referral_outlet),
+	activists.language = IF(LENGTH(form_application.language), form_application.language, activists.language),
+	activists.accessibility = IF(LENGTH(form_application.accessibility), form_application.accessibility, activists.accessibility),
 	# mark as processed
 	form_application.processed = 1
 WHERE
@@ -67,6 +69,8 @@ SET
 	activists.referral_friends = IF(LENGTH(form_application.referral_friends), form_application.referral_friends, activists.referral_friends),
 	activists.referral_apply = IF(LENGTH(form_application.referral_apply), CONCAT_WS(', ', IF(LENGTH(activists.referral_apply),activists.referral_apply,NULL),form_application.referral_apply), activists.referral_apply),
 	activists.referral_outlet = IF(LENGTH(form_application.referral_outlet), form_application.referral_outlet, activists.referral_outlet),
+	activists.language = IF(LENGTH(form_application.language), form_application.language, activists.language),
+	activists.accessibility = IF(LENGTH(form_application.accessibility), form_application.accessibility, activists.accessibility),
 	# mark as processed
 	form_application.processed = 1
 WHERE
@@ -130,7 +134,9 @@ INSERT INTO activists (
 	study_group,
 	study_activator,
 	study_conversation,
-    chapter_id
+    chapter_id,
+	language,
+	accessibility
 )
 select
         NULL,
@@ -184,6 +190,8 @@ select
         '', 
         NULL,
         '47'
+		form_application.language,
+		form_application.accessibility
 from
 	form_application
 WHERE
