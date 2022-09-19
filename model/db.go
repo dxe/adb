@@ -104,6 +104,8 @@ CREATE TABLE activists (
   chapter_id int(11) DEFAULT '0',
   assigned_to int(11) DEFAULT '0',
   followup_date date DEFAULT NULL,
+  language varchar(40) NOT NULL DEFAULT '',
+  accessibility varchar(300) NOT NULL DEFAULT '',
   UNIQUE (name, chapter_id)
 )
 `)
