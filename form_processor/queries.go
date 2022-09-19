@@ -189,7 +189,7 @@ select
         '',
         '', 
         NULL,
-        '47'
+        '47',
 		form_application.language,
 		form_application.accessibility
 from
