@@ -26,6 +26,8 @@ CREATE TABLE form_application (
   referral_apply text COLLATE utf8mb4_unicode_ci NOT NULL,
   referral_outlet text COLLATE utf8mb4_unicode_ci NOT NULL,
   contact_method varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+  language varchar(40) NOT NULL DEFAULT '',
+  accessibility varchar(300) NOT NULL DEFAULT '',
   timestamp datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   processed tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (id)
@@ -116,6 +118,8 @@ CREATE TABLE activists (
   state varchar(40) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
   discord_id bigint(18) DEFAULT NULL,
   chapter_id int(11) DEFAULT '0',
+  language varchar(40) NOT NULL DEFAULT '',
+  accessibility varchar(300) NOT NULL DEFAULT '',
   PRIMARY KEY (id),
   UNIQUE KEY name_ukey (name, chapter_id),
   KEY activists_email (email),

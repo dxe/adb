@@ -703,6 +703,28 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
       enabled: view === 'all_activists' && chapter === 'SF Bay Area',
       showForAllChapters: true,
     },
+    {
+      header: 'Accessibility',
+      longHeader: 'Accessibility Needs',
+      category: 'Basic Info',
+      data: {
+        data: 'accessibility',
+        colWidths: 50,
+      },
+      enabled: false,
+      showForAllChapters: true,
+    },
+    {
+      header: 'Language',
+      longHeader: 'Primary Language',
+      category: 'Basic Info',
+      data: {
+        data: 'language',
+        colWidths: 50,
+      },
+      enabled: false,
+      showForAllChapters: true,
+    },
     // Other
     {
       header: 'Notes',

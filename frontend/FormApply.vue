@@ -256,9 +256,29 @@
             </b-field>
           </div>
 
-          <div class="column is-full">
+          <div class="column is-half">
             <b-field label="Who encouraged you to apply? (optional)" label-position="on-border">
               <b-input type="text" v-model.trim="referral" maxlength="100"></b-input>
+            </b-field>
+          </div>
+
+          <div class="column is-half">
+            <b-field
+              label="Primary language (optional)"
+              label-position="on-border"
+              message="We try to create materials and events in your primary language when possible."
+            >
+              <b-input type="text" v-model.trim="language" maxlength="40"></b-input>
+            </b-field>
+          </div>
+
+          <div class="column is-full">
+            <b-field
+              label="Accessibility needs (optional)"
+              label-position="on-border"
+              message="We do our best to accommodate our events to your needs."
+            >
+              <b-input type="text" v-model.trim="accessibility" maxlength="300"></b-input>
             </b-field>
           </div>
 
@@ -378,6 +398,8 @@ export default Vue.extend({
           phone: this.phone,
           birthday: this.birthday,
           referral: this.referral,
+          language: this.language,
+          accessibility: this.accessibility,
           applicationType: this.applicationType,
         }),
         success: (data) => {
@@ -417,6 +439,8 @@ export default Vue.extend({
       phone: '',
       birthday: '',
       referral: '',
+      language: '',
+      accessibility: '',
       applicationType: '',
     };
   },
