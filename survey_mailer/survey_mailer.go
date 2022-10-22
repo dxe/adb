@@ -168,7 +168,7 @@ func surveyMailerWrapper(db *sqlx.DB) {
 			QueryDate:      yesterday,
 			QueryEventType: "Community",
 			QueryEventName: "Meetup",
-			BodyHtml:       `<p>Thank you for attending the meetup! Please <a href="https://docs.google.com/forms/d/e/1FAIpQLSfV0smO8sQo1ch-rlX7g9Oz4t_2d3fjGytwrE_yJ8Ez9uLSZQ/viewform?usp=pp_url&entry.783443419=LINK_PARAM_NAME&entry.1369832182=LINK_PARAM_DATE">click here</a> to provide feedback which will help us in planning future events.</p>`,
+			BodyHtml:       `<p>Thank you for attending the meetup! Please <a href="https://docs.google.com/forms/d/e/1FAIpQLSfJNn8vjrLWXqFkgzKsnObUZSrbIs_9k3_KFTy7M8glt4ZNug/viewform?usp=pp_url&entry.783443419=LINK_PARAM_NAME&entry.1369832182=LINK_PARAM_DATE">click here</a> to provide feedback which will help us in planning future events.</p>`,
 		})
 	}
 
@@ -203,7 +203,7 @@ func surveyMailerWrapper(db *sqlx.DB) {
 		QueryDate:      yesterday,
 		QueryEventType: "Community",
 		QueryEventName: "",
-		BodyHtml:       `<p>Thank you for attending our community event! Please <a href="https://docs.google.com/forms/d/e/1FAIpQLSfV0smO8sQo1ch-rlX7g9Oz4t_2d3fjGytwrE_yJ8Ez9uLSZQ/viewform?usp=pp_url&entry.783443419=LINK_PARAM_NAME&entry.1369832182=LINK_PARAM_DATE">click here</a> to provide feedback which will help us in planning future events.</p>`,
+		BodyHtml:       `<p>Thank you for attending our community event! Please <a href="https://docs.google.com/forms/d/e/1FAIpQLSfJNn8vjrLWXqFkgzKsnObUZSrbIs_9k3_KFTy7M8glt4ZNug/viewform?usp=pp_url&entry.783443419=LINK_PARAM_NAME&entry.1369832182=LINK_PARAM_DATE">click here</a> to provide feedback which will help us in planning future events.</p>`,
 	})
 
 }
