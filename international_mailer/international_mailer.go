@@ -126,7 +126,7 @@ func sendInternationalOnboardingEmail(db *sqlx.DB, formData model.InternationalF
 		msg.BodyHTML += `
 			<p>
 				In the meantime you can
-				<a href="http://nomorefactoryfarms.com">sign our petition to stop factory farms</a>.
+				<a href="https://righttorescue.com/">sign a letter to support the right to rescue</a>.
 			</p>
 			<p>Let me know if you have any questions or if you still haven't been able to connect with your local chapter.</p>
 			<p>Hope that you can join us!</p>
