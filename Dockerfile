@@ -27,6 +27,7 @@ COPY package.json package-lock.json ./
 RUN npm ci
 COPY tsconfig.json webpack.config.js ./
 COPY frontend frontend/
+ENV NODE_OPTIONS=--openssl-legacy-provider
 RUN npm run build
 
 
