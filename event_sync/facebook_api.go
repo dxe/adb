@@ -5,7 +5,7 @@ import (
 	"errors"
 	"github.com/dxe/adb/model"
 	"image"
-	"image/jpeg"
+	"io/ioutil"
 	"net/http"
 	"path"
 	"strconv"
@@ -98,16 +98,12 @@ func downloadImageFromFacebook(imageUrl string) (Image, error) {
 		return outputImage, errors.New("failed to get image from Facebook. Status: " + strconv.Itoa(resp.StatusCode))
 	}
 
-	img, _, err := image.Decode(resp.Body)
+	outputImage.Buffer, err = ioutil.ReadAll(resp.Body)
+
+	img, _, err := image.Decode(bytes.NewReader(outputImage.Buffer))
 	if err != nil {
 		return outputImage, err
 	}
-	buf := new(bytes.Buffer)
-	err = jpeg.Encode(buf, img, nil)
-	if err != nil {
-		return outputImage, err
-	}
-	outputImage.Buffer = buf.Bytes()
 
 	outputImage.Width = img.Bounds().Dx()
 	outputImage.Height = img.Bounds().Dy()
