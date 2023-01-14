@@ -1,14 +1,15 @@
 package event_sync
 
 import (
+	"bytes"
 	"errors"
-	"io/ioutil"
+	"github.com/dxe/adb/model"
+	"image"
+	"image/jpeg"
 	"net/http"
 	"path"
 	"strconv"
 	"strings"
-
-	"github.com/dxe/adb/model"
 )
 
 const facebookAPIBaseURL = "https://graph.facebook.com/v4.0"
@@ -55,6 +56,8 @@ type FacebookCover struct {
 type Image struct {
 	Buffer []byte
 	Name   string
+	Width  int
+	Height int
 }
 
 func getFacebookEvents(page model.ChapterWithToken) ([]FacebookEvent, error) {
@@ -82,26 +85,35 @@ func getFacebookEvent(page model.ChapterWithToken, eventID string) (FacebookEven
 }
 
 func downloadImageFromFacebook(imageUrl string) (Image, error) {
-	var image Image
+	var output Image
 
 	resp, err := http.Get(imageUrl)
 	if err != nil {
-		return image, err
+		return output, err
 	}
 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return image, errors.New("failed to get image from Facebook. Status: " + strconv.Itoa(resp.StatusCode))
+		return output, errors.New("failed to get image from Facebook. Status: " + strconv.Itoa(resp.StatusCode))
 	}
 
-	image.Buffer, err = ioutil.ReadAll(resp.Body)
+	img, _, err := image.Decode(resp.Body)
 	if err != nil {
-		return image, err
+		return output, err
 	}
+	buf := new(bytes.Buffer)
+	err = jpeg.Encode(buf, img, nil)
+	if err != nil {
+		return output, err
+	}
+	output.Buffer = buf.Bytes()
 
-	image.Name = path.Base(imageUrl)
-	image.Name = image.Name[:strings.Index(image.Name, "?")]
+	output.Width = img.Bounds().Dx()
+	output.Height = img.Bounds().Dy()
 
-	return image, nil
+	output.Name = path.Base(imageUrl)
+	output.Name = output.Name[:strings.Index(output.Name, "?")]
+
+	return output, nil
 }
