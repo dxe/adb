@@ -99,12 +99,14 @@ func downloadImageFromFacebook(imageUrl string) (Image, error) {
 	}
 
 	outputImage.Buffer, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return outputImage, err
+	}
 
 	img, _, err := image.Decode(bytes.NewReader(outputImage.Buffer))
 	if err != nil {
 		return outputImage, err
 	}
-
 	outputImage.Width = img.Bounds().Dx()
 	outputImage.Height = img.Bounds().Dy()
 
