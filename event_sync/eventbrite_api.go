@@ -401,19 +401,30 @@ func notifyEventbriteOfNewImage(token string, uploadToken string, width int, hei
 	}
 
 	// Eventbrite requires an image with a 2:1 aspect ratio, but that may not always be what Facebook provides.
-	// So we calculate the height based on 1/2 of the image width, then crop it vertically to show the center.
-	croppedHeight := width / 2
-	yPoint := (height - croppedHeight) / 2
+	// So we must crop the image vertically or horizontally using the center.
+	var x, y = 1, 1
+	var finalWidth, finalHeight = width, height
+	cropHeight := width / 2
+	if cropHeight > height {
+		// If cropped height is greater than actual height, we need to crop horizontally instead.
+		cropWidth := height * 2
+		x = (width - cropWidth) / 2
+		finalWidth = cropWidth
+	} else {
+		// Else crop vertically.
+		y = (height - cropHeight) / 2
+		finalHeight = cropHeight
+	}
 
 	req := reqBody{
 		UploadToken: uploadToken,
 		CropMask: cropMask{
 			TopLeft: topLeft{
-				X: 1,
-				Y: yPoint,
+				X: x,
+				Y: y,
 			},
-			Width:  width,
-			Height: croppedHeight,
+			Width:  finalWidth,
+			Height: finalHeight,
 		},
 	}
 
