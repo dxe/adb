@@ -85,35 +85,35 @@ func getFacebookEvent(page model.ChapterWithToken, eventID string) (FacebookEven
 }
 
 func downloadImageFromFacebook(imageUrl string) (Image, error) {
-	var output Image
+	var outputImage Image
 
 	resp, err := http.Get(imageUrl)
 	if err != nil {
-		return output, err
+		return outputImage, err
 	}
 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return output, errors.New("failed to get image from Facebook. Status: " + strconv.Itoa(resp.StatusCode))
+		return outputImage, errors.New("failed to get image from Facebook. Status: " + strconv.Itoa(resp.StatusCode))
 	}
 
 	img, _, err := image.Decode(resp.Body)
 	if err != nil {
-		return output, err
+		return outputImage, err
 	}
 	buf := new(bytes.Buffer)
 	err = jpeg.Encode(buf, img, nil)
 	if err != nil {
-		return output, err
+		return outputImage, err
 	}
-	output.Buffer = buf.Bytes()
+	outputImage.Buffer = buf.Bytes()
 
-	output.Width = img.Bounds().Dx()
-	output.Height = img.Bounds().Dy()
+	outputImage.Width = img.Bounds().Dx()
+	outputImage.Height = img.Bounds().Dy()
 
-	output.Name = path.Base(imageUrl)
-	output.Name = output.Name[:strings.Index(output.Name, "?")]
+	pathBase := path.Base(imageUrl)
+	outputImage.Name = pathBase[:strings.Index(pathBase, "?")]
 
-	return output, nil
+	return outputImage, nil
 }
