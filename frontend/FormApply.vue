@@ -36,7 +36,7 @@
           participation is more likely when activists are embedded in a strong, supportive
           community. When you become a chapter member, you're committing to being an integral part
           of this activist community and to coming to one direct action event (like a protest,
-          outreach event, or sanctuary workday) every month.
+          outreach event, or animal care event) every month.
         </p>
 
         <h2>How to become a Chapter Member</h2>

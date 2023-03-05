@@ -114,7 +114,7 @@ raw_mpi as (
           select id,
                  extract(year_month from date) as month,
                  event_type in ('Circle', 'Community', 'Training') as community,
-                 event_type in ('Action', 'Campaign Action', 'Frontline Surveillance', 'Outreach', 'Sanctuary') as direct_action
+                 event_type in ('Action', 'Campaign Action', 'Frontline Surveillance', 'Outreach', 'Animal Care') as direct_action
           from events
         ) e on (e.id = ea.event_id)
   group by a.id, e.month

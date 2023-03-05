@@ -53,7 +53,7 @@
                   { value: 'Frontline Surveillance', display: 'Frontline Surveillance' },
                   { value: 'Meeting', display: 'Meeting' },
                   { value: 'Outreach', display: 'Outreach' },
-                  { value: 'Sanctuary', display: 'Sanctuary' },
+                  { value: 'Animal Care', display: 'Animal Care' },
                   { value: 'Training', display: 'Training' },
                   { value: 'mpiDA', display: 'MPI: Direct Action' },
                   { value: 'mpiCOM', display: 'MPI: Community' },
