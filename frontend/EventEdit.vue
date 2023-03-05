@@ -24,7 +24,7 @@
                   'Frontline Surveillance',
                   'Meeting',
                   'Outreach',
-                  'Sanctuary',
+                  'Animal Care',
                   'Training',
                 ]"
                 :value="eventType"
@@ -538,7 +538,7 @@ export default Vue.extend({
         this.type === 'Action' ||
         this.type === 'Campaign Action' ||
         this.type === 'Community' ||
-        this.type === 'Sanctuary'
+        this.type === 'Animal Care'
       )
         return true;
       if (this.name.toLowerCase().includes('chapter meeting')) return true;

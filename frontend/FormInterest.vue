@@ -87,8 +87,8 @@
         <p class="mb-3">What are your activism interests, if any?</p>
 
         <div class="block">
-          <b-checkbox v-model="activismInterests" native-value="Sanctuary">
-            <strong>Sanctuary Days:</strong>
+          <b-checkbox v-model="activismInterests" native-value="Animal Care">
+            <strong>Animal Care:</strong>
             <small>Work with and spend time with rescued animals</small>
           </b-checkbox>
           <b-checkbox v-model="activismInterests" native-value="Community">

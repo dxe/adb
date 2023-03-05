@@ -22,7 +22,7 @@ var EventTypes map[string]bool = map[string]bool{
 	"Frontline Surveillance": true,
 	"Meeting":                true,
 	"Outreach":               true,
-	"Sanctuary":              true,
+	"Animal Care":            true,
 	"Training":               true,
 	"Connection":             true,
 }
@@ -174,7 +174,7 @@ ON (e.id = ea.event_id AND ea.activist_id = a.id)
 	if options.EventType == "noConnections" {
 		where("e.event_type <> 'Connection'")
 	} else if options.EventType == "mpiDA" {
-		where("e.event_type in ('Outreach', 'Action', 'Campaign Action', 'Sanctuary', 'Frontline Surveillance')")
+		where("e.event_type in ('Outreach', 'Action', 'Campaign Action', 'Animal Care', 'Frontline Surveillance')")
 	} else if options.EventType == "mpiCOM" {
 		where("e.event_type in ('Community', 'Training', 'Circle')")
 	} else if options.EventType != "" {

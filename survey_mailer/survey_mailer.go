@@ -183,7 +183,7 @@ func surveyMailerWrapper(db *sqlx.DB) {
 		})
 	}
 
-	// send protest, sanctuary, & community surveys daily
+	// send protest, animal care, & community surveys daily
 	survey(db, SurveyOptions{
 		SurveyType:     "protest",
 		QueryDate:      yesterday,
@@ -192,11 +192,11 @@ func surveyMailerWrapper(db *sqlx.DB) {
 		BodyHtml:       `<p>Thank you for taking part in direct action! Please <a href="https://docs.google.com/forms/d/e/1FAIpQLScfrPtPxmYAroODhBkwUGq753JPykYKNdosg4gUR_SRng8BRQ/viewform?usp=pp_url&entry.466557185=LINK_PARAM_NAME">click here</a> to take a quick survey.</p><p>If you captured any photos or videos, please upload them <a href="http://dxe.io/upload">here</a>.</p>`,
 	})
 	survey(db, SurveyOptions{
-		SurveyType:     "sanctuary",
+		SurveyType:     "animal care",
 		QueryDate:      yesterday,
-		QueryEventType: "Sanctuary",
+		QueryEventType: "Animal Care",
 		QueryEventName: "",
-		BodyHtml:       `<p>Thank you for attending a sanctuary event! Please <a href="https://docs.google.com/forms/d/e/1FAIpQLSdxn514dpwXduMeaGr8xCszoAUYDS0_95faskbFCzVNcAJ_fw/viewform?usp=pp_url&entry.466557185=LINK_PARAM_NAME">click here</a> to take a quick survey.</p><p>If you captured any photos or videos, please upload them <a href="http://dxe.io/upload">here</a>.</p>`,
+		BodyHtml:       `<p>Thank you for attending an animal care event! Please <a href="https://docs.google.com/forms/d/e/1FAIpQLSdxn514dpwXduMeaGr8xCszoAUYDS0_95faskbFCzVNcAJ_fw/viewform?usp=pp_url&entry.466557185=LINK_PARAM_NAME">click here</a> to take a quick survey.</p><p>If you captured any photos or videos, please upload them <a href="http://dxe.io/upload">here</a>.</p>`,
 	})
 	survey(db, SurveyOptions{
 		SurveyType:     "community",
