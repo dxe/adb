@@ -10,27 +10,20 @@ First, download all the needed dependencies. Then start the server by running `m
 ## Dependencies
 
 You will need the following to run this project:
-
+r
  * go
- * node
- * mysql
+ * node.js v16
+ * docker
 
 After installing the above, download all the go and node dependencies by running `make deps`.
 
 ### Set up mysql locally for development
 
-First, install mysql server. Then, create a user and database like this:
-
+There is now a Docker container to run MySQL locally, so just run the following:
 ```
-CREATE USER adb_user@localhost IDENTIFIED BY 'adbpassword';
-GRANT ALL PRIVILEGES ON *.* to adb_user@localhost;
-FLUSH PRIVILEGES;
-
-CREATE DATABASE adb_db CHARACTER SET utf8 COLLATE utf8_general_ci;
-CREATE DATABASE adb_test_db CHARACTER SET utf8 COLLATE utf8_general_ci;
+docker compose up -d
+make dev_db
 ```
-
-Then run `make dev_db`.
 
 ## JS
 
@@ -39,8 +32,6 @@ files that need to be compiled are in `frontend/`, and the compiled
 outputs are in `dist/`.
 
  * package.json: file with all frontend dependencies
-
-Run `npm install --save some-module-name` to install a new dependency.
 
  * webpack.config.js: configuration file for webpack, which builds the js
 
@@ -54,7 +45,7 @@ The most convenient workflow is to run `make watch` in one terminal
 and `make run` in another one. Then your JS changes will automatically
 be built as you edit them.
 
-## Required enviornment variables for running in prod:
+## Required environment variables for running in prod:
 
 - ADB_URL_PATH: For example, "http://adb.domain.com"
 - PORT: The port to run the webserver on
