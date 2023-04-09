@@ -25,7 +25,7 @@ jobs:
           go version
       - name: Install deps
         run: |
-          npm ci --openssl-legacy-provider
+          npm ci --legacy-peer-deps
           go mod download
       - name: Start database
         run: |

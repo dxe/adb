@@ -27,7 +27,7 @@ dev_db:
 
 # Install all deps for this project.
 deps:
-	npm install
+	npm install --legacy-peer-deps
 	go get -t github.com/dxe/adb/...
 
 # Run all tests

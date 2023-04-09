@@ -24,7 +24,7 @@ RUN CGO_ENABLED=0 go build -o adb
 FROM node:16 AS build-ui
 WORKDIR /src
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 COPY tsconfig.json webpack.config.js ./
 COPY frontend frontend/
 ENV NODE_OPTIONS=--openssl-legacy-provider
