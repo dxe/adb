@@ -122,18 +122,11 @@ func FeatureExternalEvent(db *sqlx.DB, eventId int) error {
 		return errors.Wrap(err, "failed to update event (failed to unfeature events)")
 	}
 	// Then feature the specified event.
-	result, err := db.Exec(`UPDATE fb_events
+	_, err = db.Exec(`UPDATE fb_events
 		SET featured = 1
 		WHERE id = ?`, eventId)
 	if err != nil {
 		return errors.Wrap(err, "failed to update event (failed to feature event)")
-	}
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return errors.Wrap(err, "failed to update event (failed to count affected rows)")
-	}
-	if rowsAffected != 1 {
-		return errors.New("failed to update event (rows affected != 1)")
 	}
 	return nil
 }
