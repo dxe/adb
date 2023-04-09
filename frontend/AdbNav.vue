@@ -84,7 +84,10 @@
         <b-navbar-item href="/list_chapters" :active="page === 'ChaptersList'">
           Chapters
         </b-navbar-item>
-        <b-navbar-item href="/admin/users" :active="page === 'UserList'"> Users </b-navbar-item>
+        <b-navbar-item href="/admin/users" :active="page === 'UserList'">Users</b-navbar-item>
+        <b-navbar-item href="/admin/external_events" :active="page === 'FacebookEvents'"
+          >Facebook Events</b-navbar-item
+        >
       </b-navbar-dropdown>
     </template>
 

@@ -30,6 +30,7 @@ func TestInsertFacebookEvent(t *testing.T) {
 		AttendingCount:  25,
 		InterestedCount: 50,
 		IsCanceled:      false,
+		Featured:        false,
 	}
 
 	err := InsertExternalEvent(db, event)
@@ -69,6 +70,7 @@ func TestGetFacebookEvents(t *testing.T) {
 		AttendingCount:  25,
 		InterestedCount: 50,
 		IsCanceled:      false,
+		Featured:        false,
 	}
 
 	event2 := ExternalEvent{
@@ -90,6 +92,7 @@ func TestGetFacebookEvents(t *testing.T) {
 		AttendingCount:  25,
 		InterestedCount: 50,
 		IsCanceled:      false,
+		Featured:        false,
 	}
 
 	event3 := ExternalEvent{
@@ -111,6 +114,7 @@ func TestGetFacebookEvents(t *testing.T) {
 		AttendingCount:  25,
 		InterestedCount: 50,
 		IsCanceled:      false,
+		Featured:        false,
 	}
 
 	event4 := ExternalEvent{
@@ -132,6 +136,7 @@ func TestGetFacebookEvents(t *testing.T) {
 		AttendingCount:  25,
 		InterestedCount: 50,
 		IsCanceled:      true,
+		Featured:        false,
 	}
 
 	event5 := ExternalEvent{
@@ -153,6 +158,7 @@ func TestGetFacebookEvents(t *testing.T) {
 		AttendingCount:  25,
 		InterestedCount: 50,
 		IsCanceled:      false,
+		Featured:        false,
 	}
 
 	err := InsertExternalEvent(db, event1)

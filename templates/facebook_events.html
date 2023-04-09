@@ -1,0 +1,9 @@
+{{template "header.html" .}}
+
+<div id="app">
+    <adb-nav page="{{ .PageName }}" user="{{ .UserName }}" role="{{ .MainRole }}" chapter="{{ .UserChapter.Name }}"></adb-nav>
+    <facebook-events></facebook-events>
+</div>
+<script src="/dist/adb.js?{{ .StaticResourcesHash }}"></script>
+
+{{template "footer.html" .}}

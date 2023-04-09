@@ -12,6 +12,7 @@ import FormInternationalActions from './FormInternationalActions.vue';
 import FormDiscord from './FormDiscord.vue';
 import ChapterList from './ChapterList.vue';
 import AdbNav from './AdbNav.vue';
+import FacebookEvents from './FacebookEvents.vue';
 
 new Vue({
   el: '#app',
@@ -29,5 +30,6 @@ new Vue({
     FormDiscord,
     ChapterList,
     AdbNav,
+    FacebookEvents,
   },
 });

@@ -223,6 +223,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	// Authed Admin pages
 	admin.Handle("/admin/users", alice.New(main.authAdminMiddleware).ThenFunc(main.ListUsersHandler))
 	admin.Handle("/list_chapters", alice.New(main.authAdminMiddleware).ThenFunc(main.ListChaptersHandler))
+	admin.Handle("/admin/external_events", alice.New(main.authAdminMiddleware).ThenFunc(main.ListAdminExternalEventsHandler))
 
 	// Unauthed API (internal)
 	router.HandleFunc("/tokensignin", main.TokenSignInHandler)
@@ -276,6 +277,8 @@ func router() (*mux.Router, *sqlx.DB) {
 	admin.Handle("/chapter/save", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.ChapterSaveHandler))
 	admin.Handle("/users-roles/add", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UsersRolesAddHandler))
 	admin.Handle("/users-roles/remove", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UsersRolesRemoveHandler))
+	admin.Handle("/admin/external_events/feature", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.AdminFeatureEventHandler))
+	admin.Handle("/admin/external_events/cancel", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.AdminCancelEventHandler))
 
 	// Discord API
 	router.Handle("/discord/list", alice.New(main.discordBotAuthMiddleware).ThenFunc(main.DiscordListHandler))
@@ -658,6 +661,10 @@ func (c MainController) ListUsersHandler(w http.ResponseWriter, r *http.Request)
 
 func (c MainController) ListChaptersHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, r, "chapters_list", PageData{PageName: "ChaptersList"})
+}
+
+func (c MainController) ListAdminExternalEventsHandler(w http.ResponseWriter, r *http.Request) {
+	renderPage(w, r, "facebook_events", PageData{PageName: "FacebookEvents"})
 }
 
 func (c MainController) ChapterListHandler(w http.ResponseWriter, r *http.Request) {
@@ -1630,6 +1637,50 @@ func (c MainController) UsersRolesRemoveHandler(w http.ResponseWriter, r *http.R
 	writeJSON(w, map[string]interface{}{
 		"status":  "success",
 		"user_id": userId,
+	})
+}
+
+func (c MainController) AdminFeatureEventHandler(w http.ResponseWriter, r *http.Request) {
+	var eventData struct {
+		ID int `json:"id"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&eventData)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	err = model.FeatureExternalEvent(c.db, eventData.ID)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	writeJSON(w, map[string]interface{}{
+		"status": "success",
+	})
+}
+
+func (c MainController) AdminCancelEventHandler(w http.ResponseWriter, r *http.Request) {
+	var eventData struct {
+		ID int `json:"id"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&eventData)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	err = model.CancelExternalEvent(c.db, eventData.ID)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	writeJSON(w, map[string]interface{}{
+		"status": "success",
 	})
 }
 

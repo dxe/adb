@@ -293,6 +293,7 @@ CREATE TABLE fb_events (
   last_update TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   eventbrite_id VARCHAR(32) NOT NULL DEFAULT '',
   eventbrite_url VARCHAR(400) NOT NULL DEFAULT '',
+  featured TINYINT NOT NULL DEFAULT '0',
   PRIMARY KEY (id, page_id)
 )
 `)

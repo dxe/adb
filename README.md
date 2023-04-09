@@ -35,9 +35,6 @@ outputs are in `dist/`.
 
  * webpack.config.js: configuration file for webpack, which builds the js
 
-If you want to add a new page, you'll have to add it as an entry in
-webpack.js.config.
-
  * `make watch`: watch the frontend folder for changes and
    automatically build the file if anything changes.
 

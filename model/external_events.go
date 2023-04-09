@@ -30,12 +30,13 @@ type ExternalEvent struct {
 	LastUpdate      time.Time `db:"last_update"`
 	EventbriteID    string    `db:"eventbrite_id"`
 	EventbriteURL   string    `db:"eventbrite_url"`
+	Featured        bool      `db:"featured"`
 }
 
 func GetExternalEvents(db *sqlx.DB, pageID int, startTime time.Time, endTime time.Time, onlineOnly bool) ([]ExternalEvent, error) {
 	query := `SELECT id, page_id, name, start_time, end_time, location_name,
 		location_country, location_country, location_state, location_address, location_zip,
-		lat, lng, cover, attending_count, interested_count, is_canceled, last_update, eventbrite_id, eventbrite_url, description FROM fb_events`
+		lat, lng, cover, attending_count, interested_count, is_canceled, last_update, eventbrite_id, eventbrite_url, description, featured FROM fb_events`
 
 	query += " WHERE is_canceled = 0"
 
@@ -74,8 +75,8 @@ func InsertExternalEvent(db *sqlx.DB, event ExternalEvent) (err error) {
 	// TODO: used NamedExec here to make it more maintainable
 	_, err = db.Exec(`INSERT INTO fb_events (id, page_id, name, description, start_time, end_time,
 		location_name, location_city, location_country, location_state, location_address, location_zip,
-		lat, lng, cover, attending_count, interested_count, is_canceled, last_update) VALUES
-		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now())
+		lat, lng, cover, attending_count, interested_count, is_canceled, last_update, featured) VALUES
+		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now(), ?)
 		ON DUPLICATE KEY UPDATE name=VALUES(name), description=VALUES(description),
 		start_time=VALUES(start_time), end_time=VALUES(end_time), 
 		location_name=VALUES(location_name), location_city=VALUES(location_city), location_country=VALUES(location_country), 
@@ -86,7 +87,7 @@ func InsertExternalEvent(db *sqlx.DB, event ExternalEvent) (err error) {
 		event.EndTime.Format(sqlTimeLayout), event.LocationName, event.LocationCity,
 		event.LocationCountry, event.LocationState, event.LocationAddress,
 		event.LocationZip, event.Lat, event.Lng, event.Cover,
-		event.AttendingCount, event.InterestedCount, event.IsCanceled)
+		event.AttendingCount, event.InterestedCount, event.IsCanceled, event.Featured)
 	if err != nil {
 		return errors.Wrap(err, "failed to insert event")
 	}
@@ -107,6 +108,40 @@ func AddEventbriteDetailsToEventByID(db *sqlx.DB, event ExternalEvent) error {
 	_, err := db.NamedExec(`UPDATE fb_events
 		SET eventbrite_id = :eventbrite_id, eventbrite_url = :eventbrite_url
 		WHERE id = :id`, event)
+	if err != nil {
+		return errors.Wrap(err, "failed to update event")
+	}
+	return nil
+}
+
+func FeatureExternalEvent(db *sqlx.DB, eventId int) error {
+	// Unfeature all events (b/c only one event should be featured at a time).
+	_, err := db.Exec(`UPDATE fb_events
+		SET featured = 0`)
+	if err != nil {
+		return errors.Wrap(err, "failed to update event (failed to unfeature events)")
+	}
+	// Then feature the specified event.
+	result, err := db.Exec(`UPDATE fb_events
+		SET featured = 1
+		WHERE id = ?`, eventId)
+	if err != nil {
+		return errors.Wrap(err, "failed to update event (failed to feature event)")
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return errors.Wrap(err, "failed to update event (failed to count affected rows)")
+	}
+	if rowsAffected != 1 {
+		return errors.New("failed to update event (rows affected != 1)")
+	}
+	return nil
+}
+
+func CancelExternalEvent(db *sqlx.DB, eventId int) error {
+	_, err := db.Exec(`UPDATE fb_events
+		SET is_canceled = 1
+		WHERE id = ?`, eventId)
 	if err != nil {
 		return errors.Wrap(err, "failed to update event")
 	}

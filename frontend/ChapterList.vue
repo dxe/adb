@@ -614,7 +614,6 @@ export default Vue.extend({
   },
   methods: {
     updateCountryFlag(code: string) {
-      console.log(code);
       this.currentChapter.Flag = this.allCountries.filter((c) => {
         return c.Code === code;
       })[0].Flag;
