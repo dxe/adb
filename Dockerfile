@@ -21,7 +21,7 @@ RUN CGO_ENABLED=0 go build -o adb
 
 ## Build web UI frontend.   
 
-FROM node:lts AS build-ui
+FROM node:16 AS build-ui
 WORKDIR /src
 COPY package.json package-lock.json ./
 RUN npm ci
