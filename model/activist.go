@@ -1155,6 +1155,7 @@ func UpdateActivistData(db *sqlx.DB, activist ActivistExtra, userEmail string) (
 				fmt.Println("ERROR updating activist on mailing list:", err.Error())
 			}
 		}
+		fmt.Println("Updated: ", activist.Location, activist.City, activist.State)
 	}
 
 	_, err = db.NamedExec(`UPDATE activists
