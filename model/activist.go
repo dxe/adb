@@ -285,8 +285,8 @@ type Activist struct {
 	Language      string         `db:"language"`
 	Accessibility string         `db:"accessibility"`
 	Birthday      sql.NullString `db:"dob"`
-	Lat           float64        `json:"lat"`
-	Lng           float64        `json:"lng"`
+	Lat           float64        `db:"lat"`
+	Lng           float64        `db:"lng"`
 	ChapterID     int            `db:"chapter_id"`
 }
 
@@ -1234,6 +1234,8 @@ SET
   street_address = :street_address,
   city = :city,
   state = :state,
+  lat = :lat,
+  lng = :lng,
   discord_id = :discord_id,
   assigned_to = :assigned_to,
   followup_date = :followup_date
