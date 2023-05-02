@@ -1183,7 +1183,7 @@ func UpdateActivistData(db *sqlx.DB, activist ActivistExtra, userEmail string) (
 			var geocode_response GeocodeResponse
 			json.NewDecoder(resp.Body).Decode(&geocode_response)
 			if len(geocode_response.Results) == 0 {
-				fmt.Println("No geocoding results found for address %v. Not updating Lat and Lng", full_address)
+				fmt.Printf("No geocoding results found for address %v. Not updating Lat and Lng", full_address)
 			} else {
 				activist.Lng = geocode_response.Results[0].Geometry.Location.Lng
 				activist.Lat = geocode_response.Results[0].Geometry.Location.Lat
