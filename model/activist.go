@@ -1144,7 +1144,7 @@ func UpdateActivistData(db *sqlx.DB, activist ActivistExtra, userEmail string) (
 	// if in the Bay Area, add to mailing list if needed
 	// TODO: make this work for other chapters too, maybe based on Chapters table mailing list info?
 	// or maybe just passing chapter Name or ID to the signup service?
-	if origActivist.ChapterID == 1 {
+	if origActivist.ChapterID == 47 {
 		activistAddressChanged := activist.StreetAddress != origActivist.StreetAddress ||
 			activist.City != origActivist.City ||
 			activist.State != origActivist.State
