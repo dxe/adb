@@ -446,7 +446,7 @@ type GetActivistOptions struct {
 
 type GeocodeResponse struct {
 	Results []struct {
-		Geometry         struct {
+		Geometry struct {
 			Location struct {
 				Lat float64 `json:"lat"`
 				Lng float64 `json:"lng"`
@@ -1150,7 +1150,7 @@ func UpdateActivistData(db *sqlx.DB, activist ActivistExtra, userEmail string) (
 			activist.City != origActivist.City ||
 			activist.State != origActivist.State
 		activistInfoChanged := activistAddressChanged ||
-			activist.Location != origActivist.Location || 
+			activist.Location != origActivist.Location ||
 			activist.Name != origActivist.Name ||
 			activist.Email != origActivist.Email ||
 			activist.Phone != origActivist.Phone ||
@@ -1172,12 +1172,12 @@ func UpdateActivistData(db *sqlx.DB, activist ActivistExtra, userEmail string) (
 				fmt.Println("ERROR updating activist on mailing list:", err.Error())
 			}
 		}
-		if activistAddressChanged && activist.StreetAddress != "" && activist.City != "" && activist.State != ""{
+		if activistAddressChanged && activist.StreetAddress != "" && activist.City != "" && activist.State != "" {
 			full_address := url.QueryEscape(activist.StreetAddress + " " + activist.City + " " + activist.State)
 			request := "https://maps.googleapis.com/maps/api/geocode/json?address=" + full_address + "&key=" + config.GooglePlacesAPIKey
 			resp, err := http.Get(request)
 			if err != nil {
-				fmt.Println("Error geocoding activist location",err)
+				fmt.Println("Error geocoding activist location", err)
 			}
 			defer resp.Body.Close()
 			var geocode_response GeocodeResponse
