@@ -5,14 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net/http"
-	"net/url"
+
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/dxe/adb/config"
 	"github.com/dxe/adb/mailing_list_signup"
 
 	"github.com/go-sql-driver/mysql"
@@ -444,6 +442,7 @@ type GetActivistOptions struct {
 	UpcomingFollowupsOnly bool   `json:"upcoming_followups_only"`
 }
 
+// struct for geocoding API: https://developers.google.com/maps/documentation/geocoding/overview
 type GeocodeResponse struct {
 	Results []struct {
 		Geometry struct {
@@ -1145,17 +1144,18 @@ func UpdateActivistData(db *sqlx.DB, activist ActivistExtra, userEmail string) (
 	// if in the Bay Area, add to mailing list if needed
 	// TODO: make this work for other chapters too, maybe based on Chapters table mailing list info?
 	// or maybe just passing chapter Name or ID to the signup service?
-	if origActivist.ChapterID == 47 {
-		activistAddressChanged := activist.StreetAddress != origActivist.StreetAddress ||
-			activist.City != origActivist.City ||
-			activist.State != origActivist.State
-		activistInfoChanged := activistAddressChanged ||
-			activist.Location != origActivist.Location ||
-			activist.Name != origActivist.Name ||
+	if origActivist.ChapterID == 1 {
+		geoInfoChanged := activist.City != origActivist.City ||
+			activist.State != origActivist.State || 
+			activist.StreetAddress != origActivist.StreetAddress
+		mailingListInfoChanged := activist.Name != origActivist.Name ||
 			activist.Email != origActivist.Email ||
 			activist.Phone != origActivist.Phone ||
+			activist.Location != origActivist.Location ||
+			activist.City != origActivist.City ||
+			activist.State != origActivist.State ||
 			activist.ActivistLevel != origActivist.ActivistLevel
-		if activistInfoChanged && activist.Email != "" {
+		if mailingListInfoChanged && activist.Email != "" {
 			signup := mailing_list_signup.Signup{
 				Source:        "adb",
 				Name:          activist.Name,
@@ -1172,22 +1172,11 @@ func UpdateActivistData(db *sqlx.DB, activist ActivistExtra, userEmail string) (
 				fmt.Println("ERROR updating activist on mailing list:", err.Error())
 			}
 		}
-		if activistAddressChanged && activist.StreetAddress != "" && activist.City != "" && activist.State != "" {
-			full_address := url.QueryEscape(activist.StreetAddress + " " + activist.City + " " + activist.State)
-			request := "https://maps.googleapis.com/maps/api/geocode/json?address=" + full_address + "&key=" + config.GooglePlacesAPIKey
-			resp, err := http.Get(request)
-			if err != nil {
-				fmt.Println("Error geocoding activist location", err)
-			}
-			defer resp.Body.Close()
-			var geocode_response GeocodeResponse
-			json.NewDecoder(resp.Body).Decode(&geocode_response)
-			if len(geocode_response.Results) == 0 {
-				fmt.Printf("No geocoding results found for address %v. Not updating Lat and Lng", full_address)
-			} else {
-				activist.Lng = geocode_response.Results[0].Geometry.Location.Lng
-				activist.Lat = geocode_response.Results[0].Geometry.Location.Lat
-			}
+		if geoInfoChanged && activist.StreetAddress != "" && activist.City != "" && activist.State != "" {
+			location := geoCodeAddress(activist.StreetAddress, activist.City, activist.State)
+			activist.Lng = location.Lng
+			activist.Lat = location.Lat
+			fmt.Println("updated:", activist.Lng, activist.Lat)
 		}
 	}
 
