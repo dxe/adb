@@ -1,4 +1,5 @@
-package model 
+package model
+
 import (
 	"encoding/json"
 	"fmt"
@@ -9,11 +10,11 @@ import (
 )
 
 type Location struct {
-	Lat float64 
-	Lng float64 
-} 
+	Lat float64
+	Lng float64
+}
 
-func geoCodeAddress(streetAddress string, city string, state string) (*Location){
+func geoCodeAddress(streetAddress string, city string, state string) *Location {
 	full_address := url.QueryEscape(streetAddress + " " + city + " " + state)
 	request := "https://maps.googleapis.com/maps/api/geocode/json?address=" + full_address + "&key=" + config.GooglePlacesAPIKey
 	resp, err := http.Get(request)

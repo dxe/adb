@@ -1146,7 +1146,7 @@ func UpdateActivistData(db *sqlx.DB, activist ActivistExtra, userEmail string) (
 	// or maybe just passing chapter Name or ID to the signup service?
 	if origActivist.ChapterID == 47 {
 		geoInfoChanged := activist.City != origActivist.City ||
-			activist.State != origActivist.State || 
+			activist.State != origActivist.State ||
 			activist.StreetAddress != origActivist.StreetAddress
 		mailingListInfoChanged := activist.Name != origActivist.Name ||
 			activist.Email != origActivist.Email ||
