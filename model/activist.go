@@ -442,19 +442,6 @@ type GetActivistOptions struct {
 	UpcomingFollowupsOnly bool   `json:"upcoming_followups_only"`
 }
 
-// struct for geocoding API: https://developers.google.com/maps/documentation/geocoding/overview
-type GeocodeResponse struct {
-	Results []struct {
-		Geometry struct {
-			Location struct {
-				Lat float64 `json:"lat"`
-				Lng float64 `json:"lng"`
-			} `json:"location"`
-		} `json:"geometry"`
-	} `json:"results"`
-	Status string `json:"status"`
-}
-
 var validOrderFields = map[string]struct{}{
 	"a.name":        struct{}{},
 	"last_event":    struct{}{},
@@ -1145,9 +1132,6 @@ func UpdateActivistData(db *sqlx.DB, activist ActivistExtra, userEmail string) (
 	// TODO: make this work for other chapters too, maybe based on Chapters table mailing list info?
 	// or maybe just passing chapter Name or ID to the signup service?
 	if origActivist.ChapterID == 47 {
-		geoInfoChanged := activist.City != origActivist.City ||
-			activist.State != origActivist.State ||
-			activist.StreetAddress != origActivist.StreetAddress
 		mailingListInfoChanged := activist.Name != origActivist.Name ||
 			activist.Email != origActivist.Email ||
 			activist.Phone != origActivist.Phone ||
@@ -1172,6 +1156,9 @@ func UpdateActivistData(db *sqlx.DB, activist ActivistExtra, userEmail string) (
 				fmt.Println("ERROR updating activist on mailing list:", err.Error())
 			}
 		}
+		geoInfoChanged := activist.City != origActivist.City ||
+			activist.State != origActivist.State ||
+			activist.StreetAddress != origActivist.StreetAddress
 		if geoInfoChanged && activist.StreetAddress != "" && activist.City != "" && activist.State != "" {
 			location := geoCodeAddress(activist.StreetAddress, activist.City, activist.State)
 			if location != nil {
