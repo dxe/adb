@@ -14,7 +14,6 @@ type Location struct {
 	Lng float64
 }
 
-
 // struct for geocoding API: https://developers.google.com/maps/documentation/geocoding/overview
 type GeocodeResponse struct {
 	Results []struct {
@@ -27,7 +26,6 @@ type GeocodeResponse struct {
 	} `json:"results"`
 	Status string `json:"status"`
 }
-
 
 func geoCodeAddress(streetAddress string, city string, state string) *Location {
 	full_address := url.QueryEscape(streetAddress + " " + city + " " + state)
