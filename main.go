@@ -195,7 +195,6 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.HandleFunc("/apply", main.ApplicationFormHandler)
 	router.HandleFunc("/interest", main.InterestFormHandler)
 	router.HandleFunc("/international", main.InternationalFormHandler)
-	router.HandleFunc("/international_actions/{id:[0-9]+}/{token:[a-zA-Z0-9]+}", main.InternationalActionsFormHandler)
 
 	// Error pages
 	router.HandleFunc("/403", main.ForbiddenHandler)
@@ -227,7 +226,6 @@ func router() (*mux.Router, *sqlx.DB) {
 
 	// Unauthed API (internal)
 	router.HandleFunc("/tokensignin", main.TokenSignInHandler)
-	router.HandleFunc("/international_actions", main.InternationalActionsFormHandler)
 
 	// Unauthed API (public)
 	router.Handle("/health", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.HealthStatusHandler))
@@ -2396,67 +2394,6 @@ func (c MainController) InternationalFormHandler(w http.ResponseWriter, r *http.
 	}
 }
 
-func (c MainController) InternationalActionsFormHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" {
-		vars := mux.Vars(r)
-		token := vars["token"]
-		chapID, err := strconv.Atoi(vars["id"])
-		if err != nil {
-			panic(err)
-		}
-
-		// TODO: check that the token and ID match a chapter in the database
-		chapFromDB, err := model.GetChapterByID(c.db, chapID)
-		if err != nil {
-			writeJSON(w, map[string]interface{}{
-				"status":  "error",
-				"message": "Invalid chapter.",
-			})
-			return
-		}
-
-		if chapFromDB.EmailToken != token {
-			writeJSON(w, map[string]interface{}{
-				"status":  "error",
-				"message": "Invalid token.",
-			})
-			return
-		}
-
-		renderPage(w, r, "form_international_actions", PageData{
-			PageName: "FormInternationalActions",
-			Chapter:  chapFromDB,
-		})
-	}
-
-	if r.Method == "POST" {
-		var formData model.InternationalActionFormData
-
-		err := json.NewDecoder(r.Body).Decode(&formData)
-		if err != nil {
-			log.Println(err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		err = model.SubmitInternationalActionForm(c.db, formData)
-
-		if err != nil {
-			log.Println(err.Error())
-			log.Println(formData)
-			writeJSON(w, map[string]interface{}{
-				"status":  "error",
-				"message": err.Error(),
-			})
-			return
-		}
-
-		writeJSON(w, map[string]interface{}{
-			"status": "success",
-		})
-	}
-}
-
 func (c MainController) InteractionSaveHandler(w http.ResponseWriter, r *http.Request) {
 	var interaction model.Interaction
 	if err := json.NewDecoder(r.Body).Decode(&interaction); err != nil {
@@ -2562,7 +2499,6 @@ func main() {
 		go google_groups_sync.StartMailingListsSync(db)
 		go survey_mailer.StartSurveyMailer(db)
 		go international_mailer.StartInternationalMailer(db)
-		go international_mailer.StartInternationalActionFormProcessor(db)
 		go event_sync.StartExternalEventSync(db)
 		go form_processor.StartFormProcessor(db)
 	}

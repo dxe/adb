@@ -8,7 +8,6 @@ import WorkingGroupList from './WorkingGroupList.vue';
 import FormApply from './FormApply.vue';
 import FormInterest from './FormInterest.vue';
 import FormInternational from './FormInternational.vue';
-import FormInternationalActions from './FormInternationalActions.vue';
 import FormDiscord from './FormDiscord.vue';
 import ChapterList from './ChapterList.vue';
 import AdbNav from './AdbNav.vue';
@@ -26,7 +25,6 @@ new Vue({
     FormApply,
     FormInterest,
     FormInternational,
-    FormInternationalActions,
     FormDiscord,
     ChapterList,
     AdbNav,

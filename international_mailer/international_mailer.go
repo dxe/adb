@@ -1,7 +1,6 @@
 package international_mailer
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"strings"
@@ -207,75 +206,6 @@ func sendInternationalAlertEmail(formData model.InternationalFormData, to []stri
 	return nil
 }
 
-func sendInternationalActionEmail(db *sqlx.DB, chapter model.ChapterWithToken) {
-	subject := "Please report your last action & let us know how we can assist you"
-	body := `
-	<p>Hi DxE ` + chapter.Name + `,</p>
-
-	<p>We are doing monthly check-ins to keep track of which chapters are organizing actions each quarter (either online or in person).
-    <a href="` + fmt.Sprintf("https://adb.dxe.io/international_actions/%d/%v", chapter.ChapterID, chapter.EmailToken) + `">
-    <strong>Please click here to provide your chapter's update for last month.</strong></a> Actions can be community events,  protests,
-	campaigns, investigatory work, or any other type of nonviolent direct action that your chapter has decided to do. Please feel free to fill
-	out the information in Spanish, if that is easier for you.
-</p>`
-
-	if chapter.Token == "" {
-		body += `<p>Also note that we now have the ability to showcase your chapter's events on
-		<a href="http://dxe.io/events">DxE's main website</a>, so they can be found by visitors who are looking for
-		events in your area. In order for this to happen, please make
-		<a href="https://www.facebook.com/cassie.king.399">Cassie King</a> an admin on your Facebook page.
-        Feel free to reach out if you have any questions or concerns.</p>`
-	}
-
-	body += `<p>Thank you for all your hard work to create a better world for animals!</p>
-	
-	<p>Michelle Del Cueto<br />
-	International Coordinator<br />
-	Direct Action Everywhere</p>
-	`
-
-	var toEmails []string
-	if chapter.Email != "" {
-		toEmails = append(toEmails, chapter.Email)
-	}
-	if len(chapter.Organizers) > 0 {
-		for _, o := range chapter.Organizers {
-			if o.Email != "" {
-				toEmails = append(toEmails, o.Email)
-			}
-		}
-	}
-
-	if len(toEmails) == 0 {
-		log.Printf("Can't send international actions email to %v due to missing email address\n", chapter.Name)
-		return
-	}
-
-	log.Printf("Sending int'l action email to %v: %v\n", chapter.Name, strings.Join(toEmails, ","))
-	err := mailer.Send(mailer.Message{
-		FromName:    "Michelle Del Cueto",
-		FromAddress: "internationalcoordination@directactioneverywhere.com",
-		ToName:      "DxE " + chapter.Name,
-		ToAddress:   toEmails[0],
-		Subject:     subject,
-		BodyHTML:    body,
-		CC:          toEmails[1:],
-	})
-	if err != nil {
-		log.Println("Failed to send email for international actions email")
-		return
-	}
-
-	chapter.LastCheckinEmailSent = sql.NullTime{
-		Time:  time.Now(),
-		Valid: true,
-	}
-	_, err = model.UpdateChapter(db, chapter)
-	if err != nil {
-		panic("Failed to update chapter last check-in email sent time " + err.Error())
-	}
-}
-
 func internationalMailerWrapper(db *sqlx.DB) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -294,129 +224,6 @@ func internationalMailerWrapper(db *sqlx.DB) {
 	}
 }
 
-func internationalActionMailerWrapper(db *sqlx.DB) {
-	defer func() {
-		if r := recover(); r != nil {
-			log.Println("Recovered from panic in int'l action mailer", r)
-		}
-	}()
-
-	// Only run on the 1st or 7th of the month b/w 4pm and midnight UTC (9am-5pm PT).
-	now := time.Now()
-	if now.Day() != 1 && now.Day() != 7 {
-		return
-	}
-	if now.Hour() < 16 || now.Hour() > 23 {
-		return
-	}
-
-	// Calculate first day of current month.
-	y, m, _ := now.Date()
-	startOfCurrentMonth := time.Date(y, m, 1, 0, 0, 0, 0, now.Location())
-
-	chapters, err := model.GetAllChapters(db)
-	if err != nil {
-		panic("Failed to get chapters for int'l action mailer " + err.Error())
-	}
-	for _, chap := range chapters {
-
-		if chap.Region == "Online" {
-			continue
-		}
-
-		neverSentEmail := !chap.LastCheckinEmailSent.Valid
-		sentEmailBeforeCurrentMonth := chap.LastCheckinEmailSent.Valid && chap.LastCheckinEmailSent.Time.Before(startOfCurrentMonth)
-		sentEmailToday := chap.LastCheckinEmailSent.Valid && chap.LastCheckinEmailSent.Time.Year() == now.Year() && chap.LastCheckinEmailSent.Time.YearDay() == now.YearDay()
-
-		switch now.Day() {
-		case 1:
-			if neverSentEmail || sentEmailBeforeCurrentMonth {
-				sendInternationalActionEmail(db, chap)
-			}
-		case 7:
-			if neverSentEmail || sentEmailToday {
-				continue
-			}
-			if chap.LastContact == "" {
-				sendInternationalActionEmail(db, chap)
-				continue
-			}
-			dateLayout := "2006-01-02"
-			lastContactDate, err := time.Parse(dateLayout, chap.LastContact)
-			if err != nil {
-				log.Printf("Error parsing last contact date for chapter %v\n", chap.Name)
-				continue
-			}
-			if lastContactDate.Before(startOfCurrentMonth) {
-				// Chapter hasn't responded this month, so send the email again.
-				sendInternationalActionEmail(db, chap)
-			}
-		default:
-			continue
-		}
-	}
-}
-
-func internationalActionFormProcessor(db *sqlx.DB) {
-	newResponses, err := model.GetUnprocessedInternationalActionFormResponses(db)
-	if err != nil {
-		log.Println("Error getting new int'l action form responses to process", err.Error())
-		return
-	}
-	for _, form := range newResponses {
-		chap, err := model.GetChapterByID(db, form.ChapterID)
-		if err != nil {
-			log.Println("Error looking up chapter for int'l action form response", form.ID, err.Error())
-			continue
-		}
-		chap.LastContact = form.SubmittedAt.Time.Format("2006-01-02")
-		if form.LastAction != "" {
-			chap.LastAction = form.LastAction
-		}
-		_, err = model.UpdateChapter(db, chap)
-		if err != nil {
-			log.Println("Failed to update chapter with int'l action form response data", form.ID, err.Error())
-			continue
-		}
-		if form.Needs != "" {
-			var chapEmails []string
-			if chap.Email != "" {
-				chapEmails = append(chapEmails, chap.Email)
-			}
-			if len(chap.Organizers) > 0 {
-				for _, o := range chap.Organizers {
-					if o.Email != "" {
-						chapEmails = append(chapEmails, o.Email)
-					}
-				}
-			}
-			emailLink := fmt.Sprintf(`https://mail.google.com/mail/?view=cm&fs=1&su=%v&to=%v`, chap.Name, strings.Join(chapEmails, ","))
-
-			body := fmt.Sprintf("<p>%v</p>", form.Needs)
-			body += fmt.Sprintf(`<p><a href="%v">Click here to reply to %v</a></p>`, emailLink, chap.Name)
-
-			err = mailer.Send(mailer.Message{
-				FromName:         "DxE International Action Form",
-				FromAddress:      "noreply@directactioneverywhere.com",
-				ToName:           "International Coordination",
-				ToAddress:        "internationalcoordination@directactioneverywhere.com",
-				ReplyToAddresses: chapEmails,
-				Subject:          fmt.Sprintf("Assistance needed for %v (%v)", chap.Name, form.OrganizerName),
-				BodyHTML:         body,
-				CC:               []string{"jake@dxe.io"},
-			})
-			if err != nil {
-				log.Println("Failed to send email to int'l coordination for int'l action form", form.ID)
-			}
-		}
-		err = model.MarkInternationalActionFormProcessed(db, form.ID)
-		if err != nil {
-			log.Println("Failed to mark int'l action form as processed", form.ID, err.Error())
-			continue
-		}
-	}
-}
-
 // Sends emails every 60 minutes.
 // Should be run in a goroutine.
 func StartInternationalMailer(db *sqlx.DB) {
@@ -425,21 +232,6 @@ func StartInternationalMailer(db *sqlx.DB) {
 		internationalMailerWrapper(db)
 		log.Println("Finished international mailer")
 
-		log.Println("Starting international action mailer")
-		internationalActionMailerWrapper(db)
-		log.Println("Finished international action mailer")
-
 		time.Sleep(60 * time.Minute)
-	}
-}
-
-// Process International Action form responses every 5 minutes.
-// Should be run in a goroutine.
-func StartInternationalActionFormProcessor(db *sqlx.DB) {
-	for {
-		log.Println("Starting international action form processor")
-		internationalActionFormProcessor(db)
-		log.Println("Finished international action form processor")
-		time.Sleep(5 * time.Minute)
 	}
 }
