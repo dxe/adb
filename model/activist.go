@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+
 	"regexp"
 	"strconv"
 	"strings"
@@ -282,8 +283,8 @@ type Activist struct {
 	Language      string         `db:"language"`
 	Accessibility string         `db:"accessibility"`
 	Birthday      sql.NullString `db:"dob"`
-	Lat           float64        `json:"lat"`
-	Lng           float64        `json:"lng"`
+	Lat           float64        `db:"lat"`
+	Lng           float64        `db:"lng"`
 	ChapterID     int            `db:"chapter_id"`
 }
 
@@ -1131,14 +1132,14 @@ func UpdateActivistData(db *sqlx.DB, activist ActivistExtra, userEmail string) (
 	// TODO: make this work for other chapters too, maybe based on Chapters table mailing list info?
 	// or maybe just passing chapter Name or ID to the signup service?
 	if origActivist.ChapterID == 47 {
-		activistInfoChanged := activist.Name != origActivist.Name ||
+		mailingListInfoChanged := activist.Name != origActivist.Name ||
 			activist.Email != origActivist.Email ||
 			activist.Phone != origActivist.Phone ||
 			activist.Location != origActivist.Location ||
 			activist.City != origActivist.City ||
 			activist.State != origActivist.State ||
 			activist.ActivistLevel != origActivist.ActivistLevel
-		if activistInfoChanged && activist.Email != "" {
+		if mailingListInfoChanged && activist.Email != "" {
 			signup := mailing_list_signup.Signup{
 				Source:        "adb",
 				Name:          activist.Name,
@@ -1155,7 +1156,16 @@ func UpdateActivistData(db *sqlx.DB, activist ActivistExtra, userEmail string) (
 				fmt.Println("ERROR updating activist on mailing list:", err.Error())
 			}
 		}
-		fmt.Println("Updated: ", activist.Location, activist.City, activist.State)
+		geoInfoChanged := activist.City != origActivist.City ||
+			activist.State != origActivist.State ||
+			activist.StreetAddress != origActivist.StreetAddress
+		if geoInfoChanged && activist.StreetAddress != "" && activist.City != "" && activist.State != "" {
+			location := geoCodeAddress(activist.StreetAddress, activist.City, activist.State)
+			if location != nil {
+				activist.Lng = location.Lng
+				activist.Lat = location.Lat
+			}
+		}
 	}
 
 	_, err = db.NamedExec(`UPDATE activists
@@ -1201,6 +1211,8 @@ SET
   street_address = :street_address,
   city = :city,
   state = :state,
+  lat = :lat,
+  lng = :lng,
   discord_id = :discord_id,
   assigned_to = :assigned_to,
   followup_date = :followup_date
