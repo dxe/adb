@@ -64,7 +64,8 @@ var (
 	SignupAPIKey = mustGetenv("SIGNUP_KEY", "", false)
 
 	// For location picker on International form
-	GooglePlacesAPIKey = mustGetenv("GOOGLE_PLACES_API_KEY", "", false)
+	GooglePlacesAPIKey        = mustGetenv("GOOGLE_PLACES_API_KEY", "", false)
+	GooglePlacesBackendAPIKey = mustGetenv("GOOGLE_PLACES_API_KEY_BACKEND", "", false)
 
 	// For form processor
 	FormProcessorProcessFormsCronExpression = mustGetenv(
