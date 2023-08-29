@@ -22,7 +22,6 @@
         <b-button
           @click="featureEvent(props.row.ID, false)"
           v-if="props.row.Featured"
-          icon-left="star"
           type="is-danger"
         >
           Unfeature
