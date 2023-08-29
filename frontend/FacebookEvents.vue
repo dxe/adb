@@ -13,7 +13,7 @@
       <b-table-column v-slot="props">
         <b-switch
           v-model="props.row.Featured"
-          @input="(val: boolean) => featureEvent(props.row.ID, val)"
+          @input="(val) => featureEvent(props.row.ID, val)"
         >
           {{ props.row.Featured ? 'Featured' : 'Feature' }}
         </b-switch>
