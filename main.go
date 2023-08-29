@@ -1640,7 +1640,8 @@ func (c MainController) UsersRolesRemoveHandler(w http.ResponseWriter, r *http.R
 
 func (c MainController) AdminFeatureEventHandler(w http.ResponseWriter, r *http.Request) {
 	var eventData struct {
-		ID int `json:"id"`
+		ID       int  `json:"id"`
+		Featured bool `json:"featured"`
 	}
 
 	err := json.NewDecoder(r.Body).Decode(&eventData)
@@ -1649,7 +1650,7 @@ func (c MainController) AdminFeatureEventHandler(w http.ResponseWriter, r *http.
 		return
 	}
 
-	err = model.FeatureExternalEvent(c.db, eventData.ID)
+	err = model.FeatureExternalEvent(c.db, eventData.ID, eventData.Featured)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
