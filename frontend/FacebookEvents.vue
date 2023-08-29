@@ -11,22 +11,12 @@
         }}</a>
       </b-table-column>
       <b-table-column v-slot="props">
-        <b-button
-          @click="featureEvent(props.row.ID, true)"
-          v-if="!props.row.Featured"
-          icon-left="star"
-          type="is-success"
+        <b-switch
+          v-model="props.row.Featured"
+          @input="(val: boolean) => featureEvent(props.row.ID, val)"
         >
-          Feature
-        </b-button>
-        <b-button
-          @click="featureEvent(props.row.ID, false)"
-          v-if="props.row.Featured"
-          icon-left="star"
-          type="is-error"
-        >
-          Unfeature
-        </b-button>
+          {{ props.row.Featured ? 'Featured' : 'Feature' }}
+        </b-switch>
       </b-table-column>
       <b-table-column v-slot="props">
         <b-button @click="cancelEvent(props.row.ID)" icon-left="delete" type="is-danger">
@@ -76,7 +66,9 @@ export default Vue.extend({
           flashMessage('Successfully featured event.');
 
           // Update the event in the page state.
-          this.events = this.events.map((it) => ({ ...it, Featured: it.ID === id }));
+          this.events = this.events.map((it) =>
+            it.ID === id ? { ...it, Featured: featured } : it,
+          );
         },
         error: (err) => {
           console.warn(err.responseText);
