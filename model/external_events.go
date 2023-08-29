@@ -114,17 +114,10 @@ func AddEventbriteDetailsToEventByID(db *sqlx.DB, event ExternalEvent) error {
 	return nil
 }
 
-func FeatureExternalEvent(db *sqlx.DB, eventId int) error {
-	// Unfeature all events (b/c only one event should be featured at a time).
+func FeatureExternalEvent(db *sqlx.DB, eventId int, featured bool) error {
 	_, err := db.Exec(`UPDATE fb_events
-		SET featured = 0`)
-	if err != nil {
-		return errors.Wrap(err, "failed to update event (failed to unfeature events)")
-	}
-	// Then feature the specified event.
-	_, err = db.Exec(`UPDATE fb_events
-		SET featured = 1
-		WHERE id = ?`, eventId)
+		SET featured = ?
+		WHERE id = ?`, featured, eventId)
 	if err != nil {
 		return errors.Wrap(err, "failed to update event (failed to feature event)")
 	}

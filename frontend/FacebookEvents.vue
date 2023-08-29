@@ -12,14 +12,21 @@
       </b-table-column>
       <b-table-column v-slot="props">
         <b-button
-          @click="featureEvent(props.row.ID)"
+          @click="featureEvent(props.row.ID, true)"
           v-if="!props.row.Featured"
           icon-left="star"
           type="is-success"
         >
           Feature
         </b-button>
-        <span v-if="props.row.Featured" class="tag is-success">Featured</span>
+        <b-button
+          @click="featureEvent(props.row.ID, false)"
+          v-if="props.row.Featured"
+          icon-left="star"
+          type="is-error"
+        >
+          Unfeature
+        </b-button>
       </b-table-column>
       <b-table-column v-slot="props">
         <b-button @click="cancelEvent(props.row.ID)" icon-left="delete" type="is-danger">
@@ -51,14 +58,14 @@ export default Vue.extend({
   computed: {},
   methods: {
     dayjs,
-    featureEvent(id: number) {
+    featureEvent(id: number, featured: boolean) {
       const csrfToken = $('meta[name="csrf-token"]').attr('content');
       $.ajax({
         url: '/admin/external_events/feature',
         method: 'POST',
         headers: { 'X-CSRF-Token': csrfToken },
         contentType: 'application/json',
-        data: JSON.stringify({ id }),
+        data: JSON.stringify({ id, featured }),
         success: (data) => {
           const parsed = JSON.parse(data);
           if (parsed.status === 'error') {
