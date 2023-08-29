@@ -76,7 +76,7 @@ export default Vue.extend({
           flashMessage('Successfully featured event.');
 
           // Update the event in the page state.
-          this.events = this.events.map((it) => ({ ...it, Featured: it.ID === id }));
+          this.events = this.events.map((it) => ({ ...it, Featured: featured }));
         },
         error: (err) => {
           console.warn(err.responseText);
