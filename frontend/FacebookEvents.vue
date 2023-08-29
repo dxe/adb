@@ -14,15 +14,16 @@
         <b-button
           @click="featureEvent(props.row.ID, true)"
           v-if="!props.row.Featured"
-          icon-left="star"
-          type="is-success"
+          type="is-primary"
+          outlined
         >
           Feature
         </b-button>
         <b-button
           @click="featureEvent(props.row.ID, false)"
           v-if="props.row.Featured"
-          type="is-danger"
+          icon-left="star"
+          type="is-warning"
         >
           Unfeature
         </b-button>
