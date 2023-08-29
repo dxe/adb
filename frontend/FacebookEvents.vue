@@ -11,10 +11,7 @@
         }}</a>
       </b-table-column>
       <b-table-column v-slot="props">
-        <b-switch
-          v-model="props.row.Featured"
-          @input="(val) => featureEvent(props.row.ID, val)"
-        >
+        <b-switch v-model="props.row.Featured" @input="(val) => featureEvent(props.row.ID, val)">
           {{ props.row.Featured ? 'Featured' : 'Feature' }}
         </b-switch>
       </b-table-column>
