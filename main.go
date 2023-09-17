@@ -1716,6 +1716,11 @@ func (c MainController) ListFBEventsHandler(w http.ResponseWriter, r *http.Reque
 			})
 			return
 		}
+	} else {
+		writeJSON(w, map[string]string{
+			"error": "start_time is required",
+		})
+		return
 	}
 
 	if endTimeStr, ok := params["end_time"]; ok {
