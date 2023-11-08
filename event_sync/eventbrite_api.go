@@ -132,7 +132,10 @@ func createEventbriteImage(event model.ExternalEvent, chapter model.ChapterWithT
 		return "", err
 	}
 
-	imageId, err := notifyEventbriteOfNewImage(chapter.EventbriteToken, uploadData.UploadToken)
+	imageId, err := notifyEventbriteOfNewImage(chapter.EventbriteToken, uploadData.UploadToken, image.Width, image.Height)
+	if err != nil {
+		return "", err
+	}
 
 	return imageId, nil
 }
@@ -374,7 +377,7 @@ func uploadImageToEventbrite(image Image, data EventbriteUploadData) error {
 	return nil
 }
 
-func notifyEventbriteOfNewImage(token string, uploadToken string) (string, error) {
+func notifyEventbriteOfNewImage(token string, uploadToken string, width int, height int) (string, error) {
 	path := eventbriteAPIBaseURL + "/media/upload/?token=" + token
 
 	type topLeft struct {
@@ -397,15 +400,31 @@ func notifyEventbriteOfNewImage(token string, uploadToken string) (string, error
 		ID string `json:"id"`
 	}
 
+	// Eventbrite requires an image with a 2:1 aspect ratio, but that may not always be what Facebook provides.
+	// So we must crop the image vertically or horizontally using the center.
+	var x, y = 1, 1
+	var finalWidth, finalHeight = width, height
+	cropHeight := width / 2
+	if cropHeight > height {
+		// If cropped height is greater than actual height, we need to crop horizontally instead.
+		cropWidth := height * 2
+		x = (width - cropWidth) / 2
+		finalWidth = cropWidth
+	} else {
+		// Else crop vertically.
+		y = (height - cropHeight) / 2
+		finalHeight = cropHeight
+	}
+
 	req := reqBody{
 		UploadToken: uploadToken,
 		CropMask: cropMask{
 			TopLeft: topLeft{
-				X: 1,
-				Y: 1,
+				X: x,
+				Y: y,
 			},
-			Width:  1280,
-			Height: 640,
+			Width:  finalWidth,
+			Height: finalHeight,
 		},
 	}
 
