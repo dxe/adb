@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/dxe/adb.svg?branch=master)](https://travis-ci.org/dxe/adb)
 
-# adb
+# ADB
 
 Activist Database Project
 
@@ -14,20 +14,30 @@ You will need the following to run this project:
  * docker
 
 After installing the above (already installed in the Devcontainer), download all
-the go and node dependencies by running `make deps`.
+the go and node dependencies:
+
+```bash
+make deps
+```
 
 #### Set up mysql locally for development
 
 There is now a Docker container to run MySQL locally, so just run the following:
-```
+
+```bash
 docker compose up -d
 make dev_db
 ```
 
 ### Run
 
-After downloading the dependencies, start the server by running `make run_all`
-and access the web app at localhost:8080.
+After downloading the dependencies, start the server:
+
+```bash
+make run_all
+```
+
+Access the web app at http://localhost:8080.
 
 ### JS
 

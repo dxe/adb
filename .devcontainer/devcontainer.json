@@ -26,13 +26,18 @@
 	"customizations": {
 		"vscode": {
 			"extensions": [
-				"ms-vscode.makefile-tools"
+				"ms-vscode.makefile-tools",
+				"golang.go",
+				"Vue.volar"
 			]
 		}
-	}
+	},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// "forwardPorts": [],
+	"forwardPorts": [
+		8080, /* ADB main site (adb.dxe.io) */
+		8081 /* Members app (members.dxesf.org) */
+	]
 
 	// Configure tool-specific properties.
 	// "customizations": {},
