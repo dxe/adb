@@ -205,5 +205,5 @@ func TestGetFacebookEvents(t *testing.T) {
 	require.NoError(t, err)
 	events, err = GetExternalEvents(db, 0, queryStartTime, queryEndTime, true)
 	require.Equal(t, len(events), 1)
-	require.Equal(t, events[0].ID, 5555555555)
+	require.Equal(t, events[0].ID, int64(5555555555))
 }
