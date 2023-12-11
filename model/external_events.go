@@ -9,8 +9,8 @@ import (
 )
 
 type ExternalEvent struct {
-	ID              int       `db:"id"`
-	PageID          int       `db:"page_id"`
+	ID              int64     `db:"id"`
+	PageID          int64     `db:"page_id"`
 	Name            string    `db:"name"`
 	Description     string    `db:"description"`
 	StartTime       time.Time `db:"start_time"`
