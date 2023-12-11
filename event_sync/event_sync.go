@@ -91,7 +91,7 @@ func parseFacebookEvent(fbEvent FacebookEvent, page model.ChapterWithToken) (mod
 	if fbEvent.IsOnline {
 		placeName = "Online"
 	}
-	eventId, err := strconv.Atoi(fbEvent.ID)
+	eventId, err := strconv.ParseInt(fbEvent.ID, 10, 64)
 	if err != nil {
 		return model.ExternalEvent{}, err
 	}
