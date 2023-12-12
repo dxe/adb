@@ -96,7 +96,7 @@ func parseFacebookEvent(fbEvent FacebookEvent, page model.ChapterWithToken) (mod
 		return model.ExternalEvent{}, err
 	}
 	parsedEvent := model.ExternalEvent{
-		ID:              eventId,
+		ID:              strconv.FormatInt(eventId, 10),
 		PageID:          page.ID,
 		Name:            fbEvent.Name,
 		Description:     fbEvent.Description,

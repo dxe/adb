@@ -116,7 +116,7 @@ func sendInternationalOnboardingEmail(db *sqlx.DB, formData model.InternationalF
 			<p>I’ve also cc'd the organizers in your local chapter on this email, so you can both be in contact.</p>
 		`
 
-		if nextEvent.ID != 0 {
+		if len(nextEvent.ID) != 0 {
 			msg.BodyHTML += fmt.Sprintf(`
 				<p>You can also find details of their next event here: <a href="https://facebook.com/%v">%v</a>.</p>
 			`, nextEvent.ID, nextEvent.Name)

@@ -9,7 +9,7 @@ import (
 )
 
 type ExternalEvent struct {
-	ID              int64     `db:"id"`
+	ID              string    `db:"id"`
 	PageID          int       `db:"page_id"`
 	Name            string    `db:"name"`
 	Description     string    `db:"description"`
@@ -67,7 +67,6 @@ func GetExternalEvents(db *sqlx.DB, pageID int, startTime time.Time, endTime tim
 }
 
 func InsertExternalEvent(db *sqlx.DB, event ExternalEvent) (err error) {
-
 	sqlTimeLayout := "2006-01-02T15:04:05"
 
 	// insert into database
