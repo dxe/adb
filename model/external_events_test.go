@@ -12,7 +12,7 @@ func TestInsertFacebookEvent(t *testing.T) {
 	defer db.Close()
 
 	event := ExternalEvent{
-		ID:              1111111111,
+		ID:              "1111111111",
 		PageID:          123123123123,
 		Name:            "Test Event 1",
 		Description:     "This is a test event.",
@@ -52,7 +52,7 @@ func TestGetFacebookEvents(t *testing.T) {
 	const pageOther int = 456456456456
 
 	event1 := ExternalEvent{
-		ID:              1111111111,
+		ID:              "1111111111",
 		PageID:          pageBerkeley,
 		Name:            "Test Event 1",
 		Description:     "This is a test event in Berkeley.",
@@ -74,7 +74,7 @@ func TestGetFacebookEvents(t *testing.T) {
 	}
 
 	event2 := ExternalEvent{
-		ID:              2222222222,
+		ID:              "2222222222",
 		PageID:          pageOther,
 		Name:            "Test Event 2",
 		Description:     "This is a test event in NY.",
@@ -96,7 +96,7 @@ func TestGetFacebookEvents(t *testing.T) {
 	}
 
 	event3 := ExternalEvent{
-		ID:              3333333333,
+		ID:              "3333333333",
 		PageID:          pageOther,
 		Name:            "Test Event 3",
 		Description:     "This is a test event in NY at a later date.",
@@ -118,7 +118,7 @@ func TestGetFacebookEvents(t *testing.T) {
 	}
 
 	event4 := ExternalEvent{
-		ID:              4444444444,
+		ID:              "4444444444",
 		PageID:          pageOther,
 		Name:            "Test Event 4",
 		Description:     "This is a test event that was cancelled.",
@@ -140,7 +140,7 @@ func TestGetFacebookEvents(t *testing.T) {
 	}
 
 	event5 := ExternalEvent{
-		ID:              5555555555,
+		ID:              "5555555555",
 		PageID:          pageBerkeley,
 		Name:            "Test Event 5",
 		Description:     "This is an online event hosted by Berkeley.",
@@ -205,5 +205,5 @@ func TestGetFacebookEvents(t *testing.T) {
 	require.NoError(t, err)
 	events, err = GetExternalEvents(db, 0, queryStartTime, queryEndTime, true)
 	require.Equal(t, len(events), 1)
-	require.Equal(t, events[0].ID, int64(5555555555))
+	require.Equal(t, events[0].ID, "5555555555")
 }
