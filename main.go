@@ -140,9 +140,8 @@ func setAuthSession(w http.ResponseWriter, r *http.Request, adbUser model.ADBUse
 	}
 	authSession.Options = &sessions.Options{
 		Path: "/",
-		// MaxAge is 30 days in seconds
-		MaxAge: 30 * // days
-			24 * // hours
+		// MaxAge is 12 hours in seconds
+		MaxAge: 12 * // hours
 			60 * // minutes
 			60, // seconds
 		HttpOnly: true,
