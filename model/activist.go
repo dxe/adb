@@ -124,6 +124,11 @@ SELECT
         AND ea.activist_id = a.id
       LIMIT 1)),
     '') AS last_event_name,
+    
+  IFNULL(
+    TIMESTAMPDIFF(MONTH, DATE_FORMAT(@last_event, '%Y-%m-01'), NOW()) AS months_since_last_event,
+    9999
+  ) AS months_since_last_event,
 
   (SELECT COUNT(DISTINCT ea.event_id)
     FROM event_attendance ea
@@ -289,14 +294,15 @@ type Activist struct {
 }
 
 type ActivistEventData struct {
-	FirstEvent     mysql.NullTime `db:"first_event"`
-	LastEvent      mysql.NullTime `db:"last_event"`
-	FirstEventName string         `db:"first_event_name"`
-	LastEventName  string         `db:"last_event_name"`
-	TotalEvents    int            `db:"total_events"`
-	TotalPoints    int            `db:"total_points"`
-	Active         bool           `db:"active"`
-	Status         string
+	FirstEvent           mysql.NullTime `db:"first_event"`
+	LastEvent            mysql.NullTime `db:"last_event"`
+	FirstEventName       string         `db:"first_event_name"`
+	LastEventName        string         `db:"last_event_name"`
+	MonthsSinceLastEvent int            `db:"months_since_last_event"`
+	TotalEvents          int            `db:"total_events"`
+	TotalPoints          int            `db:"total_points"`
+	Active               bool           `db:"active"`
+	Status               string
 }
 
 type ActivistMembershipData struct {
@@ -371,14 +377,15 @@ type ActivistJSON struct {
 	Birthday      string `json:"dob"`
 	ChapterID     int    `json:"chapter_id"`
 
-	FirstEvent     string `json:"first_event"`
-	LastEvent      string `json:"last_event"`
-	FirstEventName string `json:"first_event_name"`
-	LastEventName  string `json:"last_event_name"`
-	TotalEvents    int    `json:"total_events"`
-	TotalPoints    int    `json:"total_points"`
-	Active         bool   `json:"active"`
-	Status         string `json:"status"`
+	FirstEvent           string `json:"first_event"`
+	LastEvent            string `json:"last_event"`
+	FirstEventName       string `json:"first_event_name"`
+	LastEventName        string `json:"last_event_name"`
+	MonthsSinceLastEvent int    `json:"months_since_last_event"`
+	TotalEvents          int    `json:"total_events"`
+	TotalPoints          int    `json:"total_points"`
+	Active               bool   `json:"active"`
+	Status               string `json:"status"`
 
 	ActivistLevel string `json:"activist_level"`
 	Source        string `json:"source"`

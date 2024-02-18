@@ -1067,6 +1067,17 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
       showForAllChapters: true,
     },
     {
+      header: 'Mo. Since Last Event',
+      longHeader: 'Months Since Last Event',
+      category: 'Event Attendance',
+      data: {
+        data: 'months_since_last_event',
+        readOnly: true,
+        colWidths: 50,
+      },
+      enabled: view === 'chapter_member_development',
+    },
+    {
       header: 'Points',
       longHeader: 'Leaderboard Points',
       category: 'Event Attendance',
