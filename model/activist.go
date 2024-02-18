@@ -126,7 +126,7 @@ SELECT
     '') AS last_event_name,
     
   IFNULL(
-    TIMESTAMPDIFF(MONTH, DATE_FORMAT(@last_event, '%Y-%m-01'), NOW()) AS months_since_last_event,
+    TIMESTAMPDIFF(MONTH, DATE_FORMAT(@last_event, '%Y-%m-01'), NOW()),
     9999
   ) AS months_since_last_event,
 
