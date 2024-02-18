@@ -1071,6 +1071,7 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
       longHeader: 'Months Since Last Event',
       category: 'Event Attendance',
       data: {
+        type: 'numeric',
         data: 'months_since_last_event',
         readOnly: true,
         colWidths: 50,
