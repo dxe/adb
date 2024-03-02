@@ -1067,12 +1067,12 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
       showForAllChapters: true,
     },
     {
-      header: 'Mo. Since Last Event',
-      longHeader: 'Months Since Last Event',
+      header: 'Mo. Since Last Action',
+      longHeader: 'Months Since Last Action',
       category: 'Event Attendance',
       data: {
         type: 'numeric',
-        data: 'months_since_last_event',
+        data: 'months_since_last_action',
         readOnly: true,
         colWidths: 50,
       },

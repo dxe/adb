@@ -125,10 +125,18 @@ SELECT
       LIMIT 1)),
     '') AS last_event_name,
     
+  @last_action := (
+    SELECT max(e.date) AS max_date
+    FROM event_attendance ea
+    JOIN activists inner_a ON inner_a.id = ea.activist_id
+    JOIN events e ON e.id = ea.event_id
+    WHERE inner_a.id = a.id and event_type in ("Action", "Outreach", "Frontline Surveillance", "Campaign Action", "Animal Care")
+  ) AS last_action,
+    
   IFNULL(
-    TIMESTAMPDIFF(MONTH, DATE_FORMAT(@last_event, '%Y-%m-01'), NOW()),
+    TIMESTAMPDIFF(MONTH, DATE_FORMAT(@last_action, '%Y-%m-01'), NOW()),
     9999
-  ) AS months_since_last_event,
+  ) AS months_since_last_action,
 
   (SELECT COUNT(DISTINCT ea.event_id)
     FROM event_attendance ea
@@ -294,15 +302,15 @@ type Activist struct {
 }
 
 type ActivistEventData struct {
-	FirstEvent           mysql.NullTime `db:"first_event"`
-	LastEvent            mysql.NullTime `db:"last_event"`
-	FirstEventName       string         `db:"first_event_name"`
-	LastEventName        string         `db:"last_event_name"`
-	MonthsSinceLastEvent int            `db:"months_since_last_event"`
-	TotalEvents          int            `db:"total_events"`
-	TotalPoints          int            `db:"total_points"`
-	Active               bool           `db:"active"`
-	Status               string
+	FirstEvent            mysql.NullTime `db:"first_event"`
+	LastEvent             mysql.NullTime `db:"last_event"`
+	FirstEventName        string         `db:"first_event_name"`
+	LastEventName         string         `db:"last_event_name"`
+	MonthsSinceLastAction int            `db:"months_since_last_action"`
+	TotalEvents           int            `db:"total_events"`
+	TotalPoints           int            `db:"total_points"`
+	Active                bool           `db:"active"`
+	Status                string
 }
 
 type ActivistMembershipData struct {
@@ -377,15 +385,15 @@ type ActivistJSON struct {
 	Birthday      string `json:"dob"`
 	ChapterID     int    `json:"chapter_id"`
 
-	FirstEvent           string `json:"first_event"`
-	LastEvent            string `json:"last_event"`
-	FirstEventName       string `json:"first_event_name"`
-	LastEventName        string `json:"last_event_name"`
-	MonthsSinceLastEvent int    `json:"months_since_last_event"`
-	TotalEvents          int    `json:"total_events"`
-	TotalPoints          int    `json:"total_points"`
-	Active               bool   `json:"active"`
-	Status               string `json:"status"`
+	FirstEvent            string `json:"first_event"`
+	LastEvent             string `json:"last_event"`
+	FirstEventName        string `json:"first_event_name"`
+	LastEventName         string `json:"last_event_name"`
+	MonthsSinceLastAction int    `json:"months_since_last_action"`
+	TotalEvents           int    `json:"total_events"`
+	TotalPoints           int    `json:"total_points"`
+	Active                bool   `json:"active"`
+	Status                string `json:"status"`
 
 	ActivistLevel string `json:"activist_level"`
 	Source        string `json:"source"`
@@ -605,15 +613,15 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			Accessibility: a.Accessibility,
 			Birthday:      dob,
 
-			FirstEvent:           firstEvent,
-			LastEvent:            lastEvent,
-			FirstEventName:       a.FirstEventName,
-			LastEventName:        a.LastEventName,
-			MonthsSinceLastEvent: a.MonthsSinceLastEvent,
-			Status:               a.Status,
-			TotalEvents:          a.TotalEvents,
-			TotalPoints:          a.TotalPoints,
-			Active:               a.Active,
+			FirstEvent:            firstEvent,
+			LastEvent:             lastEvent,
+			FirstEventName:        a.FirstEventName,
+			LastEventName:         a.LastEventName,
+			MonthsSinceLastAction: a.MonthsSinceLastAction,
+			Status:                a.Status,
+			TotalEvents:           a.TotalEvents,
+			TotalPoints:           a.TotalPoints,
+			Active:                a.Active,
 
 			ActivistLevel: a.ActivistLevel,
 			Source:        a.Source,
