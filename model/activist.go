@@ -306,6 +306,7 @@ type ActivistEventData struct {
 	LastEvent             mysql.NullTime `db:"last_event"`
 	FirstEventName        string         `db:"first_event_name"`
 	LastEventName         string         `db:"last_event_name"`
+	LastAction            mysql.NullTime `db:"last_action"`
 	MonthsSinceLastAction int            `db:"months_since_last_action"`
 	TotalEvents           int            `db:"total_events"`
 	TotalPoints           int            `db:"total_points"`
@@ -389,6 +390,7 @@ type ActivistJSON struct {
 	LastEvent             string `json:"last_event"`
 	FirstEventName        string `json:"first_event_name"`
 	LastEventName         string `json:"last_event_name"`
+	LastAction            string `json:"last_action"`
 	MonthsSinceLastAction int    `json:"months_since_last_action"`
 	TotalEvents           int    `json:"total_events"`
 	TotalPoints           int    `json:"total_points"`
@@ -525,6 +527,10 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 		if a.ActivistEventData.LastEvent.Valid {
 			lastEvent = a.ActivistEventData.LastEvent.Time.Format(EventDateLayout)
 		}
+		lastAction := ""
+		if a.ActivistEventData.LastAction.Valid {
+			lastAction = a.ActivistEventData.LastAction.Time.Format(EventDateLayout)
+		}
 		applicationDate := ""
 		if a.ActivistConnectionData.ApplicationDate.Valid {
 			applicationDate = a.ActivistConnectionData.ApplicationDate.Time.Format(EventDateLayout)
@@ -617,6 +623,7 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			LastEvent:             lastEvent,
 			FirstEventName:        a.FirstEventName,
 			LastEventName:         a.LastEventName,
+			LastAction:            lastAction,
 			MonthsSinceLastAction: a.MonthsSinceLastAction,
 			Status:                a.Status,
 			TotalEvents:           a.TotalEvents,
