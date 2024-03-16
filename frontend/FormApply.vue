@@ -35,8 +35,8 @@
           is sustained participation in nonviolent direct action. We also know that sustained
           participation is more likely when activists are embedded in a strong, supportive
           community. When you become a chapter member, you're committing to being an integral part
-          of this activist community and to attending direct action events (like a protest,
-          outreach event, or animal care event) consistently.
+          of this activist community and to attending direct action events (like a protest, outreach
+          event, or animal care event) consistently.
         </p>
 
         <h2>How to become a Chapter Member</h2>
@@ -49,7 +49,7 @@
           <li>Attend a direct action event</li>
           <li>
             Watch a video and
-            <a href="http://dxe.io/consentquiz"  target="_blank">take a quiz</a>
+            <a href="http://dxe.io/consentquiz" target="_blank">take a quiz</a>
             on consent
           </li>
         </ul>
@@ -58,7 +58,9 @@
         <ul>
           <li>Voting rights (after sustained participation in the chapter) on chapter decisions</li>
           <li>Access to chapter member mailing lists, Signal alerts chat, and Facebook group</li>
-          <li>Added to a small community group with other chapter members in your neighborhood/area</li>
+          <li>
+            Added to a small community group with other chapter members in your neighborhood/area
+          </li>
           <li>Invites to special events and opportunities</li>
         </ul>
 
@@ -66,9 +68,7 @@
         <ul>
           <li>
             Uphold our
-            <a href="https://dxe.io/conduct" target="_blank"
-              >code of conduct</a
-            >
+            <a href="https://dxe.io/conduct" target="_blank">code of conduct</a>
             and
             <a href="https://www.directactioneverywhere.com/core-values" target="_blank">values</a>
           </li>
@@ -143,11 +143,7 @@
           <div class="column is-one-third">
             <p>
               I will uphold DxE's
-              <a
-                href="https://dxe.io/conduct"
-                target="_blank"
-                >code of conduct</a
-              >.
+              <a href="https://dxe.io/conduct" target="_blank">code of conduct</a>.
             </p>
 
             <b-field class="mt-3">
@@ -161,11 +157,7 @@
           <div class="column is-one-third">
             <p>
               I agree to watch a video and
-              <a
-                href="http://dxe.io/consentquiz"
-                target="_blank"
-                >take a quiz</a
-              >
+              <a href="http://dxe.io/consentquiz" target="_blank">take a quiz</a>
               on consent.
             </p>
 
