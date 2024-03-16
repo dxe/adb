@@ -35,8 +35,8 @@
           is sustained participation in nonviolent direct action. We also know that sustained
           participation is more likely when activists are embedded in a strong, supportive
           community. When you become a chapter member, you're committing to being an integral part
-          of this activist community and to coming to one direct action event (like a protest,
-          outreach event, or animal care event) every month.
+          of this activist community and to attending direct action events (like a protest,
+          outreach event, or animal care event) consistently.
         </p>
 
         <h2>How to become a Chapter Member</h2>
@@ -46,47 +46,36 @@
             <a href="http://dxe.io/workshop" target="_blank">intro workshop</a> (held monthly) to
             learn about our community and theory of change
           </li>
-          <li>Take the Movement Power Pledge below (attend one action each month)</li>
+          <li>Attend a direct action event</li>
           <li>
             Watch a video and
-            <a
-              href="https://docs.google.com/forms/d/e/1FAIpQLSdc5Fe81BgNhn7vmC2rf1TAYx_ojberwJXh6DJLIZzeAyfdww/viewform"
-              target="_blank"
-              >take a quiz</a
-            >
+            <a href="http://dxe.io/consentquiz"  target="_blank">take a quiz</a>
             on consent
           </li>
         </ul>
 
         <h3>Benefits of becoming a Chapter Member</h3>
         <ul>
-          <li>Voting rights (after sustained participation in the chapter)</li>
-          <li>Access to chapter member mailing lists, Discord server, and Facebook group</li>
-          <li>Discounts at local and online businesses</li>
-          <li>
-            Added to a small community group with other chapter members in your neighborhood/area
-          </li>
+          <li>Voting rights (after sustained participation in the chapter) on chapter decisions</li>
+          <li>Access to chapter member mailing lists, Signal alerts chat, and Facebook group</li>
+          <li>Added to a small community group with other chapter members in your neighborhood/area</li>
           <li>Invites to special events and opportunities</li>
-          <li>
-            Your photo posted at the Berkeley Animal Rights Center and on the virtual chapter member
-            wall
-          </li>
         </ul>
 
         <h3>Expectations of Chapter Members</h3>
         <ul>
           <li>
             Uphold our
-            <a href="https://dxe.io/conduct?utm_source=adb&utm_campaign=apply" target="_blank"
+            <a href="https://dxe.io/conduct" target="_blank"
               >code of conduct</a
             >
             and
             <a href="https://www.directactioneverywhere.com/core-values" target="_blank">values</a>
           </li>
-          <li>Uphold the Movement Power Pledge (attend one action every month)</li>
+          <li>Attend direct action events consistently</li>
           <li>
-            Failure to uphold our code of conduct, values, or the Movement Power Pledge may result
-            in being removed as a chapter member
+            Failure to uphold our code of conduct, values, or attend direct action events
+            consistently may result in being removed as a chapter member
           </li>
         </ul>
 
@@ -96,11 +85,7 @@
       </div>
 
       <div v-if="showForm && !submitSuccess" class="content">
-        <h2 class="mt-6">Take The Movement Power Pledge</h2>
-
-        <p>
-          By entering your name below, you are pledging to come to at least one action each month.
-        </p>
+        <h2 class="mt-6">Take direct action for animals</h2>
 
         <div class="columns is-multiline">
           <div class="column is-half">
@@ -159,7 +144,7 @@
             <p>
               I will uphold DxE's
               <a
-                href="https://docs.google.com/document/d/e/2PACX-1vSTt4SXGl-eARvOpTzOM8Nzcs9uo1ZVkCuqD0doRkE6zCpx6NgMbVqYwCh691GLKZ5-hklnsaPfHlfa/pub"
+                href="https://dxe.io/conduct"
                 target="_blank"
                 >code of conduct</a
               >.
@@ -177,7 +162,7 @@
             <p>
               I agree to watch a video and
               <a
-                href="https://docs.google.com/forms/d/e/1FAIpQLSdc5Fe81BgNhn7vmC2rf1TAYx_ojberwJXh6DJLIZzeAyfdww/viewform"
+                href="http://dxe.io/consentquiz"
                 target="_blank"
                 >take a quiz</a
               >
