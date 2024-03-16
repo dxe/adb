@@ -39,6 +39,10 @@ make run_all
 
 Access the web app at http://localhost:8080.
 
+### Format and test
+
+Please run `make fmt` and `make test` before sending a pull request.
+
 ### JS
 
 This project uses webpack to compile our frontend files. Frontend
