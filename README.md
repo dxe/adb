@@ -8,13 +8,13 @@ Activist Database Project
 
 ### Dependencies
 
-You will need the following to run this project:
+The following dependencies are required to run this project and will be already
+installed if using the devcontainer:
  * go
  * node.js v16
  * docker
 
-After installing the above (already installed in the Devcontainer), download all
-the go and node dependencies:
+Running this command is required to download all the go and node dependencies:
 
 ```bash
 make deps
