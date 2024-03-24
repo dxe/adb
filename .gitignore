@@ -5,7 +5,6 @@
 adb
 adb-config
 adb.db
-dist
-docker-compose.yml
-node_modules
+frontend/dist
+frontend/node_modules
 npm-debug.log

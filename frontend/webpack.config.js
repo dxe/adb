@@ -6,8 +6,8 @@ module.exports = {
   // List of bundles to create. If you want to add a new page, you'll
   // need to also add it here.
   entry: {
-    adb: './frontend/adb',
-    flash_message: './frontend/flash_message',
+    adb: './adb',
+    flash_message: './flash_message',
   },
 
   output: {
@@ -33,7 +33,7 @@ module.exports = {
         exclude: /node_modules/,
         options: {
           appendTsSuffixTo: [/\.vue$/],
-          reportFiles: ['!frontend/external/**/*.ts'],
+          reportFiles: ['!external/**/*.ts'],
         },
       },
       {
