@@ -1,9 +1,10 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/debian
 {
-	"name": "Debian",
-	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/base:bullseye",
+	"name": "DxE ADB",
+	"build": {
+		"dockerfile": "Dockerfile"
+	},
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	"features": {
@@ -28,7 +29,8 @@
 			"extensions": [
 				"ms-vscode.makefile-tools",
 				"golang.go",
-				"Vue.volar"
+				"Vue.volar",
+				"GitHub.vscode-github-actions"
 			]
 		}
 	},
