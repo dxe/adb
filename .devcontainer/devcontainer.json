@@ -29,7 +29,8 @@
 			"extensions": [
 				"ms-vscode.makefile-tools",
 				"golang.go",
-				"Vue.volar"
+				"Vue.volar",
+				"GitHub.vscode-github-actions"
 			]
 		}
 	},
