@@ -1,6 +1,6 @@
-var path = require('path')
-var webpack = require('webpack')
-var VueLoaderPlugin = require('vue-loader/lib/plugin')
+var path = require('path');
+var webpack = require('webpack');
+var VueLoaderPlugin = require('vue-loader/lib/plugin');
 
 module.exports = {
   // List of bundles to create. If you want to add a new page, you'll
@@ -17,9 +17,7 @@ module.exports = {
     libraryTarget: 'var',
   },
 
-  plugins: [
-    new VueLoaderPlugin(),
-  ],
+  plugins: [new VueLoaderPlugin()],
 
   module: {
     rules: [
@@ -46,24 +44,21 @@ module.exports = {
       },
       {
         test: /\.css$/,
-        use: [
-          { loader: "style-loader" },
-          { loader: "css-loader" }
-        ]
-      }
-    ]
+        use: [{ loader: 'style-loader' }, { loader: 'css-loader' }],
+      },
+    ],
   },
   resolve: {
     extensions: ['.js', '.ts'],
     alias: {
-      'vue$': 'vue/dist/vue.esm.js'
+      vue$: 'vue/dist/vue.esm.js',
     },
   },
   devServer: {
     historyApiFallback: true,
-    noInfo: true
+    noInfo: true,
   },
   performance: {
-    hints: false
+    hints: false,
   },
-}
+};
