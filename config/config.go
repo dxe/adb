@@ -25,10 +25,6 @@ var (
 	CookieSecret = mustGetenv("COOKIE_SECRET", "some-fake-secret", true)
 	CsrfAuthKey  = mustGetenv("CSRF_AUTH_KEY", "", true)
 
-	TemplatesDirectory = mustGetenv("TEMPLATES_DIRECTORY", "./templates", true)
-	StaticDirectory    = mustGetenv("STATIC_DIRECTORY", "./static", true)
-	DistDirectory      = mustGetenv("DIST_DIRECTORY", "./dist", true)
-
 	// Path to Google API oauth client_secrets.json file, with
 	// access to the following scope:
 	// https://www.googleapis.com/auth/admin.directory.group
