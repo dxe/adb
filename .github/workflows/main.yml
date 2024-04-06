@@ -25,7 +25,9 @@ jobs:
           go version
       - name: Install deps
         run: |
+          cd ./frontend
           npm ci --legacy-peer-deps
+          cd ../server/src
           go mod download
       - name: Start database
         run: |
@@ -37,6 +39,7 @@ jobs:
       - name: Run tests
         run: |
           ./hooks/pre-commit
+          cd ./server/src
           go test github.com/dxe/adb/...
       - name: Deploy image to ECR
         if: ${{ github.event_name == 'push' }}  # don't deploy branches

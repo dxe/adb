@@ -1,13 +1,13 @@
-var path = require('path')
-var webpack = require('webpack')
-var VueLoaderPlugin = require('vue-loader/lib/plugin')
+var path = require('path');
+var webpack = require('webpack');
+var VueLoaderPlugin = require('vue-loader/lib/plugin');
 
 module.exports = {
   // List of bundles to create. If you want to add a new page, you'll
   // need to also add it here.
   entry: {
-    adb: './frontend/adb',
-    flash_message: './frontend/flash_message',
+    adb: './adb',
+    flash_message: './flash_message',
   },
 
   output: {
@@ -17,9 +17,7 @@ module.exports = {
     libraryTarget: 'var',
   },
 
-  plugins: [
-    new VueLoaderPlugin(),
-  ],
+  plugins: [new VueLoaderPlugin()],
 
   module: {
     rules: [
@@ -33,7 +31,7 @@ module.exports = {
         exclude: /node_modules/,
         options: {
           appendTsSuffixTo: [/\.vue$/],
-          reportFiles: ['!frontend/external/**/*.ts'],
+          reportFiles: ['!external/**/*.ts'],
         },
       },
       {
@@ -46,24 +44,21 @@ module.exports = {
       },
       {
         test: /\.css$/,
-        use: [
-          { loader: "style-loader" },
-          { loader: "css-loader" }
-        ]
-      }
-    ]
+        use: [{ loader: 'style-loader' }, { loader: 'css-loader' }],
+      },
+    ],
   },
   resolve: {
     extensions: ['.js', '.ts'],
     alias: {
-      'vue$': 'vue/dist/vue.esm.js'
+      vue$: 'vue/dist/vue.esm.js',
     },
   },
   devServer: {
     historyApiFallback: true,
-    noInfo: true
+    noInfo: true,
   },
   performance: {
-    hints: false
+    hints: false,
   },
-}
+};

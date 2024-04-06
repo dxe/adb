@@ -295,13 +295,15 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 	router.HandleFunc("/debug/pprof/trace", pprof.Trace)
 
-	if config.IsProd {
-		router.PathPrefix("/static").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-		router.PathPrefix("/dist").Handler(http.StripPrefix("/dist/", http.FileServer(http.Dir("dist"))))
-	} else {
-		router.PathPrefix("/static").Handler(noCacheHandler(http.StripPrefix("/static/", http.FileServer(http.Dir("static")))))
-		router.PathPrefix("/dist").Handler(noCacheHandler(http.StripPrefix("/dist/", http.FileServer(http.Dir("dist")))))
+	var staticHandler = http.StripPrefix("/static/", http.FileServer(http.Dir(config.StaticDirectory)))
+	var distHandler = http.StripPrefix("/dist/", http.FileServer(http.Dir(config.DistDirectory)))
+	if !config.IsProd {
+		staticHandler = noCacheHandler(staticHandler)
+		distHandler = noCacheHandler(distHandler)
 	}
+	router.PathPrefix("/static").Handler(staticHandler)
+	router.PathPrefix("/dist").Handler(distHandler)
+
 	return router, db
 }
 
@@ -745,7 +747,7 @@ var templates = template.Must(template.New("").Funcs(
 			}
 			return input
 		},
-	}).ParseGlob("templates/*.html"))
+	}).ParseGlob(config.TemplatesDirectory + "/*.html"))
 
 type UserChapter struct {
 	ID   int
