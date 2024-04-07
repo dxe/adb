@@ -7,4 +7,4 @@ if [ -z ${DXE_DEV_EMAIL+x} ]; then
     echo "Please enter your development email or set DXE_DEV_EMAIL to never see this message again: "
     read DXE_DEV_EMAIL
 fi
-go run ./scripts/create_db.go --dev-email="${DXE_DEV_EMAIL}"
+go run ./create_db.go --dev-email="${DXE_DEV_EMAIL}"
