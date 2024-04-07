@@ -25,7 +25,7 @@ make deps
 There is now a Docker container to run MySQL locally, so just run the following:
 
 ```bash
-docker compose up -d
+( cd server/ && docker compose up -d )
 make dev_db
 ```
 
@@ -47,7 +47,7 @@ Please run `make fmt` and `make test` before sending a pull request.
 
 This project uses webpack to compile our frontend files. Frontend
 files that need to be compiled are in `frontend/`, and the compiled
-outputs are in `dist/`.
+outputs are in `frontend/dist/`.
 
  * package.json: file with all frontend dependencies
 
