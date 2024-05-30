@@ -22,12 +22,28 @@ make deps
 
 #### Set up mysql locally for development
 
-There is now a Docker container to run MySQL locally, so just run the following:
+If you are not using the devcontainer, you can use our Docker Compose configuration
+to run MySQL locally:
 
 ```bash
 ( cd server/ && docker compose up -d )
 make dev_db
 ```
+
+If you are using the devcontainer, just run this command in the container:
+```bash
+make dev_db
+```
+
+This command will log you into the database if you run the comman in the same
+container as the database:
+
+```bash
+mysql -u adb_user -padbpassword -h 127.0.0.1
+```
+
+(Note the syntax of the above command is to accept the password after `-p`
+without a space.)
 
 ### Run
 
