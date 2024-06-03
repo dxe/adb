@@ -871,10 +871,10 @@ export default Vue.extend({
       if (time.isValid()) {
         c = 'is-danger';
       }
-      if (time.isAfter(dayjs().add(-2, 'month'))) {
+      if (time.isAfter(dayjs().add(-58, 'day'))) {
         c = 'is-warning';
       }
-      if (time.isAfter(dayjs().add(-1, 'month'))) {
+      if (time.isAfter(dayjs().add(-29, 'day'))) {
         c = 'is-success';
       }
       return c;
