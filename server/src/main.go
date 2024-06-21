@@ -1642,8 +1642,8 @@ func (c MainController) UsersRolesRemoveHandler(w http.ResponseWriter, r *http.R
 
 func (c MainController) AdminFeatureEventHandler(w http.ResponseWriter, r *http.Request) {
 	var eventData struct {
-		ID       int  `json:"id"`
-		Featured bool `json:"featured"`
+		ID       string `json:"id"`
+		Featured bool   `json:"featured"`
 	}
 
 	err := json.NewDecoder(r.Body).Decode(&eventData)
@@ -1665,7 +1665,7 @@ func (c MainController) AdminFeatureEventHandler(w http.ResponseWriter, r *http.
 
 func (c MainController) AdminCancelEventHandler(w http.ResponseWriter, r *http.Request) {
 	var eventData struct {
-		ID int `json:"id"`
+		ID string `json:"id"`
 	}
 
 	err := json.NewDecoder(r.Body).Decode(&eventData)
