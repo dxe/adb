@@ -113,7 +113,7 @@ func AddEventbriteDetailsToEventByID(db *sqlx.DB, event ExternalEvent) error {
 	return nil
 }
 
-func FeatureExternalEvent(db *sqlx.DB, eventId int, featured bool) error {
+func FeatureExternalEvent(db *sqlx.DB, eventId string, featured bool) error {
 	_, err := db.Exec(`UPDATE fb_events
 		SET featured = ?
 		WHERE id = ?`, featured, eventId)
@@ -123,7 +123,7 @@ func FeatureExternalEvent(db *sqlx.DB, eventId int, featured bool) error {
 	return nil
 }
 
-func CancelExternalEvent(db *sqlx.DB, eventId int) error {
+func CancelExternalEvent(db *sqlx.DB, eventId string) error {
 	_, err := db.Exec(`UPDATE fb_events
 		SET is_canceled = 1
 		WHERE id = ?`, eventId)
