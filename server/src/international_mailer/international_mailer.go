@@ -140,11 +140,12 @@ func sendInternationalOnboardingEmail(db *sqlx.DB, formData model.InternationalF
 		msg.Subject = "Getting involved with Direct Action Everywhere"
 		msg.BodyHTML = `
 			<p>Hi ` + strings.Title(strings.TrimSpace(formData.FirstName)) + `,</p>
-			<p>Thank you for your interest in becoming a DxE organizer. We are currently revamping the onboarding process to make it more
-			effective and engaging for everyone. At the moment, the next step you can take is to
-			<a href="https://youtu.be/I65LCZbGje4?si=Zs5R4gSv_6LtwA9O">watch this video</a> that talks more in depth
-			about DxE's theory of change. Then, find other two people in your area that are interested in taking action together and email
-			me at <a href="mailto:michelle@dxe.io">michelle@dxe.io</a> so we can set up a call together.</p>
+			<p>Thank you for your interest in becoming a DxE organizer. We are currently revamping
+			the onboarding process to make it more effective and engaging for everyone. At the moment,
+			the next step you can take is to <a href="https://youtu.be/I65LCZbGje4?si=Zs5R4gSv_6LtwA9O">
+			watch this video</a> that talks more in depth about DxE's theory of change. Then, find other
+			two people in your area that are interested in taking action together and email me at
+			<a href="mailto:michelle@dxe.io">michelle@dxe.io</a> so we can set up a call together.</p>
 			<p>
 				<strong>Michelle Del Cueto</strong><br/>
 				International Coordinator<br/>
