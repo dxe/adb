@@ -139,22 +139,12 @@ func sendInternationalOnboardingEmail(db *sqlx.DB, formData model.InternationalF
 	default:
 		msg.Subject = "Getting involved with Direct Action Everywhere"
 		msg.BodyHTML = `
-			<p>Hey ` + strings.Title(strings.TrimSpace(formData.FirstName)) + `!</p>
-			<p>I saw that you showed interest in getting involved with our international network.</p>
-			<p>
-				Currently, there isn’t a DxE chapter in your city, but if you are interested in starting a chapter and
-				organizing actions or events that would help mobilize your community for animal rights, the international
-				coordination team is here to help you!
-			</p>
-            <p>
- 				We just launched a Workshop on How to Organize a DxE Chapter. I highly encourage you to attend, so you
- 				can learn about our mission, strategy and everything else you need to know to be involved with DxE. Here
- 				is the event link, please RSVP:
- 				<a href="https://dxe.io/organizedxechapter">dxe.io/organizedxechapter</a>.
- 			</p>
- 			<p>
- 				I really hope to see you there, and if you have any questions please let me know.
- 			</p>
+			<p>Hi ` + strings.Title(strings.TrimSpace(formData.FirstName)) + `,</p>
+			<p>Thank you for your interest in becoming a DxE organizer. We are currently revamping the onboarding process to make it more
+			effective and engaging for everyone. At the moment, the next step you can take is to
+			<a href="https://youtu.be/I65LCZbGje4?si=Zs5R4gSv_6LtwA9O">watch this video</a> that talks more in depth
+			about DxE's theory of change. Then, find other two people in your area that are interested in taking action together and email
+			me at <a href="mailto:michelle@dxe.io">michelle@dxe.io</a> so we can set up a call together.</p>
 			<p>
 				<strong>Michelle Del Cueto</strong><br/>
 				International Coordinator<br/>
