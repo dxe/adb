@@ -297,12 +297,15 @@ func router() (*mux.Router, *sqlx.DB) {
 
 	var staticHandler = http.StripPrefix("/static/", http.FileServer(http.Dir(config.StaticDirectory)))
 	var distHandler = http.StripPrefix("/dist/", http.FileServer(http.Dir(config.DistDirectory)))
+	var jsHandler = http.StripPrefix("/v2/", http.FileServer(http.Dir("../../frontend-v2/out")))
 	if !config.IsProd {
 		staticHandler = noCacheHandler(staticHandler)
 		distHandler = noCacheHandler(distHandler)
+		jsHandler = noCacheHandler(jsHandler)
 	}
 	router.PathPrefix("/static").Handler(staticHandler)
 	router.PathPrefix("/dist").Handler(distHandler)
+	router.PathPrefix("/v2").Handler(jsHandler)
 
 	return router, db
 }

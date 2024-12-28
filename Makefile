@@ -13,6 +13,7 @@ run:
 	export TEMPLATES_DIRECTORY=../templates; \
 	export STATIC_DIRECTORY=../../frontend/static; \
 	export DIST_DIRECTORY=../../frontend/dist; \
+	export JS_DIRECTORY=../../frontend-v2/out; \
 	go run main.go
 
 # Builds the frontend JS.
