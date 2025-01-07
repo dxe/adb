@@ -2,9 +2,14 @@
 // README at: https://github.com/devcontainers/templates/tree/main/src/debian
 {
 	"name": "DxE ADB",
-	"build": {
-		"dockerfile": "Dockerfile"
-	},
+
+	// https://code.visualstudio.com/docs/devcontainers/create-dev-container#_use-docker-compose
+	"dockerComposeFile": ["../server/compose.yaml", "./compose.extend.yaml"],
+	"service": "devcontainer", // defined in dockerComposeFile
+	"runServices": ["devcontainer", "mysql"], // defined in dockerComposeFile
+	"workspaceFolder": "/workspace",
+	"shutdownAction": "stopCompose",
+	"remoteUser": "vscode",
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	"features": {
@@ -43,7 +48,4 @@
 
 	// Configure tool-specific properties.
 	// "customizations": {},
-
-	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
-	// "remoteUser": "root"
 }

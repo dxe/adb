@@ -1,0 +1,26 @@
+# Docker Compose configuration for development environment, for users of the
+# devcontainer. This file defines the devcontainer container itself as well as
+# adding configuration to other docker compose configuration.
+
+services:
+  # https://code.visualstudio.com/docs/devcontainers/create-dev-container
+  devcontainer:
+    image: "mcr.microsoft.com/devcontainers/base:1.0.9-bookworm"
+    volumes:
+      # Mounts the project folder to '/workspace', referenced by
+      # 'workspaceFolder' in devcontainer.json.
+      - ..:/workspace:cached
+    networks:
+      - dev-net
+    # Override default command to keep devcontainer alive as default command
+    # could exit immediately. Command taken from VS Code devcontainer docs.
+    command: /bin/sh -c "while sleep 1000; do :; done"
+    environment:
+      - DB_PROTOCOL=tcp(mysql:3306)
+  mysql:  # extending server/compose.yaml
+    networks: # make accessible to devcontainer via network
+      - dev-net
+
+networks:
+  dev-net:
+    driver: bridge

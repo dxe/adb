@@ -35,7 +35,7 @@ If you are using the devcontainer, just run this command in the container:
 make dev_db
 ```
 
-This command will log you into the database if you run the comman in the same
+This command will log you into the database if you run the command in the same
 container as the database:
 
 ```bash
@@ -55,9 +55,18 @@ make run_all
 
 Access the web app at http://localhost:8080.
 
-### Format and test
+### Code formatting
 
-Please run `make fmt` and `make test` before sending a pull request.
+Please run `make fmt` before sending a pull request.
+
+### Test
+
+Please run `make test` before sending a pull request.
+
+Note the tests take several minutes to run, even though some of them
+finish quickly. To check if any tests are hanging, you can add "-v -p 1" after
+"go test" args in the Makefile to show individual test names and to run them
+in serial.
 
 ### JS
 

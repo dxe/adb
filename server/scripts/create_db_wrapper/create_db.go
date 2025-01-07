@@ -54,7 +54,7 @@ func createEventsDevDB() string {
 }
 
 func createDevDB(name string) {
-	db := model.NewDB(config.DBUser + ":" + config.DBPassword + "@/" + name + "?multiStatements=true")
+	db := model.NewDB(config.DataSourceBase + "/" + name + "?multiStatements=true")
 	defer db.Close()
 	model.WipeDatabase(db)
 	insertStatement := fmt.Sprintf(`
