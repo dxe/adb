@@ -9,10 +9,11 @@ import (
 )
 
 var (
-	DBUser     = mustGetenv("DB_USER", "adb_user", true)
-	DBPassword = mustGetenv("DB_PASSWORD", "adbpassword", true)
-	DBName     = mustGetenv("DB_NAME", "adb_db", true)
-	DBProtocol = mustGetenv("DB_PROTOCOL", "", true)
+	DBUser         = mustGetenv("DB_USER", "adb_user", true)
+	DBPassword     = mustGetenv("DB_PASSWORD", "adbpassword", true)
+	DBName         = mustGetenv("DB_NAME", "adb_db", true)
+	DBProtocol     = mustGetenv("DB_PROTOCOL", "", true)
+	DataSourceBase = DBUser + ":" + DBPassword + "@" + DBProtocol
 
 	Port        = mustGetenv("PORT", "8080", true)
 	MembersPort = mustGetenv("MEMBERS_PORT", "8081", true)
@@ -133,7 +134,7 @@ func mustGetenvAsBool(key string) bool {
 }
 
 func DBDataSource() string {
-	connectionString := DBUser + ":" + DBPassword + "@" + DBProtocol + "/" + DBName + "?parseTime=true&charset=utf8mb4"
+	connectionString := DataSourceBase + "/" + DBName + "?parseTime=true&charset=utf8mb4"
 	if IsProd {
 		return connectionString + "&tls=true"
 	}
@@ -141,7 +142,7 @@ func DBDataSource() string {
 }
 
 func DBTestDataSource() string {
-	return DBUser + ":" + DBPassword + "@/adb_test_db?parseTime=true"
+	return DataSourceBase + "/adb_test_db?parseTime=true"
 }
 
 var staticResourcesHash = strconv.FormatInt(rand.NewSource(time.Now().UnixNano()).Int63(), 10)

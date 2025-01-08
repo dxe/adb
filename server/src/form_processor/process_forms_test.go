@@ -1,9 +1,9 @@
 package form_processor
 
 import (
-	"github.com/jmoiron/sqlx"
-	"github.com/lestrrat-go/test-mysqld"
 	"testing"
+
+	"github.com/jmoiron/sqlx"
 )
 
 /* Common utils */
@@ -11,47 +11,13 @@ type activist struct {
 	id int
 }
 
-func createTables(t *testing.T) (*mysqltest.TestMysqld, *sqlx.DB) {
-	/* Set up MySQL */
-	mysqld, err := mysqltest.NewMysqld(nil)
-	if err != nil {
-		t.Fatalf("failed to start mysqld: %s", err)
-	}
-	db, err := sqlx.Open("mysql", mysqld.Datasource("test", "", "", 0))
-	if err != nil {
-		t.Fatalf("failed to open MySQL connection: %s", err)
-	}
-
-	/* Crate tables */
-	_, err = db.Exec(createTableFormApplicationQuery)
-	if err != nil {
-		t.Fatalf("createTableFormApplicationQuery failed: %s", err)
-	}
-	_, err = db.Exec(createTableActivistsQuery)
-	if err != nil {
-		t.Fatalf("createTableActivistsQuery failed: %s", err)
-	}
-	_, err = db.Exec(createTableWorkingGroupMembersQuery)
-	if err != nil {
-		t.Fatalf("createTableWorkingGroupMembersQuery failed: %s", err)
-	}
-	_, err = db.Exec(createTableCircleMembersQuery)
-	if err != nil {
-		t.Fatalf("createTableCircleMembersQuery failed: %s", err)
-	}
-	_, err = db.Exec(createTableFormInterestQuery)
-	if err != nil {
-		t.Fatalf("createTableFormInterestQuery failed: %s", err)
-	}
-	return mysqld, db
-}
-
 func verifyFormWasMarkedAsProcessed(t *testing.T, db *sqlx.DB, query string) {
 	rawActivists, err := db.Query(getActivistsQuery)
-	defer rawActivists.Close()
 	if err != nil {
 		t.Fatalf("getActivistsQuery failed: %s", err)
 	}
+	defer rawActivists.Close()
+
 	var activists []activist
 	for rawActivists.Next() {
 		var activist activist
@@ -73,8 +39,8 @@ func verifyFormWasMarkedAsProcessed(t *testing.T, db *sqlx.DB, query string) {
 /* Form application tests */
 func TestProcessFormApplicationForNoMatchingActivist(t *testing.T) {
 	/* Set up */
-	mysqld, db := createTables(t)
-	defer mysqld.Stop()
+	db := useTestDb()
+	defer db.Close()
 	_, err := db.Query(insertIntoFormApplicationQuery)
 	if err != nil {
 		t.Fatalf("insertIntoFormApplicationQuery failed: %s", err)
@@ -89,8 +55,9 @@ func TestProcessFormApplicationForNoMatchingActivist(t *testing.T) {
 
 func TestProcessFormApplicationForActivistMatchingOnName(t *testing.T) {
 	/* Set up */
-	mysqld, db := createTables(t)
-	defer mysqld.Stop()
+	db := useTestDb()
+	defer db.Close()
+
 	_, err := db.Exec(insertActivistQuery, "name1")
 	if err != nil {
 		t.Fatalf("insertActivistQuery failed: %s", err)
@@ -109,8 +76,9 @@ func TestProcessFormApplicationForActivistMatchingOnName(t *testing.T) {
 
 func TestProcessFormApplicationForActivistMatchingOnEmail(t *testing.T) {
 	/* Set up */
-	mysqld, db := createTables(t)
-	defer mysqld.Stop()
+	db := useTestDb()
+	defer db.Close()
+
 	_, err := db.Exec(insertActivistQuery, "non-matching_name")
 	if err != nil {
 		t.Fatalf("insertActivistQuery failed: %s", err)
@@ -129,8 +97,8 @@ func TestProcessFormApplicationForActivistMatchingOnEmail(t *testing.T) {
 
 func TestProcessFormApplicationForMultipleMatchingActivistsOnEmail(t *testing.T) {
 	/* Set up */
-	mysqld, db := createTables(t)
-	defer mysqld.Stop()
+	db := useTestDb()
+	defer db.Close()
 	_, err := db.Exec(insertActivistQuery, "non-matching_name1")
 	if err != nil {
 		t.Fatalf("insertActivistQuery failed: %s", err)
@@ -153,8 +121,8 @@ func TestProcessFormApplicationForMultipleMatchingActivistsOnEmail(t *testing.T)
 /* Form interest tests */
 func TestProcessFormInterestForNoMatchingActivist(t *testing.T) {
 	/* Set up */
-	mysqld, db := createTables(t)
-	defer mysqld.Stop()
+	db := useTestDb()
+	defer db.Close()
 	_, err := db.Exec(insertIntoFormInterestQuery)
 	if err != nil {
 		t.Fatalf("insertIntoFormInterestQuery failed: %s", err)
@@ -169,8 +137,8 @@ func TestProcessFormInterestForNoMatchingActivist(t *testing.T) {
 
 func TestProcessFormInterestForActivistMatchingOnName(t *testing.T) {
 	/* Set up */
-	mysqld, db := createTables(t)
-	defer mysqld.Stop()
+	db := useTestDb()
+	defer db.Close()
 	_, err := db.Exec(insertActivistQuery, "name1")
 	if err != nil {
 		t.Fatalf("insertActivistQuery failed: %s", err)
@@ -189,8 +157,8 @@ func TestProcessFormInterestForActivistMatchingOnName(t *testing.T) {
 
 func TestProcessFormInterestForActivistMatchingOnEmail(t *testing.T) {
 	/* Set up */
-	mysqld, db := createTables(t)
-	defer mysqld.Stop()
+	db := useTestDb()
+	defer db.Close()
 	_, err := db.Exec(insertActivistQuery, "non-matching_name")
 	if err != nil {
 		t.Fatalf("insertActivistQuery failed: %s", err)
@@ -209,8 +177,8 @@ func TestProcessFormInterestForActivistMatchingOnEmail(t *testing.T) {
 
 func TestProcessFormInterestForMultipleMatchingActivistsOnEmail(t *testing.T) {
 	/* Set up */
-	mysqld, db := createTables(t)
-	defer mysqld.Stop()
+	db := useTestDb()
+	defer db.Close()
 	_, err := db.Exec(insertActivistQuery, "non-matching_name1")
 	if err != nil {
 		t.Fatalf("insertActivistQuery failed: %s", err)
