@@ -13,6 +13,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/http/httputil"
 	"net/http/pprof"
 	"net/url"
 	"strconv"
@@ -167,6 +168,27 @@ func noCacheHandler(h http.Handler) http.Handler {
 	})
 }
 
+func proxyHandler(target string) http.Handler {
+	// Parse the target URL
+	targetURL, err := url.Parse(target)
+	if err != nil {
+		panic("Invalid proxy target: " + err.Error())
+	}
+
+	// Create the reverse proxy
+	proxy := httputil.NewSingleHostReverseProxy(targetURL)
+
+	// Wrap the proxy to modify the request/response as needed
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Optionally, modify the request here if necessary
+		r.Host = targetURL.Host
+
+		// Serve the request with the reverse proxy
+		proxy.ServeHTTP(w, r)
+	})
+}
+
+
 func (c MainController) corsAllowGetMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Access-Control-Allow-Origin", "*")
@@ -297,15 +319,22 @@ func router() (*mux.Router, *sqlx.DB) {
 
 	var staticHandler = http.StripPrefix("/static/", http.FileServer(http.Dir(config.StaticDirectory)))
 	var distHandler = http.StripPrefix("/dist/", http.FileServer(http.Dir(config.DistDirectory)))
-	var jsHandler = http.StripPrefix("/v2/", http.FileServer(http.Dir("../../frontend-v2/out")))
+	// TODO(jh): move to config & env script like the other variables
+	var jsAppHandler = http.StripPrefix("/app/", http.FileServer(http.Dir("../../frontend-v2/out")))
 	if !config.IsProd {
 		staticHandler = noCacheHandler(staticHandler)
 		distHandler = noCacheHandler(distHandler)
-		jsHandler = noCacheHandler(jsHandler)
+
+		// TODO(jh): start next.js dev server as part of `make run_all` for local dev?
+		// Proxy /app to dev server in non-production mode.
+		jsAppHandler = proxyHandler("http://localhost:3000") // TODO(jh): move this to env
+
+		var nextDevHandler = proxyHandler("http://localhost:3000")
+		router.PathPrefix("/_next").Handler(nextDevHandler)
 	}
 	router.PathPrefix("/static").Handler(staticHandler)
 	router.PathPrefix("/dist").Handler(distHandler)
-	router.PathPrefix("/v2").Handler(jsHandler)
+	router.PathPrefix("/app").Handler(jsAppHandler)
 
 	return router, db
 }
