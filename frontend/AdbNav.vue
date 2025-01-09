@@ -16,7 +16,7 @@
           <b-navbar-item
             v-for="item in dropdown.items"
             :key="item.href"
-            v-if="!item.roleRequired || hasAccess(item.roleRequired)"
+            v-if="hasAccess(item.roleRequired)"
             :href="item.href"
             :active="page === item.page"
             :class="{ 'mb-2': item.separatorBelow }"
@@ -61,19 +61,19 @@ export default Vue.extend({
     };
   },
   methods: {
-    hasAccess(roleRequired: string[]) {
+    hasAccess(roleRequired: string[] | undefined) {
       return (
         !roleRequired ||
         roleRequired.some((it) =>
           it === 'admin'
             ? this.role === 'admin'
             : it === 'organizer'
-            ? this.role === 'admin' || this.role === 'organizer'
-            : it === 'attendance'
-            ? this.role === 'admin' || this.role === 'organizer' || this.role === 'attendance'
-            : it === 'non-sfbay'
-            ? this.role === 'non-sfbay'
-            : false,
+              ? this.role === 'admin' || this.role === 'organizer'
+              : it === 'attendance'
+                ? this.role === 'admin' || this.role === 'organizer' || this.role === 'attendance'
+                : it === 'non-sfbay'
+                  ? this.role === 'non-sfbay'
+                  : false,
         )
       );
     },

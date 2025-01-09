@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "fmt": "pnpm prettier --write *.{ts,json}"
+    "fmt": "pnpm prettier --write **/*.{ts,tsx}"
   },
   "dependencies": {
     "@ebay/nice-modal-react": "^1.2.13",
