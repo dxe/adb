@@ -1533,7 +1533,6 @@ func (c MainController) EventAttendanceCSVHandler(w http.ResponseWriter, r *http
 	writer.Flush()
 }
 
-
 func (c MainController) AuthedUserInfoHandler(w http.ResponseWriter, r *http.Request) {
 	user, _ := getAuthedADBUser(c.db, r)
 
