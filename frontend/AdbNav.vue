@@ -89,6 +89,10 @@
           >Facebook Events</b-navbar-item
         >
       </b-navbar-dropdown>
+      <b-navbar-dropdown label="Beta" collapsible v-if="isAdmin(role)">
+        <b-navbar-item href="/v2/test" :active="page === 'TestPage'"> Test page </b-navbar-item>
+        <b-navbar-item href="/v2/test2" :active="page === 'TestPage2'"> Test page 2 </b-navbar-item>
+      </b-navbar-dropdown>
     </template>
 
     <template #end>

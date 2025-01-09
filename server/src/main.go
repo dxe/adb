@@ -180,14 +180,10 @@ func proxyHandler(target string) http.Handler {
 
 	// Wrap the proxy to modify the request/response as needed
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Optionally, modify the request here if necessary
 		r.Host = targetURL.Host
-
-		// Serve the request with the reverse proxy
 		proxy.ServeHTTP(w, r)
 	})
 }
-
 
 func (c MainController) corsAllowGetMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -251,6 +247,7 @@ func router() (*mux.Router, *sqlx.DB) {
 
 	// Unauthed API (public)
 	router.Handle("/health", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.HealthStatusHandler))
+	router.Handle("/static_resources_hash", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.StaticResourcesHashHandler))
 	router.Handle("/external_events/{page_id:[0-9]+}", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.ListFBEventsHandler))
 	router.Handle("/chapters/{lat:[0-9.\\-]+},{lng:[0-9.\\-]+}", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.FindNearestChaptersHandler))
 	router.Handle("/regions", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.ListAllChaptersByRegion))
@@ -288,6 +285,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/csv/event_attendance/{event_id:[0-9]+}", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.EventAttendanceCSVHandler))
 	router.Handle("/csv/all_activists_spoke", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.SupporterSpokeCSVHandler))
 	router.Handle("/user/list", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.UserListHandler))
+	router.Handle("/user/me", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AuthedUserInfoHandler))
 
 	// Authed Admin API
 	admin.Handle("/user/save", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserSaveHandler))
@@ -319,22 +317,16 @@ func router() (*mux.Router, *sqlx.DB) {
 
 	var staticHandler = http.StripPrefix("/static/", http.FileServer(http.Dir(config.StaticDirectory)))
 	var distHandler = http.StripPrefix("/dist/", http.FileServer(http.Dir(config.DistDirectory)))
-	// TODO(jh): move to config & env script like the other variables
-	var jsAppHandler = http.StripPrefix("/app/", http.FileServer(http.Dir("../../frontend-v2/out")))
+	var jsV2Handler = http.StripPrefix("/app/", http.FileServer(http.Dir(config.JsV2Directory)))
 	if !config.IsProd {
 		staticHandler = noCacheHandler(staticHandler)
 		distHandler = noCacheHandler(distHandler)
-
-		// TODO(jh): start next.js dev server as part of `make run_all` for local dev?
-		// Proxy /app to dev server in non-production mode.
-		jsAppHandler = proxyHandler("http://localhost:3000") // TODO(jh): move this to env
-
-		var nextDevHandler = proxyHandler("http://localhost:3000")
-		router.PathPrefix("/_next").Handler(nextDevHandler)
+		jsV2Handler = proxyHandler(config.NextJsProxyUrl)
 	}
 	router.PathPrefix("/static").Handler(staticHandler)
 	router.PathPrefix("/dist").Handler(distHandler)
-	router.PathPrefix("/app").Handler(jsAppHandler)
+	router.PathPrefix("/v2").Handler(jsV2Handler)
+	router.PathPrefix("/_next").Handler(jsV2Handler)
 
 	return router, db
 }
@@ -1539,6 +1531,21 @@ func (c MainController) EventAttendanceCSVHandler(w http.ResponseWriter, r *http
 		}
 	}
 	writer.Flush()
+}
+
+
+func (c MainController) AuthedUserInfoHandler(w http.ResponseWriter, r *http.Request) {
+	user, _ := getAuthedADBUser(c.db, r)
+
+	writeJSON(w, map[string]interface{}{
+		"user": user,
+	})
+}
+
+func (c MainController) StaticResourcesHashHandler(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, map[string]interface{}{
+		"hash": config.StaticResourcesHash(),
+	})
 }
 
 func (c MainController) UserListHandler(w http.ResponseWriter, r *http.Request) {

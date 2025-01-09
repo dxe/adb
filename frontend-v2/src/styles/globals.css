@@ -14,9 +14,13 @@
   }
 }
 
-/* TODO(jh): move stuff from old css file to here? */
 body {
-  /* color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif; */
+  min-height: 100vh;
+  background:
+    linear-gradient(rgba(80, 90, 170, 0.85), rgba(80, 90, 170, 0.85)),
+    url("/static/img/bg1.jpg") no-repeat center center fixed;
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
 }
