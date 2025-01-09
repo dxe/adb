@@ -51,8 +51,6 @@ export const useSession = () => {
             : undefined;
   }, [query.data?.user?.Roles]);
 
-  console.log(query);
-
   return {
     user: {
       ...query.data?.user,

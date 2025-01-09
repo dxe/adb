@@ -1,13 +1,6 @@
 import { useSession } from "@/hooks/use-session";
 import Script from "next/script";
-import { useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import ky from "ky";
-import { z } from "zod";
-
-const StaticResourcesHashResp = z.object({
-  hash: z.string(),
-});
+import { useStaticResourceHash } from "@/hooks/use-static-resource-hash";
 
 // Allows the Vue AdbNav component to be used within the React app
 // for more seamless UX. Once most pages are rebuilt in
@@ -20,24 +13,7 @@ export const VueNavbar = (props: {
   pageName: string;
 }) => {
   const session = useSession();
-
-  // TODO(jh): prob should do this elsewhere b/c a logged-out navbar is fine & should show a 'login' button.
-  useEffect(() => {
-    if (session.isLoading) {
-      return;
-    }
-    if (!session.user) {
-      window.location.pathname = "/login";
-    }
-  }, [session.isLoading, session.user]);
-
-  const { data: staticResourceHash } = useQuery({
-    queryKey: ["static_resources_hash"],
-    queryFn: async () => {
-      const resp = await ky.get("/static_resources_hash").json();
-      return StaticResourcesHashResp.parse(resp);
-    },
-  });
+  const staticResourceHash = useStaticResourceHash();
 
   return !staticResourceHash || session.isLoading ? null : (
     <>
@@ -62,7 +38,7 @@ export const VueNavbar = (props: {
         }}
       />
       <Script
-        src={`/dist/adb.js?hash=${staticResourceHash.hash}`}
+        src={`/dist/adb.js?hash=${staticResourceHash}`}
         strategy="afterInteractive"
       />
     </>
