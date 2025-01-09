@@ -24,3 +24,9 @@ body {
   -o-background-size: cover;
   background-size: cover;
 }
+
+@layer base {
+  :root {
+    --radius: 0.5rem;
+  }
+}

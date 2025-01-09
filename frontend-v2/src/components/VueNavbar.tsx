@@ -30,17 +30,14 @@ export const VueNavbar = (props: {
           __html: `
               <adb-nav
                 page="${props.pageName}"
-                user="${session.user?.Name}"
-                role="${session?.user.role}"
-                chapter="${session.user.ChapterName}">
+                user="${session?.user?.Name ?? ""}"
+                role="${session?.user?.role ?? ""}"
+                chapter="${session?.user?.ChapterName ?? ""}">
               </adb-nav>
             `,
         }}
       />
-      <Script
-        src={`/dist/adb.js?hash=${staticResourceHash}`}
-        strategy="afterInteractive"
-      />
+      <Script src={`/dist/adb.js?hash=${staticResourceHash}`} />
     </>
   );
 };

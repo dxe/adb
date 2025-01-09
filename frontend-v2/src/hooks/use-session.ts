@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import ky from "ky";
-import { useMemo } from "react";
 import { z } from "zod";
+
+const Role = z.enum(["admin", "organizer", "attendance", "non-sfbay"]);
 
 const AuthedUserRespSchema = z.object({
   user: z.object({
@@ -13,13 +14,10 @@ const AuthedUserRespSchema = z.object({
     ID: z.number(),
     Name: z.string(),
     Roles: z
-      .array(
-        z.object({
-          Role: z.enum(["admin", "organizer", "attendance", "non-sfbay"]),
-        })
-      )
+      .array(z.object({ Role: Role }))
       .transform((roles) => roles.map((it) => it.Role)),
   }),
+  mainRole: Role,
 });
 
 export const useSession = () => {
@@ -33,28 +31,16 @@ export const useSession = () => {
         console.error(`Error fetching authed user: ${err}`);
         return {
           user: null,
+          mainRole: null,
         };
       }
     },
   });
 
-  const highestRole = useMemo(() => {
-    const roles = query.data?.user?.Roles;
-    return roles?.includes("admin")
-      ? "admin"
-      : roles?.includes("organizer")
-        ? "organizer"
-        : roles?.includes("attendance")
-          ? "attendance"
-          : roles?.includes("non-sfbay")
-            ? "non-sfbay"
-            : undefined;
-  }, [query.data?.user?.Roles]);
-
   return {
     user: {
       ...query.data?.user,
-      role: highestRole,
+      role: query.data?.mainRole,
     },
     isLoading: query.isLoading,
   };

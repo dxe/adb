@@ -1903,8 +1903,9 @@ export default Vue.extend({
       height: 500,
       columns: getColumnsForChapter(this.chapter, this.view),
       lastEventDateFrom:
-        this.view === ('all_activists' || 'leaderboard') ? initialDateFromValue() : '',
-      lastEventDateTo: this.view === ('all_activists' || 'leaderboard') ? initialDateToValue() : '',
+        this.view === 'all_activists' || this.view === 'leaderboard' ? initialDateFromValue() : '',
+      lastEventDateTo:
+        this.view === 'all_activists' || this.view === 'leaderboard' ? initialDateToValue() : '',
       interestDateFrom: this.view === 'community_prospects' ? initialDateFromValue(6) : '',
       interestDateTo: this.view === 'community_prospects' ? initialDateToValue() : '',
       assignedToCurrentUser: this.view === 'community_prospects_followup',

@@ -1,4 +1,4 @@
-import { cn } from "@/util/cn";
+import { cn } from "@/lib/utils";
 import { ReactNode } from "react";
 
 const contentWrapperClass = {
@@ -11,13 +11,15 @@ const contentWrapperClass = {
 
 export const ContentWrapper = (props: {
   size: keyof typeof contentWrapperClass;
+  className?: string;
   children: ReactNode;
 }) => {
   return (
     <div
       className={cn(
-        "bg-white w-full rounded-md py-6 px-10 shadow-2xl backdrop-blur-md bg-opacity-95 lg:mt-6 lg:mx-auto",
-        contentWrapperClass[props.size]
+        "bg-white w-full lg:rounded-md py-6 px-10 shadow-2xl backdrop-blur-md bg-opacity-95 lg:mt-6 lg:mx-auto",
+        contentWrapperClass[props.size],
+        props.className
       )}
     >
       {props.children}

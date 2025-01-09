@@ -1538,6 +1538,7 @@ func (c MainController) AuthedUserInfoHandler(w http.ResponseWriter, r *http.Req
 
 	writeJSON(w, map[string]interface{}{
 		"user": user,
+		"mainRole": getUserMainRole(user),
 	})
 }
 
