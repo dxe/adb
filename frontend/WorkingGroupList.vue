@@ -279,7 +279,7 @@ export default Vue.extend({
         navigator.userAgent,
       );
     },
-    showModal(modalName: string, workingGroup: WorkingGroup) {
+    showModal(modalName: string, workingGroup?: WorkingGroup) {
       // Hide the navbar so that the model doesn't go behind it.
       const mainNav = document.getElementById('mainNav');
       if (mainNav) mainNav.style.visibility = 'hidden';
@@ -289,7 +289,7 @@ export default Vue.extend({
         this.hideModal();
       }
 
-      this.currentWorkingGroup = { ...workingGroup };
+      this.currentWorkingGroup = !workingGroup ? ({} as WorkingGroup) : { ...workingGroup };
 
       if (this.currentWorkingGroup.members && this.currentWorkingGroup.members.length > 0) {
         this.currentPointPerson = this.currentWorkingGroup.members

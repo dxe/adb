@@ -623,7 +623,7 @@ export default Vue.extend({
         navigator.userAgent,
       );
     },
-    showModal(modalName: string, chapter: Chapter) {
+    showModal(modalName: string, chapter?: Chapter) {
       // Hide the navbar so that the model doesn't go behind it.
       const mainNav = document.getElementById('mainNav');
       if (mainNav) mainNav.style.visibility = 'hidden';
@@ -633,7 +633,7 @@ export default Vue.extend({
         this.hideModal();
       }
 
-      this.currentChapter = { ...chapter };
+      this.currentChapter = !chapter ? ({} as Chapter) : { ...chapter };
 
       // Parse strings to dates.
       if (this.currentChapter.LastContact != undefined) {

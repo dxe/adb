@@ -136,6 +136,7 @@ interface User {
   email: string;
   roles: string[];
   chapter_id: number;
+  disabled: boolean;
 }
 
 interface Chapter {
@@ -161,7 +162,7 @@ export default Vue.extend({
       }
       return '';
     },
-    showModal(modalName: string, user: User) {
+    showModal(modalName: string, user?: User) {
       // Hide the navbar so that the model doesn't go behind it.
       const mainNav = document.getElementById('mainNav');
       if (mainNav) mainNav.style.visibility = 'hidden';
@@ -173,7 +174,7 @@ export default Vue.extend({
 
       // Make shallow copy of selected activist to prevent persisting unsaved
       // edits at the view layer when closing modal
-      this.currentUser = { ...user };
+      this.currentUser = !user ? ({} as User) : { ...user };
 
       // Get the index for updating the view w/o refreshing the whole page.
       this.userIndex = this.users.findIndex((u) => {

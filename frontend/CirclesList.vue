@@ -300,7 +300,7 @@ export default Vue.extend({
     toggleMembers() {
       this.membersVisible = !this.membersVisible;
     },
-    showModal(modalName: string, circleGroup: Circle) {
+    showModal(modalName: string, circleGroup?: Circle) {
       // Hide the navbar so that the model doesn't go behind it.
       const mainNav = document.getElementById('mainNav');
       if (mainNav) mainNav.style.visibility = 'hidden';
@@ -310,7 +310,7 @@ export default Vue.extend({
         this.hideModal();
       }
 
-      this.currentCircleGroup = { ...circleGroup };
+      this.currentCircleGroup = !circleGroup ? ({} as Circle) : { ...circleGroup };
 
       if (this.currentCircleGroup.members && this.currentCircleGroup.members.length > 0) {
         this.currentCircleHost = this.currentCircleGroup.members
