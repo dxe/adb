@@ -1537,7 +1537,7 @@ func (c MainController) AuthedUserInfoHandler(w http.ResponseWriter, r *http.Req
 	user, _ := getAuthedADBUser(c.db, r)
 
 	writeJSON(w, map[string]interface{}{
-		"user": user,
+		"user":     user,
 		"mainRole": getUserMainRole(user),
 	})
 }
