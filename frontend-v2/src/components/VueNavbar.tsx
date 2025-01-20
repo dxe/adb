@@ -3,7 +3,7 @@ import Script from "next/script";
 import { useStaticResourceHash } from "@/hooks/use-static-resource-hash";
 
 // Allows the Vue AdbNav component to be used within the React app
-// for more seamless UX. Once most pages are rebuilt in
+// so that the UI is more consistent. Once most pages are rebuilt in
 // React, we should migrate the Navbar to React as well.
 // The biggest downside currently is that the entire app has
 // to reload whenever a link is clicked, due to not using the <Link>

@@ -1,6 +1,7 @@
 .PHONY: run_all run watch test clean prod_build deps dev_db fmt
 
 # Runs the application (builds Vue.js files, starts Next.js dev server, starts Go server).
+# As of January 2025, upgrading past Node 16 breaks old Vue dependencies, and Node 18 is required to use the latest version of React.
 run_all:
 	. ~/.nvm/nvm.sh && \
     (cd frontend && nvm install 16 && npm run dev-build) && \
