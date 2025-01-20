@@ -5,10 +5,11 @@
 
 gofiles=$(gofmt -l $(find . -name "*.go"))
 webfiles=$(npx prettier -l frontend/*.{js,ts,vue})
+webfilesV2=$(npx prettier -l frontend-v2/*.{ts,tsx})
 [ -z "$gofiles" -a -z "$webfiles" ] && exit 0
 
 echo >&2 "Misformatted files:"
-for fn in $gofiles $webfiles; do
+for fn in $gofiles $webfiles $webfilesV2; do
   echo >&2 "  $fn"
 done
 echo >&2

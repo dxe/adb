@@ -3,25 +3,29 @@
 </template>
 
 <script>
-  import Handsontable from 'handsontable';
-  import {
-    hotInit,
-    hotDestroy,
-    propFactory,
-    propWatchFactory,
-    updateHotSettings,
-    updateBulkHotSettings
-  } from './helpers';
+import Handsontable from 'handsontable';
+import {
+  hotInit,
+  hotDestroy,
+  propFactory,
+  propWatchFactory,
+  updateHotSettings,
+  updateBulkHotSettings,
+} from './helpers';
 
-  export default {
-    name: 'HotTable',
-    props: propFactory(),
-    watch: propWatchFactory(updateHotSettings, updateBulkHotSettings),
-    mounted: function() { return hotInit(this); },
-    beforeDestroy: function() { return hotDestroy(this); },
-  };
+export default {
+  name: 'HotTable',
+  props: propFactory(),
+  watch: propWatchFactory(updateHotSettings, updateBulkHotSettings),
+  mounted: function () {
+    return hotInit(this);
+  },
+  beforeDestroy: function () {
+    return hotDestroy(this);
+  },
+};
 </script>
 
 <style>
-  @import "~handsontable/dist/handsontable.full.css";
+@import '~handsontable/dist/handsontable.full.css';
 </style>

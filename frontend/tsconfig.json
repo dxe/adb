@@ -10,11 +10,8 @@
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
     "types": ["jquery"],
+    "resolveJsonModule": true
   },
-  "include": [
-    "./*",
-  ],
-  "exclude": [
-    "./external/**/*",
-  ],
+  "include": ["./*"],
+  "exclude": ["./external/**/*"]
 }

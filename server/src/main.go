@@ -13,6 +13,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/http/httputil"
 	"net/http/pprof"
 	"net/url"
 	"strconv"
@@ -167,6 +168,23 @@ func noCacheHandler(h http.Handler) http.Handler {
 	})
 }
 
+func proxyHandler(target string) http.Handler {
+	// Parse the target URL
+	targetURL, err := url.Parse(target)
+	if err != nil {
+		panic("Invalid proxy target: " + err.Error())
+	}
+
+	// Create the reverse proxy
+	proxy := httputil.NewSingleHostReverseProxy(targetURL)
+
+	// Wrap the proxy to modify the request/response as needed
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.Host = targetURL.Host
+		proxy.ServeHTTP(w, r)
+	})
+}
+
 func (c MainController) corsAllowGetMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Access-Control-Allow-Origin", "*")
@@ -229,6 +247,7 @@ func router() (*mux.Router, *sqlx.DB) {
 
 	// Unauthed API (public)
 	router.Handle("/health", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.HealthStatusHandler))
+	router.Handle("/static_resources_hash", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.StaticResourcesHashHandler))
 	router.Handle("/external_events/{page_id:[0-9]+}", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.ListFBEventsHandler))
 	router.Handle("/chapters/{lat:[0-9.\\-]+},{lng:[0-9.\\-]+}", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.FindNearestChaptersHandler))
 	router.Handle("/regions", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.ListAllChaptersByRegion))
@@ -266,6 +285,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/csv/event_attendance/{event_id:[0-9]+}", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.EventAttendanceCSVHandler))
 	router.Handle("/csv/all_activists_spoke", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.SupporterSpokeCSVHandler))
 	router.Handle("/user/list", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.UserListHandler))
+	router.Handle("/user/me", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AuthedUserInfoHandler))
 
 	// Authed Admin API
 	admin.Handle("/user/save", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserSaveHandler))
@@ -297,12 +317,15 @@ func router() (*mux.Router, *sqlx.DB) {
 
 	var staticHandler = http.StripPrefix("/static/", http.FileServer(http.Dir(config.StaticDirectory)))
 	var distHandler = http.StripPrefix("/dist/", http.FileServer(http.Dir(config.DistDirectory)))
+	var jsV2Handler = proxyHandler(config.NextJsProxyUrl)
 	if !config.IsProd {
 		staticHandler = noCacheHandler(staticHandler)
 		distHandler = noCacheHandler(distHandler)
 	}
 	router.PathPrefix("/static").Handler(staticHandler)
 	router.PathPrefix("/dist").Handler(distHandler)
+	router.PathPrefix("/v2").Handler(jsV2Handler)
+	router.PathPrefix("/_next").Handler(jsV2Handler)
 
 	return router, db
 }
@@ -1507,6 +1530,21 @@ func (c MainController) EventAttendanceCSVHandler(w http.ResponseWriter, r *http
 		}
 	}
 	writer.Flush()
+}
+
+func (c MainController) AuthedUserInfoHandler(w http.ResponseWriter, r *http.Request) {
+	user, _ := getAuthedADBUser(c.db, r)
+
+	writeJSON(w, map[string]interface{}{
+		"user":     user,
+		"mainRole": getUserMainRole(user),
+	})
+}
+
+func (c MainController) StaticResourcesHashHandler(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, map[string]interface{}{
+		"hash": config.StaticResourcesHash(),
+	})
 }
 
 func (c MainController) UserListHandler(w http.ResponseWriter, r *http.Request) {

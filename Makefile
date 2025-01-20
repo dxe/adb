@@ -1,8 +1,12 @@
 .PHONY: run_all run watch test clean prod_build deps dev_db fmt
 
-# Runs the application.
+# Runs the application (builds Vue.js files, starts Next.js dev server, starts Go server).
+# As of January 2025, upgrading past Node 16 breaks old Vue dependencies, and Node 18 is required to use the latest version of React.
 run_all:
-	cd frontend && npm run dev-build
+	. ~/.nvm/nvm.sh; \
+	export NEXT_PUBLIC_API_BASE_URL=http://localhost:8080; \
+    (cd frontend && nvm install 16 && npm run dev-build); \
+	(cd frontend-v2 && nvm install 18 && nvm use 18 && pnpm dev) &
 	$(MAKE) run
 
 # Just start the go program without recompiling the JS.
@@ -13,14 +17,16 @@ run:
 	export TEMPLATES_DIRECTORY=../templates; \
 	export STATIC_DIRECTORY=../../frontend/static; \
 	export DIST_DIRECTORY=../../frontend/dist; \
+	export JS_V2_DIRECTORY=../../frontend-v2/out; \
+	export NEXT_JS_PROXY_URL=http://localhost:3000; \
 	go run main.go
 
-# Builds the frontend JS.
+# Builds the frontend Vue JS files.
 js:
-	cd frontend && npm run dev-build
+	. ~/.nvm/nvm.sh && nvm use 16 && cd frontend && npm run dev-build
 
-# Automatically rebuild the JS when you edit a JS file. This is more
-# convenient then manually running `make run_all` every time you
+# Automatically rebuilds the Vue JS app when you edit a file. This is
+# more convenient then manually running `make run_all` every time you
 # update the JS. You'll need to do this in a separate terminal.
 watch:
 	cd frontend && npm run watch
@@ -33,6 +39,7 @@ dev_db:
 # Install all deps for this project.
 deps:
 	cd frontend && npm install --legacy-peer-deps
+	cd frontend-v2 && pnpm i
 	cd server/src && go get -t github.com/dxe/adb/...
 
 # Run all tests
@@ -43,6 +50,7 @@ test:
 clean:
 	rm -f server/adb
 	rm -rf frontend/dist
+	rm -rf frontend-v2/out
 
 # Set git hooks
 set_git_hooks:
@@ -70,3 +78,4 @@ prod_build: clean set_git_hooks
 fmt:
 	cd server && gofmt -w `find . -name '*.go'`
 	cd frontend && npx prettier --write *.{ts,vue,js}
+	cd frontend-v2 && pnpm fmt
