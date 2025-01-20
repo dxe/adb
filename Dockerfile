@@ -15,15 +15,6 @@ COPY frontend ./
 RUN npm ci --legacy-peer-deps
 RUN npm run build
 
-## Build web UI frontend v2.   
-
-FROM node:20 AS build-ui-v2
-
-WORKDIR /src
-COPY frontend ./
-RUN pnpm i --frozen-lockfile
-RUN pnpm build
-
 ## Assemble composite server container.
 
 FROM alpine:latest
@@ -36,7 +27,6 @@ COPY server/templates templates/
 COPY frontend/static static/
 COPY --from=build-api /src/adb ./
 COPY --from=build-ui /src/dist dist/
-COPY --from=build-ui-v2 /src/out js/
 
 USER adb
 

@@ -3,8 +3,9 @@
 # Runs the application (builds Vue.js files, starts Next.js dev server, starts Go server).
 # As of January 2025, upgrading past Node 16 breaks old Vue dependencies, and Node 18 is required to use the latest version of React.
 run_all:
-	. ~/.nvm/nvm.sh && \
-    (cd frontend && nvm install 16 && npm run dev-build) && \
+	. ~/.nvm/nvm.sh; \
+	export NEXT_PUBLIC_API_BASE_URL=http://localhost:8080; \
+    (cd frontend && nvm install 16 && npm run dev-build); \
 	(cd frontend-v2 && nvm install 18 && nvm use 18 && pnpm dev) &
 	$(MAKE) run
 

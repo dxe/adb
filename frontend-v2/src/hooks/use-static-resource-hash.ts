@@ -1,10 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-import ky from "ky";
-import { z } from "zod";
-
-const StaticResourcesHashResp = z.object({
-  hash: z.string(),
-});
+import { API_PATH, getStaticResourceHash } from '@/lib/api'
+import { useQuery } from '@tanstack/react-query'
 
 // This is only used for Vue components and should eventually be removed.
 // It gets the "static resource hash" from the backend, which is a random
@@ -13,12 +8,9 @@ const StaticResourcesHashResp = z.object({
 // of the Vue.js assets.
 export const useStaticResourceHash = () => {
   const { data: staticResourceHash } = useQuery({
-    queryKey: ["static_resources_hash"],
-    queryFn: async () => {
-      const resp = await ky.get("/static_resources_hash").json();
-      return StaticResourcesHashResp.parse(resp);
-    },
-  });
+    queryKey: [API_PATH.STATIC_RESOURCE_HASH],
+    queryFn: getStaticResourceHash,
+  })
 
-  return staticResourceHash?.hash;
-};
+  return staticResourceHash?.hash
+}

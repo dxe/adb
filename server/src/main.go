@@ -317,11 +317,10 @@ func router() (*mux.Router, *sqlx.DB) {
 
 	var staticHandler = http.StripPrefix("/static/", http.FileServer(http.Dir(config.StaticDirectory)))
 	var distHandler = http.StripPrefix("/dist/", http.FileServer(http.Dir(config.DistDirectory)))
-	var jsV2Handler = http.StripPrefix("/app/", http.FileServer(http.Dir(config.JsV2Directory)))
+	var jsV2Handler = proxyHandler(config.NextJsProxyUrl)
 	if !config.IsProd {
 		staticHandler = noCacheHandler(staticHandler)
 		distHandler = noCacheHandler(distHandler)
-		jsV2Handler = proxyHandler(config.NextJsProxyUrl)
 	}
 	router.PathPrefix("/static").Handler(staticHandler)
 	router.PathPrefix("/dist").Handler(distHandler)

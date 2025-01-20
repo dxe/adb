@@ -28,7 +28,6 @@ var (
 	TemplatesDirectory = mustGetenv("TEMPLATES_DIRECTORY", "./templates", false)
 	StaticDirectory    = mustGetenv("STATIC_DIRECTORY", "./static", false)
 	DistDirectory      = mustGetenv("DIST_DIRECTORY", "./dist", false)
-	JsV2Directory      = mustGetenv("JS_V2_DIRECTORY", "./js", false)
 	NextJsProxyUrl     = mustGetenv("NEXT_JS_PROXY_URL", "", false)
 
 	// Path to Google API oauth client_secrets.json file, with

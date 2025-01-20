@@ -2,9 +2,9 @@ name: Build
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
   workflow_dispatch:
 
 jobs:
@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
-        with: 
+        with:
           node-version: 16
       - uses: actions/setup-go@v3
         with:
@@ -41,8 +41,8 @@ jobs:
           ./hooks/pre-commit
           cd ./server/src
           go test github.com/dxe/adb/...
-      - name: Deploy image to ECR
-        if: ${{ github.event_name == 'push' }}  # don't deploy branches
+      - name: Deploy image to ECR (main)
+        if: ${{ github.event_name == 'push' }} # don't deploy branches
         uses: kciter/aws-ecr-action@master
         with:
           access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -50,4 +50,15 @@ jobs:
           account_id: ${{ secrets.AWS_ACCOUNT_ID }}
           repo: dxe/adb
           region: us-west-2
-          tags: latest,${{ github.sha }}    
+          tags: latest,${{ github.sha }}
+      - name: Deploy image to ECR (next.js)
+        if: ${{ github.event_name == 'push' }} # don't deploy branches
+        uses: kciter/aws-ecr-action@master
+        with:
+          access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          account_id: ${{ secrets.AWS_ACCOUNT_ID }}
+          repo: dxe/adb-next
+          region: us-west-2
+          dockerfile: frontend-v2/Dockerfile
+          tags: latest,${{ github.sha }}
