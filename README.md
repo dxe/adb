@@ -49,13 +49,20 @@ without a space.)
 
 ### Run
 
-After downloading the dependencies, start the server:
+After downloading the dependencies, start the development servers:
 
 ```bash
 make run_all
 ```
+Access the new frontend (React app) at http://localhost:3000/ - or test with
+http://localhost:3000/v2/test
 
-Access the web app at http://localhost:8080.
+React pages auto-update in the frontend development server when you save
+changes.
+
+Access the Go API serverand and old frontend (Vue app) at http://localhost:8080
+
+Access the Members app at members.dxesf.org at http://localhost:8081
 
 ### Code formatting
 
@@ -72,6 +79,11 @@ in serial.
 
 ### JS
 
+The frontend is being migrated from Vue to React and is split into two
+applications: the Vue app in /frontend and the React app in /frontend-v2.
+
+#### Vue app
+
 This project uses webpack to compile our frontend files. Frontend
 files that need to be compiled are in `frontend/`, and the compiled
 outputs are in `frontend/dist/`.
@@ -86,6 +98,12 @@ outputs are in `frontend/dist/`.
 The most convenient workflow is to run `make watch` in one terminal
 and `make run` in another one. Then your JS changes will automatically
 be built as you edit them.
+
+#### React app
+
+See frontend-v2/README.md for more information on the React app. See above for
+instructions on building and running the React app along with other components
+of ADB.
 
 ## Required environment variables for running in prod:
 

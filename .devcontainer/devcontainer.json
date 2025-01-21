@@ -42,6 +42,7 @@
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	"forwardPorts": [
+		3000, /* Frontend React dev server (adb.dxe.io/v2) */
 		8080, /* ADB main site (adb.dxe.io) */
 		8081 /* Members app (members.dxesf.org) */
 	]
