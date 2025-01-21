@@ -2,6 +2,7 @@
 .DS_Store
 .env
 .idea
+.pnpm-store
 adb
 adb-config
 adb.db
