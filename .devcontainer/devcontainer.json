@@ -25,7 +25,7 @@
 		},
 		"ghcr.io/devcontainers/features/node:1": {
 			"nodeGypDependencies": true,
-			"version": "16"  // Match version from Dockerfile
+			"version": "18"  // Match version from Dockerfile
 		},
 		"ghcr.io/jungaretti/features/make:1": {}
 	},
