@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import NiceModal, { useModal } from '@ebay/nice-modal-react'
-import { API_PATH, getActivistNames } from '@/lib/api'
+import { API_PATH, apiClient } from '@/lib/api'
 import { DefaultPageProps, getDefaultServerSideProps } from '@/lib/ssr'
 import { Loader } from 'lucide-react'
 
@@ -45,7 +45,7 @@ export const getServerSideProps = getDefaultServerSideProps
 const ActivistNames = () => {
   const { data, isLoading } = useQuery({
     queryKey: [API_PATH.ACTIVIST_NAMES_GET],
-    queryFn: getActivistNames,
+    queryFn: apiClient.getActivistNames,
   })
 
   const sampledActivists = useMemo(() => {
@@ -57,7 +57,7 @@ const ActivistNames = () => {
       <p className="font-bold">Here are some activists:</p>
       <ul className="list-disc pl-4">
         {isLoading ? (
-          <Loader />
+          <Loader className="animate-spin" />
         ) : (
           sampledActivists.map((name) => <li key={name}>{name}</li>)
         )}

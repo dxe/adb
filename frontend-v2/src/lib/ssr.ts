@@ -1,6 +1,6 @@
-import { dehydrate, QueryClient, QueryFunction } from '@tanstack/react-query'
-import { API_PATH, getAuthedUser, getStaticResourceHash } from '@/lib/api'
-import { InferGetServerSidePropsType } from 'next'
+import { dehydrate, QueryClient } from '@tanstack/react-query'
+import { API_PATH, ApiClient } from '@/lib/api'
+import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next'
 
 /** Loads the static resource hash & session data during SSR.
  *  On any page that you want to pre-fetch these things,
@@ -11,26 +11,20 @@ import { InferGetServerSidePropsType } from 'next'
  *  HydrationBoundary so that it gets hydrated properly.
  */
 export const getDefaultServerSideProps = async (
-  /** If you want to prefetch additional queries than just the
-   *  defaults that we fetch for every page, you can add more here.
-   */
-  prefetchAdditionalQueries?: { queryKey: string[]; queryFn: QueryFunction }[],
+  context: GetServerSidePropsContext,
 ) => {
+  const cookies = context.req.headers.cookie
+  const ssrApiClient = new ApiClient(cookies)
   const queryClient = new QueryClient()
   await Promise.all([
     queryClient.prefetchQuery({
       queryKey: [API_PATH.STATIC_RESOURCE_HASH],
-      queryFn: getStaticResourceHash,
+      queryFn: ssrApiClient.getStaticResourceHash,
     }),
     queryClient.prefetchQuery({
       queryKey: [API_PATH.USER_ME],
-      queryFn: getAuthedUser,
+      queryFn: ssrApiClient.getAuthedUser,
     }),
-    ...(prefetchAdditionalQueries?.length
-      ? prefetchAdditionalQueries.map((q) =>
-          queryClient.prefetchQuery({ ...q }),
-        )
-      : []),
   ])
   return {
     props: {

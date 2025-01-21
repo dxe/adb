@@ -1,15 +1,5 @@
-import ky from 'ky'
+import ky, { KyInstance } from 'ky'
 import { z } from 'zod'
-
-export const getBaseUrl = () => {
-  return typeof window === 'undefined'
-    ? process.env.NEXT_PUBLIC_API_BASE_URL
-    : '/'
-}
-
-const apiClient = ky.extend({
-  prefixUrl: getBaseUrl(),
-})
 
 export const API_PATH = {
   STATIC_RESOURCE_HASH: 'static_resources_hash',
@@ -20,11 +10,6 @@ export const API_PATH = {
 export const StaticResourcesHashResp = z.object({
   hash: z.string(),
 })
-
-export const getStaticResourceHash = async () => {
-  const resp = await apiClient.get(API_PATH.STATIC_RESOURCE_HASH).json()
-  return StaticResourcesHashResp.parse(resp)
-}
 
 const Role = z.enum(['admin', 'organizer', 'attendance', 'non-sfbay'])
 
@@ -44,24 +29,53 @@ const AuthedUserResp = z.object({
   mainRole: Role,
 })
 
-export const getAuthedUser = async () => {
-  try {
-    const resp = await apiClient.get(API_PATH.USER_ME).json()
-    return AuthedUserResp.parse(resp)
-  } catch (err) {
-    console.error(`Error fetching authed user: ${err}`)
-    return {
-      user: null,
-      mainRole: null,
-    }
-  }
-}
-
 export const ActivistNamesResp = z.object({
   activist_names: z.array(z.string()),
 })
 
-export const getActivistNames = async () => {
-  const resp = await apiClient.get(API_PATH.ACTIVIST_NAMES_GET).json()
-  return ActivistNamesResp.parse(resp)
+export class ApiClient {
+  private client: KyInstance
+
+  constructor(cookies?: string) {
+    this.client = ky.extend({
+      prefixUrl:
+        typeof window === 'undefined'
+          ? process.env.NEXT_PUBLIC_API_BASE_URL
+          : '/',
+      headers: cookies
+        ? {
+            Cookie: cookies,
+          }
+        : undefined,
+    })
+  }
+
+  getAuthedUser = async () => {
+    try {
+      const resp = await this.client.get(API_PATH.USER_ME).json()
+      return AuthedUserResp.parse(resp)
+    } catch (err) {
+      console.error(`Error fetching authed user: ${err}`)
+      return {
+        user: null,
+        mainRole: null,
+      }
+    }
+  }
+
+  getStaticResourceHash = async () => {
+    const resp = await this.client.get(API_PATH.STATIC_RESOURCE_HASH).json()
+    return StaticResourcesHashResp.parse(resp)
+  }
+
+  getActivistNames = async () => {
+    const resp = await this.client.get(API_PATH.ACTIVIST_NAMES_GET).json()
+    return ActivistNamesResp.parse(resp)
+  }
 }
+
+/** Single API client to be used from client-side calls.
+ *  When using SSR, you should construct a new ApiClient
+ *  using the cookies.
+ */
+export const apiClient = new ApiClient()

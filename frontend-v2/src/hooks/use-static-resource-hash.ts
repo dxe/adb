@@ -1,4 +1,4 @@
-import { API_PATH, getStaticResourceHash } from '@/lib/api'
+import { API_PATH, apiClient } from '@/lib/api'
 import { useQuery } from '@tanstack/react-query'
 
 // This is only used for Vue components and should eventually be removed.
@@ -9,7 +9,7 @@ import { useQuery } from '@tanstack/react-query'
 export const useStaticResourceHash = () => {
   const { data: staticResourceHash } = useQuery({
     queryKey: [API_PATH.STATIC_RESOURCE_HASH],
-    queryFn: getStaticResourceHash,
+    queryFn: apiClient.getStaticResourceHash,
   })
 
   return staticResourceHash?.hash
