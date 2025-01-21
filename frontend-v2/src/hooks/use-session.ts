@@ -8,10 +8,12 @@ export const useSession = () => {
   })
 
   return {
-    user: {
-      ...data?.user,
-      role: data?.mainRole,
-    },
+    user: data?.user
+      ? {
+          ...data.user,
+          role: data.mainRole,
+        }
+      : null,
     isLoading: isLoading,
   }
 }
