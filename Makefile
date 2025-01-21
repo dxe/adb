@@ -1,9 +1,21 @@
 .PHONY: run_all run watch test clean prod_build deps dev_db fmt
 
+# When not using devcontainer, NVM initialization script may be located in home
+# directory. In the devcontainer, it is in /usr/local/share/nvm/.
+NVM_SCRIPT := $(shell \
+    if [ -s "$(HOME)/.nvm/nvm.sh" ]; then \
+      echo "$(HOME)/.nvm/nvm.sh"; \
+    elif [ -s "/usr/local/share/nvm/nvm.sh" ]; then \
+      echo "/usr/local/share/nvm/nvm.sh"; \
+    else \
+      echo "Error: nvm.sh not found in either location." >&2; \
+      exit 1; \
+    fi)
+
 # Runs the application (builds Vue.js files, starts Next.js dev server, starts Go server).
 # As of January 2025, upgrading past Node 16 breaks old Vue dependencies, and Node 18 is required to use the latest version of React.
 run_all:
-	. ~/.nvm/nvm.sh; \
+	. $(NVM_SCRIPT) && \
 	export NEXT_PUBLIC_API_BASE_URL=http://localhost:8080; \
     (cd frontend && nvm install 16 && npm run dev-build); \
 	(cd frontend-v2 && nvm install 18 && nvm use 18 && pnpm dev) &
@@ -23,7 +35,7 @@ run:
 
 # Builds the frontend Vue JS files.
 js:
-	. ~/.nvm/nvm.sh && nvm use 16 && cd frontend && npm run dev-build
+	. $(NVM_SCRIPT) && nvm use 16 && cd frontend && npm run dev-build
 
 # Automatically rebuilds the Vue JS app when you edit a file. This is
 # more convenient then manually running `make run_all` every time you
