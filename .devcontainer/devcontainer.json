@@ -27,7 +27,12 @@
 			"nodeGypDependencies": true,
 			"version": "18"  // Match version from Dockerfile
 		},
-		"ghcr.io/jungaretti/features/make:1": {}
+		"ghcr.io/jungaretti/features/make:1": {},
+		"ghcr.io/rocker-org/devcontainer-features/apt-packages:1": {
+			// mariadb-client package provides the `mysql` command for
+			// development / debugging purposes (not an app dependeny).
+			"packages": "mariadb-client"
+		}
 	},
 	"customizations": {
 		"vscode": {
