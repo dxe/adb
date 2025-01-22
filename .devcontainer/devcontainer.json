@@ -27,7 +27,12 @@
 			"nodeGypDependencies": true,
 			"version": "18"  // Match version from Dockerfile
 		},
-		"ghcr.io/jungaretti/features/make:1": {}
+		"ghcr.io/jungaretti/features/make:1": {},
+		"ghcr.io/rocker-org/devcontainer-features/apt-packages:1": {
+			// mariadb-client package provides the `mysql` command for
+			// development / debugging purposes (not an app dependeny).
+			"packages": "mariadb-client"
+		}
 	},
 	"customizations": {
 		"vscode": {
@@ -42,10 +47,14 @@
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	"forwardPorts": [
-		3000, /* Frontend React dev server (adb.dxe.io/v2) */
-		8080, /* ADB main site (adb.dxe.io) */
-		8081 /* Members app (members.dxesf.org) */
-	]
+		8080 /* ADB main site (adb.dxe.io) */
+	],
+	"otherPortsAttributes": {
+		// Other ports will be automatically forwarded, but without any
+		// notification. They will still appear in the "ports" tab of the Panel
+		// in VS Code.
+		"onAutoForward": "silent"
+	}
 
 	// Configure tool-specific properties.
 	// "customizations": {},

@@ -54,15 +54,18 @@ After downloading the dependencies, start the development servers:
 ```bash
 make run_all
 ```
-Access the new frontend (React app) at http://localhost:3000/ - or test with
-http://localhost:3000/v2/test
+Access the new frontend (React app) at http://localhost:8080/v2 - or test with
+http://localhost:8080/v2/test.
 
 React pages auto-update in the frontend development server when you save
 changes.
 
-Access the Go API serverand and old frontend (Vue app) at http://localhost:8080
+Note: The react app can technically be accessed directly on port 3000 locally,
+but it won't have access to the cookies from :8080 which could cause issues.
 
-Access the Members app at members.dxesf.org at http://localhost:8081
+Access the Go API server and old frontend (Vue app) at http://localhost:8080/
+
+Access the Members app at members.dxesf.org at http://localhost:8081/
 
 ### Code formatting
 
