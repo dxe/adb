@@ -17,8 +17,8 @@ NVM_SCRIPT := $(shell \
 run_all:
 	. $(NVM_SCRIPT) && \
 	export NEXT_PUBLIC_API_BASE_URL=http://localhost:8080; \
-    (cd frontend && nvm install 16 && npm run dev-build); \
-	(cd frontend-v2 && nvm install 18 && nvm use 18 && pnpm dev) &
+    (cd frontend && nvm use 16 && npm run dev-build); \
+	(cd frontend-v2 && nvm use 18 && pnpm dev) &
 	$(MAKE) run
 
 # Just start the go program without recompiling the JS.
@@ -46,12 +46,13 @@ watch:
 # Wipe and re-create the dev databases. See the readme for more
 # details.
 dev_db:
+	export DXE_DEV_EMAIL=test-dev@directactioneverywhere.com && \
 	cd server/scripts/create_db_wrapper && ./create_db_wrapper.sh
 
 # Install all deps for this project.
 deps:
-	cd frontend && npm install --legacy-peer-deps
-	cd frontend-v2 && pnpm i
+	. $(NVM_SCRIPT) && cd frontend && nvm install 16 && npm i --legacy-peer-deps
+	. $(NVM_SCRIPT) && cd frontend-v2 && nvm install 18 && pnpm i
 	cd server/src && go get -t github.com/dxe/adb/...
 
 # Run all tests

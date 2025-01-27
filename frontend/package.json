@@ -5,7 +5,7 @@
   "author": "test",
   "private": true,
   "scripts": {
-    "watch": "webpack --watch --mode=development",
+    "watch": "webpack --watch --progress --mode=development",
     "dev-build": "webpack --progress --hide-modules --mode=development",
     "build": "webpack --progress --hide-modules --mode=production"
   },
