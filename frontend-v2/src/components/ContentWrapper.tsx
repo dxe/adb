@@ -9,8 +9,9 @@ const contentWrapperClass = {
   '2xl': 'lg:max-w-screen-2xl',
 }
 
-/** ContentWrapper is equivalent to the "body wrapper" element that was used in Vue.
- *  It is the white box of varialbe width that contains all of the page elements.
+/**
+ * ContentWrapper is the white box of variable width that contains all of the
+ * page elements. It is equivalent to the "body wrapper" element in the Vue app.
  */
 export const ContentWrapper = (props: {
   size: keyof typeof contentWrapperClass
