@@ -49,11 +49,22 @@ without a space.)
 
 ### Run
 
-After downloading the dependencies, start the development servers:
+After downloading the dependencies, start the development servers. There are two
+ways to do this.
+
+The first way is using the configuration in Makefile. This runs the React app
+in the background and then runs the Go server.
 
 ```bash
+# Convenient but does not allow viewing server output separately.
 make run_all
 ```
+
+The other way is using VS Code launch configurations. This allows you to see
+the output of each process individually via the debug console, and to restart
+processes individually. To do this, go to the Run and Debug panel and choose
+`Launch all`.
+
 Access the new frontend (React app) at http://localhost:8080/v2 - or test with
 http://localhost:8080/v2/test.
 
