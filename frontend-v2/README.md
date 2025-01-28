@@ -14,9 +14,9 @@ This allows us to define in one place which pages belong to which application.
 Each application is hosted at the same origin, so cookies are shared.
 
 All React pages are served under the path `v2/*`  (via a proxy in local dev so
-the next.js dev server can properly run, then via static files in the prod
-build). The navigation bar links to a mix of `v2/` and non-v2 destinations,
-which determines which app will load as the user navigates.
+the next.js dev server can properly run, and in prod so that Next.js can do SSR
+for smoother page loads). The navigation bar links to a mix of `v2/` and non-v2
+destinations, which determines which app will load as the user navigates.
 
 To upgrade a page, one implements it in the React app, changes the link in the
 navigation to go to the `v2/` page, then deletes the Vue page.
