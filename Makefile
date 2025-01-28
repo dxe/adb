@@ -25,12 +25,8 @@ run_all:
 run:
 	cd server/src && go install # Install first so that we keep cached build objects around.
 
-	cd server/src; \
-	export TEMPLATES_DIRECTORY=../templates; \
-	export STATIC_DIRECTORY=../../frontend/static; \
-	export DIST_DIRECTORY=../../frontend/dist; \
-	export JS_V2_DIRECTORY=../../frontend-v2/out; \
-	export NEXT_JS_PROXY_URL=http://localhost:3000; \
+	set -a && . server/debug.env && set +a && \
+	cd server/src && \
 	go run main.go
 
 # Builds the frontend Vue JS files.
