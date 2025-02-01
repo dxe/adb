@@ -1,0 +1,5 @@
+{
+    // Stop Makefile extension from asking about installing C++ tools when the
+    // project is opened.
+    "makefile.configureOnOpen": false
+}
