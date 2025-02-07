@@ -1,6 +1,6 @@
-import { useSession } from '@/hooks/use-session'
+import { useSession } from 'hooks/use-session'
 import Script from 'next/script'
-import { useStaticResourceHash } from '@/hooks/use-static-resource-hash'
+import { useStaticResourceHash } from 'hooks/use-static-resource-hash'
 
 // Allows the Vue AdbNav component to be used within the React app
 // so that the UI is more consistent. Once most pages are rebuilt in

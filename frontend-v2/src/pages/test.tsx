@@ -1,21 +1,21 @@
-import { AuthedPageLayout } from '@/components/AuthedPageLayout'
-import { ContentWrapper } from '@/components/ContentWrapper'
-import { VueNavbar } from '@/components/VueNavbar'
+import { AuthedPageLayout } from 'components/AuthedPageLayout'
+import { ContentWrapper } from 'components/ContentWrapper'
+import { VueNavbar } from 'components/VueNavbar'
 import { HydrationBoundary, useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import { sampleSize } from 'lodash-es'
 import toast from 'react-hot-toast'
-import { Button } from '@/components/ui/button'
+import { Button } from 'components/ui/button'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
+} from 'components/ui/dialog'
 import NiceModal, { useModal } from '@ebay/nice-modal-react'
-import { API_PATH, apiClient } from '@/lib/api'
-import { DefaultPageProps, getDefaultServerSideProps } from '@/lib/ssr'
+import { API_PATH, apiClient } from 'lib/api'
+import { DefaultPageProps, getDefaultServerSideProps } from 'lib/ssr'
 import { Loader } from 'lucide-react'
 
 export default function TestPage({ dehydratedState }: DefaultPageProps) {
