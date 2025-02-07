@@ -1,5 +1,15 @@
 {
     // Stop Makefile extension from asking about installing C++ tools when the
     // project is opened.
-    "makefile.configureOnOpen": false
+    "makefile.configureOnOpen": false,
+    "editor.formatOnSave": true,
+    "[typescriptreact]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[css]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
 }

@@ -48,7 +48,7 @@ dev_db:
 # Install all deps for this project.
 deps:
 	. $(NVM_SCRIPT) && cd frontend && nvm install 16 && npm i --legacy-peer-deps
-	. $(NVM_SCRIPT) && cd frontend-v2 && nvm install 18 && pnpm i
+	. $(NVM_SCRIPT) && cd frontend-v2 && nvm install 18 && npm i -g pnpm && pnpm i
 	cd server/src && go get -t github.com/dxe/adb/...
 
 # Run all tests

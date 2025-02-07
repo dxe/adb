@@ -41,7 +41,8 @@
 				"golang.go",
 				"Vue.volar",
 				"GitHub.vscode-github-actions",
-				"ms-vscode.vscode-typescript-next"
+				"ms-vscode.vscode-typescript-next",
+				"esbenp.prettier-vscode"
 			]
 		}
 	},
