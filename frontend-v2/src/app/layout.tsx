@@ -1,6 +1,7 @@
 import '@/styles/globals.css'
 import type { Metadata, Viewport } from 'next'
 import { Toaster } from 'react-hot-toast'
+import Providers from './providers'
 
 export const metadata: Metadata = {
   title: 'Activist Database',
@@ -26,7 +27,7 @@ export default function RootLayout({
         <meta charSet="utf-8" />
       </head>
       <body className="antialiased">
-        {children}
+        <Providers>{children}</Providers>
         <Toaster position="bottom-right" />
       </body>
     </html>
