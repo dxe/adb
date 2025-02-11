@@ -6,23 +6,26 @@ import {
   HydrationBoundary,
   QueryClient,
 } from '@tanstack/react-query'
-import Activists, { getActivists } from './activists'
+import Activists from './activists'
 import { VueNavbar } from 'app/VueNavbar'
 import { ContentWrapper } from 'app/ContentWrapper'
 import { AuthedPageLayout } from 'app/AuthedPageLayout'
+import { API_PATH, apiClient } from 'lib/api'
 
 export default async function ActivistsPage() {
   const queryClient = new QueryClient()
 
   await queryClient.prefetchQuery({
-    queryKey: ['activists'],
-    queryFn: getActivists,
+    queryKey: [API_PATH.ACTIVIST_NAMES_GET],
+    queryFn: apiClient.getActivistNames,
   })
 
   return (
     <AuthedPageLayout>
       <VueNavbar pageName="TestPage" />
       <ContentWrapper size="sm" className="gap-6">
+        <p>Hello from App Router!</p>
+
         {
           // Serialization is as easy as passing props.
           // HydrationBoundary is a Client Component, so hydration will happen there.
