@@ -7,6 +7,9 @@ import {
   QueryClient,
 } from '@tanstack/react-query'
 import Activists, { getActivists } from './activists'
+import { VueNavbar } from 'app/VueNavbar'
+import { ContentWrapper } from 'app/ContentWrapper'
+import { AuthedPageLayout } from 'app/AuthedPageLayout'
 
 export default async function ActivistsPage() {
   const queryClient = new QueryClient()
@@ -17,10 +20,17 @@ export default async function ActivistsPage() {
   })
 
   return (
-    // Serialization is as easy as passing props.
-    // HydrationBoundary is a Client Component, so hydration will happen there.
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      <Activists />
-    </HydrationBoundary>
+    <AuthedPageLayout>
+      <VueNavbar pageName="TestPage" />
+      <ContentWrapper size="sm" className="gap-6">
+        {
+          // Serialization is as easy as passing props.
+          // HydrationBoundary is a Client Component, so hydration will happen there.
+        }
+        <HydrationBoundary state={dehydrate(queryClient)}>
+          <Activists />
+        </HydrationBoundary>
+      </ContentWrapper>
+    </AuthedPageLayout>
   )
 }

@@ -1,4 +1,4 @@
-import '@/styles/globals.css'
+import 'styles/globals.css'
 import type { Metadata, Viewport } from 'next'
 import { Toaster } from 'react-hot-toast'
 import Providers from './providers'
@@ -26,7 +26,12 @@ export default function RootLayout({
       <head>
         <meta charSet="utf-8" />
       </head>
-      <body className="antialiased">
+      {/*
+      Without "has-navbar-fixed-top" we get an error:
+      "Hydration failed because the server rendered HTML didn't match the
+      client. As a result this tree will be regenerated on the client...."
+      */}
+      <body className="antialiased has-navbar-fixed-top">
         <Providers>{children}</Providers>
         <Toaster position="bottom-right" />
       </body>
