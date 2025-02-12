@@ -1,7 +1,7 @@
 import Script from 'next/script'
 import { fetchStaticResourceHash } from 'app/static-resource-hash'
 import { fetchSession } from 'app/session'
-import { headers } from 'next/headers'
+import { getAuthCookies } from 'lib/auth'
 
 // Allows the Vue AdbNav component to be used within the React app
 // so that the UI is more consistent. Once most pages are rebuilt in
@@ -13,10 +13,8 @@ export const VueNavbar = async (props: {
   /** The name of the active page, corresponding to the name in Vue. */
   pageName: string
 }) => {
-  const session = await fetchSession(
-    (await headers()).get('Cookie') ?? undefined,
-  )
-  const staticResourceHash = fetchStaticResourceHash()
+  const session = await fetchSession(await getAuthCookies())
+  const staticResourceHash = await fetchStaticResourceHash()
 
   return (
     <>
@@ -40,12 +38,7 @@ export const VueNavbar = async (props: {
         }}
         suppressHydrationWarning
       />
-      {/* eslint-disable-next-line @next/next/no-before-interactive-script-outside-document */}
-      <Script
-        src={`/dist/adb.js?hash=${staticResourceHash}`}
-        // `beforeInteractive` is used so that the UI loads smoothly when using SSR.
-        strategy="beforeInteractive"
-      />
+      <Script src={`/dist/adb.js?hash=${staticResourceHash}`} />
     </>
   )
 }
