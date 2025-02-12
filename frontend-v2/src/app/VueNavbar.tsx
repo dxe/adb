@@ -1,6 +1,7 @@
 import Script from 'next/script'
 import { fetchStaticResourceHash } from 'app/static-resource-hash'
 import { fetchSession } from 'app/session'
+import { headers } from 'next/headers'
 
 // Allows the Vue AdbNav component to be used within the React app
 // so that the UI is more consistent. Once most pages are rebuilt in
@@ -12,12 +13,13 @@ export const VueNavbar = async (props: {
   /** The name of the active page, corresponding to the name in Vue. */
   pageName: string
 }) => {
-  const session = await fetchSession()
+  const session = await fetchSession(
+    (await headers()).get('Cookie') ?? undefined,
+  )
   const staticResourceHash = fetchStaticResourceHash()
 
   return (
     <>
-      {/* eslint-disable-next-line @next/next/no-css-tags */}
       <link
         rel="stylesheet"
         type="text/css"

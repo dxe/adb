@@ -1,8 +1,9 @@
-import { API_PATH, apiClient } from 'lib/api'
+import { API_PATH, ApiClient } from 'lib/api'
 import { QueryClient } from '@tanstack/react-query'
 
-export const fetchSession = async () => {
+export const fetchSession = async (cookies?: string) => {
   const queryClient = new QueryClient()
+  const apiClient = new ApiClient(cookies)
 
   const data = await queryClient.fetchQuery({
     queryKey: [API_PATH.USER_ME],
