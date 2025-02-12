@@ -77,10 +77,9 @@ docker_shell:
 	docker exec -it adbtest /bin/ash
 
 # Build the project for production.
-prod_build: clean set_git_hooks
-	cd server && ./scripts/pull_adb_config.sh
-	cd frontend && npm run build
-	cd server/src && env GOOS=linux GOARCH=amd64 go build
+prod_build:
+	docker build . -t dxe/adb
+	cd frontend-v2 && docker build . -t dxe/adb-next
 
 # Reformat source files.
 # Keep in sync with hooks/pre-commit.

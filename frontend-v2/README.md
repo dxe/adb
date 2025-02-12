@@ -53,3 +53,22 @@ React Server Components. See React Query's documentation for this in their
 [Advanced SSR guide][rq-ssr]
 
 [rq-ssr]: https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr
+
+# Build
+
+## Testing in production
+
+If you have AWS access, you can deploy changes to the v2 frontend in production
+before merging changes to the main branch. As actual traffic to v2 pages
+increases, this will become a riskier testing method.
+
+First, build the images, assign the right tags for use in the AWS ECR repo,
+log into the AWS CLI and then push to the ECR repo. Watchtower running in EC2
+will automatically pick up the changes and make them live.
+
+```bash
+make prod_build
+docker tag dxe/adb-next 521324062467.dkr.ecr.us-west-2.amazonaws.com/dxe/adb-next
+aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 521324062467.dkr.ecr.us-west-2.amazonaws.com
+docker push 521324062467.dkr.ecr.us-west-2.amazonaws.com/dxe/adb-next:latest
+```

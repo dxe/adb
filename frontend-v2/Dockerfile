@@ -1,9 +1,12 @@
+# syntax=docker/dockerfile:1.7-labs
+# Use 1.7-labs to use COPY with --exclude flag.
+
 ## Build web UI frontend v2.   
 
 FROM node:20-alpine
 
 WORKDIR /src
-COPY . .
+COPY --exclude=node_modules --exclude=.next . .
 
 RUN npm install -g pnpm
 RUN apk add --no-cache libc6-compat
