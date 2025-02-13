@@ -9,6 +9,10 @@ import { getAuthCookies } from 'lib/auth'
 // The biggest downside currently is that the entire app has
 // to reload whenever a link is clicked, due to not using the <Link>
 // component to navigate between pages.
+//
+// Works best with 'has-navbar-fixed-top' class on the body tag to prevent
+// layout shift, since the Vue script is loaded asynchronously. Without this,
+// the navbar pushes remaining page content down once it finally loads.
 export const VueNavbar = async (props: {
   /** The name of the active page, corresponding to the name in Vue. */
   pageName: string

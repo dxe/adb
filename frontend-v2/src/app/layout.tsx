@@ -26,12 +26,13 @@ export default function RootLayout({
       <head>
         <meta charSet="utf-8" />
       </head>
-      {/*
-      Without "has-navbar-fixed-top" we get an error:
-      "Hydration failed because the server rendered HTML didn't match the
-      client. As a result this tree will be regenerated on the client...."
-      */}
-      <body className="antialiased has-navbar-fixed-top">
+      <body
+        className={[
+          'antialiased',
+          /* Prevent layout shift. See VueNavbar.tsx for details. */
+          'has-navbar-fixed-top',
+        ].join(' ')}
+      >
         <Providers>{children}</Providers>
         <Toaster position="bottom-right" />
       </body>
