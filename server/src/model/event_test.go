@@ -11,10 +11,14 @@ func TestGetEvents(t *testing.T) {
 	db := newTestDB()
 	defer db.Close()
 
-	a1, err := GetOrCreateActivist(db, "Hello", 1)
+	a1 := Activist{Name: "Hello", ChapterID: 1, Email: "test1@example.org", Phone: "123-456-7890"}
+	a2 := Activist{Name: "Hi", ChapterID: 1, Email: "test2@example.org", Phone: "888-888-8888"}
+	a1ID, err := CreateActivist(db, ActivistExtra{Activist: a1})
 	require.NoError(t, err)
-	a2, err := GetOrCreateActivist(db, "Hi", 1)
+	a2ID, err := CreateActivist(db, ActivistExtra{Activist: a2})
 	require.NoError(t, err)
+	a1.ID = a1ID
+	a2.ID = a2ID
 
 	d1, err := time.Parse("2006-01-02", "2017-01-15")
 	require.NoError(t, err)
@@ -25,8 +29,9 @@ func TestGetEvents(t *testing.T) {
 		EventName:      "event one",
 		EventDate:      d1,
 		EventType:      "Working Group",
-		Attendees:      []string{a1.Name},
-		AttendeeEmails: []string{a1.Email},
+		Attendees:      []string{"Hello"},
+		AttendeeEmails: []string{"test1@example.org"},
+		AttendeePhones: []string{"123-456-7890"},
 		AttendeeIDs:    []int{a1.ID},
 		ChapterID:      1,
 	}, {
@@ -34,8 +39,9 @@ func TestGetEvents(t *testing.T) {
 		EventName:      "event two",
 		EventDate:      d2,
 		EventType:      "Protest",
-		Attendees:      []string{a1.Name, a2.Name},
-		AttendeeEmails: []string{a1.Email, a2.Email},
+		Attendees:      []string{"Hello", "Hi"},
+		AttendeeEmails: []string{"test1@example.org", "test2@example.org"},
+		AttendeePhones: []string{"123-456-7890", "888-888-8888"},
 		AttendeeIDs:    []int{a1.ID, a2.ID},
 		ChapterID:      1,
 	}}
