@@ -66,6 +66,7 @@ var DevTestUser = ADBUser{
 	ID:          1,
 	Email:       "test@test.com",
 	Name:        "Test User",
+	Admin:       true,
 	Disabled:    false,
 	Roles:       []UserRole{{UserID: 1, Role: "admin"}},
 	ChapterID:   1,
