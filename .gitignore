@@ -12,3 +12,4 @@ frontend-v2/node_modules
 frontend-v2/.next
 frontend-v2/out
 npm-debug.log
+server/src/__debug*

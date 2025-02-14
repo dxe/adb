@@ -40,7 +40,9 @@
 				"ms-vscode.makefile-tools",
 				"golang.go",
 				"Vue.volar",
-				"GitHub.vscode-github-actions"
+				"GitHub.vscode-github-actions",
+				"ms-vscode.vscode-typescript-next",
+				"esbenp.prettier-vscode"
 			]
 		}
 	},
