@@ -2,6 +2,7 @@ import Script from 'next/script'
 import { fetchStaticResourceHash } from 'app/static-resource-hash'
 import { fetchSession } from 'app/session'
 import { getAuthCookies } from 'lib/auth'
+import styles from './VueNavbar.module.css'
 
 // Allows the Vue AdbNav component to be used within the React app
 // so that the UI is more consistent. Once most pages are rebuilt in
@@ -27,6 +28,10 @@ export const VueNavbar = async (props: {
         type="text/css"
         href="/static/external/buefy.min.css"
       />
+      {/* Show a white background where the navbar will appear to reduce the
+      effect of the navbar flashing in and out as the user navigates between
+      pages. */}
+      <div className={styles['navbar-placeholder']}></div>
       <div
         id="app"
         className="shadow-none"

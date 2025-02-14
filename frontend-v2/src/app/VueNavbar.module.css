@@ -1,0 +1,9 @@
+.navbar-placeholder {
+  position: fixed; /* Keep at the top on scroll */
+  top: 0; /* Aligns to the top of the screen */
+  left: 0;
+  width: 100%;
+  height: 3.25rem; /* Same height as Buefy navbar */
+  background-color: #fff;
+  z-index: 15; /* Place behind actual navbar which is z-index 30 */
+}
