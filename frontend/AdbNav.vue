@@ -32,8 +32,8 @@
           <b-icon icon="account" size="is-small" class="mx-1"></b-icon>
           {{ user }} ({{ chapter }})
         </div>
-        <div class="buttons">
-          <a href="/logout" class="button is-light">Log out</a>
+        <div>
+          <a href="/logout">Log out</a>
         </div>
       </b-navbar-item>
     </template>
