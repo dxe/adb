@@ -67,7 +67,7 @@ log into the AWS CLI and then push to the ECR repo. Watchtower running in EC2
 will automatically pick up the changes and make them live.
 
 ```bash
-cd frontend-v2 && docker build . -t dxe/adb-next && cd ..
+cd frontend-v2 && docker build . -t dxe/adb-next ; cd ..
 docker tag dxe/adb-next 521324062467.dkr.ecr.us-west-2.amazonaws.com/dxe/adb-next
 aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 521324062467.dkr.ecr.us-west-2.amazonaws.com
 docker push 521324062467.dkr.ecr.us-west-2.amazonaws.com/dxe/adb-next:latest
