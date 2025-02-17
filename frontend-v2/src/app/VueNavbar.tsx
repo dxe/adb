@@ -1,8 +1,7 @@
 import Script from 'next/script'
 import { fetchStaticResourceHash } from 'app/static-resource-hash'
 import { fetchSession } from 'app/session'
-import { getAuthCookies } from 'lib/auth'
-import styles from './VueNavbar.module.css'
+import { getCookies } from 'lib/auth'
 
 // Allows the Vue AdbNav component to be used within the React app
 // so that the UI is more consistent. Once most pages are rebuilt in
@@ -18,8 +17,10 @@ export const VueNavbar = async (props: {
   /** The name of the active page, corresponding to the name in Vue. */
   pageName: string
 }) => {
-  const session = await fetchSession(await getAuthCookies())
-  const staticResourceHash = await fetchStaticResourceHash()
+  const [session, staticResourceHash] = await Promise.all([
+    fetchSession(await getCookies()),
+    fetchStaticResourceHash(),
+  ])
 
   return (
     <>
@@ -31,7 +32,17 @@ export const VueNavbar = async (props: {
       {/* Show a white background where the navbar will appear to reduce the
       effect of the navbar flashing in and out as the user navigates between
       pages. */}
-      <div className={styles['navbar-placeholder']}></div>
+      <div
+        style={{
+          position: 'fixed' /* Keep at the top on scroll */,
+          top: 0 /* Aligns to the top of the screen */,
+          left: 0,
+          width: '100%',
+          height: '3.25rem' /* Same height as Buefy navbar */,
+          backgroundColor: '#fff',
+          zIndex: 15 /* Place behind actual navbar which is z-index 30 */,
+        }}
+      ></div>
       <div
         id="app"
         className="shadow-none"

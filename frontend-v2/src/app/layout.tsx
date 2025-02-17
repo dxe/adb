@@ -2,6 +2,7 @@ import 'styles/globals.css'
 import type { Metadata, Viewport } from 'next'
 import { Toaster } from 'react-hot-toast'
 import Providers from './providers'
+import { cn } from 'lib/utils'
 
 export const metadata: Metadata = {
   title: 'Activist Database',
@@ -27,11 +28,11 @@ export default function RootLayout({
         <meta charSet="utf-8" />
       </head>
       <body
-        className={[
+        className={cn(
           'antialiased',
           /* Prevent layout shift. See VueNavbar.tsx for details. */
           'has-navbar-fixed-top',
-        ].join(' ')}
+        )}
       >
         <Providers>{children}</Providers>
         <Toaster position="bottom-right" />

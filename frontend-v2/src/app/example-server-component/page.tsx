@@ -11,10 +11,10 @@ import { VueNavbar } from 'app/VueNavbar'
 import { ContentWrapper } from 'app/ContentWrapper'
 import { AuthedPageLayout } from 'app/AuthedPageLayout'
 import { API_PATH, ApiClient } from 'lib/api'
-import { getAuthCookies } from 'lib/auth'
+import { getCookies } from 'lib/auth'
 
 export default async function ActivistsPage() {
-  const apiClient = new ApiClient(await getAuthCookies())
+  const apiClient = new ApiClient(await getCookies())
   const queryClient = new QueryClient()
 
   await queryClient.prefetchQuery({
