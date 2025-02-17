@@ -57,6 +57,7 @@ type Event struct {
 	SuppressSurvey        bool      `db:"suppress_survey"`
 	Attendees             []string  // For retrieving all event attendees
 	AttendeeEmails        []string
+	AttendeePhones        []string
 	AttendeeIDs           []int
 	AttendeeMissingEmails []string   // Used for sending event surveys
 	AddedAttendees        []Activist // Used for Updating Events
@@ -219,6 +220,7 @@ SELECT
   ea.event_id,
   a.name as activist_name,
   a.email as activist_email,
+  a.phone as activist_phone,
   a.id as activist_id
 FROM activists a
 JOIN event_attendance ea
@@ -234,6 +236,7 @@ WHERE
 		EventID       int    `db:"event_id"`
 		ActivistName  string `db:"activist_name"`
 		ActivistEmail string `db:"activist_email"`
+		ActivistPhone string `db:"activist_phone"`
 		ActivistID    int    `db:"activist_id"`
 	}
 	var allAttendance []Attendance
@@ -246,6 +249,7 @@ WHERE
 		i := eventIDToIndex[a.EventID]
 		events[i].Attendees = append(events[i].Attendees, a.ActivistName)
 		events[i].AttendeeEmails = append(events[i].AttendeeEmails, a.ActivistEmail)
+		events[i].AttendeePhones = append(events[i].AttendeePhones, a.ActivistPhone)
 		events[i].AttendeeIDs = append(events[i].AttendeeIDs, a.ActivistID)
 	}
 

@@ -37,11 +37,10 @@ If you are using the devcontainer, just run this command in the container:
 make dev_db
 ```
 
-This command will log you into the database if you run the command in the same
-container as the database:
+You can log into the database from the devcontainer using this command:
 
 ```bash
-mysql -u adb_user -padbpassword -h 127.0.0.1
+mysql -u adb_user -padbpassword -h mysql
 ```
 
 (Note the syntax of the above command is to accept the password after `-p`

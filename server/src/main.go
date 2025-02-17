@@ -1517,13 +1517,13 @@ func (c MainController) EventAttendanceCSVHandler(w http.ResponseWriter, r *http
 	w.Header().Set("Transfer-Encoding", "chunked")
 
 	writer := csv.NewWriter(w)
-	err = writer.Write([]string{"name", "email"})
+	err = writer.Write([]string{"name", "email", "phone"})
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
 	}
 	for i, attendee := range event.Attendees {
-		err := writer.Write([]string{attendee, event.AttendeeEmails[i]})
+		err := writer.Write([]string{attendee, event.AttendeeEmails[i], event.AttendeePhones[i]})
 		if err != nil {
 			sendErrorMessage(w, err)
 			return
