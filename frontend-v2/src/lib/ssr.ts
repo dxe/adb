@@ -1,5 +1,5 @@
 import { dehydrate, QueryClient } from '@tanstack/react-query'
-import { API_PATH, ApiClient } from '@/lib/api'
+import { API_PATH, ApiClient } from 'lib/api'
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next'
 
 /** Loads the static resource hash & session data during SSR.

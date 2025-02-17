@@ -134,6 +134,11 @@
           "label": "Test Page",
           "href": "/v2/test",
           "page": "TestPage"
+        },
+        {
+          "label": "Test Page: App Router",
+          "href": "/v2/example-server-component",
+          "page": "TestPage2"
         }
       ]
     }

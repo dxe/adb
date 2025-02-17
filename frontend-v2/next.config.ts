@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
   basePath: '/v2',
+  output: 'standalone',
 }
 
 export default nextConfig
