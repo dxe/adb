@@ -33,7 +33,7 @@
           {{ user }} ({{ chapter }})
         </div>
         <div>
-          <a href="/logout">Log out</a>
+          <a href="/logout" style="color:inherit">Log out</a>
         </div>
       </b-navbar-item>
     </template>
