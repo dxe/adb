@@ -114,7 +114,7 @@ func getExternalEvents(db *sqlx.DB, pageID int, startTime time.Time, endTime tim
 	return events, nil
 }
 
-func InsertExternalEvent(db *sqlx.DB, event ExternalEvent) (err error) {
+func UpsertExternalEvent(db *sqlx.DB, event ExternalEvent) (err error) {
 	sqlTimeLayout := "2006-01-02T15:04:05"
 
 	// insert into database

@@ -22,14 +22,13 @@ func TestInsertFacebookEvent(t *testing.T) {
 		WithIsCanceled(false),
 	)
 
-	InsertExternalEvents(t, db, event)
+	UpsertExternalEvents(t, db, event)
 
 	var events []ExternalEvent
 	require.NoError(t,
 		db.Select(&events, "select id, page_id, name from fb_events where name = 'Test Event 1'"))
 
 	require.Equal(t, len(events), 1)
-
 }
 
 func TestGetFacebookEvents(t *testing.T) {
@@ -75,7 +74,7 @@ func TestGetFacebookEvents(t *testing.T) {
 		WithLocationName("Online"),
 	)
 
-	InsertExternalEvents(t, db,
+	UpsertExternalEvents(t, db,
 		sfBayEvent,
 		firstOtherEvent,
 		secondOtherEvent,
@@ -118,7 +117,7 @@ func TestGetBayAreaFacebookEvents(t *testing.T) {
 	event2 := makeExternalEvent("2", WithPageID(NorthBayPageID))
 	event3 := makeExternalEvent("3", WithPageID(pageOther))
 
-	InsertExternalEvents(t, db, event1, event2, event3)
+	UpsertExternalEvents(t, db, event1, event2, event3)
 
 	eventsSFBay, _, err1 := GetExternalEventsWithFallback(db, SFBayPageID, beforeDefaultStartTime, time.Time{})
 	require.NoError(t, err1)
@@ -279,9 +278,9 @@ func WithFeatured(featured bool) ExternalEventOption {
 	}
 }
 
-func InsertExternalEvents(t *testing.T, db *sqlx.DB, events ...ExternalEvent) {
+func UpsertExternalEvents(t *testing.T, db *sqlx.DB, events ...ExternalEvent) {
 	for _, event := range events {
-		err := InsertExternalEvent(db, event)
+		err := UpsertExternalEvent(db, event)
 		require.NoError(t, err)
 	}
 }

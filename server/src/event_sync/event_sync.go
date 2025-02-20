@@ -49,7 +49,7 @@ func syncFacebookEventsForPage(db *sqlx.DB, page model.ChapterWithToken) error {
 	}
 
 	for _, event := range events {
-		err := parseAndInsertFacebookEvent(db, event, page)
+		err := parseAndUpsertFacebookEvent(db, event, page)
 		if err != nil {
 			fmt.Println(err.Error()) // print the error, but keep trying for the rest of the events
 		}
@@ -57,11 +57,11 @@ func syncFacebookEventsForPage(db *sqlx.DB, page model.ChapterWithToken) error {
 	return nil
 }
 
-func parseAndInsertFacebookEvent(db *sqlx.DB, event FacebookEvent, page model.ChapterWithToken) error {
+func parseAndUpsertFacebookEvent(db *sqlx.DB, event FacebookEvent, page model.ChapterWithToken) error {
 	// if event has event_times, then insert the sub-events instead
 	if event.EventTimes != nil {
 		for _, subEvent := range event.EventTimes {
-			err := parseAndInsertFacebookEvent(db, subEvent, page)
+			err := parseAndUpsertFacebookEvent(db, subEvent, page)
 			if err != nil {
 				return errors.New("failed to insert FB sub-events for: " + event.Name + ": " + err.Error())
 			}
@@ -74,7 +74,7 @@ func parseAndInsertFacebookEvent(db *sqlx.DB, event FacebookEvent, page model.Ch
 	if err != nil {
 		return errors.New("failed to parse FB event: " + event.Name + ": " + err.Error())
 	}
-	err = model.InsertExternalEvent(db, parsedEvent)
+	err = model.UpsertExternalEvent(db, parsedEvent)
 	if err != nil {
 		return errors.New("failed to insert event into database: " + event.Name + ": " + err.Error())
 	}
