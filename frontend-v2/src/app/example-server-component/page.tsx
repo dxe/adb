@@ -24,7 +24,7 @@ export default async function ActivistsPage() {
 
   return (
     <AuthedPageLayout>
-      <VueNavbar pageName="TestPage" />
+      <VueNavbar pageName="TestPage2" />
       <ContentWrapper size="sm" className="gap-6">
         <p>Hello from App Router!</p>
 

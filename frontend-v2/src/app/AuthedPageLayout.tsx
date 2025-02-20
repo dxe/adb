@@ -6,7 +6,9 @@ import { getCookies } from 'lib/auth'
 export const AuthedPageLayout = async (props: { children: ReactNode }) => {
   const session = await fetchSession(await getCookies())
   if (!session.user) {
-    redirect('/login')
+    // Go one level up from the Next.js app root (`/v2`), to get to the
+    // absolute URL root, and go to /login from there.
+    redirect('/../login')
   }
 
   return props.children
