@@ -122,10 +122,12 @@ func TestGetBayAreaFacebookEvents(t *testing.T) {
 	eventsSFBay, _, err1 := GetExternalEventsWithFallback(db, SFBayPageID, beforeDefaultStartTime, time.Time{})
 	require.NoError(t, err1)
 	require.Equal(t, 2, len(eventsSFBay))
+	require.ElementsMatch(t, []string{"1", "2"}, []string{eventsSFBay[0].ID, eventsSFBay[1].ID})
 
 	eventsNorthBay, _, err2 := GetExternalEventsWithFallback(db, NorthBayPageID, beforeDefaultStartTime, time.Time{})
 	require.NoError(t, err2)
 	require.Equal(t, 2, len(eventsNorthBay))
+	require.ElementsMatch(t, []string{"1", "2"}, []string{eventsNorthBay[0].ID, eventsNorthBay[1].ID})
 }
 
 func ParseTime(t *testing.T, timeStr string) time.Time {
