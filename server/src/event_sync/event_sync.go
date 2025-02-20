@@ -148,7 +148,7 @@ func syncEventbriteEvents(db *sqlx.DB) {
 			fmt.Println("ERROR:", err)
 		}
 
-		dbEvents, err := model.GetExternalEvents(db, page.ID, now, time.Time{}, false)
+		dbEvents, err := model.GetExternalEvents(db, page.ID, now, time.Time{})
 		if err != nil {
 			fmt.Println("ERROR:", err)
 		}
@@ -159,7 +159,7 @@ func syncEventbriteEvents(db *sqlx.DB) {
 		}
 
 		// read events from db again since we may have just added the EB information to them
-		dbEvents, err = model.GetExternalEvents(db, page.ID, now, time.Time{}, false)
+		dbEvents, err = model.GetExternalEvents(db, page.ID, now, time.Time{})
 		if err != nil {
 			fmt.Println("ERROR:", err)
 		}

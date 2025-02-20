@@ -33,7 +33,14 @@ type ExternalEvent struct {
 	Featured        bool      `db:"featured"`
 }
 
-func GetExternalEvents(db *sqlx.DB, pageID int, startTime time.Time, endTime time.Time, onlineOnly bool) ([]ExternalEvent, error) {
+func GetExternalEvents(db *sqlx.DB, pageID int, startTime time.Time, endTime time.Time) ([]ExternalEvent, error) {
+	return getExternalEvents(db, pageID, startTime, endTime, false)
+}
+func GetExternalOnlineEvents(db *sqlx.DB, startTime time.Time, endTime time.Time) ([]ExternalEvent, error) {
+	return getExternalEvents(db, 0, startTime, endTime, true)
+}
+
+func getExternalEvents(db *sqlx.DB, pageID int, startTime time.Time, endTime time.Time, onlineOnly bool) ([]ExternalEvent, error) {
 	query := `SELECT id, page_id, name, start_time, end_time, location_name,
 		location_country, location_country, location_state, location_address, location_zip,
 		lat, lng, cover, attending_count, interested_count, is_canceled, last_update, eventbrite_id, eventbrite_url, description, featured FROM fb_events`
@@ -41,7 +48,10 @@ func GetExternalEvents(db *sqlx.DB, pageID int, startTime time.Time, endTime tim
 	query += " WHERE is_canceled = 0"
 
 	if onlineOnly {
-		query += " and ((page_id = 1377014279263790 and location_name = 'Online') or page_id = 287332515138353)"
+		// Show main chapter online events and ALC events
+		const SFBayPageID = "1377014279263790"
+		const AlcPageID = "287332515138353"
+		query += " and ((page_id = " + SFBayPageID + " and location_name = 'Online') or page_id = " + AlcPageID + ")"
 	} else {
 		query += " and page_id = " + strconv.Itoa(pageID)
 	}

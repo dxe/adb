@@ -1729,6 +1729,16 @@ func (c MainController) HealthStatusHandler(w http.ResponseWriter, r *http.Reque
 	})
 }
 
+/**
+ * ListFBEventsHandler gets events for the given Facebook page ID, with optional
+ * start and end times, and fetching extra events in certain cases.
+ *
+ * If the page ID is a Bay Area page, events from all Bay Area pages are
+ * returned.
+ *
+ * If no local events are found, SF Bay events with location set to "Online" are
+ * returned along with all ALC events.
+ */
 func (c MainController) ListFBEventsHandler(w http.ResponseWriter, r *http.Request) {
 	// page ID (required)
 	vars := mux.Vars(r)
@@ -1776,14 +1786,14 @@ func (c MainController) ListFBEventsHandler(w http.ResponseWriter, r *http.Reque
 	if model.IsBayAreaPage(pageID) {
 		// If one Bay Area page is chosen, combine events from all Bay Area pages
 		for _, chapterPageID := range model.BayAreaPages {
-			chapterEvents, err2 := model.GetExternalEvents(c.db, chapterPageID, startTime, endTime, false)
+			chapterEvents, err2 := model.GetExternalEvents(c.db, chapterPageID, startTime, endTime)
 			if err2 != nil {
 				panic(err)
 			}
 			events = append(events, chapterEvents...)
 		}
 	} else {
-		events, err = model.GetExternalEvents(c.db, pageID, startTime, endTime, false)
+		events, err = model.GetExternalEvents(c.db, pageID, startTime, endTime)
 		if err != nil {
 			panic(err)
 		}
@@ -1796,7 +1806,7 @@ func (c MainController) ListFBEventsHandler(w http.ResponseWriter, r *http.Reque
 
 	if !localEventsFound {
 		// get online SF Bay + ALOA events instead
-		events, err = model.GetExternalEvents(c.db, 0, startTime, endTime, true)
+		events, err = model.GetExternalOnlineEvents(c.db, startTime, endTime)
 		if err != nil {
 			panic(err)
 		}

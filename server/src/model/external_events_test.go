@@ -185,7 +185,7 @@ func TestGetFacebookEvents(t *testing.T) {
 	require.NoError(t, err)
 	queryEndTime, err := time.Parse(queryTimeLayout, "2020-03-01T00:00")
 	require.NoError(t, err)
-	events, err = GetExternalEvents(db, 456456456456, queryStartTime, queryEndTime, false)
+	events, err = GetExternalEvents(db, 456456456456, queryStartTime, queryEndTime)
 	require.Equal(t, len(events), 2)
 	require.Equal(t, events[0].PageID, 456456456456)
 
@@ -194,7 +194,7 @@ func TestGetFacebookEvents(t *testing.T) {
 	require.NoError(t, err)
 	queryEndTime, err = time.Parse(queryTimeLayout, "2020-01-15T00:00")
 	require.NoError(t, err)
-	events, err = GetExternalEvents(db, 456456456456, queryStartTime, queryEndTime, false)
+	events, err = GetExternalEvents(db, 456456456456, queryStartTime, queryEndTime)
 	require.Equal(t, len(events), 1)
 	require.Equal(t, events[0].PageID, 456456456456)
 
@@ -203,7 +203,7 @@ func TestGetFacebookEvents(t *testing.T) {
 	require.NoError(t, err)
 	queryEndTime, err = time.Parse(queryTimeLayout, "2020-01-15T00:00")
 	require.NoError(t, err)
-	events, err = GetExternalEvents(db, 0, queryStartTime, queryEndTime, true)
+	events, err = GetExternalOnlineEvents(db, queryStartTime, queryEndTime)
 	require.Equal(t, len(events), 1)
 	require.Equal(t, events[0].ID, "5555555555")
 }
