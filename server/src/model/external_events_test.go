@@ -4,8 +4,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/require"
 )
+
+const queryTimeLayout string = "2006-01-02T15:04"
 
 func TestInsertFacebookEvent(t *testing.T) {
 	db := newTestDB()
@@ -48,12 +51,11 @@ func TestGetFacebookEvents(t *testing.T) {
 	db := newTestDB()
 	defer db.Close()
 
-	const pageBerkeley int = 1377014279263790
 	const pageOther int = 456456456456
 
 	event1 := ExternalEvent{
 		ID:              "1111111111",
-		PageID:          pageBerkeley,
+		PageID:          SFBayPageID,
 		Name:            "Test Event 1",
 		Description:     "This is a test event in Berkeley.",
 		StartTime:       time.Date(2020, 1, 1, 11, 0, 0, 0, time.UTC),
@@ -141,7 +143,7 @@ func TestGetFacebookEvents(t *testing.T) {
 
 	event5 := ExternalEvent{
 		ID:              "5555555555",
-		PageID:          pageBerkeley,
+		PageID:          SFBayPageID,
 		Name:            "Test Event 5",
 		Description:     "This is an online event hosted by Berkeley.",
 		StartTime:       time.Date(2020, 1, 1, 11, 0, 0, 0, time.UTC),
@@ -161,24 +163,9 @@ func TestGetFacebookEvents(t *testing.T) {
 		Featured:        false,
 	}
 
-	err := InsertExternalEvent(db, event1)
-	require.NoError(t, err)
-
-	err = InsertExternalEvent(db, event2)
-	require.NoError(t, err)
-
-	err = InsertExternalEvent(db, event3)
-	require.NoError(t, err)
-
-	err = InsertExternalEvent(db, event4)
-	require.NoError(t, err)
-
-	err = InsertExternalEvent(db, event5)
-	require.NoError(t, err)
+	InsertExternalEvents(t, db, event1, event2, event3, event4, event5)
 
 	var events []ExternalEvent
-
-	const queryTimeLayout string = "2006-01-02T15:04"
 
 	// get events for specific chapter, excluding cancelled events
 	queryStartTime, err := time.Parse(queryTimeLayout, "2019-12-01T00:00")
@@ -204,6 +191,100 @@ func TestGetFacebookEvents(t *testing.T) {
 	queryEndTime, err = time.Parse(queryTimeLayout, "2020-01-15T00:00")
 	require.NoError(t, err)
 	events, err = GetExternalOnlineEvents(db, queryStartTime, queryEndTime)
+	require.NoError(t, err)
 	require.Equal(t, len(events), 1)
 	require.Equal(t, events[0].ID, "5555555555")
+}
+
+func TestGetBayAreaFacebookEvents(t *testing.T) {
+	db := newTestDB()
+	defer db.Close()
+
+	const pageOther int = 456456456456
+
+	event1 := ExternalEvent{
+		ID:              "1111111111",
+		PageID:          SFBayPageID,
+		Name:            "Test Event 1",
+		Description:     "This is a test event in Berkeley.",
+		StartTime:       time.Date(2020, 1, 1, 11, 0, 0, 0, time.UTC),
+		EndTime:         time.Date(2020, 1, 1, 13, 0, 0, 0, time.UTC),
+		LocationName:    "Berkeley Animal Rights Center",
+		LocationCity:    "Berkeley",
+		LocationCountry: "United States",
+		LocationState:   "CA",
+		LocationAddress: "123 Channing Way",
+		LocationZip:     "94703",
+		Lat:             1.000,
+		Lng:             1.000,
+		Cover:           "http://not-a-real-link",
+		AttendingCount:  25,
+		InterestedCount: 50,
+		IsCanceled:      false,
+		Featured:        false,
+	}
+
+	event2 := ExternalEvent{
+		ID:              "2222222222",
+		PageID:          NorthBayPageID,
+		Name:            "Test Event 2",
+		Description:     "This is a test event in North Bay.",
+		StartTime:       time.Date(2020, 1, 1, 11, 0, 0, 0, time.UTC),
+		EndTime:         time.Date(2020, 1, 1, 13, 0, 0, 0, time.UTC),
+		LocationName:    "Somewhere",
+		LocationCity:    "New York",
+		LocationCountry: "United States",
+		LocationState:   "NY",
+		LocationAddress: "123 Main St",
+		LocationZip:     "10258",
+		Lat:             1.000,
+		Lng:             1.000,
+		Cover:           "http://not-a-real-link",
+		AttendingCount:  25,
+		InterestedCount: 50,
+		IsCanceled:      false,
+		Featured:        false,
+	}
+
+	event3 := ExternalEvent{
+		ID:              "3333333333",
+		PageID:          pageOther,
+		Name:            "Test Event 3",
+		Description:     "This is a test event in NY at a later date.",
+		StartTime:       time.Date(2020, 2, 1, 11, 0, 0, 0, time.UTC),
+		EndTime:         time.Date(2020, 2, 1, 13, 0, 0, 0, time.UTC),
+		LocationName:    "Somewhere",
+		LocationCity:    "New York",
+		LocationCountry: "United States",
+		LocationState:   "NY",
+		LocationAddress: "123 Main St",
+		LocationZip:     "10258",
+		Lat:             1.000,
+		Lng:             1.000,
+		Cover:           "http://not-a-real-link",
+		AttendingCount:  25,
+		InterestedCount: 50,
+		IsCanceled:      false,
+		Featured:        false,
+	}
+
+	InsertExternalEvents(t, db, event1, event2, event3)
+
+	// get events for specific chapter, excluding cancelled events
+	queryStartTime, err := time.Parse(queryTimeLayout, "2019-12-01T00:00")
+	require.NoError(t, err)
+	eventsSFBay, _, err1 := GetExternalEventsWithFallback(db, SFBayPageID, queryStartTime, time.Time{})
+	require.NoError(t, err1)
+	require.Equal(t, len(eventsSFBay), 2)
+	eventsNorthBay, _, err2 := GetExternalEventsWithFallback(db, NorthBayPageID, queryStartTime, time.Time{})
+	require.NoError(t, err2)
+	require.Equal(t, len(eventsNorthBay), 2)
+}
+
+func InsertExternalEvents(t *testing.T, db *sqlx.DB, events ...ExternalEvent) error {
+	for _, event := range events {
+		err := InsertExternalEvent(db, event)
+		require.NoError(t, err)
+	}
+	return nil
 }

@@ -33,6 +33,44 @@ type ExternalEvent struct {
 	Featured        bool      `db:"featured"`
 }
 
+func GetExternalEventsWithFallback(db *sqlx.DB, pageID int, startTime time.Time, endTime time.Time) (events []ExternalEvent, localEventsFound bool, err error) {
+	localEventsFound = false
+
+	// run query to get local events
+	if IsBayAreaPage(pageID) {
+		// If one Bay Area page is chosen, combine events from all Bay Area pages
+		for _, chapterPageID := range BayAreaPages {
+			chapterEvents, err := GetExternalEvents(db, chapterPageID, startTime, endTime)
+			if err != nil {
+				return nil, false, err
+			}
+			events = append(events, chapterEvents...)
+		}
+	} else {
+		var err error
+		events, err = GetExternalEvents(db, pageID, startTime, endTime)
+		if err != nil {
+			return nil, false, err
+		}
+	}
+
+	// check if any local events were returned
+	if len(events) > 0 {
+		localEventsFound = true
+	}
+
+	if !localEventsFound {
+		// get online SF Bay + ALOA events instead
+		var err error
+		events, err = GetExternalOnlineEvents(db, startTime, endTime)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	return events, localEventsFound, nil
+}
+
 func GetExternalEvents(db *sqlx.DB, pageID int, startTime time.Time, endTime time.Time) ([]ExternalEvent, error) {
 	return getExternalEvents(db, pageID, startTime, endTime, false)
 }
