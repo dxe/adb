@@ -1770,10 +1770,23 @@ func (c MainController) ListFBEventsHandler(w http.ResponseWriter, r *http.Reque
 
 	localEventsFound := false
 
+	var events []model.ExternalEvent
+
 	// run query to get local events
-	events, err := model.GetExternalEvents(c.db, pageID, startTime, endTime, false)
-	if err != nil {
-		panic(err)
+	if model.IsBayAreaPage(pageID) {
+		// If one Bay Area page is chosen, combine events from all Bay Area pages
+		for _, chapterPageID := range model.BayAreaPages {
+			chapterEvents, err2 := model.GetExternalEvents(c.db, chapterPageID, startTime, endTime, false)
+			if err2 != nil {
+				panic(err)
+			}
+			events = append(events, chapterEvents...)
+		}
+	} else {
+		events, err = model.GetExternalEvents(c.db, pageID, startTime, endTime, false)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	// check if any local events were returned
