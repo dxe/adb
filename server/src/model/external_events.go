@@ -33,7 +33,52 @@ type ExternalEvent struct {
 	Featured        bool      `db:"featured"`
 }
 
-func GetExternalEvents(db *sqlx.DB, pageID int, startTime time.Time, endTime time.Time, onlineOnly bool) ([]ExternalEvent, error) {
+func GetExternalEventsWithFallback(db *sqlx.DB, pageID int, startTime time.Time, endTime time.Time) (events []ExternalEvent, localEventsFound bool, err error) {
+	localEventsFound = false
+
+	// run query to get local events
+	if IsBayAreaPage(pageID) {
+		// If one Bay Area page is chosen, combine events from all Bay Area pages
+		for _, chapterPageID := range BayAreaPages {
+			chapterEvents, err := GetExternalEvents(db, chapterPageID, startTime, endTime)
+			if err != nil {
+				return nil, false, err
+			}
+			events = append(events, chapterEvents...)
+		}
+	} else {
+		var err error
+		events, err = GetExternalEvents(db, pageID, startTime, endTime)
+		if err != nil {
+			return nil, false, err
+		}
+	}
+
+	// check if any local events were returned
+	if len(events) > 0 {
+		localEventsFound = true
+	}
+
+	if !localEventsFound {
+		// get online SF Bay + ALOA events instead
+		var err error
+		events, err = GetExternalOnlineEvents(db, startTime, endTime)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	return events, localEventsFound, nil
+}
+
+func GetExternalEvents(db *sqlx.DB, pageID int, startTime time.Time, endTime time.Time) ([]ExternalEvent, error) {
+	return getExternalEvents(db, pageID, startTime, endTime, false)
+}
+func GetExternalOnlineEvents(db *sqlx.DB, startTime time.Time, endTime time.Time) ([]ExternalEvent, error) {
+	return getExternalEvents(db, 0, startTime, endTime, true)
+}
+
+func getExternalEvents(db *sqlx.DB, pageID int, startTime time.Time, endTime time.Time, onlineOnly bool) ([]ExternalEvent, error) {
 	query := `SELECT id, page_id, name, start_time, end_time, location_name,
 		location_country, location_country, location_state, location_address, location_zip,
 		lat, lng, cover, attending_count, interested_count, is_canceled, last_update, eventbrite_id, eventbrite_url, description, featured FROM fb_events`
@@ -41,7 +86,10 @@ func GetExternalEvents(db *sqlx.DB, pageID int, startTime time.Time, endTime tim
 	query += " WHERE is_canceled = 0"
 
 	if onlineOnly {
-		query += " and ((page_id = 1377014279263790 and location_name = 'Online') or page_id = 287332515138353)"
+		// Show main chapter online events and ALC events
+		const SFBayPageID = "1377014279263790"
+		const AlcPageID = "287332515138353"
+		query += " and ((page_id = " + SFBayPageID + " and location_name = 'Online') or page_id = " + AlcPageID + ")"
 	} else {
 		query += " and page_id = " + strconv.Itoa(pageID)
 	}
@@ -66,7 +114,7 @@ func GetExternalEvents(db *sqlx.DB, pageID int, startTime time.Time, endTime tim
 	return events, nil
 }
 
-func InsertExternalEvent(db *sqlx.DB, event ExternalEvent) (err error) {
+func UpsertExternalEvent(db *sqlx.DB, event ExternalEvent) (err error) {
 	sqlTimeLayout := "2006-01-02T15:04:05"
 
 	// insert into database

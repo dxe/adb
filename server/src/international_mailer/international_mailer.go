@@ -94,7 +94,7 @@ func sendInternationalOnboardingEmail(db *sqlx.DB, formData model.InternationalF
 		if chapter.ID != 0 {
 			startTime := time.Now()
 			endTime := time.Now().Add(60 * 24 * time.Hour)
-			events, _ := model.GetExternalEvents(db, chapter.ID, startTime, endTime, false)
+			events, _ := model.GetExternalEvents(db, chapter.ID, startTime, endTime)
 			if len(events) > 0 {
 				nextEvent = events[0]
 			}
