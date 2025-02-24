@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"net/http"
 	"sort"
 	"strconv"
 	"strings"
@@ -24,8 +25,9 @@ func (s *server) roster() {
 		return
 	}
 
-	if q, ok := s.r.URL.Query()["month"]; ok && len(q) == 1 {
-		month, err := strconv.Atoi(q[0])
+	query := s.r.URL.Query()
+	if monthValues, ok := query["month"]; ok && len(monthValues) == 1 {
+		month, err := strconv.Atoi(monthValues[0])
 		if err != nil {
 			s.error(err)
 			return
@@ -34,62 +36,71 @@ func (s *server) roster() {
 			s.error(errors.New("invalid month query; must be YYYYMM syntax"))
 			return
 		}
-		s.rosterDownload(month)
+
+		namesOnly := false
+		if namesOnlyValues, ok := query["names_only"]; ok && len(namesOnlyValues) == 1 {
+			namesOnly = namesOnlyValues[0] == "true"
+		}
+		s.rosterDownload(month, namesOnly)
 		return
 	}
 
+	type MonthRoster struct {
+		URI, Text, NamesOnlyURI string
+	}
 	var data struct {
-		ThisURL, NextURL   string
-		ThisText, NextText string
+		ThisMonth MonthRoster
+		NextMonth MonthRoster
 	}
 
 	year, month, _ := time.Now().Date()
-	link := func(adj time.Month) (string, string) {
+	rosterInfoForMonth := func(adj time.Month) MonthRoster {
 		// TODO(mdempsky): No better way to do month arithmetic?
 		year, month := year, month+adj
 		if month == time.December+1 {
 			year, month = year+1, time.January
 		}
 
-		addr := fmt.Sprintf("/roster?month=%04d%02d", year, month)
+		uri := fmt.Sprintf("/roster?month=%04d%02d", year, month)
 		text := fmt.Sprintf("%s %d", month, year)
-		return addr, text
+
+		return MonthRoster{uri, text, uri + "&names_only=true"}
 	}
-	data.ThisURL, data.ThisText = link(0)
-	data.NextURL, data.NextText = link(1)
+	data.ThisMonth = rosterInfoForMonth(0)
+	data.NextMonth = rosterInfoForMonth(1)
 
 	s.render(rosterTmpl, &data)
 }
 
-func (s *server) rosterDownload(queryMonth int) {
-	// MySQL doesn't have a proper boolean data type, and it's
-	// json_object seems to have some arbitrary heuristics for
-	// deciding when to encode a boolean expression as 0/1 vs
-	// true/false.
-	type mysqlBool = int
+// MySQL doesn't have a proper boolean data type, and it's
+// json_object seems to have some arbitrary heuristics for
+// deciding when to encode a boolean expression as 0/1 vs
+// true/false.
+type mysqlBool = int
 
-	var members []struct {
-		ID            int
-		Name          string
-		Email         string
-		ActivistLevel string
+type member struct {
+	ID            int
+	Name          string
+	Email         string
+	ActivistLevel string
 
-		Eligible mysqlBool
+	Eligible mysqlBool
 
-		// Past3 and Past12 are how many of the past 3
-		// and 12 months, respectively, the activist
-		// fulfilled MPI requirements.
-		MPIPast3, MPIPast12 int
+	// Past3 and Past12 are how many of the past 3
+	// and 12 months, respectively, the activist
+	// fulfilled MPI requirements.
+	MPIPast3, MPIPast12 int
 
-		// CMApproved6 is the day the member was
-		// approved as a chapter member.
-		CMApproval string
+	// CMApproved6 is the day the member was
+	// approved as a chapter member.
+	CMApproval string
 
-		// VotingAgreement is whether the member has
-		// signing the voting agreement.
-		VotingAgreement mysqlBool
-	}
+	// VotingAgreement is whether the member has
+	// signing the voting agreement.
+	VotingAgreement mysqlBool
+}
 
+func (s *server) fetchRoster(queryMonth int) (members []member, err error) {
 	// This query would be more natural if attendance could be
 	// computed using a subquery like working groups, but because
 	// of the two-level aggregation, we'd actually need a
@@ -150,15 +161,37 @@ select json_arrayagg(json_object(
 from roster r
 `
 
-	if err := s.queryJSON(&members, q, queryMonth); err != nil {
-		s.error(err)
-		return
+	if err = s.queryJSON(&members, q, queryMonth); err != nil {
+		return nil, err
 	}
 
 	sort.Slice(members, func(i, j int) bool {
 		return members[i].Name < members[j].Name
 	})
 
+	return members, nil
+}
+
+// Fetches the roster for the given month and writes it to the response.
+//
+// namesOnly: If true, sends a text-only response that contains a list of
+// eligible voters' names. This makes it easy to copy and paste the names into
+// an email.
+func (s *server) rosterDownload(queryMonth int, namesOnly bool) {
+	members, err := s.fetchRoster(queryMonth)
+	if err != nil {
+		s.error(err)
+		return
+	}
+
+	if namesOnly {
+		s.sendNamesOnlyResponse(queryMonth, members)
+	} else {
+		s.sendCsvResponse(queryMonth, members)
+	}
+}
+
+func (s *server) sendCsvResponse(queryMonth int, members []member) {
 	year, month, day := time.Now().Date()
 	filename := fmt.Sprintf("%s %04d Roster (as of %04d-%02d-%02d).csv", time.Month(queryMonth%100), queryMonth/100, year, month, day)
 
@@ -186,6 +219,36 @@ from roster r
 		// We've already written the HTTP header at this
 		// point. Can't change response code to 5xx.
 		log.Printf("error writing csv: %v", err)
+	}
+}
+
+func (s *server) sendNamesOnlyResponse(queryMonth int, members []member) {
+	var responseText strings.Builder
+	year, month, day := time.Now().Date()
+	responseText.WriteString(fmt.Sprintf(
+		"%s %04d Roster (as of %04d-%02d-%02d) - Eligible voters only\n\n",
+		time.Month(queryMonth%100),
+		queryMonth/100,
+		year,
+		month,
+		day))
+
+	for _, member := range members {
+		if member.Eligible == 0 {
+			continue
+		}
+		responseText.WriteString(member.Name)
+		responseText.WriteByte('\n')
+	}
+
+	w := s.w
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "text/plain")
+
+	_, err := w.Write([]byte(responseText.String()))
+	if err != nil {
+		http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -218,8 +281,8 @@ body {
 <p>Available rosters:</p>
 
 <ul>
-<li><a href="{{.ThisURL}}">{{.ThisText}}</a></li>
-<li><a href="{{.NextURL}}">{{.NextText}}</a> (tentative!)</li>
+<li><a href="{{.ThisMonth.URI}}">{{.ThisMonth.Text}}</a> - <a href="{{.ThisMonth.NamesOnlyURI}}">Names Only</a></li>
+<li><a href="{{.NextMonth.URI}}">{{.NextMonth.Text}}</a> (tentative!) - <a href="{{.NextMonth.NamesOnlyURI}}">Names Only</a></li>
 </ul>
 
 </div>
