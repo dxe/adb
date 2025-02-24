@@ -34,4 +34,4 @@ deploy:
   provider: script
   script: bash push-to-docker-hub.sh
   on:
-    branch: master
+    branch: main
