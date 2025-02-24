@@ -89,20 +89,18 @@ func getExternalEvents(db *sqlx.DB, pageIDs []int, startTime time.Time, endTime 
 
 	if onlineOnly {
 		// Show main chapter online events and ALC events
-		const SFBayPageID = "1377014279263790"
-		const AlcPageID = "287332515138353"
-		query += " and ((page_id = " + SFBayPageID + " and location_name = 'Online') or page_id = " + AlcPageID + ")"
+		query += fmt.Sprintf(" and ((page_id = %d and location_name = 'Online') or page_id = %d)", SFBayPageID, AlcPageID)
 	} else {
 		query += fmt.Sprintf(" and page_id in (%s)", intsToString(pageIDs))
 	}
 
 	if !startTime.IsZero() {
-		query += " and start_time >= '" + startTime.Format(time.RFC3339) + "'"
+		query += fmt.Sprintf(" and start_time >= '%s'", startTime.Format(time.RFC3339))
 	}
 	if !endTime.IsZero() {
 		// we actually want to show events which have a START time before the query's end time
 		// otherwise really long (or recurring) events could be hidden
-		query += " and start_time <= '" + endTime.Format(time.RFC3339) + "'"
+		query += fmt.Sprintf(" and start_time <= '%s'", endTime.Format(time.RFC3339))
 	}
 
 	query += " ORDER BY start_time"

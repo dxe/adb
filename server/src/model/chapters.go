@@ -311,6 +311,7 @@ func GetAllChaptersByRegion(db *sqlx.DB) (map[string][]ChapterWithToken, error) 
 
 const SFBayPageID = 1377014279263790
 const NorthBayPageID = 495485410315891
+const AlcPageID = 287332515138353
 
 var BayAreaPages = []int{
 	SFBayPageID,
