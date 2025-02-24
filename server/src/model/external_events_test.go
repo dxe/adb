@@ -128,6 +128,23 @@ func TestGetBayAreaFacebookEvents(t *testing.T) {
 	require.NoError(t, err2)
 	require.Equal(t, 2, len(eventsNorthBay))
 	require.ElementsMatch(t, []string{"1", "2"}, []string{eventsNorthBay[0].ID, eventsNorthBay[1].ID})
+
+	// Now say the chapters are co-hosting both of their events.
+	event4 := makeExternalEvent("1", WithPageID(NorthBayPageID))
+	event5 := makeExternalEvent("2", WithPageID(SFBayPageID))
+	UpsertExternalEvents(t, db, event4, event5)
+	require.Equal(t, 5, GetExternalEventsCount(t, db))
+
+	// Results should be the same as before and not have duplicates.
+	eventsSFBay2, _, err1 := GetExternalEventsWithFallback(db, SFBayPageID, beforeDefaultStartTime, time.Time{})
+	require.NoError(t, err1)
+	require.Equal(t, 2, len(eventsSFBay2))
+	require.ElementsMatch(t, []string{"1", "2"}, []string{eventsSFBay[0].ID, eventsSFBay[1].ID})
+
+	eventsNorthBay2, _, err2 := GetExternalEventsWithFallback(db, NorthBayPageID, beforeDefaultStartTime, time.Time{})
+	require.NoError(t, err2)
+	require.Equal(t, 2, len(eventsNorthBay2))
+	require.ElementsMatch(t, []string{"1", "2"}, []string{eventsNorthBay[0].ID, eventsNorthBay[1].ID})
 }
 
 func ParseTime(t *testing.T, timeStr string) time.Time {
@@ -285,4 +302,11 @@ func UpsertExternalEvents(t *testing.T, db *sqlx.DB, events ...ExternalEvent) {
 		err := UpsertExternalEvent(db, event)
 		require.NoError(t, err)
 	}
+}
+
+func GetExternalEventsCount(t *testing.T, db *sqlx.DB) int {
+	var count int
+	err := db.Get(&count, "SELECT COUNT(*) FROM fb_events")
+	require.NoError(t, err)
+	return count
 }

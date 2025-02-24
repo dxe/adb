@@ -1,7 +1,9 @@
 package model
 
 import (
+	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -39,12 +41,9 @@ func GetExternalEventsWithFallback(db *sqlx.DB, pageID int, startTime time.Time,
 	// run query to get local events
 	if IsBayAreaPage(pageID) {
 		// If one Bay Area page is chosen, combine events from all Bay Area pages
-		for _, chapterPageID := range BayAreaPages {
-			chapterEvents, err := GetExternalEvents(db, chapterPageID, startTime, endTime)
-			if err != nil {
-				return nil, false, err
-			}
-			events = append(events, chapterEvents...)
+		events, err = GetExternalEventsForPages(db, BayAreaPages, startTime, endTime)
+		if err != nil {
+			return nil, false, err
 		}
 	} else {
 		var err error
@@ -72,13 +71,16 @@ func GetExternalEventsWithFallback(db *sqlx.DB, pageID int, startTime time.Time,
 }
 
 func GetExternalEvents(db *sqlx.DB, pageID int, startTime time.Time, endTime time.Time) ([]ExternalEvent, error) {
-	return getExternalEvents(db, pageID, startTime, endTime, false)
+	return getExternalEvents(db, []int{pageID}, startTime, endTime, false)
+}
+func GetExternalEventsForPages(db *sqlx.DB, pageIDs []int, startTime time.Time, endTime time.Time) ([]ExternalEvent, error) {
+	return getExternalEvents(db, pageIDs, startTime, endTime, false)
 }
 func GetExternalOnlineEvents(db *sqlx.DB, startTime time.Time, endTime time.Time) ([]ExternalEvent, error) {
-	return getExternalEvents(db, 0, startTime, endTime, true)
+	return getExternalEvents(db, []int{}, startTime, endTime, true)
 }
 
-func getExternalEvents(db *sqlx.DB, pageID int, startTime time.Time, endTime time.Time, onlineOnly bool) ([]ExternalEvent, error) {
+func getExternalEvents(db *sqlx.DB, pageIDs []int, startTime time.Time, endTime time.Time, onlineOnly bool) ([]ExternalEvent, error) {
 	query := `SELECT id, page_id, name, start_time, end_time, location_name,
 		location_country, location_country, location_state, location_address, location_zip,
 		lat, lng, cover, attending_count, interested_count, is_canceled, last_update, eventbrite_id, eventbrite_url, description, featured FROM fb_events`
@@ -91,7 +93,7 @@ func getExternalEvents(db *sqlx.DB, pageID int, startTime time.Time, endTime tim
 		const AlcPageID = "287332515138353"
 		query += " and ((page_id = " + SFBayPageID + " and location_name = 'Online') or page_id = " + AlcPageID + ")"
 	} else {
-		query += " and page_id = " + strconv.Itoa(pageID)
+		query += fmt.Sprintf(" and page_id in (%s)", intsToString(pageIDs))
 	}
 
 	if !startTime.IsZero() {
@@ -111,7 +113,35 @@ func getExternalEvents(db *sqlx.DB, pageID int, startTime time.Time, endTime tim
 		return nil, errors.Wrap(err, "failed to select events")
 	}
 
+	// If there are multiple pages, they could be co-hosting the same events.
+	// To keep the SQL query simple, deduplicate the events here.
+	// (Deduplicating in the SQL query would require ANY(page_id) and grouping
+	// by all other columns, or not retrieving any page_id.)
+	if len(pageIDs) > 1 {
+		events = deduplicateEvents(events)
+	}
+
 	return events, nil
+}
+
+func deduplicateEvents(events []ExternalEvent) []ExternalEvent {
+	seen := make(map[string]bool)
+	uniqueEvents := make([]ExternalEvent, 0, len(events))
+	for _, event := range events {
+		if !seen[event.ID] {
+			seen[event.ID] = true
+			uniqueEvents = append(uniqueEvents, event)
+		}
+	}
+	return uniqueEvents
+}
+
+func intsToString(ints []int) string {
+	strs := make([]string, len(ints))
+	for i, id := range ints {
+		strs[i] = strconv.Itoa(id)
+	}
+	return strings.Join(strs, ",")
 }
 
 func UpsertExternalEvent(db *sqlx.DB, event ExternalEvent) (err error) {
