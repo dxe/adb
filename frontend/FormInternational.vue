@@ -63,6 +63,9 @@
           >
           </vue-google-autocomplete>
         </b-field>
+        <p style="font-size: small; font-style: italic" v-if="!this.locationChosen">
+          Please make a selection in the dropdown list that appears here as you type a city name.
+        </p>
       </div>
 
       <div class="column is-full">
