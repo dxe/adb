@@ -186,6 +186,28 @@ export default {
     this.autocomplete.setFields(this.fields);
 
     this.autocomplete.addListener('place_changed', this.onPlaceChanged);
+
+    // Browser autocomplete interferes with the defining autocomplete
+    // feature that this component provides.
+    //
+    // The dropdown list of locations does not show unless the user types
+    // something, and browser autocomplete may prevent the user from typing
+    // since the field may already be populated with a text value that looks
+    // correct. However, the user needs to select a location from the dropdown,
+    // so we do need them to type something.
+    //
+    // autocomplete="off" doesn't work in Chrome as of Feb 27, 2025 (even though the
+    // app is HTML5). autocomplete="x" or any other unrecognized value does seem
+    // to prevent at least Chrome's autocomplete.
+    //
+    // Setting attribute directly in the Vue template does not work.
+    // Without setTimeout, this does not work. Using $nextTick instead of
+    // setTimeout also does not work. These other attempts result in the
+    // attribute always being set to "off", which does not have the desired
+    // effect as mentioned above.
+    setTimeout(() => {
+      this.$refs.autocomplete.setAttribute('autocomplete', 'some-unrecognized-value-xf4p');
+    }, 100);
   },
 
   methods: {
