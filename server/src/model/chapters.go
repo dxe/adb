@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"slices"
 	"strings"
 
 	"github.com/jmoiron/sqlx"
@@ -306,4 +307,17 @@ func GetAllChaptersByRegion(db *sqlx.DB) (map[string][]ChapterWithToken, error) 
 	}
 	//return pages grouped into regions, nil
 	return regions, nil
+}
+
+const SFBayPageID = 1377014279263790
+const NorthBayPageID = 495485410315891
+const AlcPageID = 287332515138353
+
+var BayAreaPages = []int{
+	SFBayPageID,
+	NorthBayPageID,
+}
+
+func IsBayAreaPage(pageId int) bool {
+	return slices.Contains(BayAreaPages, pageId)
 }

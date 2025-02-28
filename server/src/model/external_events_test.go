@@ -4,206 +4,309 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/require"
 )
+
+// A start time before the default set by `makeExternalEvent`.
+var beforeDefaultStartTime = time.Date(1999, time.January, 1, 0, 0, 0, 0, time.UTC)
+
+const queryTimeLayout string = "2006-01-02T15:04"
 
 func TestInsertFacebookEvent(t *testing.T) {
 	db := newTestDB()
 	defer db.Close()
 
-	event := ExternalEvent{
-		ID:              "1111111111",
-		PageID:          123123123123,
-		Name:            "Test Event 1",
-		Description:     "This is a test event.",
-		StartTime:       time.Date(2020, 1, 1, 11, 0, 0, 0, time.UTC),
-		EndTime:         time.Date(2020, 1, 1, 13, 0, 0, 0, time.UTC),
-		LocationName:    "Berkeley Animal Rights Center",
-		LocationCity:    "Berkeley",
-		LocationCountry: "United States",
-		LocationState:   "CA",
-		LocationAddress: "123 Channing Way",
-		LocationZip:     "94703",
-		Lat:             1.000,
-		Lng:             1.000,
-		Cover:           "http://not-a-real-link",
-		AttendingCount:  25,
-		InterestedCount: 50,
-		IsCanceled:      false,
-		Featured:        false,
-	}
+	event := makeExternalEvent("1",
+		WithName("Test Event 1"),
+		WithIsCanceled(false),
+	)
 
-	err := InsertExternalEvent(db, event)
-	require.NoError(t, err)
+	UpsertExternalEvents(t, db, event)
 
 	var events []ExternalEvent
 	require.NoError(t,
 		db.Select(&events, "select id, page_id, name from fb_events where name = 'Test Event 1'"))
 
 	require.Equal(t, len(events), 1)
-
 }
 
 func TestGetFacebookEvents(t *testing.T) {
 	db := newTestDB()
 	defer db.Close()
 
-	const pageBerkeley int = 1377014279263790
 	const pageOther int = 456456456456
 
-	event1 := ExternalEvent{
-		ID:              "1111111111",
-		PageID:          pageBerkeley,
-		Name:            "Test Event 1",
-		Description:     "This is a test event in Berkeley.",
-		StartTime:       time.Date(2020, 1, 1, 11, 0, 0, 0, time.UTC),
-		EndTime:         time.Date(2020, 1, 1, 13, 0, 0, 0, time.UTC),
-		LocationName:    "Berkeley Animal Rights Center",
-		LocationCity:    "Berkeley",
-		LocationCountry: "United States",
-		LocationState:   "CA",
-		LocationAddress: "123 Channing Way",
-		LocationZip:     "94703",
-		Lat:             1.000,
-		Lng:             1.000,
-		Cover:           "http://not-a-real-link",
-		AttendingCount:  25,
-		InterestedCount: 50,
-		IsCanceled:      false,
-		Featured:        false,
-	}
+	sfBayEvent := makeExternalEvent("1",
+		WithPageID(SFBayPageID),
+		WithName("Test Event 1"),
+		WithStartTime(time.Date(2020, 1, 1, 11, 0, 0, 0, time.UTC)),
+		WithEndTime(time.Date(2020, 1, 1, 13, 0, 0, 0, time.UTC)),
+	)
 
-	event2 := ExternalEvent{
-		ID:              "2222222222",
-		PageID:          pageOther,
-		Name:            "Test Event 2",
-		Description:     "This is a test event in NY.",
-		StartTime:       time.Date(2020, 1, 1, 11, 0, 0, 0, time.UTC),
-		EndTime:         time.Date(2020, 1, 1, 13, 0, 0, 0, time.UTC),
-		LocationName:    "Not Berkeley Animal Rights Center",
-		LocationCity:    "New York",
-		LocationCountry: "United States",
-		LocationState:   "NY",
-		LocationAddress: "123 Main St",
-		LocationZip:     "10258",
-		Lat:             1.000,
-		Lng:             1.000,
-		Cover:           "http://not-a-real-link",
-		AttendingCount:  25,
-		InterestedCount: 50,
-		IsCanceled:      false,
-		Featured:        false,
-	}
+	firstOtherEvent := makeExternalEvent("2",
+		WithPageID(pageOther),
+		WithName("Test Event 2"),
+		WithStartTime(time.Date(2020, 1, 1, 11, 0, 0, 0, time.UTC)),
+		WithEndTime(time.Date(2020, 1, 1, 13, 0, 0, 0, time.UTC)),
+	)
 
-	event3 := ExternalEvent{
-		ID:              "3333333333",
-		PageID:          pageOther,
-		Name:            "Test Event 3",
-		Description:     "This is a test event in NY at a later date.",
-		StartTime:       time.Date(2020, 2, 1, 11, 0, 0, 0, time.UTC),
-		EndTime:         time.Date(2020, 2, 1, 13, 0, 0, 0, time.UTC),
-		LocationName:    "Not Berkeley Animal Rights Center",
-		LocationCity:    "New York",
-		LocationCountry: "United States",
-		LocationState:   "NY",
-		LocationAddress: "123 Main St",
-		LocationZip:     "10258",
-		Lat:             1.000,
-		Lng:             1.000,
-		Cover:           "http://not-a-real-link",
-		AttendingCount:  25,
-		InterestedCount: 50,
-		IsCanceled:      false,
-		Featured:        false,
-	}
+	secondOtherEvent := makeExternalEvent("3",
+		WithPageID(pageOther),
+		WithName("Test Event 3"),
+		WithStartTime(time.Date(2020, 2, 1, 11, 0, 0, 0, time.UTC)),
+		WithEndTime(time.Date(2020, 2, 1, 13, 0, 0, 0, time.UTC)),
+	)
 
-	event4 := ExternalEvent{
-		ID:              "4444444444",
-		PageID:          pageOther,
-		Name:            "Test Event 4",
-		Description:     "This is a test event that was cancelled.",
-		StartTime:       time.Date(2020, 2, 1, 11, 0, 0, 0, time.UTC),
-		EndTime:         time.Date(2020, 2, 1, 13, 0, 0, 0, time.UTC),
-		LocationName:    "Not Berkeley Animal Rights Center",
-		LocationCity:    "New York",
-		LocationCountry: "United States",
-		LocationState:   "NY",
-		LocationAddress: "123 Main St",
-		LocationZip:     "10258",
-		Lat:             1.000,
-		Lng:             1.000,
-		Cover:           "http://not-a-real-link",
-		AttendingCount:  25,
-		InterestedCount: 50,
-		IsCanceled:      true,
-		Featured:        false,
-	}
+	cancelledEvent := makeExternalEvent("4",
+		WithPageID(pageOther),
+		WithName("Test Event 4"),
+		WithStartTime(time.Date(2020, 2, 1, 11, 0, 0, 0, time.UTC)),
+		WithEndTime(time.Date(2020, 2, 1, 13, 0, 0, 0, time.UTC)),
+		WithIsCanceled(true),
+	)
 
-	event5 := ExternalEvent{
-		ID:              "5555555555",
-		PageID:          pageBerkeley,
-		Name:            "Test Event 5",
-		Description:     "This is an online event hosted by Berkeley.",
-		StartTime:       time.Date(2020, 1, 1, 11, 0, 0, 0, time.UTC),
-		EndTime:         time.Date(2020, 1, 1, 13, 0, 0, 0, time.UTC),
-		LocationName:    "Online",
-		LocationCity:    "",
-		LocationCountry: "",
-		LocationState:   "",
-		LocationAddress: "",
-		LocationZip:     "",
-		Lat:             1.000,
-		Lng:             1.000,
-		Cover:           "http://not-a-real-link",
-		AttendingCount:  25,
-		InterestedCount: 50,
-		IsCanceled:      false,
-		Featured:        false,
-	}
+	onlineEvent := makeExternalEvent("5",
+		WithPageID(SFBayPageID),
+		WithName("Test Event 5"),
+		WithStartTime(time.Date(2020, 1, 1, 11, 0, 0, 0, time.UTC)),
+		WithEndTime(time.Date(2020, 1, 1, 13, 0, 0, 0, time.UTC)),
+		WithLocationName("Online"),
+	)
 
-	err := InsertExternalEvent(db, event1)
-	require.NoError(t, err)
-
-	err = InsertExternalEvent(db, event2)
-	require.NoError(t, err)
-
-	err = InsertExternalEvent(db, event3)
-	require.NoError(t, err)
-
-	err = InsertExternalEvent(db, event4)
-	require.NoError(t, err)
-
-	err = InsertExternalEvent(db, event5)
-	require.NoError(t, err)
-
-	var events []ExternalEvent
-
-	const queryTimeLayout string = "2006-01-02T15:04"
+	UpsertExternalEvents(t, db,
+		sfBayEvent,
+		firstOtherEvent,
+		secondOtherEvent,
+		cancelledEvent,
+		onlineEvent,
+	)
 
 	// get events for specific chapter, excluding cancelled events
-	queryStartTime, err := time.Parse(queryTimeLayout, "2019-12-01T00:00")
-	require.NoError(t, err)
-	queryEndTime, err := time.Parse(queryTimeLayout, "2020-03-01T00:00")
-	require.NoError(t, err)
-	events, err = GetExternalEvents(db, 456456456456, queryStartTime, queryEndTime, false)
-	require.Equal(t, len(events), 2)
-	require.Equal(t, events[0].PageID, 456456456456)
+	queryStartTime := ParseTime(t, "2019-12-01T00:00")
+	queryEndTime := ParseTime(t, "2020-03-01T00:00")
+	events1, err1 := GetExternalEvents(db, 456456456456, queryStartTime, queryEndTime)
+	require.NoError(t, err1)
+	require.Equal(t, 2, len(events1))
+	require.Equal(t, 456456456456, events1[0].PageID)
 
 	// get events filtered by date for specific chapter
-	queryStartTime, err = time.Parse(queryTimeLayout, "2019-12-01T00:00")
-	require.NoError(t, err)
-	queryEndTime, err = time.Parse(queryTimeLayout, "2020-01-15T00:00")
-	require.NoError(t, err)
-	events, err = GetExternalEvents(db, 456456456456, queryStartTime, queryEndTime, false)
-	require.Equal(t, len(events), 1)
-	require.Equal(t, events[0].PageID, 456456456456)
+	queryStartTime = ParseTime(t, "2019-12-01T00:00")
+	queryEndTime = ParseTime(t, "2020-01-15T00:00")
+	events2, err2 := GetExternalEvents(db, 456456456456, queryStartTime, queryEndTime)
+	require.NoError(t, err2)
+	require.Equal(t, 1, len(events2))
+	require.Equal(t, 456456456456, events2[0].PageID)
 
 	// get online events
-	queryStartTime, err = time.Parse(queryTimeLayout, "2019-12-01T00:00")
+	queryStartTime = ParseTime(t, "2019-12-01T00:00")
+	queryEndTime = ParseTime(t, "2020-01-15T00:00")
+	events3, err3 := GetExternalOnlineEvents(db, queryStartTime, queryEndTime)
+	require.NoError(t, err3)
+	require.Equal(t, 1, len(events3))
+	require.Equal(t, "5", events3[0].ID)
+}
+
+func TestGetBayAreaFacebookEvents(t *testing.T) {
+	db := newTestDB()
+	defer db.Close()
+
+	const pageOther int = 456456456456
+
+	event1 := makeExternalEvent("1", WithPageID(SFBayPageID))
+	event2 := makeExternalEvent("2", WithPageID(NorthBayPageID))
+	event3 := makeExternalEvent("3", WithPageID(pageOther))
+
+	UpsertExternalEvents(t, db, event1, event2, event3)
+
+	eventsSFBay, _, err1 := GetExternalEventsWithFallback(db, SFBayPageID, beforeDefaultStartTime, time.Time{})
+	require.NoError(t, err1)
+	require.Equal(t, 2, len(eventsSFBay))
+	require.ElementsMatch(t, []string{"1", "2"}, []string{eventsSFBay[0].ID, eventsSFBay[1].ID})
+
+	eventsNorthBay, _, err2 := GetExternalEventsWithFallback(db, NorthBayPageID, beforeDefaultStartTime, time.Time{})
+	require.NoError(t, err2)
+	require.Equal(t, 2, len(eventsNorthBay))
+	require.ElementsMatch(t, []string{"1", "2"}, []string{eventsNorthBay[0].ID, eventsNorthBay[1].ID})
+
+	// Now say the chapters are co-hosting both of their events.
+	event4 := makeExternalEvent("1", WithPageID(NorthBayPageID))
+	event5 := makeExternalEvent("2", WithPageID(SFBayPageID))
+	UpsertExternalEvents(t, db, event4, event5)
+	require.Equal(t, 5, GetExternalEventsCount(t, db))
+
+	// Results should be the same as before and not have duplicates.
+	eventsSFBay2, _, err1 := GetExternalEventsWithFallback(db, SFBayPageID, beforeDefaultStartTime, time.Time{})
+	require.NoError(t, err1)
+	require.Equal(t, 2, len(eventsSFBay2))
+	require.ElementsMatch(t, []string{"1", "2"}, []string{eventsSFBay[0].ID, eventsSFBay[1].ID})
+
+	eventsNorthBay2, _, err2 := GetExternalEventsWithFallback(db, NorthBayPageID, beforeDefaultStartTime, time.Time{})
+	require.NoError(t, err2)
+	require.Equal(t, 2, len(eventsNorthBay2))
+	require.ElementsMatch(t, []string{"1", "2"}, []string{eventsNorthBay[0].ID, eventsNorthBay[1].ID})
+}
+
+func ParseTime(t *testing.T, timeStr string) time.Time {
+	parsedTime, err := time.Parse(queryTimeLayout, timeStr)
 	require.NoError(t, err)
-	queryEndTime, err = time.Parse(queryTimeLayout, "2020-01-15T00:00")
+	return parsedTime
+}
+
+// ExternalEventOption is a function that sets a property on an ExternalEvent
+type ExternalEventOption func(*ExternalEvent)
+
+// makeExternalEvent creates an ExternalEvent with the given options and sets reasonable defaults for any options not specified
+func makeExternalEvent(id string, options ...ExternalEventOption) ExternalEvent {
+	event := ExternalEvent{
+		ID:              id,
+		PageID:          1234567890,
+		Name:            "Event",
+		Description:     "Description",
+		StartTime:       time.Date(2020, 1, 1, 11, 0, 0, 0, time.UTC),
+		EndTime:         time.Date(2020, 1, 1, 13, 0, 0, 0, time.UTC),
+		LocationName:    "Location",
+		LocationCity:    "City",
+		LocationCountry: "Country",
+		LocationState:   "State",
+		LocationAddress: "123 Default St",
+		LocationZip:     "00000",
+		Lat:             0.0,
+		Lng:             0.0,
+		Cover:           "http://default-cover-link",
+		AttendingCount:  0,
+		InterestedCount: 0,
+		IsCanceled:      false,
+		Featured:        false,
+	}
+
+	for _, option := range options {
+		option(&event)
+	}
+
+	return event
+}
+
+// Option functions to set properties on ExternalEvent
+
+func WithPageID(pageID int) ExternalEventOption {
+	return func(e *ExternalEvent) {
+		e.PageID = pageID
+	}
+}
+
+func WithName(name string) ExternalEventOption {
+	return func(e *ExternalEvent) {
+		e.Name = name
+	}
+}
+
+func WithDescription(description string) ExternalEventOption {
+	return func(e *ExternalEvent) {
+		e.Description = description
+	}
+}
+
+func WithStartTime(startTime time.Time) ExternalEventOption {
+	return func(e *ExternalEvent) {
+		e.StartTime = startTime
+	}
+}
+
+func WithEndTime(endTime time.Time) ExternalEventOption {
+	return func(e *ExternalEvent) {
+		e.EndTime = endTime
+	}
+}
+
+func WithLocationName(locationName string) ExternalEventOption {
+	return func(e *ExternalEvent) {
+		e.LocationName = locationName
+	}
+}
+
+func WithLocationCity(locationCity string) ExternalEventOption {
+	return func(e *ExternalEvent) {
+		e.LocationCity = locationCity
+	}
+}
+
+func WithLocationCountry(locationCountry string) ExternalEventOption {
+	return func(e *ExternalEvent) {
+		e.LocationCountry = locationCountry
+	}
+}
+
+func WithLocationState(locationState string) ExternalEventOption {
+	return func(e *ExternalEvent) {
+		e.LocationState = locationState
+	}
+}
+
+func WithLocationAddress(locationAddress string) ExternalEventOption {
+	return func(e *ExternalEvent) {
+		e.LocationAddress = locationAddress
+	}
+}
+
+func WithLocationZip(locationZip string) ExternalEventOption {
+	return func(e *ExternalEvent) {
+		e.LocationZip = locationZip
+	}
+}
+
+func WithLat(lat float64) ExternalEventOption {
+	return func(e *ExternalEvent) {
+		e.Lat = lat
+	}
+}
+
+func WithLng(lng float64) ExternalEventOption {
+	return func(e *ExternalEvent) {
+		e.Lng = lng
+	}
+}
+
+func WithCover(cover string) ExternalEventOption {
+	return func(e *ExternalEvent) {
+		e.Cover = cover
+	}
+}
+
+func WithAttendingCount(attendingCount int) ExternalEventOption {
+	return func(e *ExternalEvent) {
+		e.AttendingCount = attendingCount
+	}
+}
+
+func WithInterestedCount(interestedCount int) ExternalEventOption {
+	return func(e *ExternalEvent) {
+		e.InterestedCount = interestedCount
+	}
+}
+
+func WithIsCanceled(isCanceled bool) ExternalEventOption {
+	return func(e *ExternalEvent) {
+		e.IsCanceled = isCanceled
+	}
+}
+
+func WithFeatured(featured bool) ExternalEventOption {
+	return func(e *ExternalEvent) {
+		e.Featured = featured
+	}
+}
+
+func UpsertExternalEvents(t *testing.T, db *sqlx.DB, events ...ExternalEvent) {
+	for _, event := range events {
+		err := UpsertExternalEvent(db, event)
+		require.NoError(t, err)
+	}
+}
+
+func GetExternalEventsCount(t *testing.T, db *sqlx.DB) int {
+	var count int
+	err := db.Get(&count, "SELECT COUNT(*) FROM fb_events")
 	require.NoError(t, err)
-	events, err = GetExternalEvents(db, 0, queryStartTime, queryEndTime, true)
-	require.Equal(t, len(events), 1)
-	require.Equal(t, events[0].ID, "5555555555")
+	return count
 }
