@@ -44,6 +44,10 @@ var conf, verifier = func() (*oauth2.Config, *oidc.IDTokenVerifier) {
 }()
 
 func (s *server) googleEmail() (string, error) {
+	if !config.IsProd {
+		return "test-dev@directactioneverywhere.com", nil
+	}
+
 	c, err := s.r.Cookie(membersIDToken)
 	if err != nil {
 		return "", err

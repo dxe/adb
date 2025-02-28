@@ -38,6 +38,9 @@ func (s *server) queryJSON(data interface{}, query string, args ...interface{}) 
 	if err := s.db.QueryRowContext(s.r.Context(), query, args...).Scan(&buf); err != nil {
 		return err
 	}
+	if len(buf) == 0 { // Some queries return NULL for empty results.
+		return nil
+	}
 	return json.Unmarshal(buf, data)
 }
 
