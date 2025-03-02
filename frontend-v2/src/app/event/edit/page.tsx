@@ -7,6 +7,7 @@ import * as z from 'zod'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { ContentWrapper } from '@/app/ContentWrapper'
 
 // TODO(jh):
 // - fix focus bugs... keyboard nav is working perfectly, but clicking on a suggestion doesn't work.
@@ -106,20 +107,8 @@ export default function AttendancePage() {
   const handleSelectSuggestion = (index: number, value: string) => {
     setValue(`attendees.${index}.name`, value)
     setSuggestions([])
-
-    // Check for duplicates.
-    const firstIndex = attendees.findIndex(
-      (it) => it.name.toLowerCase() === value.toLowerCase(),
-    )
-    if (firstIndex !== index) {
-      setDuplicateIndex(index)
-      inputRefs.current[index]?.focus()
-      setActiveInputIndex(index)
-      setTimeout(() => {
-        setDuplicateIndex(null)
-        // Ensure the input remains focused
-      }, 300)
-      return
+    if (index < fields.length - 1) {
+      inputRefs.current[index + 1]?.focus()
     }
   }
 
@@ -147,10 +136,33 @@ export default function AttendancePage() {
       case 'Enter': {
         // Behave similarly to Tab.
         e.preventDefault()
-        if (index < fields.length - 1) {
-          inputRefs.current[index + 1]?.focus()
+        const trimmedValue = attendees[index].name.trim()
+        if (!trimmedValue.length) {
+          return
         }
+        handleSelectSuggestion(
+          index,
+          selectedSuggestionIndex >= 0 && suggestions[selectedSuggestionIndex]
+            ? suggestions[selectedSuggestionIndex]
+            : trimmedValue,
+        )
         return
+      }
+      case 'Tab': {
+        if (e.shiftKey) {
+          return
+        }
+        e.preventDefault()
+        const trimmedValue = attendees[index].name.trim()
+        if (!trimmedValue.length) {
+          return
+        }
+        handleSelectSuggestion(
+          index,
+          selectedSuggestionIndex >= 0 && suggestions[selectedSuggestionIndex]
+            ? suggestions[selectedSuggestionIndex]
+            : trimmedValue,
+        )
       }
     }
   }
@@ -161,33 +173,42 @@ export default function AttendancePage() {
     )
   }
 
-  const isNewName = (name: string) => {
-    return (
-      name.trim() !== '' &&
-      !people.some((person) => person.toLowerCase() === name.toLowerCase())
-    )
-  }
-
   return (
-    <div className="py-4 md:py-8 px-2 md:px-4 flex justify-center">
-      <div className="max-w-lg flex flex-col gap-6">
+    <ContentWrapper size="md" className="gap-8">
+      <div className="flex flex-col gap-3">
         <h1 className="text-3xl font-bold">Attendance</h1>
-        <p className="text-muted-foreground">
+        <p className="text-neutral-500">
           Enter the names of attendees below. Type to see suggestions or enter
           new names.
         </p>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="flex flex-col gap-4">
-            {fields.map((field, index) => {
-              const isFocused = index === activeInputIndex
-              return (
-                <div key={field._id} className="relative">
-                  <div className="flex items-center gap-2">
-                    <div className="relative w-full">
-                      <Controller
-                        name={`attendees.${index}.name`}
-                        control={control}
-                        render={({ field }) => (
+      </div>
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4">
+          {fields.map((field, index) => {
+            const isFocused = index === activeInputIndex
+            return (
+              <div key={field._id} className="relative">
+                <div className="flex items-center gap-2">
+                  <div className="relative w-full">
+                    <Controller
+                      name={`attendees.${index}.name`}
+                      control={control}
+                      render={({ field }) => {
+                        const isDuplicate =
+                          !!field.value.length &&
+                          attendees.findIndex(
+                            (it) =>
+                              it.name.toLowerCase() ===
+                              field.value.toLowerCase(),
+                          ) !== index
+                        const isNewName =
+                          field.value.trim() !== '' &&
+                          !people.some(
+                            (person) =>
+                              person.toLowerCase() ===
+                              field.value.toLowerCase(),
+                          )
+                        return (
                           <Input
                             {...field}
                             ref={(el) => {
@@ -204,34 +225,17 @@ export default function AttendancePage() {
                             onKeyDown={(e) => handleKeyDown(e, index)}
                             placeholder="Enter name..."
                             className={cn(
-                              'w-full transition-colors duration-300',
-                              !isFocused &&
-                                isNewName(field.value) &&
-                                'border-blue-500 border-2',
-                              duplicateIndex === index &&
-                                'border-red-500 text-red-500 animate-shake border-2',
+                              'w-full transition-colors duration-300 border-2',
+                              isDuplicate
+                                ? 'text-red-500 border-red-500 focus:border-red-500'
+                                : isNewName
+                                  ? 'border-blue-500 focus:border-transparent'
+                                  : '',
                             )}
                             autoComplete="off"
                             onFocus={() => setActiveInputIndex(index)}
                             onBlur={() => {
-                              setActiveInputIndex(-1)
-                              // If a suggestion is highlighted, use it.
-                              if (
-                                selectedSuggestionIndex >= 0 &&
-                                suggestions[selectedSuggestionIndex]
-                              ) {
-                                handleSelectSuggestion(
-                                  index,
-                                  suggestions[selectedSuggestionIndex],
-                                )
-                              } else if (attendees[index].name.trim() !== '') {
-                                // Otherwise, use the input value.
-                                handleSelectSuggestion(
-                                  index,
-                                  attendees[index].name.trim(),
-                                )
-                              }
-                              // If there are less than 2 more rows below us, add another row.
+                              // If there are less than 2 empty rows, add another row.
                               if (
                                 attendees.filter((it) => !it.name.length)
                                   .length < MIN_EMPTY_FIELDS
@@ -240,45 +244,42 @@ export default function AttendancePage() {
                               }
                             }}
                           />
-                        )}
-                      />
+                        )
+                      }}
+                    />
 
-                      {isFocused && !!suggestions.length && (
-                        <ul className="absolute z-10 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg">
-                          {suggestions.map((suggestion, i) => (
-                            <li
-                              key={suggestion}
-                              className={cn(
-                                'cursor-pointer px-4 py-2 hover:bg-gray-100',
-                                i === selectedSuggestionIndex
-                                  ? 'bg-neutral-100'
-                                  : '',
-                              )}
-                              onClick={() => {
-                                handleSelectSuggestion(index, suggestion)
-                                if (index < fields.length - 1) {
-                                  inputRefs.current[index + 1]?.focus()
-                                }
-                              }}
-                            >
-                              {suggestion}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
+                    {isFocused && !!suggestions.length && (
+                      <ul className="absolute z-10 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg">
+                        {suggestions.map((suggestion, i) => (
+                          <li
+                            key={suggestion}
+                            className={cn(
+                              'cursor-pointer px-4 py-2 hover:bg-gray-100',
+                              i === selectedSuggestionIndex
+                                ? 'bg-neutral-100'
+                                : '',
+                            )}
+                            onClick={() => {
+                              handleSelectSuggestion(index, suggestion)
+                            }}
+                          >
+                            {suggestion}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 </div>
-              )
-            })}
-          </div>
-          <div className="flex justify-end py-6">
-            <Button type="submit" variant="default">
-              Save
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
+              </div>
+            )
+          })}
+        </div>
+        <div className="flex justify-end">
+          <Button type="submit" variant="default">
+            Save
+          </Button>
+        </div>
+      </form>
+    </ContentWrapper>
   )
 }
