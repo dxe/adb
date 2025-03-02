@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 // TODO(jh):
-// - add more fields once we run out of empty fields
+// - fix focus bugs... keyboard nav is working perfectly, but clicking on a suggestion doesn't work.
 // - get list of names from server
 // - show indicator for missing phone/email
 // - add other form fields (event name, type, date, suppress survey)
