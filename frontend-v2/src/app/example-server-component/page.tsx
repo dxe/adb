@@ -7,11 +7,11 @@ import {
   QueryClient,
 } from '@tanstack/react-query'
 import Activists from './activists'
-import { VueNavbar } from 'app/VueNavbar'
-import { ContentWrapper } from 'app/ContentWrapper'
-import { AuthedPageLayout } from 'app/AuthedPageLayout'
-import { API_PATH, ApiClient } from 'lib/api'
-import { getCookies } from 'lib/auth'
+import { VueNavbar } from '@/app/VueNavbar'
+import { ContentWrapper } from '@/app/ContentWrapper'
+import { AuthedPageLayout } from '@/app/AuthedPageLayout'
+import { API_PATH, ApiClient } from '@/lib/api'
+import { getCookies } from '@/lib/auth'
 
 export default async function ActivistsPage() {
   const apiClient = new ApiClient(await getCookies())

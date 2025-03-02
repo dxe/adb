@@ -1,7 +1,7 @@
 import Script from 'next/script'
-import { fetchStaticResourceHash } from 'app/static-resource-hash'
-import { fetchSession } from 'app/session'
-import { getCookies } from 'lib/auth'
+import { fetchStaticResourceHash } from '@/app/static-resource-hash'
+import { fetchSession } from '@/app/session'
+import { getCookies } from '@/lib/auth'
 
 // Allows the Vue AdbNav component to be used within the React app
 // so that the UI is more consistent. Once most pages are rebuilt in

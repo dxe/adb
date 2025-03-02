@@ -1,8 +1,8 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
-import { Button } from 'components/ui/button'
-import { API_PATH, apiClient } from 'lib/api'
+import { Button } from '@/components/ui/button'
+import { API_PATH, apiClient } from '@/lib/api'
 import { sampleSize } from 'lodash-es'
 import { Loader } from 'lucide-react'
 import { useMemo } from 'react'

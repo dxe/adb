@@ -1,4 +1,4 @@
-import { API_PATH, apiClient } from 'lib/api'
+import { API_PATH, apiClient } from '@/lib/api'
 import { QueryClient } from '@tanstack/react-query'
 
 // This is only used for Vue components and should eventually be removed.

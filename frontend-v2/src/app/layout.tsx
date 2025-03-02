@@ -1,8 +1,8 @@
-import 'styles/globals.css'
+import '@/styles/globals.css'
 import type { Metadata, Viewport } from 'next'
 import { Toaster } from 'react-hot-toast'
 import Providers from './providers'
-import { cn } from 'lib/utils'
+import { cn } from '@/lib/utils'
 
 export const metadata: Metadata = {
   title: 'Activist Database',
