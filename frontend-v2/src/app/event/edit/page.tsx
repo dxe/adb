@@ -80,7 +80,6 @@ export default function AttendancePage() {
   const [activeInputIndex, setActiveInputIndex] = useState(0)
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] =
     useState<number>(-1)
-  const [duplicateIndex, setDuplicateIndex] = useState<number | null>(null)
 
   const handleInputChange = (index: number, value: string) => {
     const trimmedValue = value.trim()
@@ -216,9 +215,6 @@ export default function AttendancePage() {
                               field.ref(el)
                             }}
                             onChange={(e) => {
-                              if (duplicateIndex) {
-                                return
-                              }
                               field.onChange(e)
                               handleInputChange(index, e.target.value)
                             }}
@@ -247,7 +243,6 @@ export default function AttendancePage() {
                         )
                       }}
                     />
-
                     {isFocused && !!suggestions.length && (
                       <ul className="absolute z-10 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg">
                         {suggestions.map((suggestion, i) => (
