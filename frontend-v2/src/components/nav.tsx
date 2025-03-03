@@ -1,46 +1,109 @@
 'use client'
 
 import navbarData from '../../../frontend/nav.json'
-import { fetchSession } from '@/app/session'
 import { User } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 import Image from 'next/image'
 import logo1 from '../../../frontend/static/img/logo1.png'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
+import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
 
-export const Navbar = ({
-  pageName,
-  session,
+function userHasAccess(
+  /** Role the auth'd user has. */
+  userRole: string,
+  /** Array of roles that are permitted to access. A user can access if they
+   * hold **any** of the required roles. If undefined, any role is permitted. */
+  roleRequired: string[] | undefined,
+): boolean {
+  if (!roleRequired) return true
+
+  if (!userRole) return false
+
+  return roleRequired.some((it) => {
+    if (it === 'admin') return userRole === 'admin'
+    if (it === 'organizer')
+      return userRole === 'admin' || userRole === 'organizer'
+    if (it === 'attendance')
+      return (
+        userRole === 'admin' ||
+        userRole === 'organizer' ||
+        userRole === 'attendance'
+      )
+    if (it === 'non-sfbay') return userRole === 'non-sfbay'
+    return false
+  })
+}
+
+type TDropdownItem = (typeof navbarData.items)[number]
+
+const DropdownItem = ({
+  item,
+  isExpanded,
+  onClick,
 }: {
-  /** The name of the active page, corresponding to the name in Vue. */
-  pageName: string
-  /** The user sesion returned from the `fetchSession` function. */
-  session: Awaited<ReturnType<typeof fetchSession>>
+  item: TDropdownItem
+  isExpanded: boolean
+  onClick: () => void
 }) => {
+  const { user, pageName } = useAuthedPageContext()
+
+  if (!userHasAccess(user.role, item.roleRequired)) {
+    return null
+  }
+  return (
+    <div className="navbar-item has-dropdown">
+      {/* Important: This must remain an `a` element and not a `button` for the buefy mobile styles to work properly. */}
+      <a
+        role="menuitem"
+        aria-haspopup
+        className="navbar-link"
+        onClick={(e) => {
+          e.preventDefault()
+          onClick()
+        }}
+      >
+        {item.label}
+      </a>
+      {isExpanded && (
+        <div className="navbar-dropdown !block" onClick={onClick}>
+          {item.items.map((innerItem) => {
+            const classNames = cn(
+              'navbar-item',
+              { 'is-active': pageName === innerItem.page },
+              { 'mb-2': innerItem.separatorBelow },
+            )
+            return (
+              userHasAccess(user.role, innerItem.roleRequired) &&
+              (innerItem.href.startsWith('/v2') ? (
+                <Link
+                  href={innerItem.href.substring(3)}
+                  className={classNames}
+                  key={innerItem.href}
+                >
+                  {innerItem.label}
+                </Link>
+              ) : (
+                <a
+                  href={innerItem.href}
+                  className={classNames}
+                  key={innerItem.href}
+                >
+                  {innerItem.label}
+                </a>
+              ))
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export const Navbar = () => {
+  const { user } = useAuthedPageContext()
   const [isMobileExpanded, setMobileExpanded] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
-
-  const hasAccess = useCallback(
-    (roleRequired: string[] | undefined) => {
-      if (!roleRequired) return true
-
-      const role = session?.user?.role
-      if (!role) return false
-
-      return roleRequired.some((it) => {
-        if (it === 'admin') return role === 'admin'
-        if (it === 'organizer') return role === 'admin' || role === 'organizer'
-        if (it === 'attendance')
-          return (
-            role === 'admin' || role === 'organizer' || role === 'attendance'
-          )
-        if (it === 'non-sfbay') return role === 'non-sfbay'
-        return false
-      })
-    },
-    [session?.user?.role],
-  )
 
   // Note that this navbar currently uses the Vue stylesheet. Once we
   // are no longer using Vue, we should update this using tailwind.
@@ -62,6 +125,7 @@ export const Navbar = ({
           })}
           onClick={() => setMobileExpanded((prev) => !prev)}
         >
+          {/* These spans are what make the hamburger icon on mobile (via buefy styles). */}
           <span aria-hidden="true"></span>
           <span aria-hidden="true"></span>
           <span aria-hidden="true"></span>
@@ -70,61 +134,18 @@ export const Navbar = ({
 
       <div className={cn('navbar-menu', { 'is-active': isMobileExpanded })}>
         <div className="navbar-start">
-          {navbarData.items.map(
-            (dropdown) =>
-              hasAccess(dropdown.roleRequired) && (
-                <div className="navbar-item has-dropdown" key={dropdown.label}>
-                  {/* Important: This must remain an `a` element and not a `button` for the buefy mobile styles to work properly. */}
-                  <a
-                    role="menuitem"
-                    aria-haspopup
-                    className="navbar-link"
-                    onClick={(e) => {
-                      e.preventDefault()
-                      setActiveDropdown((prev) =>
-                        prev === dropdown.label ? null : dropdown.label,
-                      )
-                    }}
-                  >
-                    {dropdown.label}
-                  </a>
-                  {activeDropdown === dropdown.label && (
-                    <div
-                      className={cn('navbar-dropdown !block')}
-                      onClick={() => setActiveDropdown(dropdown.label)}
-                    >
-                      {dropdown.items.map((item) => {
-                        const classNames = cn(
-                          'navbar-item',
-                          { 'is-active': pageName === item.page },
-                          { 'mb-2': item.separatorBelow },
-                        )
-                        return (
-                          hasAccess(item.roleRequired) &&
-                          (item.href.startsWith('/v2') ? (
-                            <Link
-                              href={item.href.substring(3)}
-                              className={classNames}
-                              key={item.href}
-                            >
-                              {item.label}
-                            </Link>
-                          ) : (
-                            <a
-                              href={item.href}
-                              className={classNames}
-                              key={item.href}
-                            >
-                              {item.label}
-                            </a>
-                          ))
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-              ),
-          )}
+          {navbarData.items.map((item) => (
+            <DropdownItem
+              key={item.label}
+              item={item}
+              isExpanded={activeDropdown === item.label}
+              onClick={() =>
+                setActiveDropdown((prev) =>
+                  prev === item.label ? null : item.label,
+                )
+              }
+            />
+          ))}
         </div>
 
         <div className="navbar-end">
@@ -134,7 +155,7 @@ export const Navbar = ({
                 <span className="icon is-small">
                   <User />
                 </span>
-                {session.user?.Name} ({session.user?.ChapterName})
+                {user.Name} ({user.ChapterName})
               </div>
               <a href="/logout" style={{ color: 'linktext' }}>
                 Log out
