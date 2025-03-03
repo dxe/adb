@@ -30,7 +30,14 @@ export default function RootLayout({
       <head>
         <meta charSet="utf-8" />
       </head>
-      <body className={cn('antialiased', 'has-navbar-fixed-top')}>
+      <body
+        className={cn(
+          'antialiased',
+          // Prevents layout shift since we are still using buefy styles for the nav.
+          // This should be removed once the nav is no longer using buefy.
+          'has-navbar-fixed-top',
+        )}
+      >
         <Providers>{children}</Providers>
         <Toaster position="bottom-right" />
       </body>
