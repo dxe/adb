@@ -131,14 +131,14 @@
       "roleRequired": ["admin"],
       "items": [
         {
-          "label": "Test Page",
-          "href": "/v2/test",
-          "page": "TestPage"
+          "label": "New Event",
+          "href": "/v2/event/edit",
+          "page": "NewEvent_beta"
         },
         {
-          "label": "Test Page: App Router",
+          "label": "Test Page",
           "href": "/v2/example-server-component",
-          "page": "TestPage2"
+          "page": "TestPage"
         }
       ]
     }
