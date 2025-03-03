@@ -1,9 +1,8 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
-import { Button } from 'components/ui/button'
-import { API_PATH, apiClient } from 'lib/api'
-import { sampleSize } from 'lodash-es'
+import { Button } from '@/components/ui/button'
+import { API_PATH, apiClient } from '@/lib/api'
 import { Loader } from 'lucide-react'
 import { useMemo } from 'react'
 import toast from 'react-hot-toast'
@@ -17,7 +16,7 @@ export function ActivistNames() {
   })
 
   const sampledActivists = useMemo(() => {
-    return sampleSize(data?.activist_names ?? [], 25)
+    return (data?.activist_names ?? []).slice(0, 5)
   }, [data?.activist_names])
 
   return (

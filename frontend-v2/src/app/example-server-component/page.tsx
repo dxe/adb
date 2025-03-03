@@ -7,15 +7,17 @@ import {
   QueryClient,
 } from '@tanstack/react-query'
 import Activists from './activists'
-import { VueNavbar } from 'app/VueNavbar'
-import { ContentWrapper } from 'app/ContentWrapper'
-import { AuthedPageLayout } from 'app/AuthedPageLayout'
-import { API_PATH, ApiClient } from 'lib/api'
-import { getCookies } from 'lib/auth'
+import { ContentWrapper } from '@/app/content-wrapper'
+import { AuthedPageLayout } from '@/app/authed-page-layout'
+import { API_PATH, ApiClient } from '@/lib/api'
+import { getCookies } from '@/lib/auth'
+import { fetchSession } from '../session'
+import { Navbar } from '@/components/nav'
 
 export default async function ActivistsPage() {
   const apiClient = new ApiClient(await getCookies())
   const queryClient = new QueryClient()
+  const session = await fetchSession(await getCookies())
 
   await queryClient.prefetchQuery({
     queryKey: [API_PATH.ACTIVIST_NAMES_GET],
@@ -24,7 +26,7 @@ export default async function ActivistsPage() {
 
   return (
     <AuthedPageLayout>
-      <VueNavbar pageName="TestPage2" />
+      <Navbar pageName="TestPage" session={session} />
       <ContentWrapper size="sm" className="gap-6">
         <p>Hello from App Router!</p>
 
