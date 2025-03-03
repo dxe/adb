@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { ContentWrapper } from '@/app/ContentWrapper'
+import { MailX, PhoneMissed, UserRoundPlus } from 'lucide-react'
 
 // TODO(jh):
 // - fix focus bugs... keyboard nav is working perfectly, but clicking on a suggestion doesn't work.
@@ -207,39 +208,55 @@ export default function AttendancePage() {
                               person.toLowerCase() ===
                               field.value.toLowerCase(),
                           )
+                        const isMissingEmail = !!field.value.length // TODO(jh): implement once we have the real activist list
+                        const isMissingPhone = !!field.value.length // TODO(jh): implement once we have the real activist list
                         return (
-                          <Input
-                            {...field}
-                            ref={(el) => {
-                              inputRefs.current[index] = el
-                              field.ref(el)
-                            }}
-                            onChange={(e) => {
-                              field.onChange(e)
-                              handleInputChange(index, e.target.value)
-                            }}
-                            onKeyDown={(e) => handleKeyDown(e, index)}
-                            placeholder="Enter name..."
-                            className={cn(
-                              'w-full transition-colors duration-300 border-2',
-                              isDuplicate
-                                ? 'text-red-500 border-red-500 focus:border-red-500'
-                                : isNewName
-                                  ? 'border-blue-500 focus:border-transparent'
-                                  : '',
-                            )}
-                            autoComplete="off"
-                            onFocus={() => setActiveInputIndex(index)}
-                            onBlur={() => {
-                              // If there are less than 2 empty rows, add another row.
-                              if (
-                                attendees.filter((it) => !it.name.length)
-                                  .length < MIN_EMPTY_FIELDS
-                              ) {
-                                append({ name: '' }, { shouldFocus: false })
-                              }
-                            }}
-                          />
+                          <div className="relative">
+                            <Input
+                              {...field}
+                              ref={(el) => {
+                                inputRefs.current[index] = el
+                                field.ref(el)
+                              }}
+                              onChange={(e) => {
+                                field.onChange(e)
+                                handleInputChange(index, e.target.value)
+                              }}
+                              onKeyDown={(e) => handleKeyDown(e, index)}
+                              placeholder="Enter name..."
+                              className={cn(
+                                'w-full transition-colors duration-300 border-2',
+                                isDuplicate
+                                  ? 'text-red-500 border-red-500 focus:border-red-500'
+                                  : isNewName
+                                    ? 'border-purple-500 focus:border-transparent'
+                                    : '',
+                              )}
+                              autoComplete="off"
+                              onFocus={() => setActiveInputIndex(index)}
+                              onBlur={() => {
+                                // If there are less than 2 empty rows, add another row.
+                                if (
+                                  attendees.filter((it) => !it.name.length)
+                                    .length < MIN_EMPTY_FIELDS
+                                ) {
+                                  append({ name: '' }, { shouldFocus: false })
+                                }
+                              }}
+                            />
+                            <div className="right-0 top-0 bottom-0 h-full pointer-events-none absolute flex gap-2 items-center p-1.5 opacity-80">
+                              {isNewName && (
+                                <UserRoundPlus className="text-purple-500" />
+                              )}
+                              {/* TODO(jh): in a perfect world, maybe tapping these icons could open a modal to add the missing info (or a qr code to scan that prefills sthe name?) or maybe the check-in form can just automatically ask people if they are at at event, if an event is in progress, then add them to attendance automatically? */}
+                              {!isNewName && isMissingEmail && (
+                                <MailX className="text-orange-500" />
+                              )}
+                              {!isNewName && isMissingPhone && (
+                                <PhoneMissed className="text-orange-500" />
+                              )}
+                            </div>
+                          </div>
                         )
                       }}
                     />
