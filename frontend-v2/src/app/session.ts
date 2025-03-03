@@ -1,4 +1,4 @@
-import { API_PATH, ApiClient } from 'lib/api'
+import { API_PATH, ApiClient } from '@/lib/api'
 import { QueryClient } from '@tanstack/react-query'
 
 export const fetchSession = async (cookies?: string) => {

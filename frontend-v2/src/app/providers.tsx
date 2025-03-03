@@ -1,4 +1,4 @@
-// Use of QueryClientProvider in this file follows a pattern for Reacty Query
+// Use of QueryClientProvider in this file follows a pattern for React Query
 // with Next.js App Router:
 // https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr
 

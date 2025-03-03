@@ -28,11 +28,13 @@
     </template>
     <template #end>
       <b-navbar-item tag="div">
-        <div class="mx-2 has-text-grey-dark">
-          <b-icon icon="account" size="is-small" class="mx-1"></b-icon>
-          {{ user }} ({{ chapter }})
-        </div>
-        <div>
+        <div
+          style="display: flex; align-items: center; gap: 0.75rem; justify-content: space-between"
+        >
+          <div class="has-text-grey-dark" style="display: flex; align-items: center; gap: 0.5rem">
+            <b-icon icon="account" size="is-small"></b-icon>
+            {{ user }} ({{ chapter }})
+          </div>
           <a href="/logout" style="color: LinkText">Log out</a>
         </div>
       </b-navbar-item>

@@ -1,7 +1,7 @@
 import { ReactNode } from 'react'
-import { fetchSession } from 'app/session'
+import { fetchSession } from '@/app/session'
 import { redirect } from 'next/navigation'
-import { getCookies } from 'lib/auth'
+import { getCookies } from '@/lib/auth'
 
 export const AuthedPageLayout = async (props: { children: ReactNode }) => {
   const session = await fetchSession(await getCookies())
