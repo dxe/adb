@@ -331,7 +331,7 @@
             </div>
             <div class="column is-one-quarter">
               <b-field label="Facebook Token" label-position="on-border">
-                <b-input type="text" maxlength="200" v-model.trim="currentChapter.Token" />
+                <b-input type="text" maxlength="500" v-model.trim="currentChapter.Token" />
               </b-field>
             </div>
             <div class="column is-one-quarter">
