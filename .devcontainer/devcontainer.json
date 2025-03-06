@@ -27,6 +27,9 @@
 			"nodeGypDependencies": true,
 			"version": "18"  // Match version from Dockerfile
 		},
+		// Shares a pnpm store between devcontainers.
+		// https://github.com/joshuanianji/devcontainer-features/tree/main/src/mount-pnpm-store
+		"ghcr.io/joshuanianji/devcontainer-features/mount-pnpm-store:1": {},
 		"ghcr.io/jungaretti/features/make:1": {},
 		"ghcr.io/rocker-org/devcontainer-features/apt-packages:1": {
 			// mariadb-client package provides the `mysql` command for
