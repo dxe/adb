@@ -63,5 +63,5 @@ jobs:
           repo: dxe/adb-next
           region: us-west-2
           path: frontend-v2
-          dockerfile: frontend-v2/Dockerfile
+          dockerfile: frontend-v2/Dockerfile.frontend-v2
           tags: latest,${{ github.sha }}
