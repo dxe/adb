@@ -27,7 +27,7 @@ WORKDIR /app
 COPY shared ./shared/
 # Copy frontend-v2 and its node_modules
 WORKDIR /app/frontend-v2
-COPY frontend-v2 ./
+COPY --exclude=node_modules --exclude=.next frontend-v2 ./
 COPY --from=deps /app/frontend-v2/node_modules ./node_modules
 RUN npm install -g pnpm
 ENV PNPM_HOME=/app/.pnpm
