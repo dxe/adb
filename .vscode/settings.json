@@ -1,18 +1,13 @@
 {
-    // Stop Makefile extension from asking about installing C++ tools when the
-    // project is opened.
-    "makefile.configureOnOpen": false,
-    "editor.formatOnSave": true,
-    "[typescriptreact]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode"
-    },
-    "[typescript]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode"
-    },
-    "[css]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode"
-    },
-    "[vue]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode"
-    }
+  // Stop Makefile extension from asking about installing C++ tools when the
+  // project is opened.
+  "makefile.configureOnOpen": false,
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[go]": {
+    "editor.defaultFormatter": "golang.go"
+  },
+  // Ensures same settings are used by VS Code extension and CLI.
+  "prettier.requireConfig": true,
+  "prettier.prettierPath": "./frontend-v2/node_modules/prettier",
 }
