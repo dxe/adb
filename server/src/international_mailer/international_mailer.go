@@ -1,3 +1,9 @@
+// Please keep in sync with
+// https://docs.google.com/document/d/1tgtxGONu86XN0KBvOx9-OXmh3mDKpvzkAyQGFoHOdkM/edit?tab=t.0#heading=h.qsu6qdtc3163
+//
+// Documentation:
+// https://coda.io/d/Tech-Team_dR-UIgVShEf/ADB-Forms_suuKCpXS
+
 package international_mailer
 
 import (
