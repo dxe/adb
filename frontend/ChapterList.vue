@@ -408,7 +408,12 @@
             <p v-if="!currentChapter.ChapterID">
               Please save the new chapter before adding organizers.
             </p>
-            <b-table :data="currentChapter.Organizers" v-if="currentChapter.ChapterID">
+            <b-table
+              :data="currentChapter.Organizers"
+              detailed
+              :show-detail-icon="true"
+              v-if="currentChapter.ChapterID"
+            >
               <template #empty>
                 <div class="has-text-centered">No organizers found. Add one below.</div>
               </template>
@@ -436,19 +441,51 @@
                   icon="phone"
                 ></b-input>
               </b-table-column>
-              <b-table-column field="Facebook" label="Facebook" v-slot="props">
-                <b-input
-                  type="text"
-                  v-model="props.row.Facebook"
-                  placeholder="Facebook"
-                  icon="facebook"
-                ></b-input>
-              </b-table-column>
               <b-table-column v-slot="props">
                 <b-button @click="deleteOrganizer(props.row)">
                   <b-icon icon="delete" type="is-danger"></b-icon>
                 </b-button>
               </b-table-column>
+              <template #detail="props">
+                <div style="display: flex; flex-wrap: wrap; column-gap: 20px">
+                  <b-field label="Facebook" label-position="on-border" style="max-width: 300px">
+                    <b-input
+                      type="text"
+                      v-model="props.row.Facebook"
+                      placeholder="Facebook"
+                      icon="facebook"
+                      maxlength="100"
+                    ></b-input>
+                  </b-field>
+                  <b-field label="Instagram" label-position="on-border" style="max-width: 300px">
+                    <b-input
+                      type="text"
+                      v-model="props.row.Instagram"
+                      placeholder="Instagram"
+                      icon="instagram"
+                      maxlength="100"
+                    ></b-input>
+                  </b-field>
+                  <b-field label="Twitter" label-position="on-border" style="max-width: 300px">
+                    <b-input
+                      type="text"
+                      v-model="props.row.Twitter"
+                      placeholder="Twitter"
+                      icon="twitter"
+                      maxlength="100"
+                    ></b-input>
+                  </b-field>
+                  <b-field label="Website" label-position="on-border" style="max-width: 300px">
+                    <b-input
+                      type="text"
+                      v-model="props.row.Website"
+                      placeholder="Website"
+                      icon="web"
+                      maxlength="100"
+                    ></b-input>
+                  </b-field>
+                </div>
+              </template>
             </b-table>
           </b-field>
           <b-button
@@ -603,6 +640,9 @@ interface Organizer {
   Email: string;
   Phone: string;
   Facebook: string;
+  Instagram: string;
+  Twitter: string;
+  Website: string;
 }
 
 const Colors = {
