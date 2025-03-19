@@ -63,10 +63,13 @@ type ChapterWithToken struct {
 }
 
 type Organizer struct {
-	Name     string
-	Email    string
-	Phone    string
-	Facebook string
+	Name      string
+	Email     string
+	Phone     string
+	Facebook  string
+	Instagram string
+	Twitter   string
+	Website   string
 }
 
 type Organizers []*Organizer
