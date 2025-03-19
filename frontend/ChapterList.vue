@@ -94,7 +94,6 @@
         <span
           @click="showModal('chapter-last-contact-modal', props.row)"
           class="is-clickable tag"
-          :class="colorQuarterlyGoal(props.row.LastContact)"
           >{{ props.row.LastContact || 'None' }}</span
         >
       </b-table-column>
@@ -103,15 +102,14 @@
         <span
           @click="showModal('chapter-last-action-modal', props.row)"
           class="is-clickable tag"
-          :class="colorQuarterlyGoal(props.row.LastAction)"
+          :class="colorLastAction(props.row.LastAction)"
+          :title="lastActionTooltip(props.row.LastAction)"
           >{{ props.row.LastAction || 'None' }}</span
         >
       </b-table-column>
 
       <b-table-column field="LastFBEvent" label="Last FB Event" v-slot="props" centered sortable>
-        <span class="tag" :class="colorQuarterlyGoal(props.row.LastFBEvent)">{{
-          props.row.LastFBEvent || 'None'
-        }}</span>
+        <span class="tag">{{ props.row.LastFBEvent || 'None' }}</span>
       </b-table-column>
 
       <b-table-column field="LastFBSync" label="FB Sync Status" v-slot="props" centered sortable>
@@ -584,6 +582,14 @@ interface Organizer {
   Facebook: string;
 }
 
+const Colors = {
+  GREEN: 'is-success',
+  YELLOW: 'is-warning',
+  RED: 'is-danger',
+  GRAY: 'is-grey',
+  BLACK: 'is-black',
+};
+
 export default Vue.extend({
   name: 'chapter-list',
   computed: {
@@ -754,12 +760,13 @@ export default Vue.extend({
 
       const csrfToken = $('meta[name="csrf-token"]').attr('content');
       this.disableConfirmButton = true;
+      const data = JSON.stringify(this.currentChapter);
       $.ajax({
         url: '/chapter/save',
         method: 'POST',
         headers: { 'X-CSRF-Token': csrfToken },
         contentType: 'application/json',
-        data: JSON.stringify(this.currentChapter),
+        data,
         success: (data) => {
           this.disableConfirmButton = false;
 
@@ -853,31 +860,50 @@ export default Vue.extend({
     },
     colorFBSyncStatus(text: string) {
       const time = dayjs(text).add(8, 'hour'); // this converts our DB time for this field to UTC
-      let c = 'is-grey';
+      let c = Colors.GRAY;
       if (time.isValid()) {
-        c = 'is-danger';
+        c = Colors.RED;
       }
       if (time.isAfter(dayjs().add(-1, 'day'))) {
-        c = 'is-warning';
+        c = Colors.YELLOW;
       }
       if (time.isAfter(dayjs().add(-1, 'hour'))) {
-        c = 'is-success';
+        c = Colors.GREEN;
       }
       return c;
     },
-    colorQuarterlyGoal(text: string) {
+    colorLastAction(text: string) {
       const time = dayjs(text);
-      let c = '';
-      if (time.isValid()) {
-        c = 'is-danger';
+
+      if (!time.isValid()) {
+        return Colors.GRAY;
       }
-      if (time.isAfter(dayjs().add(-58, 'day'))) {
-        c = 'is-warning';
+
+      if (time.isAfter(dayjs().subtract(30 * 2, 'day'))) {
+        return Colors.GREEN;
+      } else if (time.isAfter(dayjs().subtract(30 * 3.5, 'day'))) {
+        return Colors.YELLOW;
+      } else if (time.isAfter(dayjs().subtract(30 * 4 + 1, 'day'))) {
+        // + 1 because "black" means the chapter should be offboarded, but
+        // when there are "0" days remaining according to date subtraction,
+        // there still may be a fraction of a day remaining in reality because
+        // protests don't start at the 0th hour of the day.
+        return Colors.RED;
+      } else {
+        return Colors.BLACK;
       }
-      if (time.isAfter(dayjs().add(-29, 'day'))) {
-        c = 'is-success';
+    },
+    lastActionTooltip(text: string) {
+      const time = dayjs(text);
+
+      if (!time.isValid()) {
+        return undefined;
       }
-      return c;
+
+      const daysSinceLastActionText = dayjs().diff(time, 'day') + ' days since last action';
+      const daysRemainingToHostActionText =
+        time.add(30 * 4, 'day').diff(dayjs(), 'day') + ' days remaining to host an action';
+      return daysSinceLastActionText + '\n' + daysRemainingToHostActionText;
     },
     dateInLastThreeMonths(text: string): boolean {
       return dayjs(text).isAfter(dayjs().add(-3, 'month'));
