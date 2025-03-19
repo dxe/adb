@@ -64,10 +64,19 @@
             <b-input v-model="filterName" type="text" icon="filter"></b-input>
           </b-field>
         </div>
+        <div class="level-item">
+          <b-checkbox v-model="showFacebookColumns">Show FB columns</b-checkbox>
+        </div>
       </div>
     </nav>
 
-    <b-table :data="filteredChapters" striped hoverable default-sort="Name">
+    <b-table
+      :data="filteredChapters"
+      striped
+      hoverable
+      default-sort="Name"
+      :key="showFacebookColumns"
+    >
       <b-table-column v-slot="props">
         <div style="width: 130px">
           <b-button @click="showModal('edit-chapter-modal', props.row)">
@@ -94,7 +103,6 @@
         <span
           @click="showModal('chapter-last-contact-modal', props.row)"
           class="is-clickable tag"
-          :class="colorQuarterlyGoal(props.row.LastContact)"
           >{{ props.row.LastContact || 'None' }}</span
         >
       </b-table-column>
@@ -103,18 +111,31 @@
         <span
           @click="showModal('chapter-last-action-modal', props.row)"
           class="is-clickable tag"
-          :class="colorQuarterlyGoal(props.row.LastAction)"
+          :class="colorLastAction(props.row.LastAction)"
+          :title="lastActionTooltip(props.row.LastAction)"
           >{{ props.row.LastAction || 'None' }}</span
         >
       </b-table-column>
 
-      <b-table-column field="LastFBEvent" label="Last FB Event" v-slot="props" centered sortable>
-        <span class="tag" :class="colorQuarterlyGoal(props.row.LastFBEvent)">{{
-          props.row.LastFBEvent || 'None'
-        }}</span>
+      <b-table-column
+        field="LastFBEvent"
+        label="Last FB Event"
+        v-slot="props"
+        centered
+        sortable
+        v-if="showFacebookColumns"
+      >
+        <span class="tag">{{ props.row.LastFBEvent || 'None' }}</span>
       </b-table-column>
 
-      <b-table-column field="LastFBSync" label="FB Sync Status" v-slot="props" centered sortable>
+      <b-table-column
+        field="LastFBSync"
+        label="FB Sync Status"
+        v-slot="props"
+        centered
+        sortable
+        v-if="showFacebookColumns"
+      >
         <b-icon icon="circle" :type="colorFBSyncStatus(props.row.LastFBSync)"></b-icon>
       </b-table-column>
     </b-table>
@@ -754,12 +775,14 @@ export default Vue.extend({
 
       const csrfToken = $('meta[name="csrf-token"]').attr('content');
       this.disableConfirmButton = true;
+      const data = JSON.stringify(this.currentChapter);
+      console.log(data);
       $.ajax({
         url: '/chapter/save',
         method: 'POST',
         headers: { 'X-CSRF-Token': csrfToken },
         contentType: 'application/json',
-        data: JSON.stringify(this.currentChapter),
+        data,
         success: (data) => {
           this.disableConfirmButton = false;
 
@@ -865,19 +888,44 @@ export default Vue.extend({
       }
       return c;
     },
-    colorQuarterlyGoal(text: string) {
+    colorLastAction(text: string) {
+      const GREEN = 'is-success';
+      const YELLOW = 'is-warning';
+      const RED = 'is-danger';
+      const GRAY = 'is-grey';
+      const BLACK = 'is-black';
+
       const time = dayjs(text);
-      let c = '';
-      if (time.isValid()) {
-        c = 'is-danger';
+
+      if (!time.isValid()) {
+        return GRAY;
       }
-      if (time.isAfter(dayjs().add(-58, 'day'))) {
-        c = 'is-warning';
+
+      if (time.isAfter(dayjs().subtract(30 * 2, 'day'))) {
+        return GREEN;
+      } else if (time.isAfter(dayjs().subtract(30 * 3.5, 'day'))) {
+        return YELLOW;
+      } else if (time.isAfter(dayjs().subtract(30 * 4 + 1, 'day'))) {
+        // + 1 becauase "black" means the chapter should be offboarded, but
+        // when there are "0" days remaining according to date subtraction,
+        // there still may be a fraction of a day remaining in reality because
+        // protests don't start at the 0th hour of the day.
+        return RED;
+      } else {
+        return BLACK;
       }
-      if (time.isAfter(dayjs().add(-29, 'day'))) {
-        c = 'is-success';
+    },
+    lastActionTooltip(text: string) {
+      const time = dayjs(text);
+
+      if (!time.isValid()) {
+        return undefined;
       }
-      return c;
+
+      const daysSinceLastActionText = dayjs().diff(time, 'day') + ' days since last action';
+      const daysRemainingToHostActionText =
+        time.add(30 * 4, 'day').diff(dayjs(), 'day') + ' days remaining to host an action';
+      return daysSinceLastActionText + '\n' + daysRemainingToHostActionText;
     },
     dateInLastThreeMonths(text: string): boolean {
       return dayjs(text).isAfter(dayjs().add(-3, 'month'));
@@ -888,6 +936,7 @@ export default Vue.extend({
       currentChapter: {} as Chapter,
       currentChapterIndex: -1,
       chapters: [] as Chapter[],
+      showFacebookColumns: false,
       disableConfirmButton: false,
       currentModalName: '',
       showMoreOptions: false,
