@@ -16,6 +16,8 @@
       "skipFiles": ["<node_internals>/**"],
       "type": "node",
       "runtimeVersion": "16",
+      // Webpack watch only shows build status when TTY is detected
+      "console": "integratedTerminal",
     },
     {
       "name": "Launch React Frontend",
