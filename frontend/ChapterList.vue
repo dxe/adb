@@ -64,10 +64,19 @@
             <b-input v-model="filterName" type="text" icon="filter"></b-input>
           </b-field>
         </div>
+        <div class="level-item">
+          <b-checkbox v-model="showFacebookColumns">Show FB columns</b-checkbox>
+        </div>
       </div>
     </nav>
 
-    <b-table :data="filteredChapters" striped hoverable default-sort="Name">
+    <b-table
+      :data="filteredChapters"
+      striped
+      hoverable
+      default-sort="Name"
+      :key="showFacebookColumns"
+    >
       <b-table-column v-slot="props">
         <div style="width: 130px">
           <b-button @click="showModal('edit-chapter-modal', props.row)">
@@ -108,11 +117,25 @@
         >
       </b-table-column>
 
-      <b-table-column field="LastFBEvent" label="Last FB Event" v-slot="props" centered sortable>
+      <b-table-column
+        field="LastFBEvent"
+        label="Last FB Event"
+        v-slot="props"
+        centered
+        sortable
+        v-if="showFacebookColumns"
+      >
         <span class="tag">{{ props.row.LastFBEvent || 'None' }}</span>
       </b-table-column>
 
-      <b-table-column field="LastFBSync" label="FB Sync Status" v-slot="props" centered sortable>
+      <b-table-column
+        field="LastFBSync"
+        label="FB Sync Status"
+        v-slot="props"
+        centered
+        sortable
+        v-if="showFacebookColumns"
+      >
         <b-icon icon="circle" :type="colorFBSyncStatus(props.row.LastFBSync)"></b-icon>
       </b-table-column>
     </b-table>
@@ -914,6 +937,7 @@ export default Vue.extend({
       currentChapter: {} as Chapter,
       currentChapterIndex: -1,
       chapters: [] as Chapter[],
+      showFacebookColumns: false,
       disableConfirmButton: false,
       currentModalName: '',
       showMoreOptions: false,
