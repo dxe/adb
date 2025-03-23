@@ -47,6 +47,7 @@ dev_db:
 
 # Install all deps for this project.
 deps:
+	. $(NVM_SCRIPT) && nvm install 22 && pnpm i
 	. $(NVM_SCRIPT) && cd frontend && nvm install 16 && npm i --legacy-peer-deps
 	. $(NVM_SCRIPT) && cd frontend-v2 && nvm install 18 && npm i -g pnpm && pnpm i
 	cd server/src && go get -t github.com/dxe/adb/...
@@ -85,5 +86,4 @@ prod_build:
 # Keep in sync with hooks/pre-commit.
 fmt:
 	cd server && gofmt -w `find . -name '*.go'`
-	cd frontend && npx prettier --write **/*.{ts,vue,js}
-	cd frontend-v2 && pnpm fmt
+	. $(NVM_SCRIPT) && nvm use 22 && pnpx prettier --write .

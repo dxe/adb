@@ -6,8 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "fmt": "pnpx prettier --write ."
+    "lint": "next lint"
   },
   "dependencies": {
     "@ebay/nice-modal-react": "^1.2.13",
