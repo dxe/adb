@@ -49,7 +49,7 @@
           <li>Attend a direct action event</li>
           <li>
             Watch a video and
-            <a href="http://dxe.io/consentquiz" target="_blank">take a quiz</a>
+            <a href="https://dxe.io/refresherquiz" target="_blank">take a quiz</a>
             on consent
           </li>
         </ul>
@@ -157,7 +157,7 @@
           <div class="column is-one-third">
             <p>
               I agree to watch a video and
-              <a href="http://dxe.io/consentquiz" target="_blank">take a quiz</a>
+              <a href="https://dxe.io/refresherquiz" target="_blank">take a quiz</a>
               on consent.
             </p>
 
