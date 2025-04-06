@@ -18,7 +18,7 @@
       "azureDnsAutoDetection": true,
       "installDockerBuildx": true,
       "version": "latest",
-      "dockerDashComposeVersion": "v1"
+      "dockerDashComposeVersion": "v2"
     },
     "ghcr.io/devcontainers/features/go:1": {
       "version": "latest"
