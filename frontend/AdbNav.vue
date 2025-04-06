@@ -45,7 +45,7 @@
 <script lang="ts">
 import Vue from 'vue';
 import Buefy from 'buefy';
-import navbarData from '../shared/nav.json';
+import navbarData from './nav.json';
 
 Vue.use(Buefy);
 

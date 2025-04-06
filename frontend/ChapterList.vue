@@ -64,19 +64,10 @@
             <b-input v-model="filterName" type="text" icon="filter"></b-input>
           </b-field>
         </div>
-        <div class="level-item">
-          <b-checkbox v-model="showFacebookColumns">Show FB columns</b-checkbox>
-        </div>
       </div>
     </nav>
 
-    <b-table
-      :data="filteredChapters"
-      striped
-      hoverable
-      default-sort="Name"
-      :key="showFacebookColumns"
-    >
+    <b-table :data="filteredChapters" striped hoverable default-sort="Name">
       <b-table-column v-slot="props">
         <div style="width: 130px">
           <b-button @click="showModal('edit-chapter-modal', props.row)">
@@ -103,6 +94,7 @@
         <span
           @click="showModal('chapter-last-contact-modal', props.row)"
           class="is-clickable tag"
+          :class="colorQuarterlyGoal(props.row.LastContact)"
           >{{ props.row.LastContact || 'None' }}</span
         >
       </b-table-column>
@@ -111,31 +103,18 @@
         <span
           @click="showModal('chapter-last-action-modal', props.row)"
           class="is-clickable tag"
-          :class="colorLastAction(props.row.LastAction)"
-          :title="lastActionTooltip(props.row.LastAction)"
+          :class="colorQuarterlyGoal(props.row.LastAction)"
           >{{ props.row.LastAction || 'None' }}</span
         >
       </b-table-column>
 
-      <b-table-column
-        field="LastFBEvent"
-        label="Last FB Event"
-        v-slot="props"
-        centered
-        sortable
-        v-if="showFacebookColumns"
-      >
-        <span class="tag">{{ props.row.LastFBEvent || 'None' }}</span>
+      <b-table-column field="LastFBEvent" label="Last FB Event" v-slot="props" centered sortable>
+        <span class="tag" :class="colorQuarterlyGoal(props.row.LastFBEvent)">{{
+          props.row.LastFBEvent || 'None'
+        }}</span>
       </b-table-column>
 
-      <b-table-column
-        field="LastFBSync"
-        label="FB Sync Status"
-        v-slot="props"
-        centered
-        sortable
-        v-if="showFacebookColumns"
-      >
+      <b-table-column field="LastFBSync" label="FB Sync Status" v-slot="props" centered sortable>
         <b-icon icon="circle" :type="colorFBSyncStatus(props.row.LastFBSync)"></b-icon>
       </b-table-column>
     </b-table>
@@ -352,7 +331,7 @@
             </div>
             <div class="column is-one-quarter">
               <b-field label="Facebook Token" label-position="on-border">
-                <b-input type="text" maxlength="500" v-model.trim="currentChapter.Token" />
+                <b-input type="text" maxlength="200" v-model.trim="currentChapter.Token" />
               </b-field>
             </div>
             <div class="column is-one-quarter">
@@ -408,12 +387,7 @@
             <p v-if="!currentChapter.ChapterID">
               Please save the new chapter before adding organizers.
             </p>
-            <b-table
-              :data="currentChapter.Organizers"
-              detailed
-              :show-detail-icon="true"
-              v-if="currentChapter.ChapterID"
-            >
+            <b-table :data="currentChapter.Organizers" v-if="currentChapter.ChapterID">
               <template #empty>
                 <div class="has-text-centered">No organizers found. Add one below.</div>
               </template>
@@ -441,51 +415,19 @@
                   icon="phone"
                 ></b-input>
               </b-table-column>
+              <b-table-column field="Facebook" label="Facebook" v-slot="props">
+                <b-input
+                  type="text"
+                  v-model="props.row.Facebook"
+                  placeholder="Facebook"
+                  icon="facebook"
+                ></b-input>
+              </b-table-column>
               <b-table-column v-slot="props">
                 <b-button @click="deleteOrganizer(props.row)">
                   <b-icon icon="delete" type="is-danger"></b-icon>
                 </b-button>
               </b-table-column>
-              <template #detail="props">
-                <div style="display: flex; flex-wrap: wrap; column-gap: 20px">
-                  <b-field label="Facebook" label-position="on-border" style="max-width: 300px">
-                    <b-input
-                      type="text"
-                      v-model="props.row.Facebook"
-                      placeholder="Facebook"
-                      icon="facebook"
-                      maxlength="100"
-                    ></b-input>
-                  </b-field>
-                  <b-field label="Instagram" label-position="on-border" style="max-width: 300px">
-                    <b-input
-                      type="text"
-                      v-model="props.row.Instagram"
-                      placeholder="Instagram"
-                      icon="instagram"
-                      maxlength="100"
-                    ></b-input>
-                  </b-field>
-                  <b-field label="Twitter" label-position="on-border" style="max-width: 300px">
-                    <b-input
-                      type="text"
-                      v-model="props.row.Twitter"
-                      placeholder="Twitter"
-                      icon="twitter"
-                      maxlength="100"
-                    ></b-input>
-                  </b-field>
-                  <b-field label="Website" label-position="on-border" style="max-width: 300px">
-                    <b-input
-                      type="text"
-                      v-model="props.row.Website"
-                      placeholder="Website"
-                      icon="web"
-                      maxlength="100"
-                    ></b-input>
-                  </b-field>
-                </div>
-              </template>
             </b-table>
           </b-field>
           <b-button
@@ -640,18 +582,7 @@ interface Organizer {
   Email: string;
   Phone: string;
   Facebook: string;
-  Instagram: string;
-  Twitter: string;
-  Website: string;
 }
-
-const Colors = {
-  GREEN: 'is-success',
-  YELLOW: 'is-warning',
-  RED: 'is-danger',
-  GRAY: 'is-grey',
-  BLACK: 'is-black',
-};
 
 export default Vue.extend({
   name: 'chapter-list',
@@ -823,13 +754,12 @@ export default Vue.extend({
 
       const csrfToken = $('meta[name="csrf-token"]').attr('content');
       this.disableConfirmButton = true;
-      const data = JSON.stringify(this.currentChapter);
       $.ajax({
         url: '/chapter/save',
         method: 'POST',
         headers: { 'X-CSRF-Token': csrfToken },
         contentType: 'application/json',
-        data,
+        data: JSON.stringify(this.currentChapter),
         success: (data) => {
           this.disableConfirmButton = false;
 
@@ -923,50 +853,31 @@ export default Vue.extend({
     },
     colorFBSyncStatus(text: string) {
       const time = dayjs(text).add(8, 'hour'); // this converts our DB time for this field to UTC
-      let c = Colors.GRAY;
+      let c = 'is-grey';
       if (time.isValid()) {
-        c = Colors.RED;
+        c = 'is-danger';
       }
       if (time.isAfter(dayjs().add(-1, 'day'))) {
-        c = Colors.YELLOW;
+        c = 'is-warning';
       }
       if (time.isAfter(dayjs().add(-1, 'hour'))) {
-        c = Colors.GREEN;
+        c = 'is-success';
       }
       return c;
     },
-    colorLastAction(text: string) {
+    colorQuarterlyGoal(text: string) {
       const time = dayjs(text);
-
-      if (!time.isValid()) {
-        return Colors.GRAY;
+      let c = '';
+      if (time.isValid()) {
+        c = 'is-danger';
       }
-
-      if (time.isAfter(dayjs().subtract(30 * 2, 'day'))) {
-        return Colors.GREEN;
-      } else if (time.isAfter(dayjs().subtract(30 * 3.5, 'day'))) {
-        return Colors.YELLOW;
-      } else if (time.isAfter(dayjs().subtract(30 * 4 + 1, 'day'))) {
-        // + 1 because "black" means the chapter should be offboarded, but
-        // when there are "0" days remaining according to date subtraction,
-        // there still may be a fraction of a day remaining in reality because
-        // protests don't start at the 0th hour of the day.
-        return Colors.RED;
-      } else {
-        return Colors.BLACK;
+      if (time.isAfter(dayjs().add(-58, 'day'))) {
+        c = 'is-warning';
       }
-    },
-    lastActionTooltip(text: string) {
-      const time = dayjs(text);
-
-      if (!time.isValid()) {
-        return undefined;
+      if (time.isAfter(dayjs().add(-29, 'day'))) {
+        c = 'is-success';
       }
-
-      const daysSinceLastActionText = dayjs().diff(time, 'day') + ' days since last action';
-      const daysRemainingToHostActionText =
-        time.add(30 * 4, 'day').diff(dayjs(), 'day') + ' days remaining to host an action';
-      return daysSinceLastActionText + '\n' + daysRemainingToHostActionText;
+      return c;
     },
     dateInLastThreeMonths(text: string): boolean {
       return dayjs(text).isAfter(dayjs().add(-3, 'month'));
@@ -977,7 +888,6 @@ export default Vue.extend({
       currentChapter: {} as Chapter,
       currentChapterIndex: -1,
       chapters: [] as Chapter[],
-      showFacebookColumns: false,
       disableConfirmButton: false,
       currentModalName: '',
       showMoreOptions: false,

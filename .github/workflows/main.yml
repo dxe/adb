@@ -62,5 +62,6 @@ jobs:
           account_id: ${{ secrets.AWS_ACCOUNT_ID }}
           repo: dxe/adb-next
           region: us-west-2
-          dockerfile: Dockerfile.frontend-v2
+          path: frontend-v2
+          dockerfile: frontend-v2/Dockerfile
           tags: latest,${{ github.sha }}

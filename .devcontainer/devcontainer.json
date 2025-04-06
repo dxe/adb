@@ -1,64 +1,63 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/debian
 {
-  "name": "DxE ADB",
+	"name": "DxE ADB",
 
-  // https://code.visualstudio.com/docs/devcontainers/create-dev-container#_use-docker-compose
-  "dockerComposeFile": ["../server/compose.yaml", "./compose.extend.yaml"],
-  "service": "devcontainer", // defined in dockerComposeFile
-  "runServices": ["devcontainer", "mysql"], // defined in dockerComposeFile
-  "workspaceFolder": "/workspace",
-  "shutdownAction": "stopCompose",
-  "remoteUser": "vscode",
+	// https://code.visualstudio.com/docs/devcontainers/create-dev-container#_use-docker-compose
+	"dockerComposeFile": ["../server/compose.yaml", "./compose.extend.yaml"],
+	"service": "devcontainer", // defined in dockerComposeFile
+	"runServices": ["devcontainer", "mysql"], // defined in dockerComposeFile
+	"workspaceFolder": "/workspace",
+	"shutdownAction": "stopCompose",
+	"remoteUser": "vscode",
 
-  // Features to add to the dev container. More info: https://containers.dev/features.
-  "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {
-      "moby": true,
-      "azureDnsAutoDetection": true,
-      "installDockerBuildx": true,
-      "version": "latest",
-      "dockerDashComposeVersion": "v1"
-    },
-    "ghcr.io/devcontainers/features/go:1": {
-      "version": "latest"
-    },
-    "ghcr.io/devcontainers/features/node:1": {
-      "nodeGypDependencies": true,
-      "version": "18" // Match version from Dockerfile
-    },
-    // Shares a pnpm store between devcontainers.
-    // https://github.com/joshuanianji/devcontainer-features/tree/main/src/mount-pnpm-store
-    "ghcr.io/joshuanianji/devcontainer-features/mount-pnpm-store:1": {},
-    "ghcr.io/jungaretti/features/make:1": {},
-    "ghcr.io/rocker-org/devcontainer-features/apt-packages:1": {
-      // mariadb-client package provides the `mysql` command for
-      // development / debugging purposes (not an app dependeny).
-      "packages": "mariadb-client"
-    }
-  },
-  "customizations": {
-    "vscode": {
-      "extensions": [
-        "ms-vscode.makefile-tools",
-        "golang.go",
-        "Vue.volar",
-        "GitHub.vscode-github-actions",
-        "ms-vscode.vscode-typescript-next",
-        "esbenp.prettier-vscode"
-      ]
-    }
-  },
+	// Features to add to the dev container. More info: https://containers.dev/features.
+	"features": {
+		"ghcr.io/devcontainers/features/docker-in-docker:2": {
+			"moby": true,
+			"azureDnsAutoDetection": true,
+			"installDockerBuildx": true,
+			"version": "latest",
+			"dockerDashComposeVersion": "v1"
+		},
+		"ghcr.io/devcontainers/features/go:1": {
+			"version": "latest"
+		},
+		"ghcr.io/devcontainers/features/node:1": {
+			"nodeGypDependencies": true,
+			"version": "18"  // Match version from Dockerfile
+		},
+		"ghcr.io/jungaretti/features/make:1": {},
+		"ghcr.io/rocker-org/devcontainer-features/apt-packages:1": {
+			// mariadb-client package provides the `mysql` command for
+			// development / debugging purposes (not an app dependeny).
+			"packages": "mariadb-client"
+		}
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-vscode.makefile-tools",
+				"golang.go",
+				"Vue.volar",
+				"GitHub.vscode-github-actions",
+				"ms-vscode.vscode-typescript-next",
+				"esbenp.prettier-vscode"
+			]
+		}
+	},
 
-  // Use 'forwardPorts' to make a list of ports inside the container available locally.
-  "forwardPorts": [8080 /* ADB main site (adb.dxe.io) */],
-  "otherPortsAttributes": {
-    // Other ports will be automatically forwarded, but without any
-    // notification. They will still appear in the "ports" tab of the Panel
-    // in VS Code.
-    "onAutoForward": "silent"
-  }
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	"forwardPorts": [
+		8080 /* ADB main site (adb.dxe.io) */
+	],
+	"otherPortsAttributes": {
+		// Other ports will be automatically forwarded, but without any
+		// notification. They will still appear in the "ports" tab of the Panel
+		// in VS Code.
+		"onAutoForward": "silent"
+	}
 
-  // Configure tool-specific properties.
-  // "customizations": {},
+	// Configure tool-specific properties.
+	// "customizations": {},
 }

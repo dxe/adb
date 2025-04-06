@@ -4,11 +4,12 @@
 # Keep in sync with "make fmt".
 
 gofiles=$(cd server && gofmt -l $(find . -name "*.go"))
-webfiles=$(npx prettier -l .)
-[ -z "$gofiles" -a -z "$webfiles" ] && exit 0
+webfiles=$(cd frontend && npx prettier -l **/*.{js,ts,vue})
+webfilesV2=$(cd frontend-v2 && npx prettier -l **/*.{ts,tsx})
+[ -z "$gofiles" -a -z "$webfiles" -a -z "$webfilesV2" ] && exit 0
 
 echo >&2 "Misformatted files:"
-for fn in $gofiles $webfiles do
+for fn in $gofiles $webfiles $webfilesV2; do
   echo >&2 "  $fn"
 done
 echo >&2

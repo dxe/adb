@@ -1,8 +1,6 @@
 import { API_PATH, ApiClient } from '@/lib/api'
 import { QueryClient } from '@tanstack/react-query'
 
-export type User = NonNullable<Awaited<ReturnType<typeof fetchSession>>['user']>
-
 export const fetchSession = async (cookies?: string) => {
   const queryClient = new QueryClient()
   const apiClient = new ApiClient(cookies)
