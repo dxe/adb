@@ -4,6 +4,7 @@ import { z } from 'zod'
 export const API_PATH = {
   STATIC_RESOURCE_HASH: 'static_resources_hash',
   ACTIVIST_NAMES_GET: 'activist_names/get',
+  ACTIVIST_LIST_BASIC: 'activist/list_basic',
   USER_ME: 'user/me',
 }
 
@@ -32,6 +33,8 @@ const AuthedUserResp = z.object({
 export const ActivistNamesResp = z.object({
   activist_names: z.array(z.string()),
 })
+
+export const ActivistListBasicResp = z.unknown() // TODO(jh): implement
 
 export class ApiClient {
   private client: KyInstance
@@ -71,6 +74,11 @@ export class ApiClient {
   getActivistNames = async () => {
     const resp = await this.client.get(API_PATH.ACTIVIST_NAMES_GET).json()
     return ActivistNamesResp.parse(resp)
+  }
+
+  getActivistListBasic = async () => {
+    const resp = await this.client.get(API_PATH.ACTIVIST_LIST_BASIC).json()
+    return ActivistListBasicResp.parse(resp)
   }
 }
 
