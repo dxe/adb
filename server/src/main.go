@@ -279,11 +279,11 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/interaction/save", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.InteractionSaveHandler))
 	router.Handle("/interaction/list", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.InteractionListHandler))
 	router.Handle("/interaction/delete", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.InteractionDeleteHandler))
-	router.Handle("/csv/chapter_member_spoke", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.ChapterMemberSpokeCSVHandler))
-	router.Handle("/csv/community_prospects_hubspot", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.CommunityProspectHubSpotCSVHandler))
+	router.Handle("/csv/chapter_member_spoke", alice.New(main.apiOrganizerOrNonSFBayAuthMiddleware).ThenFunc(main.ChapterMemberSpokeCSVHandler))
+	router.Handle("/csv/community_prospects_hubspot", alice.New(main.apiOrganizerOrNonSFBayAuthMiddleware).ThenFunc(main.CommunityProspectHubSpotCSVHandler))
 	router.Handle("/csv/international_organizers", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.InternationalOrganizersCSVHandler))
-	router.Handle("/csv/event_attendance/{event_id:[0-9]+}", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.EventAttendanceCSVHandler))
-	router.Handle("/csv/all_activists_spoke", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.SupporterSpokeCSVHandler))
+	router.Handle("/csv/event_attendance/{event_id:[0-9]+}", alice.New(main.apiOrganizerOrNonSFBayAuthMiddleware).ThenFunc(main.EventAttendanceCSVHandler))
+	router.Handle("/csv/all_activists_spoke", alice.New(main.apiOrganizerOrNonSFBayAuthMiddleware).ThenFunc(main.SupporterSpokeCSVHandler))
 	router.Handle("/user/list", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.UserListHandler))
 	router.Handle("/user/me", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AuthedUserInfoHandler))
 
@@ -1504,15 +1504,17 @@ func (c MainController) EventAttendanceCSVHandler(w http.ResponseWriter, r *http
 		}
 	}
 
+	chapter := getAuthedADBChapter(c.db, r)
 	event, err := model.GetEvent(c.db, model.GetEventOptions{
-		EventID: eventID,
+		EventID:   eventID,
+		ChapterID: chapter,
 	})
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
 	}
 
-	w.Header().Set("Content-Disposition", "attachment; filename=international_organizers.csv")
+	w.Header().Set("Content-Disposition", "attachment; filename=event_attendance.csv")
 	w.Header().Set("Content-Type", "text/csv")
 	w.Header().Set("Transfer-Encoding", "chunked")
 
