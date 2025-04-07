@@ -74,6 +74,9 @@ type Organizer struct {
 
 type Organizers []*Organizer
 
+const SFBayChapterId = 47
+const SFBayChapterIdStr = "47"
+
 func (o Organizers) Value() (driver.Value, error) {
 	return json.Marshal(o)
 }

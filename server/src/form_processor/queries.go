@@ -1,5 +1,7 @@
 package form_processor
 
+import "github.com/dxe/adb/model"
+
 /* Form application queries */
 const applicationResponsesToProcessQuery = "SELECT id FROM form_application WHERE processed = 0 and name <> ''"
 
@@ -33,7 +35,7 @@ SET
 	# mark as processed
 	form_application.processed = 1
 WHERE
-    chapter_id = 47
+    chapter_id = ` + model.SFBayChapterIdStr + `
 	and form_application.id = ?
 	and form_application.name <> ''
 	and form_application.processed = 0
@@ -74,7 +76,7 @@ SET
 	# mark as processed
 	form_application.processed = 1
 WHERE
-    chapter_id = 47
+    chapter_id = ` + model.SFBayChapterIdStr + `
 	and form_application.id = ?
 	and form_application.name <> ''
 	and form_application.processed = 0
@@ -189,7 +191,7 @@ select
         '',
         '', 
         NULL,
-        '47',
+        '` + model.SFBayChapterIdStr + `',
 		form_application.language,
 		form_application.accessibility
 from
@@ -215,7 +217,7 @@ WHERE
 	and activists.dev_application_date = cast(form_application.timestamp as date)
 	and form_application.processed = 0
 	and activists.hidden < 1
-    and activists.chapter_id = 47;
+    and activists.chapter_id = ` + model.SFBayChapterIdStr + `;
 `
 
 /* Form interest query */
@@ -247,7 +249,7 @@ SET
 	form_interest.processed = 1
 
 WHERE
-    chapter_id = 47
+    chapter_id = ` + model.SFBayChapterIdStr + `
 	and form_interest.id = ?
 	and form_interest.processed = 0
 	and activists.hidden = 0
@@ -282,7 +284,7 @@ SET
 	# mark as processed
 	form_interest.processed = 1
 WHERE
-    chapter_id = 47
+    chapter_id = ` + model.SFBayChapterIdStr + `
 	and form_interest.id = ?
 	AND form_interest.processed = 0
 	AND activists.hidden = 0
@@ -392,7 +394,7 @@ SELECT
     '',
     NULL,
 	IF(LENGTH(form_interest.discord_id),form_interest.discord_id,NULL),
-    '47'
+    '` + model.SFBayChapterIdStr + `'
 FROM
 	form_interest
 WHERE
@@ -411,11 +413,11 @@ INNER JOIN
 SET
 	form_interest.processed = 1
 WHERE
-    activists.chapter_id = 47
+    activists.chapter_id = ` + model.SFBayChapterIdStr + `
 	AND form_interest.id = ?
 	AND form_interest.processed = 0
 	AND activists.hidden < 1;
 `
 
 /* Common queries */
-const countActivistsForEmailQuery = "SELECT count(id) AS amount FROM activists WHERE hidden = 0 and email = ? and chapter_id = 47"
+const countActivistsForEmailQuery = "SELECT count(id) AS amount FROM activists WHERE hidden = 0 and email = ? and chapter_id = " + model.SFBayChapterIdStr
