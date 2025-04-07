@@ -19,6 +19,7 @@ type Message struct {
 	ReplyToAddress   string
 	ReplyToAddresses []string
 	CC               []string
+	BCC              []string
 }
 
 func smtpConfigValid() bool {
@@ -80,9 +81,8 @@ func Send(e Message) error {
 	message := headers + "\n" + body
 
 	sendTo := []string{e.ToAddress}
-	if len(e.CC) > 0 {
-		sendTo = append(sendTo, e.CC...)
-	}
+	sendTo = append(sendTo, e.CC...)
+	sendTo = append(sendTo, e.BCC...)
 
 	if err := smtp.SendMail(host+":"+port, auth, e.FromAddress, sendTo, []byte(message)); err != nil {
 		return errors.Wrap(err, "failed to send email")
