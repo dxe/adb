@@ -749,7 +749,7 @@ SELECT
   name,
   email
 FROM activists
-WHERE hidden = 0 AND activist_level IN('Organizer', 'Chapter Member') AND chapter_id = 47
+WHERE hidden = 0 AND activist_level IN('Organizer', 'Chapter Member') AND chapter_id = ` + SFBayChapterIdStr + `
 `
 
 	var activists []Activist
@@ -768,7 +768,7 @@ SELECT
   name,
   email
 FROM activists
-WHERE hidden = 0 AND activist_level = 'Organizer' AND chapter_id = 47
+WHERE hidden = 0 AND activist_level = 'Organizer' AND chapter_id = ` + SFBayChapterIdStr + `
 `
 
 	var activists []Activist
@@ -1152,7 +1152,7 @@ func UpdateActivistData(db *sqlx.DB, activist ActivistExtra, userEmail string) (
 	// if in the Bay Area, add to mailing list if needed
 	// TODO: make this work for other chapters too, maybe based on Chapters table mailing list info?
 	// or maybe just passing chapter Name or ID to the signup service?
-	if origActivist.ChapterID == 47 {
+	if origActivist.ChapterID == SFBayChapterId {
 		mailingListInfoChanged := activist.Name != origActivist.Name ||
 			activist.Email != origActivist.Email ||
 			activist.Phone != origActivist.Phone ||

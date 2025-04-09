@@ -6,6 +6,8 @@ import (
 	"html/template"
 	"sort"
 	"strings"
+
+	"github.com/dxe/adb/model"
 )
 
 var admins = map[string]bool{
@@ -150,7 +152,7 @@ from (
           from events
         ) e on (e.id = ea.event_id)
   where a.email = ?
-    and a.chapter_id = 47
+    and a.chapter_id = ` + model.SFBayChapterIdStr + `
     and not a.hidden
   group by a.id, e.month
 ) x

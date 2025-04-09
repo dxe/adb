@@ -5,6 +5,8 @@ import (
 	"html/template"
 	"sort"
 	"time"
+
+	"github.com/dxe/adb/model"
 )
 
 func (s *server) reminder() {
@@ -62,7 +64,7 @@ with target as (select ?),
 sfbay as (
   select *
   from activists a
-  where a.chapter_id = 47
+  where a.chapter_id = ` + model.SFBayChapterIdStr + `
     and a.activist_level in ('Organizer', 'Chapter Member')
     and not a.hidden
 ),
