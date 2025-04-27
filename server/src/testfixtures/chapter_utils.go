@@ -11,12 +11,12 @@ func NewChapterBuilder() *ChapterBuilder {
 		chapter: model.ChapterWithToken{
 			ID:                98240,
 			ChapterID:         28992,
-			Name:              "Foo Chapter",
-			Flag:              "default_flag",
-			FbURL:             "https://facebook.com/dxe-foo",
-			TwitterURL:        "https://twitter.com/dxe-foo",
-			InstaURL:          "https://instagram.com/dxe-foo",
-			Email:             "dxe-foo@example.com",
+			Name:              "Esperantoland",
+			Flag:              "🟩",
+			FbURL:             "https://facebook.com/dxe-esperantoland",
+			TwitterURL:        "https://twitter.com/dxe-esperantoland",
+			InstaURL:          "https://instagram.com/dxe-esperantoland",
+			Email:             "dxe-esperantoland@example.com",
 			Region:            "Default Region",
 			Lat:               37.7749,
 			Lng:               -122.4194,
@@ -176,6 +176,6 @@ func (b *ChapterBuilder) WithEmailToken(emailToken string) *ChapterBuilder {
 	return b
 }
 
-func (b *ChapterBuilder) Build() model.ChapterWithToken {
-	return b.chapter
+func (b *ChapterBuilder) Build() *model.ChapterWithToken {
+	return &b.chapter
 }

@@ -96,19 +96,19 @@ func (b *onboardingEmailMessageBuilder) nearNonSFBayChapter() (mailer.Message, e
 
 	body.WriteString("<p>")
 	if b.chapter.FbURL != "" {
-		fmt.Fprintf(&body, `<a href="%v">%v Facebook page</a><br />`,
+		fmt.Fprintf(&body, `<a href="%v">DxE %v Facebook page</a><br />`,
 			b.chapter.FbURL, b.chapter.Name)
 	}
 	if b.chapter.InstaURL != "" {
-		fmt.Fprintf(&body, `<a href="%v">%v Instagram</a><br />`,
+		fmt.Fprintf(&body, `<a href="%v">DxE %v Instagram</a><br />`,
 			b.chapter.InstaURL, b.chapter.Name)
 	}
 	if b.chapter.TwitterURL != "" {
-		fmt.Fprintf(&body, `<a href="%v">%v Twitter</a><br />`,
+		fmt.Fprintf(&body, `<a href="%v">DxE %v Twitter</a><br />`,
 			b.chapter.TwitterURL, b.chapter.Name)
 	}
 	if b.chapter.Email != "" {
-		fmt.Fprintf(&body, `<a href="mailto:%v">%v Email</a><br />`,
+		fmt.Fprintf(&body, `<a href="mailto:%v">DxE %v Email</a><br />`,
 			b.chapter.Email, b.chapter.Name)
 	}
 	body.WriteString("</p>")

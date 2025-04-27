@@ -30,7 +30,7 @@ func TestBuildOnboardingEmailMessage(t *testing.T) {
 				Build()
 
 			// Act
-			msg, err := buildOnboardingEmailMessage(formData, &chapter, nil)
+			msg, err := buildOnboardingEmailMessage(formData, chapter, nil)
 
 			// Assert
 			assert.NoError(t, err)
@@ -57,7 +57,7 @@ func TestBuildOnboardingEmailMessage(t *testing.T) {
 			}
 
 			// Act
-			msg, err := buildOnboardingEmailMessage(formData, &chapter, nextEvent)
+			msg, err := buildOnboardingEmailMessage(formData, chapter, nextEvent)
 
 			// Assert
 			assert.NoError(t, err)
@@ -85,7 +85,7 @@ func TestBuildOnboardingEmailMessage(t *testing.T) {
 				Build()
 
 			// Act
-			msg, err := buildOnboardingEmailMessage(formData, &chapter, nil)
+			msg, err := buildOnboardingEmailMessage(formData, chapter, nil)
 
 			// Assert
 			assert.NoError(t, err)
@@ -116,7 +116,7 @@ func TestBuildOnboardingEmailMessage(t *testing.T) {
 			}
 
 			// Act
-			msg, err := buildOnboardingEmailMessage(formData, &chapter, nextEvent)
+			msg, err := buildOnboardingEmailMessage(formData, chapter, nextEvent)
 
 			// Assert
 			assert.NoError(t, err)
@@ -138,7 +138,7 @@ func TestBuildOnboardingEmailMessage(t *testing.T) {
 				Build()
 
 			// Act
-			msg, err := buildOnboardingEmailMessage(formData, &chapter, nil)
+			msg, err := buildOnboardingEmailMessage(formData, chapter, nil)
 
 			// Assert
 			assert.NoError(t, err)
@@ -161,7 +161,7 @@ func TestBuildOnboardingEmailMessage(t *testing.T) {
 				Build()
 
 			// Act
-			msg, err := buildOnboardingEmailMessage(formData, &chapter, nil)
+			msg, err := buildOnboardingEmailMessage(formData, chapter, nil)
 
 			// Assert
 			assert.NoError(t, err)
@@ -181,7 +181,7 @@ func TestBuildOnboardingEmailMessage(t *testing.T) {
 				Build()
 
 			// Act
-			msg, err := buildOnboardingEmailMessage(formData, &chapter, nil)
+			msg, err := buildOnboardingEmailMessage(formData, chapter, nil)
 
 			// Assert
 			assert.NoError(t, err)

@@ -22,7 +22,7 @@ func TestBuildNotificationEmail(t *testing.T) {
 		chapter := testfixtures.NewChapterBuilder().Build()
 
 		// Act
-		msg, err := buildNotificationEmail(formData, &chapter)
+		msg, err := buildNotificationEmail(formData, chapter)
 
 		// Assert
 		require.NoError(t, err)
@@ -43,7 +43,7 @@ func TestBuildNotificationEmail(t *testing.T) {
 			Build()
 
 		// Act
-		msg, err := buildNotificationEmail(formData, &chapter)
+		msg, err := buildNotificationEmail(formData, chapter)
 
 		// Assert
 		require.NoError(t, err)
@@ -64,7 +64,7 @@ func TestBuildNotificationEmail(t *testing.T) {
 			Build()
 
 		// Act
-		msg, err := buildNotificationEmail(formData, &chapter)
+		msg, err := buildNotificationEmail(formData, chapter)
 
 		// Assert
 		require.NoError(t, err)
@@ -87,7 +87,7 @@ func TestBuildNotificationEmail(t *testing.T) {
 			Build()
 
 		// Act
-		msg, err := buildNotificationEmail(formData, &chapter)
+		msg, err := buildNotificationEmail(formData, chapter)
 
 		// Assert
 		require.NoError(t, err)
@@ -107,7 +107,7 @@ func TestBuildNotificationEmail(t *testing.T) {
 			Build()
 
 		// Act
-		msg, err := buildNotificationEmail(formData, &chapter)
+		msg, err := buildNotificationEmail(formData, chapter)
 
 		// Assert
 		require.NoError(t, err)

@@ -2,7 +2,10 @@ package international_application_processor
 
 import (
 	"flag"
+	"fmt"
 	"log"
+	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -13,37 +16,21 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// This is a test of the integration of this package with the email service
-// and allows viewing the emails in a real email client.
-
-// SMTP_ environment variables must be configured to run this test.
-
+// cd international_application_processor && go test . --intl-application-mailer-integration-test-enable
 var enableMailerIntegrationTest = flag.Bool("intl-application-mailer-integration-test-enable", false, "Enable the international application form processor mailer integration test")
-var mailerIntegrationTestEmail = flag.String("intl-application-mailer-integration-test-email", "", "Email for the international application form processor mailer integration test")
 
-type coords struct {
-	lat float64
-	lng float64
-}
+var verificationStrategy = writeEmailMsgToFile
 
-var downtownBerkeley = coords{
-	lat: 37.870352730245024,
-	lng: -122.26794876651053,
-}
-
-func makeFormData(location coords, state string, interest string) model.InternationalFormData {
+func makeFormData(state string, involvement string) model.InternationalFormData {
 	return testfixtures.NewInternationalFormDataBuilder().
 		WithFirstName("John").
 		WithLastName("Doe").
-		WithEmail(*mailerIntegrationTestEmail).
-		WithLat(location.lat).
-		WithLng(location.lng).
 		WithState(state).
-		WithInterest(interest).
+		WithInvolvement(involvement).
 		Build()
 }
 
-func makeSfBayChapter() model.ChapterWithToken {
+func makeSfBayChapter() *model.ChapterWithToken {
 	return testfixtures.NewChapterBuilder().
 		WithChapterID(model.SFBayChapterId).
 		WithName("SF Bay").
@@ -62,45 +49,33 @@ func makeEvent() *model.ExternalEvent {
 	}
 }
 
-func replaceRecipientsWithTestAddress(msg *mailer.Message) {
-	// Replace the recipient with the test email address
-	msg.ToAddress = *mailerIntegrationTestEmail
-	msg.CC = []string{}
-	msg.BCC = []string{}
-}
+// writeEmailMsgToFile writes the given email message to an HTML file named after the
+// test. The file includes the message headers in a table followed by the HTML
+// body, allowing for easy verification of the HTML in a web browser.
+func writeEmailMsgToFile(msg *mailer.Message, t *testing.T) error {
+	var sb strings.Builder
+	sb.WriteString("<table border='1'><tr><th>Header</th><th>Value</th></tr>")
+	sb.WriteString(fmt.Sprintf("<tr><td>From</td><td>%s (%s)</td></tr>", msg.FromAddress, msg.FromName))
+	sb.WriteString(fmt.Sprintf("<tr><td>To</td><td>%s (%s)</td></tr>", msg.ToAddress, msg.ToName))
+	sb.WriteString(fmt.Sprintf("<tr><td>CC</td><td>%s</td></tr>", strings.Join(msg.CC, ", ")))
+	sb.WriteString(fmt.Sprintf("<tr><td>BCC</td><td>%s</td></tr>", strings.Join(msg.BCC, ", ")))
+	sb.WriteString(fmt.Sprintf("<tr><td>Subject</td><td>%s</td></tr>", msg.Subject))
+	sb.WriteString("</table><hr>")
+	sb.WriteString(msg.BodyHTML)
 
-func sendTestNotificationEmail(formData model.InternationalFormData, chapter *model.ChapterWithToken) error {
-	msg, err := buildNotificationEmail(formData, chapter)
+	fileName := t.Name() + ".html"
+	const dir = "test-output/"
+	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+		return errors.Wrap(err, "error creating test-output directory")
+	}
+	err := os.WriteFile(
+		dir+strings.ReplaceAll(fileName, "/", "__"),
+		[]byte(sb.String()), 0644)
 	if err != nil {
-		return errors.Wrap(err, "error building int'l application notification email")
+		return errors.Wrap(err, "error writing email to file")
 	}
 
-	replaceRecipientsWithTestAddress(msg)
-
-	err = mailer.Send(*msg)
-	if err != nil {
-		return errors.Wrap(err, "error sending int'l application notification email")
-	}
-
-	log.Printf("Test int'l application notification email sent to %v", formData.Email)
-
-	return err
-}
-
-func sendTestOnboardingEmail(formData model.InternationalFormData, chapter *model.ChapterWithToken) error {
-	msg, err := buildOnboardingEmailMessage(formData, chapter, makeEvent())
-	if err != nil {
-		return errors.Wrap(err, "error building email message")
-	}
-
-	replaceRecipientsWithTestAddress(msg)
-
-	if err := mailer.Send(*msg); err != nil {
-		return errors.Wrap(err, "error sending email for international form submission")
-	}
-
-	log.Printf("Int'l mailer onboarding email sent to %v", msg.ToAddress)
-
+	log.Printf("Email written to file: %s", fileName)
 	return nil
 }
 
@@ -110,61 +85,71 @@ func TestMailIntegration(t *testing.T) {
 		t.Skip()
 		return
 	}
-	if *mailerIntegrationTestEmail == "" {
-		t.Skip("No email address provided for mailer integration test")
-		return
-	}
 
 	t.Run("SendsNotificationEmail", func(t *testing.T) {
-		formData := makeFormData(downtownBerkeley, "CA", "participate")
-		chapter := makeSfBayChapter()
+		msg, err := buildNotificationEmail(makeFormData("CA", "participate"), makeSfBayChapter())
+		assert.NoError(t, err)
 
-		err := sendTestNotificationEmail(formData, &chapter)
+		err = verificationStrategy(msg, t)
 		assert.NoError(t, err)
 	})
 
 	t.Run("OnboardingEmails", func(t *testing.T) {
 		t.Run("SendsSFBayEmail", func(t *testing.T) {
-			formData := makeFormData(downtownBerkeley, "CA", "participate")
-			chapter := makeSfBayChapter()
+			msg, err := buildOnboardingEmailMessage(
+				makeFormData("CA", "participate"),
+				makeSfBayChapter(),
+				makeEvent())
+			assert.NoError(t, err)
 
-			err := sendTestOnboardingEmail(formData, &chapter)
+			err = verificationStrategy(msg, t)
 			assert.NoError(t, err)
 		})
 
 		t.Run("SendsNearbyChapterEmail", func(t *testing.T) {
-			formData := makeFormData(coords{0, 0}, "ZZ", "participate")
-			chapter := testfixtures.NewChapterBuilder().Build()
+			msg, err := buildOnboardingEmailMessage(
+				makeFormData("ZZ", "participate"),
+				testfixtures.NewChapterBuilder().Build(),
+				makeEvent())
+			assert.NoError(t, err)
 
-			err := sendTestOnboardingEmail(formData, &chapter)
+			err = verificationStrategy(msg, t)
 			assert.NoError(t, err)
 		})
 
 		t.Run("SendsCAOrganizerEmail", func(t *testing.T) {
-			formData := makeFormData(coords{0, 0}, "CA", "organize")
+			msg, err := buildOnboardingEmailMessage(
+				makeFormData("CA", "organize"), nil, nil)
+			assert.NoError(t, err)
 
-			err := sendTestOnboardingEmail(formData, nil)
+			err = verificationStrategy(msg, t)
 			assert.NoError(t, err)
 		})
 
 		t.Run("SendsNonCAOrganizerEmail", func(t *testing.T) {
-			formData := makeFormData(coords{0, 0}, "ZZ", "organize")
+			msg, err := buildOnboardingEmailMessage(
+				makeFormData("ZZ", "organize"), nil, nil)
+			assert.NoError(t, err)
 
-			err := sendTestOnboardingEmail(formData, nil)
+			err = verificationStrategy(msg, t)
 			assert.NoError(t, err)
 		})
 
 		t.Run("SendsCAParticipatantEmail", func(t *testing.T) {
-			formData := makeFormData(coords{0, 0}, "CA", "participate")
+			msg, err := buildOnboardingEmailMessage(
+				makeFormData("CA", "participate"), nil, nil)
+			assert.NoError(t, err)
 
-			err := sendTestOnboardingEmail(formData, nil)
+			err = verificationStrategy(msg, t)
 			assert.NoError(t, err)
 		})
 
 		t.Run("SendsNonCAParticipantEmail", func(t *testing.T) {
-			formData := makeFormData(coords{0, 0}, "ZZ", "participate")
+			msg, err := buildOnboardingEmailMessage(
+				makeFormData("ZZ", "participate"), nil, nil)
+			assert.NoError(t, err)
 
-			err := sendTestOnboardingEmail(formData, nil)
+			err = verificationStrategy(msg, t)
 			assert.NoError(t, err)
 		})
 	})
