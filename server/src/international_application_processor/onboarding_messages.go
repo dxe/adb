@@ -9,6 +9,15 @@ import (
 	"github.com/dxe/adb/model"
 )
 
+const almiraTannerSignatureHtml = `
+		<p>
+			<b>Almira Tanner</b><br/>
+			Lead Organizer<br/>
+			Direct Action Everywhere<br/>
+			she/her
+		</p>
+	`
+
 func (b *onboardingEmailMessageBuilder) nearSFBayChapter() (mailer.Message, error) {
 	var msg mailer.Message
 	msg.FromName = sfBayCoordinator.Name
@@ -173,22 +182,10 @@ func (b *onboardingEmailMessageBuilder) caOrganizerNotNearAnyChapter() (mailer.M
 			I’m looking forward to hearing back from you,
 		</p>`, californiaCoordinator.Address)
 
-	fmt.Fprintf(&body, `
-		<p>
-			<b>Almira Tanner</b><br/>
-			Lead Organizer<br/>
-			Direct Action Everywhere<br/>
-			she/her
-		</p>
-	`)
+	body.WriteString(almiraTannerSignatureHtml)
 
 	msg.BodyHTML = body.String()
 
-	return msg, nil
-}
-
-func (b *onboardingEmailMessageBuilder) caParticipantNotNearAnyChapter() (mailer.Message, error) {
-	var msg mailer.Message
 	return msg, nil
 }
 
@@ -256,8 +253,67 @@ func (b *onboardingEmailMessageBuilder) nonCaOrganizerNotNearAnyChapter() (maile
 	return msg, nil
 }
 
+const networkMemberProgramIntroHtml = `
+		<p>
+			Thank you for your interest in joining the DxE Network.
+			We recently launched the Network Member Program which is a platform
+			for people who are interested in taking action with DxE but don’t
+			have a chapter near them or have the capacity to organize a chapter
+			themselves.
+			The only steps to complete to officially become a member are:
+		</p>
+		<ol>
+			<li>Watch a video</li>
+			<li>Complete a short quiz</li>
+		</ol>
+		<p>
+			This program offers the opportunity to connect with other activists
+			around the US and the world, join DxE’s campaigns, receive mentoring
+			to develop multiple skills and financial support to attend events
+			and actions in person.
+		</p>
+	`
+
+func (b *onboardingEmailMessageBuilder) caParticipantNotNearAnyChapter() (mailer.Message, error) {
+	var msg mailer.Message
+	msg.FromName = californiaCoordinator.Name
+	msg.FromAddress = californiaCoordinator.Address
+	msg.ToName = b.fullName
+	msg.ToAddress = b.email
+	msg.Subject = "Getting involved with Direct Action Everywhere"
+
+	var body strings.Builder
+	fmt.Fprintf(&body, `<p>Hi %v,</p>`, html.EscapeString(b.firstName))
+	body.WriteString(networkMemberProgramIntroHtml)
+	body.WriteString(almiraTannerSignatureHtml)
+	msg.BodyHTML = body.String()
+
+	return msg, nil
+}
+
 func (b *onboardingEmailMessageBuilder) nonCaParticipantNotNearAnyChapter() (mailer.Message, error) {
 	var msg mailer.Message
+	msg.FromName = globalCoordinator.Name
+	msg.FromAddress = globalCoordinator.Address
+	msg.ToName = b.fullName
+	msg.ToAddress = b.email
+	msg.Subject = "Getting involved with Direct Action Everywhere"
+
+	var body strings.Builder
+	fmt.Fprintf(&body, `<p>Hi %v,</p>`, html.EscapeString(b.firstName))
+
+	body.WriteString(networkMemberProgramIntroHtml)
+
+	fmt.Fprintf(&body, `
+		<p>
+			<strong>%v</strong><br/>
+			International Coordinator<br/>
+			Direct Action Everywhere
+		</p>`,
+		globalCoordinator.Name)
+
+	msg.BodyHTML = body.String()
+
 	return msg, nil
 }
 

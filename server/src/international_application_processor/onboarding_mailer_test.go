@@ -50,7 +50,7 @@ func TestBuildOnboardingEmailMessage(t *testing.T) {
 			// Arrange
 			formData := testfixtures.NewInternationalFormDataBuilder().Build()
 			chapter := testfixtures.NewChapterBuilder().Build()
-			var nextEvent *model.ExternalEvent = &model.ExternalEvent{
+			nextEvent := &model.ExternalEvent{
 				ID:        "555500",
 				Name:      "Test Event",
 				StartTime: time.Now().Add(48 * time.Hour),
@@ -109,7 +109,7 @@ func TestBuildOnboardingEmailMessage(t *testing.T) {
 			// Arrange
 			formData := testfixtures.NewInternationalFormDataBuilder().Build()
 			chapter := testfixtures.NewChapterBuilder().Build()
-			var nextEvent *model.ExternalEvent = &model.ExternalEvent{
+			nextEvent := &model.ExternalEvent{
 				ID:        "555500",
 				Name:      "Test Event",
 				StartTime: time.Now().Add(48 * time.Hour),
@@ -218,10 +218,6 @@ func TestBuildOnboardingEmailMessage(t *testing.T) {
 		})
 	})
 
-	t.Run("ForCaParticipantNotNearAnyChapter", func(t *testing.T) {
-
-	})
-
 	t.Run("ForNonCaOrganizerNotNearAnyChapter", func(t *testing.T) {
 		t.Run("ContainsBasicInfo", func(t *testing.T) {
 			// Arrange
@@ -250,7 +246,59 @@ func TestBuildOnboardingEmailMessage(t *testing.T) {
 		})
 	})
 
-	t.Run("ForNonCaParticipantNotNearAnyChapter", func(t *testing.T) {
+	t.Run("ForCaParticipantNotNearAnyChapter", func(t *testing.T) {
+		t.Run("ContainsBasicInfo", func(t *testing.T) {
+			// Arrange
+			formData := testfixtures.NewInternationalFormDataBuilder().
+				WithFirstName("John").
+				WithLastName("Doe").
+				WithEmail("john.doe@example.com").
+				WithInvolvement("participate").
+				WithState("CA").
+				Build()
 
+			// Act
+			msg, err := buildOnboardingEmailMessage(formData, nil, nil)
+
+			// Assert
+			assert.NoError(t, err)
+			assert.NotNil(t, msg)
+			assert.Equal(t, californiaCoordinator.Name, msg.FromName)
+			assert.Equal(t, californiaCoordinator.Address, msg.FromAddress)
+			assert.Contains(t, msg.BCC, californiaCoordinator.Address)
+			assert.Equal(t, "John Doe", msg.ToName)
+			assert.Equal(t, "john.doe@example.com", msg.ToAddress)
+			assert.Equal(t, "Getting involved with Direct Action Everywhere", msg.Subject)
+			assert.Contains(t, msg.BodyHTML, "Hi John,")
+			assert.Contains(t, msg.BodyHTML, "Network Member Program")
+		})
+	})
+
+	t.Run("ForNonCaParticipantNotNearAnyChapter", func(t *testing.T) {
+		t.Run("ContainsBasicInfo", func(t *testing.T) {
+			// Arrange
+			formData := testfixtures.NewInternationalFormDataBuilder().
+				WithFirstName("John").
+				WithLastName("Doe").
+				WithEmail("john.doe@example.com").
+				WithInvolvement("participate").
+				WithState("ZZ").
+				Build()
+
+			// Act
+			msg, err := buildOnboardingEmailMessage(formData, nil, nil)
+
+			// Assert
+			assert.NoError(t, err)
+			assert.NotNil(t, msg)
+			assert.Equal(t, globalCoordinator.Name, msg.FromName)
+			assert.Equal(t, globalCoordinator.Address, msg.FromAddress)
+			assert.Contains(t, msg.BCC, globalCoordinator.Address)
+			assert.Equal(t, "John Doe", msg.ToName)
+			assert.Equal(t, "john.doe@example.com", msg.ToAddress)
+			assert.Equal(t, "Getting involved with Direct Action Everywhere", msg.Subject)
+			assert.Contains(t, msg.BodyHTML, "Hi John,")
+			assert.Contains(t, msg.BodyHTML, "Network Member Program")
+		})
 	})
 }

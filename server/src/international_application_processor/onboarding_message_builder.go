@@ -25,8 +25,8 @@ const (
 	nearSFBayChapter onboardingEmailType = iota
 	nearNonSFBayChapter
 	caOrganizerNotNearAnyChapter
-	caParticipantNotNearAnyChapter
 	nonCaOrganizerNotNearAnyChapter
+	caParticipantNotNearAnyChapter
 	nonCaParticipantNotNearAnyChapter
 )
 
@@ -94,21 +94,18 @@ func (b *onboardingEmailMessageBuilder) getOnboardingEmailType() onboardingEmail
 		if b.chapter.ChapterID == model.SFBayChapterId {
 			return nearSFBayChapter
 		}
-
 		return nearNonSFBayChapter
 	}
 
-	if stateIsCalifornia(b.state) {
-		if b.involvementUnsanitized == "organize" {
+	if b.involvementUnsanitized == "organize" {
+		if stateIsCalifornia(b.state) {
 			return caOrganizerNotNearAnyChapter
 		}
-
-		return caParticipantNotNearAnyChapter
-	}
-
-	if b.involvementUnsanitized == "organize" {
 		return nonCaOrganizerNotNearAnyChapter
 	}
 
+	if stateIsCalifornia(b.state) {
+		return caParticipantNotNearAnyChapter
+	}
 	return nonCaParticipantNotNearAnyChapter
 }
