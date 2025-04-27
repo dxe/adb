@@ -26,11 +26,56 @@ type coords struct {
 	lng float64
 }
 
+var downtownBerkeley = coords{
+	lat: 37.870352730245024,
+	lng: -122.26794876651053,
+}
+
+func makeFormData(location coords, state string, interest string) model.InternationalFormData {
+	return testfixtures.NewInternationalFormDataBuilder().
+		WithFirstName("John").
+		WithLastName("Doe").
+		WithEmail(*mailerIntegrationTestEmail).
+		WithLat(location.lat).
+		WithLng(location.lng).
+		WithState(state).
+		WithInterest(interest).
+		Build()
+}
+
+func makeSfBayChapter() model.ChapterWithToken {
+	return testfixtures.NewChapterBuilder().
+		WithChapterID(model.SFBayChapterId).
+		WithName("SF Bay").
+		WithFbURL("https://facebook.com/test-chapter").
+		WithInstaURL("https://instagram.com/test-chapter").
+		WithTwitterURL("https://twitter.com/test-chapter").
+		WithEmail("chapter-email@example.org").
+		Build()
+}
+
+func makeEvent() *model.ExternalEvent {
+	return &model.ExternalEvent{
+		ID:        "555500",
+		Name:      "Test Event",
+		StartTime: time.Now().Add(48 * time.Hour),
+	}
+}
+
+func replaceRecipientsWithTestAddress(msg *mailer.Message) {
+	// Replace the recipient with the test email address
+	msg.ToAddress = *mailerIntegrationTestEmail
+	msg.CC = []string{}
+	msg.BCC = []string{}
+}
+
 func sendTestNotificationEmail(formData model.InternationalFormData, chapter *model.ChapterWithToken) error {
 	msg, err := buildNotificationEmail(formData, chapter)
 	if err != nil {
 		return errors.Wrap(err, "error building int'l application notification email")
 	}
+
+	replaceRecipientsWithTestAddress(msg)
 
 	err = mailer.Send(*msg)
 	if err != nil {
@@ -43,16 +88,12 @@ func sendTestNotificationEmail(formData model.InternationalFormData, chapter *mo
 }
 
 func sendTestOnboardingEmail(formData model.InternationalFormData, chapter *model.ChapterWithToken) error {
-	nextEvent := &model.ExternalEvent{
-		ID:        "555500",
-		Name:      "Test Event",
-		StartTime: time.Now().Add(48 * time.Hour),
-	}
-
-	msg, err := buildOnboardingEmailMessage(formData, chapter, nextEvent)
+	msg, err := buildOnboardingEmailMessage(formData, chapter, makeEvent())
 	if err != nil {
 		return errors.Wrap(err, "error building email message")
 	}
+
+	replaceRecipientsWithTestAddress(msg)
 
 	if err := mailer.Send(*msg); err != nil {
 		return errors.Wrap(err, "error sending email for international form submission")
@@ -63,7 +104,7 @@ func sendTestOnboardingEmail(formData model.InternationalFormData, chapter *mode
 	return nil
 }
 
-func TestFunctionWithOptionalE2EE(t *testing.T) {
+func TestMailIntegration(t *testing.T) {
 	flag.Parse()
 	if !*enableMailerIntegrationTest {
 		t.Skip()
@@ -74,34 +115,57 @@ func TestFunctionWithOptionalE2EE(t *testing.T) {
 		return
 	}
 
-	downtownBerkeley := coords{
-		lat: 37.870352730245024,
-		lng: -122.26794876651053,
-	}
+	t.Run("SendsNotificationEmail", func(t *testing.T) {
+		formData := makeFormData(downtownBerkeley, "CA", "participate")
+		chapter := makeSfBayChapter()
 
-	formData := testfixtures.NewInternationalFormDataBuilder().
-		WithFirstName("John").
-		WithLastName("Doe").
-		WithEmail(*mailerIntegrationTestEmail).
-		WithLat(downtownBerkeley.lat).
-		WithLng(downtownBerkeley.lng).
-		WithState("CA").
-		Build()
+		err := sendTestNotificationEmail(formData, &chapter)
+		assert.NoError(t, err)
+	})
 
-	chapter := testfixtures.NewChapterBuilder().
-		WithChapterID(model.SFBayChapterId).
-		WithName("SF Bay").
-		WithFbURL("https://facebook.com/test-chapter").
-		WithInstaURL("https://instagram.com/test-chapter").
-		WithTwitterURL("https://twitter.com/test-chapter").
-		WithEmail("chapter-email@example.org").
-		Build()
+	t.Run("OnboardingEmails", func(t *testing.T) {
+		t.Run("SendsSFBayEmail", func(t *testing.T) {
+			formData := makeFormData(downtownBerkeley, "CA", "participate")
+			chapter := makeSfBayChapter()
 
-	// Email the person who submitted the form.
-	err := sendTestOnboardingEmail(formData, &chapter)
-	assert.NoError(t, err)
+			err := sendTestOnboardingEmail(formData, &chapter)
+			assert.NoError(t, err)
+		})
 
-	// Email relevant existing organizers to notify them of the form submission.
-	err = sendTestNotificationEmail(formData, &chapter)
-	assert.NoError(t, err)
+		t.Run("SendsNearbyChapterEmail", func(t *testing.T) {
+			formData := makeFormData(coords{0, 0}, "ZZ", "participate")
+			chapter := testfixtures.NewChapterBuilder().Build()
+
+			err := sendTestOnboardingEmail(formData, &chapter)
+			assert.NoError(t, err)
+		})
+
+		t.Run("SendsCAOrganizerEmail", func(t *testing.T) {
+			formData := makeFormData(coords{0, 0}, "CA", "organize")
+
+			err := sendTestOnboardingEmail(formData, nil)
+			assert.NoError(t, err)
+		})
+
+		t.Run("SendsNonCAOrganizerEmail", func(t *testing.T) {
+			formData := makeFormData(coords{0, 0}, "ZZ", "organize")
+
+			err := sendTestOnboardingEmail(formData, nil)
+			assert.NoError(t, err)
+		})
+
+		t.Run("SendsCAParticipatantEmail", func(t *testing.T) {
+			formData := makeFormData(coords{0, 0}, "CA", "participate")
+
+			err := sendTestOnboardingEmail(formData, nil)
+			assert.NoError(t, err)
+		})
+
+		t.Run("SendsNonCAParticipantEmail", func(t *testing.T) {
+			formData := makeFormData(coords{0, 0}, "ZZ", "participate")
+
+			err := sendTestOnboardingEmail(formData, nil)
+			assert.NoError(t, err)
+		})
+	})
 }
