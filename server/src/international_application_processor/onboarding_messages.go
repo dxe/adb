@@ -32,34 +32,35 @@ func (b *onboardingEmailMessageBuilder) nearSFBayChapter() (mailer.Message, erro
 
 	body.WriteString(
 		`<p>
-			I wanted to reach out about your inquiry of getting involved with
-			DxE.
-			The DxE SF Bay Area chapter is within 100 miles of you.
-			You can check out <a href="https://dxe.io/events">dxe.io/events</a>
-			for a variety of different events happening local to you, from
-			community events to actions, so you can get involved and start
-			taking action with us!
-			You can also apply to be a chapter member at
-			<a href="https://dxe.io/apply">dxe.io/apply</a>.
-		</p>`)
+			Thank you for reaching out about getting involved with Direct Action
+			Everywhere.
+		</p>
+		<p>
+			Great news—the SF Bay Area chapter is within 100 miles of you.
+			We’d love to see you at an upcoming event!
+		</p>
+		<p>
+			Here are some ways to get started:
+			<ul>
+		`)
 
 	nextEventLink := getFacebookEventLinkOrEmptyString(b.nextEvent)
 	if len(nextEventLink) > 0 {
 		fmt.Fprintf(
 			&body,
-			"<p>You can also find details of our next event here: %v</p>",
+			"<li>Come to our next event: %v</li>",
 			nextEventLink)
 	}
 
-	body.WriteString(
-		`<p>
-			In the meantime you can
-			<a href="https://righttorescue.com/">sign a letter to support the right to rescue</a>.
+	body.WriteString(`
+				<li>Find all of our events at <a href="https://dxe.io/events">dxe.io/events</a>, including community gatherings, trainings, and actions.</li>
+				<li>Become a member at <a href="https://dxe.io/apply">dxe.io/apply</a>. When you’re ready to dive deeper, fill out this quick application.</li>
+				<li>Sign the <a href="https://righttorescue.com/">letter to support the right to rescue</a>.</li>
+			</ul>
 		</p>
-
-		<p>Let me know if you have any questions.</p>
-
-		<p>Hope that you can join us!</p>`)
+		<p>Feel free to reply with any questions—I’m happy to help.</p>
+		<p>Hope to see you soon!</p>
+	`)
 
 	fmt.Fprintf(&body,
 		`<p>%v<br/>
