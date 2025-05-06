@@ -9,14 +9,26 @@ import (
 	"github.com/dxe/adb/model"
 )
 
-const almiraTannerSignatureHtml = `
+func globalCoordinatorSignatureHtml() string {
+	return fmt.Sprintf(`
 		<p>
-			<b>Almira Tanner</b><br/>
-			Lead Organizer<br/>
+			<strong>%v</strong><br/>
+			%v<br/>
+			Direct Action Everywhere
+		</p>`,
+		globalCoordinator.Name, globalCoordinator.Role)
+}
+
+func californiaCoordinatorSignatureHtml() string {
+	return fmt.Sprintf(`
+		<p>
+			<strong>%v</strong><br/>
+			%v<br/>
 			Direct Action Everywhere<br/>
-			she/her
+			%v
 		</p>
-	`
+	`, californiaCoordinator.Name, californiaCoordinator.Role, californiaCoordinator.Pronouns)
+}
 
 func (b *onboardingEmailMessageBuilder) nearSFBayChapter() (mailer.Message, error) {
 	var msg mailer.Message
@@ -63,7 +75,7 @@ func (b *onboardingEmailMessageBuilder) nearSFBayChapter() (mailer.Message, erro
 	`)
 
 	fmt.Fprintf(&body,
-		`<p>%v<br/>
+		`<p><strong>%v</strong><br/>
 		DxE Organizer</p>`,
 		sfBayCoordinator.Name)
 
@@ -140,13 +152,8 @@ func (b *onboardingEmailMessageBuilder) nearNonSFBayChapter() (mailer.Message, e
 		</p>
 		<p>Hope that you can join us!</p>
 		`)
-	fmt.Fprintf(&body, `
-		<p>
-			<strong>%v</strong><br/>
-			International Coordinator<br/>
-			Direct Action Everywhere
-		</p>`,
-		globalCoordinator.Name)
+
+	body.WriteString(globalCoordinatorSignatureHtml())
 
 	msg.BodyHTML = body.String()
 
@@ -183,7 +190,7 @@ func (b *onboardingEmailMessageBuilder) caOrganizerNotNearAnyChapter() (mailer.M
 			I’m looking forward to hearing back from you,
 		</p>`, californiaCoordinator.Address)
 
-	body.WriteString(almiraTannerSignatureHtml)
+	body.WriteString(californiaCoordinatorSignatureHtml())
 
 	msg.BodyHTML = body.String()
 
@@ -241,13 +248,7 @@ func (b *onboardingEmailMessageBuilder) nonCaOrganizerNotNearAnyChapter() (maile
 		</p>
 	`)
 
-	fmt.Fprintf(&body, `
-		<p>
-			%v<br/>
-			International Coordinator
-			Direct Action Everywhere
-		</p>`,
-		globalCoordinator.Name)
+	body.WriteString(globalCoordinatorSignatureHtml())
 
 	msg.BodyHTML = body.String()
 
@@ -286,7 +287,7 @@ func (b *onboardingEmailMessageBuilder) caParticipantNotNearAnyChapter() (mailer
 	var body strings.Builder
 	fmt.Fprintf(&body, `<p>Hi %v,</p>`, html.EscapeString(b.firstName))
 	body.WriteString(networkMemberProgramIntroHtml)
-	body.WriteString(almiraTannerSignatureHtml)
+	body.WriteString(californiaCoordinatorSignatureHtml())
 	msg.BodyHTML = body.String()
 
 	return msg, nil
@@ -305,13 +306,7 @@ func (b *onboardingEmailMessageBuilder) nonCaParticipantNotNearAnyChapter() (mai
 
 	body.WriteString(networkMemberProgramIntroHtml)
 
-	fmt.Fprintf(&body, `
-		<p>
-			<strong>%v</strong><br/>
-			International Coordinator<br/>
-			Direct Action Everywhere
-		</p>`,
-		globalCoordinator.Name)
+	body.WriteString(globalCoordinatorSignatureHtml())
 
 	msg.BodyHTML = body.String()
 

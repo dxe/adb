@@ -56,13 +56,15 @@ func TestSanitizeState(t *testing.T) {
 		expected string
 	}{
 		{"CA", "CA"},
-		{"California123", "California"},
+		{" CA ", "CA"},
+		{"ca", "CA"},
+		{"California123", "CALIFORNIA"},
 		{"!@#CA", "CA"},
 		{"", ""},
 	}
 
 	for _, test := range tests {
-		result := sanitizeState(test.input)
+		result := sanitizeAndNormalizeState(test.input)
 		assert.Equal(t, test.expected, result, "Expected sanitized state to match")
 	}
 }

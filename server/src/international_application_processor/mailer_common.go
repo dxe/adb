@@ -10,17 +10,28 @@ import (
 	"golang.org/x/text/language"
 )
 
+type coordinator struct {
+	Name     string
+	Role     string
+	Address  string
+	Pronouns string
+}
+
 var (
-	sfBayCoordinator = mail.Address{
+	sfBayCoordinator = coordinator{
 		Name:    "Antonelle Racelis",
+		Role:    "Organizer",
 		Address: "antonelle@directactioneverywhere.com",
 	}
-	californiaCoordinator = mail.Address{
-		Name:    "Almira Tanner",
-		Address: "almira@directactioneverywhere.com",
+	californiaCoordinator = coordinator{
+		Name:     "Almira Tanner",
+		Role:     "Lead Organizer",
+		Address:  "almira@directactioneverywhere.com",
+		Pronouns: "she/her",
 	}
-	globalCoordinator = mail.Address{
+	globalCoordinator = coordinator{
 		Name:    "Michelle Del Cueto",
+		Role:    "International Coordinator",
 		Address: "internationalcoordination@directactioneverywhere.com",
 	}
 )
@@ -73,15 +84,19 @@ func getChapterOrganizerEmails(chapter *model.ChapterWithToken) []string {
 }
 
 func sanitizeAndFormatName(name string) string {
-	sanitized := strings.Map(func(r rune) rune {
+	sanitized := selectNumbersLettersAndSpaces(name)
+
+	return strings.TrimSpace(
+		cases.Title(language.AmericanEnglish).String(sanitized))
+}
+
+func selectNumbersLettersAndSpaces(str string) string {
+	return strings.Map(func(r rune) rune {
 		if unicode.IsLetter(r) || unicode.IsDigit(r) || r == ' ' {
 			return r
 		}
 		return -1
-	}, name)
-
-	return strings.TrimSpace(
-		cases.Title(language.AmericanEnglish).String(sanitized))
+	}, str)
 }
 
 func validateEmail(str string) error {
@@ -89,7 +104,11 @@ func validateEmail(str string) error {
 	return err
 }
 
-func sanitizeState(state string) string {
+func sanitizeAndNormalizeState(state string) string {
+	return strings.TrimSpace(strings.ToUpper(selectLettersOnly(state)))
+}
+
+func selectLettersOnly(state string) string {
 	return strings.Map(func(r rune) rune {
 		if unicode.IsLetter(r) {
 			return r

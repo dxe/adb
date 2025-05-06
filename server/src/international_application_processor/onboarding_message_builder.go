@@ -41,7 +41,7 @@ func buildOnboardingEmailMessage(formData model.InternationalFormData, chapter *
 	}
 	email := formData.Email
 
-	state := sanitizeState(formData.State)
+	state := sanitizeAndNormalizeState(formData.State)
 	involvementUnsanitized := formData.Involvement
 
 	builder := onboardingEmailMessageBuilder{
