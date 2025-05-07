@@ -97,7 +97,7 @@ func TestBuildOnboardingEmailMessage(t *testing.T) {
 			assert.Equal(t, "john.doe@example.com", msg.ToAddress)
 			assert.Equal(t, "Join your local Direct Action Everywhere chapter!", msg.Subject)
 			assert.Contains(t, msg.BodyHTML, "Hey John!")
-			assert.Contains(t, msg.BodyHTML, "There is currently a DxE chapter near you")
+			assert.Contains(t, msg.BodyHTML, "there is a DxE chapter near you")
 			assert.Contains(t, msg.BodyHTML, "Test Chapter")
 			assert.Contains(t, msg.BodyHTML, "https://facebook.com/test-chapter")
 			assert.Contains(t, msg.BodyHTML, "https://instagram.com/test-chapter")

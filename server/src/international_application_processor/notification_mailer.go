@@ -46,15 +46,16 @@ func buildNotificationEmail(formData model.InternationalFormData, chapter *model
 		Subject:     fmt.Sprintf("%v signed up to join your chapter", fullName),
 	}
 
-	var bodyBuilder strings.Builder
-	fmt.Fprintf(&bodyBuilder, "<p>Name: %s</p>", html.EscapeString(fullName))
-	fmt.Fprintf(&bodyBuilder, "<p>Email: %s</p>", html.EscapeString(formData.Email))
-	fmt.Fprintf(&bodyBuilder, "<p>Phone: %s</p>", html.EscapeString(formData.Phone))
-	fmt.Fprintf(&bodyBuilder, "<p>City: %s</p>", html.EscapeString(formData.City))
-	fmt.Fprintf(&bodyBuilder, "<p>Involvement: %s</p>", html.EscapeString(formData.Involvement))
-	fmt.Fprintf(&bodyBuilder, "<p>Interests: %s</p>", html.EscapeString(formData.Interest))
-	fmt.Fprintf(&bodyBuilder, "<p>Skills: %s</p>", html.EscapeString(formData.Skills))
-	msg.BodyHTML = bodyBuilder.String()
+	var body strings.Builder
+	body.WriteString("<p>Here are the details provided on the international application form:</p>")
+	fmt.Fprintf(&body, "<p>Name: %s</p>", html.EscapeString(fullName))
+	fmt.Fprintf(&body, "<p>Email: %s</p>", html.EscapeString(formData.Email))
+	fmt.Fprintf(&body, "<p>Phone: %s</p>", html.EscapeString(formData.Phone))
+	fmt.Fprintf(&body, "<p>City: %s</p>", html.EscapeString(formData.City))
+	fmt.Fprintf(&body, "<p>Involvement: %s</p>", html.EscapeString(formData.Involvement))
+	fmt.Fprintf(&body, "<p>Interests: %s</p>", html.EscapeString(formData.Interest))
+	fmt.Fprintf(&body, "<p>Skills: %s</p>", html.EscapeString(formData.Skills))
+	msg.BodyHTML = body.String()
 
 	return &msg, nil
 }

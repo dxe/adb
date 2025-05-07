@@ -101,8 +101,11 @@ func (b *onboardingEmailMessageBuilder) nearNonSFBayChapter() (mailer.Message, e
 		<p>
 			I wanted to reach out about your inquiry of getting involved with
 			DxE’s international network.
-			There is currently a DxE chapter near you, so I’ve included their
-			information and contact below so you can reach out, get involved,
+		</p>
+		<p>
+			Great news, there is a DxE chapter near you! I’ve CC’d the
+			organizers on this email so you can be in contact, and I’ve included
+			the chapter’s information below so you can reach out, get involved,
 			and start taking action with them!
 		</p>
 	`)
@@ -126,12 +129,6 @@ func (b *onboardingEmailMessageBuilder) nearNonSFBayChapter() (mailer.Message, e
 	}
 	body.WriteString("</p>")
 
-	body.WriteString(
-		`<p>
-			I’ve also cc'd the organizers in your local chapter on this email,
-			so you can both be in contact.
-		</p>`)
-
 	nextEventLink := getFacebookEventLinkOrEmptyString(b.nextEvent)
 	if len(nextEventLink) > 0 {
 		fmt.Fprintf(
@@ -147,8 +144,8 @@ func (b *onboardingEmailMessageBuilder) nearNonSFBayChapter() (mailer.Message, e
 			right to rescue</a>.
 		</p>
 		<p>
-			Let me know if you have any questions or if you still haven't been
-			able to connect with your local chapter.
+			Let me know if you have any questions or if you aren’t able to
+			connect with your local chapter.
 		</p>
 		<p>Hope that you can join us!</p>
 		`)
@@ -187,8 +184,11 @@ func (b *onboardingEmailMessageBuilder) caOrganizerNotNearAnyChapter() (mailer.M
 			interested in helping you organize a chapter. Once you have
 			identified them, reach out to me by email at %v to schedule a call.
 			Don’t hesitate to email me with any questions in the meantime.
+		</p>
+		<p>
 			I’m looking forward to hearing back from you,
-		</p>`, californiaCoordinator.Address)
+		</p>
+		`, californiaCoordinator.Address)
 
 	body.WriteString(californiaCoordinatorSignatureHtml())
 
@@ -244,7 +244,9 @@ func (b *onboardingEmailMessageBuilder) nonCaOrganizerNotNearAnyChapter() (maile
 			identified them, reach out to me by email to schedule our first
 			call.
 			Don’t hesitate to email me with any questions.
-			I’m looking forward to hearing back from you.
+		</p>
+		<p>
+			I’m looking forward to hearing back from you!
 		</p>
 	`)
 
