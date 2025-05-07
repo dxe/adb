@@ -48,7 +48,7 @@ func (b *onboardingEmailMessageBuilder) nearSFBayChapter() (mailer.Message, erro
 			Everywhere.
 		</p>
 		<p>
-			Great news—the SF Bay Area chapter is within 100 miles of you.
+			Great news—you're near the SF Bay Area chapter.
 			We’d love to see you at an upcoming event!
 		</p>
 		<p>
@@ -265,14 +265,19 @@ const networkMemberProgramIntroHtml = `
 			The only steps to complete to officially become a member are:
 		</p>
 		<ol>
-			<li>Watch a video</li>
-			<li>Complete a short quiz</li>
+			<li><a href="https://dxe.io/networkmember">Watch a video</a></li>
+			<li>Complete a short quiz (under construction–I will send you a link soon!)</li>
 		</ol>
 		<p>
-			This program offers the opportunity to connect with other activists
+			As a Network Member you’ll be able to connect with other activists
 			around the US and the world, join DxE’s campaigns, receive mentoring
-			to develop multiple skills and financial support to attend events
-			and actions in person.
+			to develop your activism skills, and become eligible for financial
+			support to attend events and actions in person.
+		</p>
+		<p>
+			If you have any questions or would like help getting started, just
+			reply to this email—I’m happy to assist. I hope to welcome you to
+			the Network soon!
 		</p>
 	`
 

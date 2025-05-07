@@ -42,7 +42,7 @@ func TestBuildOnboardingEmailMessage(t *testing.T) {
 			assert.Equal(t, "john.doe@example.com", msg.ToAddress)
 			assert.Equal(t, "Join your local Direct Action Everywhere chapter!", msg.Subject)
 			assert.Contains(t, msg.BodyHTML, "Hey John!")
-			assert.Contains(t, msg.BodyHTML, "the SF Bay Area chapter is within 100 miles of you.")
+			assert.Contains(t, msg.BodyHTML, "you're near the SF Bay Area chapter")
 			assert.Contains(t, msg.BodyHTML, "https://dxe.io/events")
 		})
 
