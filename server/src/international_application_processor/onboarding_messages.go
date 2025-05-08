@@ -257,7 +257,18 @@ func (b *onboardingEmailMessageBuilder) nonCaOrganizerNotNearAnyChapter() (maile
 	return msg, nil
 }
 
-const networkMemberProgramIntroHtml = `
+func (b *onboardingEmailMessageBuilder) participantNotNearAnyChapter() (mailer.Message, error) {
+	var msg mailer.Message
+	msg.FromName = globalCoordinator.Name
+	msg.FromAddress = globalCoordinator.Address
+	msg.ToName = b.fullName
+	msg.ToAddress = b.email
+	msg.Subject = "Getting involved with Direct Action Everywhere"
+
+	var body strings.Builder
+	fmt.Fprintf(&body, `<p>Hi %v,</p>`, html.EscapeString(b.firstName))
+
+	body.WriteString(`
 		<p>
 			Thank you for your interest in joining the DxE Network.
 			We recently launched the Network Member Program which is a platform
@@ -281,37 +292,7 @@ const networkMemberProgramIntroHtml = `
 			reply to this email—I’m happy to assist. I hope to welcome you to
 			the Network soon!
 		</p>
-	`
-
-func (b *onboardingEmailMessageBuilder) caParticipantNotNearAnyChapter() (mailer.Message, error) {
-	var msg mailer.Message
-	msg.FromName = californiaCoordinator.Name
-	msg.FromAddress = californiaCoordinator.Address
-	msg.ToName = b.fullName
-	msg.ToAddress = b.email
-	msg.Subject = "Getting involved with Direct Action Everywhere"
-
-	var body strings.Builder
-	fmt.Fprintf(&body, `<p>Hi %v,</p>`, html.EscapeString(b.firstName))
-	body.WriteString(networkMemberProgramIntroHtml)
-	body.WriteString(californiaCoordinatorSignatureHtml())
-	msg.BodyHTML = body.String()
-
-	return msg, nil
-}
-
-func (b *onboardingEmailMessageBuilder) nonCaParticipantNotNearAnyChapter() (mailer.Message, error) {
-	var msg mailer.Message
-	msg.FromName = globalCoordinator.Name
-	msg.FromAddress = globalCoordinator.Address
-	msg.ToName = b.fullName
-	msg.ToAddress = b.email
-	msg.Subject = "Getting involved with Direct Action Everywhere"
-
-	var body strings.Builder
-	fmt.Fprintf(&body, `<p>Hi %v,</p>`, html.EscapeString(b.firstName))
-
-	body.WriteString(networkMemberProgramIntroHtml)
+	`)
 
 	body.WriteString(globalCoordinatorSignatureHtml())
 

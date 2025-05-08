@@ -246,7 +246,7 @@ func TestBuildOnboardingEmailMessage(t *testing.T) {
 		})
 	})
 
-	t.Run("ForCaParticipantNotNearAnyChapter", func(t *testing.T) {
+	t.Run("ForParticipantNotNearAnyChapter", func(t *testing.T) {
 		t.Run("ContainsBasicInfo", func(t *testing.T) {
 			// Arrange
 			formData := testfixtures.NewInternationalFormDataBuilder().
@@ -254,35 +254,6 @@ func TestBuildOnboardingEmailMessage(t *testing.T) {
 				WithLastName("Doe").
 				WithEmail("john.doe@example.com").
 				WithInvolvement("participate").
-				WithState("CA").
-				Build()
-
-			// Act
-			msg, err := buildOnboardingEmailMessage(formData, nil, nil)
-
-			// Assert
-			assert.NoError(t, err)
-			assert.NotNil(t, msg)
-			assert.Equal(t, californiaCoordinator.Name, msg.FromName)
-			assert.Equal(t, californiaCoordinator.Address, msg.FromAddress)
-			assert.Contains(t, msg.BCC, californiaCoordinator.Address)
-			assert.Equal(t, "John Doe", msg.ToName)
-			assert.Equal(t, "john.doe@example.com", msg.ToAddress)
-			assert.Equal(t, "Getting involved with Direct Action Everywhere", msg.Subject)
-			assert.Contains(t, msg.BodyHTML, "Hi John,")
-			assert.Contains(t, msg.BodyHTML, "Network Member Program")
-		})
-	})
-
-	t.Run("ForNonCaParticipantNotNearAnyChapter", func(t *testing.T) {
-		t.Run("ContainsBasicInfo", func(t *testing.T) {
-			// Arrange
-			formData := testfixtures.NewInternationalFormDataBuilder().
-				WithFirstName("John").
-				WithLastName("Doe").
-				WithEmail("john.doe@example.com").
-				WithInvolvement("participate").
-				WithState("ZZ").
 				Build()
 
 			// Act

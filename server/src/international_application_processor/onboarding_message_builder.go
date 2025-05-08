@@ -26,8 +26,7 @@ const (
 	nearNonSFBayChapter
 	caOrganizerNotNearAnyChapter
 	nonCaOrganizerNotNearAnyChapter
-	caParticipantNotNearAnyChapter
-	nonCaParticipantNotNearAnyChapter
+	participantNotNearAnyChapter
 )
 
 func buildOnboardingEmailMessage(formData model.InternationalFormData, chapter *model.ChapterWithToken, nextEvent *model.ExternalEvent) (*mailer.Message, error) {
@@ -62,12 +61,11 @@ func (b *onboardingEmailMessageBuilder) build() (*mailer.Message, error) {
 	emailType := b.getOnboardingEmailType()
 
 	var builders = map[onboardingEmailType]func(*onboardingEmailMessageBuilder) (mailer.Message, error){
-		nearSFBayChapter:                  (*onboardingEmailMessageBuilder).nearSFBayChapter,
-		nearNonSFBayChapter:               (*onboardingEmailMessageBuilder).nearNonSFBayChapter,
-		caOrganizerNotNearAnyChapter:      (*onboardingEmailMessageBuilder).caOrganizerNotNearAnyChapter,
-		caParticipantNotNearAnyChapter:    (*onboardingEmailMessageBuilder).caParticipantNotNearAnyChapter,
-		nonCaOrganizerNotNearAnyChapter:   (*onboardingEmailMessageBuilder).nonCaOrganizerNotNearAnyChapter,
-		nonCaParticipantNotNearAnyChapter: (*onboardingEmailMessageBuilder).nonCaParticipantNotNearAnyChapter,
+		nearSFBayChapter:                (*onboardingEmailMessageBuilder).nearSFBayChapter,
+		nearNonSFBayChapter:             (*onboardingEmailMessageBuilder).nearNonSFBayChapter,
+		caOrganizerNotNearAnyChapter:    (*onboardingEmailMessageBuilder).caOrganizerNotNearAnyChapter,
+		nonCaOrganizerNotNearAnyChapter: (*onboardingEmailMessageBuilder).nonCaOrganizerNotNearAnyChapter,
+		participantNotNearAnyChapter:    (*onboardingEmailMessageBuilder).participantNotNearAnyChapter,
 	}
 
 	builder, found := builders[emailType]
@@ -104,8 +102,5 @@ func (b *onboardingEmailMessageBuilder) getOnboardingEmailType() onboardingEmail
 		return nonCaOrganizerNotNearAnyChapter
 	}
 
-	if stateIsCalifornia(b.state) {
-		return caParticipantNotNearAnyChapter
-	}
-	return nonCaParticipantNotNearAnyChapter
+	return participantNotNearAnyChapter
 }
