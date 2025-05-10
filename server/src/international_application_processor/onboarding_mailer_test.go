@@ -197,7 +197,7 @@ func TestBuildOnboardingEmailMessage(t *testing.T) {
 				WithFirstName("John").
 				WithLastName("Doe").
 				WithEmail("john.doe@example.com").
-				WithInvolvement("organize").
+				WithInterest("organize").
 				WithState("CA").
 				Build()
 
@@ -225,7 +225,7 @@ func TestBuildOnboardingEmailMessage(t *testing.T) {
 				WithFirstName("John").
 				WithLastName("Doe").
 				WithEmail("john.doe@example.com").
-				WithInvolvement("organize").
+				WithInterest("organize").
 				WithState("ZZ").
 				Build()
 
@@ -253,7 +253,7 @@ func TestBuildOnboardingEmailMessage(t *testing.T) {
 				WithFirstName("John").
 				WithLastName("Doe").
 				WithEmail("john.doe@example.com").
-				WithInvolvement("participate").
+				WithInterest("participate").
 				Build()
 
 			// Act

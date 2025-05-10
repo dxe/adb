@@ -7,18 +7,18 @@ import (
 )
 
 type onboardingEmailMessageBuilder struct {
-	chapter                *model.ChapterWithToken
-	nextEvent              *model.ExternalEvent
-	firstName              string // Sanitized (but not HTML-escaped)
-	fullName               string // Sanitized (but not HTML-escaped)
-	email                  string // Format validated
-	state                  string // Sanitized
-	involvementUnsanitized string
+	chapter             *model.ChapterWithToken
+	nextEvent           *model.ExternalEvent
+	firstName           string // Sanitized (but not HTML-escaped)
+	fullName            string // Sanitized (but not HTML-escaped)
+	email               string // Format validated
+	state               string // Sanitized
+	interestUnsanitized string
 }
 
 // onboardingEmailType represents the email templates used to email the
 // responder. Each template is specific to factors such as the responder's
-// location, nearby chapter, and desired involvement.
+// location, nearby chapter, and level of interest.
 type onboardingEmailType int
 
 const (
@@ -41,7 +41,7 @@ func buildOnboardingEmailMessage(formData model.InternationalFormData, chapter *
 	email := formData.Email
 
 	state := sanitizeAndNormalizeState(formData.State)
-	involvementUnsanitized := formData.Involvement
+	interestUnsanitized := formData.Interest
 
 	builder := onboardingEmailMessageBuilder{
 		chapter,
@@ -50,7 +50,7 @@ func buildOnboardingEmailMessage(formData model.InternationalFormData, chapter *
 		fullName,
 		email,
 		state,
-		involvementUnsanitized,
+		interestUnsanitized,
 	}
 
 	msg, err := builder.build()
@@ -95,7 +95,7 @@ func (b *onboardingEmailMessageBuilder) getOnboardingEmailType() onboardingEmail
 		return nearNonSFBayChapter
 	}
 
-	if b.involvementUnsanitized == "organize" {
+	if b.interestUnsanitized == "organize" {
 		if stateIsCalifornia(b.state) {
 			return caOrganizerNotNearAnyChapter
 		}
