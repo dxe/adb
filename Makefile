@@ -46,10 +46,11 @@ dev_db:
 	cd server/scripts/create_db_wrapper && ./create_db_wrapper.sh
 
 # Install all deps for this project.
+# Note: PNPM must be installed separately for each version of NPM used, since it is installed within each NPM installation.
 deps:
-	. $(NVM_SCRIPT) && nvm install 22 && pnpm i
-	. $(NVM_SCRIPT) && cd frontend && nvm install 16 && npm i --legacy-peer-deps
-	. $(NVM_SCRIPT) && cd frontend-v2 && nvm install 18 && npm i -g pnpm && pnpm i
+	. $(NVM_SCRIPT) && nvm i 22 && npm i -g pnpm && pnpm i
+	. $(NVM_SCRIPT) && cd frontend && nvm i 16 && npm i --legacy-peer-deps
+	. $(NVM_SCRIPT) && cd frontend-v2 && nvm i 18 && npm i -g pnpm && pnpm i
 	cd server/src && go get -t github.com/dxe/adb/...
 
 # Run all tests

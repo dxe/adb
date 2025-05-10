@@ -97,22 +97,13 @@
       </div>
 
       <div class="column is-full mt-4">
-        <b-field label="What special skills or talents do you have?" label-position="on-border">
+        <b-field label="What special skills or interests do you have?" label-position="on-border">
           <b-input
             type="textarea"
             maxlength="500"
-            v-model.trim="skills"
-            placeholder="Let us know where we can get you plugged in by telling us what skills or talents you have."
+            v-model.trim="involvement"
+            placeholder="Let us know where we can get you plugged in by telling us about your skills and interests."
           />
-        </b-field>
-      </div>
-
-      <div class="column is-full">
-        <b-field
-          label="Is there anything specific you'd like to get involved with?"
-          label-position="on-border"
-        >
-          <b-input type="textarea" maxlength="500" v-model.trim="involvement" />
         </b-field>
       </div>
 
@@ -190,7 +181,6 @@ export default Vue.extend({
           phone: this.phone,
           interest: this.interest,
           terms: this.terms,
-          skills: this.skills,
           involvement: this.involvement,
           city: this.city,
           state: this.state,
@@ -227,7 +217,6 @@ export default Vue.extend({
       phone: '',
       interest: '',
       terms: '',
-      skills: '',
       involvement: '',
       city: '',
       state: '',

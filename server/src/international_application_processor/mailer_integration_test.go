@@ -21,12 +21,12 @@ var enableMailerIntegrationTest = flag.Bool("intl-application-mailer-integration
 
 var verificationStrategy = writeEmailMsgToFile
 
-func makeFormData(state string, involvement string) model.InternationalFormData {
+func makeFormData(state string, interest string) model.InternationalFormData {
 	return testfixtures.NewInternationalFormDataBuilder().
 		WithFirstName("John").
 		WithLastName("Doe").
 		WithState(state).
-		WithInvolvement(involvement).
+		WithInterest(interest).
 		Build()
 }
 
