@@ -43,9 +43,9 @@ type InternationalFormData struct {
 	LastName    string  `json:"lastName" db:"last_name"`
 	Email       string  `json:"email" db:"email"`
 	Phone       string  `json:"phone" db:"phone"`
-	Interest    string  `json:"interest" db:"interest"`
-	Skills      string  `json:"skills" db:"skills"`
-	Involvement string  `json:"involvement" db:"involvement"`
+	Interest    string  `json:"interest" db:"interest"`       // "organize" or "participate"
+	Skills      string  `json:"skills" db:"skills"`           // Deprecated
+	Involvement string  `json:"involvement" db:"involvement"` // skills and interests
 	City        string  `json:"city" db:"city"`
 	State       string  `json:"state" db:"state"`
 	Country     string  `json:"country" db:"country"`
@@ -153,7 +153,7 @@ func SubmitInternationalForm(db *sqlx.DB, formData InternationalFormData) error 
 }
 
 func GetInternationalFormSubmissionsToEmail(db *sqlx.DB) ([]InternationalFormData, error) {
-	query := `SELECT id, first_name, last_name, email, phone, interest, skills, involvement, city, state, country, lat, lng
+	query := `SELECT id, first_name, last_name, email, phone, interest, involvement, city, state, country, lat, lng
 from form_international WHERE form_submitted is not null AND email_sent is null`
 
 	var submissions []InternationalFormData

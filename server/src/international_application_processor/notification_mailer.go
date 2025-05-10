@@ -54,7 +54,6 @@ func buildNotificationEmail(formData model.InternationalFormData, chapter *model
 	fmt.Fprintf(&body, "<p>City: %s</p>", html.EscapeString(formData.City))
 	fmt.Fprintf(&body, "<p>Interest: %s</p>", html.EscapeString(formData.Interest))
 	fmt.Fprintf(&body, "<p>Involvement: %s</p>", html.EscapeString(formData.Involvement))
-	fmt.Fprintf(&body, "<p>Skills: %s</p>", html.EscapeString(formData.Skills))
 	msg.BodyHTML = body.String()
 
 	return &msg, nil

@@ -15,7 +15,6 @@ func NewInternationalFormDataBuilder() *InternationalFormDataBuilder {
 			Email:       "default@example.com",
 			Phone:       "1234567890",
 			Interest:    "DefaultInterest",
-			Skills:      "DefaultSkills",
 			Involvement: "DefaultInvolvement",
 			City:        "DefaultCity",
 			State:       "DefaultState",
@@ -51,11 +50,6 @@ func (b *InternationalFormDataBuilder) WithPhone(phone string) *InternationalFor
 
 func (b *InternationalFormDataBuilder) WithInterest(interest string) *InternationalFormDataBuilder {
 	b.formData.Interest = interest
-	return b
-}
-
-func (b *InternationalFormDataBuilder) WithSkills(skills string) *InternationalFormDataBuilder {
-	b.formData.Skills = skills
 	return b
 }
 
