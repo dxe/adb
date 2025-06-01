@@ -279,7 +279,7 @@ func (b *onboardingEmailMessageBuilder) participantNotNearAnyChapter() (mailer.M
 		</p>
 		<ol>
 			<li><a href="https://dxe.io/networkmember">Watch a video</a></li>
-			<li>Complete a short quiz (under construction–I will send you a link soon!)</li>
+			<li><a href="https://dxe.io/networkmemberquiz">Complete a short quiz</a></li>
 		</ol>
 		<p>
 			As a Network Member you’ll be able to connect with other activists
