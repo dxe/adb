@@ -8,7 +8,7 @@ webfiles=$(npx prettier -l .)
 [ -z "$gofiles" -a -z "$webfiles" ] && exit 0
 
 echo >&2 "Misformatted files:"
-for fn in $gofiles $webfiles do
+for fn in $gofiles $webfiles; do
   echo >&2 "  $fn"
 done
 echo >&2
