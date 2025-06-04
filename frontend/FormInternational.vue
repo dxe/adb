@@ -97,7 +97,10 @@
       </div>
 
       <div class="column is-full mt-4">
-        <b-field label="What special skills or interests do you have?" label-position="on-border">
+        <b-field
+          label="Describe your interest in and/or experience with animal rights activism."
+          label-position="on-border"
+        >
           <b-input
             type="textarea"
             maxlength="500"
