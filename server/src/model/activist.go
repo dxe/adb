@@ -842,6 +842,17 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 			whereClause = append(whereClause, "assigned_to <> 0")
 		case "leaderboard":
 			whereClause = append(whereClause, "a.id in (select distinct activist_id  from event_attendance ea  where ea.event_id in (select id from events e where e.date >= (now() - interval 30 day)))")
+		case "new_activists":
+			whereClause = append(whereClause, `
+				activist_level = 'supporter' AND (
+					SELECT COUNT(*) 
+					FROM event_attendance ea
+					JOIN events e ON ea.event_id = e.id
+					WHERE ea.activist_id = a.id 
+						AND e.date BETWEEN ? AND ?
+				) <= 3`)
+			queryArgs = append(queryArgs, options.LastEventDateFrom, options.LastEventDateTo)
+
 		}
 
 		if len(whereClause) != 0 {
@@ -1725,6 +1736,56 @@ func GetSupporterSpokeInfo(db *sqlx.DB, chapterID int, startDate, endDate string
 			and hidden = 0
 	`
 	args := []interface{}{chapterID}
+
+	var havingClause []string
+	if startDate != "" {
+		havingClause = append(havingClause, "last_event >= ?")
+		args = append(args, startDate)
+	}
+	if endDate != "" {
+		havingClause = append(havingClause, "last_event <= ?")
+		args = append(args, endDate)
+	}
+	if len(havingClause) != 0 {
+		query += " HAVING " + strings.Join(havingClause, " AND ")
+	}
+
+	var activists []ActivistSpokeInfo
+	err := db.Select(&activists, query, args...)
+	if err != nil {
+		return []ActivistSpokeInfo{}, err
+	}
+
+	return activists, nil
+}
+
+func GetNewSupporterSpokeInfo(db *sqlx.DB, chapterID int, startDate, endDate string) ([]ActivistSpokeInfo, error) {
+	query := `
+		SELECT
+			IF(preferred_name <> '', preferred_name, substring_index(name, " ", 1)) as first_name,
+			SUBSTRING(name, LOCATE(' ', name)+1) as last_name,
+			phone as cell,
+		    @last_event := (
+				SELECT max(e.date) AS max_date
+				FROM event_attendance ea
+				JOIN activists inner_a ON inner_a.id = ea.activist_id
+				JOIN events e ON e.id = ea.event_id
+				WHERE inner_a.id = activists.id
+			) AS last_event
+		FROM activists
+		WHERE
+		    chapter_id = ?
+		    and activist_level = 'supporter'
+			and hidden = 0
+			and (
+					SELECT COUNT(*) 
+					FROM event_attendance ea
+					JOIN events e ON ea.event_id = e.id
+					WHERE ea.activist_id = activists.id 
+						AND e.date BETWEEN ? AND ?
+				) <= 3
+	`
+	args := []interface{}{chapterID, startDate, endDate}
 
 	var havingClause []string
 	if startDate != "" {
