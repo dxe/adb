@@ -225,6 +225,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/list_events", alice.New(main.authAttendanceMiddleware).ThenFunc(main.ListEventsHandler))
 	router.Handle("/list_connections", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListConnectionsHandler))
 	router.Handle("/list_activists", alice.New(main.authOrganizerOrNonSFBayMiddleware).ThenFunc(main.ListActivistsHandler))
+	router.Handle("/new_activists", alice.New(main.authOrganizerOrNonSFBayMiddleware).ThenFunc(main.NewActivistsHandler))
 	router.Handle("/community_prospects", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListCommunityProspectsHandler))
 	router.Handle("/community_prospects_followup", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListCommunityProspectsFollowupHandler))
 	router.Handle("/activist_development", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListActivistsDevelopmentHandler))
@@ -283,6 +284,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/csv/international_organizers", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.InternationalOrganizersCSVHandler))
 	router.Handle("/csv/event_attendance/{event_id:[0-9]+}", alice.New(main.apiOrganizerOrNonSFBayAuthMiddleware).ThenFunc(main.EventAttendanceCSVHandler))
 	router.Handle("/csv/all_activists_spoke", alice.New(main.apiOrganizerOrNonSFBayAuthMiddleware).ThenFunc(main.SupporterSpokeCSVHandler))
+	router.Handle("/csv/new_activists_spoke", alice.New(main.apiOrganizerOrNonSFBayAuthMiddleware).ThenFunc(main.NewSupporterSpokeCSVHandler))
 	router.Handle("/user/list", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.UserListHandler))
 	router.Handle("/user/me", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AuthedUserInfoHandler))
 
@@ -584,6 +586,18 @@ func (c MainController) ListActivistsHandler(w http.ResponseWriter, r *http.Requ
 			Title:       "All Activists",
 			Description: "Everyone who has attended an event within the filtered range",
 			View:        "all_activists",
+		},
+	})
+}
+
+// add handler for new activists too
+func (c MainController) NewActivistsHandler(w http.ResponseWriter, r *http.Request) {
+	renderPage(w, r, "activist_list", PageData{
+		PageName: "NewActivistList",
+		Data: ActivistListData{
+			Title:       "New Activists",
+			Description: "Everyone who has attended 3 or less events within the last 6 months",
+			View:        "new_activists",
 		},
 	})
 }
@@ -1401,6 +1415,38 @@ func (c MainController) SupporterSpokeCSVHandler(w http.ResponseWriter, r *http.
 	endDate := r.URL.Query().Get("end_date")
 
 	activists, err := model.GetSupporterSpokeInfo(c.db, chapter, startDate, endDate)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Disposition", "attachment; filename=all_activists_spoke.csv")
+	w.Header().Set("Content-Type", "text/csv")
+	w.Header().Set("Transfer-Encoding", "chunked")
+
+	writer := csv.NewWriter(w)
+	err = writer.Write([]string{"first_name", "last_name", "cell", "last_event"})
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+	for _, activist := range activists {
+		err := writer.Write([]string{activist.FirstName, activist.LastName, activist.Cell, activist.LastEvent})
+		if err != nil {
+			sendErrorMessage(w, err)
+			return
+		}
+	}
+	writer.Flush()
+}
+
+func (c MainController) NewSupporterSpokeCSVHandler(w http.ResponseWriter, r *http.Request) {
+	chapter := getAuthedADBChapter(c.db, r)
+
+	startDate := r.URL.Query().Get("start_date")
+	endDate := r.URL.Query().Get("end_date")
+
+	activists, err := model.GetNewSupporterSpokeInfo(c.db, chapter, startDate, endDate)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
