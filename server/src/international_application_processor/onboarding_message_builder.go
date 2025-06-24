@@ -1,6 +1,10 @@
 package international_application_processor
 
 import (
+	"fmt"
+	"html"
+	"strings"
+
 	"github.com/dxe/adb/mailer"
 	"github.com/dxe/adb/model"
 	"github.com/pkg/errors"
@@ -14,6 +18,7 @@ type onboardingEmailMessageBuilder struct {
 	email               string // Format validated
 	state               string // Sanitized
 	interestUnsanitized string
+	formDataUnsanitized model.InternationalFormData
 }
 
 // onboardingEmailType represents the email templates used to email the
@@ -51,6 +56,7 @@ func buildOnboardingEmailMessage(formData model.InternationalFormData, chapter *
 		email,
 		state,
 		interestUnsanitized,
+		formData,
 	}
 
 	msg, err := builder.build()
@@ -84,6 +90,8 @@ func (b *onboardingEmailMessageBuilder) build() (*mailer.Message, error) {
 	// * Can report any outdated info
 	msg.BCC = append(msg.BCC, msg.FromAddress)
 
+	msg.BodyHTML += buildFormResponsesSummary(b.formDataUnsanitized, b.chapter)
+
 	return &msg, nil
 }
 
@@ -103,4 +111,28 @@ func (b *onboardingEmailMessageBuilder) getOnboardingEmailType() onboardingEmail
 	}
 
 	return participantNotNearAnyChapter
+}
+
+func buildFormResponsesSummary(formDataUnsanitized model.InternationalFormData, chapter *model.ChapterWithToken) string {
+	fullName := sanitizeAndFormatName(formDataUnsanitized.FirstName + " " + formDataUnsanitized.LastName)
+	chapterName := "none"
+	if chapter != nil {
+		chapterName = chapter.Name
+	}
+	cityUnsanitized := formDataUnsanitized.City + ", " + formDataUnsanitized.State + ", " + formDataUnsanitized.Country
+
+	var body strings.Builder
+	body.WriteString("<br/><br/>")
+	body.WriteString("<div style=\"color:#303030\">")
+	body.WriteString("<p>Here are the details provided on the international application form:</p>")
+	fmt.Fprintf(&body, "<p>Name: %s</p>", html.EscapeString(fullName))
+	fmt.Fprintf(&body, "<p>Email: %s</p>", html.EscapeString(formDataUnsanitized.Email))
+	fmt.Fprintf(&body, "<p>Phone: %s</p>", html.EscapeString(formDataUnsanitized.Phone))
+	fmt.Fprintf(&body, "<p>City: %s</p>", html.EscapeString(cityUnsanitized))
+	fmt.Fprintf(&body, "<p>Interest: %s</p>", html.EscapeString(formDataUnsanitized.Interest))
+	fmt.Fprintf(&body, "<p>Involvement: %s</p>", html.EscapeString(formDataUnsanitized.Involvement))
+	fmt.Fprintf(&body, "<p>Nearby chapter: %s</p>", chapterName)
+	body.WriteString("</div>")
+
+	return body.String()
 }
