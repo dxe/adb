@@ -59,8 +59,8 @@ import navbarData from '../shared/nav.json';
 
 Vue.use(Buefy);
 
-// TODO(jh): d
-const SF_BAY_CHAPTER_ID = process.env.NODE_ENV === 'development' ? 1 : 47;
+// TODO(jh): can we handle this some cleaner way, or is this okay for now?
+const SF_BAY_CHAPTER_ID = process.env.NODE_ENV === 'production' ? 47 : 1;
 
 export default Vue.extend({
   name: 'adb-nav',
@@ -120,7 +120,7 @@ export default Vue.extend({
       }
     },
     switchChapter(value: number) {
-      console.debug('Switching chapter to:', value);
+      console.debug(`Switching chapter to: ${value}`);
       window.location.href = `/auth/switch_chapter?chapter_id=${value}`;
     },
   },
