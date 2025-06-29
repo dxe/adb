@@ -1,8 +1,8 @@
 'use client'
 
 import navbarData from '$shared/nav.json'
-import { CircleUser, Icon } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { CircleUser } from 'lucide-react'
+import { useState } from 'react'
 import Image from 'next/image'
 import logo1 from '$public/logo.png'
 import Link from 'next/link'

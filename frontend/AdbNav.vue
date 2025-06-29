@@ -35,7 +35,7 @@
             <b-icon icon="account" size="is-small"></b-icon>
             <span>
               <span>{{ user }}</span>
-              <span v-if="role !== 'admin'"> ({{ chapter }})</span>
+              <span v-if="role !== 'admin'"> ({{ chapterName }})</span>
             </span>
           </div>
           <a href="/logout" style="color: LinkText">Log out</a>
@@ -68,7 +68,7 @@ export default Vue.extend({
     page: String,
     user: String,
     role: String,
-    chapter: String,
+    chapterName: String,
     chapterId: Number,
   },
   data() {
@@ -86,7 +86,7 @@ export default Vue.extend({
   },
   methods: {
     hasAccess(roleRequired: string[] | undefined) {
-      if (this.chapterId !== SF_BAY_CHAPTER_ID) {
+      if (this.activeChapterId !== SF_BAY_CHAPTER_ID) {
         // If non-sfbay chapter is active, we only show non-sfbay items or admin items.
         return (
           !roleRequired ||

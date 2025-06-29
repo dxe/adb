@@ -1,8 +1,8 @@
 {{template "header.html" .}}
 
 <div id="app">
-  <adb-nav page="{{ .PageName }}" user="{{ .UserName }}" role="{{ .MainRole }}" chapter="{{ .UserChapter.Name }}" :chapter-id="{{ .UserChapter.ID }}"></adb-nav>
-  <event-edit connections id="{{.Data.EventID}}" chapter="{{ .UserChapter.Name }}"></event-edit>
+  <adb-nav page="{{ .PageName }}" user="{{ .UserName }}" role="{{ .MainRole }}" chapter-name="{{ .UserChapter.Name }}" :chapter-id="{{ .UserChapter.ID }}"></adb-nav>
+  <event-edit connections id="{{.Data.EventID}}" chapter-name="{{ .UserChapter.Name }}"></event-edit>
 </div>
 <script src="/dist/adb.js?{{ .StaticResourcesHash }}"></script>
 
