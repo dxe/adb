@@ -92,7 +92,6 @@ func getAuthedADBUser(db *sqlx.DB, w http.ResponseWriter, r *http.Request) (adbU
 				adbUser.ChapterName = chapter.Name
 			}
 		}
-		fmt.Println("getAuthedADBUser (dev mode) - using chapter ID:", adbUser.ChapterID)
 		setAuthSession(w, r, adbUser)
 		return adbUser, true
 	}
@@ -156,7 +155,6 @@ func setAuthSession(w http.ResponseWriter, r *http.Request, adbUser model.ADBUse
 	authSession.Values["authed"] = true
 	authSession.Values["adbuserid"] = adbUser.ID
 	authSession.Values["chapterid"] = adbUser.ChapterID
-	fmt.Println("setAuthSession - saving chapter ID:", adbUser.ChapterID)
 	return sessionStore.Save(r, w, authSession)
 }
 
@@ -177,8 +175,6 @@ func getAuthedADBChapter(db *sqlx.DB, r *http.Request) int {
 	if !ok {
 		panic("chapterid not in session")
 	}
-
-	fmt.Println("Chapter ID from session:", chapterID) // TODO(jh): remove
 
 	return chapterID
 }
@@ -797,8 +793,6 @@ func (c MainController) SwitchActiveChapterHandler(w http.ResponseWriter, r *htt
 		http.Error(w, "Failed to save session", http.StatusInternalServerError)
 		return
 	}
-
-	fmt.Println("Switched active chapter to ID:", chapterID) // TODO(jh): remove
 
 	http.Redirect(w, r, "/", http.StatusFound)
 }

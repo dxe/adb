@@ -59,6 +59,9 @@ import navbarData from '../shared/nav.json';
 
 Vue.use(Buefy);
 
+// TODO(jh): d
+const SF_BAY_CHAPTER_ID = process.env.NODE_ENV === 'development' ? 1 : 47;
+
 export default Vue.extend({
   name: 'adb-nav',
   props: {
@@ -72,19 +75,26 @@ export default Vue.extend({
     return {
       navbarData,
       chapters: [] as Array<{ ChapterID: number; Name: string }>,
-      activeChapterId: undefined as number | undefined,
+      activeChapterId: this.chapterId as number | undefined,
     };
   },
   mounted() {
-    this.activeChapterId = this.chapterId;
-    if (this.role === 'admin') {
-      this.fetchChapters();
+    if (this.role !== 'admin') {
+      return;
     }
+    this.fetchChapters();
   },
   methods: {
-    // TODO(jh): if chapter is non-sfbay & user is admin, we need to only show the "non-sfbay" menu
-    // items, BUT ALSO THE ADMIN MENU SECTION.
     hasAccess(roleRequired: string[] | undefined) {
+      const isSfBayActive = this.chapterId === SF_BAY_CHAPTER_ID;
+      if (!isSfBayActive) {
+        // If non-sfbay chapter is active, we only show non-sfbay items or admin items.
+        return (
+          !roleRequired ||
+          roleRequired.indexOf('non-sfbay') !== -1 ||
+          (roleRequired.indexOf('admin') !== -1 && this.role === 'admin')
+        );
+      }
       return (
         !roleRequired ||
         roleRequired.some((it) =>
@@ -104,14 +114,13 @@ export default Vue.extend({
       try {
         const response = await fetch('/chapter/list');
         const data = await response.json();
-        console.log('Chapters fetched:', data.chapters);
         this.chapters = data.chapters;
       } catch (error) {
         console.error('Error fetching chapters:', error);
       }
     },
     switchChapter(value: number) {
-      console.log('Switching chapter to:', value);
+      console.debug('Switching chapter to:', value);
       window.location.href = `/auth/switch_chapter?chapter_id=${value}`;
     },
   },
