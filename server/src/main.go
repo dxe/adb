@@ -76,24 +76,30 @@ func generateToken() string {
 
 var sessionStore = sessions.NewCookieStore([]byte(config.CookieSecret))
 
-func getAuthedADBUser(db *sqlx.DB, w http.ResponseWriter, r *http.Request) (adbUser model.ADBUser, authed bool) {
-	// In dev, just return the test user.
+func withActiveChapter(db *sqlx.DB, r *http.Request, adbUser model.ADBUser) model.ADBUser {
+	authSession, err := sessionStore.Get(r, "auth-session")
+	if err != nil {
+		return adbUser
+	}
+
+	chapterID, ok := authSession.Values["chapterid"].(int)
+	if !ok {
+		return adbUser
+	}
+
+	chapter, err := model.GetChapterByID(db, chapterID)
+	if err != nil {
+		return adbUser
+	}
+
+	adbUser.ChapterID = chapter.ChapterID
+	adbUser.ChapterName = chapter.Name
+	return adbUser
+}
+
+func getAuthedADBUser(db *sqlx.DB, r *http.Request) (adbUser model.ADBUser, authed bool) {
 	if !config.IsProd {
-		authSession, err := sessionStore.Get(r, "auth-session")
-		if err != nil {
-			return model.DevTestUser, true
-		}
-		adbUser = model.DevTestUser
-		// If a chapter ID is already in the session, use that.
-		if chapterID, ok := authSession.Values["chapterid"].(int); ok {
-			adbUser.ChapterID = chapterID
-			chapter, err := model.GetChapterByID(db, chapterID)
-			if err == nil {
-				adbUser.ChapterName = chapter.Name
-			}
-		}
-		setAuthSession(w, r, adbUser)
-		return adbUser, true
+		return withActiveChapter(db, r, model.DevTestUser), true
 	}
 
 	// First, check the cookie.
@@ -122,16 +128,7 @@ func getAuthedADBUser(db *sqlx.DB, w http.ResponseWriter, r *http.Request) (adbU
 		return model.ADBUser{}, false
 	}
 
-	chapterID, ok := authSession.Values["chapterid"].(int)
-	if ok {
-		chapter, err := model.GetChapterByID(db, chapterID)
-		if err == nil {
-			adbUser.ChapterID = chapter.ChapterID
-			adbUser.ChapterName = chapter.Name
-		}
-	}
-
-	return adbUser, true
+	return withActiveChapter(db, r, adbUser), true
 }
 
 func setAuthSession(w http.ResponseWriter, r *http.Request, adbUser model.ADBUser) error {
@@ -158,20 +155,12 @@ func setAuthSession(w http.ResponseWriter, r *http.Request, adbUser model.ADBUse
 	return sessionStore.Save(r, w, authSession)
 }
 
-func getAuthedADBChapter(db *sqlx.DB, w http.ResponseWriter, r *http.Request) int {
-	authSession, err := sessionStore.New(r, "auth-session")
-	if err != nil {
-		panic("Error reading auth session.")
+func getAuthedADBChapter(db *sqlx.DB, r *http.Request) int {
+	user, authed := getAuthedADBUser(db, r)
+	if !authed {
+		panic("Tried getting chapter for unauthorized user.")
 	}
-	chapterID, ok := authSession.Values["chapterid"].(int)
-	if !ok {
-		// If the user has an old session without a chapter ID,
-		// log them out so that they can log in again & get a new
-		// session with a chapter ID.
-		http.Redirect(w, r, "/logout", http.StatusFound)
-	}
-
-	return chapterID
+	return user.ChapterID
 }
 
 func noCacheHandler(h http.Handler) http.Handler {
@@ -350,7 +339,7 @@ type MainController struct {
 
 func (c MainController) authRoleMiddleware(h http.Handler, allowedRoles []string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, authed := getAuthedADBUser(c.db, w, r)
+		user, authed := getAuthedADBUser(c.db, r)
 		if !authed {
 			// Delete the cookie if it doesn't auth.
 			c := &http.Cookie{
@@ -435,7 +424,7 @@ func getUserMainRole(user model.ADBUser) string {
 
 func (c MainController) apiRoleMiddleware(h http.Handler, allowedRoles []string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, authed := getAuthedADBUser(c.db, w, r)
+		user, authed := getAuthedADBUser(c.db, r)
 
 		if !authed {
 			http.Error(w, http.StatusText(400), 400)
@@ -915,7 +904,7 @@ func (c MainController) UpdateConnectionHandler(w http.ResponseWriter, r *http.R
 }
 
 func (c MainController) AutocompleteActivistsHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := getAuthedADBChapter(c.db, w, r)
+	chapter := getAuthedADBChapter(c.db, r)
 
 	names := model.GetAutocompleteNames(c.db, chapter)
 	writeJSON(w, map[string][]string{
@@ -924,7 +913,7 @@ func (c MainController) AutocompleteActivistsHandler(w http.ResponseWriter, r *h
 }
 
 func (c MainController) AutocompleteOrganizersHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := getAuthedADBChapter(c.db, w, r)
+	chapter := getAuthedADBChapter(c.db, r)
 
 	names := model.GetAutocompleteOrganizerNames(c.db, chapter)
 	writeJSON(w, map[string][]string{
@@ -933,7 +922,7 @@ func (c MainController) AutocompleteOrganizersHandler(w http.ResponseWriter, r *
 }
 
 func (c MainController) AutocompleteChapterMembersHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := getAuthedADBChapter(c.db, w, r)
+	chapter := getAuthedADBChapter(c.db, r)
 
 	names := model.GetAutocompleteChapterMembersNames(c.db, chapter)
 	writeJSON(w, map[string][]string{
@@ -962,7 +951,7 @@ func (c MainController) ActivistInfiniteScrollHandler(w http.ResponseWriter, r *
 
 func (c MainController) ActivistSaveHandler(w http.ResponseWriter, r *http.Request) {
 	// get requesting user's (for logging)
-	user, _ := getAuthedADBUser(c.db, w, r)
+	user, _ := getAuthedADBUser(c.db, r)
 
 	activistExtra, err := model.CleanActivistData(r.Body, c.db)
 	if err != nil {
@@ -1021,7 +1010,7 @@ func (c MainController) ActivistHideHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (c MainController) ActivistMergeHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := getAuthedADBChapter(c.db, w, r)
+	chapter := getAuthedADBChapter(c.db, r)
 
 	var activistMergeData struct {
 		CurrentActivistID  int    `json:"current_activist_id"`
@@ -1054,7 +1043,7 @@ func (c MainController) ActivistMergeHandler(w http.ResponseWriter, r *http.Requ
 }
 
 func (c MainController) EventGetHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := getAuthedADBChapter(c.db, w, r)
+	chapter := getAuthedADBChapter(c.db, r)
 
 	eventID, err := strconv.Atoi(mux.Vars(r)["event_id"])
 	if err != nil {
@@ -1077,7 +1066,7 @@ func (c MainController) EventGetHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (c MainController) EventSaveHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := getAuthedADBChapter(c.db, w, r)
+	chapter := getAuthedADBChapter(c.db, r)
 
 	event, err := model.CleanEventData(c.db, r.Body, chapter)
 	if err != nil {
@@ -1112,7 +1101,7 @@ func (c MainController) EventSaveHandler(w http.ResponseWriter, r *http.Request)
 }
 
 func (c MainController) ConnectionSaveHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := getAuthedADBChapter(c.db, w, r)
+	chapter := getAuthedADBChapter(c.db, r)
 
 	event, err := model.CleanEventData(c.db, r.Body, chapter)
 	if err != nil {
@@ -1147,7 +1136,7 @@ func (c MainController) ConnectionSaveHandler(w http.ResponseWriter, r *http.Req
 }
 
 func (c MainController) EventListHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := getAuthedADBChapter(c.db, w, r)
+	chapter := getAuthedADBChapter(c.db, r)
 
 	err := r.ParseForm()
 	if err != nil {
@@ -1189,7 +1178,7 @@ func (c MainController) EventDeleteHandler(w http.ResponseWriter, r *http.Reques
 		panic(err)
 	}
 
-	chapter := getAuthedADBChapter(c.db, w, r)
+	chapter := getAuthedADBChapter(c.db, r)
 
 	// We pass in the chapter ID to make sure people don't delete event that don't belong to their chapter.
 	if err := model.DeleteEvent(c.db, eventID, chapter); err != nil {
@@ -1203,7 +1192,7 @@ func (c MainController) EventDeleteHandler(w http.ResponseWriter, r *http.Reques
 }
 
 func (c MainController) WorkingGroupSaveHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := getAuthedADBChapter(c.db, w, r)
+	chapter := getAuthedADBChapter(c.db, r)
 
 	wg, err := model.CleanWorkingGroupData(c.db, r.Body, chapter)
 	if err != nil {
@@ -1269,7 +1258,7 @@ func (c MainController) WorkingGroupDeleteHandler(w http.ResponseWriter, r *http
 }
 
 func (c MainController) CircleGroupSaveHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := getAuthedADBChapter(c.db, w, r)
+	chapter := getAuthedADBChapter(c.db, r)
 
 	cir, err := model.CleanCircleGroupData(c.db, r.Body, chapter)
 	if err != nil {
@@ -1369,7 +1358,7 @@ func (c MainController) ActivistListHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	user, _ := getAuthedADBUser(c.db, w, r)
+	user, _ := getAuthedADBUser(c.db, r)
 	options.ChapterID = user.ChapterID
 
 	if options.AssignedToCurrentUser {
@@ -1390,7 +1379,7 @@ func (c MainController) ActivistListHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (c MainController) ActivistListBasicHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := getAuthedADBChapter(c.db, w, r)
+	chapter := getAuthedADBChapter(c.db, r)
 
 	activists := model.GetActivistListBasicJSON(c.db, chapter)
 
@@ -1403,7 +1392,7 @@ func (c MainController) ActivistListBasicHandler(w http.ResponseWriter, r *http.
 }
 
 func (c MainController) ChapterMemberSpokeCSVHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := getAuthedADBChapter(c.db, w, r)
+	chapter := getAuthedADBChapter(c.db, r)
 
 	activists, err := model.GetChapterMemberSpokeInfo(c.db, chapter)
 	if err != nil {
@@ -1433,7 +1422,7 @@ func (c MainController) ChapterMemberSpokeCSVHandler(w http.ResponseWriter, r *h
 }
 
 func (c MainController) SupporterSpokeCSVHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := getAuthedADBChapter(c.db, w, r)
+	chapter := getAuthedADBChapter(c.db, r)
 
 	startDate := r.URL.Query().Get("start_date")
 	endDate := r.URL.Query().Get("end_date")
@@ -1465,7 +1454,7 @@ func (c MainController) SupporterSpokeCSVHandler(w http.ResponseWriter, r *http.
 }
 
 func (c MainController) CommunityProspectHubSpotCSVHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := getAuthedADBChapter(c.db, w, r)
+	chapter := getAuthedADBChapter(c.db, r)
 
 	activists, err := model.GetCommunityProspectHubSpotInfo(c.db, chapter)
 	if err != nil {
@@ -1541,7 +1530,7 @@ func (c MainController) EventAttendanceCSVHandler(w http.ResponseWriter, r *http
 		}
 	}
 
-	chapter := getAuthedADBChapter(c.db, w, r)
+	chapter := getAuthedADBChapter(c.db, r)
 	event, err := model.GetEvent(c.db, model.GetEventOptions{
 		EventID:   eventID,
 		ChapterID: chapter,
@@ -1572,7 +1561,7 @@ func (c MainController) EventAttendanceCSVHandler(w http.ResponseWriter, r *http
 }
 
 func (c MainController) AuthedUserInfoHandler(w http.ResponseWriter, r *http.Request) {
-	user, _ := getAuthedADBUser(c.db, w, r)
+	user, _ := getAuthedADBUser(c.db, r)
 
 	writeJSON(w, map[string]interface{}{
 		"user":     user,
@@ -2478,7 +2467,7 @@ func (c MainController) InteractionSaveHandler(w http.ResponseWriter, r *http.Re
 
 	if interaction.UserID == 0 {
 		// new interaction, so create it using the current user's id
-		user, _ := getAuthedADBUser(c.db, w, r)
+		user, _ := getAuthedADBUser(c.db, r)
 		interaction.UserID = user.ID
 	}
 

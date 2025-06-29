@@ -86,8 +86,7 @@ export default Vue.extend({
   },
   methods: {
     hasAccess(roleRequired: string[] | undefined) {
-      const isSfBayActive = this.chapterId === SF_BAY_CHAPTER_ID;
-      if (!isSfBayActive) {
+      if (this.chapterId !== SF_BAY_CHAPTER_ID) {
         // If non-sfbay chapter is active, we only show non-sfbay items or admin items.
         return (
           !roleRequired ||

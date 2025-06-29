@@ -1,7 +1,7 @@
 'use client'
 
 import navbarData from '$shared/nav.json'
-import { CircleUser } from 'lucide-react'
+import { CircleUser, Icon } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import logo1 from '$public/logo.png'
@@ -9,29 +9,46 @@ import Link from 'next/link'
 import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
 import buefyStyles from './nav.module.css'
 import clsx from 'clsx'
+import { useQuery } from '@tanstack/react-query'
+import { API_PATH, apiClient } from '@/lib/api'
+
+// TODO(jh): can we handle this some cleaner way, or is this okay for now?
+const SF_BAY_CHAPTER_ID = process.env.NODE_ENV === 'production' ? 47 : 1
 
 function userHasAccess(
-  /** Role the auth'd user has. */
-  userRole: string,
+  /** Auth'd user. */
+  user: {
+    role: string
+    ChapterID: number
+  },
   /** Array of roles that are permitted to access. A user can access if they
    * hold **any** of the required roles. If undefined, any role is permitted. */
   roleRequired: string[] | undefined,
 ): boolean {
   if (!roleRequired) return true
 
-  if (!userRole) return false
+  if (!user.role) return false
+
+  if (user.ChapterID !== SF_BAY_CHAPTER_ID) {
+    // If non-sfbay chapter is active, we only show non-sfbay items or admin items.
+    return (
+      !roleRequired ||
+      roleRequired.includes('non-sfbay') ||
+      (roleRequired.includes('admin') && user.role === 'admin')
+    )
+  }
 
   return roleRequired.some((it) => {
-    if (it === 'admin') return userRole === 'admin'
+    if (it === 'admin') return user.role === 'admin'
     if (it === 'organizer')
-      return userRole === 'admin' || userRole === 'organizer'
+      return user.role === 'admin' || user.role === 'organizer'
     if (it === 'attendance')
       return (
-        userRole === 'admin' ||
-        userRole === 'organizer' ||
-        userRole === 'attendance'
+        user.role === 'admin' ||
+        user.role === 'organizer' ||
+        user.role === 'attendance'
       )
-    if (it === 'non-sfbay') return userRole === 'non-sfbay'
+    if (it === 'non-sfbay') return user.role === 'non-sfbay'
     return false
   })
 }
@@ -49,7 +66,7 @@ const DropdownItem = ({
 }) => {
   const { user, pageName } = useAuthedPageContext()
 
-  if (!userHasAccess(user.role, item.roleRequired)) {
+  if (!userHasAccess(user, item.roleRequired)) {
     return null
   }
   return (
@@ -81,7 +98,7 @@ const DropdownItem = ({
               { 'mb-2': innerItem.separatorBelow },
             )
             return (
-              userHasAccess(user.role, innerItem.roleRequired) &&
+              userHasAccess(user, innerItem.roleRequired) &&
               (innerItem.href.startsWith('/v2') ? (
                 <Link
                   href={innerItem.href.substring(3)}
@@ -109,16 +126,12 @@ const DropdownItem = ({
 
 const ChapterSwitcher = () => {
   const { user } = useAuthedPageContext()
-  const [chapters, setChapters] = useState<any[]>([])
 
-  // TODO(jh): use tanstack query for this.
-  useEffect(() => {
-    if (user.role === 'admin') {
-      fetch('/chapter/list')
-        .then((res) => res.json())
-        .then((data) => setChapters(data.chapters))
-    }
-  }, [user.role])
+  const { data, isLoading } = useQuery({
+    queryKey: [API_PATH.CHAPTER_LIST],
+    queryFn: apiClient.getChapterList,
+    enabled: user.role === 'admin',
+  })
 
   if (user.role !== 'admin') {
     return null
@@ -135,8 +148,9 @@ const ChapterSwitcher = () => {
         onChange={switchChapter}
         value={user.ChapterID}
         className="cursor-pointer"
+        disabled={isLoading || !data?.length}
       >
-        {chapters.map((chapter) => (
+        {data?.map((chapter) => (
           <option key={chapter.ChapterID} value={chapter.ChapterID}>
             {chapter.Name}
           </option>
