@@ -2,7 +2,7 @@
 
 import navbarData from '$shared/nav.json'
 import { CircleUser } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import logo1 from '$public/logo.png'
 import Link from 'next/link'
@@ -107,6 +107,45 @@ const DropdownItem = ({
   )
 }
 
+const ChapterSwitcher = () => {
+  const { user } = useAuthedPageContext()
+  const [chapters, setChapters] = useState<any[]>([])
+
+  // TODO(jh): use tanstack query for this.
+  useEffect(() => {
+    if (user.role === 'admin') {
+      fetch('/chapter/list')
+        .then((res) => res.json())
+        .then((data) => setChapters(data.chapters))
+    }
+  }, [user.role])
+
+  if (user.role !== 'admin') {
+    return null
+  }
+
+  const switchChapter = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    window.location.href = `/auth/switch_chapter?chapter_id=${e.target.value}`
+  }
+
+  return (
+    <div className={buefyStyles['navbar-item']}>
+      {/* TODO(jh): use a better styled select component here eventually. */}
+      <select
+        onChange={switchChapter}
+        value={user.ChapterID}
+        className="cursor-pointer"
+      >
+        {chapters.map((chapter) => (
+          <option key={chapter.ChapterID} value={chapter.ChapterID}>
+            {chapter.Name}
+          </option>
+        ))}
+      </select>
+    </div>
+  )
+}
+
 export const Navbar = () => {
   const { user } = useAuthedPageContext()
   const [isMobileExpanded, setMobileExpanded] = useState(false)
@@ -168,13 +207,17 @@ export const Navbar = () => {
             <div className="flex gap-3 justify-between">
               <div className="flex items-center gap-2">
                 <CircleUser className="text-neutral-600" size={20} />
-                {user.Name} ({user.ChapterName})
+                <span>
+                  <span>{user.Name}</span>
+                  {user.role !== 'admin' && <span> ({user.ChapterName})</span>}
+                </span>
               </div>
               <a href="/logout" style={{ color: 'linktext' }}>
                 Log out
               </a>
             </div>
           </div>
+          <ChapterSwitcher />
         </div>
       </div>
     </nav>

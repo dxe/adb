@@ -33,11 +33,21 @@
         >
           <div class="has-text-grey-dark" style="display: flex; align-items: center; gap: 0.5rem">
             <b-icon icon="account" size="is-small"></b-icon>
-            {{ user }} ({{ chapter }})
+            <span>
+              <span>{{ user }}</span>
+              <span v-if="role !== 'admin'"> ({{ chapter }})</span>
+            </span>
           </div>
           <a href="/logout" style="color: LinkText">Log out</a>
         </div>
       </b-navbar-item>
+      <div v-if="role === 'admin'" class="navbar-item">
+        <b-select v-model="activeChapterId" @input="switchChapter">
+          <option v-for="chapter in chapters" :key="chapter.ChapterID" :value="chapter.ChapterID">
+            {{ chapter.Name }}
+          </option>
+        </b-select>
+      </div>
     </template>
   </b-navbar>
 </template>
@@ -56,13 +66,24 @@ export default Vue.extend({
     user: String,
     role: String,
     chapter: String,
+    chapterId: Number,
   },
   data() {
     return {
       navbarData,
+      chapters: [] as Array<{ ChapterID: number; Name: string }>,
+      activeChapterId: undefined as number | undefined,
     };
   },
+  mounted() {
+    this.activeChapterId = this.chapterId;
+    if (this.role === 'admin') {
+      this.fetchChapters();
+    }
+  },
   methods: {
+    // TODO(jh): if chapter is non-sfbay & user is admin, we need to only show the "non-sfbay" menu
+    // items, BUT ALSO THE ADMIN MENU SECTION.
     hasAccess(roleRequired: string[] | undefined) {
       return (
         !roleRequired ||
@@ -78,6 +99,20 @@ export default Vue.extend({
                   : false,
         )
       );
+    },
+    async fetchChapters() {
+      try {
+        const response = await fetch('/chapter/list');
+        const data = await response.json();
+        console.log('Chapters fetched:', data.chapters);
+        this.chapters = data.chapters;
+      } catch (error) {
+        console.error('Error fetching chapters:', error);
+      }
+    },
+    switchChapter(value: number) {
+      console.log('Switching chapter to:', value);
+      window.location.href = `/auth/switch_chapter?chapter_id=${value}`;
     },
   },
 });
