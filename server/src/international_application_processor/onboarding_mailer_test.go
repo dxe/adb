@@ -8,6 +8,7 @@ import (
 	"github.com/dxe/adb/model"
 	"github.com/dxe/adb/testfixtures"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestBuildOnboardingEmailMessage(t *testing.T) {
@@ -270,6 +271,48 @@ func TestBuildOnboardingEmailMessage(t *testing.T) {
 			assert.Equal(t, "Getting involved with Direct Action Everywhere", msg.Subject)
 			assert.Contains(t, msg.BodyHTML, "Hi John,")
 			assert.Contains(t, msg.BodyHTML, "Network Member Program")
+		})
+	})
+
+	t.Run("ResponderInfo", func(t *testing.T) {
+		t.Run("ContainsInfo", func(t *testing.T) {
+			// Arrange
+			formData := testfixtures.NewInternationalFormDataBuilder().
+				WithEmail("test@example.com").
+				WithFirstName("John").
+				WithLastName("Doe").
+				WithPhone("123-456-7890").
+				WithCity("City1").
+				WithState("NY").
+				WithCountry("USA").
+				Build()
+
+			// Act
+			msg, err := buildOnboardingEmailMessage(formData, nil, nil)
+
+			// Assert
+			require.NoError(t, err)
+			require.NotNil(t, msg)
+			require.Contains(t, msg.BodyHTML, "Name: John Doe")
+			require.Contains(t, msg.BodyHTML, "Email: test@example.com")
+			require.Contains(t, msg.BodyHTML, "Phone: 123-456-7890")
+			require.Contains(t, msg.BodyHTML, "City: City1, NY, USA")
+			require.Contains(t, msg.BodyHTML, "Nearby chapter: none")
+		})
+
+		t.Run("ContainsNearbyChapter", func(t *testing.T) {
+			// Arrange
+			formData := testfixtures.NewInternationalFormDataBuilder().Build()
+
+			chapter := testfixtures.NewChapterBuilder().WithName("EsperantoLand").Build()
+
+			// Act
+			msg, err := buildOnboardingEmailMessage(formData, chapter, nil)
+
+			// Assert
+			require.NoError(t, err)
+			require.NotNil(t, msg)
+			require.Contains(t, msg.BodyHTML, "Nearby chapter: EsperantoLand")
 		})
 	})
 }

@@ -42,26 +42,20 @@ func processFormSubmissions(db *sqlx.DB) {
 	}
 }
 
-func processFormSubmission(db *sqlx.DB, formData model.InternationalFormData) error {
-	chapter, err := getNearestChapterOrNil(db, formData)
+func processFormSubmission(db *sqlx.DB, formDataUnsanitized model.InternationalFormData) error {
+	chapter, err := getNearestChapterOrNil(db, formDataUnsanitized)
 	if err != nil {
 		return errors.Wrap(err, "error getting nearest chapter")
 	}
 
 	// Email the person who submitted the form.
-	err = sendOnboardingEmail(db, formData, chapter)
+	err = sendOnboardingEmail(db, formDataUnsanitized, chapter)
 	if err != nil {
 		return errors.Wrap(err, "failed to send onboarding email")
 	}
 
-	// Email relevant existing organizers to notify them of the form submission.
-	err = sendNotificationEmail(formData, chapter)
-	if err != nil {
-		return errors.Wrap(err, "failed to send notification email")
-	}
-
 	// Mark submission as procesed.
-	err = model.UpdateInternationalFormSubmissionEmailStatus(db, formData.ID)
+	err = model.UpdateInternationalFormSubmissionEmailStatus(db, formDataUnsanitized.ID)
 	if err != nil {
 		return errors.Wrap(err, "error updating status: %w")
 	}

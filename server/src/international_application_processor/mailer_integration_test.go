@@ -86,71 +86,61 @@ func TestMailIntegration(t *testing.T) {
 		return
 	}
 
-	t.Run("SendsNotificationEmail", func(t *testing.T) {
-		msg, err := buildNotificationEmail(makeFormData("CA", "participate"), makeSfBayChapter())
+	t.Run("SendsSFBayEmail", func(t *testing.T) {
+		msg, err := buildOnboardingEmailMessage(
+			makeFormData("CA", "participate"),
+			makeSfBayChapter(),
+			makeEvent())
 		assert.NoError(t, err)
 
 		err = verificationStrategy(msg, t)
 		assert.NoError(t, err)
 	})
 
-	t.Run("OnboardingEmails", func(t *testing.T) {
-		t.Run("SendsSFBayEmail", func(t *testing.T) {
-			msg, err := buildOnboardingEmailMessage(
-				makeFormData("CA", "participate"),
-				makeSfBayChapter(),
-				makeEvent())
-			assert.NoError(t, err)
+	t.Run("SendsNearbyChapterEmail", func(t *testing.T) {
+		msg, err := buildOnboardingEmailMessage(
+			makeFormData("ZZ", "participate"),
+			testfixtures.NewChapterBuilder().Build(),
+			makeEvent())
+		assert.NoError(t, err)
 
-			err = verificationStrategy(msg, t)
-			assert.NoError(t, err)
-		})
+		err = verificationStrategy(msg, t)
+		assert.NoError(t, err)
+	})
 
-		t.Run("SendsNearbyChapterEmail", func(t *testing.T) {
-			msg, err := buildOnboardingEmailMessage(
-				makeFormData("ZZ", "participate"),
-				testfixtures.NewChapterBuilder().Build(),
-				makeEvent())
-			assert.NoError(t, err)
+	t.Run("SendsCAOrganizerEmail", func(t *testing.T) {
+		msg, err := buildOnboardingEmailMessage(
+			makeFormData("CA", "organize"), nil, nil)
+		assert.NoError(t, err)
 
-			err = verificationStrategy(msg, t)
-			assert.NoError(t, err)
-		})
+		err = verificationStrategy(msg, t)
+		assert.NoError(t, err)
+	})
 
-		t.Run("SendsCAOrganizerEmail", func(t *testing.T) {
-			msg, err := buildOnboardingEmailMessage(
-				makeFormData("CA", "organize"), nil, nil)
-			assert.NoError(t, err)
+	t.Run("SendsNonCAOrganizerEmail", func(t *testing.T) {
+		msg, err := buildOnboardingEmailMessage(
+			makeFormData("ZZ", "organize"), nil, nil)
+		assert.NoError(t, err)
 
-			err = verificationStrategy(msg, t)
-			assert.NoError(t, err)
-		})
+		err = verificationStrategy(msg, t)
+		assert.NoError(t, err)
+	})
 
-		t.Run("SendsNonCAOrganizerEmail", func(t *testing.T) {
-			msg, err := buildOnboardingEmailMessage(
-				makeFormData("ZZ", "organize"), nil, nil)
-			assert.NoError(t, err)
+	t.Run("SendsCAParticipatantEmail", func(t *testing.T) {
+		msg, err := buildOnboardingEmailMessage(
+			makeFormData("CA", "participate"), nil, nil)
+		assert.NoError(t, err)
 
-			err = verificationStrategy(msg, t)
-			assert.NoError(t, err)
-		})
+		err = verificationStrategy(msg, t)
+		assert.NoError(t, err)
+	})
 
-		t.Run("SendsCAParticipatantEmail", func(t *testing.T) {
-			msg, err := buildOnboardingEmailMessage(
-				makeFormData("CA", "participate"), nil, nil)
-			assert.NoError(t, err)
+	t.Run("SendsNonCAParticipantEmail", func(t *testing.T) {
+		msg, err := buildOnboardingEmailMessage(
+			makeFormData("ZZ", "participate"), nil, nil)
+		assert.NoError(t, err)
 
-			err = verificationStrategy(msg, t)
-			assert.NoError(t, err)
-		})
-
-		t.Run("SendsNonCAParticipantEmail", func(t *testing.T) {
-			msg, err := buildOnboardingEmailMessage(
-				makeFormData("ZZ", "participate"), nil, nil)
-			assert.NoError(t, err)
-
-			err = verificationStrategy(msg, t)
-			assert.NoError(t, err)
-		})
+		err = verificationStrategy(msg, t)
+		assert.NoError(t, err)
 	})
 }
