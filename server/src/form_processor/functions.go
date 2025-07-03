@@ -5,29 +5,23 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/dxe/adb/model"
 	"github.com/jmoiron/sqlx"
 	"github.com/rs/zerolog/log"
 )
 
-func getResponsesToProcess(db *sqlx.DB, query string) ([]int, bool) {
-	rawIds, getIdsErr := db.Query(query)
-	if getIdsErr != nil {
-		log.Error().Msgf("failed to get responses to process: %s", getIdsErr)
+type formResponse struct {
+	Id        int `db:"id"`
+	ChapterId int `db:"chapter_id"`
+}
+
+func getResponsesToProcess(db *sqlx.DB, query string) ([]formResponse, bool) {
+	var responses []formResponse
+	err := db.Select(&responses, query)
+	if err != nil {
+		log.Error().Msgf("failed to get responses to process: %s", err)
 		return nil, false
 	}
-	defer rawIds.Close()
-	var ids []int
-	for rawIds.Next() {
-		var id int
-		err := rawIds.Scan(&id)
-		if err != nil {
-			log.Error().Msgf("failed to scan responses to process: %s", err)
-			return nil, false
-		}
-		ids = append(ids, id)
-	}
-	return ids, true
+	return responses, true
 }
 
 func getProcessingStatus(db *sqlx.DB, query string, id int) (bool, error) {
@@ -52,14 +46,14 @@ func getEmail(db *sqlx.DB, query string, id int) (string, bool) {
 	return email, true
 }
 
-func countActivistsForEmail(db *sqlx.DB, email string) (int, bool) {
-	const countActivistsForEmailQuery = `
-		SELECT count(id) AS amount
-		FROM activists
-		WHERE hidden = 0 and email = ? and chapter_id = ` + model.SFBayChapterIdStr
+func countActivistsForEmail(db *sqlx.DB, email string, chapterId int) (int, bool) {
 	var count int
-	// TODO: is only getting the first row accceptable?
-	err := db.QueryRow(countActivistsForEmailQuery, email).Scan(&count)
+	err := db.Get(&count, `
+		SELECT count(*)
+		FROM activists
+		WHERE hidden = 0 and email = ? and chapter_id = ?`,
+		email,
+		chapterId)
 	if err != nil {
 		log.Error().Msgf("failed to get email count for %s from activists tables (no match found or error?); %s", email, err)
 		return 0, false

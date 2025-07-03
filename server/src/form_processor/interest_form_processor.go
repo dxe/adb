@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/dxe/adb/model"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/rs/zerolog/log"
@@ -39,7 +38,7 @@ SET
 	form_interest.processed = 1
 
 WHERE
-    chapter_id = ` + model.SFBayChapterIdStr + `
+    form_interest.chapter_id = activists.chapter_id
 	and form_interest.id = ?
 	and form_interest.processed = 0
 	and activists.hidden = 0
@@ -70,7 +69,7 @@ SET
 	# mark as processed
 	form_interest.processed = 1
 WHERE
-    chapter_id = ` + model.SFBayChapterIdStr + `
+    form_interest.chapter_id = activists.chapter_id
 	and form_interest.id = ?
 	AND form_interest.processed = 0
 	AND activists.hidden = 0
@@ -180,7 +179,7 @@ SELECT
     '',
     NULL,
 	IF(LENGTH(form_interest.discord_id),form_interest.discord_id,NULL),
-    '` + model.SFBayChapterIdStr + `'
+    form_interest.chapter_id
 FROM
 	form_interest
 WHERE
@@ -197,7 +196,7 @@ INNER JOIN
 SET
 	form_interest.processed = 1
 WHERE
-    activists.chapter_id = ` + model.SFBayChapterIdStr + `
+    activists.chapter_id = form_interest.chapter_id
 	AND form_interest.id = ?
 	AND form_interest.processed = 0
 	AND activists.hidden < 1;
@@ -206,17 +205,17 @@ WHERE
 func ProcessInterestForms(db *sqlx.DB) {
 	log.Debug().Msg("processing interest forms")
 
-	interestIds, isSuccess := getResponsesToProcess(db,
-		"SELECT id FROM form_interest WHERE processed = 0 and name <> ''")
+	responses, isSuccess := getResponsesToProcess(db,
+		"SELECT id, chapter_id FROM form_interest WHERE processed = 0 and name <> ''")
 	if !isSuccess {
 		log.Error().Msg("failed to get interestIds; exiting")
 		return
 	}
-	if len(interestIds) == 0 {
+	if len(responses) == 0 {
 		log.Debug().Msg("no new form_interest submissions to process")
 	}
-	for _, id := range interestIds {
-		err := processInterestForm(id, db)
+	for _, response := range responses {
+		err := processInterestForm(response, db)
 		if err != nil {
 			log.Error().Msgf("error processing interest form; exiting: %v", err)
 			return
@@ -226,15 +225,15 @@ func ProcessInterestForms(db *sqlx.DB) {
 	log.Debug().Msg("finished processing interest forms")
 }
 
-func processInterestForm(id int, db *sqlx.DB) error {
-	log.Info().Msgf("processing Interest row %d", id)
-	_, err := db.Exec(processInterestOnNameQuery, id)
+func processInterestForm(response formResponse, db *sqlx.DB) error {
+	log.Info().Msgf("processing Interest row %d", response.Id)
+	_, err := db.Exec(processInterestOnNameQuery, response.Id)
 	if err != nil {
 		return fmt.Errorf("failed to process interest on name; %s", err)
 	}
 
 	// Return early if previous query updated activist based on name.
-	processed, err := getProcessingStatus(db, interestProcessingStatusQuery, id)
+	processed, err := getProcessingStatus(db, interestProcessingStatusQuery, response.Id)
 	if err != nil {
 		return fmt.Errorf("failed to get processing status: %v", err)
 	}
@@ -244,23 +243,23 @@ func processInterestForm(id int, db *sqlx.DB) error {
 	}
 
 	// check how many records are tied to this email address
-	email, isSuccess := getEmail(db, "SELECT email FROM form_interest WHERE id = ?", id)
+	email, isSuccess := getEmail(db, "SELECT email FROM form_interest WHERE id = ?", response.Id)
 	if !isSuccess {
 		return errors.New("failed to get email")
 	}
-	count, isSuccess := countActivistsForEmail(db, email)
+	count, isSuccess := countActivistsForEmail(db, email, response.ChapterId)
 	if !isSuccess {
 		return errors.New("failed to count activists for email")
 	}
 
 	switch count {
 	case 1:
-		err := updateActivistWithInterestFormBasedOnEmail(db, id)
+		err := updateActivistWithInterestFormBasedOnEmail(db, response.Id)
 		if err != nil {
 			return fmt.Errorf("failed to update activist: %w", err)
 		}
 	case 0:
-		err := insertActivistFromInterestForm(db, id)
+		err := insertActivistFromInterestForm(db, response.Id)
 		if err != nil {
 			return fmt.Errorf("failed to insert activist: %w", err)
 		}
@@ -270,7 +269,7 @@ func processInterestForm(id int, db *sqlx.DB) error {
 			"%d non-hidden activists associated with email address %s for Interest response %d Please correct.",
 			count,
 			email,
-			id,
+			response.Id,
 		)
 	}
 

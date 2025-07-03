@@ -76,6 +76,8 @@ type Organizers []*Organizer
 
 const SFBayChapterId = 47
 const SFBayChapterIdStr = "47"
+const SFBayChapterIdDevTest = 1
+const SFBayChapterIdDevTestStr = "1"
 
 func (o Organizers) Value() (driver.Value, error) {
 	return json.Marshal(o)

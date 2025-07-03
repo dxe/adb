@@ -225,17 +225,17 @@ WHERE
 func ProcessApplicationForms(db *sqlx.DB) {
 	log.Debug().Msg("processing application forms")
 
-	applicationIds, isSuccess := getResponsesToProcess(db,
-		"SELECT id FROM form_application WHERE processed = 0 and name <> ''")
+	responses, isSuccess := getResponsesToProcess(db,
+		"SELECT id, '"+model.SFBayChapterIdStr+"' as chapter_id FROM form_application WHERE processed = 0 and name <> ''")
 	if !isSuccess {
 		log.Error().Msg("failed to get applicationIds; exiting")
 		return
 	}
-	if len(applicationIds) == 0 {
+	if len(responses) == 0 {
 		log.Debug().Msg("no new form_application submissions to process")
 	}
-	for _, id := range applicationIds {
-		err := processApplicationForm(id, db)
+	for _, response := range responses {
+		err := processApplicationForm(response, db)
 		if err != nil {
 			log.Error().Msgf("error processing application form; exiting: %v", err)
 			return
@@ -245,15 +245,15 @@ func ProcessApplicationForms(db *sqlx.DB) {
 	log.Debug().Msg("finished processing application forms")
 }
 
-func processApplicationForm(id int, db *sqlx.DB) error {
-	log.Info().Msgf("Processing Application row %d", id)
-	_, err := db.Exec(processApplicationOnNameQuery, id)
+func processApplicationForm(response formResponse, db *sqlx.DB) error {
+	log.Info().Msgf("Processing Application row %d", response.Id)
+	_, err := db.Exec(processApplicationOnNameQuery, response.Id)
 	if err != nil {
 		return fmt.Errorf("failed to process application on name; %s", err)
 	}
 
 	// Return early if previous query updated activist based on name.
-	processed, err := getProcessingStatus(db, applicationProcessingStatusQuery, id)
+	processed, err := getProcessingStatus(db, applicationProcessingStatusQuery, response.Id)
 	if err != nil {
 		return fmt.Errorf("failed to get processing status: %v", err)
 	}
@@ -263,23 +263,23 @@ func processApplicationForm(id int, db *sqlx.DB) error {
 	}
 
 	// check how many records are tied to this email address
-	email, isSuccess := getEmail(db, "SELECT email FROM form_application WHERE id = ?", id)
+	email, isSuccess := getEmail(db, "SELECT email FROM form_application WHERE id = ?", response.Id)
 	if !isSuccess {
 		return errors.New("failed to get email; exiting")
 	}
-	count, isSuccess := countActivistsForEmail(db, email)
+	count, isSuccess := countActivistsForEmail(db, email, model.SFBayChapterId)
 	if !isSuccess {
 		return errors.New("failed to count activists for email; exiting")
 	}
 
 	switch count {
 	case 1:
-		err := updateActivistWithApplicationFormBasedOnEmail(db, id)
+		err := updateActivistWithApplicationFormBasedOnEmail(db, response.Id)
 		if err != nil {
 			return fmt.Errorf("failed to update activist: %w", err)
 		}
 	case 0:
-		err := insertActivistFromApplicationForm(db, id)
+		err := insertActivistFromApplicationForm(db, response.Id)
 		if err != nil {
 			return fmt.Errorf("failed to insert activist: %w", err)
 		}
@@ -289,7 +289,7 @@ func processApplicationForm(id int, db *sqlx.DB) error {
 			"%d non-hidden activists associated with email address %s for Application response %d Please correct.",
 			count,
 			email,
-			id,
+			response.Id,
 		)
 	}
 
