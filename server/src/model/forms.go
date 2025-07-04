@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/dxe/adb/mailing_list_signup"
 	"github.com/jmoiron/sqlx"
@@ -87,8 +88,8 @@ func SubmitApplicationForm(db *sqlx.DB, formData ApplicationFormData) error {
 	}
 	err = mailing_list_signup.Enqueue(signup)
 	if err != nil {
-		// Don't return this error because we still want to successfully update the database.
-		fmt.Println("ERROR adding application form submission to mailing list:", err.Error())
+		// Don't fail the HTTP request since at least the user's response was added to the database.
+		log.Printf("ERROR adding application form submission to mailing list: %v", err)
 	}
 
 	return nil
@@ -115,8 +116,8 @@ func SubmitInterestForm(db *sqlx.DB, formData InterestFormData) error {
 		}
 		err = mailing_list_signup.Enqueue(signup)
 		if err != nil {
-			// Don't return this error because we still want to successfully update the database.
-			fmt.Println("ERROR adding application form submission to mailing list:", err.Error())
+			// Don't fail the HTTP request since at least the user's response was added to the database.
+			log.Printf("ERROR adding application form submission to mailing list: %v", err)
 		}
 	}
 

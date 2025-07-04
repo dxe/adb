@@ -17,6 +17,7 @@ func TestProcessFormInterestForNoMatchingActivist(t *testing.T) {
 	processInterestForms(db)
 
 	/* Verify */
+	verifyActivistIsInserted(t, db)
 	verifyFormWasMarkedAsProcessed(t, db, interestProcessingStatusQuery)
 }
 
@@ -37,6 +38,7 @@ func TestProcessFormInterestForActivistMatchingOnName(t *testing.T) {
 	processInterestForms(db)
 
 	/* Verify */
+	verifyActivistIsInserted(t, db)
 	verifyFormWasMarkedAsProcessed(t, db, interestProcessingStatusQuery)
 }
 
@@ -57,6 +59,7 @@ func TestProcessFormInterestForActivistMatchingOnEmail(t *testing.T) {
 	processInterestForms(db)
 
 	/* Verify */
+	verifyActivistIsInserted(t, db)
 	verifyFormWasMarkedAsProcessed(t, db, interestProcessingStatusQuery)
 }
 
@@ -81,4 +84,5 @@ func TestProcessFormInterestForMultipleMatchingActivistsOnEmail(t *testing.T) {
 	processInterestForms(db)
 
 	// For now, manually check error message "ERROR: 2 non-hidden activists associated"
+	verifyFormWasNotMarkedAsProcessed(t, db, interestProcessingStatusQuery)
 }
