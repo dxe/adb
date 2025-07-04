@@ -83,7 +83,7 @@
         </b-field>
       </div>
 
-      <div class="column full">
+      <div class="column full" v-if="formOptions.showInterests">
         <p class="mb-3">What are your activism interests, if any?</p>
 
         <div class="block">
@@ -236,6 +236,7 @@ export default Vue.extend({
         formName: '',
         formTitle: '',
         formDescription: '',
+        showInterests: false,
         showReferralFriends: false,
         showReferralApply: false,
         showReferralOutlet: false,
@@ -262,6 +263,7 @@ export default Vue.extend({
     this.formOptions.formName = urlParams.get('name') || 'Interest Form';
     this.formOptions.formTitle = urlParams.get('title') || 'DxE SF Bay - Get Involved';
     this.formOptions.formDescription = urlParams.get('description') || '';
+    this.formOptions.showInterests = urlParams.get('showInterests') !== 'false';
     this.formOptions.showReferralFriends = urlParams.get('showReferralFriends') === 'true';
     this.formOptions.showReferralApply = urlParams.get('showReferralApply') === 'true';
     this.formOptions.showReferralOutlet = urlParams.get('showReferralOutlet') === 'true';
