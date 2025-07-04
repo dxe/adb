@@ -2526,6 +2526,14 @@ func main() {
 	config.SetCommandLineFlags(*isProdArgument, *logLevel)
 	log.Println("IsProd =", config.IsProd)
 
+	err := model.ApplyAllMigrations(
+		model.NewDB(config.DBDataSource()+"&multiStatements=true"),
+		config.DBMigrationsLocation(),
+		true)
+	if err != nil {
+		log.Panicf("error applying database schema migrations: %v", err)
+	}
+
 	n := negroni.New()
 	n.Use(negroni.NewRecovery())
 	n.Use(negroni.NewLogger())
