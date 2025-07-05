@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/dxe/adb/model"
 	"github.com/jmoiron/sqlx"
 	"github.com/rs/zerolog/log"
 )
@@ -52,6 +53,10 @@ func getEmail(db *sqlx.DB, query string, id int) (string, bool) {
 }
 
 func countActivistsForEmail(db *sqlx.DB, email string) (int, bool) {
+	const countActivistsForEmailQuery = `
+		SELECT count(id) AS amount
+		FROM activists
+		WHERE hidden = 0 and email = ? and chapter_id = ` + model.SFBayChapterIdStr
 	var count int
 	// TODO: is only getting the first row accceptable?
 	err := db.QueryRow(countActivistsForEmailQuery, email).Scan(&count)

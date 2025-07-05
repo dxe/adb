@@ -3,8 +3,16 @@ package form_processor
 import (
 	"testing"
 
+	"github.com/dxe/adb/model"
 	"github.com/jmoiron/sqlx"
 )
+
+/* Common queries */
+const insertActivistQuery = `
+INSERT INTO activists (id, email, name, chapter_id) VALUES (NULL, "email1", ?, ` + model.SFBayChapterIdStr + `);
+`
+
+const getActivistsQuery = `SELECT id FROM activists;`
 
 /* Common utils */
 type activist struct {
