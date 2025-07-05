@@ -23,6 +23,20 @@ body {
   -moz-background-size: cover;
   -o-background-size: cover;
   background-size: cover;
+  scrollbar-gutter: stable;
+}
+
+html {
+  /* Reduce jitter when Shadcn <Select> component displays a modal that hides the scrollbar.
+     https://github.com/radix-ui/primitives/issues/1496#issuecomment-1962839229 */
+  scrollbar-gutter: stable;
+}
+
+/* Reduce jitter when Shadcn <Select> component displays a modal that hides the scrollbar.
+   https://github.com/radix-ui/primitives/issues/1496#issuecomment-1962839229 */
+html body[data-scroll-locked] {
+  --removed-body-scroll-bar-size: 0 !important;
+  margin-right: 0 !important;
 }
 
 @layer base {
