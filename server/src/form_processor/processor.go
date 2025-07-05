@@ -1,6 +1,7 @@
 package form_processor
 
 import (
+	"github.com/dxe/adb/config"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/robfig/cron/v3"
@@ -14,19 +15,13 @@ func StartFormProcessor(db *sqlx.DB) {
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	log.Info().Msg("starting go processor; logging to default location")
 
-	/* Get config */
-	mainEnv, ok := getMainEnv()
-	if !ok {
-		log.Error().Msg("failed to get ENV variables; will exit main program")
-		return
-	}
 	/* Set defined log level */
-	log.Info().Msgf("setting log level to %d", mainEnv.logLevel)
-	zerolog.SetGlobalLevel(zerolog.Level(mainEnv.logLevel))
+	log.Info().Msgf("setting log level to %d", config.LogLevel)
+	zerolog.SetGlobalLevel(zerolog.Level(config.LogLevel))
 
 	/* Start tasks on a scheduule */
 	cron := cron.New()
-	cron.AddFunc(mainEnv.processFormsCronExpression, func() {
+	cron.AddFunc(config.FormProcessorProcessFormsCronExpression, func() {
 		processApplicationForms(db)
 		processInterestForms(db)
 	})

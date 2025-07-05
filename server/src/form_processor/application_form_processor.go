@@ -255,9 +255,9 @@ func processApplicationForm(id int, db *sqlx.DB) error {
 	}
 
 	// Return early if previous query updated activist based on name.
-	processed, isSuccess := getProcessingStatus(db, applicationProcessingStatusQuery, id)
-	if !isSuccess {
-		return errors.New("failed to get processing status; exiting")
+	processed, err := getProcessingStatus(db, applicationProcessingStatusQuery, id)
+	if err != nil {
+		return fmt.Errorf("failed to get processing status: %v", err)
 	}
 	if processed {
 		return nil

@@ -2,6 +2,10 @@ package form_processor
 
 import (
 	"database/sql"
+	"errors"
+	"fmt"
+
+	"github.com/dxe/adb/model"
 	"github.com/jmoiron/sqlx"
 	"github.com/rs/zerolog/log"
 )
@@ -26,18 +30,16 @@ func getResponsesToProcess(db *sqlx.DB, query string) ([]int, bool) {
 	return ids, true
 }
 
-func getProcessingStatus(db *sqlx.DB, query string, id int) (bool, bool) {
+func getProcessingStatus(db *sqlx.DB, query string, id int) (bool, error) {
 	var processed bool
 	err := db.QueryRow(query, id).Scan(&processed)
 	if err == sql.ErrNoRows {
-		log.Error().Msgf("failed to find requested ID in requested table")
-		return false, false
+		return false, errors.New("failed to find requested ID in requested table")
 	}
 	if err != nil {
-		log.Error().Msgf("failed to check processing status for %d; %s", id, err)
-		return false, false
+		return false, fmt.Errorf("failed to check processing status for %d; %s", id, err)
 	}
-	return processed, true
+	return processed, nil
 }
 
 func getEmail(db *sqlx.DB, query string, id int) (string, bool) {
@@ -51,6 +53,10 @@ func getEmail(db *sqlx.DB, query string, id int) (string, bool) {
 }
 
 func countActivistsForEmail(db *sqlx.DB, email string) (int, bool) {
+	const countActivistsForEmailQuery = `
+		SELECT count(id) AS amount
+		FROM activists
+		WHERE hidden = 0 and email = ? and chapter_id = ` + model.SFBayChapterIdStr
 	var count int
 	// TODO: is only getting the first row accceptable?
 	err := db.QueryRow(countActivistsForEmailQuery, email).Scan(&count)
