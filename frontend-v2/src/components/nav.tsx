@@ -1,3 +1,8 @@
+/* When making changes to this file, be
+   sure to implement the same changes in
+   `frontend/AdbNav.vue`.
+*/
+
 'use client'
 
 import navbarData from '$shared/nav.json'
@@ -12,7 +17,6 @@ import clsx from 'clsx'
 import { useQuery } from '@tanstack/react-query'
 import { API_PATH, apiClient } from '@/lib/api'
 
-// TODO(jh): can we handle this some cleaner way, or is this okay for now?
 const SF_BAY_CHAPTER_ID = process.env.NODE_ENV === 'production' ? 47 : 1
 
 function userHasAccess(
@@ -223,7 +227,12 @@ export const Navbar = () => {
                 <CircleUser className="text-neutral-600" size={20} />
                 <span>
                   <span>{user.Name}</span>
-                  {user.role !== 'admin' && <span> ({user.ChapterName})</span>}
+                  {user.role !== 'admin' && (
+                    <>
+                      {' '}
+                      <span>({user.ChapterName})</span>
+                    </>
+                  )}
                 </span>
               </div>
               <a href="/logout" style={{ color: 'linktext' }}>

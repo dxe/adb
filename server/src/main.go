@@ -76,30 +76,37 @@ func generateToken() string {
 
 var sessionStore = sessions.NewCookieStore([]byte(config.CookieSecret))
 
-func withActiveChapter(db *sqlx.DB, r *http.Request, adbUser model.ADBUser) model.ADBUser {
+func augmentUserWithChapterFromSession(db *sqlx.DB, r *http.Request, adbUser model.ADBUser) (augmentedAdbUser model.ADBUser, err error) {
 	authSession, err := sessionStore.Get(r, "auth-session")
 	if err != nil {
-		return adbUser
+		return adbUser, fmt.Errorf("failed to get auth session: %w", err)
 	}
 
 	chapterID, ok := authSession.Values["chapterid"].(int)
 	if !ok {
-		return adbUser
+		// User could have old session cookie that doesn't contain `chapterid`.
+		return adbUser, fmt.Errorf("failed to get chapter ID from session")
 	}
 
 	chapter, err := model.GetChapterByID(db, chapterID)
 	if err != nil {
-		return adbUser
+		// Chapter could have been deleted.
+		return adbUser, fmt.Errorf("failed to get chapter by ID %d: %w", chapterID, err)
 	}
 
 	adbUser.ChapterID = chapter.ChapterID
 	adbUser.ChapterName = chapter.Name
-	return adbUser
+	return adbUser, nil
 }
 
 func getAuthedADBUser(db *sqlx.DB, r *http.Request) (adbUser model.ADBUser, authed bool) {
 	if !config.IsProd {
-		return withActiveChapter(db, r, model.DevTestUser), true
+		augmentedUser, err := augmentUserWithChapterFromSession(db, r, model.DevTestUser)
+		if err != nil {
+			// It's fine if this fails in local dev, b/c we often don't actually have a session cookie.
+			log.Println("Warning: Failed to augment dev user with chapter from session:", err)
+		}
+		return augmentedUser, true
 	}
 
 	// First, check the cookie.
@@ -128,7 +135,12 @@ func getAuthedADBUser(db *sqlx.DB, r *http.Request) (adbUser model.ADBUser, auth
 		return model.ADBUser{}, false
 	}
 
-	return withActiveChapter(db, r, adbUser), true
+	augmentedUser, err := augmentUserWithChapterFromSession(db, r, adbUser)
+	if err != nil {
+		return model.ADBUser{}, false
+	}
+
+	return augmentedUser, true
 }
 
 func setAuthSession(w http.ResponseWriter, r *http.Request, adbUser model.ADBUser) error {
