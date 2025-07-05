@@ -5,6 +5,7 @@ export const API_PATH = {
   STATIC_RESOURCE_HASH: 'static_resources_hash',
   ACTIVIST_NAMES_GET: 'activist_names/get',
   USER_ME: 'user/me',
+  CHAPTER_LIST: 'chapter/list',
 }
 
 export const StaticResourcesHashResp = z.object({
@@ -28,6 +29,13 @@ const AuthedUserResp = z.object({
   }),
   mainRole: Role,
 })
+
+const ChapterListResp = z.array(
+  z.object({
+    ChapterID: z.number(),
+    Name: z.string(),
+  }),
+)
 
 export const ActivistNamesResp = z.object({
   activist_names: z.array(z.string()),
@@ -71,6 +79,11 @@ export class ApiClient {
   getActivistNames = async () => {
     const resp = await this.client.get(API_PATH.ACTIVIST_NAMES_GET).json()
     return ActivistNamesResp.parse(resp)
+  }
+
+  getChapterList = async () => {
+    const resp = await this.client.get(API_PATH.CHAPTER_LIST).json()
+    return ChapterListResp.parse(resp)
   }
 }
 
