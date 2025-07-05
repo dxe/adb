@@ -56,7 +56,7 @@ func createEventsDevDB() string {
 func createDevDB(name string) {
 	db := model.NewDB(config.DataSourceBase + "/" + name + "?multiStatements=true")
 	defer db.Close()
-	model.WipeDatabase(db)
+	model.WipeDatabaseWithDb(db, config.DBMigrationsLocation())
 	insertStatement := fmt.Sprintf(`
 INSERT INTO activists
   (id, name, email, phone, location, activist_level)
@@ -107,6 +107,8 @@ INSERT INTO fb_pages (id, name, flag, fb_url, twitter_url, insta_url, email, reg
 }
 
 func main() {
+	fmt.Println("Creating adb_db")
 	createDevDB("adb_db")
+	fmt.Println("Creating adb_test_db")
 	createDevDB("adb_test_db")
 }

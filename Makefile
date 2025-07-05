@@ -47,11 +47,13 @@ dev_db:
 
 # Install all deps for this project.
 # Note: PNPM must be installed separately for each version of NPM used, since it is installed within each NPM installation.
+# Note: `go tool` cannot yet be used to install golang-migrate: https://github.com/golang-migrate/migrate/issues/1232
 deps:
 	. $(NVM_SCRIPT) && nvm i 22 && npm i -g pnpm && pnpm i
 	. $(NVM_SCRIPT) && cd frontend && nvm i 16 && npm i --legacy-peer-deps
 	. $(NVM_SCRIPT) && cd frontend-v2 && nvm i 18 && npm i -g pnpm && pnpm i
 	cd server/src && go get -t github.com/dxe/adb/...
+	go install -tags 'mysql' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 
 # Run all tests
 test:
@@ -70,9 +72,10 @@ set_git_hooks:
 
 
 # Test docker image
+# (Note, --net=host runs the container in the same network as the devcontainer created by the devcontainer's docker-compose config)
 docker_run:
 	docker build . -t dxe/adb
-	docker container run --rm -p 8080:8080 -it --name adbtest dxe/adb
+	docker container run --rm -p 8080:8080 --net=host -it --name adbtest --env-file docker-debug.env dxe/adb
 
 # Open shell inside docker container while it's running
 docker_shell:
