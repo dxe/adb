@@ -30,12 +30,14 @@ const AuthedUserResp = z.object({
   mainRole: Role,
 })
 
-const ChapterListResp = z.array(
-  z.object({
-    ChapterID: z.number(),
-    Name: z.string(),
-  }),
-)
+const ChapterListResp = z.object({
+  chapters: z.array(
+    z.object({
+      ChapterID: z.number(),
+      Name: z.string(),
+    }),
+  ),
+})
 
 export const ActivistNamesResp = z.object({
   activist_names: z.array(z.string()),
@@ -83,7 +85,7 @@ export class ApiClient {
 
   getChapterList = async () => {
     const resp = await this.client.get(API_PATH.CHAPTER_LIST).json()
-    return ChapterListResp.parse(resp)
+    return ChapterListResp.parse(resp).chapters
   }
 }
 
