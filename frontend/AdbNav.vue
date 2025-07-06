@@ -1,3 +1,8 @@
+<!-- When making changes to this file, be
+     sure to implement the same changes in
+     `frontend-v2/src/components/nav.tsx`.
+-->
+
 <template>
   <b-navbar fixed-top shadow id="mainNav">
     <template #brand>
@@ -33,11 +38,21 @@
         >
           <div class="has-text-grey-dark" style="display: flex; align-items: center; gap: 0.5rem">
             <b-icon icon="account" size="is-small"></b-icon>
-            {{ user }} ({{ chapter }})
+            <span>
+              <span>{{ user }}</span>
+              <span v-if="role !== 'admin'"> ({{ chapterName }})</span>
+            </span>
           </div>
           <a href="/logout" style="color: LinkText">Log out</a>
         </div>
       </b-navbar-item>
+      <div v-if="role === 'admin'" class="navbar-item">
+        <b-select v-model="activeChapterId" @input="switchChapter">
+          <option v-for="chapter in chapters" :key="chapter.ChapterID" :value="chapter.ChapterID">
+            {{ chapter.Name }}
+          </option>
+        </b-select>
+      </div>
     </template>
   </b-navbar>
 </template>
@@ -49,21 +64,40 @@ import navbarData from '../shared/nav.json';
 
 Vue.use(Buefy);
 
+const SF_BAY_CHAPTER_ID = process.env.NODE_ENV === 'production' ? 47 : 1;
+
 export default Vue.extend({
   name: 'adb-nav',
   props: {
     page: String,
     user: String,
     role: String,
-    chapter: String,
+    chapterName: String,
+    chapterId: Number,
   },
   data() {
     return {
       navbarData,
+      chapters: [] as Array<{ ChapterID: number; Name: string }>,
+      activeChapterId: this.chapterId,
     };
+  },
+  mounted() {
+    if (this.role !== 'admin') {
+      return;
+    }
+    this.fetchChapters();
   },
   methods: {
     hasAccess(roleRequired: string[] | undefined) {
+      if (this.activeChapterId !== SF_BAY_CHAPTER_ID) {
+        // If non-sfbay chapter is active, we only show non-sfbay items or admin items.
+        return (
+          !roleRequired ||
+          roleRequired.indexOf('non-sfbay') !== -1 ||
+          (roleRequired.indexOf('admin') !== -1 && this.role === 'admin')
+        );
+      }
       return (
         !roleRequired ||
         roleRequired.some((it) =>
@@ -78,6 +112,21 @@ export default Vue.extend({
                   : false,
         )
       );
+    },
+    async fetchChapters() {
+      try {
+        const response = await fetch('/chapter/list');
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const data = await response.json();
+        this.chapters = data.chapters;
+      } catch (error) {
+        console.error('Error fetching chapters:', error);
+      }
+    },
+    switchChapter(chapterId: number) {
+      window.location.href = `/auth/switch_chapter?chapter_id=${chapterId}`;
     },
   },
 });

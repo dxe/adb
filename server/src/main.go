@@ -41,24 +41,6 @@ import (
 	"github.com/urfave/negroni"
 )
 
-func flashMessageSuccess(w http.ResponseWriter, message string) {
-	http.SetCookie(w, &http.Cookie{
-		Name:     "flash_message_success",
-		Value:    message,
-		Path:     "/",
-		SameSite: http.SameSiteLaxMode,
-	})
-}
-
-func flashMesssageError(w http.ResponseWriter, message string) {
-	http.SetCookie(w, &http.Cookie{
-		Name:     "flash_message_error",
-		Value:    message,
-		Path:     "/",
-		SameSite: http.SameSiteLaxMode,
-	})
-}
-
 type latLng struct {
 	Latitude  string `json:"latitude"`
 	Longitude string `json:"longitude"`
@@ -94,10 +76,36 @@ func generateToken() string {
 
 var sessionStore = sessions.NewCookieStore([]byte(config.CookieSecret))
 
+func augmentUserWithChapterFromSession(db *sqlx.DB, r *http.Request, adbUser model.ADBUser) (augmentedAdbUser model.ADBUser, err error) {
+	authSession, err := sessionStore.Get(r, "auth-session")
+	if err != nil {
+		return adbUser, fmt.Errorf("failed to get auth session: %w", err)
+	}
+
+	chapterID, ok := authSession.Values["chapterid"].(int)
+	if !ok {
+		// User could have old session cookie that doesn't contain `chapterid`.
+		return adbUser, fmt.Errorf("failed to get chapter ID from session")
+	}
+
+	chapter, err := model.GetChapterByID(db, chapterID)
+	if err != nil {
+		return adbUser, fmt.Errorf("failed to get chapter by ID %d: %w", chapterID, err)
+	}
+
+	adbUser.ChapterID = chapter.ChapterID
+	adbUser.ChapterName = chapter.Name
+	return adbUser, nil
+}
+
 func getAuthedADBUser(db *sqlx.DB, r *http.Request) (adbUser model.ADBUser, authed bool) {
-	// In dev, just return the test user.
 	if !config.IsProd {
-		return model.DevTestUser, true
+		augmentedUser, err := augmentUserWithChapterFromSession(db, r, model.DevTestUser)
+		if err != nil {
+			// It's fine if this fails in local dev, b/c we often don't actually have a session cookie.
+			log.Println("Warning: Failed to augment dev user with chapter from session:", err)
+		}
+		return augmentedUser, true
 	}
 
 	// First, check the cookie.
@@ -126,7 +134,12 @@ func getAuthedADBUser(db *sqlx.DB, r *http.Request) (adbUser model.ADBUser, auth
 		return model.ADBUser{}, false
 	}
 
-	return adbUser, true
+	augmentedUser, err := augmentUserWithChapterFromSession(db, r, adbUser)
+	if err != nil {
+		return model.ADBUser{}, false
+	}
+
+	return augmentedUser, true
 }
 
 func setAuthSession(w http.ResponseWriter, r *http.Request, adbUser model.ADBUser) error {
@@ -149,6 +162,7 @@ func setAuthSession(w http.ResponseWriter, r *http.Request, adbUser model.ADBUse
 	}
 	authSession.Values["authed"] = true
 	authSession.Values["adbuserid"] = adbUser.ID
+	authSession.Values["chapterid"] = adbUser.ChapterID
 	return sessionStore.Save(r, w, authSession)
 }
 
@@ -296,6 +310,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	admin.Handle("/users-roles/remove", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UsersRolesRemoveHandler))
 	admin.Handle("/admin/external_events/feature", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.AdminFeatureEventHandler))
 	admin.Handle("/admin/external_events/cancel", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.AdminCancelEventHandler))
+	admin.Handle("/auth/switch_chapter", alice.New(main.authAdminMiddleware).ThenFunc(main.SwitchActiveChapterHandler))
 
 	// Discord API
 	router.Handle("/discord/list", alice.New(main.discordBotAuthMiddleware).ThenFunc(main.DiscordListHandler))
@@ -752,6 +767,29 @@ func (c MainController) ChapterDeleteHandler(w http.ResponseWriter, r *http.Requ
 	writeJSON(w, map[string]string{
 		"status": "success",
 	})
+}
+
+func (c MainController) SwitchActiveChapterHandler(w http.ResponseWriter, r *http.Request) {
+	chapterID, err := strconv.Atoi(r.URL.Query().Get("chapter_id"))
+	if err != nil {
+		http.Error(w, "Invalid chapter ID", http.StatusBadRequest)
+		return
+	}
+
+	authSession, err := sessionStore.Get(r, "auth-session")
+	if err != nil {
+		http.Error(w, "Failed to get session", http.StatusInternalServerError)
+		return
+	}
+
+	authSession.Values["chapterid"] = chapterID
+	err = sessionStore.Save(r, w, authSession)
+	if err != nil {
+		http.Error(w, "Failed to save session", http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 var templates = template.Must(template.New("").Funcs(
