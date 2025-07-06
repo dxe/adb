@@ -227,6 +227,7 @@ export const Navbar = () => {
                 <CircleUser className="text-neutral-600" size={20} />
                 <span>
                   <span>{user.Name}</span>
+                  {/* Admins see the ChapterSwitcher instead of the active chapter after the user name. */}
                   {user.role !== 'admin' && (
                     <>
                       {' '}
@@ -240,7 +241,7 @@ export const Navbar = () => {
               </a>
             </div>
           </div>
-          <ChapterSwitcher />
+          {user.role === 'admin' && <ChapterSwitcher />}
         </div>
       </div>
     </nav>

@@ -90,7 +90,6 @@ func augmentUserWithChapterFromSession(db *sqlx.DB, r *http.Request, adbUser mod
 
 	chapter, err := model.GetChapterByID(db, chapterID)
 	if err != nil {
-		// Chapter could have been deleted.
 		return adbUser, fmt.Errorf("failed to get chapter by ID %d: %w", chapterID, err)
 	}
 

@@ -116,6 +116,9 @@ export default Vue.extend({
     async fetchChapters() {
       try {
         const response = await fetch('/chapter/list');
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
         const data = await response.json();
         this.chapters = data.chapters;
       } catch (error) {
