@@ -126,6 +126,12 @@ export default Vue.extend({
       }
     },
     switchChapter(chapterId: number) {
+      // TODO: Switching chapter & then using the browser's back button
+      // can cause issues since the stale data from the previous chapter
+      // is still displayed. Building a cache invalidation mechanism
+      // for Vue might not be worth it for now, as this will be easier
+      // to handle in React w/ TanStack Query. Almira has been warned
+      // and is okay w/ this.
       window.location.href = `/auth/switch_chapter?chapter_id=${chapterId}`;
     },
   },
