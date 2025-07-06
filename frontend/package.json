@@ -24,7 +24,7 @@
     "@types/chosen-js": "1.8.1",
     "@types/debounce": "1.2.0",
     "@types/jquery": "3.3.31",
-    "@types/node": "^12.20.55",
+    "@types/node": "12.20.20",
     "@types/zipcodes": "6.1.0",
     "css-loader": "2.1.1",
     "file-loader": "3.0.1",
