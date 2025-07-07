@@ -1425,7 +1425,7 @@ export default Vue.extend({
     view: {
       type: String,
     },
-    chapter: String,
+    chapterName: String,
   },
   methods: {
     groupBy(objectArray: Column[], property: any) {
@@ -1901,7 +1901,7 @@ export default Vue.extend({
       allActivists: [] as Activist[],
       lastRequestTimestamp: 0,
       height: 500,
-      columns: getColumnsForChapter(this.chapter, this.view),
+      columns: getColumnsForChapter(this.chapterName, this.view),
       lastEventDateFrom:
         this.view === 'all_activists' || this.view === 'leaderboard' ? initialDateFromValue() : '',
       lastEventDateTo:
