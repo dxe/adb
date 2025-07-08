@@ -263,9 +263,9 @@ func TestBuildOnboardingEmailMessage(t *testing.T) {
 			// Assert
 			assert.NoError(t, err)
 			assert.NotNil(t, msg)
-			assert.Equal(t, globalCoordinator.Name, msg.FromName)
-			assert.Equal(t, globalCoordinator.Address, msg.FromAddress)
-			assert.Contains(t, msg.BCC, globalCoordinator.Address)
+			assert.Equal(t, networkMemberProgramCoordinator.Name, msg.FromName)
+			assert.Equal(t, networkMemberProgramCoordinator.Address, msg.FromAddress)
+			assert.Contains(t, msg.BCC, networkMemberProgramCoordinator.Address)
 			assert.Equal(t, "John Doe", msg.ToName)
 			assert.Equal(t, "john.doe@example.com", msg.ToAddress)
 			assert.Equal(t, "Getting involved with Direct Action Everywhere", msg.Subject)
