@@ -30,7 +30,7 @@ var (
 	}
 	networkMemberProgramCoordinator = coordinator{
 		Name:    "Robert Yamada",
-		Role:    "International Coordination team",
+		Role:    "International Coordination Team",
 		Address: "internationalcoordination@directactioneverywhere.com",
 	}
 )
