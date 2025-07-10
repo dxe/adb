@@ -19,6 +19,16 @@ func globalCoordinatorSignatureHtml() string {
 		globalCoordinator.Name, globalCoordinator.Role)
 }
 
+func networkMemberProgramCoordinatorSignatureHtml() string {
+	return fmt.Sprintf(`
+		<p>
+			<strong>%v</strong><br/>
+			%v<br/>
+			Direct Action Everywhere
+		</p>`,
+		networkMemberProgramCoordinator.Name, networkMemberProgramCoordinator.Role)
+}
+
 func californiaCoordinatorSignatureHtml() string {
 	return fmt.Sprintf(`
 		<p>
@@ -259,8 +269,8 @@ func (b *onboardingEmailMessageBuilder) nonCaOrganizerNotNearAnyChapter() (maile
 
 func (b *onboardingEmailMessageBuilder) participantNotNearAnyChapter() (mailer.Message, error) {
 	var msg mailer.Message
-	msg.FromName = globalCoordinator.Name
-	msg.FromAddress = globalCoordinator.Address
+	msg.FromName = networkMemberProgramCoordinator.Name
+	msg.FromAddress = networkMemberProgramCoordinator.Address
 	msg.ToName = b.fullName
 	msg.ToAddress = b.email
 	msg.Subject = "Getting involved with Direct Action Everywhere"
@@ -294,7 +304,7 @@ func (b *onboardingEmailMessageBuilder) participantNotNearAnyChapter() (mailer.M
 		</p>
 	`)
 
-	body.WriteString(globalCoordinatorSignatureHtml())
+	body.WriteString(networkMemberProgramCoordinatorSignatureHtml())
 
 	msg.BodyHTML = body.String()
 
