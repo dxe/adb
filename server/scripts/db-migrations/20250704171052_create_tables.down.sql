@@ -1,0 +1,1 @@
+-- This migration should not be reverted.
