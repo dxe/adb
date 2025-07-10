@@ -4,6 +4,34 @@ import (
 	"testing"
 )
 
+const insertIntoFormInterestQuery = `
+INSERT INTO form_interest (
+  id,
+  form,
+  email,
+  name,
+  phone,
+  zip,
+  referral_friends,
+  referral_apply,
+  referral_outlet,
+  comments,
+  interests
+) VALUES (
+  NULL,
+  "form1",
+  "email1",
+  "name1",
+  "phone1",
+  "zip1",
+  "referral_friends1",
+  "referral_apply1",
+  "referral_outlet1",
+  "comments1",
+  "interests1"
+);
+`
+
 func TestProcessFormInterestForNoMatchingActivist(t *testing.T) {
 	/* Set up */
 	db := useTestDb()
@@ -17,6 +45,7 @@ func TestProcessFormInterestForNoMatchingActivist(t *testing.T) {
 	processInterestForms(db)
 
 	/* Verify */
+	verifyActivistIsInserted(t, db)
 	verifyFormWasMarkedAsProcessed(t, db, interestProcessingStatusQuery)
 }
 
@@ -37,6 +66,7 @@ func TestProcessFormInterestForActivistMatchingOnName(t *testing.T) {
 	processInterestForms(db)
 
 	/* Verify */
+	verifyActivistIsInserted(t, db)
 	verifyFormWasMarkedAsProcessed(t, db, interestProcessingStatusQuery)
 }
 
@@ -57,6 +87,7 @@ func TestProcessFormInterestForActivistMatchingOnEmail(t *testing.T) {
 	processInterestForms(db)
 
 	/* Verify */
+	verifyActivistIsInserted(t, db)
 	verifyFormWasMarkedAsProcessed(t, db, interestProcessingStatusQuery)
 }
 
@@ -81,4 +112,5 @@ func TestProcessFormInterestForMultipleMatchingActivistsOnEmail(t *testing.T) {
 	processInterestForms(db)
 
 	// For now, manually check error message "ERROR: 2 non-hidden activists associated"
+	verifyFormWasNotMarkedAsProcessed(t, db, interestProcessingStatusQuery)
 }
