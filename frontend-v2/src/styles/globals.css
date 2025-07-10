@@ -28,11 +28,13 @@ body {
 
 html {
   /* Reduce jitter when Shadcn <Select> component displays a modal that hides the scrollbar.
-     https://github.com/radix-ui/primitives/issues/1496#issuecomment-1962839229 */
+     See below `html body[data-scroll-locked]` for details. */
   scrollbar-gutter: stable;
 }
 
 /* Reduce jitter when Shadcn <Select> component displays a modal that hides the scrollbar.
+   Requires `scrollbar-gutter: stable;` on `html`.
+   This prevents the entire page from widening when the scrollbar disappears. Other jitter issues may remain.
    https://github.com/radix-ui/primitives/issues/1496#issuecomment-1962839229 */
 html body[data-scroll-locked] {
   --removed-body-scroll-bar-size: 0 !important;

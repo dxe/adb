@@ -23,21 +23,28 @@ import {
   SelectItem,
 } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
+import { z } from 'zod'
 
-type FormValues = {
-  name: string
-  title: string
-  description: string
-  chapterId: string
-  activismInterests: boolean
-  referralApplyName: string
-  referralFriends: boolean
-  referralApply: boolean
-  referralOutlet: boolean
-}
+const formSchema = z.object({
+  name: z.string(),
+  title: z.string(),
+  description: z.string(),
+  chapterId: z.string().min(1, 'Chapter is required.'),
+  activismInterests: z.boolean(),
+  referralApplyName: z.string(),
+  referralFriends: z.boolean(),
+  referralApply: z.boolean(),
+  referralOutlet: z.boolean(),
+})
 
-export default function GeneratorForm() {
-  const { data: chapterList, isLoading: chapterListIsLoading } = useQuery({
+type FormValues = z.infer<typeof formSchema>
+
+export default function GeneratorForm(props: { adbRootUrl: string }) {
+  // adbRootUrl may be provided by parent for testing purposes.
+  const adbRootUrl =
+    props.adbRootUrl ?? `${window.location.protocol}//${window.location.host}`
+
+  const { data: chapterList, isLoading: isChapterListLoading } = useQuery({
     queryKey: [API_PATH.CHAPTER_LIST],
     queryFn: apiClient.getChapterList,
   })
@@ -73,7 +80,7 @@ export default function GeneratorForm() {
     params.append('showReferralApply', data.referralApply.toString())
     params.append('showReferralOutlet', data.referralOutlet.toString())
 
-    const url = `https://adb.dxe.io/interest?${params.toString()}`
+    const url = `${adbRootUrl}/interest?${params.toString()}`
     setOutput(url)
   }
 
@@ -131,10 +138,9 @@ export default function GeneratorForm() {
                 </FormLabel>
 
                 <Select
-                  key={field.value}
                   value={field.value}
                   onValueChange={field.onChange}
-                  disabled={chapterListIsLoading}
+                  disabled={isChapterListLoading}
                 >
                   <FormControl>
                     <SelectTrigger>
@@ -142,15 +148,14 @@ export default function GeneratorForm() {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {chapterList &&
-                      chapterList.map((chapter: any) => (
-                        <SelectItem
-                          key={chapter.ChapterID}
-                          value={chapter.ChapterID}
-                        >
-                          {chapter.Name}
-                        </SelectItem>
-                      ))}
+                    {chapterList?.map((chapter) => (
+                      <SelectItem
+                        key={chapter.ChapterID}
+                        value={chapter.ChapterID.toString()}
+                      >
+                        {chapter.Name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage>
@@ -174,6 +179,22 @@ export default function GeneratorForm() {
                 <FormLabel>
                   Show "What are your activism interests, if any?"
                 </FormLabel>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="referralApply"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center gap-2 space-y-0">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <FormLabel>Show "Who encouraged you to sign up?"</FormLabel>
               </FormItem>
             )}
           />
@@ -212,22 +233,6 @@ export default function GeneratorForm() {
 
           <FormField
             control={form.control}
-            name="referralApply"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center gap-2 space-y-0">
-                <FormControl>
-                  <Checkbox
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-                <FormLabel>Show "Who encouraged you to sign up?"</FormLabel>
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
             name="referralOutlet"
             render={({ field }) => (
               <FormItem className="flex flex-row items-center gap-2 space-y-0">
@@ -245,9 +250,21 @@ export default function GeneratorForm() {
             )}
           />
 
-          <div>
-            <Button type="submit" className="w-full">
+          <div className="flex items-center gap-2">
+            <Button type="submit" className="w-1/2">
               Generate URL
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                navigator.clipboard.writeText(output)
+                alert('Copied URL')
+              }}
+              disabled={!output}
+              className="w-1/2"
+            >
+              Copy
             </Button>
           </div>
 
