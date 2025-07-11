@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
 
 const formSchema = z.object({
   name: z.string(),
@@ -39,7 +40,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>
 
-export default function GeneratorForm(props: { adbRootUrl: string }) {
+export default function GeneratorForm(props: { adbRootUrl?: string }) {
   // adbRootUrl may be provided by parent for testing purposes.
   const adbRootUrl =
     props.adbRootUrl ?? `${window.location.protocol}//${window.location.host}`
@@ -50,6 +51,7 @@ export default function GeneratorForm(props: { adbRootUrl: string }) {
   })
 
   const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
       title: '',
@@ -130,7 +132,6 @@ export default function GeneratorForm(props: { adbRootUrl: string }) {
           <FormField
             control={form.control}
             name="chapterId"
-            rules={{ required: true }}
             render={({ field }) => (
               <FormItem>
                 <FormLabel>
@@ -159,7 +160,7 @@ export default function GeneratorForm(props: { adbRootUrl: string }) {
                   </SelectContent>
                 </Select>
                 <FormMessage>
-                  {form.formState.errors.chapterId && 'Chapter is required.'}
+                  {form.formState.errors.chapterId?.message}
                 </FormMessage>
               </FormItem>
             )}
@@ -177,7 +178,7 @@ export default function GeneratorForm(props: { adbRootUrl: string }) {
                   />
                 </FormControl>
                 <FormLabel>
-                  Show "What are your activism interests, if any?"
+                  Show &quot;What are your activism interests, if any?&quot;
                 </FormLabel>
               </FormItem>
             )}
@@ -194,7 +195,9 @@ export default function GeneratorForm(props: { adbRootUrl: string }) {
                     onCheckedChange={field.onChange}
                   />
                 </FormControl>
-                <FormLabel>Show "Who encouraged you to sign up?"</FormLabel>
+                <FormLabel>
+                  Show &quot;Who encouraged you to sign up?&quot;
+                </FormLabel>
               </FormItem>
             )}
           />
@@ -204,7 +207,9 @@ export default function GeneratorForm(props: { adbRootUrl: string }) {
             name="referralApplyName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Pre-fill "Who encouraged you to sign up?"</FormLabel>
+                <FormLabel>
+                  Pre-fill &quot;Who encouraged you to sign up?&quot;
+                </FormLabel>
                 <FormControl>
                   <Input type="text" placeholder="Referral" {...field} />
                 </FormControl>
@@ -224,8 +229,8 @@ export default function GeneratorForm(props: { adbRootUrl: string }) {
                   />
                 </FormControl>
                 <FormLabel>
-                  Show "List any existing DxE activists who you are close
-                  friends with"
+                  Show &quot;List any existing DxE activists who you are close
+                  friends with&quot;
                 </FormLabel>
               </FormItem>
             )}
@@ -243,8 +248,8 @@ export default function GeneratorForm(props: { adbRootUrl: string }) {
                   />
                 </FormControl>
                 <FormLabel>
-                  Show "Where did you hear about this opportunity to get
-                  involved in DxE?"
+                  Show &quot;Where did you hear about this opportunity to get
+                  involved in DxE?&quot;
                 </FormLabel>
               </FormItem>
             )}

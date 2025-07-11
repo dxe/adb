@@ -81,7 +81,7 @@ docker_shell:
 # Build the project for production.
 prod_build:
 	docker build . -t dxe/adb
-	cd frontend-v2 && docker build . -t dxe/adb-next
+	docker build . -f Dockerfile.frontend-v2 -t dxe/adb-next
 
 # Reformat source files.
 # Keep in sync with hooks/pre-commit.
