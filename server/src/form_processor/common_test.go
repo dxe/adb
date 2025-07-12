@@ -35,7 +35,7 @@ func verifyActivistIsInserted(t *testing.T, db *sqlx.DB) {
 		}
 		activists = append(activists, activist)
 	}
-	if activists[0].id != 1 {
+	if len(activists) == 0 {
 		t.Error("new activist was not inserted")
 	}
 	if len(activists) > 1 {

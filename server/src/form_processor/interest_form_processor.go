@@ -241,6 +241,7 @@ func processInterestForm(id int, db *sqlx.DB) error {
 		return fmt.Errorf("failed to get processing status: %v", err)
 	}
 	if processed {
+		log.Info().Msg("Updated activist with interest form based on name")
 		return nil
 	}
 
@@ -256,7 +257,7 @@ func processInterestForm(id int, db *sqlx.DB) error {
 
 	switch count {
 	case 1:
-		err := updateActivistWithInterestForm(db, id)
+		err := updateActivistWithInterestFormBasedOnEmail(db, id)
 		if err != nil {
 			return fmt.Errorf("failed to update activist: %w", err)
 		}
@@ -278,13 +279,13 @@ func processInterestForm(id int, db *sqlx.DB) error {
 	return nil
 }
 
-func updateActivistWithInterestForm(db *sqlx.DB, id int) error {
+func updateActivistWithInterestFormBasedOnEmail(db *sqlx.DB, id int) error {
 	_, err := db.Exec(processInterestOnEmailQuery, id)
 	if err != nil {
 		return fmt.Errorf("failed to processInterestOnEmailQuery; %s", err)
 	}
 
-	log.Info().Msg("Updated activist with interest form")
+	log.Info().Msg("Updated activist with interest form based on email")
 	return nil
 }
 
@@ -303,17 +304,16 @@ func insertActivistFromInterestForm(db *sqlx.DB, id int) error {
 
 	res, updateErr := db.ExecContext(ctx, markInterestProcessedQuery, id)
 	if updateErr != nil {
-		return fmt.Errorf("failed to processInsertByInsertUpdateQuery; %s", updateErr)
+		return fmt.Errorf("failed to markInterestProcessedQuery; %s", updateErr)
 	}
 
 	count, getRowsAffectedErr := res.RowsAffected()
 	if getRowsAffectedErr != nil {
-		return fmt.Errorf("failed to get processApplicationByInsertUpdateQuery affected rows; %s",
+		return fmt.Errorf("failed to get markInterestProcessedQuery affected rows; %s",
 			getRowsAffectedErr)
 	}
 	if count != 1 {
-		log.Error().Msg("the activist was not updated (application date in activists table does not match the date " +
-			"in interest?) -- please correct")
+		log.Error().Msg("interest form was processed but not marked as such")
 	}
 
 	commitErr := tx.Commit()

@@ -251,7 +251,7 @@ func processApplicationForm(id int, db *sqlx.DB) error {
 	log.Info().Msgf("Processing Application row %d", id)
 	_, err := db.Exec(processApplicationOnNameQuery, id)
 	if err != nil {
-		return fmt.Errorf("failed to prrocess application on name; %s", err)
+		return fmt.Errorf("failed to process application on name; %s", err)
 	}
 
 	// Return early if previous query updated activist based on name.
@@ -260,6 +260,7 @@ func processApplicationForm(id int, db *sqlx.DB) error {
 		return fmt.Errorf("failed to get processing status: %v", err)
 	}
 	if processed {
+		log.Info().Msg("Updated activist with application form based on name")
 		return nil
 	}
 
@@ -275,7 +276,7 @@ func processApplicationForm(id int, db *sqlx.DB) error {
 
 	switch count {
 	case 1:
-		err := updateActivistWithApplicationForm(db, id)
+		err := updateActivistWithApplicationFormBasedOnEmail(db, id)
 		if err != nil {
 			return fmt.Errorf("failed to update activist: %w", err)
 		}
@@ -297,13 +298,13 @@ func processApplicationForm(id int, db *sqlx.DB) error {
 	return nil
 }
 
-func updateActivistWithApplicationForm(db *sqlx.DB, id int) error {
+func updateActivistWithApplicationFormBasedOnEmail(db *sqlx.DB, id int) error {
 	_, err := db.Exec(processApplicationOnEmailQuery, id)
 	if err != nil {
 		return fmt.Errorf("failed to processApplicationOnEmailQuery; %s", err)
 	}
 
-	log.Info().Msg("Updated activist with application form")
+	log.Info().Msg("Updated activist with interest form based on email")
 	return nil
 }
 
@@ -322,17 +323,16 @@ func insertActivistFromApplicationForm(db *sqlx.DB, id int) error {
 
 	res, updateErr := tx.ExecContext(ctx, markApplicationProcessedQuery, id)
 	if updateErr != nil {
-		return fmt.Errorf("failed to processApplicationByInsertUpdateQuery; %s", updateErr)
+		return fmt.Errorf("failed to markApplicationProcessedQuery; %s", updateErr)
 	}
 
 	count, getRowsAffectedErr := res.RowsAffected()
 	if getRowsAffectedErr != nil {
-		return fmt.Errorf("failed to get processApplicationByInsertUpdateQuery affected rows; %s",
+		return fmt.Errorf("failed to get markApplicationProcessedQuery affected rows; %s",
 			getRowsAffectedErr)
 	}
 	if count != 1 {
-		log.Error().Msg("the activist was not updated (application date in activists table does not match the date " +
-			"in application?) -- please correct")
+		log.Error().Msg("application form was processed but not marked as such")
 	}
 
 	commitErr := tx.Commit()
