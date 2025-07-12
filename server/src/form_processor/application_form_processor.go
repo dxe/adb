@@ -224,7 +224,7 @@ WHERE
     and activists.chapter_id = ` + model.SFBayChapterIdStr + `;
 `
 
-func processApplicationForms(db *sqlx.DB) {
+func ProcessApplicationForms(db *sqlx.DB) {
 	log.Debug().Msg("processing application forms")
 
 	applicationIds, isSuccess := getResponsesToProcess(db,

@@ -57,3 +57,8 @@ Various forms for getting data into the ADB.
 ### Inserting a new activist from the application or interest form
 - All data from the form submission should be added to the new activist record.
 - " (inserted by application, check for duplicate)" should be appended to the activist's name so that someone can merge the record later if it is a duplicate of someone else whose name or email didn't match.
+
+## Manual testing
+
+The `/dev-testing/process-interest-forms` and `/dev-testing/process-application-forms` endpoints can be used to manually
+process form submissions in non-production environments.

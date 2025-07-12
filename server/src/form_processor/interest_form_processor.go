@@ -205,7 +205,7 @@ WHERE
 	AND activists.hidden < 1;
 `
 
-func processInterestForms(db *sqlx.DB) {
+func ProcessInterestForms(db *sqlx.DB) {
 	log.Debug().Msg("processing interest forms")
 
 	interestIds, isSuccess := getResponsesToProcess(db,
