@@ -299,9 +299,18 @@ func processApplicationForm(id int, db *sqlx.DB) error {
 }
 
 func updateActivistWithApplicationFormBasedOnEmail(db *sqlx.DB, id int) error {
-	_, err := db.Exec(processApplicationOnEmailQuery, id)
+	res, err := db.Exec(processApplicationOnEmailQuery, id)
 	if err != nil {
 		return fmt.Errorf("failed to processApplicationOnEmailQuery; %s", err)
+	}
+
+	count, getRowsAffectedErr := res.RowsAffected()
+	if getRowsAffectedErr != nil {
+		return fmt.Errorf("failed to get processApplicationOnEmailQuery affected rows; %s",
+			getRowsAffectedErr)
+	}
+	if count != 1 {
+		return fmt.Errorf("no rows updated on processApplicationOnEmailQuery")
 	}
 
 	log.Info().Msg("Updated activist with interest form based on email")
@@ -316,22 +325,30 @@ func insertActivistFromApplicationForm(db *sqlx.DB, id int) error {
 	}
 	defer tx.Rollback()
 
-	_, processErr := tx.ExecContext(ctx, processApplicationByInsertQuery, id)
+	insertResult, processErr := tx.ExecContext(ctx, processApplicationByInsertQuery, id)
 	if processErr != nil {
 		return fmt.Errorf("failed to processApplicationByInsertQuery; %s", processErr)
 	}
+	insertCount, getRowsAffectedErr := insertResult.RowsAffected()
+	if getRowsAffectedErr != nil {
+		return fmt.Errorf("failed to get processApplicationByInsertQuery affected rows; %s",
+			getRowsAffectedErr)
+	}
+	if insertCount != 1 {
+		return fmt.Errorf("no rows updated on processApplicationByInsertQuery")
+	}
 
-	res, updateErr := tx.ExecContext(ctx, markApplicationProcessedQuery, id)
+	markResult, updateErr := tx.ExecContext(ctx, markApplicationProcessedQuery, id)
 	if updateErr != nil {
 		return fmt.Errorf("failed to markApplicationProcessedQuery; %s", updateErr)
 	}
 
-	count, getRowsAffectedErr := res.RowsAffected()
+	markCount, getRowsAffectedErr := markResult.RowsAffected()
 	if getRowsAffectedErr != nil {
 		return fmt.Errorf("failed to get markApplicationProcessedQuery affected rows; %s",
 			getRowsAffectedErr)
 	}
-	if count != 1 {
+	if markCount != 1 {
 		log.Error().Msg("application form was processed but not marked as such")
 	}
 

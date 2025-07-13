@@ -280,9 +280,18 @@ func processInterestForm(id int, db *sqlx.DB) error {
 }
 
 func updateActivistWithInterestFormBasedOnEmail(db *sqlx.DB, id int) error {
-	_, err := db.Exec(processInterestOnEmailQuery, id)
+	res, err := db.Exec(processInterestOnEmailQuery, id)
 	if err != nil {
 		return fmt.Errorf("failed to processInterestOnEmailQuery; %s", err)
+	}
+
+	count, getRowsAffectedErr := res.RowsAffected()
+	if getRowsAffectedErr != nil {
+		return fmt.Errorf("failed to get processInterestOnEmailQuery affected rows; %s",
+			getRowsAffectedErr)
+	}
+	if count != 1 {
+		return fmt.Errorf("no rows updated on processInterestOnEmailQuery")
 	}
 
 	log.Info().Msg("Updated activist with interest form based on email")
@@ -297,22 +306,30 @@ func insertActivistFromInterestForm(db *sqlx.DB, id int) error {
 	}
 	defer tx.Rollback()
 
-	_, processErr := db.ExecContext(ctx, processInterestByInsertQuery, id)
+	insertResult, processErr := db.ExecContext(ctx, processInterestByInsertQuery, id)
 	if processErr != nil {
 		return fmt.Errorf("failed to processInterestByInsertQuery; %s", processErr)
 	}
+	insertCount, getRowsAffectedErr := insertResult.RowsAffected()
+	if getRowsAffectedErr != nil {
+		return fmt.Errorf("failed to get processInterestByInsertQuery affected rows; %s",
+			getRowsAffectedErr)
+	}
+	if insertCount != 1 {
+		return fmt.Errorf("no rows updated on processInterestByInsertQuery")
+	}
 
-	res, updateErr := db.ExecContext(ctx, markInterestProcessedQuery, id)
+	markResult, updateErr := db.ExecContext(ctx, markInterestProcessedQuery, id)
 	if updateErr != nil {
 		return fmt.Errorf("failed to markInterestProcessedQuery; %s", updateErr)
 	}
 
-	count, getRowsAffectedErr := res.RowsAffected()
+	markCount, getRowsAffectedErr := markResult.RowsAffected()
 	if getRowsAffectedErr != nil {
 		return fmt.Errorf("failed to get markInterestProcessedQuery affected rows; %s",
 			getRowsAffectedErr)
 	}
-	if count != 1 {
+	if markCount != 1 {
 		log.Error().Msg("interest form was processed but not marked as such")
 	}
 
