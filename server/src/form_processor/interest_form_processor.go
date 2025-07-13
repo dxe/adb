@@ -186,8 +186,6 @@ FROM
 WHERE
 	form_interest.id = ?
 	and form_interest.processed = 0
-	and form_interest.email not in (select * from (select email from activists where hidden < 1 and email <> '') temp1)
-	and form_interest.name not in (select * from (select name from activists where hidden < 1 and name <> '') temp2)
 	and form_interest.name <> '';
 `
 

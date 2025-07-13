@@ -203,9 +203,7 @@ from
 WHERE
 	form_application.id = ?
 	and form_application.name <> ''
-	and form_application.processed = 0
-	and form_application.email not in (select * from (select email from activists where hidden < 1 and email <> '') temp1)
-	and concat(form_application.name,' (inserted by application, check for duplicate)') not in (select * from (select name from activists where hidden < 1 and name <> '') temp2);
+	and form_application.processed = 0;
 `
 
 const markApplicationProcessedQuery = `
