@@ -32,3 +32,9 @@ Then write the migration code in the SQL files.
 The "up" file should contain the main migration code, and the "down" file should undo what the "up" file does, allowing
 reverting to a previous version of the schema. This is useful, for example, in case there is a bug in production that
 requires a rollback, or to test a previous version during development.
+
+## Concurrency control
+
+The golang-migrate [MySql driver](https://github.com/golang-migrate/migrate/blob/master/database/mysql/README.md)
+handles concurrency control, which we require to run multiple instances of ADB simultaneously. We simply do not set
+`x-no-lock` / `NoLock` and use the default value.
