@@ -226,7 +226,7 @@ func ProcessApplicationForms(db *sqlx.DB) {
 	log.Debug().Msg("processing application forms")
 
 	responses, isSuccess := getResponsesToProcess(db,
-		"SELECT id, '"+model.SFBayChapterIdStr+"' as chapter_id FROM form_application WHERE processed = 0 and name <> ''")
+		"SELECT id, '"+model.SFBayChapterIdStr+"' as chapter_id, email FROM form_application WHERE processed = 0 and name <> ''")
 	if !isSuccess {
 		log.Error().Msg("failed to get applicationIds; exiting")
 		return
@@ -255,12 +255,7 @@ func processApplicationForm(response formResponse, db *sqlx.DB) error {
 		return nil
 	}
 
-	// check how many records are tied to this email address
-	email, isSuccess := getEmail(db, "SELECT email FROM form_application WHERE id = ?", response.Id)
-	if !isSuccess {
-		return errors.New("failed to get email; exiting")
-	}
-	emailCount, isSuccess := countActivistsForEmail(db, email, model.SFBayChapterId)
+	emailCount, isSuccess := countActivistsWithEmail(db, response.Email, model.SFBayChapterId)
 	if !isSuccess {
 		return errors.New("failed to count activists for email; exiting")
 	}
@@ -281,7 +276,7 @@ func processApplicationForm(response formResponse, db *sqlx.DB) error {
 		log.Error().Msgf(
 			"%d non-hidden activists associated with email address %s for Application response %d Please correct.",
 			emailCount,
-			email,
+			response.Email,
 			response.Id,
 		)
 	}

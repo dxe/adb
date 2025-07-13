@@ -206,7 +206,7 @@ func ProcessInterestForms(db *sqlx.DB) {
 	log.Debug().Msg("processing interest forms")
 
 	responses, isSuccess := getResponsesToProcess(db,
-		"SELECT id, chapter_id FROM form_interest WHERE processed = 0 and name <> ''")
+		"SELECT id, chapter_id, email FROM form_interest WHERE processed = 0 and name <> ''")
 	if !isSuccess {
 		log.Error().Msg("failed to get interestIds; exiting")
 		return
@@ -235,12 +235,7 @@ func processInterestForm(response formResponse, db *sqlx.DB) error {
 		return nil
 	}
 
-	// check how many records are tied to this email address
-	email, isSuccess := getEmail(db, "SELECT email FROM form_interest WHERE id = ?", response.Id)
-	if !isSuccess {
-		return errors.New("failed to get email")
-	}
-	emailCount, isSuccess := countActivistsForEmail(db, email, response.ChapterId)
+	emailCount, isSuccess := countActivistsWithEmail(db, response.Email, response.ChapterId)
 	if !isSuccess {
 		return errors.New("failed to count activists for email")
 	}
@@ -261,7 +256,7 @@ func processInterestForm(response formResponse, db *sqlx.DB) error {
 		log.Error().Msgf(
 			"%d non-hidden activists associated with email address %s for Interest response %d Please correct.",
 			emailCount,
-			email,
+			response.Email,
 			response.Id,
 		)
 	}

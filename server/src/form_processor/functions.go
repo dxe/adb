@@ -6,8 +6,9 @@ import (
 )
 
 type formResponse struct {
-	Id        int `db:"id"`
-	ChapterId int `db:"chapter_id"`
+	Id        int    `db:"id"`
+	ChapterId int    `db:"chapter_id"`
+	Email     string `db:"email"`
 }
 
 func getResponsesToProcess(db *sqlx.DB, query string) ([]formResponse, bool) {
@@ -20,17 +21,7 @@ func getResponsesToProcess(db *sqlx.DB, query string) ([]formResponse, bool) {
 	return responses, true
 }
 
-func getEmail(db *sqlx.DB, query string, id int) (string, bool) {
-	var email string
-	err := db.QueryRow(query, id).Scan(&email)
-	if err != nil {
-		log.Error().Msgf("failed to get email for %d; (failed to find requested ID in requested table) %s", id, err)
-		return "", false
-	}
-	return email, true
-}
-
-func countActivistsForEmail(db *sqlx.DB, email string, chapterId int) (int, bool) {
+func countActivistsWithEmail(db *sqlx.DB, email string, chapterId int) (int, bool) {
 	var count int
 	err := db.Get(&count, `
 		SELECT count(*)
