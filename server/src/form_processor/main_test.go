@@ -46,9 +46,9 @@ func dropTempDb(name string) {
 	}
 }
 func useTestDb() *sqlx.DB {
-	db := model.NewDB(config.DataSourceBase + "/" + dbName + "?parseTime=true")
-	model.WipeDatabase(db)
-	return db
+	dataSource := config.DataSourceBase + "/" + dbName + "?parseTime=true"
+	model.WipeDatabase(dataSource+"&multiStatements=true", config.DBMigrationsLocation())
+	return model.NewDB(dataSource)
 }
 
 func TestMain(m *testing.M) {

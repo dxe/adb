@@ -17,6 +17,9 @@ services:
     command: /bin/sh -c "while sleep 1000; do :; done"
     environment:
       - DB_PROTOCOL=tcp(mysql:3306)
+      - DB_USER=adb_user
+      - DB_PASSWORD=adbpassword
+      - DB_NAME=adb_db
   mysql: # extending server/compose.yaml
     networks: # make accessible to devcontainer via network
       - dev-net
