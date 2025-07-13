@@ -227,18 +227,11 @@ func ProcessInterestForms(db *sqlx.DB) {
 
 func processInterestForm(response formResponse, db *sqlx.DB) error {
 	log.Info().Msgf("processing Interest row %d", response.Id)
-	_, err := db.Exec(processInterestOnNameQuery, response.Id)
-	if err != nil {
-		return fmt.Errorf("failed to process interest on name; %s", err)
+	updated, nameUpdateErr := tryUpdateActivistWithInterestFormBasedOnName(db, response)
+	if nameUpdateErr != nil {
+		return fmt.Errorf("error updating activist matching by name: %v", nameUpdateErr)
 	}
-
-	// Return early if previous query updated activist based on name.
-	processed, err := getProcessingStatus(db, interestProcessingStatusQuery, response.Id)
-	if err != nil {
-		return fmt.Errorf("failed to get processing status: %v", err)
-	}
-	if processed {
-		log.Info().Msg("Updated activist with interest form based on name")
+	if updated {
 		return nil
 	}
 
@@ -247,33 +240,46 @@ func processInterestForm(response formResponse, db *sqlx.DB) error {
 	if !isSuccess {
 		return errors.New("failed to get email")
 	}
-	count, isSuccess := countActivistsForEmail(db, email, response.ChapterId)
+	emailCount, isSuccess := countActivistsForEmail(db, email, response.ChapterId)
 	if !isSuccess {
 		return errors.New("failed to count activists for email")
 	}
 
-	switch count {
+	switch emailCount {
 	case 1:
-		err := updateActivistWithInterestFormBasedOnEmail(db, response.Id)
-		if err != nil {
-			return fmt.Errorf("failed to update activist: %w", err)
+		emailUpdateErr := updateActivistWithInterestFormBasedOnEmail(db, response.Id)
+		if emailUpdateErr != nil {
+			return fmt.Errorf("failed to update activist: %w", emailUpdateErr)
 		}
 	case 0:
-		err := insertActivistFromInterestForm(db, response.Id)
-		if err != nil {
-			return fmt.Errorf("failed to insert activist: %w", err)
+		insertErr := insertActivistFromInterestForm(db, response.Id)
+		if insertErr != nil {
+			return fmt.Errorf("failed to insert activist: %w", insertErr)
 		}
 	default:
 		// email count is > 1, so send email to tech
 		log.Error().Msgf(
 			"%d non-hidden activists associated with email address %s for Interest response %d Please correct.",
-			count,
+			emailCount,
 			email,
 			response.Id,
 		)
 	}
 
 	return nil
+}
+
+func tryUpdateActivistWithInterestFormBasedOnName(db *sqlx.DB, response formResponse) (updated bool, err error) {
+	res, err := db.Exec(processInterestOnNameQuery, response.Id)
+	if err != nil {
+		return false, fmt.Errorf("failed to process processInterestOnNameQuery; %s", err)
+	}
+	updateCount, getRowsAffectedErr := res.RowsAffected()
+	if getRowsAffectedErr != nil {
+		return false, fmt.Errorf("failed to get processInterestOnNameQuery affected rows; %s",
+			getRowsAffectedErr)
+	}
+	return updateCount == 1, nil
 }
 
 func updateActivistWithInterestFormBasedOnEmail(db *sqlx.DB, id int) error {

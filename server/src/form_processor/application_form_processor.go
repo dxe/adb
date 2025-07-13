@@ -247,18 +247,11 @@ func ProcessApplicationForms(db *sqlx.DB) {
 
 func processApplicationForm(response formResponse, db *sqlx.DB) error {
 	log.Info().Msgf("Processing Application row %d", response.Id)
-	_, err := db.Exec(processApplicationOnNameQuery, response.Id)
-	if err != nil {
-		return fmt.Errorf("failed to process application on name; %s", err)
+	updated, nameUpdateErr := tryUpdateActivistWithApplicationFormBasedOnName(db, response)
+	if nameUpdateErr != nil {
+		return fmt.Errorf("error updating activist matching by name: %v", nameUpdateErr)
 	}
-
-	// Return early if previous query updated activist based on name.
-	processed, err := getProcessingStatus(db, applicationProcessingStatusQuery, response.Id)
-	if err != nil {
-		return fmt.Errorf("failed to get processing status: %v", err)
-	}
-	if processed {
-		log.Info().Msg("Updated activist with application form based on name")
+	if updated {
 		return nil
 	}
 
@@ -267,33 +260,46 @@ func processApplicationForm(response formResponse, db *sqlx.DB) error {
 	if !isSuccess {
 		return errors.New("failed to get email; exiting")
 	}
-	count, isSuccess := countActivistsForEmail(db, email, model.SFBayChapterId)
+	emailCount, isSuccess := countActivistsForEmail(db, email, model.SFBayChapterId)
 	if !isSuccess {
 		return errors.New("failed to count activists for email; exiting")
 	}
 
-	switch count {
+	switch emailCount {
 	case 1:
-		err := updateActivistWithApplicationFormBasedOnEmail(db, response.Id)
-		if err != nil {
-			return fmt.Errorf("failed to update activist: %w", err)
+		emailUpdateErr := updateActivistWithApplicationFormBasedOnEmail(db, response.Id)
+		if emailUpdateErr != nil {
+			return fmt.Errorf("failed to update activist: %w", emailUpdateErr)
 		}
 	case 0:
-		err := insertActivistFromApplicationForm(db, response.Id)
-		if err != nil {
-			return fmt.Errorf("failed to insert activist: %w", err)
+		insertErr := insertActivistFromApplicationForm(db, response.Id)
+		if insertErr != nil {
+			return fmt.Errorf("failed to insert activist: %w", insertErr)
 		}
 	default:
 		// email count is > 1, so send email to tech
 		log.Error().Msgf(
 			"%d non-hidden activists associated with email address %s for Application response %d Please correct.",
-			count,
+			emailCount,
 			email,
 			response.Id,
 		)
 	}
 
 	return nil
+}
+
+func tryUpdateActivistWithApplicationFormBasedOnName(db *sqlx.DB, response formResponse) (updated bool, err error) {
+	res, err := db.Exec(processApplicationOnNameQuery, response.Id)
+	if err != nil {
+		return false, fmt.Errorf("failed to process processApplicationOnNameQuery; %s", err)
+	}
+	updateCount, getRowsAffectedErr := res.RowsAffected()
+	if getRowsAffectedErr != nil {
+		return false, fmt.Errorf("failed to get processApplicationOnNameQuery affected rows; %s",
+			getRowsAffectedErr)
+	}
+	return updateCount == 1, nil
 }
 
 func updateActivistWithApplicationFormBasedOnEmail(db *sqlx.DB, id int) error {
