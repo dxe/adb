@@ -191,16 +191,12 @@ WHERE
 const markInterestProcessedQuery = `
 UPDATE
 	form_interest
-INNER JOIN
-	activists on activists.name = form_interest.name
 SET
 	form_interest.processed = 1
 WHERE
-    activists.chapter_id = form_interest.chapter_id
-	AND form_interest.id = ?
+	form_interest.id = ?
 	AND form_interest.processed = 0
-	AND activists.hidden < 1;
-`
+;`
 
 func ProcessInterestForms(db *sqlx.DB) {
 	log.Debug().Msg("processing interest forms")

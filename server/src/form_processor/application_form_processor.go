@@ -207,20 +207,14 @@ WHERE
 `
 
 const markApplicationProcessedQuery = `
-# mark as processed if application date in activists table matches date in application
 update
 	form_application
-INNER JOIN
-	activists on activists.name = concat(form_application.name,' (inserted by application, check for duplicate)')
 SET
 	form_application.processed = 1
 WHERE
 	form_application.id = ?
-	and activists.dev_application_date = cast(form_application.timestamp as date)
 	and form_application.processed = 0
-	and activists.hidden < 1
-    and activists.chapter_id = ` + model.SFBayChapterIdStr + `;
-`
+;`
 
 func ProcessApplicationForms(db *sqlx.DB) {
 	log.Debug().Msg("processing application forms")
