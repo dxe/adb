@@ -48,14 +48,18 @@ func ApplyAllMigrations(db *sqlx.DB, sourceURL string, verboseLogging bool) erro
 	err = m.Up()
 	if err != nil {
 		if err == migrate.ErrNoChange {
-			log.Printf("Database schema is already up-to-date.")
+			if verboseLogging {
+				log.Printf("Database schema is already up-to-date.")
+			}
 			return nil
 		} else {
 			return fmt.Errorf("error applying migrations: %v", err)
 		}
 	}
 
-	log.Printf("Database schema changes applied.")
+	if verboseLogging {
+		log.Printf("Database schema changes applied.")
+	}
 	return nil
 }
 
