@@ -116,7 +116,7 @@ export default Vue.extend({
     connections: Boolean,
     // TODO(mdempsky): Change id to Number.
     id: String,
-    chapter: String,
+    chapterName: String,
   },
   data() {
     return {
@@ -128,7 +128,7 @@ export default Vue.extend({
       date: '',
       type: '',
       attendees: [] as string[],
-      suppressSurvey: this.chapter != 'SF Bay Area',
+      suppressSurvey: this.chapterName != 'SF Bay Area',
 
       oldName: '',
       oldDate: '',
@@ -530,7 +530,7 @@ export default Vue.extend({
       return activistFull && activistFull.phone;
     },
     shouldShowSuppressSurveyCheckbox() {
-      if (this.chapter != 'SF Bay Area') return false;
+      if (this.chapterName != 'SF Bay Area') return false;
       // only show checkbox if a survey will be sent for this event
       if (
         this.type === 'Action' ||
