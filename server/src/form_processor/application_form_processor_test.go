@@ -2,8 +2,13 @@ package form_processor
 
 import (
 	"testing"
+
+	"github.com/dxe/adb/model"
 )
 
+const insertActivistForApplicationQuery = `
+INSERT INTO activists (id, email, name, chapter_id) VALUES (NULL, "email1", ?, ` + model.SFBayChapterIdStr + `);
+`
 const insertIntoFormApplicationQuery = `
 INSERT INTO form_application (
   id,
@@ -60,10 +65,10 @@ func TestProcessFormApplicationForNoMatchingActivist(t *testing.T) {
 	}
 
 	/* Call functionality under test */
-	processApplicationForms(db)
+	ProcessApplicationForms(db)
 
 	/* Verify */
-	verifyActivistIsInserted(t, db)
+	verifyActivistCount(t, db, 1)
 	verifyFormWasMarkedAsProcessed(t, db, applicationProcessingStatusQuery)
 }
 
@@ -72,9 +77,9 @@ func TestProcessFormApplicationForActivistMatchingOnName(t *testing.T) {
 	db := useTestDb()
 	defer db.Close()
 
-	_, err := db.Exec(insertActivistQuery, "name1")
+	_, err := db.Exec(insertActivistForApplicationQuery, "name1")
 	if err != nil {
-		t.Fatalf("insertActivistQuery failed: %s", err)
+		t.Fatalf("insertActivistForApplicationQuery failed: %s", err)
 	}
 	_, err = db.Exec(insertIntoFormApplicationQuery)
 	if err != nil {
@@ -82,10 +87,10 @@ func TestProcessFormApplicationForActivistMatchingOnName(t *testing.T) {
 	}
 
 	/* Call functionality under test */
-	processApplicationForms(db)
+	ProcessApplicationForms(db)
 
 	/* Verify */
-	verifyActivistIsInserted(t, db)
+	verifyActivistCount(t, db, 1)
 	verifyFormWasMarkedAsProcessed(t, db, applicationProcessingStatusQuery)
 }
 
@@ -94,9 +99,9 @@ func TestProcessFormApplicationForActivistMatchingOnEmail(t *testing.T) {
 	db := useTestDb()
 	defer db.Close()
 
-	_, err := db.Exec(insertActivistQuery, "non-matching_name")
+	_, err := db.Exec(insertActivistForApplicationQuery, "non-matching_name")
 	if err != nil {
-		t.Fatalf("insertActivistQuery failed: %s", err)
+		t.Fatalf("insertActivistForApplicationQuery failed: %s", err)
 	}
 	_, err = db.Exec(insertIntoFormApplicationQuery)
 	if err != nil {
@@ -104,10 +109,10 @@ func TestProcessFormApplicationForActivistMatchingOnEmail(t *testing.T) {
 	}
 
 	/* Call functionality under test */
-	processApplicationForms(db)
+	ProcessApplicationForms(db)
 
 	/* Verify */
-	verifyActivistIsInserted(t, db)
+	verifyActivistCount(t, db, 1)
 	verifyFormWasMarkedAsProcessed(t, db, applicationProcessingStatusQuery)
 }
 
@@ -115,13 +120,13 @@ func TestProcessFormApplicationForMultipleMatchingActivistsOnEmail(t *testing.T)
 	/* Set up */
 	db := useTestDb()
 	defer db.Close()
-	_, err := db.Exec(insertActivistQuery, "non-matching_name1")
+	_, err := db.Exec(insertActivistForApplicationQuery, "non-matching_name1")
 	if err != nil {
-		t.Fatalf("insertActivistQuery failed: %s", err)
+		t.Fatalf("insertActivistForApplicationQuery failed: %s", err)
 	}
-	_, err = db.Exec(insertActivistQuery, "non-matching_name2")
+	_, err = db.Exec(insertActivistForApplicationQuery, "non-matching_name2")
 	if err != nil {
-		t.Fatalf("insertActivistQuery failed: %s", err)
+		t.Fatalf("insertActivistForApplicationQuery failed: %s", err)
 	}
 	_, err = db.Exec(insertIntoFormApplicationQuery)
 	if err != nil {
@@ -129,8 +134,8 @@ func TestProcessFormApplicationForMultipleMatchingActivistsOnEmail(t *testing.T)
 	}
 
 	/* Call functionality under test */
-	processApplicationForms(db)
+	ProcessApplicationForms(db)
 
-	// For now, manually check error message "ERROR: 2 non-hidden activists associated"
+	verifyActivistCount(t, db, 2)
 	verifyFormWasNotMarkedAsProcessed(t, db, applicationProcessingStatusQuery)
 }

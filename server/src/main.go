@@ -312,6 +312,12 @@ func router() (*mux.Router, *sqlx.DB) {
 	admin.Handle("/admin/external_events/cancel", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.AdminCancelEventHandler))
 	admin.Handle("/auth/switch_chapter", alice.New(main.authAdminMiddleware).ThenFunc(main.SwitchActiveChapterHandler))
 
+	if !config.IsProd {
+		admin.Handle("/dev-testing/process-interest-forms", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.DevTestingProcessInterestForms))
+		admin.Handle("/dev-testing/process-application-forms", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.DevTestingProcessApplicationForms))
+		admin.Handle("/dev-testing/process-intl-app-forms", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.DevTestingProcessIntlAppForms))
+	}
+
 	// Discord API
 	router.Handle("/discord/list", alice.New(main.discordBotAuthMiddleware).ThenFunc(main.DiscordListHandler))
 	router.Handle("/discord/status", alice.New(main.discordBotAuthMiddleware).ThenFunc(main.DiscordStatusHandler))
@@ -790,6 +796,18 @@ func (c MainController) SwitchActiveChapterHandler(w http.ResponseWriter, r *htt
 	}
 
 	http.Redirect(w, r, "/", http.StatusFound)
+}
+
+func (c MainController) DevTestingProcessInterestForms(w http.ResponseWriter, r *http.Request) {
+	form_processor.ProcessInterestForms(c.db)
+}
+
+func (c MainController) DevTestingProcessApplicationForms(w http.ResponseWriter, r *http.Request) {
+	form_processor.ProcessApplicationForms(c.db)
+}
+
+func (c MainController) DevTestingProcessIntlAppForms(w http.ResponseWriter, r *http.Request) {
+	international_application_processor.ProcessFormSubmissions(c.db)
 }
 
 var templates = template.Must(template.New("").Funcs(

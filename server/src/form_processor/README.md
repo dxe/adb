@@ -1,23 +1,26 @@
-# Local development
-### Testing
-From project root:
-- `go test ./form_processor -v`
-- Specific test: `go test ./form_processor -v TestProcessFormApplicationForNoMatchingActivist`
-
 # ADB Form Processor Overview
-Various forms for getting data into the ADB.
 
-### How the process currently works
+This module processes interest form (including "check-in" form) and chapter member application form responses.
+
+See the ["ADB Forms" page in Coda](https://coda.io/d/Tech-Team_dR-UIgVShEf/ADB-Forms_suuKCpXS#_luTXvnLR) for a
+high-level overview of these forms.
+
+## Ingress
 - When the form at dxe.io/apply is submitted, it inserts a row into the form_application table.
 - When the form at dxe.io/checkin (and some other variations of it) is submitted, it insert rows to the form_interest table.
 - When people sign petitions on our public website, it also inserts a row into the form_interest table if they are in the Bay Area.
 - Then the Go "form processor" runs every N min within the Go program to process the new rows of those two tables and update the activists table accordingly.
 
-### Processor Overview
-- We first try to match the new form submission to an existing activist using their exact name. (We don't check email first in case people share an email address – sometimes people do this, especially older couples.)
-- If no name is matched, then we try to match on email address. (But first we check that there is only one non-hidden activist that exists for this email address to avoid the issue mentioned above. If there is more than 1, then we generate an error so that someone can manually intervene).
+## Processing
+
+### Overview
+
+- We first try to match the new form submission to an existing activist using their exact name.
+  - We don't check email first in case people share an email address – sometimes people do this, especially older couples.
+- If no name is matched, then we try to match on email address.
+  - But first we check that there is only one non-hidden activist that exists for this email address to avoid the issue mentioned above. If there is more than 1, then we generate an error so that someone can manually intervene.
 - If no name or email matches an existing activist, then we insert a new row into the activists table.
-- The "processed" row in the respective form table changes from 0 to 1 after the row is successfully processed.
+- The "processed" row in the respective form response table changes from 0 to 1 after the row is successfully processed.
 
 ### Updating an existing activist who filled out the application form
 - We add data for the following fields to the record in the activists table ONLY if the field in the activists table is currently blank:
@@ -57,3 +60,8 @@ Various forms for getting data into the ADB.
 ### Inserting a new activist from the application or interest form
 - All data from the form submission should be added to the new activist record.
 - " (inserted by application, check for duplicate)" should be appended to the activist's name so that someone can merge the record later if it is a duplicate of someone else whose name or email didn't match.
+
+## Manual testing
+
+The `/dev-testing/process-interest-forms` and `/dev-testing/process-application-forms` endpoints can be used to manually
+process form submissions in non-production environments.

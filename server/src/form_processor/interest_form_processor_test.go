@@ -2,11 +2,60 @@ package form_processor
 
 import (
 	"testing"
+
+	"github.com/dxe/adb/model"
+	"github.com/dxe/adb/testfixtures"
+	"github.com/jmoiron/sqlx"
 )
 
-const insertIntoFormInterestQuery = `
+func insertActivistForInterestTest(t *testing.T, db *sqlx.DB, activist *model.ActivistExtra) {
+	id, err := model.CreateActivist(db, *activist)
+	if err != nil {
+		t.Fatalf("insertActivistForInterestTest failed: %s", err)
+	}
+	activist.ID = id
+}
+
+type interestResponseBuilder struct {
+	id        int
+	chapterId int
+	form      string
+	email     string
+	name      string
+	phone     string
+}
+
+func newInterestResponseBuilder() *interestResponseBuilder {
+	return &interestResponseBuilder{
+		id:        0,
+		chapterId: model.SFBayChapterIdDevTest,
+		form:      "form1",
+		email:     "email1",
+		name:      "name1",
+		phone:     "phone1",
+	}
+}
+
+func (b *interestResponseBuilder) withChapterId(chapterID int) *interestResponseBuilder {
+	b.chapterId = chapterID
+	return b
+}
+
+func (b *interestResponseBuilder) WithEmail(email string) *interestResponseBuilder {
+	b.email = email
+	return b
+}
+
+func (b *interestResponseBuilder) WithName(name string) *interestResponseBuilder {
+	b.name = name
+	return b
+}
+
+func insertInterestFormResponse(t *testing.T, db *sqlx.DB, b *interestResponseBuilder) {
+	_, err := db.Exec(`
 INSERT INTO form_interest (
   id,
+  chapter_id,
   form,
   email,
   name,
@@ -18,11 +67,7 @@ INSERT INTO form_interest (
   comments,
   interests
 ) VALUES (
-  NULL,
-  "form1",
-  "email1",
-  "name1",
-  "phone1",
+  ?, ?, ?, ?, ?, ?,
   "zip1",
   "referral_friends1",
   "referral_apply1",
@@ -30,22 +75,26 @@ INSERT INTO form_interest (
   "comments1",
   "interests1"
 );
-`
+`,
+		b.id, b.chapterId, b.form, b.email, b.name, b.phone,
+	)
+
+	if err != nil {
+		t.Fatalf("insertInterestFormResponse failed: %s", err)
+	}
+}
 
 func TestProcessFormInterestForNoMatchingActivist(t *testing.T) {
 	/* Set up */
 	db := useTestDb()
 	defer db.Close()
-	_, err := db.Exec(insertIntoFormInterestQuery)
-	if err != nil {
-		t.Fatalf("insertIntoFormInterestQuery failed: %s", err)
-	}
+	insertInterestFormResponse(t, db, newInterestResponseBuilder())
 
 	/* Call functionality under test */
-	processInterestForms(db)
+	ProcessInterestForms(db)
 
 	/* Verify */
-	verifyActivistIsInserted(t, db)
+	verifyActivistCount(t, db, 1)
 	verifyFormWasMarkedAsProcessed(t, db, interestProcessingStatusQuery)
 }
 
@@ -53,20 +102,19 @@ func TestProcessFormInterestForActivistMatchingOnName(t *testing.T) {
 	/* Set up */
 	db := useTestDb()
 	defer db.Close()
-	_, err := db.Exec(insertActivistQuery, "name1")
-	if err != nil {
-		t.Fatalf("insertActivistQuery failed: %s", err)
-	}
-	_, err = db.Exec(insertIntoFormInterestQuery)
-	if err != nil {
-		t.Fatalf("insertIntoFormInterestQuery failed: %s", err)
-	}
+	insertActivistForInterestTest(t, db, testfixtures.NewActivistBuilder().
+		WithName("Bob").
+		WithEmail("foo@example.org").
+		Build())
+	insertInterestFormResponse(t, db, newInterestResponseBuilder().
+		WithName("Bob").
+		WithEmail("bar@example.org"))
 
 	/* Call functionality under test */
-	processInterestForms(db)
+	ProcessInterestForms(db)
 
 	/* Verify */
-	verifyActivistIsInserted(t, db)
+	verifyActivistCount(t, db, 1)
 	verifyFormWasMarkedAsProcessed(t, db, interestProcessingStatusQuery)
 }
 
@@ -74,20 +122,19 @@ func TestProcessFormInterestForActivistMatchingOnEmail(t *testing.T) {
 	/* Set up */
 	db := useTestDb()
 	defer db.Close()
-	_, err := db.Exec(insertActivistQuery, "non-matching_name")
-	if err != nil {
-		t.Fatalf("insertActivistQuery failed: %s", err)
-	}
-	_, err = db.Exec(insertIntoFormInterestQuery)
-	if err != nil {
-		t.Fatalf("insertIntoFormInterestQuery failed: %s", err)
-	}
+	insertActivistForInterestTest(t, db, testfixtures.NewActivistBuilder().
+		WithName("Bob").
+		WithEmail("match@example.org").
+		Build())
+	insertInterestFormResponse(t, db, newInterestResponseBuilder().
+		WithName("Alice").
+		WithEmail("match@example.org"))
 
 	/* Call functionality under test */
-	processInterestForms(db)
+	ProcessInterestForms(db)
 
 	/* Verify */
-	verifyActivistIsInserted(t, db)
+	verifyActivistCount(t, db, 1)
 	verifyFormWasMarkedAsProcessed(t, db, interestProcessingStatusQuery)
 }
 
@@ -95,22 +142,102 @@ func TestProcessFormInterestForMultipleMatchingActivistsOnEmail(t *testing.T) {
 	/* Set up */
 	db := useTestDb()
 	defer db.Close()
-	_, err := db.Exec(insertActivistQuery, "non-matching_name1")
-	if err != nil {
-		t.Fatalf("insertActivistQuery failed: %s", err)
-	}
-	_, err = db.Exec(insertActivistQuery, "non-matching_name2")
-	if err != nil {
-		t.Fatalf("insertActivistQuery failed: %s", err)
-	}
-	_, err = db.Exec(insertIntoFormInterestQuery)
-	if err != nil {
-		t.Fatalf("insertIntoFormInterestQuery failed: %s", err)
-	}
+	insertActivistForInterestTest(t, db, testfixtures.NewActivistBuilder().
+		WithName("Bob").
+		WithEmail("match@example.org").
+		Build())
+	insertActivistForInterestTest(t, db, testfixtures.NewActivistBuilder().
+		WithName("Carl").
+		WithEmail("match@example.org").
+		Build())
+	insertInterestFormResponse(t, db, newInterestResponseBuilder().
+		WithName("Alice").
+		WithEmail("match@example.org"))
 
 	/* Call functionality under test */
-	processInterestForms(db)
+	ProcessInterestForms(db)
 
-	// For now, manually check error message "ERROR: 2 non-hidden activists associated"
+	verifyActivistCount(t, db, 2)
 	verifyFormWasNotMarkedAsProcessed(t, db, interestProcessingStatusQuery)
+}
+
+func TestProcessFormInterestForMatchingChapterIdAndName(t *testing.T) {
+	/* Set up */
+	db := useTestDb()
+	defer db.Close()
+
+	insertActivistForInterestTest(t, db, testfixtures.NewActivistBuilder().
+		WithName("Sam").
+		WithEmail("foo@example.org").
+		WithChapterID(10).
+		Build())
+	insertActivistForInterestTest(t, db, testfixtures.NewActivistBuilder().
+		WithName("Sam").
+		WithEmail("bar@example.org").
+		WithChapterID(20).
+		Build())
+	insertInterestFormResponse(t, db, newInterestResponseBuilder().
+		WithName("Sam").
+		WithEmail("baz@example.org").
+		withChapterId(10),
+	)
+
+	/* Call functionality under test */
+	ProcessInterestForms(db)
+
+	/* Verify */
+	verifyActivistCount(t, db, 2)
+	verifyFormWasMarkedAsProcessed(t, db, interestProcessingStatusQuery)
+}
+
+func TestProcessFormInterestForMatchingChapterIdAndEmail(t *testing.T) {
+	/* Set up */
+	db := useTestDb()
+	defer db.Close()
+
+	insertActivistForInterestTest(t, db, testfixtures.NewActivistBuilder().
+		WithName("Alice").
+		WithEmail("match@example.org").
+		WithChapterID(10).
+		Build())
+	insertActivistForInterestTest(t, db, testfixtures.NewActivistBuilder().
+		WithName("Bob").
+		WithEmail("match@example.org").
+		WithChapterID(20).
+		Build())
+	insertInterestFormResponse(t, db, newInterestResponseBuilder().
+		WithName("Carl").
+		WithEmail("match@example.org").
+		withChapterId(10),
+	)
+
+	/* Call functionality under test */
+	ProcessInterestForms(db)
+
+	/* Verify */
+	verifyActivistCount(t, db, 2)
+	verifyFormWasMarkedAsProcessed(t, db, interestProcessingStatusQuery)
+}
+
+func TestProcessFormInterestForNonMatchingChapter(t *testing.T) {
+	/* Set up */
+	db := useTestDb()
+	defer db.Close()
+
+	insertActivistForInterestTest(t, db, testfixtures.NewActivistBuilder().
+		WithName("Alice").
+		WithEmail("match@example.org").
+		WithChapterID(10).Build())
+	insertInterestFormResponse(t, db, newInterestResponseBuilder().
+		WithName("Alice").
+		WithEmail("match@example.org").
+		withChapterId(20),
+	)
+
+	/* Call functionality under test */
+	ProcessInterestForms(db)
+
+	/* Verify */
+	verifyActivistCount(t, db, 2)
+	verifyFormWasMarkedAsProcessed(t, db, interestProcessingStatusQuery)
 }

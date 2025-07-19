@@ -203,41 +203,33 @@ from
 WHERE
 	form_application.id = ?
 	and form_application.name <> ''
-	and form_application.processed = 0
-	and form_application.email not in (select * from (select email from activists where hidden < 1 and email <> '') temp1)
-	and concat(form_application.name,' (inserted by application, check for duplicate)') not in (select * from (select name from activists where hidden < 1 and name <> '') temp2);
+	and form_application.processed = 0;
 `
 
 const markApplicationProcessedQuery = `
-# mark as processed if application date in activists table matches date in application
 update
 	form_application
-INNER JOIN
-	activists on activists.name = concat(form_application.name,' (inserted by application, check for duplicate)')
 SET
 	form_application.processed = 1
 WHERE
 	form_application.id = ?
-	and activists.dev_application_date = cast(form_application.timestamp as date)
 	and form_application.processed = 0
-	and activists.hidden < 1
-    and activists.chapter_id = ` + model.SFBayChapterIdStr + `;
-`
+;`
 
-func processApplicationForms(db *sqlx.DB) {
+func ProcessApplicationForms(db *sqlx.DB) {
 	log.Debug().Msg("processing application forms")
 
-	applicationIds, isSuccess := getResponsesToProcess(db,
-		"SELECT id FROM form_application WHERE processed = 0 and name <> ''")
+	responses, isSuccess := getResponsesToProcess(db,
+		"SELECT id, '"+model.SFBayChapterIdStr+"' as chapter_id, email FROM form_application WHERE processed = 0 and name <> ''")
 	if !isSuccess {
 		log.Error().Msg("failed to get applicationIds; exiting")
 		return
 	}
-	if len(applicationIds) == 0 {
+	if len(responses) == 0 {
 		log.Debug().Msg("no new form_application submissions to process")
 	}
-	for _, id := range applicationIds {
-		err := processApplicationForm(id, db)
+	for _, response := range responses {
+		err := processApplicationForm(response, db)
 		if err != nil {
 			log.Error().Msgf("error processing application form; exiting: %v", err)
 			return
@@ -247,63 +239,74 @@ func processApplicationForms(db *sqlx.DB) {
 	log.Debug().Msg("finished processing application forms")
 }
 
-func processApplicationForm(id int, db *sqlx.DB) error {
-	log.Info().Msgf("Processing Application row %d", id)
-	_, err := db.Exec(processApplicationOnNameQuery, id)
-	if err != nil {
-		return fmt.Errorf("failed to prrocess application on name; %s", err)
+func processApplicationForm(response formResponse, db *sqlx.DB) error {
+	log.Info().Msgf("Processing Application row %d", response.Id)
+	updated, nameUpdateErr := tryUpdateActivistWithApplicationFormBasedOnName(db, response)
+	if nameUpdateErr != nil {
+		return fmt.Errorf("error updating activist matching by name: %v", nameUpdateErr)
 	}
-
-	// Return early if previous query updated activist based on name.
-	processed, err := getProcessingStatus(db, applicationProcessingStatusQuery, id)
-	if err != nil {
-		return fmt.Errorf("failed to get processing status: %v", err)
-	}
-	if processed {
+	if updated {
 		return nil
 	}
 
-	// check how many records are tied to this email address
-	email, isSuccess := getEmail(db, "SELECT email FROM form_application WHERE id = ?", id)
-	if !isSuccess {
-		return errors.New("failed to get email; exiting")
-	}
-	count, isSuccess := countActivistsForEmail(db, email)
+	emailCount, isSuccess := countActivistsWithEmail(db, response.Email, model.SFBayChapterId)
 	if !isSuccess {
 		return errors.New("failed to count activists for email; exiting")
 	}
 
-	switch count {
+	switch emailCount {
 	case 1:
-		err := updateActivistWithApplicationForm(db, id)
-		if err != nil {
-			return fmt.Errorf("failed to update activist: %w", err)
+		emailUpdateErr := updateActivistWithApplicationFormBasedOnEmail(db, response.Id)
+		if emailUpdateErr != nil {
+			return fmt.Errorf("failed to update activist: %w", emailUpdateErr)
 		}
 	case 0:
-		err := insertActivistFromApplicationForm(db, id)
-		if err != nil {
-			return fmt.Errorf("failed to insert activist: %w", err)
+		insertErr := insertActivistFromApplicationForm(db, response.Id)
+		if insertErr != nil {
+			return fmt.Errorf("failed to insert activist: %w", insertErr)
 		}
 	default:
 		// email count is > 1, so send email to tech
 		log.Error().Msgf(
 			"%d non-hidden activists associated with email address %s for Application response %d Please correct.",
-			count,
-			email,
-			id,
+			emailCount,
+			response.Email,
+			response.Id,
 		)
 	}
 
 	return nil
 }
 
-func updateActivistWithApplicationForm(db *sqlx.DB, id int) error {
-	_, err := db.Exec(processApplicationOnEmailQuery, id)
+func tryUpdateActivistWithApplicationFormBasedOnName(db *sqlx.DB, response formResponse) (updated bool, err error) {
+	res, err := db.Exec(processApplicationOnNameQuery, response.Id)
+	if err != nil {
+		return false, fmt.Errorf("failed to process processApplicationOnNameQuery; %s", err)
+	}
+	updateCount, getRowsAffectedErr := res.RowsAffected()
+	if getRowsAffectedErr != nil {
+		return false, fmt.Errorf("failed to get processApplicationOnNameQuery affected rows; %s",
+			getRowsAffectedErr)
+	}
+	return updateCount == 1, nil
+}
+
+func updateActivistWithApplicationFormBasedOnEmail(db *sqlx.DB, id int) error {
+	res, err := db.Exec(processApplicationOnEmailQuery, id)
 	if err != nil {
 		return fmt.Errorf("failed to processApplicationOnEmailQuery; %s", err)
 	}
 
-	log.Info().Msg("Updated activist with application form")
+	count, getRowsAffectedErr := res.RowsAffected()
+	if getRowsAffectedErr != nil {
+		return fmt.Errorf("failed to get processApplicationOnEmailQuery affected rows; %s",
+			getRowsAffectedErr)
+	}
+	if count != 1 {
+		return fmt.Errorf("no rows updated on processApplicationOnEmailQuery")
+	}
+
+	log.Info().Msg("Updated activist with interest form based on email")
 	return nil
 }
 
@@ -315,24 +318,31 @@ func insertActivistFromApplicationForm(db *sqlx.DB, id int) error {
 	}
 	defer tx.Rollback()
 
-	_, processErr := tx.ExecContext(ctx, processApplicationByInsertQuery, id)
+	insertResult, processErr := tx.ExecContext(ctx, processApplicationByInsertQuery, id)
 	if processErr != nil {
 		return fmt.Errorf("failed to processApplicationByInsertQuery; %s", processErr)
 	}
-
-	res, updateErr := tx.ExecContext(ctx, markApplicationProcessedQuery, id)
-	if updateErr != nil {
-		return fmt.Errorf("failed to processApplicationByInsertUpdateQuery; %s", updateErr)
-	}
-
-	count, getRowsAffectedErr := res.RowsAffected()
+	insertCount, getRowsAffectedErr := insertResult.RowsAffected()
 	if getRowsAffectedErr != nil {
-		return fmt.Errorf("failed to get processApplicationByInsertUpdateQuery affected rows; %s",
+		return fmt.Errorf("failed to get processApplicationByInsertQuery affected rows; %s",
 			getRowsAffectedErr)
 	}
-	if count != 1 {
-		log.Error().Msg("the activist was not updated (application date in activists table does not match the date " +
-			"in application?) -- please correct")
+	if insertCount != 1 {
+		return fmt.Errorf("no rows updated on processApplicationByInsertQuery")
+	}
+
+	markResult, updateErr := tx.ExecContext(ctx, markApplicationProcessedQuery, id)
+	if updateErr != nil {
+		return fmt.Errorf("failed to markApplicationProcessedQuery; %s", updateErr)
+	}
+
+	markCount, getRowsAffectedErr := markResult.RowsAffected()
+	if getRowsAffectedErr != nil {
+		return fmt.Errorf("failed to get markApplicationProcessedQuery affected rows; %s",
+			getRowsAffectedErr)
+	}
+	if markCount != 1 {
+		log.Error().Msg("application form was processed but not marked as such")
 	}
 
 	commitErr := tx.Commit()
