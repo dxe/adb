@@ -28,11 +28,7 @@ var (
 		Role:    "International Coordinator",
 		Address: "internationalcoordination@directactioneverywhere.com",
 	}
-	networkMemberProgramCoordinator = coordinator{
-		Name:    "Robert Yamada",
-		Role:    "International Coordination Team",
-		Address: "internationalcoordination@directactioneverywhere.com",
-	}
+	networkMemberProgramCoordinator = globalCoordinator
 )
 
 func stateIsCalifornia(state string) bool {
