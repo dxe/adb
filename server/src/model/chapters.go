@@ -26,14 +26,25 @@ type Chapter struct {
 	InstaURL   string  `db:"insta_url"`
 	Email      string  `db:"email"`
 	Region     string  `db:"region"`
+	Country    string  `db:"country"`
 	Lat        float64 `db:"lat"`
 	Lng        float64 `db:"lng"`
 }
 
+type ChapterWithMailingList struct {
+	Chapter
+	Distance          float32 `db:"distance"`
+	MailingListType   string  `db:"ml_type"`
+	MailingListRadius int     `db:"ml_radius"`
+	MailingListID     string  `db:"ml_id"`
+}
+
 // used for internal Chapters page on ADB, syncing with FB and Eventbrite, and for displaying events on the website
+//
+// Deprecated in public API; use `Chapter` instead, which uses the real chapter ID in the `ID` field.
 type ChapterWithToken struct {
-	ID                   int          `db:"id"` // id on `fb_pages` table
-	ChapterID            int          `db:"chapter_id"`
+	ID                   int          `db:"id"`         // Facebook page ID; `id` column on `fb_pages` table
+	ChapterID            int          `db:"chapter_id"` // canonical ID of chapter recognized by ADB
 	Name                 string       `db:"name"`
 	Flag                 string       `db:"flag"`
 	FbURL                string       `db:"fb_url"`
@@ -151,7 +162,7 @@ func GetAllChapters(db *sqlx.DB) ([]ChapterWithToken, error) {
 }
 
 // for the chapter management admin page on the ADB itself
-func GetChapterByID(db *sqlx.DB, id int) (ChapterWithToken, error) {
+func GetChapterWithTokenById(db *sqlx.DB, id int) (ChapterWithToken, error) {
 	query := `SELECT fb_pages.id, chapter_id, fb_pages.name, flag, fb_url, twitter_url, insta_url, email, region, fb_pages.lat, fb_pages.lng, token, fb_pages.eventbrite_id, eventbrite_token, ml_type, ml_radius, ml_id,
 	
 		@last_update := IFNULL((
@@ -242,12 +253,15 @@ func DeleteChapter(db *sqlx.DB, chapter int) error {
 
 // for the chapter management admin page on the ADB itself
 func InsertChapter(db *sqlx.DB, page ChapterWithToken) (int, error) {
-	res, err := db.NamedExec(`INSERT INTO fb_pages ( id, name, flag, fb_url, insta_url, twitter_url, email, region, lat, lng, mentor, country, notes, last_contact, last_action, organizers, email_token )
-		VALUES ( :id, :name, :flag, :fb_url, :insta_url, :twitter_url, :email, :region, :lat, :lng, :mentor, :country, :notes, :last_contact, :last_action, :organizers, :email_token )`, page)
+	res, err := db.NamedExec(`INSERT INTO fb_pages ( id, name, flag, fb_url, insta_url, twitter_url, email, region, lat, lng, mentor, country, notes, last_contact, last_action, organizers, email_token, ml_type, ml_radius, ml_id )
+		VALUES ( :id, :name, :flag, :fb_url, :insta_url, :twitter_url, :email, :region, :lat, :lng, :mentor, :country, :notes, :last_contact, :last_action, :organizers, :email_token, :ml_type, :ml_radius, :ml_id )`, page)
 	if err != nil {
 		return 0, errors.Wrapf(err, "failed to insert chapter %d", page.ID)
 	}
 	insertedID, err := res.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("error getting ID after insert: %w", err)
+	}
 	return int(insertedID), nil
 }
 
@@ -279,20 +293,33 @@ func CleanChapterData(db *sqlx.DB, body io.Reader) (ChapterWithToken, error) {
 	return chapter, nil
 }
 
-// TODO: update this function (and the website) to handle data in the normal Chapter struct instead of w/ Token
-func FindNearestChaptersSortedByDistance(db *sqlx.DB, lat float64, lng float64) ([]ChapterWithToken, error) {
-	query := `SELECT id, chapter_id, name, email, flag, fb_url, insta_url, twitter_url, region, country, ml_type, ml_radius, ml_id, (3959*acos(cos(radians(` + fmt.Sprintf("%f", lat) + `))*cos(radians(lat))* 
+func getFindNearestChaptersQuery(lat float64, lng float64) string {
+	return `SELECT id, chapter_id, name, email, flag, fb_url, insta_url, twitter_url, region, country, ml_type, ml_radius, ml_id, (3959*acos(cos(radians(` + fmt.Sprintf("%f", lat) + `))*cos(radians(lat))*
 		cos(radians(lng)-radians(` + fmt.Sprintf("%f", lng) + `))+sin(radians(` + fmt.Sprintf("%f", lat) + `))* 
 		sin(radians(lat)))) AS distance
 		FROM fb_pages
 		WHERE region <> 'Online'
 		ORDER BY distance
 		LIMIT 3`
+}
+
+// Deprecated. Use FindNearestChaptersSortedByDistance instead.
+func FindNearestChaptersSortedByDistanceDeprecated(db *sqlx.DB, lat float64, lng float64) ([]ChapterWithToken, error) {
 	var pages []ChapterWithToken // we aren't actually getting tokens, but the website expects the FB ID to be in the ID field
-	err := db.Select(&pages, query)
+	err := db.Select(&pages, getFindNearestChaptersQuery(lat, lng))
 	if err != nil {
 		// error
 		return nil, errors.Wrap(err, "failed to select pages")
+	}
+	return pages, nil
+}
+
+func FindNearestChaptersSortedByDistance(db *sqlx.DB, lat float64, lng float64) ([]ChapterWithMailingList, error) {
+	var pages []ChapterWithMailingList
+	err := db.Select(&pages, getFindNearestChaptersQuery(lat, lng))
+	if err != nil {
+		// error
+		return nil, errors.Wrap(err, "failed to select chapters")
 	}
 	return pages, nil
 }
@@ -315,6 +342,19 @@ func GetAllChaptersByRegion(db *sqlx.DB) (map[string][]ChapterWithToken, error) 
 	}
 	//return pages grouped into regions, nil
 	return regions, nil
+}
+
+func GetChapterById(db *sqlx.DB, id int) (ChapterWithMailingList, error) {
+	query := `SELECT chapter_id, id, name, flag, fb_url, twitter_url, insta_url, email, region, lat, lng, ml_type, ml_radius, ml_id
+		FROM fb_pages
+		WHERE chapter_id = ?
+		ORDER BY name`
+	var chapter ChapterWithMailingList
+	err := db.Get(&chapter, query, id)
+	if err != nil {
+		return ChapterWithMailingList{}, fmt.Errorf("failed to select chapter: %v", err)
+	}
+	return chapter, nil
 }
 
 const SFBayPageID = 1377014279263790

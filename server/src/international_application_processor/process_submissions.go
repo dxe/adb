@@ -64,7 +64,7 @@ func processFormSubmission(db *sqlx.DB, formDataUnsanitized model.InternationalF
 }
 
 func getNearestChapterOrNil(db *sqlx.DB, formData model.InternationalFormData) (*model.ChapterWithToken, error) {
-	nearestChapters, err := model.FindNearestChaptersSortedByDistance(db, formData.Lat, formData.Lng)
+	nearestChapters, err := model.FindNearestChaptersSortedByDistanceDeprecated(db, formData.Lat, formData.Lng)
 	if err != nil {
 		return nil, errors.Wrap(err, "error fetching nearby chapters: %w")
 	}
@@ -73,7 +73,7 @@ func getNearestChapterOrNil(db *sqlx.DB, formData model.InternationalFormData) (
 
 	if nearestChapter != nil {
 		// `GetChapterByID` returns more details about the chapter than `FindNearestChapters`.
-		*nearestChapter, err = model.GetChapterByID(db, nearestChapter.ChapterID)
+		*nearestChapter, err = model.GetChapterWithTokenById(db, nearestChapter.ChapterID)
 		if err != nil {
 			return nil, errors.Wrap(err, "error fetching chapter: %w")
 		}
