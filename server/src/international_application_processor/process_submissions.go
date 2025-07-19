@@ -15,14 +15,14 @@ import (
 func RunProcessor(db *sqlx.DB) {
 	for {
 		log.Println("Starting international mailer")
-		processFormSubmissions(db)
+		ProcessFormSubmissions(db)
 		log.Println("Finished international mailer")
 
 		time.Sleep(60 * time.Minute)
 	}
 }
 
-func processFormSubmissions(db *sqlx.DB) {
+func ProcessFormSubmissions(db *sqlx.DB) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("Recovered from panic in international mailer:", r)

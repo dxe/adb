@@ -61,10 +61,9 @@
 import Vue from 'vue';
 import Buefy from 'buefy';
 import navbarData from '../shared/nav.json';
+import { SF_BAY_CHAPTER_ID } from './chapters';
 
 Vue.use(Buefy);
-
-const SF_BAY_CHAPTER_ID = process.env.NODE_ENV === 'production' ? 47 : 1;
 
 export default Vue.extend({
   name: 'adb-nav',

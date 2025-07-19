@@ -22,8 +22,8 @@ func StartFormProcessor(db *sqlx.DB) {
 	/* Start tasks on a scheduule */
 	cron := cron.New()
 	cron.AddFunc(config.FormProcessorProcessFormsCronExpression, func() {
-		processApplicationForms(db)
-		processInterestForms(db)
+		ProcessApplicationForms(db)
+		ProcessInterestForms(db)
 	})
 	cron.Run()
 }

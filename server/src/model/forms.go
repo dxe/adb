@@ -25,6 +25,7 @@ type ApplicationFormData struct {
 }
 
 type InterestFormData struct {
+	ChapterId                 int    `json:"chapterId" db:"chapter_id"`
 	Form                      string `json:"form" db:"form"`
 	Name                      string `json:"name" db:"name"`
 	Email                     string `json:"email" db:"email"`
@@ -89,7 +90,7 @@ func SubmitApplicationForm(db *sqlx.DB, formData ApplicationFormData) error {
 	err = mailing_list_signup.Enqueue(signup)
 	if err != nil {
 		// Don't fail the HTTP request since at least the user's response was added to the database.
-		log.Printf("ERROR adding application form submission to mailing list: %v", err)
+		fmt.Println("ERROR adding application form submission to mailing list:", err.Error())
 	}
 
 	return nil
@@ -97,9 +98,9 @@ func SubmitApplicationForm(db *sqlx.DB, formData ApplicationFormData) error {
 
 func SubmitInterestForm(db *sqlx.DB, formData InterestFormData) error {
 	_, err := db.NamedExec(`INSERT INTO form_interest
-		(form, email, name, phone, zip, referral_friends, referral_apply, referral_outlet, interests, discord_id)
+		(chapter_id, form, email, name, phone, zip, referral_friends, referral_apply, referral_outlet, interests, discord_id)
 		VALUES
-		(:form, :email, :name, :phone, :zip, :referral_friends, :referral_apply, :referral_outlet, :interests, :discord_id)
+		(:chapter_id, :form, :email, :name, :phone, :zip, :referral_friends, :referral_apply, :referral_outlet, :interests, :discord_id)
 		`, formData)
 
 	if err != nil {
@@ -117,7 +118,7 @@ func SubmitInterestForm(db *sqlx.DB, formData InterestFormData) error {
 		err = mailing_list_signup.Enqueue(signup)
 		if err != nil {
 			// Don't fail the HTTP request since at least the user's response was added to the database.
-			log.Printf("ERROR adding application form submission to mailing list: %v", err)
+			fmt.Println("ERROR adding interest form submission to mailing list:", err.Error())
 		}
 	}
 
@@ -146,8 +147,8 @@ func SubmitInternationalForm(db *sqlx.DB, formData InternationalFormData) error 
 	}
 	err = mailing_list_signup.Enqueue(signup)
 	if err != nil {
-		// Don't return this error because we still want to successfully update the database.
-		fmt.Println("ERROR adding international form submission to mailing list:", err.Error())
+		// Don't return this error because we still want to indicate successfully updating the database.
+		log.Printf("ERROR adding international application form submission to mailing list: %v", err.Error())
 	}
 
 	return nil

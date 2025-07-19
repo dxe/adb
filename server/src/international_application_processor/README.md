@@ -13,3 +13,8 @@ Further related documentation for this mechanism can be found in [Coda][coda].
 [doc]: https://docs.google.com/document/d/1tgtxGONu86XN0KBvOx9-OXmh3mDKpvzkAyQGFoHOdkM/edit?tab=t.0#heading=h.qsu6qdtc3163
 
 [coda]: https://coda.io/d/Tech-Team_dR-UIgVShEf/ADB-Forms_suuKCpXS
+
+## Manual testing
+
+The `/dev-testing/process-intl-app-forms` endpoint can be used to manually process form submissions in non-production
+environments.

@@ -173,6 +173,7 @@
 import Vue from 'vue';
 import AdbPage from './AdbPage.vue';
 import { flashMessage, initializeFlashMessage } from './flash_message';
+import { SF_BAY_CHAPTER_ID } from './chapters';
 
 export default Vue.extend({
   name: 'form-interest',
@@ -193,6 +194,7 @@ export default Vue.extend({
         method: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({
+          chapterId: this.formOptions.chapterId,
           form: this.formOptions.formName + ' Form',
           name: this.firstName + ' ' + this.lastName,
           firstName: this.firstName,
@@ -233,6 +235,7 @@ export default Vue.extend({
   data() {
     return {
       formOptions: {
+        chapterId: -1,
         formName: '',
         formTitle: '',
         formDescription: '',
@@ -260,8 +263,16 @@ export default Vue.extend({
   created() {
     // Get form options from URL query params
     const urlParams = new URLSearchParams(window.location.search);
+    const chapterIdStr = urlParams.get('chapterId');
+    const chapterId = chapterIdStr != null ? parseInt(chapterIdStr, 10) : NaN;
+    this.formOptions.chapterId = !Number.isNaN(chapterId) ? chapterId : SF_BAY_CHAPTER_ID;
     this.formOptions.formName = urlParams.get('name') || 'Interest Form';
-    this.formOptions.formTitle = urlParams.get('title') || 'DxE SF Bay - Get Involved';
+    const formTitle =
+      urlParams.get('title') ||
+      (chapterId === SF_BAY_CHAPTER_ID
+        ? 'DxE SF Bay - Get Involved'
+        : 'Direct Action Everywhere - Get Involved');
+    this.formOptions.formTitle = formTitle;
     this.formOptions.formDescription = urlParams.get('description') || '';
     this.formOptions.showInterests = urlParams.get('showInterests') !== 'false';
     this.formOptions.showReferralFriends = urlParams.get('showReferralFriends') === 'true';
