@@ -1161,15 +1161,15 @@ func UpdateActivistData(db *sqlx.DB, activist ActivistExtra, userEmail string) (
 		activist.ActivistLevel != origActivist.ActivistLevel
 	if mailingListInfoChanged && activist.Email != "" {
 		signup := mailing_list_signup.Signup{
-			Source:        "adb",
-			Name:          activist.Name,
-			Email:         activist.Email,
-			Phone:         activist.Phone,
-			City:          activist.City,
-			State:         activist.State,
-			Zip:           activist.Location.String,
-			ChapterId:     activist.ChapterID,
-			ActivistLevel: activist.ActivistLevel,
+			Source:          "adb",
+			Name:            activist.Name,
+			Email:           activist.Email,
+			Phone:           activist.Phone,
+			City:            activist.City,
+			State:           activist.State,
+			Zip:             activist.Location.String,
+			TargetChapterId: activist.ChapterID,
+			ActivistLevel:   activist.ActivistLevel,
 		}
 		err := mailing_list_signup.Enqueue(signup)
 		if err != nil {

@@ -110,10 +110,13 @@ func SubmitInterestForm(db *sqlx.DB, formData InterestFormData) error {
 	if !formData.SubmittedViaSignupService {
 		signup := mailing_list_signup.Signup{
 			Source: "adb-interest-form",
-			Name:   formData.Name,
-			Email:  formData.Email,
-			Phone:  formData.Phone,
-			Zip:    formData.Zip,
+			// Subscribe responder to the chapter that owns the form in addition to any chapter
+			// near the responder's zip code.
+			SourceChapterId: formData.ChapterId,
+			Name:            formData.Name,
+			Email:           formData.Email,
+			Phone:           formData.Phone,
+			Zip:             formData.Zip,
 		}
 		err = mailing_list_signup.Enqueue(signup)
 		if err != nil {
