@@ -263,6 +263,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/static_resources_hash", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.StaticResourcesHashHandler))
 	router.Handle("/external_events/{page_id:[0-9]+}", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.ListFBEventsHandler))
 	// Deprecated. Use "/chapters/nearest/{lat:[0-9.\\-]+},{lng:[0-9.\\-]+}" instead, which returns real Chapter ID in response `id` field rather than Facebook Page ID.
+	// Todo: remove this handler: https://app.asana.com/1/71341131816665/project/1209217418568645/task/1210958184890117?focus=true
 	router.Handle("/chapters/{lat:[0-9.\\-]+},{lng:[0-9.\\-]+}", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.FindNearestChaptersDeprecatedHandler))
 	router.Handle("/chapters/nearest/{lat:[0-9.\\-]+},{lng:[0-9.\\-]+}", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.FindNearestChaptersHandler))
 	router.Handle("/chapters/{id:[0-9]+}", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.FindChapterById))
