@@ -68,7 +68,6 @@
             :href="`/csv/all_activists_spoke?start_date=${lastEventDateFrom}&end_date=${lastEventDateTo}`"
           ></b-button>
         </div>
-        <!-- implement the csv route for new activists otherwise this will not work-->
         <div class="level-item px-1" v-if="view === 'new_activists'">
           <b-button
             label="Export Supporter CSV for Spoke"

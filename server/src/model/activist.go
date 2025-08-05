@@ -843,14 +843,20 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 		case "leaderboard":
 			whereClause = append(whereClause, "a.id in (select distinct activist_id  from event_attendance ea  where ea.event_id in (select id from events e where e.date >= (now() - interval 30 day)))")
 		case "new_activists":
+			//where activists have been to <=3 events in total AND most recent event is within range provided
 			whereClause = append(whereClause, `
 				activist_level = 'supporter' AND (
 					SELECT COUNT(*) 
 					FROM event_attendance ea
 					JOIN events e ON ea.event_id = e.id
 					WHERE ea.activist_id = a.id 
-						AND e.date BETWEEN ? AND ?
-				) <= 3`)
+				) <= 3 AND (
+					SELECT MAX(e.date)
+					FROM event_attendance ea
+					JOIN events e ON ea.event_id = e.id
+					WHERE ea.activist_id = a.id
+				) BETWEEN ? AND ?
+				`)
 			queryArgs = append(queryArgs, options.LastEventDateFrom, options.LastEventDateTo)
 
 		}
@@ -1775,29 +1781,34 @@ func GetNewSupporterSpokeInfo(db *sqlx.DB, chapterID int, startDate, endDate str
 		FROM activists
 		WHERE
 		    chapter_id = ?
-		    and activist_level = 'supporter'
-			and hidden = 0
-			and (
+		    AND activist_level = 'supporter'
+			AND hidden = 0
+			AND (
 					SELECT COUNT(*) 
 					FROM event_attendance ea
 					JOIN events e ON ea.event_id = e.id
 					WHERE ea.activist_id = activists.id 
-						AND e.date BETWEEN ? AND ?
 				) <= 3
+			AND (
+					SELECT MAX(e.date)
+					FROM event_attendance ea
+					JOIN events e ON ea.event_id = e.id
+					WHERE ea.activist_id = a.id
+			) BETWEEN ? AND ?
 	`
 	args := []interface{}{chapterID, startDate, endDate}
 
-	var havingClause []string
+	var lastEventClause []string
 	if startDate != "" {
-		havingClause = append(havingClause, "last_event >= ?")
+		lastEventClause = append(lastEventClause, "last_event >= ?")
 		args = append(args, startDate)
 	}
 	if endDate != "" {
-		havingClause = append(havingClause, "last_event <= ?")
+		lastEventClause = append(lastEventClause, "last_event <= ?")
 		args = append(args, endDate)
 	}
-	if len(havingClause) != 0 {
-		query += " HAVING " + strings.Join(havingClause, " AND ")
+	if len(lastEventClause) != 0 {
+		query += " AND " + strings.Join(lastEventClause, " AND ")
 	}
 
 	var activists []ActivistSpokeInfo
