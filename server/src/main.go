@@ -590,7 +590,6 @@ func (c MainController) ListActivistsHandler(w http.ResponseWriter, r *http.Requ
 	})
 }
 
-// add handler for new activists too
 func (c MainController) NewActivistsHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, r, "activist_list", PageData{
 		PageName: "NewActivistList",
