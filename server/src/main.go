@@ -596,7 +596,7 @@ func (c MainController) NewActivistsHandler(w http.ResponseWriter, r *http.Reque
 		PageName: "NewActivistList",
 		Data: ActivistListData{
 			Title:       "New Activists",
-			Description: "Everyone who has attended 3 or less events in total, with their most recent event within the given range (last 6 months by default)",
+			Description: "Everyone who has attended 3 or fewer events in total, with their most recent event within the given range (last 6 months by default)",
 			View:        "new_activists",
 		},
 	})
