@@ -845,7 +845,7 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 
 		case "new_activists":
 			whereClause = append(whereClause, `
-				activist_level = 'supporter' AND (
+				 (
 				SELECT COUNT(*) 
 					FROM event_attendance ea
 					JOIN events e ON ea.event_id = e.id
@@ -1765,7 +1765,7 @@ func GetSupporterSpokeInfo(db *sqlx.DB, chapterID int, startDate, endDate string
 	return activists, nil
 }
 
-func GetNewSupporterSpokeInfo(db *sqlx.DB, chapterID int, startDate, endDate string) ([]ActivistSpokeInfo, error) {
+func GetNewActivistSpokeInfo(db *sqlx.DB, chapterID int, startDate, endDate string) ([]ActivistSpokeInfo, error) {
 	query := `
 		SELECT
 			IF(preferred_name <> '', preferred_name, substring_index(name, " ", 1)) as first_name,
@@ -1780,7 +1780,6 @@ func GetNewSupporterSpokeInfo(db *sqlx.DB, chapterID int, startDate, endDate str
 		FROM activists
 		WHERE
 		    chapter_id = ?
-		    AND activist_level = 'supporter'
 			AND hidden = 0
 			AND (
 					SELECT COUNT(*) 
