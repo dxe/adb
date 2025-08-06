@@ -1767,12 +1767,12 @@ func GetSupporterSpokeInfo(db *sqlx.DB, chapterID int, startDate, endDate string
 
 func GetNewActivistsSpokeInfo(db *sqlx.DB, chapterID int, startDate, endDate string) ([]ActivistSpokeInfo, error) {
 	last_event_subquery := `
-			(
-					SELECT MAX(e.date)
-					FROM event_attendance ea
-					JOIN events e ON ea.event_id = e.id
-					WHERE ea.activist_id = activists.id
-			)`
+		(
+			SELECT MAX(e.date)
+			FROM event_attendance ea
+			JOIN events e ON ea.event_id = e.id
+			WHERE ea.activist_id = activists.id
+		)`
 
 	query := `
 		SELECT
