@@ -106,7 +106,7 @@
         {
           "label": "New Activists",
           "href": "/new_activists",
-          "page": "NewActivistList"
+          "page": "NewActivistsList"
         }
       ]
     },
