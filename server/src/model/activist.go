@@ -845,18 +845,19 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 
 		case "new_activists":
 			whereClause = append(whereClause, `
-				 (
-				SELECT COUNT(*) 
+				(
+					SELECT COUNT(*) 
 					FROM event_attendance ea
 					JOIN events e ON ea.event_id = e.id
 					WHERE ea.activist_id = a.id 
-					) <= 3 AND (
-				SELECT MAX(e.date)
+				) <= 3
+				AND
+				(
+					SELECT MAX(e.date)
 					FROM event_attendance ea
 					JOIN events e ON ea.event_id = e.id
 					WHERE ea.activist_id = a.id
-				) BETWEEN ? AND ?
-				`)
+				) BETWEEN ? AND ?`)
 			queryArgs = append(queryArgs, options.LastEventDateFrom, options.LastEventDateTo)
 
 		}
