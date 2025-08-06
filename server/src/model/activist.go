@@ -96,7 +96,7 @@ SELECT
   ) AS first_event,
 
   @last_event := (
-    SELECT max(e.date) AS max_date
+    SELECT max(e.date)
     FROM event_attendance ea
     JOIN activists inner_a ON inner_a.id = ea.activist_id
     JOIN events e ON e.id = ea.event_id
@@ -1765,18 +1765,21 @@ func GetSupporterSpokeInfo(db *sqlx.DB, chapterID int, startDate, endDate string
 	return activists, nil
 }
 
-func GetNewActivistSpokeInfo(db *sqlx.DB, chapterID int, startDate, endDate string) ([]ActivistSpokeInfo, error) {
+func GetNewActivistsSpokeInfo(db *sqlx.DB, chapterID int, startDate, endDate string) ([]ActivistSpokeInfo, error) {
+	last_event_subquery := `
+			(
+					SELECT MAX(e.date)
+					FROM event_attendance ea
+					JOIN events e ON ea.event_id = e.id
+					WHERE ea.activist_id = activists.id
+			)`
+
 	query := `
 		SELECT
 			IF(preferred_name <> '', preferred_name, substring_index(name, " ", 1)) as first_name,
 			SUBSTRING(name, LOCATE(' ', name)+1) as last_name,
 			phone as cell,
-		    @last_event := (
-					SELECT MAX(e.date) as max_date
-					FROM event_attendance ea
-					JOIN events e ON ea.event_id = e.id
-					WHERE ea.activist_id = activists.id
-			) AS last_event
+		    @last_event := ` + last_event_subquery + ` AS last_event
 		FROM activists
 		WHERE
 		    chapter_id = ?
@@ -1787,12 +1790,7 @@ func GetNewActivistSpokeInfo(db *sqlx.DB, chapterID int, startDate, endDate stri
 					JOIN events e ON ea.event_id = e.id
 					WHERE ea.activist_id = activists.id 
 				) <= 3
-			AND (
-					SELECT MAX(e.date)
-					FROM event_attendance ea
-					JOIN events e ON ea.event_id = e.id
-					WHERE ea.activist_id = activists.id
-			) BETWEEN ? AND ?
+			AND ` + last_event_subquery + ` BETWEEN ? AND ?
 	`
 	args := []interface{}{chapterID, startDate, endDate}
 
