@@ -70,7 +70,7 @@
         </div>
         <div class="level-item px-1" v-if="view === 'new_activists'">
           <b-button
-            label="Export Supporter CSV for Spoke"
+            label="Export CSV for Spoke"
             type="is-info"
             icon-left="download"
             tag="a"
