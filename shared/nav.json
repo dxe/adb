@@ -102,6 +102,11 @@
           "label": "All Activists",
           "href": "/list_activists",
           "page": "ActivistList"
+        },
+        {
+          "label": "New Activists",
+          "href": "/new_activists",
+          "page": "NewActivistsList"
         }
       ]
     },

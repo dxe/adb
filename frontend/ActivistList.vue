@@ -14,7 +14,12 @@
             Choose visible columns
           </b-button>
         </div>
-        <div class="level-item" v-if="view === 'all_activists' || view === 'community_prospects'">
+        <div
+          class="level-item"
+          v-if="
+            view === 'all_activists' || view === 'community_prospects' || view === 'new_activists'
+          "
+        >
           <b-field>
             <b-switch v-model="showFilters" type="is-primary">Show date filters</b-switch>
           </b-field>
@@ -63,6 +68,15 @@
             :href="`/csv/all_activists_spoke?start_date=${lastEventDateFrom}&end_date=${lastEventDateTo}`"
           ></b-button>
         </div>
+        <div class="level-item px-1" v-if="view === 'new_activists'">
+          <b-button
+            label="Export CSV for Spoke"
+            type="is-info"
+            icon-left="download"
+            tag="a"
+            :href="`/csv/new_activists_spoke?start_date=${lastEventDateFrom}&end_date=${lastEventDateTo}`"
+          ></b-button>
+        </div>
         <div class="level-item px-1" v-if="view === 'community_prospects'">
           <b-button
             label="Export CSV for HubSpot"
@@ -83,12 +97,18 @@
 
     <nav class="level mb-6">
       <div class="level-left">
-        <div class="level-item" v-if="showFilters && view === 'all_activists'">
+        <div
+          class="level-item"
+          v-if="showFilters && (view === 'all_activists' || view === 'new_activists')"
+        >
           <b-field label="Last Event From" label-position="on-border">
             <b-input v-model="lastEventDateFrom" type="date" icon="calendar-start"></b-input>
           </b-field>
         </div>
-        <div class="level-item" v-if="showFilters && view === 'all_activists'">
+        <div
+          class="level-item"
+          v-if="showFilters && (view === 'all_activists' || view === 'new_activists')"
+        >
           <b-field label="Last Event To" label-position="on-border">
             <b-input v-model="lastEventDateTo" type="date" icon="calendar-end"></b-input>
           </b-field>
@@ -633,7 +653,8 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
         view === 'chapter_member_prospects' ||
         view === 'chapter_member_development' ||
         view === 'community_prospects' ||
-        view === 'community_prospects_followup',
+        view === 'community_prospects_followup' ||
+        view === 'new_activists',
       showForAllChapters: true,
     },
     {
@@ -649,7 +670,8 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
         view === 'community_prospects_followup' ||
         view === 'all_activists' ||
         view === 'chapter_member_prospects' ||
-        view === 'chapter_member_development',
+        view === 'chapter_member_development' ||
+        view === 'new_activists',
       showForAllChapters: true,
     },
     {
@@ -669,7 +691,7 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
       data: {
         data: 'facebook',
       },
-      enabled: view === 'all_activists',
+      enabled: view === 'all_activists' || view === 'new_activists',
       showForAllChapters: true,
     },
     {
@@ -687,7 +709,8 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
         view === 'leaderboard' ||
         view === 'organizer_prospects' ||
         view === 'chapter_member_prospects' ||
-        view === 'chapter_member_development',
+        view === 'chapter_member_development' ||
+        view === 'new_activists',
     },
     {
       header: 'Birthday',
@@ -1107,7 +1130,8 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
         view === 'chapter_member_prospects' ||
         view === 'chapter_member_development' ||
         view === 'organizer_prospects' ||
-        view === 'development',
+        view === 'development' ||
+        view === 'new_activists',
     },
     {
       header: 'DA&C Current Month',
@@ -1903,9 +1927,17 @@ export default Vue.extend({
       height: 500,
       columns: getColumnsForChapter(this.chapterName, this.view),
       lastEventDateFrom:
-        this.view === 'all_activists' || this.view === 'leaderboard' ? initialDateFromValue() : '',
+        this.view === 'all_activists' || this.view === 'leaderboard'
+          ? initialDateFromValue()
+          : this.view === 'new_activists'
+            ? initialDateFromValue(6)
+            : '',
       lastEventDateTo:
-        this.view === 'all_activists' || this.view === 'leaderboard' ? initialDateToValue() : '',
+        this.view === 'all_activists' ||
+        this.view === 'leaderboard' ||
+        this.view === 'new_activists'
+          ? initialDateToValue()
+          : '',
       interestDateFrom: this.view === 'community_prospects' ? initialDateFromValue(6) : '',
       interestDateTo: this.view === 'community_prospects' ? initialDateToValue() : '',
       assignedToCurrentUser: this.view === 'community_prospects_followup',
@@ -1941,7 +1973,8 @@ export default Vue.extend({
           this.view === 'leaderboard' ||
           this.view === 'chapter_member_development' ||
           this.view === 'chapter_member_prospects' ||
-          this.view === 'all_activists',
+          this.view === 'all_activists' ||
+          this.view === 'new_activists',
         disableVisualSelection: false,
         multiSelect: true,
         fillHandle: false,
