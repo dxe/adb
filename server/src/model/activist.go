@@ -1779,10 +1779,10 @@ func GetNewActivistsSpokeInfo(db *sqlx.DB, chapterID int, startDate, endDate str
 			IF(preferred_name <> '', preferred_name, substring_index(name, " ", 1)) as first_name,
 			SUBSTRING(name, LOCATE(' ', name)+1) as last_name,
 			phone as cell,
-		    @last_event := ` + last_event_subquery + ` AS last_event
+			@last_event := ` + last_event_subquery + ` AS last_event
 		FROM activists
 		WHERE
-		    chapter_id = ?
+			chapter_id = ?
 			AND hidden = 0
 			AND (
 					SELECT COUNT(*) 
