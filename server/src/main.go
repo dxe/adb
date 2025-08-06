@@ -284,7 +284,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/csv/international_organizers", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.InternationalOrganizersCSVHandler))
 	router.Handle("/csv/event_attendance/{event_id:[0-9]+}", alice.New(main.apiOrganizerOrNonSFBayAuthMiddleware).ThenFunc(main.EventAttendanceCSVHandler))
 	router.Handle("/csv/all_activists_spoke", alice.New(main.apiOrganizerOrNonSFBayAuthMiddleware).ThenFunc(main.SupporterSpokeCSVHandler))
-	router.Handle("/csv/new_activists_spoke", alice.New(main.apiOrganizerOrNonSFBayAuthMiddleware).ThenFunc(main.NewSupporterSpokeCSVHandler))
+	router.Handle("/csv/new_activists_spoke", alice.New(main.apiOrganizerOrNonSFBayAuthMiddleware).ThenFunc(main.NewActivistSpokeCSVHandler))
 	router.Handle("/user/list", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.UserListHandler))
 	router.Handle("/user/me", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AuthedUserInfoHandler))
 
@@ -1439,13 +1439,13 @@ func (c MainController) SupporterSpokeCSVHandler(w http.ResponseWriter, r *http.
 	writer.Flush()
 }
 
-func (c MainController) NewSupporterSpokeCSVHandler(w http.ResponseWriter, r *http.Request) {
+func (c MainController) NewActivistSpokeCSVHandler(w http.ResponseWriter, r *http.Request) {
 	chapter := getAuthedADBChapter(c.db, r)
 
 	startDate := r.URL.Query().Get("start_date")
 	endDate := r.URL.Query().Get("end_date")
 
-	activists, err := model.GetNewSupporterSpokeInfo(c.db, chapter, startDate, endDate)
+	activists, err := model.GetNewActivistSpokeInfo(c.db, chapter, startDate, endDate)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
