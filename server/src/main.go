@@ -2520,6 +2520,7 @@ func (c MainController) InterestFormHandler(w http.ResponseWriter, r *http.Reque
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+		log.Printf("Received interest form response; chapter: %v, email: %v", formData.ChapterId, formData.Email)
 
 		err = model.SubmitInterestForm(c.db, formData)
 

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 
 	"regexp"
 	"strconv"
@@ -1194,6 +1195,8 @@ func UpdateActivistData(db *sqlx.DB, activist ActivistExtra, userEmail string) (
 			// Don't return this error because we still want to successfully update the activist in the database.
 			fmt.Println("ERROR updating activist on mailing list:", err.Error())
 		}
+		log.Printf("Pushed updated activist record to sign-up service: name: %v, email: %v, chapter: %v",
+			activist.Name, activist.Email, activist.ChapterID)
 	}
 	geoInfoChanged := activist.City != origActivist.City ||
 		activist.State != origActivist.State ||
@@ -1261,6 +1264,7 @@ WHERE
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to update activist data")
 	}
+	log.Printf("Updated data for activist %v", activist.Name)
 
 	// LOGGING (work in progress)
 	_, err = db.NamedExec(`INSERT INTO activists_history (activist_id, action, user_email, name, email, facebook, activist_level)
