@@ -88,7 +88,7 @@ func augmentUserWithChapterFromSession(db *sqlx.DB, r *http.Request, adbUser mod
 		return adbUser, fmt.Errorf("failed to get chapter ID from session")
 	}
 
-	chapter, err := model.GetChapterByID(db, chapterID)
+	chapter, err := model.GetChapterWithTokenById(db, chapterID)
 	if err != nil {
 		return adbUser, fmt.Errorf("failed to get chapter by ID %d: %w", chapterID, err)
 	}
@@ -263,7 +263,11 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/health", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.HealthStatusHandler))
 	router.Handle("/static_resources_hash", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.StaticResourcesHashHandler))
 	router.Handle("/external_events/{page_id:[0-9]+}", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.ListFBEventsHandler))
-	router.Handle("/chapters/{lat:[0-9.\\-]+},{lng:[0-9.\\-]+}", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.FindNearestChaptersHandler))
+	// Deprecated. Use "/chapters/nearest/{lat:[0-9.\\-]+},{lng:[0-9.\\-]+}" instead, which returns real Chapter ID in response `id` field rather than Facebook Page ID.
+	// Todo: remove this handler: https://app.asana.com/1/71341131816665/project/1209217418568645/task/1210958184890117?focus=true
+	router.Handle("/chapters/{lat:[0-9.\\-]+},{lng:[0-9.\\-]+}", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.FindNearestChaptersDeprecatedHandler))
+	router.Handle("/chapters/nearest/{lat:[0-9.\\-]+},{lng:[0-9.\\-]+}", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.FindNearestChaptersHandler))
+	router.Handle("/chapters/{id:[0-9]+}", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.FindChapterById))
 	router.Handle("/regions", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.ListAllChaptersByRegion))
 	router.Handle("/chapters", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.ListAllChapters))
 	router.Handle("/circles", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.CircleGroupNormalListHandler)) // TODO: maybe the public endpoints should return less info
@@ -755,7 +759,7 @@ func (c MainController) ChapterSaveHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	chapJSON, err := model.GetChapterByID(c.db, chapID)
+	chapJSON, err := model.GetChapterWithTokenById(c.db, chapID)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
@@ -1893,7 +1897,7 @@ func (c MainController) ListFBEventsHandler(w http.ResponseWriter, r *http.Reque
 	})
 }
 
-func (c MainController) FindNearestChaptersHandler(w http.ResponseWriter, r *http.Request) {
+func GetLatLng(w http.ResponseWriter, r *http.Request) (float64, float64, error) {
 	// get lat, lng
 	vars := mux.Vars(r)
 	var lat float64
@@ -1902,25 +1906,21 @@ func (c MainController) FindNearestChaptersHandler(w http.ResponseWriter, r *htt
 		var err error
 		lat, err = strconv.ParseFloat(latStr, 64)
 		if err != nil {
-			panic(err)
+			return 0, 0, fmt.Errorf("error parsing lat: %v", err)
 		}
 	}
 	if lngStr, ok := vars["lng"]; ok {
 		var err error
 		lng, err = strconv.ParseFloat(lngStr, 64)
 		if err != nil {
-			panic(err)
+			return 0, 0, fmt.Errorf("error parsing lng: %v", err)
 		}
 	}
 
 	// if lat & lng = 0, then get location using IP address
 	if lat == 0 && lng == 0 {
 		if config.IPGeolocationKey == "" {
-			writeJSON(w, map[string]string{
-				"status":  "error",
-				"message": "Geolocation API key not configured",
-			})
-			return
+			return 0, 0, errors.New("Geolocation API key not configured")
 		}
 
 		ip := getIP(r)
@@ -1928,33 +1928,77 @@ func (c MainController) FindNearestChaptersHandler(w http.ResponseWriter, r *htt
 		path := "https://api.ipgeolocation.io/ipgeo?apiKey=" + config.IPGeolocationKey + "&ip=" + ip + "&fields=latitude,longitude"
 		resp, err := http.Get(path)
 		if err != nil {
-			panic(err)
+			return 0, 0, fmt.Errorf("error connecting to Geolocation API: %v", err)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != http.StatusOK {
-			log.Printf("Error status from IP Geolocation: %v\n", resp.Status)
-			panic(resp.StatusCode)
+			return 0, 0, fmt.Errorf("error from Geolocation API: %v, %v", resp.Status, resp.StatusCode)
 		}
 		loc := latLng{}
 		err = json.NewDecoder(resp.Body).Decode(&loc)
 		if err != nil {
-			panic(err)
+			return 0, 0, fmt.Errorf("error decoding response from Geolocation API: %v", err)
 		}
 		lat, err = strconv.ParseFloat(loc.Latitude, 64)
+		if err != nil {
+			return 0, 0, fmt.Errorf("error parsing lat from Geolocation API: %v", err)
+		}
 		lng, err = strconv.ParseFloat(loc.Longitude, 64)
 		if err != nil {
-			panic(err)
+			return 0, 0, fmt.Errorf("error parsing lng from Geolocation API: %v", err)
 		}
 	}
 
+	return lat, lng, nil
+}
+
+func (c MainController) FindNearestChaptersDeprecatedHandler(w http.ResponseWriter, r *http.Request) {
+	lat, lng, err := GetLatLng(w, r)
+	if err != nil {
+		panic(fmt.Errorf("error getting lat/lng: %v", err))
+	}
+
 	// run query
-	pages, err := model.FindNearestChaptersSortedByDistance(c.db, lat, lng)
+	pages, err := model.FindNearestChaptersSortedByDistanceDeprecated(c.db, lat, lng)
 	if err != nil {
 		panic(err)
 	}
 
 	// return json
 	writeJSON(w, pages)
+}
+
+func (c MainController) FindNearestChaptersHandler(w http.ResponseWriter, r *http.Request) {
+	lat, lng, err := GetLatLng(w, r)
+	if err != nil {
+		panic(fmt.Errorf("error getting lat/lng: %v", err))
+	}
+
+	chapters, err := model.FindNearestChaptersSortedByDistance(c.db, lat, lng)
+	if err != nil {
+		panic(err)
+	}
+
+	writeJSON(w, chapters)
+}
+
+func (c MainController) FindChapterById(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	var chapterId int
+	if chapterIdStr, ok := vars["id"]; ok {
+		var err error
+		chapterId, err = strconv.Atoi(chapterIdStr)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	chapter, err := model.GetChapterById(c.db, chapterId)
+	if err != nil {
+		panic(fmt.Errorf("error getting chapter by ID: %v", err))
+	}
+
+	writeJSON(w, chapter)
 }
 
 func (c MainController) ListAllChaptersByRegion(w http.ResponseWriter, r *http.Request) {

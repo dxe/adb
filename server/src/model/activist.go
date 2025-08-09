@@ -1165,45 +1165,44 @@ func UpdateActivistData(db *sqlx.DB, activist ActivistExtra, userEmail string) (
 	orig, err := GetActivistsExtra(db, GetActivistOptions{
 		ID: activist.ID,
 	})
+	if err != nil {
+		return 0, fmt.Errorf("error fetching existing activist data: %v", err)
+	}
 	origActivist := orig[0]
 
-	// if in the Bay Area, add to mailing list if needed
-	// TODO: make this work for other chapters too, maybe based on Chapters table mailing list info?
-	// or maybe just passing chapter Name or ID to the signup service?
-	if origActivist.ChapterID == SFBayChapterId {
-		mailingListInfoChanged := activist.Name != origActivist.Name ||
-			activist.Email != origActivist.Email ||
-			activist.Phone != origActivist.Phone ||
-			activist.Location != origActivist.Location ||
-			activist.City != origActivist.City ||
-			activist.State != origActivist.State ||
-			activist.ActivistLevel != origActivist.ActivistLevel
-		if mailingListInfoChanged && activist.Email != "" {
-			signup := mailing_list_signup.Signup{
-				Source:        "adb",
-				Name:          activist.Name,
-				Email:         activist.Email,
-				Phone:         activist.Phone,
-				City:          activist.City,
-				State:         activist.State,
-				Zip:           activist.Location.String,
-				ActivistLevel: activist.ActivistLevel,
-			}
-			err := mailing_list_signup.Enqueue(signup)
-			if err != nil {
-				// Don't return this error because we still want to successfully update the activist in the database.
-				fmt.Println("ERROR updating activist on mailing list:", err.Error())
-			}
+	mailingListInfoChanged := activist.Name != origActivist.Name ||
+		activist.Email != origActivist.Email ||
+		activist.Phone != origActivist.Phone ||
+		activist.Location != origActivist.Location ||
+		activist.City != origActivist.City ||
+		activist.State != origActivist.State ||
+		activist.ActivistLevel != origActivist.ActivistLevel
+	if mailingListInfoChanged && activist.Email != "" {
+		signup := mailing_list_signup.Signup{
+			Source:          "adb",
+			Name:            activist.Name,
+			Email:           activist.Email,
+			Phone:           activist.Phone,
+			City:            activist.City,
+			State:           activist.State,
+			Zip:             activist.Location.String,
+			TargetChapterId: activist.ChapterID,
+			ActivistLevel:   activist.ActivistLevel,
 		}
-		geoInfoChanged := activist.City != origActivist.City ||
-			activist.State != origActivist.State ||
-			activist.StreetAddress != origActivist.StreetAddress
-		if geoInfoChanged && activist.StreetAddress != "" && activist.City != "" && activist.State != "" {
-			location := geoCodeAddress(activist.StreetAddress, activist.City, activist.State)
-			if location != nil {
-				activist.Lng = location.Lng
-				activist.Lat = location.Lat
-			}
+		err := mailing_list_signup.Enqueue(signup)
+		if err != nil {
+			// Don't return this error because we still want to successfully update the activist in the database.
+			fmt.Println("ERROR updating activist on mailing list:", err.Error())
+		}
+	}
+	geoInfoChanged := activist.City != origActivist.City ||
+		activist.State != origActivist.State ||
+		activist.StreetAddress != origActivist.StreetAddress
+	if geoInfoChanged && activist.StreetAddress != "" && activist.City != "" && activist.State != "" {
+		location := geoCodeAddress(activist.StreetAddress, activist.City, activist.State)
+		if location != nil {
+			activist.Lng = location.Lng
+			activist.Lat = location.Lat
 		}
 	}
 
