@@ -32,6 +32,8 @@ func (l *migrationLogger) Verbose() bool {
 	return l.verboseLogging
 }
 
+// ApplyAllMigrations applies schema migrations to the database.
+// For more information, see server/scripts/db-migrations/README.md
 func ApplyAllMigrations(db *sqlx.DB, sourceURL string, verboseLogging bool) error {
 	driver, err := mysql.WithInstance(db.DB, &mysql.Config{})
 	if err != nil {
