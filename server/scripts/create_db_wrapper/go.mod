@@ -13,6 +13,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/jmoiron/sqlx v1.2.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/rs/zerolog v1.20.0 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 )
 
