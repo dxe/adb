@@ -53,7 +53,17 @@ SELECT
   facebook,
   a.id,
   a.chapter_id,
+  mpi,
+  a.notes,
+  vision_wall,
+  mpp_requirements,
+  voting_agreement,
+  street_address,
+  city,
+  state,
   location,
+  lat,
+  lng,
   a.name,
   preferred_name,
   phone,
@@ -87,6 +97,8 @@ SELECT
   referral_apply,
   referral_outlet,
   interest_date,
+
+  discord_id,
 
   @first_event := (
       SELECT min(e.date) AS min_date
@@ -155,16 +167,6 @@ SELECT
     WHERE inner_a.id = a.id and e.event_type = "Connection"
   	),"") AS last_connection,
 
-    mpi,
-    a.notes,
-    vision_wall,
-    mpp_requirements,
-    voting_agreement,
-    street_address,
-    city,
-    state,
-    discord_id,
-
 	IFNULL((
       SELECT GROUP_CONCAT(c.name)
       FROM circle_members cm
@@ -227,9 +229,14 @@ LEFT JOIN (
 ) mpp_requirements on mpp_requirements.activist_id_mpp = a.id
 `
 
+// Warning: when adding fields to this query, test that values aren't overwritten with blank values due to unpopulated
+// fields in the model object. In particular, make sure these queries / functions are updated:
+//   - selectActivistExtraBaseQuery
+//   - buildActivistJSONArray
+//   - CleanActivistData
+//   - getMergeActivistWinner
 const updateActivistExtraBaseQuery string = `UPDATE activists
 SET
-
   email = :email,
   email_updated = IF(email <> :email, NOW(), email_updated),
   facebook = :facebook,
@@ -275,10 +282,12 @@ SET
   city = :city,
   state = :state,
   address_updated = IF(street_address <> :street_address OR city <> :city OR state <> :state, NOW(), address_updated),
+  lat = :lat,
+  lng = :lng,
+  coords_updated = IF(lat <> :lat OR lng <> :lng, NOW(), coords_updated),
   discord_id = :discord_id,
   assigned_to = :assigned_to,
   followup_date = :followup_date
-
 WHERE
   id = :id`
 
@@ -680,6 +689,8 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			StreetAddress:         a.StreetAddress,
 			City:                  a.City,
 			State:                 a.State,
+			Lat:                   a.Lat,
+			Lng:                   a.Lng,
 			DiscordID:             discord_id,
 			GeoCircles:            a.GeoCircles,
 			AssignedToName:        a.AssignedToName,
@@ -1227,61 +1238,7 @@ func UpdateActivistData(db *sqlx.DB, activist ActivistExtra, userEmail string) (
 		}
 	}
 
-	_, err = db.NamedExec(`UPDATE activists
-SET
-
-  email = :email,
-  email_updated = IF(email <> :email, NOW(), email_updated),
-  facebook = :facebook,
-  location = :location,
-  name = :name,
-  preferred_name = :preferred_name,
-  phone = :phone,
-  phone_updated = IF(phone <> :phone, NOW(), phone_updated),
-  pronouns = :pronouns,
-  language = :language,
-  accessibility = :accessibility,
-  dob = :dob,
-
-  activist_level = :activist_level,
-  source = :source,
-  hiatus = :hiatus,
-
-  connector = :connector,
-  training0 = :training0,
-  training1 = :training1,
-  training4 = :training4,
-  training5 = :training5,
-  training6 = :training6,
-  consent_quiz = :consent_quiz,
-  training_protest = :training_protest,
-  dev_interest = :dev_interest,
-  dev_quiz = :dev_quiz,
-  cm_first_email = :cm_first_email,
-  cm_approval_email = :cm_approval_email,
-  prospect_organizer = :prospect_organizer,
-  prospect_chapter_member = :prospect_chapter_member,
-  referral_friends = :referral_friends,
-  referral_apply = :referral_apply,
-  referral_outlet = :referral_outlet,
-  interest_date = :interest_date,
-  mpi = :mpi,
-  notes = :notes,
-  vision_wall = :vision_wall,
-  voting_agreement = :voting_agreement,
-  street_address = :street_address,
-  city = :city,
-  state = :state,
-  address_updated = IF(street_address <> :street_address OR city <> :city OR state <> :state, NOW(), address_updated),
-  lat = :lat,
-  lng = :lng,
-  coords_updated = IF(lat <> :lat OR lng <> :lng, NOW(), coords_updated),
-  discord_id = :discord_id,
-  assigned_to = :assigned_to,
-  followup_date = :followup_date
-  
-WHERE
-  id = :id`, activist)
+	_, err = db.NamedExec(updateActivistExtraBaseQuery, activist)
 
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to update activist data")
@@ -2024,6 +1981,10 @@ func CleanActivistData(body io.Reader, db *sqlx.DB) (ActivistExtra, error) {
 			Language:      strings.TrimSpace(activistJSON.Language),
 			Accessibility: strings.TrimSpace(activistJSON.Accessibility),
 			Birthday:      sql.NullString{String: strings.TrimSpace(activistJSON.Birthday), Valid: validBirthday},
+			Coords: Coords{
+				Lat: activistJSON.Lat,
+				Lng: activistJSON.Lng,
+			},
 		},
 		ActivistMembershipData: ActivistMembershipData{
 			ActivistLevel: strings.TrimSpace(activistJSON.ActivistLevel),
