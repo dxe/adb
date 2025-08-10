@@ -691,7 +691,7 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
       data: {
         data: 'facebook',
       },
-      enabled: view === 'all_activists' || view === 'new_activists',
+      enabled: (view === 'all_activists' || view === 'new_activists') && chapter === 'SF Bay Area',
       showForAllChapters: true,
     },
     {
@@ -807,7 +807,7 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
         data: 'city',
         colWidths: 100,
       },
-      enabled: false,
+      enabled: view === 'all_activists',
       showForAllChapters: true,
     },
     {
