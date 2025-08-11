@@ -1180,14 +1180,17 @@ func UpdateActivistData(db *sqlx.DB, activist ActivistExtra, userEmail string) (
 		activist.ActivistLevel != origActivist.ActivistLevel
 	if mailingListInfoChanged && activist.Email != "" {
 		signup := mailing_list_signup.Signup{
-			Source:          "adb",
-			Name:            activist.Name,
-			Email:           activist.Email,
-			Phone:           activist.Phone,
-			City:            activist.City,
-			State:           activist.State,
-			Zip:             activist.Location.String,
-			TargetChapterId: activist.ChapterID,
+			Source: "adb",
+			Name:   activist.Name,
+			Email:  activist.Email,
+			Phone:  activist.Phone,
+			City:   activist.City,
+			State:  activist.State,
+			// Zip will be used to find a chapter mailing list (often this chapter's mailing list).
+			// Activist may be added to ADB chapter near this zip, if different from this chapter.
+			Zip: activist.Location.String,
+			// Let signup service know this chapter's ID so it doesn't try to sync back here causing an infinite loop.
+			SourceChapterId: activist.ChapterID,
 			ActivistLevel:   activist.ActivistLevel,
 		}
 		err := mailing_list_signup.Enqueue(signup)
