@@ -17,7 +17,7 @@
         <div
           class="level-item"
           v-if="
-            view === 'all_activists' || view === 'community_prospects' || view === 'new_activists'
+            view === 'all_activists' || view === 'community_prospects' || view === 'new_activists' || view === 'new_activists_pending_workshop'
           "
         >
           <b-field>
@@ -77,6 +77,15 @@
             :href="`/csv/new_activists_spoke?start_date=${lastEventDateFrom}&end_date=${lastEventDateTo}`"
           ></b-button>
         </div>
+        <div class="level-item px-1" v-if="view === 'new_activists_pending_workshop'">
+          <b-button
+            label="Export CSV for Spoke"
+            type="is-info"
+            icon-left="download"
+            tag="a"
+            :href="`/csv/new_activists_pending_workshop_spoke?start_date=${lastEventDateFrom}&end_date=${lastEventDateTo}`"
+          ></b-button>
+        </div>
         <div class="level-item px-1" v-if="view === 'community_prospects'">
           <b-button
             label="Export CSV for HubSpot"
@@ -99,7 +108,7 @@
       <div class="level-left">
         <div
           class="level-item"
-          v-if="showFilters && (view === 'all_activists' || view === 'new_activists')"
+          v-if="showFilters && (view === 'all_activists' || view === 'new_activists' || view === 'new_activists_pending_workshop')"
         >
           <b-field label="Last Event From" label-position="on-border">
             <b-input v-model="lastEventDateFrom" type="date" icon="calendar-start"></b-input>
@@ -107,7 +116,7 @@
         </div>
         <div
           class="level-item"
-          v-if="showFilters && (view === 'all_activists' || view === 'new_activists')"
+          v-if="showFilters && (view === 'all_activists' || view === 'new_activists' || view === 'new_activists_pending_workshop')"
         >
           <b-field label="Last Event To" label-position="on-border">
             <b-input v-model="lastEventDateTo" type="date" icon="calendar-end"></b-input>
@@ -654,7 +663,8 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
         view === 'chapter_member_development' ||
         view === 'community_prospects' ||
         view === 'community_prospects_followup' ||
-        view === 'new_activists',
+        view === 'new_activists' || 
+        view === 'new_activists_pending_workshop',
       showForAllChapters: true,
     },
     {
@@ -671,7 +681,8 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
         view === 'all_activists' ||
         view === 'chapter_member_prospects' ||
         view === 'chapter_member_development' ||
-        view === 'new_activists',
+        view === 'new_activists' || 
+        view === 'new_activists_pending_workshop',
       showForAllChapters: true,
     },
     {
@@ -691,7 +702,10 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
       data: {
         data: 'facebook',
       },
-      enabled: view === 'all_activists' || view === 'new_activists',
+      enabled: 
+        view === 'all_activists' || 
+        view === 'new_activists' || 
+        view === 'new_activists_pending_workshop',
       showForAllChapters: true,
     },
     {
@@ -710,7 +724,8 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
         view === 'organizer_prospects' ||
         view === 'chapter_member_prospects' ||
         view === 'chapter_member_development' ||
-        view === 'new_activists',
+        view === 'new_activists' ||
+        view === 'new_activists_pending_workshop',
     },
     {
       header: 'Birthday',
@@ -1131,7 +1146,8 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
         view === 'chapter_member_development' ||
         view === 'organizer_prospects' ||
         view === 'development' ||
-        view === 'new_activists',
+        view === 'new_activists' ||
+        view === 'new_activists_pending_workshop',
     },
     {
       header: 'DA&C Current Month',
@@ -1929,13 +1945,14 @@ export default Vue.extend({
       lastEventDateFrom:
         this.view === 'all_activists' || this.view === 'leaderboard'
           ? initialDateFromValue()
-          : this.view === 'new_activists'
+          : this.view === 'new_activists' || this.view === 'new_activists_pending_workshop'
             ? initialDateFromValue(6)
             : '',
       lastEventDateTo:
         this.view === 'all_activists' ||
         this.view === 'leaderboard' ||
-        this.view === 'new_activists'
+        this.view === 'new_activists' || 
+        this.view === 'new_activists_pending_workshop'
           ? initialDateToValue()
           : '',
       interestDateFrom: this.view === 'community_prospects' ? initialDateFromValue(6) : '',
@@ -1974,7 +1991,8 @@ export default Vue.extend({
           this.view === 'chapter_member_development' ||
           this.view === 'chapter_member_prospects' ||
           this.view === 'all_activists' ||
-          this.view === 'new_activists',
+          this.view === 'new_activists' || 
+          this.view === 'new_activists_pending_workshop',
         disableVisualSelection: false,
         multiSelect: true,
         fillHandle: false,

@@ -860,6 +860,24 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 				) BETWEEN ? AND ?`)
 			queryArgs = append(queryArgs, options.LastEventDateFrom, options.LastEventDateTo)
 
+		case "new_activists_pending_workshop":
+			whereClause = append(whereClause, `
+				(
+					SELECT COUNT(*) 
+					FROM event_attendance ea
+					JOIN events e ON ea.event_id = e.id
+					WHERE ea.activist_id = a.id 
+				) <= 3
+				AND training0 is NULL
+				AND
+				(
+					SELECT MAX(e.date)
+					FROM event_attendance ea
+					JOIN events e ON ea.event_id = e.id
+					WHERE ea.activist_id = a.id
+				) BETWEEN ? AND ?`)
+			queryArgs = append(queryArgs, options.LastEventDateFrom, options.LastEventDateTo)
+
 		}
 
 		if len(whereClause) != 0 {
@@ -1791,6 +1809,45 @@ func GetNewActivistsSpokeInfo(db *sqlx.DB, chapterID int, startDate, endDate str
 					JOIN events e ON ea.event_id = e.id
 					WHERE ea.activist_id = activists.id 
 				) <= 3
+			AND ` + last_event_subquery + ` BETWEEN ? AND ?
+	`
+	args := []interface{}{chapterID, startDate, endDate}
+
+	var activists []ActivistSpokeInfo
+	err := db.Select(&activists, query, args...)
+	if err != nil {
+		return []ActivistSpokeInfo{}, err
+	}
+
+	return activists, nil
+}
+
+func GetNewActivistsPendingWorkshopSpokeInfo(db *sqlx.DB, chapterID int, startDate, endDate string) ([]ActivistSpokeInfo, error) {
+	last_event_subquery := `
+		(
+			SELECT MAX(e.date)
+			FROM event_attendance ea
+			JOIN events e ON ea.event_id = e.id
+			WHERE ea.activist_id = activists.id
+		)`
+
+	query := `
+		SELECT
+			IF(preferred_name <> '', preferred_name, substring_index(name, " ", 1)) as first_name,
+			SUBSTRING(name, LOCATE(' ', name)+1) as last_name,
+			phone as cell,
+			@last_event := ` + last_event_subquery + ` AS last_event
+		FROM activists
+		WHERE
+			chapter_id = ?
+			AND hidden = 0
+			AND (
+					SELECT COUNT(*) 
+					FROM event_attendance ea
+					JOIN events e ON ea.event_id = e.id
+					WHERE ea.activist_id = activists.id 
+				) <= 3
+			AND training0 IS NULL
 			AND ` + last_event_subquery + ` BETWEEN ? AND ?
 	`
 	args := []interface{}{chapterID, startDate, endDate}
