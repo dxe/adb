@@ -2,11 +2,11 @@ package model
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/dxe/adb/mailing_list_signup"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog/log"
 )
 
 type ApplicationFormData struct {
@@ -92,6 +92,7 @@ func SubmitApplicationForm(db *sqlx.DB, formData ApplicationFormData) error {
 		// Don't fail the HTTP request since at least the user's response was added to the database.
 		fmt.Println("ERROR adding application form submission to mailing list:", err.Error())
 	}
+	log.Printf("Enqueued email for sign-up: %v", formData.Email)
 
 	return nil
 }
@@ -106,20 +107,25 @@ func SubmitInterestForm(db *sqlx.DB, formData InterestFormData) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to insert interest data")
 	}
+	log.Printf("Saved interest form response for %v", formData.Email)
 
 	if !formData.SubmittedViaSignupService {
 		signup := mailing_list_signup.Signup{
 			Source: "adb-interest-form",
-			Name:   formData.Name,
-			Email:  formData.Email,
-			Phone:  formData.Phone,
-			Zip:    formData.Zip,
+			// Subscribe responder to the chapter that owns the form in addition to any chapter
+			// near the responder's zip code.
+			SourceChapterId: formData.ChapterId,
+			Name:            formData.Name,
+			Email:           formData.Email,
+			Phone:           formData.Phone,
+			Zip:             formData.Zip,
 		}
 		err = mailing_list_signup.Enqueue(signup)
 		if err != nil {
 			// Don't fail the HTTP request since at least the user's response was added to the database.
-			fmt.Println("ERROR adding interest form submission to mailing list:", err.Error())
+			log.Error().Msgf("ERROR adding interest form submission to mailing list: %v", err)
 		}
+		log.Printf("Enqueued email for sign-up: %v; source chapter id: %v; target chapter zip code: %v", formData.Email, formData.ChapterId, formData.Zip)
 	}
 
 	return nil
@@ -150,6 +156,7 @@ func SubmitInternationalForm(db *sqlx.DB, formData InternationalFormData) error 
 		// Don't return this error because we still want to indicate successfully updating the database.
 		log.Printf("ERROR adding international application form submission to mailing list: %v", err.Error())
 	}
+	log.Printf("Enqueued email for sign-up: %v", formData.Email)
 
 	return nil
 }
@@ -207,6 +214,7 @@ func SubmitDiscordForm(db *sqlx.DB, formData DiscordFormData) error {
 		// Don't return this error because we still want to successfully update the database.
 		fmt.Println("ERROR adding discord form submission to mailing list:", err.Error())
 	}
+	log.Printf("Enqueued email for sign-up: %v", formData.Email)
 
 	return nil
 }

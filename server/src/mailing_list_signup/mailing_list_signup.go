@@ -10,18 +10,22 @@ import (
 	"github.com/dxe/adb/config"
 )
 
+// Corresponds to Signup defined by sign-up service:
+// https://github.com/search?q=repo%3Adxe%2Fsignups-worker%20%22type%20Signup%20struct%20%7B%22&type=code
 type Signup struct {
-	Source        string
-	Name          string
-	Email         string
-	Phone         string
-	City          string
-	State         string
-	Zip           string
-	Country       string
-	Coords        string
-	DiscordID     string
-	ActivistLevel string `json:"activist_level"`
+	Source          string
+	Name            string
+	Email           string
+	Phone           string
+	City            string
+	State           string
+	Zip             string
+	Country         string
+	Coords          string
+	DiscordID       string
+	TargetChapterId int    `json:"target_chapter_id"`
+	SourceChapterId int    `json:"source_chapter_id"`
+	ActivistLevel   string `json:"activist_level"`
 }
 
 func Enqueue(signup Signup) error {
