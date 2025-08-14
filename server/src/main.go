@@ -240,7 +240,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/list_connections", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListConnectionsHandler))
 	router.Handle("/list_activists", alice.New(main.authOrganizerOrNonSFBayMiddleware).ThenFunc(main.ListActivistsHandler))
 	router.Handle("/new_activists", alice.New(main.authOrganizerOrNonSFBayMiddleware).ThenFunc(main.NewActivistsHandler))
-	router.Handle("/new_activists_pending_workshop", alice.New(main.authOrganizerMiddleware).ThenFunc(main.NewActivistsPendingWorkshopHandler))
+	router.Handle("/new_activists_pending_workshop", alice.New(main.authOrganizerOrNonSFBayMiddleware).ThenFunc(main.NewActivistsPendingWorkshopHandler))
 	router.Handle("/community_prospects", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListCommunityProspectsHandler))
 	router.Handle("/community_prospects_followup", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListCommunityProspectsFollowupHandler))
 	router.Handle("/activist_development", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListActivistsDevelopmentHandler))
