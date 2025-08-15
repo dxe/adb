@@ -17,7 +17,10 @@
         <div
           class="level-item"
           v-if="
-            view === 'all_activists' || view === 'community_prospects' || view === 'new_activists' || view === 'new_activists_pending_workshop'
+            view === 'all_activists' ||
+            view === 'community_prospects' ||
+            view === 'new_activists' ||
+            view === 'new_activists_pending_workshop'
           "
         >
           <b-field>
@@ -108,7 +111,12 @@
       <div class="level-left">
         <div
           class="level-item"
-          v-if="showFilters && (view === 'all_activists' || view === 'new_activists' || view === 'new_activists_pending_workshop')"
+          v-if="
+            showFilters &&
+            (view === 'all_activists' ||
+              view === 'new_activists' ||
+              view === 'new_activists_pending_workshop')
+          "
         >
           <b-field label="Last Event From" label-position="on-border">
             <b-input v-model="lastEventDateFrom" type="date" icon="calendar-start"></b-input>
@@ -116,7 +124,12 @@
         </div>
         <div
           class="level-item"
-          v-if="showFilters && (view === 'all_activists' || view === 'new_activists' || view === 'new_activists_pending_workshop')"
+          v-if="
+            showFilters &&
+            (view === 'all_activists' ||
+              view === 'new_activists' ||
+              view === 'new_activists_pending_workshop')
+          "
         >
           <b-field label="Last Event To" label-position="on-border">
             <b-input v-model="lastEventDateTo" type="date" icon="calendar-end"></b-input>
@@ -663,7 +676,7 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
         view === 'chapter_member_development' ||
         view === 'community_prospects' ||
         view === 'community_prospects_followup' ||
-        view === 'new_activists' || 
+        view === 'new_activists' ||
         view === 'new_activists_pending_workshop',
       showForAllChapters: true,
     },
@@ -681,7 +694,7 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
         view === 'all_activists' ||
         view === 'chapter_member_prospects' ||
         view === 'chapter_member_development' ||
-        view === 'new_activists' || 
+        view === 'new_activists' ||
         view === 'new_activists_pending_workshop',
       showForAllChapters: true,
     },
@@ -702,11 +715,11 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
       data: {
         data: 'facebook',
       },
-      enabled: (
-        view === 'all_activists' || 
-        view === 'new_activists' || 
-        view === 'new_activists_pending_workshop'
-      ) && chapter === 'SF Bay Area',
+      enabled:
+        (view === 'all_activists' ||
+          view === 'new_activists' ||
+          view === 'new_activists_pending_workshop') &&
+        chapter === 'SF Bay Area',
       showForAllChapters: true,
     },
     {
@@ -845,7 +858,9 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
         data: 'location',
         colWidths: 100,
       },
-      enabled: view === 'all_activists' && chapter === 'SF Bay Area',
+      enabled:
+        (view === 'all_activists' || view === 'new_activists_pending_workshop') &&
+        chapter === 'SF Bay Area',
       showForAllChapters: true,
     },
     // Prospect Info
@@ -1073,6 +1088,7 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
         view === 'community_prospects' ||
         view === 'community_prospects_followup' ||
         view === 'study' ||
+        view === 'new_activists_pending_workshop' ||
         chapter !== 'SF Bay Area',
       showForAllChapters: true,
     },
@@ -1102,7 +1118,11 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
         readOnly: true,
         colWidths: 200,
       },
-      enabled: view === 'leaderboard' || view === 'study' || chapter !== 'SF Bay Area',
+      enabled:
+        view === 'leaderboard' ||
+        view === 'study' ||
+        view === 'new_activists_pending_workshop' ||
+        chapter !== 'SF Bay Area',
       showForAllChapters: true,
     },
     {
@@ -1173,7 +1193,10 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
         correctFormat: true,
         colWidths: 100,
       },
-      enabled: view === 'chapter_member_prospects' || view === 'organizer_prospects',
+      enabled:
+        view === 'chapter_member_prospects' ||
+        view === 'organizer_prospects' ||
+        view === 'new_activists_pending_workshop',
     },
     {
       header: 'Consent & Oppress',
@@ -1952,7 +1975,7 @@ export default Vue.extend({
       lastEventDateTo:
         this.view === 'all_activists' ||
         this.view === 'leaderboard' ||
-        this.view === 'new_activists' || 
+        this.view === 'new_activists' ||
         this.view === 'new_activists_pending_workshop'
           ? initialDateToValue()
           : '',
@@ -1992,7 +2015,7 @@ export default Vue.extend({
           this.view === 'chapter_member_development' ||
           this.view === 'chapter_member_prospects' ||
           this.view === 'all_activists' ||
-          this.view === 'new_activists' || 
+          this.view === 'new_activists' ||
           this.view === 'new_activists_pending_workshop',
         disableVisualSelection: false,
         multiSelect: true,
