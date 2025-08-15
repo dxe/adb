@@ -1716,6 +1716,13 @@ type ActivistSpokeInfo struct {
 	LastEvent string `db:"last_event"`
 }
 
+type NewActivistPendingWorkshopSpokeInfo struct {
+	FirstName  string `db:"first_name"`
+	LastName   string `db:"last_name"`
+	Cell       string `db:"cell"`
+	FirstEvent string `db:"first_event"`
+}
+
 func GetChapterMemberSpokeInfo(db *sqlx.DB, chapterID int) ([]ActivistSpokeInfo, error) {
 	const query = `
 		SELECT
@@ -1819,7 +1826,7 @@ func GetNewActivistsSpokeInfo(db *sqlx.DB, chapterID int, startDate, endDate str
 	return activists, nil
 }
 
-func GetNewActivistsPendingWorkshopSpokeInfo(db *sqlx.DB, chapterID int, startDate, endDate string) ([]ActivistSpokeInfo, error) {
+func GetNewActivistsPendingWorkshopSpokeInfo(db *sqlx.DB, chapterID int, startDate, endDate string) ([]NewActivistPendingWorkshopSpokeInfo, error) {
 	first_event_subquery := `
 		(
 			SELECT MIN(e.date)
@@ -1833,7 +1840,7 @@ func GetNewActivistsPendingWorkshopSpokeInfo(db *sqlx.DB, chapterID int, startDa
 			IF(preferred_name <> '', preferred_name, substring_index(name, " ", 1)) as first_name,
 			SUBSTRING(name, LOCATE(' ', name)+1) as last_name,
 			phone as cell,
-			@last_event := ` + first_event_subquery + ` AS first_event
+			@first_event := ` + first_event_subquery + ` AS first_event
 		FROM activists
 		WHERE
 			chapter_id = ?
@@ -1843,10 +1850,10 @@ func GetNewActivistsPendingWorkshopSpokeInfo(db *sqlx.DB, chapterID int, startDa
 	`
 	args := []interface{}{chapterID, startDate, endDate}
 
-	var activists []ActivistSpokeInfo
+	var activists []NewActivistPendingWorkshopSpokeInfo
 	err := db.Select(&activists, query, args...)
 	if err != nil {
-		return []ActivistSpokeInfo{}, err
+		return []NewActivistPendingWorkshopSpokeInfo{}, err
 	}
 
 	return activists, nil

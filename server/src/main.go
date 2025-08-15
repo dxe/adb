@@ -1561,13 +1561,13 @@ func (c MainController) NewActivistsPendingWorkshopSpokeCSVHandler(w http.Respon
 	w.Header().Set("Transfer-Encoding", "chunked")
 
 	writer := csv.NewWriter(w)
-	err = writer.Write([]string{"first_name", "last_name", "cell", "last_event"})
+	err = writer.Write([]string{"first_name", "last_name", "cell", "first_event"})
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
 	}
 	for _, activist := range activists {
-		err := writer.Write([]string{activist.FirstName, activist.LastName, activist.Cell, activist.LastEvent})
+		err := writer.Write([]string{activist.FirstName, activist.LastName, activist.Cell, activist.FirstEvent})
 		if err != nil {
 			sendErrorMessage(w, err)
 			return
