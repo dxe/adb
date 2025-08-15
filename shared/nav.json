@@ -111,7 +111,8 @@
         {
           "label": "New Activists Pending Workshop",
           "href": "/new_activists_pending_workshop",
-          "page": "NewActivistsPendingWorkshopList"
+          "page": "NewActivistsPendingWorkshopList",
+          "roleRequired": ["organizer"]
         }
       ]
     },
