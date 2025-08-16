@@ -12,6 +12,8 @@ import (
 
 const interestProcessingStatusQuery = "SELECT processed FROM form_interest WHERE id = ?"
 
+const interestFormEmailSqlExpr = "IF(activists.email = '', form_interest.email, activists.email)"
+const interestFormPhoneSqlExpr = "IF(activists.phone = '', form_interest.phone, activists.phone)"
 const processInterestOnNameQuery = `
 # try to match on name
 UPDATE
@@ -19,8 +21,10 @@ UPDATE
 INNER JOIN
 	form_interest ON activists.name = form_interest.name
 SET
-	activists.email = IF(activists.email = '', form_interest.email, activists.email),
-	activists.phone = IF(activists.phone = '', form_interest.phone, activists.phone),
+	activists.email = ` + interestFormEmailSqlExpr + `,
+	activists.email_updated = IF(activists.email <> ` + interestFormEmailSqlExpr + `, NOW(), activists.email_updated),
+	activists.phone = ` + interestFormPhoneSqlExpr + `,
+	activists.phone_updated = IF(activists.phone <> ` + interestFormPhoneSqlExpr + `, NOW(), activists.phone_updated),
 	activists.location = IF(activists.location = '', form_interest.zip, activists.location),
 	# check proper prospect boxes based on application type
 	activists.circle_interest = IF(form_interest.form = 'Circle Interest Form', 1, activists.circle_interest),

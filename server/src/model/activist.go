@@ -53,7 +53,17 @@ SELECT
   facebook,
   a.id,
   a.chapter_id,
+  mpi,
+  a.notes,
+  vision_wall,
+  mpp_requirements,
+  voting_agreement,
+  street_address,
+  city,
+  state,
   location,
+  lat,
+  lng,
   a.name,
   preferred_name,
   phone,
@@ -87,6 +97,8 @@ SELECT
   referral_apply,
   referral_outlet,
   interest_date,
+
+  discord_id,
 
   @first_event := (
       SELECT min(e.date) AS min_date
@@ -155,16 +167,6 @@ SELECT
     WHERE inner_a.id = a.id and e.event_type = "Connection"
   	),"") AS last_connection,
 
-    mpi,
-    a.notes,
-    vision_wall,
-    mpp_requirements,
-    voting_agreement,
-    street_address,
-    city,
-    state,
-    discord_id,
-
 	IFNULL((
       SELECT GROUP_CONCAT(c.name)
       FROM circle_members cm
@@ -227,15 +229,22 @@ LEFT JOIN (
 ) mpp_requirements on mpp_requirements.activist_id_mpp = a.id
 `
 
+// Warning: when adding fields to this query, test that values aren't overwritten with blank values due to unpopulated
+// fields in the model object. In particular, make sure these queries / functions are updated:
+//   - selectActivistExtraBaseQuery
+//   - buildActivistJSONArray
+//   - CleanActivistData
+//   - getMergeActivistWinner
 const updateActivistExtraBaseQuery string = `UPDATE activists
 SET
-
   email = :email,
+  email_updated = IF(email <> :email, NOW(), email_updated),
   facebook = :facebook,
   location = :location,
   name = :name,
   preferred_name = :preferred_name,
   phone = :phone,
+  phone_updated = IF(phone <> :phone, NOW(), phone_updated),
   pronouns = :pronouns,
   language = :language,
   accessibility = :accessibility,
@@ -272,10 +281,13 @@ SET
   street_address = :street_address,
   city = :city,
   state = :state,
+  address_updated = IF(street_address <> :street_address OR city <> :city OR state <> :state, NOW(), address_updated),
+  lat = :lat,
+  lng = :lng,
+  coords_updated = IF(lat <> :lat OR lng <> :lng, NOW(), coords_updated),
   discord_id = :discord_id,
   assigned_to = :assigned_to,
   followup_date = :followup_date
-
 WHERE
   id = :id`
 
@@ -286,6 +298,7 @@ const AscOrder int = 1
 
 type Activist struct {
 	Email         string         `db:"email"`
+	EmailUpdated  time.Time      `db:"email_updated"`
 	Facebook      string         `db:"facebook"`
 	Hidden        bool           `db:"hidden"`
 	ID            int            `db:"id"`
@@ -293,13 +306,19 @@ type Activist struct {
 	Name          string         `db:"name"`
 	PreferredName string         `db:"preferred_name"`
 	Phone         string         `db:"phone"`
+	PhoneUpdated  time.Time      `db:"phone_updated"`
 	Pronouns      string         `db:"pronouns"`
 	Language      string         `db:"language"`
 	Accessibility string         `db:"accessibility"`
 	Birthday      sql.NullString `db:"dob"`
-	Lat           float64        `db:"lat"`
-	Lng           float64        `db:"lng"`
-	ChapterID     int            `db:"chapter_id"`
+	Coords
+	CoordsUpdated time.Time `db:"coords_updated"`
+	ChapterID     int       `db:"chapter_id"`
+}
+
+type Coords struct {
+	Lat float64 `db:"lat"`
+	Lng float64 `db:"lng"`
 }
 
 type ActivistEventData struct {
@@ -349,16 +368,21 @@ type ActivistConnectionData struct {
 	VisionWall            string         `db:"vision_wall"`
 	MPPRequirements       string         `db:"mpp_requirements"`
 	VotingAgreement       bool           `db:"voting_agreement"`
-	StreetAddress         string         `db:"street_address"`
-	City                  string         `db:"city"`
-	State                 string         `db:"state"`
-	DiscordID             sql.NullString `db:"discord_id"`
-	GeoCircles            string         `db:"geo_circles"`
-	AssignedTo            int            `db:"assigned_to"`
-	AssignedToName        string         `db:"assigned_to_name"`
-	FollowupDate          sql.NullString `db:"followup_date"`
-	TotalInteractions     int            `db:"total_interactions"`
-	LastInteractionDate   string         `db:"last_interaction_date"`
+	ActivistAddress
+	AddressUpdated      time.Time      `db:"address_updated"`
+	DiscordID           sql.NullString `db:"discord_id"`
+	GeoCircles          string         `db:"geo_circles"`
+	AssignedTo          int            `db:"assigned_to"`
+	AssignedToName      string         `db:"assigned_to_name"`
+	FollowupDate        sql.NullString `db:"followup_date"`
+	TotalInteractions   int            `db:"total_interactions"`
+	LastInteractionDate string         `db:"last_interaction_date"`
+}
+
+type ActivistAddress struct {
+	StreetAddress string `db:"street_address"`
+	City          string `db:"city"`
+	State         string `db:"state"`
 }
 
 type ActivistExtra struct {
@@ -665,6 +689,8 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			StreetAddress:         a.StreetAddress,
 			City:                  a.City,
 			State:                 a.State,
+			Lat:                   a.Lat,
+			Lng:                   a.Lng,
 			DiscordID:             discord_id,
 			GeoCircles:            a.GeoCircles,
 			AssignedToName:        a.AssignedToName,
@@ -1212,57 +1238,7 @@ func UpdateActivistData(db *sqlx.DB, activist ActivistExtra, userEmail string) (
 		}
 	}
 
-	_, err = db.NamedExec(`UPDATE activists
-SET
-
-  email = :email,
-  facebook = :facebook,
-  location = :location,
-  name = :name,
-  preferred_name = :preferred_name,
-  phone = :phone,
-  pronouns = :pronouns,
-  language = :language,
-  accessibility = :accessibility,
-  dob = :dob,
-
-  activist_level = :activist_level,
-  source = :source,
-  hiatus = :hiatus,
-
-  connector = :connector,
-  training0 = :training0,
-  training1 = :training1,
-  training4 = :training4,
-  training5 = :training5,
-  training6 = :training6,
-  consent_quiz = :consent_quiz,
-  training_protest = :training_protest,
-  dev_interest = :dev_interest,
-  dev_quiz = :dev_quiz,
-  cm_first_email = :cm_first_email,
-  cm_approval_email = :cm_approval_email,
-  prospect_organizer = :prospect_organizer,
-  prospect_chapter_member = :prospect_chapter_member,
-  referral_friends = :referral_friends,
-  referral_apply = :referral_apply,
-  referral_outlet = :referral_outlet,
-  interest_date = :interest_date,
-  mpi = :mpi,
-  notes = :notes,
-  vision_wall = :vision_wall,
-  voting_agreement = :voting_agreement,
-  street_address = :street_address,
-  city = :city,
-  state = :state,
-  lat = :lat,
-  lng = :lng,
-  discord_id = :discord_id,
-  assigned_to = :assigned_to,
-  followup_date = :followup_date
-  
-WHERE
-  id = :id`, activist)
+	_, err = db.NamedExec(updateActivistExtraBaseQuery, activist)
 
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to update activist data")
@@ -1475,8 +1451,8 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 
 	// Check string fields for empty values
 
-	target.Email = stringMerge(original.Email, target.Email)
-	target.Phone = stringMerge(original.Phone, target.Phone)
+	target.Email, target.EmailUpdated = stringMergeWithTimestamps(original.Email, original.EmailUpdated, target.Email, target.EmailUpdated)
+	target.Phone, target.PhoneUpdated = stringMergeWithTimestamps(original.Phone, original.PhoneUpdated, target.Phone, target.PhoneUpdated)
 	target.Pronouns = stringMerge(original.Pronouns, target.Pronouns)
 	target.Language = stringMerge(original.Language, target.Language)
 	target.Accessibility = stringMerge(original.Accessibility, target.Accessibility)
@@ -1504,9 +1480,8 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 	target.Notes = stringMergeSqlNullString(original.Notes, target.Notes)
 	target.VisionWall = stringMerge(original.VisionWall, target.VisionWall)
 	target.ApplicationType = stringMerge(original.ApplicationType, target.ApplicationType)
-	target.StreetAddress = stringMerge(original.StreetAddress, target.StreetAddress)
-	target.City = stringMerge(original.City, target.City)
-	target.State = stringMerge(original.State, target.State)
+	target.ActivistAddress, target.AddressUpdated = mergeAddress(original.ActivistAddress, original.AddressUpdated, target.ActivistAddress, target.AddressUpdated)
+	target.Coords, target.CoordsUpdated = mergeCoords(original.Coords, original.CoordsUpdated, target.Coords, target.CoordsUpdated)
 	target.DiscordID = stringMergeSqlNullString(original.DiscordID, target.DiscordID)
 
 	// Check Activist Levels
@@ -1535,6 +1510,16 @@ func stringMerge(original string, target string) string {
 	return target
 }
 
+func stringMergeWithTimestamps(original string, originalTimestamp time.Time, target string, targetTimestamp time.Time) (string, time.Time) {
+	if targetTimestamp.After(originalTimestamp) && len(target) > 0 {
+		return target, targetTimestamp
+	}
+	if originalTimestamp.After(targetTimestamp) && len(original) > 0 {
+		return original, originalTimestamp
+	}
+	return stringMerge(original, target), targetTimestamp
+}
+
 func stringMergeSqlNullString(original sql.NullString, target sql.NullString) sql.NullString {
 	if !target.Valid && original.Valid {
 		return original
@@ -1549,6 +1534,38 @@ func stringMergeSqlNullTime(original mysql.NullTime, target mysql.NullTime) mysq
 	}
 
 	return target
+}
+
+func mergeAddress(original ActivistAddress, originalUpdated time.Time, target ActivistAddress, targetUpdated time.Time) (ActivistAddress, time.Time) {
+	// Determine which address is newer
+	newer, newerUpdated := target, targetUpdated
+	older, olderUpdated := original, originalUpdated
+	if originalUpdated.After(targetUpdated) {
+		newer, newerUpdated = original, originalUpdated
+		older, olderUpdated = target, targetUpdated
+	}
+	// Return older if newer is empty
+	if newer.StreetAddress == "" && newer.City == "" && newer.State == "" &&
+		(older.StreetAddress != "" || older.City != "" || older.State != "") {
+		return older, olderUpdated
+	}
+	addr := newer
+	// If newer is missing city, use from older if both have the same state
+	if addr.City == "" && older.City != "" && addr.State == older.State {
+		addr.City = older.City
+	}
+	// If newer is missing street address, use from older if both have the same city
+	if addr.StreetAddress == "" && older.StreetAddress != "" && addr.City == older.City && addr.State == older.State {
+		addr.StreetAddress = older.StreetAddress
+	}
+	return addr, newerUpdated
+}
+
+func mergeCoords(original Coords, originalUpdated time.Time, target Coords, targetUpdated time.Time) (Coords, time.Time) {
+	if originalUpdated.After(targetUpdated) {
+		return original, originalUpdated
+	}
+	return target, targetUpdated
 }
 
 func updateMergedActivistDataDetails(tx *sqlx.Tx, originalActivistID int, targetActivistID int) error {
@@ -1964,6 +1981,10 @@ func CleanActivistData(body io.Reader, db *sqlx.DB) (ActivistExtra, error) {
 			Language:      strings.TrimSpace(activistJSON.Language),
 			Accessibility: strings.TrimSpace(activistJSON.Accessibility),
 			Birthday:      sql.NullString{String: strings.TrimSpace(activistJSON.Birthday), Valid: validBirthday},
+			Coords: Coords{
+				Lat: activistJSON.Lat,
+				Lng: activistJSON.Lng,
+			},
 		},
 		ActivistMembershipData: ActivistMembershipData{
 			ActivistLevel: strings.TrimSpace(activistJSON.ActivistLevel),
@@ -1995,12 +2016,14 @@ func CleanActivistData(body io.Reader, db *sqlx.DB) (ActivistExtra, error) {
 			VisionWall:            strings.TrimSpace(activistJSON.VisionWall),
 			MPPRequirements:       strings.TrimSpace(activistJSON.MPPRequirements),
 			VotingAgreement:       activistJSON.VotingAgreement,
-			StreetAddress:         strings.TrimSpace(activistJSON.StreetAddress),
-			City:                  strings.TrimSpace(activistJSON.City),
-			State:                 strings.TrimSpace(activistJSON.State),
-			DiscordID:             sql.NullString{String: strings.TrimSpace(activistJSON.DiscordID), Valid: validDiscordID},
-			AssignedTo:            assignedToInt,
-			FollowupDate:          sql.NullString{String: strings.TrimSpace(activistJSON.FollowupDate), Valid: validFollowupDate},
+			ActivistAddress: ActivistAddress{
+				StreetAddress: strings.TrimSpace(activistJSON.StreetAddress),
+				City:          strings.TrimSpace(activistJSON.City),
+				State:         strings.TrimSpace(activistJSON.State),
+			},
+			DiscordID:    sql.NullString{String: strings.TrimSpace(activistJSON.DiscordID), Valid: validDiscordID},
+			AssignedTo:   assignedToInt,
+			FollowupDate: sql.NullString{String: strings.TrimSpace(activistJSON.FollowupDate), Valid: validFollowupDate},
 		},
 	}
 
