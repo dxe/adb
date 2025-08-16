@@ -288,7 +288,7 @@ func tryUpdateActivistWithApplicationFormBasedOnName(db *sqlx.DB, response formR
 		return false, fmt.Errorf("failed to get processApplicationOnNameQuery affected rows; %s",
 			getRowsAffectedErr)
 	}
-	return updateCount == 1, nil
+	return updateCount > 0, nil
 }
 
 func updateActivistWithApplicationFormBasedOnEmail(db *sqlx.DB, id int) error {
@@ -302,7 +302,7 @@ func updateActivistWithApplicationFormBasedOnEmail(db *sqlx.DB, id int) error {
 		return fmt.Errorf("failed to get processApplicationOnEmailQuery affected rows; %s",
 			getRowsAffectedErr)
 	}
-	if count != 1 {
+	if count == 0 {
 		return fmt.Errorf("no rows updated on processApplicationOnEmailQuery")
 	}
 
@@ -327,7 +327,7 @@ func insertActivistFromApplicationForm(db *sqlx.DB, id int) error {
 		return fmt.Errorf("failed to get processApplicationByInsertQuery affected rows; %s",
 			getRowsAffectedErr)
 	}
-	if insertCount != 1 {
+	if insertCount == 0 {
 		return fmt.Errorf("no rows updated on processApplicationByInsertQuery")
 	}
 
@@ -341,7 +341,7 @@ func insertActivistFromApplicationForm(db *sqlx.DB, id int) error {
 		return fmt.Errorf("failed to get markApplicationProcessedQuery affected rows; %s",
 			getRowsAffectedErr)
 	}
-	if markCount != 1 {
+	if markCount == 0 {
 		log.Error().Msg("application form was processed but not marked as such")
 	}
 

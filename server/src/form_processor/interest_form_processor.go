@@ -270,7 +270,7 @@ func tryUpdateActivistWithInterestFormBasedOnName(db *sqlx.DB, response formResp
 		return false, fmt.Errorf("failed to get processInterestOnNameQuery affected rows; %s",
 			getRowsAffectedErr)
 	}
-	return updateCount == 1, nil
+	return updateCount > 0, nil
 }
 
 func updateActivistWithInterestFormBasedOnEmail(db *sqlx.DB, id int) error {
@@ -284,7 +284,7 @@ func updateActivistWithInterestFormBasedOnEmail(db *sqlx.DB, id int) error {
 		return fmt.Errorf("failed to get processInterestOnEmailQuery affected rows; %s",
 			getRowsAffectedErr)
 	}
-	if count != 1 {
+	if count == 0 {
 		return fmt.Errorf("no rows updated on processInterestOnEmailQuery")
 	}
 
@@ -309,7 +309,7 @@ func insertActivistFromInterestForm(db *sqlx.DB, id int) error {
 		return fmt.Errorf("failed to get processInterestByInsertQuery affected rows; %s",
 			getRowsAffectedErr)
 	}
-	if insertCount != 1 {
+	if insertCount == 0 {
 		return fmt.Errorf("no rows updated on processInterestByInsertQuery")
 	}
 
@@ -323,7 +323,7 @@ func insertActivistFromInterestForm(db *sqlx.DB, id int) error {
 		return fmt.Errorf("failed to get markInterestProcessedQuery affected rows; %s",
 			getRowsAffectedErr)
 	}
-	if markCount != 1 {
+	if markCount == 0 {
 		log.Error().Msg("interest form was processed but not marked as such")
 	}
 
