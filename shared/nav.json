@@ -107,6 +107,12 @@
           "label": "New Activists",
           "href": "/new_activists",
           "page": "NewActivistsList"
+        },
+        {
+          "label": "New Activists Pending Workshop",
+          "href": "/new_activists_pending_workshop",
+          "page": "NewActivistsPendingWorkshopList",
+          "roleRequired": ["organizer"]
         }
       ]
     },
