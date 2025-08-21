@@ -863,8 +863,8 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 
 		case "new_activists_pending_workshop":
 			whereClause = append(whereClause, `
-				training0 is NULL
-				AND
+				training0 is NULL AND
+				activist_level = 'supporter' AND
 				(
 					SELECT MIN(e.date)
 					FROM event_attendance ea
