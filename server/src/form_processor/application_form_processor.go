@@ -13,8 +13,6 @@ import (
 
 const applicationProcessingStatusQuery = "SELECT processed FROM form_application WHERE id = ?"
 
-const applicationFormEmailSqlExpr = "IF(activists.email = '', form_application.email, activists.email)"
-const applicationFormPhoneSqlExpr = "IF(activists.phone = '', form_application.phone, activists.phone)"
 const processApplicationOnNameQuery = `
 # try to match on name
 UPDATE
@@ -22,12 +20,13 @@ UPDATE
 INNER JOIN
 	form_application ON activists.name = form_application.name
 SET
-	activists.email = ` + applicationFormEmailSqlExpr + `,
-	activists.email_updated = IF(activists.email <> ` + applicationFormEmailSqlExpr + `, NOW(), activists.email_updated),
-	activists.phone = ` + applicationFormPhoneSqlExpr + `,
-	activists.phone_updated = IF(activists.phone <> ` + applicationFormPhoneSqlExpr + `, NOW(), activists.phone_updated),
-	activists.pronouns = IF(activists.pronouns = '', form_application.pronouns, activists.pronouns),
+	activists.email_updated = IF(activists.email = '', NOW(), activists.email_updated), -- This line must precede setting activists.email
+	activists.email = IF(activists.email = '', form_application.email, activists.email),
+	activists.phone_updated = IF(activists.phone = '', NOW(), activists.phone_updated), -- This line must precede setting activists.phone
+	activists.phone = IF(activists.phone = '', form_application.phone, activists.phone),
+	activists.location_updated = IF(activists.location = '', NOW(), activists.location_updated), -- This line must precede setting activists.location
 	activists.location = IF(activists.location = '', form_application.zip, activists.location),
+	activists.pronouns = IF(activists.pronouns = '', form_application.pronouns, activists.pronouns),
 	activists.dob = IF(activists.dob = '', form_application.birthday, activists.dob),
 	# check proper prospect boxes based on application type
 	activists.prospect_organizer = IF(form_application.application_type = 'organizer', 1, (IF((form_application.application_type = 'senior-organizer' and activist_level <> 'organizer'), 1, activists.prospect_organizer))),

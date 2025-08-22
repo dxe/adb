@@ -50,6 +50,7 @@ const selectActivistExtraBaseQuery string = `
 SELECT
 
   lower(email) as email,
+  email_updated,
   facebook,
   a.id,
   a.chapter_id,
@@ -62,11 +63,15 @@ SELECT
   city,
   state,
   location,
+  address_updated,
+  location_updated,
   lat,
   lng,
+  coords_updated,
   a.name,
   preferred_name,
   phone,
+  phone_updated,
   pronouns,
   language,
   accessibility,
@@ -229,22 +234,46 @@ LEFT JOIN (
 ) mpp_requirements on mpp_requirements.activist_id_mpp = a.id
 `
 
-// Warning: when adding fields to this query, test that values aren't overwritten with blank values due to unpopulated
+const updateActivistQuery string = `UPDATE activists
+SET ` +
+	// Modified timestamp field assignments
+	//
+	// These fields must be set before (above) the fields they track, otherwise the assignments here will see the new
+	// data value instead of the old and it will appear as if the values of the data fields did not change, e.g.
+	// `email` would always be equal to `:email`.
+	`
+  email_updated = IF(email <> :email, NOW(), email_updated),'
+  phone_updated = IF(phone <> :phone, NOW(), phone_updated),'
+  address_updated = IF(street_address <> :street_address OR city <> :city OR state <> :state, NOW(), address_updated),
+  location_updated = IF(street_address <> :street_address OR city <> :city OR state <> :state OR NOT location <=> :location, NOW(), location_updated),
+  coords_updated = IF(lat <> :lat OR lng <> :lng, NOW(), coords_updated),
+` + ActivistDataFieldAssignments + `
+WHERE
+  id = :id`
+
+const updateActivistWithTimestampsQuery string = `UPDATE activists
+SET
+  email_updated =    :email_updated,
+  phone_updated =    :phone_updated,
+  address_updated =  :address_updated,
+  location_updated = :location_updated,
+  coords_updated =   :coords_updated,
+` + ActivistDataFieldAssignments + `
+WHERE
+  id = :id`
+
+// Warning: when adding fields, test that values aren't overwritten with blank values due to unpopulated
 // fields in the model object. In particular, make sure these queries / functions are updated:
 //   - selectActivistExtraBaseQuery
 //   - buildActivistJSONArray
 //   - CleanActivistData
 //   - getMergeActivistWinner
-const updateActivistExtraBaseQuery string = `UPDATE activists
-SET
+const ActivistDataFieldAssignments = `
   email = :email,
-  email_updated = IF(email <> :email, NOW(), email_updated),
   facebook = :facebook,
-  location = :location,
   name = :name,
   preferred_name = :preferred_name,
   phone = :phone,
-  phone_updated = IF(phone <> :phone, NOW(), phone_updated),
   pronouns = :pronouns,
   language = :language,
   accessibility = :accessibility,
@@ -281,15 +310,13 @@ SET
   street_address = :street_address,
   city = :city,
   state = :state,
-  address_updated = IF(street_address <> :street_address OR city <> :city OR state <> :state, NOW(), address_updated),
+  location = :location,
   lat = :lat,
   lng = :lng,
-  coords_updated = IF(lat <> :lat OR lng <> :lng, NOW(), coords_updated),
   discord_id = :discord_id,
   assigned_to = :assigned_to,
   followup_date = :followup_date
-WHERE
-  id = :id`
+`
 
 const DescOrder int = 2
 const AscOrder int = 1
@@ -297,20 +324,21 @@ const AscOrder int = 1
 /** Type Definitions */
 
 type Activist struct {
-	Email         string         `db:"email"`
-	EmailUpdated  time.Time      `db:"email_updated"`
-	Facebook      string         `db:"facebook"`
-	Hidden        bool           `db:"hidden"`
-	ID            int            `db:"id"`
-	Location      sql.NullString `db:"location"`
-	Name          string         `db:"name"`
-	PreferredName string         `db:"preferred_name"`
-	Phone         string         `db:"phone"`
-	PhoneUpdated  time.Time      `db:"phone_updated"`
-	Pronouns      string         `db:"pronouns"`
-	Language      string         `db:"language"`
-	Accessibility string         `db:"accessibility"`
-	Birthday      sql.NullString `db:"dob"`
+	Email           string         `db:"email"`
+	EmailUpdated    time.Time      `db:"email_updated"`
+	Facebook        string         `db:"facebook"`
+	Hidden          bool           `db:"hidden"`
+	ID              int            `db:"id"`
+	Location        sql.NullString `db:"location"`
+	LocationUpdated time.Time      `db:"location_updated"`
+	Name            string         `db:"name"`
+	PreferredName   string         `db:"preferred_name"`
+	Phone           string         `db:"phone"`
+	PhoneUpdated    time.Time      `db:"phone_updated"`
+	Pronouns        string         `db:"pronouns"`
+	Language        string         `db:"language"`
+	Accessibility   string         `db:"accessibility"`
+	Birthday        sql.NullString `db:"dob"`
 	Coords
 	CoordsUpdated time.Time `db:"coords_updated"`
 	ChapterID     int       `db:"chapter_id"`
@@ -1238,7 +1266,7 @@ func UpdateActivistData(db *sqlx.DB, activist ActivistExtra, userEmail string) (
 		}
 	}
 
-	_, err = db.NamedExec(updateActivistExtraBaseQuery, activist)
+	_, err = db.NamedExec(updateActivistQuery, activist)
 
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to update activist data")
@@ -1457,7 +1485,7 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 	target.Language = stringMerge(original.Language, target.Language)
 	target.Accessibility = stringMerge(original.Accessibility, target.Accessibility)
 	target.Birthday = stringMergeSqlNullString(original.Birthday, target.Birthday)
-	target.Location = stringMergeSqlNullString(original.Location, target.Location)
+	target.Location, target.LocationUpdated = stringMergeSqlNullStringWithTimestamps(original.Location, original.LocationUpdated, target.Location, target.LocationUpdated)
 	target.Facebook = stringMerge(original.Facebook, target.Facebook)
 	target.Connector = stringMerge(original.Connector, target.Connector)
 	target.Source = stringMerge(original.Source, target.Source)
@@ -1528,6 +1556,16 @@ func stringMergeSqlNullString(original sql.NullString, target sql.NullString) sq
 	return target
 }
 
+func stringMergeSqlNullStringWithTimestamps(original sql.NullString, originalTimestamp time.Time, target sql.NullString, targetTimestamp time.Time) (sql.NullString, time.Time) {
+	if targetTimestamp.After(originalTimestamp) && target.Valid && len(target.String) > 0 {
+		return target, targetTimestamp
+	}
+	if originalTimestamp.After(targetTimestamp) && original.Valid && len(original.String) > 0 {
+		return original, originalTimestamp
+	}
+	return stringMergeSqlNullString(original, target), targetTimestamp
+}
+
 func stringMergeSqlNullTime(original mysql.NullTime, target mysql.NullTime) mysql.NullTime {
 	if !target.Valid && original.Valid {
 		return original
@@ -1589,7 +1627,7 @@ func updateMergedActivistDataDetails(tx *sqlx.Tx, originalActivistID int, target
 
 	mergedActivist := getMergeActivistWinner(*originalActivist, *targetActivist)
 
-	_, err = tx.NamedExec(updateActivistExtraBaseQuery, mergedActivist)
+	_, err = tx.NamedExec(updateActivistWithTimestampsQuery, mergedActivist)
 
 	if err != nil {
 		return errors.Wrapf(err, "failed to update activist with id %d", targetActivistID)
