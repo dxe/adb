@@ -1846,6 +1846,7 @@ func GetNewActivistsPendingWorkshopSpokeInfo(db *sqlx.DB, chapterID int, startDa
 			chapter_id = ?
 			AND hidden = 0
 			AND training0 IS NULL
+			AND activist_level = 'supporter'
 			AND ` + first_event_subquery + ` BETWEEN ? AND ?
 	`
 	args := []interface{}{chapterID, startDate, endDate}
