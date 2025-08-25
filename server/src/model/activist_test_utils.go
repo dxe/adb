@@ -1,19 +1,23 @@
-package testfixtures
+package model
 
-import "github.com/dxe/adb/model"
+import (
+	"testing"
+
+	"github.com/jmoiron/sqlx"
+)
 
 type ActivistBuilder struct {
-	activist model.ActivistExtra
+	activist ActivistExtra
 }
 
 func NewActivistBuilder() *ActivistBuilder {
 	return &ActivistBuilder{
-		activist: model.ActivistExtra{
-			Activist: model.Activist{
+		activist: ActivistExtra{
+			Activist: Activist{
 				ID:        0,
 				Email:     "email1",
 				Name:      "name1",
-				ChapterID: model.SFBayChapterIdDevTest,
+				ChapterID: SFBayChapterIdDevTest,
 			},
 		},
 	}
@@ -34,6 +38,14 @@ func (b *ActivistBuilder) WithChapterID(chapterID int) *ActivistBuilder {
 	return b
 }
 
-func (b *ActivistBuilder) Build() *model.ActivistExtra {
+func (b *ActivistBuilder) Build() *ActivistExtra {
 	return &b.activist
+}
+
+func MustInsertActivist(t *testing.T, db *sqlx.DB, activist *ActivistExtra) {
+	id, err := CreateActivist(db, *activist)
+	if err != nil {
+		t.Fatalf("MustInsertActivist failed: %s", err)
+	}
+	activist.ID = id
 }
