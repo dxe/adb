@@ -1,6 +1,7 @@
 package model
 
 import (
+	"database/sql"
 	"testing"
 	"time"
 
@@ -296,6 +297,57 @@ func TestGetActivistsJSON_FirstAndLastEvent(t *testing.T) {
 
 	require.Equal(t, gotActivist.FirstEventName, "2017-04-15 hi there")
 	require.Equal(t, gotActivist.LastEventName, "2017-04-17 heyo")
+}
+
+func TestInsertActivist(t *testing.T) {
+	t.Run("Minimum", func(t *testing.T) {
+		db := newTestDB()
+		defer db.Close()
+
+		var activist ActivistExtra
+		// Only Chapter and Name are set.
+		// Time fields all have 0 values, which should not underflow SQL timestamp/date fields.
+		activist.ChapterID = SFBayChapterId
+		activist.Name = "Alex Taylor"
+		id, errCreate := CreateActivist(db, activist)
+		require.NoError(t, errCreate)
+		assert.NotZero(t, id)
+
+		inserted, errGet := GetActivistExtra(db, id)
+		require.NoError(t, errGet)
+		assert.Equal(t, "Alex Taylor", inserted.Name)
+		assert.Equal(t, SFBayChapterId, inserted.ChapterID)
+	})
+
+	t.Run("Basic", func(t *testing.T) {
+		db := newTestDB()
+		defer db.Close()
+
+		activist := NewActivistBuilder().
+			WithChapterID(SFBayChapterId).
+			WithName("Alexander Taylor").
+			WithEmail("ataylor@example.org").
+			WithPhone("510-555-5555").
+			WithAddress("5 Animal Rights Way", "Berkeley", "CA").
+			WithLocation(sql.NullString{String: "94103", Valid: true}).
+			WithCoords(1, -1).
+			Build()
+		id, errCreate := CreateActivist(db, *activist)
+		require.NoError(t, errCreate)
+		assert.NotZero(t, id)
+
+		inserted, errGet := GetActivistExtra(db, id)
+		require.NoError(t, errGet)
+		assert.Equal(t, "Alexander Taylor", inserted.Name)
+		assert.Equal(t, SFBayChapterId, inserted.ChapterID)
+		assert.Equal(t, "ataylor@example.org", inserted.Email)
+		assert.Equal(t, "510-555-5555", inserted.Phone)
+		assert.Equal(t, "5 Animal Rights Way", inserted.StreetAddress)
+		assert.Equal(t, "Berkeley", inserted.City)
+		assert.Equal(t, "CA", inserted.State)
+		assert.Equal(t, sql.NullString{String: "94103", Valid: true}, inserted.Location)
+		assert.Equal(t, Coords{Lat: 1, Lng: -1}, inserted.Coords)
+	})
 }
 
 func TestHideActivist(t *testing.T) {
