@@ -67,7 +67,6 @@ SELECT
   location_updated,
   lat,
   lng,
-  coords_updated,
   a.name,
   preferred_name,
   phone,
@@ -234,6 +233,16 @@ LEFT JOIN (
 ) mpp_requirements on mpp_requirements.activist_id_mpp = a.id
 `
 
+const insertActivistQuery string = `INSERT INTO activists SET ` +
+	`chapter_id = :chapter_id,` +
+	ActivistDataFieldAssignments
+
+const insertActivistWithTimestampsQuery string = insertActivistQuery + `,
+  email_updated = :email_updated,
+  phone_updated = :phone_updated,
+  address_updated = :address_updated,
+  location_updated = :location_updated`
+
 const updateActivistQuery string = `UPDATE activists
 SET ` +
 	// Modified timestamp field assignments
@@ -246,7 +255,6 @@ SET ` +
   phone_updated = IF(phone <> :phone, NOW(), phone_updated),'
   address_updated = IF(street_address <> :street_address OR city <> :city OR state <> :state, NOW(), address_updated),
   location_updated = IF(street_address <> :street_address OR city <> :city OR state <> :state OR NOT location <=> :location, NOW(), location_updated),
-  coords_updated = IF(lat <> :lat OR lng <> :lng, NOW(), coords_updated),
 ` + ActivistDataFieldAssignments + `
 WHERE
   id = :id`
@@ -257,7 +265,6 @@ SET
   phone_updated =    :phone_updated,
   address_updated =  :address_updated,
   location_updated = :location_updated,
-  coords_updated =   :coords_updated,
 ` + ActivistDataFieldAssignments + `
 WHERE
   id = :id`
@@ -268,6 +275,8 @@ WHERE
 //   - buildActivistJSONArray
 //   - CleanActivistData
 //   - getMergeActivistWinner
+//
+// Note: Does not include chapter ID to avoid accidental updates.
 const ActivistDataFieldAssignments = `
   email = :email,
   facebook = :facebook,
@@ -340,8 +349,7 @@ type Activist struct {
 	Accessibility   string         `db:"accessibility"`
 	Birthday        sql.NullString `db:"dob"`
 	Coords
-	CoordsUpdated time.Time `db:"coords_updated"`
-	ChapterID     int       `db:"chapter_id"`
+	ChapterID int `db:"chapter_id"`
 }
 
 type Coords struct {
@@ -835,6 +843,15 @@ WHERE hidden = 0 AND activist_level = 'Organizer' AND chapter_id = ` + SFBayChap
 	return activists, nil
 }
 
+func GetActivistExtra(db *sqlx.DB, id int) (*ActivistExtra, error) {
+	var activist ActivistExtra
+	query := selectActivistExtraBaseQuery + " where a.id = ?"
+	if err := db.Get(&activist, query, id); err != nil {
+		return nil, errors.Wrapf(err, "failed to get activist with id %d", id)
+	}
+	return &activist, nil
+}
+
 func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra, error) {
 	// Redundant options validation
 	var err error
@@ -1094,7 +1111,7 @@ func GetOrCreateActivist(db *sqlx.DB, name string, chapterID int) (Activist, err
 	return newActivist, nil
 }
 
-func CreateActivist(db *sqlx.DB, activist ActivistExtra) (int, error) {
+func createActivist(db *sqlx.DB, activist ActivistExtra, query string) (int, error) {
 	if activist.ID != 0 {
 		return 0, errors.New("Activist ID must be 0")
 	}
@@ -1102,102 +1119,7 @@ func CreateActivist(db *sqlx.DB, activist ActivistExtra) (int, error) {
 		return 0, errors.New("Name cannot be empty")
 	}
 
-	result, err := db.NamedExec(`
-INSERT INTO activists (
-
-  email,
-  facebook,
-  location,
-  name,
-  preferred_name,
-  phone,
-  pronouns,
-  language,
-  accessibility,
-  dob,
-  chapter_id,
-
-  activist_level,
-  source,
-  hiatus,
-
-  connector,
-  training0,
-  training1,
-  training4,
-  training5,
-  training6,
-  consent_quiz,
-  training_protest,
-  dev_interest,
-  dev_quiz,
-  cm_first_email,
-  cm_approval_email,
-  prospect_organizer,
-  prospect_chapter_member,
-  referral_friends,
-  referral_apply,
-  referral_outlet,
-  interest_date,
-  mpi,
-  notes,
-  vision_wall,
-  voting_agreement,
-  street_address,
-  city,
-  state,
-  discord_id,
-  assigned_to,
-  followup_date
-
-) VALUES (
-
-  :email,
-  :facebook,
-  :location,
-  :name,
-  :preferred_name,
-  :phone,
-  :pronouns,
-  :language,
-  :accessibility,
-  :dob,
-  :chapter_id,
-
-  :activist_level,
-  :source,
-  :hiatus,
-
-  :connector,
-  :training0,
-  :training1,
-  :training4,
-  :training5,
-  :training6,
-  :consent_quiz,
-  :training_protest,
-  :dev_interest,
-  :dev_quiz,
-  :cm_first_email,
-  :cm_approval_email,
-  :prospect_organizer,
-  :prospect_chapter_member,
-  :referral_friends,
-  :referral_apply,
-  :referral_outlet,
-  :interest_date,
-  :mpi,
-  :notes,
-  :vision_wall,
-  :voting_agreement,
-  :street_address,
-  :city,
-  :state,
-  :discord_id,
-  :assigned_to,
-  :followup_date
-
-)`, activist)
+	result, err := db.NamedExec(query, activist)
 	if err != nil {
 		return 0, errors.Wrapf(err, "Could not create activist: %s", activist.Name)
 	}
@@ -1206,6 +1128,14 @@ INSERT INTO activists (
 		return 0, errors.Wrapf(err, "Could not get LastInsertId for %s", activist.Name)
 	}
 	return int(id), nil
+}
+
+func CreateActivist(db *sqlx.DB, activist ActivistExtra) (int, error) {
+	return createActivist(db, activist, insertActivistQuery)
+}
+
+func CreateActivistWithTimestamps(db *sqlx.DB, activist ActivistExtra) (int, error) {
+	return createActivist(db, activist, insertActivistWithTimestampsQuery)
 }
 
 func UpdateActivistData(db *sqlx.DB, activist ActivistExtra, userEmail string) (int, error) {
@@ -1354,8 +1284,7 @@ func MergeActivist(db *sqlx.DB, originalActivistID, targetActivistID int) error 
 		return err
 	}
 
-	// Merge Activist data details
-	err = updateMergedActivistDataDetails(tx, originalActivistID, targetActivistID)
+	_, err = updateMergedActivistDataDetails(tx, originalActivistID, targetActivistID)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -1508,9 +1437,14 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 	target.Notes = stringMergeSqlNullString(original.Notes, target.Notes)
 	target.VisionWall = stringMerge(original.VisionWall, target.VisionWall)
 	target.ApplicationType = stringMerge(original.ApplicationType, target.ApplicationType)
-	target.ActivistAddress, target.AddressUpdated = mergeAddress(original.ActivistAddress, original.AddressUpdated, target.ActivistAddress, target.AddressUpdated)
-	target.Coords, target.CoordsUpdated = mergeCoords(original.Coords, original.CoordsUpdated, target.Coords, target.CoordsUpdated)
+	target.ActivistAddress, target.Coords, target.AddressUpdated = mergeAddress(original.ActivistAddress, original.Coords, original.AddressUpdated, target.ActivistAddress, target.Coords, target.AddressUpdated)
 	target.DiscordID = stringMergeSqlNullString(original.DiscordID, target.DiscordID)
+
+	// The location field is considered to be at least as up-to-date as the address fields.
+	// See comments on location_updated SQL column for details.
+	if target.LocationUpdated.Before(target.AddressUpdated) {
+		target.LocationUpdated = target.AddressUpdated
+	}
 
 	// Check Activist Levels
 	if len(original.ActivistLevel) != 0 && len(target.ActivistLevel) != 0 {
@@ -1574,18 +1508,19 @@ func stringMergeSqlNullTime(original mysql.NullTime, target mysql.NullTime) mysq
 	return target
 }
 
-func mergeAddress(original ActivistAddress, originalUpdated time.Time, target ActivistAddress, targetUpdated time.Time) (ActivistAddress, time.Time) {
+// Merges address and coords. In ADB, coords are computed from address, so they are merged atomically with the adddress here.
+func mergeAddress(original ActivistAddress, originalCoords Coords, originalUpdated time.Time, target ActivistAddress, targetCoords Coords, targetUpdated time.Time) (ActivistAddress, Coords, time.Time) {
 	// Determine which address is newer
-	newer, newerUpdated := target, targetUpdated
-	older, olderUpdated := original, originalUpdated
+	newer, newerCoords, newerUpdated := target, targetCoords, targetUpdated
+	older, olderCoords, olderUpdated := original, originalCoords, originalUpdated
 	if originalUpdated.After(targetUpdated) {
-		newer, newerUpdated = original, originalUpdated
-		older, olderUpdated = target, targetUpdated
+		newer, newerCoords, newerUpdated = original, originalCoords, originalUpdated
+		older, olderCoords, olderUpdated = target, targetCoords, targetUpdated
 	}
 	// Return older if newer is empty
 	if newer.StreetAddress == "" && newer.City == "" && newer.State == "" &&
 		(older.StreetAddress != "" || older.City != "" || older.State != "") {
-		return older, olderUpdated
+		return older, olderCoords, olderUpdated
 	}
 	addr := newer
 	// If newer is missing city, use from older if both have the same state
@@ -1596,17 +1531,10 @@ func mergeAddress(original ActivistAddress, originalUpdated time.Time, target Ac
 	if addr.StreetAddress == "" && older.StreetAddress != "" && addr.City == older.City && addr.State == older.State {
 		addr.StreetAddress = older.StreetAddress
 	}
-	return addr, newerUpdated
+	return addr, newerCoords, newerUpdated
 }
 
-func mergeCoords(original Coords, originalUpdated time.Time, target Coords, targetUpdated time.Time) (Coords, time.Time) {
-	if originalUpdated.After(targetUpdated) {
-		return original, originalUpdated
-	}
-	return target, targetUpdated
-}
-
-func updateMergedActivistDataDetails(tx *sqlx.Tx, originalActivistID int, targetActivistID int) error {
+func updateMergedActivistDataDetails(tx *sqlx.Tx, originalActivistID int, targetActivistID int) (*ActivistExtra, error) {
 	// Merge details of original activist into target activist
 	// Favor booleans that are set to TRUE, and pull in missing data from original activist to target; when both
 	// activists have data for the same field, we should use the target activist's data.
@@ -1616,13 +1544,13 @@ func updateMergedActivistDataDetails(tx *sqlx.Tx, originalActivistID int, target
 	var originalActivist = new(ActivistExtra)
 	err := tx.Get(originalActivist, query, originalActivistID)
 	if err != nil || originalActivist == nil {
-		return errors.Wrapf(err, "failed to get original activist with id %d", originalActivistID)
+		return nil, errors.Wrapf(err, "failed to get original activist with id %d", originalActivistID)
 	}
 
 	var targetActivist = new(ActivistExtra)
 	err = tx.Get(targetActivist, query, targetActivistID)
 	if err != nil || targetActivist == nil {
-		return errors.Wrapf(err, "failed to get target activist with id %d", targetActivistID)
+		return nil, errors.Wrapf(err, "failed to get target activist with id %d", targetActivistID)
 	}
 
 	mergedActivist := getMergeActivistWinner(*originalActivist, *targetActivist)
@@ -1630,10 +1558,10 @@ func updateMergedActivistDataDetails(tx *sqlx.Tx, originalActivistID int, target
 	_, err = tx.NamedExec(updateActivistWithTimestampsQuery, mergedActivist)
 
 	if err != nil {
-		return errors.Wrapf(err, "failed to update activist with id %d", targetActivistID)
+		return nil, errors.Wrapf(err, "failed to update activist with id %d", targetActivistID)
 	}
 
-	return nil
+	return &mergedActivist, nil
 }
 
 func GetAutocompleteNames(db *sqlx.DB, chapterID int) []string {
