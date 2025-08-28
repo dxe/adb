@@ -574,6 +574,42 @@ func TestMergeActivist(t *testing.T) {
 			assert.Equal(t, "200 Berkeley Way", a2.StreetAddress)
 			assert.Equal(t, Coords{3, 4}, a2.Coords)
 		})
+
+		t.Run("MergesAddressWhenCityMatches", func(t *testing.T) {
+			db := newTestDB()
+			defer db.Close()
+
+			a1 := NewActivistBuilder().WithAddress("100 Berkeley Way", "Berkeley", "CA").Build()
+			a1.AddressUpdated = mustParseTime(t, "2025-01-01")
+			MustInsertActivistWithTimestamps(t, db, a1)
+
+			a2 := NewActivistBuilder().WithAddress("", "Berkeley", "CA").Build()
+			a2.AddressUpdated = mustParseTime(t, "2025-01-02")
+			MustInsertActivistWithTimestamps(t, db, a2)
+
+			require.NoError(t, MergeActivist(db, a1.ID, a2.ID))
+			a2 = MustGetActivist(t, db, a2.ID)
+			assert.Equal(t, mustParseTime(t, "2025-01-02"), a2.AddressUpdated)
+			assert.Equal(t, "100 Berkeley Way", a2.StreetAddress)
+		})
+
+		t.Run("DoesNotMergeAddressWhenCityNotMatched", func(t *testing.T) {
+			db := newTestDB()
+			defer db.Close()
+
+			a1 := NewActivistBuilder().WithAddress("100 Berkeley Way", "Berkeley", "CA").Build()
+			a1.AddressUpdated = mustParseTime(t, "2025-01-01")
+			MustInsertActivistWithTimestamps(t, db, a1)
+
+			a2 := NewActivistBuilder().WithAddress("", "New York", "NY").Build()
+			a2.AddressUpdated = mustParseTime(t, "2025-01-02")
+			MustInsertActivistWithTimestamps(t, db, a2)
+
+			require.NoError(t, MergeActivist(db, a1.ID, a2.ID))
+			a2 = MustGetActivist(t, db, a2.ID)
+			assert.Equal(t, mustParseTime(t, "2025-01-02"), a2.AddressUpdated)
+			assert.Equal(t, "", a2.StreetAddress)
+		})
 	})
 
 	t.Run("MergesEvents", func(t *testing.T) {

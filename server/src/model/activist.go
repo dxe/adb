@@ -1509,27 +1509,27 @@ func stringMergeSqlNullTime(original mysql.NullTime, target mysql.NullTime) mysq
 }
 
 // Merges address and coords. In ADB, coords are computed from address, so they are merged atomically with the adddress here.
-func mergeAddress(original ActivistAddress, originalCoords Coords, originalUpdated time.Time, target ActivistAddress, targetCoords Coords, targetUpdated time.Time) (ActivistAddress, Coords, time.Time) {
-	// Determine which address is newer
-	newer, newerCoords, newerUpdated := target, targetCoords, targetUpdated
-	older, olderCoords, olderUpdated := original, originalCoords, originalUpdated
+func mergeAddress(originalAddr ActivistAddress, originalCoords Coords, originalUpdated time.Time, target ActivistAddress, targetCoords Coords, targetUpdated time.Time) (ActivistAddress, Coords, time.Time) {
+	// Determine which address is newerAddr
+	newerAddr, newerCoords, newerUpdated := target, targetCoords, targetUpdated
+	olderAddr, olderCoords, olderUpdated := originalAddr, originalCoords, originalUpdated
 	if originalUpdated.After(targetUpdated) {
-		newer, newerCoords, newerUpdated = original, originalCoords, originalUpdated
-		older, olderCoords, olderUpdated = target, targetCoords, targetUpdated
+		newerAddr, newerCoords, newerUpdated = originalAddr, originalCoords, originalUpdated
+		olderAddr, olderCoords, olderUpdated = target, targetCoords, targetUpdated
 	}
 	// Return older if newer is empty
-	if newer.StreetAddress == "" && newer.City == "" && newer.State == "" &&
-		(older.StreetAddress != "" || older.City != "" || older.State != "") {
-		return older, olderCoords, olderUpdated
+	if newerAddr.StreetAddress == "" && newerAddr.City == "" && newerAddr.State == "" &&
+		(olderAddr.StreetAddress != "" || olderAddr.City != "" || olderAddr.State != "") {
+		return olderAddr, olderCoords, olderUpdated
 	}
-	addr := newer
+	addr := newerAddr
 	// If newer is missing city, use from older if both have the same state
-	if addr.City == "" && older.City != "" && addr.State == older.State {
-		addr.City = older.City
+	if addr.City == "" && olderAddr.City != "" && addr.State == olderAddr.State {
+		addr.City = olderAddr.City
 	}
 	// If newer is missing street address, use from older if both have the same city
-	if addr.StreetAddress == "" && older.StreetAddress != "" && addr.City == older.City && addr.State == older.State {
-		addr.StreetAddress = older.StreetAddress
+	if addr.StreetAddress == "" && olderAddr.StreetAddress != "" && addr.City == olderAddr.City && addr.State == olderAddr.State {
+		addr.StreetAddress = olderAddr.StreetAddress
 	}
 	return addr, newerCoords, newerUpdated
 }
