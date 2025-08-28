@@ -223,7 +223,7 @@ func ProcessApplicationForms(db *sqlx.DB) {
 		}
 	}
 
-	log.Debug().Msg("finished processing application forms")
+	log.Info().Msg("Finished processing application forms")
 }
 
 func processApplicationForm(response formResponse, db *sqlx.DB) error {

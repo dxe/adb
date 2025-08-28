@@ -251,8 +251,8 @@ SET ` +
 	// data value instead of the old and it will appear as if the values of the data fields did not change, e.g.
 	// `email` would always be equal to `:email`.
 	`
-  email_updated = IF(email <> :email, NOW(), email_updated),'
-  phone_updated = IF(phone <> :phone, NOW(), phone_updated),'
+  email_updated = IF(email <> :email, NOW(), email_updated),
+  phone_updated = IF(phone <> :phone, NOW(), phone_updated),
   address_updated = IF(street_address <> :street_address OR city <> :city OR state <> :state, NOW(), address_updated),
   location_updated = IF(street_address <> :street_address OR city <> :city OR state <> :state OR NOT location <=> :location, NOW(), location_updated),
 ` + ActivistDataFieldAssignments + `
@@ -879,7 +879,7 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 			whereClause = append(whereClause, "a.chapter_id = "+strconv.Itoa(options.ChapterID))
 		}
 
-		if options.Hidden == true {
+		if options.Hidden {
 			whereClause = append(whereClause, "a.hidden = true")
 		} else {
 			whereClause = append(whereClause, "a.hidden = false")
@@ -1180,10 +1180,11 @@ func UpdateActivistData(db *sqlx.DB, activist ActivistExtra, userEmail string) (
 		err := mailing_list_signup.Enqueue(signup)
 		if err != nil {
 			// Don't return this error because we still want to successfully update the activist in the database.
-			fmt.Println("ERROR updating activist on mailing list:", err.Error())
+			log.Println("ERROR updating activist on mailing list:", err.Error())
+		} else {
+			log.Printf("Pushed updated activist record to sign-up service: name: %v, email: %v, chapter: %v",
+				activist.Name, activist.Email, activist.ChapterID)
 		}
-		log.Printf("Pushed updated activist record to sign-up service: name: %v, email: %v, chapter: %v",
-			activist.Name, activist.Email, activist.ChapterID)
 	}
 	geoInfoChanged := activist.City != origActivist.City ||
 		activist.State != origActivist.State ||

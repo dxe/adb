@@ -299,6 +299,18 @@ func TestGetActivistsJSON_FirstAndLastEvent(t *testing.T) {
 	require.Equal(t, gotActivist.LastEventName, "2017-04-17 heyo")
 }
 
+func TestGetActivistsExtra(t *testing.T) {
+	db := newTestDB()
+	defer db.Close()
+
+	insertTestActivists(t, db, []string{"Alex Taylor"})
+
+	activists, err := GetActivistsExtra(db, GetActivistOptions{})
+	require.NoError(t, err)
+	require.Equal(t, len(activists), 1)
+	assert.Equal(t, "Alex Taylor", activists[0].Name)
+}
+
 func TestInsertActivist(t *testing.T) {
 	t.Run("Minimum", func(t *testing.T) {
 		db := newTestDB()
@@ -348,6 +360,46 @@ func TestInsertActivist(t *testing.T) {
 		assert.Equal(t, sql.NullString{String: "94103", Valid: true}, inserted.Location)
 		assert.Equal(t, Coords{Lat: 1, Lng: -1}, inserted.Coords)
 	})
+}
+
+func TestUpdateActivist(t *testing.T) {
+	db := newTestDB()
+	defer db.Close()
+
+	activist := NewActivistBuilder().
+		WithChapterID(SFBayChapterId).
+		WithName("Alexander Taylor").
+		WithEmail("ataylor@example.org").
+		WithPhone("510-555-5555").
+		WithAddress("5 Animal Rights Way", "Berkeley", "CA").
+		WithLocation(sql.NullString{String: "94103", Valid: true}).
+		WithCoords(1, -1).
+		Build()
+	id, errCreate := CreateActivist(db, *activist)
+	require.NoError(t, errCreate)
+
+	activist.ID = id
+	activist.Name = "Alex Taylor"
+	activist.Email = "ataylor2@example.org"
+	activist.Phone = "510-111-1234"
+	activist.ActivistAddress = ActivistAddress{
+		"6 Animal Rights Way", "New York", "NY",
+	}
+	activist.Location = sql.NullString{String: "90001", Valid: true}
+	activist.Coords = Coords{1, 2}
+
+	UpdateActivistData(db, *activist, DevTestUser.Email)
+
+	updatedActivist, err := GetActivistExtra(db, id)
+	require.NoError(t, err)
+
+	assert.Equal(t, SFBayChapterId, updatedActivist.ChapterID)
+	assert.Equal(t, "Alex Taylor", updatedActivist.Name)
+	assert.Equal(t, "ataylor2@example.org", updatedActivist.Email)
+	assert.Equal(t, "510-111-1234", updatedActivist.Phone)
+	assert.Equal(t, ActivistAddress{"6 Animal Rights Way", "New York", "NY"}, updatedActivist.ActivistAddress)
+	assert.Equal(t, sql.NullString{String: "90001", Valid: true}, updatedActivist.Location)
+	assert.Equal(t, Coords{Lat: 1, Lng: 2}, updatedActivist.Coords)
 }
 
 func TestHideActivist(t *testing.T) {
@@ -904,7 +956,7 @@ func assertActivistJSONSliceContainsOrderedNames(t *testing.T, activists []Activ
 func insertTestActivists(t *testing.T, db *sqlx.DB, names []string) []Activist {
 	var activists []Activist = make([]Activist, len(names))
 	for idx, name := range names {
-		activist, err := GetOrCreateActivist(db, name, 1)
+		activist, err := GetOrCreateActivist(db, name, SFBayChapterIdDevTest)
 		require.NoError(t, err)
 		activists[idx] = activist
 	}
