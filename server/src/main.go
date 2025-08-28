@@ -633,7 +633,7 @@ func (c MainController) NewActivistsPendingWorkshopHandler(w http.ResponseWriter
 		PageName: "NewActivistsPendingWorkshopList",
 		Data: ActivistListData{
 			Title:       "New Activists Pending Workshop",
-			Description: "Everyone who has their first event within the given range (last 6 months by default) AND has not yet attended the Intro Workshop.",
+			Description: "Supporters whose first event was within the given range (last 6 months by default) AND have not yet attended the Intro Workshop.",
 			View:        "new_activists_pending_workshop",
 		},
 	})
