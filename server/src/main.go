@@ -830,10 +830,12 @@ func (c MainController) SwitchActiveChapterHandler(w http.ResponseWriter, r *htt
 
 func (c MainController) DevTestingProcessInterestForms(w http.ResponseWriter, r *http.Request) {
 	form_processor.ProcessInterestForms(c.db)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (c MainController) DevTestingProcessApplicationForms(w http.ResponseWriter, r *http.Request) {
 	form_processor.ProcessApplicationForms(c.db)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (c MainController) DevTestingProcessIntlAppForms(w http.ResponseWriter, r *http.Request) {

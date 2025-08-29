@@ -1,11 +1,13 @@
 package model
 
 import (
+	"database/sql"
 	"testing"
 	"time"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -297,6 +299,109 @@ func TestGetActivistsJSON_FirstAndLastEvent(t *testing.T) {
 	require.Equal(t, gotActivist.LastEventName, "2017-04-17 heyo")
 }
 
+func TestGetActivistsExtra(t *testing.T) {
+	db := newTestDB()
+	defer db.Close()
+
+	insertTestActivists(t, db, []string{"Alex Taylor"})
+
+	activists, err := GetActivistsExtra(db, GetActivistOptions{})
+	require.NoError(t, err)
+	require.Equal(t, len(activists), 1)
+	assert.Equal(t, "Alex Taylor", activists[0].Name)
+}
+
+func TestInsertActivist(t *testing.T) {
+	t.Run("Minimum", func(t *testing.T) {
+		db := newTestDB()
+		defer db.Close()
+
+		var activist ActivistExtra
+		// Only Chapter and Name are set.
+		// Time fields all have 0 values, which should not underflow SQL timestamp/date fields.
+		activist.ChapterID = SFBayChapterId
+		activist.Name = "Alex Taylor"
+		id, errCreate := CreateActivist(db, activist)
+		require.NoError(t, errCreate)
+		assert.NotZero(t, id)
+
+		inserted, errGet := GetActivistExtra(db, id)
+		require.NoError(t, errGet)
+		assert.Equal(t, "Alex Taylor", inserted.Name)
+		assert.Equal(t, SFBayChapterId, inserted.ChapterID)
+	})
+
+	t.Run("Basic", func(t *testing.T) {
+		db := newTestDB()
+		defer db.Close()
+
+		activist := NewActivistBuilder().
+			WithChapterID(SFBayChapterId).
+			WithName("Alexander Taylor").
+			WithEmail("ataylor@example.org").
+			WithPhone("510-555-5555").
+			WithAddress("5 Animal Rights Way", "Berkeley", "CA").
+			WithLocation(sql.NullString{String: "94103", Valid: true}).
+			WithCoords(1, -1).
+			Build()
+		id, errCreate := CreateActivist(db, *activist)
+		require.NoError(t, errCreate)
+		assert.NotZero(t, id)
+
+		inserted, errGet := GetActivistExtra(db, id)
+		require.NoError(t, errGet)
+		assert.Equal(t, "Alexander Taylor", inserted.Name)
+		assert.Equal(t, SFBayChapterId, inserted.ChapterID)
+		assert.Equal(t, "ataylor@example.org", inserted.Email)
+		assert.Equal(t, "510-555-5555", inserted.Phone)
+		assert.Equal(t, "5 Animal Rights Way", inserted.StreetAddress)
+		assert.Equal(t, "Berkeley", inserted.City)
+		assert.Equal(t, "CA", inserted.State)
+		assert.Equal(t, sql.NullString{String: "94103", Valid: true}, inserted.Location)
+		assert.Equal(t, Coords{Lat: 1, Lng: -1}, inserted.Coords)
+	})
+}
+
+func TestUpdateActivist(t *testing.T) {
+	db := newTestDB()
+	defer db.Close()
+
+	activist := NewActivistBuilder().
+		WithChapterID(SFBayChapterId).
+		WithName("Alexander Taylor").
+		WithEmail("ataylor@example.org").
+		WithPhone("510-555-5555").
+		WithAddress("5 Animal Rights Way", "Berkeley", "CA").
+		WithLocation(sql.NullString{String: "94103", Valid: true}).
+		WithCoords(1, -1).
+		Build()
+	id, errCreate := CreateActivist(db, *activist)
+	require.NoError(t, errCreate)
+
+	activist.ID = id
+	activist.Name = "Alex Taylor"
+	activist.Email = "ataylor2@example.org"
+	activist.Phone = "510-111-1234"
+	activist.ActivistAddress = ActivistAddress{
+		"6 Animal Rights Way", "New York", "NY",
+	}
+	activist.Location = sql.NullString{String: "90001", Valid: true}
+	activist.Coords = Coords{1, 2}
+
+	UpdateActivistData(db, *activist, DevTestUser.Email)
+
+	updatedActivist, err := GetActivistExtra(db, id)
+	require.NoError(t, err)
+
+	assert.Equal(t, SFBayChapterId, updatedActivist.ChapterID)
+	assert.Equal(t, "Alex Taylor", updatedActivist.Name)
+	assert.Equal(t, "ataylor2@example.org", updatedActivist.Email)
+	assert.Equal(t, "510-111-1234", updatedActivist.Phone)
+	assert.Equal(t, ActivistAddress{"6 Animal Rights Way", "New York", "NY"}, updatedActivist.ActivistAddress)
+	assert.Equal(t, sql.NullString{String: "90001", Valid: true}, updatedActivist.Location)
+	assert.Equal(t, Coords{Lat: 1, Lng: 2}, updatedActivist.Coords)
+}
+
 func TestHideActivist(t *testing.T) {
 	db := newTestDB()
 	defer db.Close()
@@ -352,67 +457,272 @@ func TestHideActivist(t *testing.T) {
 	assertStringsSliceUnorderedEquals(t, attendanceNames, []string{a1.Name, a2.Name})
 }
 
+func mustParseTime(t *testing.T, s string) time.Time {
+	time, err := time.Parse("2006-01-02", s)
+	require.NoError(t, err)
+	return time
+}
+
 func TestMergeActivist(t *testing.T) {
-	db := newTestDB()
-	defer db.Close()
+	t.Run("ContactInfo", func(t *testing.T) {
+		t.Run("MergesNewerValues", func(t *testing.T) {
+			db := newTestDB()
+			defer db.Close()
 
-	// Test that deleting activists works
-	a1, err := GetOrCreateActivist(db, "Test Activist", 1)
-	require.NoError(t, err)
+			a1 := NewActivistBuilder().
+				WithEmail("berkeley@example.org").
+				WithPhone("510-555-5555").
+				Build()
+			a1.EmailUpdated = mustParseTime(t, "2025-01-02")
+			a1.PhoneUpdated = mustParseTime(t, "2025-01-02")
+			MustInsertActivistWithTimestamps(t, db, a1)
 
-	a2, err := GetOrCreateActivist(db, "Another Test Activist", 1)
-	require.NoError(t, err)
+			a2 := NewActivistBuilder().
+				WithEmail("old@example.org").
+				WithPhone("510-555-0000").
+				Build()
+			a2.EmailUpdated = mustParseTime(t, "2025-01-01")
+			a2.PhoneUpdated = mustParseTime(t, "2025-01-01")
+			MustInsertActivistWithTimestamps(t, db, a2)
 
-	a3, err := GetOrCreateActivist(db, "A Third Test Activist", 1)
-	require.NoError(t, err)
+			require.NoError(t, MergeActivist(db, a1.ID, a2.ID))
+			a2 = MustGetActivist(t, db, a2.ID)
+			assert.Equal(t, "berkeley@example.org", a2.Email)
+			assert.Equal(t, mustParseTime(t, "2025-01-02"), a2.EmailUpdated)
+			assert.Equal(t, "510-555-5555", a2.Phone)
+			assert.Equal(t, mustParseTime(t, "2025-01-02"), a2.PhoneUpdated)
+		})
 
-	d1, err := time.Parse("2006-01-02", "2017-04-15")
-	require.NoError(t, err)
-	d2, err := time.Parse("2006-01-02", "2017-04-16")
-	require.NoError(t, err)
-	d3, err := time.Parse("2006-01-02", "2017-04-17")
-	require.NoError(t, err)
+		t.Run("DoesNotMergeNewerButEmptyValues", func(t *testing.T) {
+			db := newTestDB()
+			defer db.Close()
 
-	insertEvents := []Event{{
-		ID:             1,
-		EventName:      "event one",
-		EventDate:      d1,
-		EventType:      "Working Group",
-		AddedAttendees: []Activist{a1, a3},
-	}, {
-		ID:             2,
-		EventName:      "event two",
-		EventDate:      d2,
-		EventType:      "Working Group",
-		AddedAttendees: []Activist{a1, a2, a3},
-	}, {
-		ID:             3,
-		EventName:      "event three",
-		EventDate:      d3,
-		EventType:      "Working Group",
-		AddedAttendees: []Activist{a2, a3},
-	}}
-	mustInsertAllEvents(t, db, insertEvents)
+			a1 := NewActivistBuilder().
+				WithEmail("").
+				WithPhone("").
+				Build()
+			a1.EmailUpdated = mustParseTime(t, "2025-01-02") // Newer
+			a1.PhoneUpdated = mustParseTime(t, "2025-01-02") // Newer
+			MustInsertActivistWithTimestamps(t, db, a1)
 
-	require.NoError(t, MergeActivist(db, a1.ID, a2.ID))
+			a2 := NewActivistBuilder().
+				WithEmail("old@example.org").
+				WithPhone("510-555-0000").
+				Build()
+			a2.EmailUpdated = mustParseTime(t, "2025-01-01")
+			a2.PhoneUpdated = mustParseTime(t, "2025-01-01")
+			MustInsertActivistWithTimestamps(t, db, a2)
 
-	e1, err := GetEvent(db, GetEventOptions{EventID: 1})
-	require.NoError(t, err)
-	require.Equal(t, len(e1.Attendees), 2)
-	require.Equal(t, e1.Attendees[0], a2.Name)
-	require.Equal(t, e1.Attendees[1], a3.Name)
+			require.NoError(t, MergeActivist(db, a1.ID, a2.ID))
+			a2 = MustGetActivist(t, db, a2.ID)
+			assert.Equal(t, "old@example.org", a2.Email)
+			assert.Equal(t, mustParseTime(t, "2025-01-01"), a2.EmailUpdated)
+			assert.Equal(t, "510-555-0000", a2.Phone)
+			assert.Equal(t, mustParseTime(t, "2025-01-01"), a2.PhoneUpdated)
+		})
 
-	e2, err := GetEvent(db, GetEventOptions{EventID: 2})
-	require.NoError(t, err)
-	require.Equal(t, len(e2.Attendees), 2)
-	require.Equal(t, e2.Attendees[0], a2.Name)
-	require.Equal(t, e2.Attendees[1], a3.Name)
+		t.Run("DoesNotMergeOlderValues", func(t *testing.T) {
+			db := newTestDB()
+			defer db.Close()
 
-	e3, err := GetEvent(db, GetEventOptions{EventID: 3})
-	require.NoError(t, err)
-	require.Equal(t, len(e3.Attendees), 2)
-	require.Equal(t, e3.Attendees[0], a2.Name)
-	require.Equal(t, e3.Attendees[1], a3.Name)
+			a1 := NewActivistBuilder().
+				WithEmail("old@example.org").
+				WithPhone("510-555-0000").
+				Build()
+			a1.EmailUpdated = mustParseTime(t, "2025-01-01")
+			a1.PhoneUpdated = mustParseTime(t, "2025-01-01")
+			MustInsertActivistWithTimestamps(t, db, a1)
+
+			a2 := NewActivistBuilder().
+				WithEmail("berkeley@example.org").
+				WithPhone("510-555-5555").
+				Build()
+			a2.EmailUpdated = mustParseTime(t, "2025-01-02")
+			a2.PhoneUpdated = mustParseTime(t, "2025-01-02")
+			MustInsertActivistWithTimestamps(t, db, a2)
+
+			require.NoError(t, MergeActivist(db, a1.ID, a2.ID))
+			a2 = MustGetActivist(t, db, a2.ID)
+			assert.Equal(t, "berkeley@example.org", a2.Email)
+			assert.Equal(t, mustParseTime(t, "2025-01-02"), a2.EmailUpdated)
+			assert.Equal(t, "510-555-5555", a2.Phone)
+			assert.Equal(t, mustParseTime(t, "2025-01-02"), a2.PhoneUpdated)
+		})
+	})
+
+	t.Run("Address", func(t *testing.T) {
+		t.Run("MergesNewerValues", func(t *testing.T) {
+			db := newTestDB()
+			defer db.Close()
+
+			a1 := NewActivistBuilder().
+				WithAddress("100 Berkeley Way", "Berkeley", "CA").
+				WithCoords(1, 2).
+				Build()
+			a1.AddressUpdated = mustParseTime(t, "2025-01-02")
+			MustInsertActivistWithTimestamps(t, db, a1)
+
+			a2 := NewActivistBuilder().
+				WithAddress("200 Berkeley Way", "Berkeley", "CA").
+				WithCoords(3, 4).
+				Build()
+			a2.AddressUpdated = mustParseTime(t, "2025-01-01")
+			MustInsertActivistWithTimestamps(t, db, a2)
+
+			require.NoError(t, MergeActivist(db, a1.ID, a2.ID))
+			a2 = MustGetActivist(t, db, a2.ID)
+			assert.Equal(t, mustParseTime(t, "2025-01-02"), a2.AddressUpdated)
+			assert.Equal(t, mustParseTime(t, "2025-01-02"), a2.LocationUpdated)
+			assert.Equal(t, "100 Berkeley Way", a2.StreetAddress)
+			assert.Equal(t, Coords{1, 2}, a2.Coords)
+		})
+
+		t.Run("DoesNotMergeNewerButEmptyValues", func(t *testing.T) {
+			db := newTestDB()
+			defer db.Close()
+
+			a1 := NewActivistBuilder().
+				WithAddress("", "", "").
+				WithCoords(0, 0).
+				Build()
+			a1.AddressUpdated = mustParseTime(t, "2025-01-02") // Newer
+			MustInsertActivistWithTimestamps(t, db, a1)
+
+			a2 := NewActivistBuilder().
+				WithAddress("200 Berkeley Way", "Berkeley", "CA").
+				WithCoords(3, 4).
+				Build()
+			a2.AddressUpdated = mustParseTime(t, "2025-01-01")
+			MustInsertActivistWithTimestamps(t, db, a2)
+
+			require.NoError(t, MergeActivist(db, a1.ID, a2.ID))
+			a2 = MustGetActivist(t, db, a2.ID)
+			assert.Equal(t, mustParseTime(t, "2025-01-01"), a2.AddressUpdated)
+			assert.Equal(t, "200 Berkeley Way", a2.StreetAddress)
+			assert.Equal(t, Coords{3, 4}, a2.Coords)
+		})
+
+		t.Run("DoesNotMergeOlderValues", func(t *testing.T) {
+			db := newTestDB()
+			defer db.Close()
+
+			a1 := NewActivistBuilder().
+				WithAddress("100 Berkeley Way", "Berkeley", "CA").
+				WithCoords(1, 2).
+				Build()
+			a1.AddressUpdated = mustParseTime(t, "2025-01-01")
+			MustInsertActivistWithTimestamps(t, db, a1)
+
+			a2 := NewActivistBuilder().
+				WithAddress("200 Berkeley Way", "Berkeley", "CA").
+				WithCoords(3, 4).
+				Build()
+			a2.AddressUpdated = mustParseTime(t, "2025-01-02")
+			MustInsertActivistWithTimestamps(t, db, a2)
+
+			require.NoError(t, MergeActivist(db, a1.ID, a2.ID))
+			a2 = MustGetActivist(t, db, a2.ID)
+			assert.Equal(t, mustParseTime(t, "2025-01-02"), a2.AddressUpdated)
+			assert.Equal(t, "200 Berkeley Way", a2.StreetAddress)
+			assert.Equal(t, Coords{3, 4}, a2.Coords)
+		})
+
+		t.Run("MergesAddressWhenCityMatches", func(t *testing.T) {
+			db := newTestDB()
+			defer db.Close()
+
+			a1 := NewActivistBuilder().WithAddress("100 Berkeley Way", "Berkeley", "CA").Build()
+			a1.AddressUpdated = mustParseTime(t, "2025-01-01")
+			MustInsertActivistWithTimestamps(t, db, a1)
+
+			a2 := NewActivistBuilder().WithAddress("", "Berkeley", "CA").Build()
+			a2.AddressUpdated = mustParseTime(t, "2025-01-02")
+			MustInsertActivistWithTimestamps(t, db, a2)
+
+			require.NoError(t, MergeActivist(db, a1.ID, a2.ID))
+			a2 = MustGetActivist(t, db, a2.ID)
+			assert.Equal(t, mustParseTime(t, "2025-01-02"), a2.AddressUpdated)
+			assert.Equal(t, "100 Berkeley Way", a2.StreetAddress)
+		})
+
+		t.Run("DoesNotMergeAddressWhenCityNotMatched", func(t *testing.T) {
+			db := newTestDB()
+			defer db.Close()
+
+			a1 := NewActivistBuilder().WithAddress("100 Berkeley Way", "Berkeley", "CA").Build()
+			a1.AddressUpdated = mustParseTime(t, "2025-01-01")
+			MustInsertActivistWithTimestamps(t, db, a1)
+
+			a2 := NewActivistBuilder().WithAddress("", "New York", "NY").Build()
+			a2.AddressUpdated = mustParseTime(t, "2025-01-02")
+			MustInsertActivistWithTimestamps(t, db, a2)
+
+			require.NoError(t, MergeActivist(db, a1.ID, a2.ID))
+			a2 = MustGetActivist(t, db, a2.ID)
+			assert.Equal(t, mustParseTime(t, "2025-01-02"), a2.AddressUpdated)
+			assert.Equal(t, "", a2.StreetAddress)
+		})
+	})
+
+	t.Run("MergesEvents", func(t *testing.T) {
+		db := newTestDB()
+		defer db.Close()
+
+		// Test that deleting activists works
+		a1, err := GetOrCreateActivist(db, "Test Activist", 1)
+		require.NoError(t, err)
+
+		a2, err := GetOrCreateActivist(db, "Another Test Activist", 1)
+		require.NoError(t, err)
+
+		a3, err := GetOrCreateActivist(db, "A Third Test Activist", 1)
+		require.NoError(t, err)
+
+		d1 := mustParseTime(t, "2017-04-15")
+		d2 := mustParseTime(t, "2017-04-16")
+		d3 := mustParseTime(t, "2017-04-17")
+
+		insertEvents := []Event{{
+			ID:             1,
+			EventName:      "event one",
+			EventDate:      d1,
+			EventType:      "Working Group",
+			AddedAttendees: []Activist{a1, a3},
+		}, {
+			ID:             2,
+			EventName:      "event two",
+			EventDate:      d2,
+			EventType:      "Working Group",
+			AddedAttendees: []Activist{a1, a2, a3},
+		}, {
+			ID:             3,
+			EventName:      "event three",
+			EventDate:      d3,
+			EventType:      "Working Group",
+			AddedAttendees: []Activist{a2, a3},
+		}}
+		mustInsertAllEvents(t, db, insertEvents)
+
+		require.NoError(t, MergeActivist(db, a1.ID, a2.ID))
+
+		e1, err := GetEvent(db, GetEventOptions{EventID: 1})
+		require.NoError(t, err)
+		require.Equal(t, len(e1.Attendees), 2)
+		require.Equal(t, e1.Attendees[0], a2.Name)
+		require.Equal(t, e1.Attendees[1], a3.Name)
+
+		e2, err := GetEvent(db, GetEventOptions{EventID: 2})
+		require.NoError(t, err)
+		require.Equal(t, len(e2.Attendees), 2)
+		require.Equal(t, e2.Attendees[0], a2.Name)
+		require.Equal(t, e2.Attendees[1], a3.Name)
+
+		e3, err := GetEvent(db, GetEventOptions{EventID: 3})
+		require.NoError(t, err)
+		require.Equal(t, len(e3.Attendees), 2)
+		require.Equal(t, e3.Attendees[0], a2.Name)
+		require.Equal(t, e3.Attendees[1], a3.Name)
+	})
 }
 
 // Not Specfiying a starting name with ascending order
@@ -646,7 +956,7 @@ func assertActivistJSONSliceContainsOrderedNames(t *testing.T, activists []Activ
 func insertTestActivists(t *testing.T, db *sqlx.DB, names []string) []Activist {
 	var activists []Activist = make([]Activist, len(names))
 	for idx, name := range names {
-		activist, err := GetOrCreateActivist(db, name, 1)
+		activist, err := GetOrCreateActivist(db, name, SFBayChapterIdDevTest)
 		require.NoError(t, err)
 		activists[idx] = activist
 	}

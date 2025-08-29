@@ -4,17 +4,8 @@ import (
 	"testing"
 
 	"github.com/dxe/adb/model"
-	"github.com/dxe/adb/testfixtures"
 	"github.com/jmoiron/sqlx"
 )
-
-func insertActivistForInterestTest(t *testing.T, db *sqlx.DB, activist *model.ActivistExtra) {
-	id, err := model.CreateActivist(db, *activist)
-	if err != nil {
-		t.Fatalf("insertActivistForInterestTest failed: %s", err)
-	}
-	activist.ID = id
-}
 
 type interestResponseBuilder struct {
 	id        int
@@ -102,7 +93,7 @@ func TestProcessFormInterestForActivistMatchingOnName(t *testing.T) {
 	/* Set up */
 	db := useTestDb()
 	defer db.Close()
-	insertActivistForInterestTest(t, db, testfixtures.NewActivistBuilder().
+	model.MustInsertActivist(t, db, model.NewActivistBuilder().
 		WithName("Bob").
 		WithEmail("foo@example.org").
 		Build())
@@ -122,7 +113,7 @@ func TestProcessFormInterestForActivistMatchingOnEmail(t *testing.T) {
 	/* Set up */
 	db := useTestDb()
 	defer db.Close()
-	insertActivistForInterestTest(t, db, testfixtures.NewActivistBuilder().
+	model.MustInsertActivist(t, db, model.NewActivistBuilder().
 		WithName("Bob").
 		WithEmail("match@example.org").
 		Build())
@@ -142,11 +133,11 @@ func TestProcessFormInterestForMultipleMatchingActivistsOnEmail(t *testing.T) {
 	/* Set up */
 	db := useTestDb()
 	defer db.Close()
-	insertActivistForInterestTest(t, db, testfixtures.NewActivistBuilder().
+	model.MustInsertActivist(t, db, model.NewActivistBuilder().
 		WithName("Bob").
 		WithEmail("match@example.org").
 		Build())
-	insertActivistForInterestTest(t, db, testfixtures.NewActivistBuilder().
+	model.MustInsertActivist(t, db, model.NewActivistBuilder().
 		WithName("Carl").
 		WithEmail("match@example.org").
 		Build())
@@ -166,12 +157,12 @@ func TestProcessFormInterestForMatchingChapterIdAndName(t *testing.T) {
 	db := useTestDb()
 	defer db.Close()
 
-	insertActivistForInterestTest(t, db, testfixtures.NewActivistBuilder().
+	model.MustInsertActivist(t, db, model.NewActivistBuilder().
 		WithName("Sam").
 		WithEmail("foo@example.org").
 		WithChapterID(10).
 		Build())
-	insertActivistForInterestTest(t, db, testfixtures.NewActivistBuilder().
+	model.MustInsertActivist(t, db, model.NewActivistBuilder().
 		WithName("Sam").
 		WithEmail("bar@example.org").
 		WithChapterID(20).
@@ -195,12 +186,12 @@ func TestProcessFormInterestForMatchingChapterIdAndEmail(t *testing.T) {
 	db := useTestDb()
 	defer db.Close()
 
-	insertActivistForInterestTest(t, db, testfixtures.NewActivistBuilder().
+	model.MustInsertActivist(t, db, model.NewActivistBuilder().
 		WithName("Alice").
 		WithEmail("match@example.org").
 		WithChapterID(10).
 		Build())
-	insertActivistForInterestTest(t, db, testfixtures.NewActivistBuilder().
+	model.MustInsertActivist(t, db, model.NewActivistBuilder().
 		WithName("Bob").
 		WithEmail("match@example.org").
 		WithChapterID(20).
@@ -224,7 +215,7 @@ func TestProcessFormInterestForNonMatchingChapter(t *testing.T) {
 	db := useTestDb()
 	defer db.Close()
 
-	insertActivistForInterestTest(t, db, testfixtures.NewActivistBuilder().
+	model.MustInsertActivist(t, db, model.NewActivistBuilder().
 		WithName("Alice").
 		WithEmail("match@example.org").
 		WithChapterID(10).Build())

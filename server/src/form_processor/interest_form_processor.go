@@ -12,15 +12,10 @@ import (
 
 const interestProcessingStatusQuery = "SELECT processed FROM form_interest WHERE id = ?"
 
-const processInterestOnNameQuery = `
-# try to match on name
-UPDATE
-	activists
-INNER JOIN
-	form_interest ON activists.name = form_interest.name
-SET
-	activists.email = IF(activists.email = '', form_interest.email, activists.email),
+const interestUpdateAssignments = `
+	activists.phone_updated = IF(activists.phone = '', NOW(), activists.phone_updated), -- This line must precede setting activists.phone
 	activists.phone = IF(activists.phone = '', form_interest.phone, activists.phone),
+	activists.location_updated = IF(activists.location = '', NOW(), activists.location_updated), -- This line must precede setting activists.location
 	activists.location = IF(activists.location = '', form_interest.zip, activists.location),
 	# check proper prospect boxes based on application type
 	activists.circle_interest = IF(form_interest.form = 'Circle Interest Form', 1, activists.circle_interest),
@@ -36,14 +31,29 @@ SET
 	activists.discord_id = IF(LENGTH(activists.discord_id), activists.discord_id, IF(LENGTH(form_interest.discord_id), form_interest.discord_id, NULL)),
 	# mark as processed
 	form_interest.processed = 1
-
-WHERE
-    form_interest.chapter_id = activists.chapter_id
-	and form_interest.id = ?
-	and form_interest.processed = 0
-	and activists.hidden = 0
-	and form_interest.name <> '';
 `
+
+const interestUpdateConditions = `
+	form_interest.chapter_id = activists.chapter_id
+	AND form_interest.id = ?
+	AND form_interest.processed = 0
+	AND activists.hidden = 0
+`
+
+const processInterestOnNameQuery = `
+# try to match on name
+UPDATE
+	activists
+INNER JOIN
+	form_interest ON activists.name = form_interest.name
+SET
+	activists.email_updated = IF(activists.email = '', NOW(), activists.email_updated), -- This line must precede setting activists.email
+	activists.email = IF(activists.email = '', form_interest.email, activists.email),
+	` + interestUpdateAssignments + `
+WHERE
+    ` + interestUpdateConditions + `
+	AND form_interest.name <> ''
+;`
 
 const processInterestOnEmailQuery = `
 # try to match on email
@@ -52,30 +62,11 @@ UPDATE
 INNER JOIN
 	form_interest ON activists.email = form_interest.email
 SET
-	activists.phone = IF(activists.phone = '', form_interest.phone, activists.phone),
-	activists.location = IF(activists.location = '', form_interest.zip, activists.location),
-	# check proper prospect boxes based on application type
-	activists.circle_interest = IF(form_interest.form = 'Circle Interest Form', 1, activists.circle_interest),
-	# update interest date only if it's currently null
-	activists.interest_date = COALESCE(activists.interest_date, form_interest.timestamp),
-	# only update the following columns if the new values are not empty
-	activists.dev_interest = IFNULL(CONCAT_WS(', ', IF(LENGTH(dev_interest),dev_interest,NULL), IF(LENGTH(form_interest.interests),form_interest.interests,NULL)),''),
-	activists.referral_friends = IF(LENGTH(form_interest.referral_friends), form_interest.referral_friends, activists.referral_friends),
-	activists.referral_apply = IF(LENGTH(form_interest.referral_apply), CONCAT_WS(', ', IF(LENGTH(activists.referral_apply),activists.referral_apply,NULL),form_interest.referral_apply), activists.referral_apply),
-	activists.referral_outlet = IF(LENGTH(form_interest.referral_outlet), form_interest.referral_outlet, activists.referral_outlet),
-	# only update source if source is currently empty
-	activists.source = IF(LENGTH(activists.source), activists.source, form_interest.form),
-	activists.discord_id = IF(LENGTH(activists.discord_id), activists.discord_id, IF(LENGTH(form_interest.discord_id), form_interest.discord_id, NULL)),
-	# mark as processed
-	form_interest.processed = 1
+	` + interestUpdateAssignments + `
 WHERE
-    form_interest.chapter_id = activists.chapter_id
-	and form_interest.id = ?
-	AND form_interest.processed = 0
-	AND activists.hidden = 0
+    ` + interestUpdateConditions + `
 	AND form_interest.email <> ''
-	AND form_interest.name <> '';
-`
+;`
 
 const processInterestByInsertQuery = `
 # insert new records
@@ -218,7 +209,7 @@ func ProcessInterestForms(db *sqlx.DB) {
 		}
 	}
 
-	log.Debug().Msg("finished processing interest forms")
+	log.Info().Msg("Finished processing interest forms")
 }
 
 func processInterestForm(response formResponse, db *sqlx.DB) error {

@@ -13,17 +13,12 @@ import (
 
 const applicationProcessingStatusQuery = "SELECT processed FROM form_application WHERE id = ?"
 
-const processApplicationOnNameQuery = `
-# try to match on name
-UPDATE
-	activists
-INNER JOIN
-	form_application ON activists.name = form_application.name
-SET
-	activists.email = IF(activists.email = '', form_application.email, activists.email),
+const applicationUpdateAssignments = `
+	activists.phone_updated = IF(activists.phone = '', NOW(), activists.phone_updated), -- This line must precede setting activists.phone
 	activists.phone = IF(activists.phone = '', form_application.phone, activists.phone),
-	activists.pronouns = IF(activists.pronouns = '', form_application.pronouns, activists.pronouns),
+	activists.location_updated = IF(activists.location = '', NOW(), activists.location_updated), -- This line must precede setting activists.location
 	activists.location = IF(activists.location = '', form_application.zip, activists.location),
+	activists.pronouns = IF(activists.pronouns = '', form_application.pronouns, activists.pronouns),
 	activists.dob = IF(activists.dob = '', form_application.birthday, activists.dob),
 	# check proper prospect boxes based on application type
 	activists.prospect_organizer = IF(form_application.application_type = 'organizer', 1, (IF((form_application.application_type = 'senior-organizer' and activist_level <> 'organizer'), 1, activists.prospect_organizer))),
@@ -42,14 +37,30 @@ SET
 	activists.accessibility = IF(LENGTH(form_application.accessibility), form_application.accessibility, activists.accessibility),
 	# mark as processed
 	form_application.processed = 1
-WHERE
-    chapter_id = ` + model.SFBayChapterIdStr + `
+`
+
+const applicationUpdateConditions = `
+	chapter_id = ` + model.SFBayChapterIdStr + `
 	and form_application.id = ?
 	and form_application.name <> ''
 	and form_application.processed = 0
 	and activists.hidden = 0
-	and form_application.name <> '';
 `
+
+const processApplicationOnNameQuery = `
+# try to match on name
+UPDATE
+	activists
+INNER JOIN
+	form_application ON activists.name = form_application.name
+SET
+	activists.email_updated = IF(activists.email = '', NOW(), activists.email_updated), -- This line must precede setting activists.email
+	activists.email = IF(activists.email = '', form_application.email, activists.email),
+	` + applicationUpdateAssignments + `
+WHERE
+    ` + applicationUpdateConditions + `
+	AND form_application.name <> ''
+;`
 
 const processApplicationOnEmailQuery = `
 # try to match on email
@@ -58,35 +69,11 @@ UPDATE
 INNER JOIN
 	form_application ON activists.email = form_application.email
 SET
-	activists.phone = IF(activists.phone = '', form_application.phone, activists.phone),
-	activists.pronouns = IF(activists.pronouns = '', form_application.pronouns, activists.pronouns),
-	activists.location = IF(activists.location = '', form_application.zip, activists.location),
-	activists.dob = IF(activists.dob = '', form_application.birthday, activists.dob),
-	# check proper prospect boxes based on application type
-	activists.prospect_organizer = IF(form_application.application_type = 'organizer', 1, (IF((form_application.application_type = 'senior-organizer' and activist_level <> 'organizer'), 1, activists.prospect_organizer))),
-	activists.prospect_chapter_member = IF(form_application.application_type = 'chapter-member', 1, (IF((form_application.application_type in ('senior-organizer','organizer') and activist_level in ('supporter','circle member','non-local')), 1, activists.prospect_chapter_member))),
-	activists.circle_agreement = IF(form_application.application_type = 'circle-member', 1, activists.circle_agreement),
-	activists.circle_interest = IF(activists.id NOT in (select activist_id from working_group_members UNION select activist_id from circle_members), 1, activists.circle_interest),
-	# update application date & type
-	activists.dev_application_date = form_application.timestamp,
-	activists.dev_application_type = form_application.application_type,
-	# only update the following columns if the new values are not empty
-	activists.dev_interest = CONCAT_WS(', ', IF(LENGTH(dev_interest),dev_interest,NULL), IF(LENGTH(form_application.circle_interest),form_application.circle_interest,NULL), IF(LENGTH(wg_interest),wg_interest,NULL), IF(LENGTH(committee_interest),committee_interest,NULL)),
-	activists.referral_friends = IF(LENGTH(form_application.referral_friends), form_application.referral_friends, activists.referral_friends),
-	activists.referral_apply = IF(LENGTH(form_application.referral_apply), CONCAT_WS(', ', IF(LENGTH(activists.referral_apply),activists.referral_apply,NULL),form_application.referral_apply), activists.referral_apply),
-	activists.referral_outlet = IF(LENGTH(form_application.referral_outlet), form_application.referral_outlet, activists.referral_outlet),
-	activists.language = IF(LENGTH(form_application.language), form_application.language, activists.language),
-	activists.accessibility = IF(LENGTH(form_application.accessibility), form_application.accessibility, activists.accessibility),
-	# mark as processed
-	form_application.processed = 1
+    ` + applicationUpdateAssignments + `
 WHERE
-    chapter_id = ` + model.SFBayChapterIdStr + `
-	and form_application.id = ?
-	and form_application.name <> ''
-	and form_application.processed = 0
-	and activists.hidden = 0
-	and form_application.email <> '';
-`
+    ` + applicationUpdateConditions + `
+	AND form_application.email <> ''
+;`
 
 const processApplicationByInsertQuery = `
 # insert new records
@@ -236,7 +223,7 @@ func ProcessApplicationForms(db *sqlx.DB) {
 		}
 	}
 
-	log.Debug().Msg("finished processing application forms")
+	log.Info().Msg("Finished processing application forms")
 }
 
 func processApplicationForm(response formResponse, db *sqlx.DB) error {
