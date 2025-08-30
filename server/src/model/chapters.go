@@ -85,6 +85,7 @@ type Organizer struct {
 
 type Organizers []*Organizer
 
+const SFBayChapterName = "SF Bay Area"
 const SFBayChapterId = 47
 const SFBayChapterIdStr = "47"
 const SFBayChapterIdDevTest = 1

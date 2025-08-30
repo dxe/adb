@@ -69,8 +69,8 @@ var DevTestUser = ADBUser{
 	Admin:       true,
 	Disabled:    false,
 	Roles:       []UserRole{{UserID: 1, Role: "admin"}},
-	ChapterID:   1,
-	ChapterName: "SF Bay Area",
+	ChapterID:   SFBayChapterIdDevTest,
+	ChapterName: SFBayChapterName,
 }
 
 type UserRole struct {
@@ -124,7 +124,7 @@ FROM adb_users
 	usersRoles, err := getUsersRoles(db, usersRolesOptions)
 
 	// We don't want non-SF Bay users to have access to any of the other roles, so just replace it.
-	if adbUser.ChapterName != "SF Bay Area" {
+	if adbUser.ChapterName != SFBayChapterName {
 		usersRoles = []UserRole{{
 			UserID: adbUser.ID,
 			Role:   "non-sfbay",
