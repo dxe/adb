@@ -62,17 +62,6 @@ type GetUsersRolesOptions struct {
 	Roles []string
 }
 
-var DevTestUser = ADBUser{
-	ID:          1,
-	Email:       "test@test.com",
-	Name:        "Test User",
-	Admin:       true,
-	Disabled:    false,
-	Roles:       []UserRole{{UserID: 1, Role: "admin"}},
-	ChapterID:   SFBayChapterIdDevTest,
-	ChapterName: SFBayChapterName,
-}
-
 type UserRole struct {
 	UserID int    `db:"user_id"`
 	Role   string `db:"role"`
@@ -82,6 +71,9 @@ type UserRoleJSON struct {
 	UserID int    `json:"user_id"`
 	Role   string `json:"role"`
 }
+
+const DevTestUserId = 1
+const DevTestUserEmail = "test@example.org"
 
 /** Functions and Methods */
 

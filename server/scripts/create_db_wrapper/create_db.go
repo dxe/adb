@@ -84,7 +84,7 @@ INSERT INTO event_attendance (activist_id, event_id) VALUES
   (1, 1), (1, 2), (2, 2), (3,3), (4,6), (5,5), (5,1), (5,6);
 
 INSERT INTO adb_users (id, email, name, admin, disabled, chapter_id) VALUES
-  (1, 'nosefrog@gmail.com', 'Samer Masterson', 1, 0, 1),
+  (1, '`+model.DevTestUserEmail+`', 'Test User', 1, 0, `+model.SFBayChapterIdDevTestStr+`),
   (2, 'cwbailey20042@gmail.com', 'Cameron Bailey', 1, 0, 1),
   (3, 'jakehobbs@gmail.com', 'Jake Hobbs', 1, 0, 1),
   (4, 'samer@directactioneverywhere.com', 'The Real Samer', 1, 0, 0),
@@ -95,7 +95,7 @@ INSERT INTO users_roles (user_id, role)
 SELECT id, 'admin' FROM adb_users WHERE id IN(1, 2, 3, 4, 5, 6);
 
 INSERT INTO fb_pages (id, name, flag, fb_url, twitter_url, insta_url, email, region, lat, lng, token, organizers) VALUES
-(1, 'SF Bay Area', 'z', 'facebook.com/a', 'twitter.com/a', 'instagram.com/a', 'a@dxe.io', 'North America', '1.000', '2.000', 'xyz', "[]"),
+(1, '`+model.SFBayChapterName+`', 'z', 'facebook.com/a', 'twitter.com/a', 'instagram.com/a', 'a@dxe.io', 'North America', '1.000', '2.000', 'xyz', "[]"),
 (2, 'Chapter B', 'z', 'facebook.com/b', 'twitter.com/b', 'instagram.com/b', 'b@dxe.io', 'North America', '3.000', '2.000', '', "[]"),
 (3, 'Chapter C', 'z', 'facebook.com/c', 'twitter.com/c', 'instagram.com/c', 'c@dxe.io', 'North America', '7.000', '1.000', '', "[]");
 

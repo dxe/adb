@@ -84,7 +84,6 @@ func augmentUserWithChapterFromSession(db *sqlx.DB, r *http.Request, adbUser mod
 
 	chapterID, ok := authSession.Values["chapterid"].(int)
 	if !ok {
-		// User could have old session cookie that doesn't contain `chapterid`.
 		return adbUser, fmt.Errorf("failed to get chapter ID from session")
 	}
 
@@ -98,18 +97,25 @@ func augmentUserWithChapterFromSession(db *sqlx.DB, r *http.Request, adbUser mod
 	return adbUser, nil
 }
 
-func getAuthedADBUser(db *sqlx.DB, r *http.Request) (adbUser model.ADBUser, authed bool) {
-	if !config.IsProd {
-		augmentedUser, err := augmentUserWithChapterFromSession(db, r, model.DevTestUser)
-		if err != nil {
-			// It's fine if this fails in local dev, b/c we often don't actually have a session cookie.
-			log.Println("Warning: Failed to augment dev user with chapter from session:", err)
+func authADBUser(db *sqlx.DB, r *http.Request, w http.ResponseWriter) (adbUser model.ADBUser, authed bool) {
+	adbUser, authed = getAuthedADBUser(db, r)
+
+	if !authed && !config.IsProd {
+		testUser, testUserErr := model.GetADBUser(db, model.DevTestUserId, "")
+		if testUserErr != nil {
+			panic(fmt.Errorf("error getting test user: %v", testUserErr))
 		}
-		return augmentedUser, true
+
+		setAuthSession(w, r, testUser)
+		adbUser, authed = getAuthedADBUser(db, r)
 	}
 
+	return adbUser, authed
+}
+
+func getAuthedADBUser(db *sqlx.DB, r *http.Request) (adbUser model.ADBUser, authed bool) {
 	// First, check the cookie.
-	authSession, err := sessionStore.New(r, "auth-session")
+	authSession, err := sessionStore.Get(r, "auth-session")
 	if err != nil {
 		// the cookie secret has changed
 		return model.ADBUser{}, false
@@ -364,7 +370,7 @@ type MainController struct {
 
 func (c MainController) authRoleMiddleware(h http.Handler, allowedRoles []string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, authed := getAuthedADBUser(c.db, r)
+		user, authed := authADBUser(c.db, r, w)
 		if !authed {
 			// Delete the cookie if it doesn't auth.
 			c := &http.Cookie{
@@ -449,7 +455,7 @@ func getUserMainRole(user model.ADBUser) string {
 
 func (c MainController) apiRoleMiddleware(h http.Handler, allowedRoles []string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, authed := getAuthedADBUser(c.db, r)
+		user, authed := authADBUser(c.db, r, w)
 
 		if !authed {
 			http.Error(w, http.StatusText(400), 400)
