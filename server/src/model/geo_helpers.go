@@ -2,7 +2,7 @@ package model
 
 import (
 	"encoding/json"
-	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 
@@ -29,21 +29,21 @@ type GeocodeResponse struct {
 
 func geoCodeAddress(streetAddress string, city string, state string) *Location {
 	if config.GooglePlacesBackendAPIKey == "" {
-		fmt.Println("GooglePlacesBackendAPIKey not configured.")
+		log.Println("GooglePlacesBackendAPIKey not configured.")
 		return nil
 	}
 	full_address := url.QueryEscape(streetAddress + " " + city + " " + state)
 	request := "https://maps.googleapis.com/maps/api/geocode/json?address=" + full_address + "&key=" + config.GooglePlacesBackendAPIKey
 	resp, err := http.Get(request)
 	if err != nil {
-		fmt.Println("Error geocoding activist location", err)
+		log.Println("Error geocoding activist location", err)
 		return nil
 	}
 	defer resp.Body.Close()
 	var geocode_response GeocodeResponse
 	json.NewDecoder(resp.Body).Decode(&geocode_response)
 	if len(geocode_response.Results) == 0 {
-		fmt.Printf("No geocoding results found for address %v. Not updating Lat and Lng\n", full_address)
+		log.Printf("No geocoding results found for address %v. Not updating Lat and Lng\n", full_address)
 		return nil
 	} else {
 		return &Location{Lat: geocode_response.Results[0].Geometry.Location.Lat, Lng: geocode_response.Results[0].Geometry.Location.Lng}

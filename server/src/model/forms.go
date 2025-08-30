@@ -90,7 +90,7 @@ func SubmitApplicationForm(db *sqlx.DB, formData ApplicationFormData) error {
 	err = mailing_list_signup.Enqueue(signup)
 	if err != nil {
 		// Don't fail the HTTP request since at least the user's response was added to the database.
-		fmt.Println("ERROR adding application form submission to mailing list:", err.Error())
+		log.Printf("ERROR adding application form submission to mailing list: %v", err)
 	}
 	log.Printf("Enqueued email for sign-up: %v", formData.Email)
 
@@ -212,7 +212,7 @@ func SubmitDiscordForm(db *sqlx.DB, formData DiscordFormData) error {
 	err = mailing_list_signup.Enqueue(signup)
 	if err != nil {
 		// Don't return this error because we still want to successfully update the database.
-		fmt.Println("ERROR adding discord form submission to mailing list:", err.Error())
+		log.Printf("ERROR adding discord form submission to mailing list: %v", err)
 	}
 	log.Printf("Enqueued email for sign-up: %v", formData.Email)
 

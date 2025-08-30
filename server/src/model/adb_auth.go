@@ -2,8 +2,8 @@ package model
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
+	"log"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
@@ -62,17 +62,6 @@ type GetUsersRolesOptions struct {
 	Roles []string
 }
 
-var DevTestUser = ADBUser{
-	ID:          1,
-	Email:       "test@test.com",
-	Name:        "Test User",
-	Admin:       true,
-	Disabled:    false,
-	Roles:       []UserRole{{UserID: 1, Role: "admin"}},
-	ChapterID:   1,
-	ChapterName: "SF Bay Area",
-}
-
 type UserRole struct {
 	UserID int    `db:"user_id"`
 	Role   string `db:"role"`
@@ -82,6 +71,9 @@ type UserRoleJSON struct {
 	UserID int    `json:"user_id"`
 	Role   string `json:"role"`
 }
+
+const DevTestUserId = 1
+const DevTestUserEmail = "test@example.org"
 
 /** Functions and Methods */
 
@@ -124,7 +116,7 @@ FROM adb_users
 	usersRoles, err := getUsersRoles(db, usersRolesOptions)
 
 	// We don't want non-SF Bay users to have access to any of the other roles, so just replace it.
-	if adbUser.ChapterName != "SF Bay Area" {
+	if adbUser.ChapterName != SFBayChapterName {
 		usersRoles = []UserRole{{
 			UserID: adbUser.ID,
 			Role:   "non-sfbay",
@@ -141,7 +133,7 @@ FROM adb_users
 		}
 	}
 
-	fmt.Println("[User access]", adbUser.Name, "-", adbUser.Email)
+	log.Println("[User access]", adbUser.Name, "-", adbUser.Email)
 
 	return *adbUser, nil
 }

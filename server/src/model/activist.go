@@ -1235,7 +1235,7 @@ func UpdateActivistData(db *sqlx.DB, activist ActivistExtra, userEmail string) (
 	})
 
 	if err != nil {
-		fmt.Println("Error logging activist update: " + err.Error())
+		log.Println("Error logging activist update: " + err.Error())
 	}
 
 	return activist.ID, nil

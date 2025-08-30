@@ -199,7 +199,7 @@ func validateReturnedWorkingGroup(t *testing.T, inserted WorkingGroup, returned 
 func insertActivists(t *testing.T, db *sqlx.DB, names []string) []WorkingGroupMember {
 	members := make([]WorkingGroupMember, len(names))
 	for idx, a := range names {
-		activist, err := GetOrCreateActivist(db, a, 1)
+		activist, err := GetOrCreateActivist(db, a, SFBayChapterIdDevTest)
 		require.NoError(t, err)
 		members[idx] = WorkingGroupMember{
 			ActivistName: activist.Name,
