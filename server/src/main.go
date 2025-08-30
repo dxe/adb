@@ -155,7 +155,9 @@ func setAuthSession(w http.ResponseWriter, r *http.Request, adbUser model.ADBUse
 
 	authSession, err := sessionStore.Get(r, "auth-session")
 	if err != nil {
-		return err
+		// This err represents an issue with decoding an existing session.
+		// sessionStore.Get returns a new session in this case, so no need to return.
+		log.Printf("Warning: creating a new session because the existing session could not be decoded: %v", err)
 	}
 	authSession.Options = &sessions.Options{
 		Path: "/",
