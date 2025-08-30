@@ -2,8 +2,8 @@ package model
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
+	"log"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
@@ -133,7 +133,7 @@ FROM adb_users
 		}
 	}
 
-	fmt.Println("[User access]", adbUser.Name, "-", adbUser.Email)
+	log.Println("[User access]", adbUser.Name, "-", adbUser.Email)
 
 	return *adbUser, nil
 }
