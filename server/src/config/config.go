@@ -82,11 +82,6 @@ var (
 		"@every 10s",
 		false,
 	)
-	FormProcessorSendLogByEmailCronExpression = mustGetenv(
-		"FORM_PROCESSOR_SEND_LOG_BY_EMAIL_CRON_EXPRESSION",
-		"@daily",
-		false,
-	)
 	FormProcessorLockFilePath = mustGetenv(
 		"FORM_PROCESSOR_LOCK_FILE_PATH",
 		"output/FORM_PROCESSOR_ROCESSOR_RUNNING",
