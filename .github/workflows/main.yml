@@ -34,8 +34,8 @@ jobs:
           sudo /etc/init.d/mysql start
           mysql -h127.0.0.1 -P3306 -uroot -proot -e "CREATE USER adb_user@localhost IDENTIFIED BY 'adbpassword';"
           mysql -h127.0.0.1 -P3306 -uroot -proot -e "GRANT ALL PRIVILEGES ON *.* to adb_user@localhost;"
-          mysql -h127.0.0.1 -P3306 -uroot -proot -e "CREATE DATABASE adb_db CHARACTER SET utf8 COLLATE utf8_general_ci;"
-          mysql -h127.0.0.1 -P3306 -uroot -proot -e "CREATE DATABASE adb_test_db CHARACTER SET utf8 COLLATE utf8_general_ci;"
+          mysql -h127.0.0.1 -P3306 -uroot -proot -e "CREATE DATABASE adb_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+          mysql -h127.0.0.1 -P3306 -uroot -proot -e "CREATE DATABASE adb_test_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
       - name: Set environment variables for tests
         run: echo "DB_PROTOCOL=tcp(127.0.0.1:3306)" >> $GITHUB_ENV
       - name: Run tests
