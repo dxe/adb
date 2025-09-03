@@ -25,7 +25,7 @@ func createTempDb(name string) {
 	defer db.Close()
 
 	// Create the database
-	createDBQuery := "CREATE DATABASE IF NOT EXISTS " + name
+	createDBQuery := "CREATE DATABASE IF NOT EXISTS " + name + " CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
 	_, err = db.Exec(createDBQuery)
 	if err != nil {
 		log.Fatalf("Error creating database: %v", err)
