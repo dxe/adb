@@ -2,6 +2,7 @@ package event_sync
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"strconv"
 	"time"
@@ -36,23 +37,24 @@ func syncFacebookEvents(db *sqlx.DB) {
 }
 
 func syncFacebookEventsForPage(db *sqlx.DB, page model.ChapterWithToken) error {
-	log.Println("Getting FB events from", page.Name, "(", page.ID, ")")
-
+	log.Printf("Getting FB events from %v (%v)", page.Name, page.ID)
 	events, err := getFacebookEvents(page) // gets events from FB API
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to fetch events: %v", err)
 	}
 	if len(events) == 0 {
-		log.Println("INFO: No events returned from Facebook.")
+		log.Printf("INFO: No events returned from Facebook for %v.", page.Name)
 		return nil
 	}
 
 	for _, event := range events {
 		err := parseAndUpsertFacebookEvent(db, event, page)
 		if err != nil {
-			log.Println(err.Error()) // print the error, but keep trying for the rest of the events
+			// print the error, but keep trying for the rest of the events
+			log.Printf("error parsing/upserting event %v (%v): %v", event.Name, event.ID, err.Error())
 		}
 	}
+	log.Printf("Processed %v events for %v", len(events), page.Name)
 	return nil
 }
 
@@ -83,8 +85,14 @@ func parseAndUpsertFacebookEvent(db *sqlx.DB, event FacebookEvent, page model.Ch
 func parseFacebookEvent(fbEvent FacebookEvent, page model.ChapterWithToken) (model.ExternalEvent, error) {
 	fbTimeLayout := "2006-01-02T15:04:05-0700"
 	startTime, err := time.Parse(fbTimeLayout, fbEvent.StartTime)
+	if err != nil {
+		return model.ExternalEvent{}, fmt.Errorf("error parsing start time: %v", err)
+	}
 	startTime = startTime.UTC()
 	endTime, err := time.Parse(fbTimeLayout, fbEvent.EndTime)
+	if err != nil {
+		return model.ExternalEvent{}, fmt.Errorf("error parsing end time: %v", err)
+	}
 	endTime = endTime.UTC()
 	placeName := fbEvent.Place.Name
 	if fbEvent.IsOnline {
