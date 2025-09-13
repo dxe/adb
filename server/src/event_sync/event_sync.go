@@ -177,7 +177,7 @@ func syncEventbriteEvents(db *sqlx.DB) {
 
 		err = createOrUpdateEventbriteEvents(db, page, dbEvents, ebEvents)
 		if err != nil {
-			log.Error().Msgf("Error creating or updating Eventbrite events: %v", err)
+			log.Error().Msgf("Error syncing Eventbrite events for chapter %v: %v", page.Name, err)
 		}
 	}
 }
@@ -240,7 +240,7 @@ func createOrUpdateEventbriteEvents(db *sqlx.DB, chapter model.ChapterWithToken,
 	for _, dbEvent := range dbEvents {
 		err := createOrUpdateEventbriteEvent(db, chapter, dbEvent, ebEventsMap)
 		if err != nil {
-			return fmt.Errorf("error creating or updating event: chapter: %v, event: %v, error: %v", chapter.Name, dbEvent.Name, err)
+			return fmt.Errorf("error syncing event '%v': %v", dbEvent.Name, err)
 		}
 	}
 
@@ -252,7 +252,7 @@ func createOrUpdateEventbriteEvent(db *sqlx.DB, chapter model.ChapterWithToken, 
 	if dbEvent.EventbriteURL == "" {
 		ebEvent, err := createEventbriteEvent(dbEvent, chapter)
 		if err != nil {
-			return fmt.Errorf("error creating event: %v", err)
+			return fmt.Errorf("error creating event on Eventbrite: %v", err)
 		}
 		// update the database w/ the information from Eventbrite
 		event := model.ExternalEvent{

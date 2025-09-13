@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 )
@@ -17,12 +18,12 @@ func postAPI(path string, req, resp interface{}) error {
 
 	response, err := http.Post(path, "application/json", &body)
 	if err != nil {
-		return err
+		return fmt.Errorf("error making POST request: %v", err)
 	}
 	defer response.Body.Close()
 
 	if response.StatusCode != http.StatusOK {
-		return errors.New("POST request failed. Status: " + strconv.Itoa(response.StatusCode))
+		return fmt.Errorf("POST request failed. Status: %v; Body: %v", strconv.Itoa(response.StatusCode), response.Body)
 	}
 	return json.NewDecoder(response.Body).Decode(&resp)
 }
