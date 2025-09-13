@@ -111,7 +111,7 @@ func createEventbriteVenue(event model.ExternalEvent, chapter model.ChapterWithT
 
 	err := postAPI(path, &req, &resp)
 	if err != nil {
-		return "", errors.New("failed to create venue on Eventbrite: " + err.Error())
+		return "", errors.New("request failed: " + err.Error())
 	}
 
 	return resp.ID, nil
