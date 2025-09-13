@@ -156,7 +156,9 @@ func syncEventbriteEvents(db *sqlx.DB) {
 
 		ebEvents, err := getUpcomingEventsFromEventbrite(page)
 		if err != nil {
-			log.Error().Msgf("Error getting upcoming events from Eventbrite: %v", err)
+			// Warn instead of Error until we can fix known issue:
+			// Error getting upcoming events from Eventbrite: failed to get upcoming events from Eventbrite: GET request failed. Status: 502
+			log.Warn().Msgf("Error getting upcoming events from Eventbrite: %v", err)
 		}
 
 		dbEvents, err := model.GetExternalEvents(db, page.ID, now, time.Time{})
@@ -177,7 +179,9 @@ func syncEventbriteEvents(db *sqlx.DB) {
 
 		err = createOrUpdateEventbriteEvents(db, page, dbEvents, ebEvents)
 		if err != nil {
-			log.Error().Msgf("Error syncing Eventbrite events for chapter %v: %v", page.Name, err)
+			// Warn instead of Error until we can fix known issue:
+			// "error creating venue: request failed: POST request failed. Status: 502; Body: ..."
+			log.Warn().Msgf("Error syncing Eventbrite events for chapter %v: %v", page.Name, err)
 		}
 	}
 }

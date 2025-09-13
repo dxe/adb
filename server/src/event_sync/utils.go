@@ -3,7 +3,6 @@ package event_sync
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -37,7 +36,9 @@ func getAPI(path string, resp interface{}) error {
 	}
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
-		return errors.New("GET request failed. Status: " + strconv.Itoa(response.StatusCode))
+		body := new(bytes.Buffer)
+		body.ReadFrom(response.Body)
+		return fmt.Errorf("GET request failed. Status: %v, Body: %v"+strconv.Itoa(response.StatusCode), body.String())
 	}
 	return json.NewDecoder(response.Body).Decode(&resp)
 }
