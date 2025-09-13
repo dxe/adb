@@ -3,47 +3,47 @@ package event_sync
 import (
 	"errors"
 	"fmt"
-	"log"
 	"strconv"
 	"time"
 
 	"github.com/dxe/adb/model"
 	"github.com/jmoiron/sqlx"
+	"github.com/rs/zerolog/log"
 )
 
 func syncFacebookEvents(db *sqlx.DB) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Println("Recovered from panic in Facebook event sync", r)
+			log.Info().Msgf("Recovered from panic in Facebook event sync: %v", r)
 		}
 	}()
 
 	// get pages from database
 	pages, err := model.GetChaptersWithFacebookTokens(db)
 	if err != nil {
-		log.Println("Error getting FB pages from database:", err)
+		log.Error().Msgf("Error getting FB pages from database: %v", err)
 		return
 	}
 	if pages == nil {
-		log.Println("There are no Facebook pages to sync.")
+		log.Info().Msg("There are no Facebook pages to sync.")
 		return
 	}
 	for _, page := range pages {
 		err := syncFacebookEventsForPage(db, page)
 		if err != nil {
-			log.Println("Sync failed for page", page.Name, err.Error())
+			log.Error().Msgf("Sync failed for page %v: %v", page.Name, err.Error())
 		}
 	}
 }
 
 func syncFacebookEventsForPage(db *sqlx.DB, page model.ChapterWithToken) error {
-	log.Printf("Getting FB events from %v (%v)", page.Name, page.ID)
+	log.Debug().Msgf("Getting FB events from %v (%v)", page.Name, page.ID)
 	events, err := getFacebookEvents(page) // gets events from FB API
 	if err != nil {
 		return fmt.Errorf("failed to fetch events: %v", err)
 	}
 	if len(events) == 0 {
-		log.Printf("INFO: No events returned from Facebook for %v.", page.Name)
+		log.Info().Msgf("No events returned from Facebook for %v.", page.Name)
 		return nil
 	}
 
@@ -51,10 +51,11 @@ func syncFacebookEventsForPage(db *sqlx.DB, page model.ChapterWithToken) error {
 		err := parseAndUpsertFacebookEvent(db, event, page)
 		if err != nil {
 			// print the error, but keep trying for the rest of the events
-			log.Printf("error parsing/upserting event %v (%v): %v", event.Name, event.ID, err.Error())
+			log.Error().Msgf("Error parsing/upserting event %v (%v): %v", event.Name, event.ID, err.Error())
+
 		}
 	}
-	log.Printf("Processed %v events for %v", len(events), page.Name)
+	log.Info().Msgf("Processed %v events for %v", len(events), page.Name)
 	return nil
 }
 
@@ -89,11 +90,14 @@ func parseFacebookEvent(fbEvent FacebookEvent, page model.ChapterWithToken) (mod
 		return model.ExternalEvent{}, fmt.Errorf("error parsing start time: %v", err)
 	}
 	startTime = startTime.UTC()
-	endTime, err := time.Parse(fbTimeLayout, fbEvent.EndTime)
-	if err != nil {
-		return model.ExternalEvent{}, fmt.Errorf("error parsing end time: %v", err)
+	var endTime time.Time
+	if len(fbEvent.EndTime) > 0 {
+		endTime, err = time.Parse(fbTimeLayout, fbEvent.EndTime)
+		if err != nil {
+			return model.ExternalEvent{}, fmt.Errorf("error parsing end time: %v", err)
+		}
+		endTime = endTime.UTC()
 	}
-	endTime = endTime.UTC()
 	placeName := fbEvent.Place.Name
 	if fbEvent.IsOnline {
 		placeName = "Online"
@@ -128,7 +132,7 @@ func parseFacebookEvent(fbEvent FacebookEvent, page model.ChapterWithToken) (mod
 func syncEventbriteEvents(db *sqlx.DB) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Println("Recovered from panic in Eventbrite sync.", r)
+			log.Info().Msgf("Recovered from panic in Eventbrite sync: %v", r)
 		}
 	}()
 
@@ -137,43 +141,43 @@ func syncEventbriteEvents(db *sqlx.DB) {
 	// get pages from database
 	pages, err := model.GetChaptersWithEventbriteTokens(db)
 	if err != nil {
-		log.Println("ERROR: Failed to get chapters with Eventbrite tokens from database.")
+		log.Error().Msg("ERROR: Failed to get chapters with Eventbrite tokens from database.")
 		return
 	}
 	if pages == nil {
 		// stop if no pages in database
-		log.Println("There are no Eventbrite pages to sync.")
+		log.Info().Msg("There are no Eventbrite pages to sync.")
 		return
 	}
 	// for each page
 	for _, page := range pages {
 
-		log.Println("Starting Eventbrite sync for", page.Name, "(", page.EventbriteID, ")")
+		log.Info().Msgf("Starting Eventbrite sync for %v (%v)", page.Name, page.EventbriteID)
 
 		ebEvents, err := getUpcomingEventsFromEventbrite(page)
 		if err != nil {
-			log.Println("ERROR:", err)
+			log.Error().Msgf("Error getting upcoming events from Eventbrite: %v", err)
 		}
 
 		dbEvents, err := model.GetExternalEvents(db, page.ID, now, time.Time{})
 		if err != nil {
-			log.Println("ERROR:", err)
+			log.Error().Msgf("Error getting external events: %v", err)
 		}
 
 		err = addEventbriteDataToExistingEvents(db, ebEvents, dbEvents)
 		if err != nil {
-			log.Println("ERROR:", err)
+			log.Error().Msgf("Error adding eventbrite data to existing events: %v", err)
 		}
 
 		// read events from db again since we may have just added the EB information to them
 		dbEvents, err = model.GetExternalEvents(db, page.ID, now, time.Time{})
 		if err != nil {
-			log.Println("ERROR:", err)
+			log.Error().Msgf("Error getting external events: %v", err)
 		}
 
 		err = createOrUpdateEventbriteEvents(db, page, dbEvents, ebEvents)
 		if err != nil {
-			log.Println("ERROR:", err)
+			log.Error().Msgf("Error creating or updating Eventbrite events: %v", err)
 		}
 	}
 }
@@ -203,7 +207,7 @@ func addEventbriteDataToExistingEvents(db *sqlx.DB, ebEvents []EventbriteEvent, 
 	// loop through events
 	for _, ebEvent := range ebEvents {
 		if _, ok := fbEventsMap[ebEvent.URL]; !ok {
-			log.Println("Attempting to add Eventbrite details to DB for", ebEvent.Name.Text)
+			log.Info().Msgf("Attempting to add Eventbrite details to DB for: %v", ebEvent.Name.Text)
 			startTime, err := time.Parse(time.RFC3339, ebEvent.Start.UTC)
 			if err != nil {
 				return errors.New("failed to parse eventbrite start time: " + err.Error())
@@ -265,7 +269,7 @@ func createOrUpdateEventbriteEvent(db *sqlx.DB, chapter model.ChapterWithToken, 
 
 	// event has Eventbrite URL in the database, so first make sure that it's still listed on Eventbrite
 	if _, ok := ebEventsMap[dbEvent.EventbriteURL]; !ok {
-		log.Println("WARNING:", dbEvent.Name, "was deleted by a human on Eventbrite, but an Eventbrite URL still exists in our database!")
+		log.Warn().Msgf("Event was deleted by a human on Eventbrite, but an Eventbrite URL still exists in our database! Event: %v", dbEvent.Name)
 		// TODO: We should probably remove the Eventbrite ID & URL from the database since it no longer exists.
 		return nil
 	}
@@ -274,7 +278,7 @@ func createOrUpdateEventbriteEvent(db *sqlx.DB, chapter model.ChapterWithToken, 
 	// TODO: move this to an updateEventbriteEvent function
 	ebEvent := ebEventsMap[dbEvent.EventbriteURL]
 	if ebEvent.Name.Text != dbEvent.Name || ebEvent.Start.UTC != dbEvent.StartTime.Format(time.RFC3339) {
-		log.Println("We need to update the event name & start time on Eventbrite for", ebEvent.Name)
+		log.Warn().Msgf("We need to update the event name & start time on Eventbrite for %v", ebEvent.Name)
 		// TODO: update the event name, summary (w/ the name), and start time
 	}
 	// TODO: check if location changed
@@ -284,7 +288,7 @@ func createOrUpdateEventbriteEvent(db *sqlx.DB, chapter model.ChapterWithToken, 
 }
 
 func createEventbriteEvent(event model.ExternalEvent, chapter model.ChapterWithToken) (EventbriteEvent, error) {
-	log.Println("Creating event on Eventbrite:", event.Name)
+	log.Info().Msgf("Creating event on Eventbrite: %v", event.Name)
 
 	var ebEvent EventbriteEvent
 
@@ -330,13 +334,13 @@ func createEventbriteEvent(event model.ExternalEvent, chapter model.ChapterWithT
 func StartExternalEventSync(db *sqlx.DB) {
 
 	for {
-		log.Println("Starting Facebook event sync")
+		log.Info().Msg("Starting Facebook event sync")
 		syncFacebookEvents(db)
-		log.Println("Finished Facebook event sync")
+		log.Info().Msg("Finished Facebook event sync")
 
-		log.Println("Starting Eventbrite event sync")
+		log.Info().Msg("Starting Eventbrite event sync")
 		syncEventbriteEvents(db)
-		log.Println("Finished Eventbrite event sync")
+		log.Info().Msg("Finished Eventbrite event sync")
 
 		time.Sleep(60 * time.Minute)
 	}

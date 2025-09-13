@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/dxe/adb/model"
+	"github.com/rs/zerolog/log"
 )
 
 const eventbriteAPIBaseURL = "https://www.eventbriteapi.com/v3"
@@ -133,6 +134,7 @@ func createEventbriteImage(event model.ExternalEvent, chapter model.ChapterWithT
 	}
 
 	imageId, err := notifyEventbriteOfNewImage(chapter.EventbriteToken, uploadData.UploadToken)
+	log.Warn().Msgf("Failed to notify Eventbrite of new image. ID: %v, error: %v", imageId, err)
 
 	return imageId, nil
 }
