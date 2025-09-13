@@ -23,7 +23,9 @@ func postAPI(path string, req, resp interface{}) error {
 	defer response.Body.Close()
 
 	if response.StatusCode != http.StatusOK {
-		return fmt.Errorf("POST request failed. Status: %v; Body: %v", strconv.Itoa(response.StatusCode), response.Body)
+		body := new(bytes.Buffer)
+		body.ReadFrom(response.Body)
+		return fmt.Errorf("POST request failed. Status: %v; Body: %v", strconv.Itoa(response.StatusCode), body.String())
 	}
 	return json.NewDecoder(response.Body).Decode(&resp)
 }
