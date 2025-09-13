@@ -24,7 +24,7 @@ func postAPI(path string, req, resp interface{}) error {
 	if response.StatusCode != http.StatusOK {
 		body := new(bytes.Buffer)
 		body.ReadFrom(response.Body)
-		return fmt.Errorf("POST request failed. Status: %v; Body: %v", strconv.Itoa(response.StatusCode), body.String())
+		return fmt.Errorf("request failed with status %v, body: %v", strconv.Itoa(response.StatusCode), body.String())
 	}
 	return json.NewDecoder(response.Body).Decode(&resp)
 }
@@ -38,7 +38,7 @@ func getAPI(path string, resp interface{}) error {
 	if response.StatusCode != http.StatusOK {
 		body := new(bytes.Buffer)
 		body.ReadFrom(response.Body)
-		return fmt.Errorf("GET request failed. Status: %v, Body: %v"+strconv.Itoa(response.StatusCode), body.String())
+		return fmt.Errorf("request failed with status %v, body: %v", strconv.Itoa(response.StatusCode), body.String())
 	}
 	return json.NewDecoder(response.Body).Decode(&resp)
 }
