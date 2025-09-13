@@ -240,7 +240,7 @@ func createOrUpdateEventbriteEvents(db *sqlx.DB, chapter model.ChapterWithToken,
 	for _, dbEvent := range dbEvents {
 		err := createOrUpdateEventbriteEvent(db, chapter, dbEvent, ebEventsMap)
 		if err != nil {
-			return err
+			return fmt.Errorf("error creating or updating event: chapter: %v, event: %v, error: %v", chapter.Name, dbEvent.Name, err)
 		}
 	}
 
@@ -252,7 +252,7 @@ func createOrUpdateEventbriteEvent(db *sqlx.DB, chapter model.ChapterWithToken, 
 	if dbEvent.EventbriteURL == "" {
 		ebEvent, err := createEventbriteEvent(dbEvent, chapter)
 		if err != nil {
-			return err
+			return fmt.Errorf("error creating event: %v", err)
 		}
 		// update the database w/ the information from Eventbrite
 		event := model.ExternalEvent{
@@ -262,7 +262,7 @@ func createOrUpdateEventbriteEvent(db *sqlx.DB, chapter model.ChapterWithToken, 
 		}
 		err = model.AddEventbriteDetailsToEventByID(db, event)
 		if err != nil {
-			return err
+			return fmt.Errorf("error adding details: %v", err)
 		}
 		return nil
 	}
@@ -295,35 +295,35 @@ func createEventbriteEvent(event model.ExternalEvent, chapter model.ChapterWithT
 	// create venue
 	venueID, err := createEventbriteVenue(event, chapter)
 	if err != nil {
-		return ebEvent, err
+		return ebEvent, fmt.Errorf("error creating venue: %v", err)
 	}
 
 	imageID, err := createEventbriteImage(event, chapter)
 	if err != nil {
-		return ebEvent, err
+		return ebEvent, fmt.Errorf("error creating image: %v", err)
 	}
 
 	ebEvent, err = addEventToEventbrite(event, chapter, venueID, imageID)
 	if err != nil {
-		return ebEvent, err
+		return ebEvent, fmt.Errorf("error adding event to Eventbrite: %v", err)
 	}
 
 	// add ticket class
 	err = addEventTicketClass(ebEvent.ID, chapter.EventbriteToken)
 	if err != nil {
-		return ebEvent, err
+		return ebEvent, fmt.Errorf("error adding ticket class: %v", err)
 	}
 
 	// add description
 	err = updateEventDescription(ebEvent.ID, event.Description, chapter.EventbriteToken)
 	if err != nil {
-		return ebEvent, err
+		return ebEvent, fmt.Errorf("error updating description: %v", err)
 	}
 
 	// publish event
 	err = publishEvent(ebEvent.ID, chapter.EventbriteToken)
 	if err != nil {
-		return ebEvent, err
+		return ebEvent, fmt.Errorf("error publishing: %v", err)
 	}
 
 	return ebEvent, nil
