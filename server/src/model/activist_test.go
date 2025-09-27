@@ -388,7 +388,7 @@ func TestUpdateActivist(t *testing.T) {
 	activist.Location = sql.NullString{String: "90001", Valid: true}
 	activist.Coords = Coords{1, 2}
 
-	UpdateActivistData(db, *activist, DevTestUserEmail)
+	UserUpdateActivist(db, *activist, DevTestUserEmail)
 
 	updatedActivist, err := GetActivistExtra(db, id)
 	require.NoError(t, err)
