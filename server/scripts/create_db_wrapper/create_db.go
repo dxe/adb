@@ -27,7 +27,7 @@ func createCurrentDateString(day int) string {
 	currentYear := currentTime.Year()
 	currentMonth := currentTime.Month()
 
-	return fmt.Sprintf("%d-%d-%d", currentYear, currentMonth, day)
+	return fmt.Sprintf("%02d-%02d-%02d", currentYear, currentMonth, day)
 }
 
 func createEventsDevDB() string {
@@ -57,24 +57,31 @@ func createDevDB(name string) {
 	db := model.NewDB(config.DataSourceBase + "/" + name + "?multiStatements=true")
 	defer db.Close()
 	model.WipeDatabaseWithDb(db, config.DBMigrationsLocation())
+	chapter := model.SFBayChapterIdDevTestStr
 	insertStatement := fmt.Sprintf(`
 INSERT INTO activists
-  (id, name, email, phone, location, activist_level)
+  (chapter_id, id, name, email, phone, location, activist_level)
   VALUES
-  (1, 'Adam Kol', 'test@directactioneverywhere.com', '7035558484', 'Berkeley, United States', 'Supporter'),
-  (2, 'Robin Houseman', 'testtest@gmail.com', '7035558484', 'United States', 'Supporter'),
-  (3, 'aaa', 'test@comcast.net', '7035558484', 'Fairfield, United States', 'Supporter'),
-  (4, 'bbb', '', '7035558484', 'Fairfield, United States', 'Supporter'),
-  (5, 'ccc', 'test@comcast.net', '7035558484', 'Fairfield, United States', 'Supporter'),
-  (100, 'ddd', 'test.test.test@gmail.com', '', 'United States', 'Supporter'),
-  (101, 'eee', 'test.test.test@gmail.com', '', 'United States', 'Supporter'),
-  (102, 'fff', 'test.test.test@gmail.com', '', 'United States', 'Supporter'),
-  (103, 'ggg', 'test.test.test@gmail.com', '', 'United States', 'Supporter'),
-  (104, 'hhh', 'test.test.test@gmail.com', '', 'United States', 'Supporter'),
-  (105, 'iii', 'test.test.test@gmail.com', '', 'United States', 'Supporter'),
-  (106, 'jjj', 'test.test.test@gmail.com', '', 'United States', 'Supporter'),
-  (107, 'lll', 'test.test.test@gmail.com', '', 'United States', 'Supporter'),
-  (108, 'mmm', 'test@gmail.com', '', 'United States', 'Supporter');
+  (`+chapter+`, 1, 'Adam Kol', 'test@directactioneverywhere.com', '7035558484', 'Berkeley, United States', 'Supporter'),
+  (`+chapter+`, 2, 'Robin Houseman', 'testtest@gmail.com', '7035558484', 'United States', 'Supporter'),
+  (`+chapter+`, 3, 'aaa', 'test@comcast.net', '7035558484', 'Fairfield, United States', 'Supporter'),
+  (`+chapter+`, 4, 'bbb', '', '7035558484', 'Fairfield, United States', 'Supporter'),
+  (`+chapter+`, 5, 'ccc', 'test@comcast.net', '7035558484', 'Fairfield, United States', 'Supporter'),
+  (`+chapter+`, 100, 'ddd', 'test.test.test@gmail.com', '', 'United States', 'Supporter'),
+  (`+chapter+`, 101, 'eee', 'test.test.test@gmail.com', '', 'United States', 'Supporter'),
+  (`+chapter+`, 102, 'fff', 'test.test.test@gmail.com', '', 'United States', 'Supporter'),
+  (`+chapter+`, 103, 'ggg', 'test.test.test@gmail.com', '', 'United States', 'Supporter'),
+  (`+chapter+`, 104, 'hhh', 'test.test.test@gmail.com', '', 'United States', 'Supporter'),
+  (`+chapter+`, 105, 'iii', 'test.test.test@gmail.com', '', 'United States', 'Supporter'),
+  (`+chapter+`, 106, 'jjj', 'test.test.test@gmail.com', '', 'United States', 'Supporter'),
+  (`+chapter+`, 107, 'lll', 'test.test.test@gmail.com', '', 'United States', 'Supporter'),
+  (`+chapter+`, 108, 'mmm', 'test@gmail.com', '', 'United States', 'Supporter');
+
+  -- Community prospect test activist
+INSERT INTO activists
+  (chapter_id, id, name, email, phone, location, activist_level, source, interest_date)
+  VALUES
+  (`+chapter+`, 1000, 'nnn', 'test2@gmail.com', '', 'United States', 'Supporter', 'Petition: no-more-bad-things', '`+createCurrentDateString(1)+`');
 
 INSERT INTO events VALUES
   %s

@@ -652,7 +652,7 @@ func (c MainController) ListCommunityProspectsHandler(w http.ResponseWriter, r *
 		PageName: "CommunityProspects",
 		Data: ActivistListData{
 			Title:       "Community Prospects",
-			Description: "Everyone whose Level is Supporter whose Source is a Petition or Form (excluding Application Form and Check-in Form), has not had an interaction, and has not attended an event within the past year",
+			Description: "Everyone whose Level is Supporter and whose Source is a petition, a form (excluding application forms) or Eventbrite, whose interest date (form submission date) falls within the given date range, and who has not had an interaction, and has not attended an event within the past year",
 			View:        "community_prospects",
 		},
 	})
@@ -1035,7 +1035,7 @@ func (c MainController) ActivistSaveHandler(w http.ResponseWriter, r *http.Reque
 		activistExtra.ChapterID = user.ChapterID
 		activistID, err = model.CreateActivist(c.db, activistExtra)
 	} else {
-		activistID, err = model.UpdateActivistData(c.db, activistExtra, user.Email)
+		activistID, err = model.UserUpdateActivist(c.db, activistExtra, user.Email)
 	}
 	if err != nil {
 		sendErrorMessage(w, err)
@@ -2398,7 +2398,7 @@ func (c MainController) DiscordConfirmHandler(w http.ResponseWriter, r *http.Req
 		// modify the discord_id in the selected activist record
 		activists[0].DiscordID = sql.NullString{String: strings.TrimSpace(strconv.Itoa(user.ID)), Valid: true}
 		// save the updated activist record to the database
-		_, err = model.UpdateActivistData(c.db, activists[0], "SYSTEM")
+		_, err = model.UserUpdateActivist(c.db, activists[0], "SYSTEM")
 		if err != nil {
 			panic(err.Error())
 		}

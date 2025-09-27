@@ -235,7 +235,7 @@ LEFT JOIN (
 
 const insertActivistQuery string = `INSERT INTO activists SET ` +
 	`chapter_id = :chapter_id,` +
-	ActivistDataFieldAssignments
+	ActivistAllDataFieldAssignments
 
 const insertActivistWithTimestampsQuery string = insertActivistQuery + `,
   email_updated = :email_updated,
@@ -243,7 +243,9 @@ const insertActivistWithTimestampsQuery string = insertActivistQuery + `,
   address_updated = :address_updated,
   location_updated = :location_updated`
 
-const updateActivistQuery string = `UPDATE activists
+// Query to update an activist as requested by a user. Non-user-editable fields are not updated. Timestamps for changed
+// fields are updated to the current time.
+const userUpdateActivistQuery string = `UPDATE activists
 SET ` +
 	// Modified timestamp field assignments
 	//
@@ -255,20 +257,27 @@ SET ` +
   phone_updated = IF(phone <> :phone, NOW(), phone_updated),
   address_updated = IF(street_address <> :street_address OR city <> :city OR state <> :state, NOW(), address_updated),
   location_updated = IF(street_address <> :street_address OR city <> :city OR state <> :state OR NOT location <=> :location, NOW(), location_updated),
-` + ActivistDataFieldAssignments + `
+` + ActivistUserEditableDataFieldAssignments + `
 WHERE
   id = :id`
 
+// Query to update activist data. Most fields are updated including non-user-editable ones. Timestamps are
+// parameterized (the caller of this query must provide the timestamp values).
 const updateActivistWithTimestampsQuery string = `UPDATE activists
 SET
   email_updated =    :email_updated,
   phone_updated =    :phone_updated,
   address_updated =  :address_updated,
   location_updated = :location_updated,
-` + ActivistDataFieldAssignments + `
+` + ActivistAllDataFieldAssignments + `
 WHERE
   id = :id`
 
+// Updates fields on an activist that are editable by users.
+//
+// Some fields are managed by ADB itself and are not editable by users; see ActivistAllDataFieldAssignments for
+// examples.
+//
 // Warning: when adding fields, test that values aren't overwritten with blank values due to unpopulated
 // fields in the model object. In particular, make sure these queries / functions are updated:
 //   - selectActivistExtraBaseQuery
@@ -277,7 +286,7 @@ WHERE
 //   - getMergeActivistWinner
 //
 // Note: Does not include chapter ID to avoid accidental updates.
-const ActivistDataFieldAssignments = `
+const ActivistUserEditableDataFieldAssignments = `
   email = :email,
   facebook = :facebook,
   name = :name,
@@ -300,8 +309,6 @@ const ActivistDataFieldAssignments = `
   training6 = :training6,
   consent_quiz = :consent_quiz,
   training_protest = :training_protest,
-  dev_application_date = :dev_application_date,
-  dev_application_type = :dev_application_type,
   dev_quiz = :dev_quiz,
   dev_interest = :dev_interest,
   cm_first_email = :cm_first_email,
@@ -325,6 +332,11 @@ const ActivistDataFieldAssignments = `
   discord_id = :discord_id,
   assigned_to = :assigned_to,
   followup_date = :followup_date
+`
+
+const ActivistAllDataFieldAssignments = ActivistUserEditableDataFieldAssignments + `,
+  dev_application_date = :dev_application_date,
+  dev_application_type = :dev_application_type
 `
 
 const DescOrder int = 2
@@ -900,10 +912,13 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 		case "chapter_member_development":
 			whereClause = append(whereClause, "(a.activist_level like '%organizer' OR a.activist_level = 'chapter member')")
 		case "community_prospects":
-			whereClause = append(whereClause, "(source like '%form%' or source like 'petition%' or source like 'eventbrite%' or source='dxe-signup' or source='arc-signup') and source not like '%application%'")
+			whereClause = append(whereClause, "("+
+				"source like '%form%' or source='dxe-signup' or source='arc-signup' "+ // forms e.g. "Check-in Form"
+				"or source like 'petition%' "+ // often of the form "Petition: x-y-z"
+				"or source like 'eventbrite%' "+
+				") "+
+				"and source not like '%application%'") // exclude application forms e.g. "Application Form"
 			whereClause = append(whereClause, "activist_level = 'supporter'")
-			//whereClause = append(whereClause, "interest_date >= DATE_SUB(now(), INTERVAL 3 MONTH)")
-			//whereClause = append(whereClause, "a.id not in (select distinct activist_id from event_attendance)")
 			// TODO: consider hiding people if they have attended 3+ events?
 		case "community_prospects_followup":
 			if options.UpcomingFollowupsOnly {
@@ -1150,7 +1165,8 @@ func CreateActivistWithTimestamps(db *sqlx.DB, activist ActivistExtra) (int, err
 	return createActivist(db, activist, insertActivistWithTimestampsQuery)
 }
 
-func UpdateActivistData(db *sqlx.DB, activist ActivistExtra, userEmail string) (int, error) {
+// UserUpdateActivist updates user-editable activist fields as requested by an ADB user.
+func UserUpdateActivist(db *sqlx.DB, activist ActivistExtra, userEmail string) (int, error) {
 	if activist.ID == 0 {
 		return 0, errors.New("activist ID cannot be 0")
 	}
@@ -1209,7 +1225,7 @@ func UpdateActivistData(db *sqlx.DB, activist ActivistExtra, userEmail string) (
 		}
 	}
 
-	_, err = db.NamedExec(updateActivistQuery, activist)
+	_, err = db.NamedExec(userUpdateActivistQuery, activist)
 
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to update activist data")
@@ -1860,6 +1876,8 @@ type CommunityProspectHubSpotInfo struct {
 func GetCommunityProspectHubSpotInfo(db *sqlx.DB, chapterID int) ([]CommunityProspectHubSpotInfo, error) {
 	var activists []CommunityProspectHubSpotInfo
 
+	// TODO: This logic is out of sync with the main community_prospects view.
+
 	// Order the activists by the last even they've been to.
 	err := db.Select(&activists, `
 		SELECT 
@@ -1974,6 +1992,17 @@ func CleanActivistData(body io.Reader, db *sqlx.DB) (ActivistExtra, error) {
 		validFollowupDate = false
 	}
 
+	var applicationDate time.Time
+	applicationDateValid := false
+	if activistJSON.ApplicationDate != "" {
+		var applicationDateErr error
+		applicationDate, applicationDateErr = time.Parse("2006-01-02", activistJSON.ApplicationDate)
+		if applicationDateErr != nil {
+			return ActivistExtra{}, fmt.Errorf("error parsing application date: %v", applicationDateErr)
+		}
+		applicationDateValid = true
+	}
+
 	var assignedToInt int
 	assignedToName := strings.TrimSpace(activistJSON.AssignedToName)
 	if assignedToName != "" {
@@ -2021,7 +2050,10 @@ func CleanActivistData(body io.Reader, db *sqlx.DB) (ActivistExtra, error) {
 			ConsentQuiz:     sql.NullString{String: strings.TrimSpace(activistJSON.ConsentQuiz), Valid: validConsentQuiz},
 			TrainingProtest: sql.NullString{String: strings.TrimSpace(activistJSON.TrainingProtest), Valid: validTrainingProtest},
 			DevInterest:     strings.TrimSpace(activistJSON.DevInterest),
-			Quiz:            sql.NullString{String: strings.TrimSpace(activistJSON.Quiz), Valid: validQuiz},
+			ApplicationType: strings.TrimSpace(activistJSON.ApplicationType),
+			ApplicationDate: mysql.NullTime{Time: applicationDate, Valid: applicationDateValid},
+
+			Quiz: sql.NullString{String: strings.TrimSpace(activistJSON.Quiz), Valid: validQuiz},
 
 			CMFirstEmail:          sql.NullString{String: strings.TrimSpace(activistJSON.CMFirstEmail), Valid: validCMFirstEmail},
 			CMApprovalEmail:       sql.NullString{String: strings.TrimSpace(activistJSON.CMApprovalEmail), Valid: validCMApprovalEmail},
