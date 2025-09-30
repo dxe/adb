@@ -533,11 +533,11 @@ type GetActivistOptions struct {
 }
 
 var validOrderFields = map[string]struct{}{
-	"a.name":        struct{}{},
-	"last_event":    struct{}{},
-	"total_points":  struct{}{},
-	"interest_date": struct{}{},
-	"followup_date": struct{}{},
+	"a.name":        {},
+	"last_event":    {},
+	"total_points":  {},
+	"interest_date": {},
+	"followup_date": {},
 }
 
 type ActivistRangeOptionsJSON struct {
@@ -1572,13 +1572,13 @@ func updateMergedActivistDataDetails(tx *sqlx.Tx, originalActivistID int, target
 
 	var originalActivist = new(ActivistExtra)
 	err := tx.Get(originalActivist, query, originalActivistID)
-	if err != nil || originalActivist == nil {
+	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get original activist with id %d", originalActivistID)
 	}
 
 	var targetActivist = new(ActivistExtra)
 	err = tx.Get(targetActivist, query, targetActivistID)
-	if err != nil || targetActivist == nil {
+	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get target activist with id %d", targetActivistID)
 	}
 

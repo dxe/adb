@@ -53,9 +53,10 @@ func TestGetEvents(t *testing.T) {
 			EventType: e.EventType,
 			ChapterID: 1,
 		}
-		if e.ID == 1 {
+		switch e.ID {
+		case 1:
 			insert.AddedAttendees = []Activist{a1}
-		} else if e.ID == 2 {
+		case 2:
 			insert.AddedAttendees = []Activist{a1, a2}
 		}
 
@@ -293,9 +294,9 @@ func TestCleanEventAttendanceData(t *testing.T) {
 	}
 
 	wantActivistNames := map[string]struct{}{
-		"New Person":     struct{}{},
-		"Another Person": struct{}{},
-		"A Third Person": struct{}{},
+		"New Person":     {},
+		"Another Person": {},
+		"A Third Person": {},
 	}
 	require.Equal(t, gotActivistNames, wantActivistNames)
 }

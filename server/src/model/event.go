@@ -9,6 +9,8 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 /** Constant and Global Variable Definitions */
@@ -503,12 +505,13 @@ func CleanEventData(db *sqlx.DB, body io.Reader, chapterID int) (Event, error) {
 
 func cleanEventAttendanceData(db *sqlx.DB, attendees []string, chapterID int) ([]Activist, error) {
 	activists := make([]Activist, len(attendees))
+	caser := cases.Title(language.Und)
 
 	for idx, attendee := range attendees {
 		if err := checkForDangerousChars(attendee); err != nil {
 			return []Activist{}, err
 		}
-		cleanAttendee := strings.Title(strings.TrimSpace(attendee))
+		cleanAttendee := caser.String(strings.TrimSpace(attendee))
 		activist, err := GetOrCreateActivist(db, cleanAttendee, chapterID)
 		if err != nil {
 			return []Activist{}, err

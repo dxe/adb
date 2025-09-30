@@ -89,11 +89,11 @@ func TestGetActivistEventData(t *testing.T) {
 	d, err := a1.GetActivistEventData(db)
 	require.NoError(t, err)
 
-	require.Equal(t, d.FirstEvent.Valid, true)
-	d.FirstEvent.Time.Equal(d1)
-	require.Equal(t, d.LastEvent.Valid, true)
-	d.LastEvent.Time.Equal(d3)
-	require.Equal(t, d.TotalEvents, 4)
+	require.Equal(t, true, d.FirstEvent.Valid)
+	assert.Equal(t, d1, d.FirstEvent.Time)
+	require.Equal(t, true, d.LastEvent.Valid)
+	assert.Equal(t, d3, d.LastEvent.Time)
+	require.Equal(t, 4, d.TotalEvents)
 }
 
 func TestGetActivistEventData_noEvents(t *testing.T) {
@@ -422,6 +422,7 @@ func TestHideActivist(t *testing.T) {
 		EventType:      "Working Group",
 		AddedAttendees: []Activist{a1, a2},
 	})
+	require.NoError(t, err)
 
 	require.NoError(t, HideActivist(db, a1.ID))
 

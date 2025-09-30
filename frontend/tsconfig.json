@@ -5,7 +5,23 @@
     "target": "es6",
     "lib": ["es6", "dom", "dom.iterable"],
     "module": "es2015",
+
+    // VS Code users, this line causes the error in the "Problems" panel:
+    //    Option 'moduleResolution=node10' is deprecated and will stop functioning in TypeScript 7.0. Specify compilerOption '"ignoreDeprecations": "6.0"' to silence this error.ts
+    //
+    // This error cannot be fixed until the Vue 2.6 app is removed. Please ignore the error until then.
+    //
+    // Attempting to change it results in a compiler error:
+    //   TS6046: Argument for '--moduleResolution' option must be: 'node', 'classic'.
+    //
+    // Ignoring the error with "ignoreDeprecations" also causes a compiler error:
+    //   TS5023: Unknown compiler option 'ignoreDeprecations'.
+    //
+    // VS Code can only be set to use one typescript version, but we have two TypeScript apps. The maximum version of
+    // TypeScript to be used in Vue 2.6 is 3.9.x, but we need to upgrade to at least 4.7.x to fix the issues VS Code
+    // generates.
     "moduleResolution": "node",
+
     "strict": true,
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
