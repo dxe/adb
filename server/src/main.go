@@ -459,12 +459,12 @@ func (c MainController) apiRoleMiddleware(h http.Handler, allowedRoles []string)
 		user, authed := authADBUser(c.db, r, w)
 
 		if !authed {
-			http.Error(w, http.StatusText(400), 400)
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 			return
 		}
 
 		if !userIsAllowed(allowedRoles, user) {
-			http.Error(w, http.StatusText(403), 403)
+			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 			return
 		}
 
@@ -489,13 +489,17 @@ func (c MainController) apiAdminAuthMiddleware(h http.Handler) http.Handler {
 	return c.apiRoleMiddleware(h, []string{"admin"})
 }
 
+type userContextKeyType struct{}
+
+var userContextKey = userContextKeyType{}
+
 func setUserContext(r *http.Request, user model.ADBUser) context.Context {
-	return context.WithValue(r.Context(), "UserContext", user)
+	return context.WithValue(r.Context(), userContextKey, user)
 }
 
 func getUserFromContext(ctx context.Context) model.ADBUser {
 	var userctx interface{}
-	userctx = ctx.Value("UserContext")
+	userctx = ctx.Value(userContextKey)
 
 	if userctx == nil {
 		return model.ADBUser{}
@@ -2052,14 +2056,14 @@ func (c MainController) discordBotAuthMiddleware(h http.Handler) http.Handler {
 
 		err := r.ParseForm()
 		if err != nil {
-			http.Error(w, http.StatusText(400), 400)
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 			return
 		}
 
 		// check that discord auth matches (shared secret w/ discord bot)
 		discordAuth := r.PostFormValue("auth")
 		if subtle.ConstantTimeCompare([]byte(discordAuth), []byte(config.DiscordSecret)) != 1 {
-			http.Error(w, http.StatusText(401), 401)
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return
 		}
 
@@ -2109,13 +2113,13 @@ func (c MainController) DiscordStatusHandler(w http.ResponseWriter, r *http.Requ
 
 func (c MainController) DiscordGenerateHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
-		http.Error(w, http.StatusText(400), 400)
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
 
 	if config.DiscordFromEmail == "" {
 		log.Println("ERROR: Discord From Email is not configured! Unable to send verification email.")
-		http.Error(w, http.StatusText(500), 500)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
@@ -2142,7 +2146,7 @@ func (c MainController) DiscordGenerateHandler(w http.ResponseWriter, r *http.Re
 	}
 
 	// Get activists already associated with this email.
-	activists, err := model.GetActivistsByEmail(c.db, user.Email)
+	activists, _ := model.GetActivistsByEmail(c.db, user.Email)
 
 	// ensure there aren't multiple activist records w/ this email to avoid issues later on
 	if len(activists) > 1 {
@@ -2443,7 +2447,6 @@ func (c MainController) DiscordConfirmHandler(w http.ResponseWriter, r *http.Req
 			"message": "There was a problem verifying your email. Please try again or contact " + template.HTML(`<a href="mailto:`+config.DiscordModeratorEmail+`">`+config.DiscordModeratorEmail+`</a>`) + ".",
 		},
 	})
-	return
 }
 
 func (c MainController) DiscordGetMessageHandler(w http.ResponseWriter, r *http.Request) {
@@ -2464,7 +2467,7 @@ func (c MainController) DiscordGetMessageHandler(w http.ResponseWriter, r *http.
 
 func (c MainController) DiscordSetMessageHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
-		http.Error(w, http.StatusText(400), 400)
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
 

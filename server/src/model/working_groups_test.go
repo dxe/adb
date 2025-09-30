@@ -123,6 +123,7 @@ func TestUpdateWorkingGroup_updatePointPersonAndGroupEmail(t *testing.T) {
 	_, err = UpdateWorkingGroup(db, updatedGroupExpected)
 	require.NoError(t, err)
 	updatedGroupActual, err := GetWorkingGroup(db, WorkingGroupQueryOptions{GroupID: id})
+	require.NoError(t, err)
 	validateReturnedWorkingGroup(t, updatedGroupExpected, updatedGroupActual)
 }
 

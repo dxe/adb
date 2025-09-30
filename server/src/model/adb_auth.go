@@ -57,11 +57,6 @@ type GetUserOptions struct {
 	Name string
 }
 
-type GetUsersRolesOptions struct {
-	Users []ADBUser
-	Roles []string
-}
-
 type UserRole struct {
 	UserID int    `db:"user_id"`
 	Role   string `db:"role"`
@@ -109,11 +104,7 @@ FROM adb_users
 		return ADBUser{}, errors.Wrapf(err, "cannot get adb user %d", id)
 	}
 
-	usersRolesOptions := GetUsersRolesOptions{
-		Users: []ADBUser{*adbUser},
-	}
-
-	usersRoles, err := getUsersRoles(db, usersRolesOptions)
+	usersRoles, err := getUsersRoles(db)
 
 	// We don't want non-SF Bay users to have access to any of the other roles, so just replace it.
 	if adbUser.ChapterName != SFBayChapterName {
@@ -163,11 +154,7 @@ func GetUsers(db *sqlx.DB, options GetUserOptions) ([]ADBUser, error) {
 		return users, nil
 	}
 
-	usersRolesOptions := GetUsersRolesOptions{
-		Users: users,
-	}
-
-	usersRoles, err := getUsersRoles(db, usersRolesOptions)
+	usersRoles, err := getUsersRoles(db)
 
 	if err != nil {
 		return nil, err
@@ -220,7 +207,7 @@ func getUsers(db *sqlx.DB, options GetUserOptions) ([]ADBUser, error) {
 	return users, nil
 }
 
-func getUsersRoles(db *sqlx.DB, options GetUsersRolesOptions) ([]UserRole, error) {
+func getUsersRoles(db *sqlx.DB) ([]UserRole, error) {
 	query := selectUsersRolesBaseQuery
 
 	var userRoles []UserRole
