@@ -1873,34 +1873,6 @@ type CommunityProspectHubSpotInfo struct {
 	InterestDate string `db:"interest_date"`
 }
 
-func GetCommunityProspectHubSpotInfo(db *sqlx.DB, chapterID int) ([]CommunityProspectHubSpotInfo, error) {
-	var activists []CommunityProspectHubSpotInfo
-
-	// TODO: This logic is out of sync with the main community_prospects view.
-
-	// Order the activists by the last even they've been to.
-	err := db.Select(&activists, `
-		SELECT 
-			IF(preferred_name <> '', preferred_name, substring_index(name, " ", 1)) as first_name,
-			SUBSTRING(name, LOCATE(' ', name)) as last_name,
-			email, phone, IFNULL(location,'') as zip, source,
-			interest_date
-		FROM activists
-		WHERE (source like '%form%' or source like 'petition%' or source like 'eventbrite%' or source='dxe-signup' or source='arc-signup') and source not like '%application%' and source != "Check-in Form"
-		and activist_level = 'supporter'
-		and interest_date >= DATE_SUB(now(), INTERVAL 3 MONTH)
-		and activists.id not in (select distinct activist_id from event_attendance)
-		and hidden = 0
-		and chapter_id = ?
-		ORDER BY interest_date desc
-`, chapterID)
-	if err != nil {
-		return []CommunityProspectHubSpotInfo{}, err
-	}
-
-	return activists, nil
-}
-
 func CleanActivistData(body io.Reader, db *sqlx.DB) (ActivistExtra, error) {
 	var activistJSON ActivistJSON
 	err := json.NewDecoder(body).Decode(&activistJSON)

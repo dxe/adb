@@ -307,7 +307,6 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/interaction/list", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.InteractionListHandler))
 	router.Handle("/interaction/delete", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.InteractionDeleteHandler))
 	router.Handle("/csv/chapter_member_spoke", alice.New(main.apiOrganizerOrNonSFBayAuthMiddleware).ThenFunc(main.ChapterMemberSpokeCSVHandler))
-	router.Handle("/csv/community_prospects_hubspot", alice.New(main.apiOrganizerOrNonSFBayAuthMiddleware).ThenFunc(main.CommunityProspectHubSpotCSVHandler))
 	router.Handle("/csv/international_organizers", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.InternationalOrganizersCSVHandler))
 	router.Handle("/csv/event_attendance/{event_id:[0-9]+}", alice.New(main.apiOrganizerOrNonSFBayAuthMiddleware).ThenFunc(main.EventAttendanceCSVHandler))
 	router.Handle("/csv/all_activists_spoke", alice.New(main.apiOrganizerOrNonSFBayAuthMiddleware).ThenFunc(main.SupporterSpokeCSVHandler))
@@ -1584,36 +1583,6 @@ func (c MainController) NewActivistsPendingWorkshopSpokeCSVHandler(w http.Respon
 		}
 	}
 	writer.Flush()
-}
-
-func (c MainController) CommunityProspectHubSpotCSVHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := getAuthedADBChapter(c.db, r)
-
-	activists, err := model.GetCommunityProspectHubSpotInfo(c.db, chapter)
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-
-	w.Header().Set("Content-Disposition", "attachment; filename=community_prospects.csv")
-	w.Header().Set("Content-Type", "text/csv")
-	w.Header().Set("Transfer-Encoding", "chunked")
-
-	writer := csv.NewWriter(w)
-	err = writer.Write([]string{"first_name", "last_name", "email", "phone", "zip", "source", "interest_date"})
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-	for _, activist := range activists {
-		err := writer.Write([]string{activist.FirstName, activist.LastName, activist.Email, activist.Phone, activist.Zip, activist.Source, activist.InterestDate})
-		if err != nil {
-			sendErrorMessage(w, err)
-			return
-		}
-	}
-	writer.Flush()
-
 }
 
 func (c MainController) InternationalOrganizersCSVHandler(w http.ResponseWriter, r *http.Request) {

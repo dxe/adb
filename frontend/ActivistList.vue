@@ -89,15 +89,6 @@
             :href="`/csv/new_activists_pending_workshop_spoke?start_date=${lastEventDateFrom}&end_date=${lastEventDateTo}`"
           ></b-button>
         </div>
-        <div class="level-item px-1" v-if="view === 'community_prospects'">
-          <b-button
-            label="Export CSV for HubSpot"
-            type="is-info"
-            icon-left="download"
-            tag="a"
-            href="/csv/community_prospects_hubspot"
-          ></b-button>
-        </div>
         <div class="level-item has-text-centered px-1">
           <div>
             <p class="heading">Total</p>
