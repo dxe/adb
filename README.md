@@ -160,13 +160,6 @@ of ADB.
 
 - IPGEOLOCATION_KEY
 
-### Discord config for verifying accounts:
-
-- DISCORD_SECRET
-- DISCORD_BOT_BASE_URL
-- DISCORD_FROM_EMAIL
-- DISCORD_MODERATOR_EMAIL
-
 ### Google Places API Key for finding city information on public-facing forms
 
 - GOOGLE_PLACES_API_KEY

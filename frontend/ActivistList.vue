@@ -690,16 +690,6 @@ function getDefaultColumns(chapter: string, view: string): Column[] {
       showForAllChapters: true,
     },
     {
-      header: 'Discord ID',
-      longHeader: 'Discord ID',
-      category: 'Basic Info',
-      data: {
-        data: 'discord_id',
-        colWidths: 50,
-      },
-      enabled: false,
-    },
-    {
       header: 'Facebook',
       longHeader: 'Facebook URL',
       category: 'Basic Info',
