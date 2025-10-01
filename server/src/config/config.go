@@ -62,12 +62,6 @@ var (
 	MembersClientID     = mustGetenv("MEMBERS_CLIENT_ID", "", false)
 	MembersClientSecret = mustGetenv("MEMBERS_CLIENT_SECRET", "", false)
 
-	// For Discord bot
-	DiscordSecret         = mustGetenv("DISCORD_SECRET", "some-fake-secret", false)
-	DiscordBotBaseUrl     = mustGetenv("DISCORD_BOT_BASE_URL", "http://localhost:6070", false)
-	DiscordFromEmail      = mustGetenv("DISCORD_FROM_EMAIL", "", false)
-	DiscordModeratorEmail = mustGetenv("DISCORD_MODERATOR_EMAIL", "", false)
-
 	// For mailing list signups
 	SignupURI    = mustGetenv("SIGNUP_ENDPOINT", "", false)
 	SignupAPIKey = mustGetenv("SIGNUP_KEY", "", false)

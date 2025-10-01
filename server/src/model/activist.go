@@ -102,8 +102,6 @@ SELECT
   referral_outlet,
   interest_date,
 
-  discord_id,
-
   @first_event := (
       SELECT min(e.date) AS min_date
       FROM event_attendance ea
@@ -329,7 +327,6 @@ const ActivistUserEditableDataFieldAssignments = `
   location = :location,
   lat = :lat,
   lng = :lng,
-  discord_id = :discord_id,
   assigned_to = :assigned_to,
   followup_date = :followup_date
 `
@@ -418,7 +415,6 @@ type ActivistConnectionData struct {
 	VotingAgreement       bool           `db:"voting_agreement"`
 	ActivistAddress
 	AddressUpdated      time.Time      `db:"address_updated"`
-	DiscordID           sql.NullString `db:"discord_id"`
 	GeoCircles          string         `db:"geo_circles"`
 	AssignedTo          int            `db:"assigned_to"`
 	AssignedToName      string         `db:"assigned_to_name"`
@@ -438,11 +434,6 @@ type ActivistExtra struct {
 	ActivistEventData
 	ActivistMembershipData
 	ActivistConnectionData
-}
-
-type ActivistDiscord struct {
-	Name      string `db:"name"`
-	DiscordID string `db:"discord_id"`
 }
 
 type ActivistJSON struct {
@@ -504,7 +495,6 @@ type ActivistJSON struct {
 	StreetAddress         string  `json:"street_address"`
 	City                  string  `json:"city"`
 	State                 string  `json:"state"`
-	DiscordID             string  `json:"discord_id"`
 	GeoCircles            string  `json:"geo_circles"`
 	Lat                   float64 `json:"lat"`
 	Lng                   float64 `json:"lng"`
@@ -669,10 +659,6 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 		if a.ActivistConnectionData.Notes.Valid {
 			notes = a.ActivistConnectionData.Notes.String
 		}
-		discord_id := ""
-		if a.ActivistConnectionData.DiscordID.Valid {
-			discord_id = a.ActivistConnectionData.DiscordID.String
-		}
 		followup_date := ""
 		if a.ActivistConnectionData.FollowupDate.Valid {
 			followup_date = a.ActivistConnectionData.FollowupDate.String
@@ -739,7 +725,6 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			State:                 a.State,
 			Lat:                   a.Lat,
 			Lng:                   a.Lng,
-			DiscordID:             discord_id,
 			GeoCircles:            a.GeoCircles,
 			AssignedToName:        a.AssignedToName,
 			FollowupDate:          followup_date,
@@ -801,17 +786,6 @@ func GetActivistsByEmail(db *sqlx.DB, email string) ([]ActivistExtra, error) {
 	var activists []ActivistExtra
 	if err := db.Select(&activists, query, queryArgs...); err != nil {
 		return nil, errors.Wrapf(err, "failed to get activists for %s", email)
-	}
-
-	return activists, nil
-}
-
-func GetActivistsWithDiscordID(db *sqlx.DB) ([]ActivistDiscord, error) {
-	query := "SELECT name, discord_id from activists WHERE discord_id is not null AND hidden = 0"
-
-	var activists []ActivistDiscord
-	if err := db.Select(&activists, query); err != nil {
-		return nil, errors.Wrapf(err, "failed to get activists with Discord ID")
 	}
 
 	return activists, nil
@@ -1467,7 +1441,6 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 	target.VisionWall = stringMerge(original.VisionWall, target.VisionWall)
 	target.ApplicationType = stringMerge(original.ApplicationType, target.ApplicationType)
 	target.ActivistAddress, target.Coords, target.AddressUpdated = mergeAddress(original.ActivistAddress, original.Coords, original.AddressUpdated, target.ActivistAddress, target.Coords, target.AddressUpdated)
-	target.DiscordID = stringMergeSqlNullString(original.DiscordID, target.DiscordID)
 
 	// The location field is considered to be at least as up-to-date as the address fields.
 	// See comments on location_updated SQL column for details.
@@ -1955,10 +1928,6 @@ func CleanActivistData(body io.Reader, db *sqlx.DB) (ActivistExtra, error) {
 		// Not specified so insert null value into database
 		validNotes = false
 	}
-	validDiscordID := true
-	if activistJSON.DiscordID == "" {
-		validDiscordID = false
-	}
 	validFollowupDate := true
 	if activistJSON.FollowupDate == "" {
 		validFollowupDate = false
@@ -2045,7 +2014,6 @@ func CleanActivistData(body io.Reader, db *sqlx.DB) (ActivistExtra, error) {
 				City:          strings.TrimSpace(activistJSON.City),
 				State:         strings.TrimSpace(activistJSON.State),
 			},
-			DiscordID:    sql.NullString{String: strings.TrimSpace(activistJSON.DiscordID), Valid: validDiscordID},
 			AssignedTo:   assignedToInt,
 			FollowupDate: sql.NullString{String: strings.TrimSpace(activistJSON.FollowupDate), Valid: validFollowupDate},
 		},

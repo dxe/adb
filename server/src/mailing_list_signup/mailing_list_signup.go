@@ -22,7 +22,6 @@ type Signup struct {
 	Zip             string
 	Country         string
 	Coords          string
-	DiscordID       string
 	TargetChapterId int    `json:"target_chapter_id"`
 	SourceChapterId int    `json:"source_chapter_id"`
 	ActivistLevel   string `json:"activist_level"`

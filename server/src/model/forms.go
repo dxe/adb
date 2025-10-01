@@ -36,7 +36,6 @@ type InterestFormData struct {
 	ReferralOutlet            string `json:"referralOutlet" db:"referral_outlet"`
 	Interests                 string `json:"interests" db:"interests"`
 	SubmittedViaSignupService bool   `json:"submitted_via_signup_service"`
-	DiscordID                 string `json:"discord_id" db:"discord_id"`
 }
 
 type InternationalFormData struct {
@@ -53,19 +52,6 @@ type InternationalFormData struct {
 	Country     string  `json:"country" db:"country"`
 	Lat         float64 `json:"lat" db:"lat"`
 	Lng         float64 `json:"lng" db:"lng"`
-}
-
-type DiscordFormData struct {
-	ID        string  `json:"id" db:"discord_id"`
-	Token     string  `json:"token" db:"token"`
-	FirstName string  `json:"firstName" db:"first_name"`
-	LastName  string  `json:"lastName" db:"last_name"`
-	Email     string  `json:"email" db:"email"`
-	City      string  `json:"city" db:"city"`
-	State     string  `json:"state" db:"state"`
-	Country   string  `json:"country" db:"country"`
-	Lat       float64 `json:"lat" db:"lat"`
-	Lng       float64 `json:"lng" db:"lng"`
 }
 
 func SubmitApplicationForm(db *sqlx.DB, formData ApplicationFormData) error {
@@ -99,9 +85,9 @@ func SubmitApplicationForm(db *sqlx.DB, formData ApplicationFormData) error {
 
 func SubmitInterestForm(db *sqlx.DB, formData InterestFormData) error {
 	_, err := db.NamedExec(`INSERT INTO form_interest
-		(chapter_id, form, email, name, phone, zip, referral_friends, referral_apply, referral_outlet, interests, discord_id)
+		(chapter_id, form, email, name, phone, zip, referral_friends, referral_apply, referral_outlet, interests)
 		VALUES
-		(:chapter_id, :form, :email, :name, :phone, :zip, :referral_friends, :referral_apply, :referral_outlet, :interests, :discord_id)
+		(:chapter_id, :form, :email, :name, :phone, :zip, :referral_friends, :referral_apply, :referral_outlet, :interests)
 		`, formData)
 
 	if err != nil {
@@ -184,37 +170,6 @@ func UpdateInternationalFormSubmissionEmailStatus(db *sqlx.DB, id int) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to update international form submission email status")
 	}
-
-	return nil
-}
-
-func SubmitDiscordForm(db *sqlx.DB, formData DiscordFormData) error {
-	_, err := db.NamedExec(`INSERT INTO form_discord
-		(first_name, last_name, email, city, state, country, lat, lng, discord_id)
-		VALUES
-		(:first_name, :last_name, :email, :city, :state, :country, :lat, :lng, :discord_id)
-		`, formData)
-
-	if err != nil {
-		return errors.Wrap(err, "failed to insert discord form data")
-	}
-
-	signup := mailing_list_signup.Signup{
-		Source:    "discord-form",
-		Name:      formData.FirstName + " " + formData.LastName,
-		Email:     formData.Email,
-		City:      formData.City,
-		State:     formData.State,
-		Country:   formData.Country,
-		Coords:    fmt.Sprintf("%.6f", formData.Lat) + "," + fmt.Sprintf("%.6f", formData.Lng),
-		DiscordID: formData.ID,
-	}
-	err = mailing_list_signup.Enqueue(signup)
-	if err != nil {
-		// Don't return this error because we still want to successfully update the database.
-		log.Printf("ERROR adding discord form submission to mailing list: %v", err)
-	}
-	log.Printf("Enqueued email for sign-up: %v", formData.Email)
 
 	return nil
 }

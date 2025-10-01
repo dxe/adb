@@ -28,7 +28,6 @@ const interestUpdateAssignments = `
 	activists.referral_outlet = IF(LENGTH(form_interest.referral_outlet), form_interest.referral_outlet, activists.referral_outlet),
 	# only update source if source is currently empty
 	activists.source = IF(LENGTH(activists.source), activists.source, form_interest.form),
-	activists.discord_id = IF(LENGTH(activists.discord_id), activists.discord_id, IF(LENGTH(form_interest.discord_id), form_interest.discord_id, NULL)),
 	# mark as processed
 	form_interest.processed = 1
 `
@@ -118,7 +117,6 @@ INSERT INTO activists (
     study_group,
     study_activator,
     study_conversation,
-	discord_id,
     chapter_id
 )
 SELECT
@@ -169,7 +167,6 @@ SELECT
     '',
     '',
     NULL,
-	IF(LENGTH(form_interest.discord_id),form_interest.discord_id,NULL),
     form_interest.chapter_id
 FROM
 	form_interest
