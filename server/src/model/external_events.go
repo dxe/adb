@@ -95,12 +95,10 @@ func getExternalEvents(db *sqlx.DB, pageIDs []int, startTime time.Time, endTime 
 	}
 
 	if !startTime.IsZero() {
-		query += fmt.Sprintf(" and start_time >= '%s'", startTime.Format(time.RFC3339))
+		query += fmt.Sprintf(" and if(end_time = '0001-01-01T00:00:00Z', start_time, end_time) >= '%s'", startTime.Format(time.RFC3339))
 	}
 	if !endTime.IsZero() {
-		// we actually want to show events which have a START time before the query's end time
-		// otherwise really long (or recurring) events could be hidden
-		query += fmt.Sprintf(" and start_time <= '%s'", endTime.Format(time.RFC3339))
+		query += fmt.Sprintf(" and start_time < '%s'", endTime.Format(time.RFC3339))
 	}
 
 	query += " ORDER BY start_time"
