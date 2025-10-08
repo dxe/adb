@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -105,6 +106,58 @@ func TestGetFacebookEvents(t *testing.T) {
 	require.NoError(t, err3)
 	require.Equal(t, 1, len(events3))
 	require.Equal(t, "5", events3[0].ID)
+}
+
+func TestGetFacebookEventsWTimeRanges(t *testing.T) {
+	db := newTestDB()
+	defer db.Close()
+
+	event1 := makeExternalEvent("1",
+		WithPageID(SFBayPageID),
+		WithName("Test Event 1"),
+		WithStartTime(time.Date(2025, 1, 10, 0, 0, 0, 0, time.UTC)),
+		WithEndTime(time.Date(2025, 1, 15, 0, 0, 0, 0, time.UTC)),
+	)
+
+	event2 := makeExternalEvent("2",
+		WithPageID(SFBayPageID),
+		WithName("Test Event 2"),
+		WithStartTime(time.Date(2025, 1, 25, 0, 0, 0, 0, time.UTC)),
+		WithEndTime(time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC)),
+	)
+
+	UpsertExternalEvents(t, db, event1, event2)
+
+	// Test that event in progress is returned despite end time of search range being before end time of event
+	events1, err1 := GetExternalEvents(db, SFBayPageID, ParseTime(t, "2025-01-08T00:00"), ParseTime(t, "2025-01-11T00:00"))
+	require.NoError(t, err1)
+	require.Equal(t, 1, len(events1))
+	assert.Equal(t, time.Date(2025, 1, 10, 0, 0, 0, 0, time.UTC), events1[0].StartTime) // event1
+
+	// Test that event in progress is returned despite start time of search range being after start time of event
+	events2, err2 := GetExternalEvents(db, SFBayPageID, ParseTime(t, "2025-01-14T00:00"), ParseTime(t, "2025-01-16T00:00"))
+	require.NoError(t, err2)
+	require.Equal(t, 1, len(events2))
+	assert.Equal(t, time.Date(2025, 1, 10, 0, 0, 0, 0, time.UTC), events2[0].StartTime) // event1
+
+	// Test that event with sentinel end time is still returned in search
+	events3, err3 := GetExternalEvents(db, SFBayPageID, ParseTime(t, "2025-01-25T00:00"), time.Time{})
+	require.NoError(t, err3)
+	require.Equal(t, 1, len(events3))
+	assert.Equal(t, time.Date(2025, 1, 25, 0, 0, 0, 0, time.UTC), events3[0].StartTime) // event2
+
+	// Negative tests
+	events4, err4 := GetExternalEvents(db, SFBayPageID, ParseTime(t, "2025-01-26T00:00"), time.Time{})
+	require.NoError(t, err4)
+	assert.Equal(t, 0, len(events4))
+
+	events5, err5 := GetExternalEvents(db, SFBayPageID, ParseTime(t, "2025-01-26T00:00"), ParseTime(t, "2025-01-27T00:00"))
+	require.NoError(t, err5)
+	assert.Equal(t, 0, len(events5))
+
+	events6, err6 := GetExternalEvents(db, SFBayPageID, ParseTime(t, "2025-01-01T00:00"), ParseTime(t, "2025-01-02T00:00"))
+	require.NoError(t, err6)
+	assert.Equal(t, 0, len(events6))
 }
 
 func TestGetBayAreaFacebookEvents(t *testing.T) {
