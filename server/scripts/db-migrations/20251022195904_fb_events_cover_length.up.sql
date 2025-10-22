@@ -1,0 +1,1 @@
+ALTER TABLE fb_events MODIFY COLUMN cover VARCHAR(5000);
