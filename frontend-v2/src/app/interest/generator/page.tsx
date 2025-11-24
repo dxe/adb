@@ -24,7 +24,7 @@ export default async function InterestGeneratorPage() {
   })
 
   return (
-    <AuthedPageLayout pageName="TestPage">
+    <AuthedPageLayout pageName="InterestFormGenerator">
       <Navbar />
       <ContentWrapper size="sm" className="gap-6">
         <h1 className="text-lg">Interest Form Generator</h1>
