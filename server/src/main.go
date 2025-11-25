@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dxe/adb/dto"
 	"github.com/dxe/adb/international_application_processor"
 	"github.com/dxe/adb/members"
 
@@ -257,7 +258,6 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/list_geocircles", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListGeoCirclesHandler))
 
 	// Authed Admin pages
-	admin.Handle("/admin/users", alice.New(main.authAdminMiddleware).ThenFunc(main.ListUsersHandler))
 	admin.Handle("/list_chapters", alice.New(main.authAdminMiddleware).ThenFunc(main.ListChaptersHandler))
 	admin.Handle("/admin/external_events", alice.New(main.authAdminMiddleware).ThenFunc(main.ListAdminExternalEventsHandler))
 
@@ -313,16 +313,16 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/user/me", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AuthedUserInfoHandler))
 
 	// Authed Admin API
-	admin.Handle("/user/save", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserSaveHandler))
-	admin.Handle("/user/delete", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserDeleteHandler))
 	admin.Handle("/chapter/list", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.ChapterListHandler))
 	admin.Handle("/chapter/delete", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.ChapterDeleteHandler))
 	admin.Handle("/chapter/save", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.ChapterSaveHandler))
-	admin.Handle("/users-roles/add", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UsersRolesAddHandler))
-	admin.Handle("/users-roles/remove", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UsersRolesRemoveHandler))
 	admin.Handle("/admin/external_events/feature", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.AdminFeatureEventHandler))
 	admin.Handle("/admin/external_events/cancel", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.AdminCancelEventHandler))
 	admin.Handle("/auth/switch_chapter", alice.New(main.authAdminMiddleware).ThenFunc(main.SwitchActiveChapterHandler))
+	admin.Handle("/api/users", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UsersListHandler)).Methods(http.MethodGet)
+	admin.Handle("/api/users", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserCreateHandler)).Methods(http.MethodPost)
+	admin.Handle("/api/users/{id:[0-9]+}", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserUpdateHandler)).Methods(http.MethodPut)
+	admin.Handle("/api/users/{id:[0-9]+}", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserGetHandler)).Methods(http.MethodGet)
 
 	if !config.IsProd {
 		admin.Handle("/dev-testing/process-interest-forms", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.DevTestingProcessInterestForms))
@@ -724,10 +724,6 @@ func (c MainController) ListCirclesHandler(w http.ResponseWriter, r *http.Reques
 
 func (c MainController) ListGeoCirclesHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, r, "circles_list", PageData{PageName: "GeoCirclesList"})
-}
-
-func (c MainController) ListUsersHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, r, "user_list", PageData{PageName: "UserList"})
 }
 
 func (c MainController) ListChaptersHandler(w http.ResponseWriter, r *http.Request) {
@@ -1673,135 +1669,106 @@ func (c MainController) CSRFTokenHandler(w http.ResponseWriter, r *http.Request)
 	})
 }
 
+func (c MainController) UsersListHandler(w http.ResponseWriter, r *http.Request) {
+	users, err := model.GetUsers(c.db, model.GetUserOptions{})
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	writeJSON(w, map[string]interface{}{
+		"users": dto.FromModels(users),
+	})
+}
+
+func (c MainController) UserGetHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	rawID := vars["id"]
+	userID, err := strconv.Atoi(rawID)
+	if err != nil {
+		sendErrorMessage(w, errors.Wrapf(err, "invalid user id %s", rawID))
+		return
+	}
+
+	users, err := model.GetUsers(c.db, model.GetUserOptions{ID: userID})
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+	if len(users) == 0 {
+		sendErrorMessage(w, errors.Errorf("no user found with ID %d", userID))
+		return
+	}
+
+	userJSON := dto.FromModel(users[0])
+
+	writeJSON(w, map[string]interface{}{
+		"user": userJSON,
+	})
+}
+
+func (c MainController) UserCreateHandler(w http.ResponseWriter, r *http.Request) {
+	input, err := model.CleanUserWithRolesData(r.Body)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	createdUser, err := model.CreateUserWithRoles(c.db, input)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	writeJSON(w, map[string]interface{}{
+		"status": "success",
+		"user":   dto.FromModel(createdUser),
+	})
+}
+
+func (c MainController) UserUpdateHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	rawID := vars["id"]
+	userID, err := strconv.Atoi(rawID)
+	if err != nil {
+		sendErrorMessage(w, errors.Wrapf(err, "invalid user id %s", rawID))
+		return
+	}
+
+	input, err := model.CleanUserWithRolesData(r.Body)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	if input.ID != 0 && input.ID != userID {
+		sendErrorMessage(w, errors.Errorf("mismatched user ids %d and %d", input.ID, userID))
+		return
+	}
+
+	input.ID = userID
+
+	updatedUser, err := model.UpdateUserWithRoles(c.db, input)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	writeJSON(w, map[string]interface{}{
+		"status": "success",
+		"user":   dto.FromModel(updatedUser),
+	})
+}
+
 func (c MainController) UserListHandler(w http.ResponseWriter, r *http.Request) {
-	users, err := model.GetUsersJSON(c.db)
+	users, err := model.GetUsers(c.db, model.GetUserOptions{})
 
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
 	}
 
-	writeJSON(w, users)
-}
-
-func (c MainController) UserSaveHandler(w http.ResponseWriter, r *http.Request) {
-	user, err := model.CleanUserData(r.Body)
-
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-
-	// Check if we're updating an existing User or creating one
-
-	var userID int
-	if user.ID == 0 {
-		// new user
-		userID, err = model.CreateUser(c.db, user)
-	} else {
-		userID, err = model.UpdateUser(c.db, user)
-	}
-
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-
-	// Retrieve updated User Data and send back in response
-
-	userJSON, err := model.GetUserJSON(c.db, model.GetUserOptions{ID: userID})
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-
-	out := map[string]interface{}{
-		"status": "success",
-		"user":   userJSON,
-	}
-
-	writeJSON(w, out)
-}
-
-func (c MainController) UserDeleteHandler(w http.ResponseWriter, r *http.Request) {
-	user, err := model.CleanUserData(r.Body)
-
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-
-	userID, err := model.RemoveUser(c.db, user.ID)
-
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-
-	out := map[string]interface{}{
-		"status": "success",
-		"userID": userID,
-	}
-
-	writeJSON(w, out)
-}
-
-func (c MainController) UsersRolesAddHandler(w http.ResponseWriter, r *http.Request) {
-	var userRoleData struct {
-		UserID int    `json:"user_id"`
-		Role   string `json:"role"`
-	}
-
-	err := json.NewDecoder(r.Body).Decode(&userRoleData)
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-
-	userRole := model.UserRole{
-		UserID: userRoleData.UserID,
-		Role:   userRoleData.Role,
-	}
-
-	userId, err := model.CreateUserRole(c.db, userRole)
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-
-	writeJSON(w, map[string]interface{}{
-		"status":  "success",
-		"user_id": userId,
-	})
-}
-
-func (c MainController) UsersRolesRemoveHandler(w http.ResponseWriter, r *http.Request) {
-	var userRoleData struct {
-		UserID int    `json:"user_id"`
-		Role   string `json:"role"`
-	}
-
-	err := json.NewDecoder(r.Body).Decode(&userRoleData)
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-
-	userRole := model.UserRole{
-		UserID: userRoleData.UserID,
-		Role:   userRoleData.Role,
-	}
-
-	userId, err := model.RemoveUserRole(c.db, userRole)
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-
-	writeJSON(w, map[string]interface{}{
-		"status":  "success",
-		"user_id": userId,
-	})
+	writeJSON(w, dto.FromModels(users))
 }
 
 func (c MainController) AdminFeatureEventHandler(w http.ResponseWriter, r *http.Request) {

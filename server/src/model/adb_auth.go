@@ -1,9 +1,11 @@
 package model
 
 import (
+	"database/sql"
 	"encoding/json"
 	"io"
 	"log"
+	"strings"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
@@ -40,16 +42,6 @@ type ADBUser struct {
 	Roles       []UserRole
 	ChapterID   int    `db:"chapter_id"`
 	ChapterName string `db:"chapter_name"`
-}
-
-type UserJSON struct {
-	ID        int      `json:"id"`
-	Email     string   `json:"email"`
-	Name      string   `json:"name"`
-	Admin     bool     `json:"admin"`
-	Disabled  bool     `json:"disabled"`
-	Roles     []string `json:"roles"`
-	ChapterID int      `json:"chapter_id"`
 }
 
 type GetUserOptions struct {
@@ -127,20 +119,6 @@ FROM adb_users
 	log.Println("[User access]", adbUser.Name, "-", adbUser.Email)
 
 	return *adbUser, nil
-}
-
-func GetUsersJSON(db *sqlx.DB) ([]UserJSON, error) {
-	return getUsersJSON(db, GetUserOptions{})
-}
-
-func getUsersJSON(db *sqlx.DB, options GetUserOptions) ([]UserJSON, error) {
-	users, err := GetUsers(db, options)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return buildUserJSONArray(users), nil
 }
 
 func GetUsers(db *sqlx.DB, options GetUserOptions) ([]ADBUser, error) {
@@ -224,80 +202,142 @@ func getUsersRoles(db *sqlx.DB) ([]UserRole, error) {
 	return userRoles, nil
 }
 
-func buildUserJSONArray(users []ADBUser) []UserJSON {
-	var usersJSON []UserJSON
-
-	for _, u := range users {
-		var roles []string
-		for _, userRole := range u.Roles {
-			roles = append(roles, userRole.Role)
-		}
-
-		usersJSON = append(usersJSON, UserJSON{
-			ID:        u.ID,
-			Email:     u.Email,
-			Name:      u.Name,
-			Admin:     u.Admin,
-			Disabled:  u.Disabled,
-			Roles:     roles,
-			ChapterID: u.ChapterID,
-		})
+func CleanUserWithRolesData(body io.Reader) (ADBUser, error) {
+	// Temporary until UserRole is replaced with string.
+	var payload struct {
+		ID        int      `json:"id"`
+		Email     string   `json:"email"`
+		Name      string   `json:"name"`
+		Disabled  bool     `json:"disabled"`
+		Roles     []string `json:"roles"`
+		ChapterID int      `json:"chapter_id"`
 	}
 
-	return usersJSON
-}
-
-func CleanUserData(body io.Reader) (ADBUser, error) {
-	var userJSON UserJSON
-	err := json.NewDecoder(body).Decode(&userJSON)
-
-	if err != nil {
+	if err := json.NewDecoder(body).Decode(&payload); err != nil {
 		return ADBUser{}, err
 	}
 
+	// Temporary until UserRole is replaced with string.
+	roles := makeRolesStructArray(payload.ID, payload.Roles)
+
 	user := ADBUser{
-		ID:        userJSON.ID,
-		Email:     userJSON.Email,
-		Name:      userJSON.Name,
-		Admin:     userJSON.Admin,
-		Disabled:  userJSON.Disabled,
-		ChapterID: userJSON.ChapterID,
+		ID:        payload.ID,
+		Email:     strings.TrimSpace(payload.Email),
+		Name:      strings.TrimSpace(payload.Name),
+		Disabled:  payload.Disabled,
+		ChapterID: payload.ChapterID,
+		Roles:     roles,
 	}
+
+	user.Admin = roleListHas(payload.Roles, "admin")
 
 	return user, nil
 }
 
-func GetUserJSON(db *sqlx.DB, options GetUserOptions) (UserJSON, error) {
-	if options.ID == 0 {
-		return UserJSON{}, errors.New("GetUserJSON: Must include ID in options")
+func makeRolesStructArray(id int, strings []string) []UserRole {
+	structs := make([]UserRole, 0, len(strings))
+	for _, r := range strings {
+		structs = append(structs, UserRole{
+			UserID: id,
+			Role:   r,
+		})
 	}
-
-	users, err := getUsersJSON(db, options)
-	if err != nil {
-		return UserJSON{}, err
-	} else if len(users) == 0 {
-		return UserJSON{}, errors.New("Could not find any users")
-	} else if len(users) > 1 {
-		return UserJSON{}, errors.New("Found too many users")
+	return structs
+}
+func makeRolesStringArray(structs []UserRole) []string {
+	strings := make([]string, 0, len(structs))
+	for _, r := range structs {
+		strings = append(strings, r.Role)
 	}
-
-	return users[0], nil
+	return strings
 }
 
-func CreateUser(db *sqlx.DB, user ADBUser) (int, error) {
+func roleListHas(roles []string, target string) bool {
+	for _, r := range roles {
+		if r == target {
+			return true
+		}
+	}
+	return false
+}
+
+func syncUserRolesTx(tx *sqlx.Tx, userID int, roles []string) error {
+	existingRoles, err := getUserRolesTx(tx, userID)
+	if err != nil {
+		return err
+	}
+
+	existingSet := map[string]struct{}{}
+	for _, r := range existingRoles {
+		existingSet[r] = struct{}{}
+	}
+
+	desiredSet := map[string]struct{}{}
+	for _, r := range roles {
+		desiredSet[r] = struct{}{}
+	}
+
+	for role := range existingSet {
+		if _, ok := desiredSet[role]; ok {
+			continue
+		}
+		if _, err := tx.Exec(`DELETE FROM users_roles WHERE user_id = ? AND role = ?`, userID, role); err != nil {
+			return errors.Wrapf(err, "failed to remove role %s for user %d", role, userID)
+		}
+	}
+
+	for role := range desiredSet {
+		if _, ok := existingSet[role]; ok {
+			continue
+		}
+		if _, err := tx.Exec(`INSERT INTO users_roles (user_id, role) VALUES (?, ?)`, userID, role); err != nil {
+			return errors.Wrapf(err, "failed to add role %s for user %d", role, userID)
+		}
+	}
+
+	return nil
+}
+
+func getUserRolesTx(tx *sqlx.Tx, userID int) ([]string, error) {
+	var roles []string
+	if err := tx.Select(&roles, `SELECT role FROM users_roles WHERE user_id = ?`, userID); err != nil {
+		return nil, errors.Wrapf(err, "failed to fetch roles for user %d", userID)
+	}
+	return roles, nil
+}
+
+func CreateUserWithRoles(db *sqlx.DB, user ADBUser) (ADBUser, error) {
 	if user.ID != 0 {
-		return 0, errors.New("User ID must be 0")
+		return ADBUser{}, errors.New("User ID must be 0 when creating a user")
 	}
 
-	if user.Email == "" {
-		return 0, errors.New("User Email cannot be empty")
+	user.Email = strings.TrimSpace(user.Email)
+	user.Name = strings.TrimSpace(user.Name)
+	user.Admin = roleListHas(makeRolesStringArray(user.Roles), "admin")
+
+	tx, err := db.Beginx()
+	if err != nil {
+		return ADBUser{}, errors.Wrap(err, "failed to start create user transaction")
+	}
+	defer tx.Rollback()
+
+	var existing struct {
+		ID       int  `db:"id"`
+		Disabled bool `db:"disabled"`
 	}
 
-	if user.Name == "" {
-		return 0, errors.New("User Name cannot be empty")
+	err = tx.Get(&existing, `SELECT id, disabled FROM adb_users WHERE email = ?`, user.Email)
+	if err != nil && err != sql.ErrNoRows {
+		return ADBUser{}, errors.Wrapf(err, "failed to check existing user %s", user.Email)
+	}
+	if err == nil {
+		if existing.Disabled {
+			return ADBUser{}, errors.Errorf("user with email %s already exists and is suspended", user.Email)
+		}
+		return ADBUser{}, errors.Errorf("user with email %s already exists", user.Email)
 	}
 
-	result, err := db.NamedExec(`
+	result, err := tx.NamedExec(`
 INSERT INTO adb_users (
   email,
   name,
@@ -310,121 +350,105 @@ INSERT INTO adb_users (
   :admin,
   :disabled,
   :chapter_id
-)`, user)
+	)`, user)
 
 	if err != nil {
-		return 0, errors.Wrapf(err, "Could not create user: %s", user.Email)
+		return ADBUser{}, errors.Wrapf(err, "Could not create user: %s", user.Email)
 	}
 
 	id, err := result.LastInsertId()
 	if err != nil {
-		return 0, errors.Wrapf(err, "Could not get LastInsertId for %s", user.Email)
+		return ADBUser{}, errors.Wrapf(err, "Could not get LastInsertId for %s", user.Email)
 	}
 
-	return int(id), nil
+	userID := int(id)
+
+	if err := syncUserRolesTx(tx, userID, makeRolesStringArray(user.Roles)); err != nil {
+		return ADBUser{}, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return ADBUser{}, errors.Wrap(err, "failed to commit create user transaction")
+	}
+
+	users, err := GetUsers(db, GetUserOptions{ID: userID})
+	if err != nil {
+		return ADBUser{}, err
+	}
+	if len(users) == 0 {
+		return ADBUser{}, errors.Errorf("no user found with ID %d after create", userID)
+	}
+	return users[0], nil
 }
 
-func UpdateUser(db *sqlx.DB, user ADBUser) (int, error) {
+func UpdateUserWithRoles(db *sqlx.DB, user ADBUser) (ADBUser, error) {
 	if user.ID == 0 {
-		return 0, errors.New("User ID cannot be 0")
+		return ADBUser{}, errors.New("User ID cannot be 0 when updating a user")
 	}
 
-	if user.Email == "" {
-		return 0, errors.New("User Email cannot be empty")
+	user.Email = strings.TrimSpace(user.Email)
+	user.Name = strings.TrimSpace(user.Name)
+	user.Admin = roleListHas(makeRolesStringArray(user.Roles), "admin")
+
+	tx, err := db.Beginx()
+	if err != nil {
+		return ADBUser{}, errors.Wrap(err, "failed to start update user transaction")
+	}
+	defer tx.Rollback()
+
+	var existing struct {
+		ID       int  `db:"id"`
+		Disabled bool `db:"disabled"`
 	}
 
-	if user.Name == "" {
-		return 0, errors.New("User Name cannot be empty")
+	err = tx.Get(&existing, `SELECT id, disabled FROM adb_users WHERE email = ?`, user.Email)
+	if err != nil && err != sql.ErrNoRows {
+		return ADBUser{}, errors.Wrapf(err, "failed to check existing user %s", user.Email)
+	}
+	if err == nil && existing.ID != user.ID {
+		if existing.Disabled {
+			return ADBUser{}, errors.Errorf("user with email %s already exists and is suspended", user.Email)
+		}
+		return ADBUser{}, errors.Errorf("user with email %s already exists", user.Email)
 	}
 
-	_, err := db.NamedExec(`UPDATE adb_users
+	result, err := tx.NamedExec(`UPDATE adb_users
 SET
   email = :email,
   name  = :name,
   admin = :admin,
   disabled = :disabled,
   chapter_id = :chapter_id
-WHERE
-id = :id`, user)
+	WHERE
+	id = :id`, user)
 
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to update user data")
+		return ADBUser{}, errors.Wrap(err, "failed to update user data")
 	}
 
-	return user.ID, nil
-}
-
-func RemoveUser(db *sqlx.DB, userID int) (int, error) {
-	if userID == 0 {
-		return 0, errors.New("User ID not provided")
-	}
-
-	// Using a transaction here will allow us to easily
-	// extend this feature in the future. The adb_user model
-	// might become more complicated with relationships to other models
-
-	tx, err := db.Beginx()
-
+	rowsUpdated, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to create transaction")
+		return ADBUser{}, errors.Wrap(err, "failed to read rows affected when updating user")
 	}
 
-	query := `
-    DELETE FROM adb_users
-    WHERE id = ?
-  `
+	if rowsUpdated == 0 {
+		return ADBUser{}, errors.Errorf("no user found with ID %d", user.ID)
+	}
 
-	_, err = tx.Exec(query, userID)
-
-	if err != nil {
-		tx.Rollback()
-		return 0, errors.Wrapf(err, "failed to delete user %d", userID)
+	if err := syncUserRolesTx(tx, user.ID, makeRolesStringArray(user.Roles)); err != nil {
+		return ADBUser{}, err
 	}
 
 	if err := tx.Commit(); err != nil {
-		tx.Rollback()
-		return 0, errors.Wrapf(err, "failed to commit delete transaction for user %d", userID)
+		return ADBUser{}, errors.Wrap(err, "failed to commit update user transaction")
 	}
 
-	return userID, nil
-}
-
-func CreateUserRole(db *sqlx.DB, userRole UserRole) (int, error) {
-	if userRole.UserID == 0 {
-		return 0, errors.New("Invalid User ID")
-	}
-
-	if userRole.Role == "" {
-		return userRole.UserID, errors.New("Role cannot be empty")
-	}
-
-	_, err := db.Exec(`
-INSERT INTO users_roles (user_id, role)
-VALUES (?, ?)
-`, userRole.UserID, userRole.Role)
-
+	users, err := GetUsers(db, GetUserOptions{ID: user.ID})
 	if err != nil {
-		return userRole.UserID, errors.Wrapf(err, "Could not add User Role for User %d", userRole.UserID)
+		return ADBUser{}, err
 	}
-
-	return userRole.UserID, nil
-}
-
-func RemoveUserRole(db *sqlx.DB, userRole UserRole) (int, error) {
-	if userRole.UserID == 0 {
-		return 0, errors.New("Invalid User ID")
+	if len(users) == 0 {
+		return ADBUser{}, errors.Errorf("no user found with ID %d after update", user.ID)
 	}
-
-	query := `
-DELETE FROM users_roles
-WHERE user_id = ? AND role = ?
-`
-
-	_, err := db.Exec(query, userRole.UserID, userRole.Role)
-
-	if err != nil {
-		return userRole.UserID, errors.Wrapf(err, "Failed to delete User %d", userRole.UserID)
-	}
-
-	return userRole.UserID, nil
+	return users[0], nil
 }

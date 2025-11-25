@@ -127,7 +127,7 @@
         },
         {
           "label": "Users",
-          "href": "/admin/users",
+          "href": "/v2/users",
           "page": "UserList"
         },
         {
