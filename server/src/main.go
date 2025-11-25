@@ -279,6 +279,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/geocircles", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.CircleGroupGeoListHandler)) // TODO: maybe the public endpoints should return less info
 
 	// Authed API
+	router.Handle("/api/csrf-token", csrfMiddleware(alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.CSRFTokenHandler))).Methods(http.MethodGet)
 	router.Handle("/activist_names/get", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteActivistsHandler))
 	router.Handle("/activist_names/get_organizers", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteOrganizersHandler))
 	router.Handle("/activist_names/get_chaptermembers", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteChapterMembersHandler))
@@ -1662,6 +1663,13 @@ func (c MainController) AuthedUserInfoHandler(w http.ResponseWriter, r *http.Req
 func (c MainController) StaticResourcesHashHandler(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]interface{}{
 		"hash": config.StaticResourcesHash(),
+	})
+}
+
+func (c MainController) CSRFTokenHandler(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, map[string]interface{}{
+		"status":    "success",
+		"csrfToken": csrf.Token(r),
 	})
 }
 
