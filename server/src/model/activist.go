@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/dxe/adb/mailing_list_signup"
+	"github.com/dxe/adb/persistence"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
@@ -1947,7 +1948,7 @@ func CleanActivistData(body io.Reader, db *sqlx.DB) (ActivistExtra, error) {
 	var assignedToInt int
 	assignedToName := strings.TrimSpace(activistJSON.AssignedToName)
 	if assignedToName != "" {
-		users, err := getUsers(db, GetUserOptions{Name: assignedToName})
+		users, err := persistence.GetUsers(db, persistence.GetUserOptions{Name: assignedToName, PopulateRoles: false})
 		if err != nil {
 			panic(err)
 		}

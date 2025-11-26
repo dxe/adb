@@ -18,9 +18,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dxe/adb/dto"
 	"github.com/dxe/adb/international_application_processor"
 	"github.com/dxe/adb/members"
+	"github.com/dxe/adb/persistence"
 
 	oidc "github.com/coreos/go-oidc"
 	"github.com/dxe/adb/config"
@@ -29,6 +29,7 @@ import (
 	"github.com/dxe/adb/google_groups_sync"
 	"github.com/dxe/adb/model"
 	"github.com/dxe/adb/survey_mailer"
+	"github.com/dxe/adb/transport"
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -98,7 +99,7 @@ func authADBUser(db *sqlx.DB, r *http.Request, w http.ResponseWriter) (adbUser m
 	adbUser, authed = getAuthedADBUser(db, r)
 
 	if !authed && !config.IsProd {
-		testUser, testUserErr := model.GetADBUser(db, model.DevTestUserId, "")
+		testUser, testUserErr := persistence.GetADBUser(db, model.DevTestUserId, "")
 		if testUserErr != nil {
 			panic(fmt.Errorf("error getting test user: %v", testUserErr))
 		}
@@ -129,7 +130,7 @@ func getAuthedADBUser(db *sqlx.DB, r *http.Request) (adbUser model.ADBUser, auth
 	}
 
 	// Then, check that the user is still authed.
-	adbUser, err = model.GetADBUser(db, adbUserID, "")
+	adbUser, err = persistence.GetADBUser(db, adbUserID, "")
 	if err != nil {
 		return model.ADBUser{}, false
 	}
@@ -403,7 +404,7 @@ func (c MainController) authAdminMiddleware(h http.Handler) http.Handler {
 func userIsAllowed(roles []string, user model.ADBUser) bool {
 	for i := 0; i < len(roles); i++ {
 		for _, r := range user.Roles {
-			if r.Role == roles[i] {
+			if r == roles[i] {
 				return true
 			}
 		}
@@ -419,21 +420,21 @@ func getUserMainRole(user model.ADBUser) string {
 
 	var mainRole string
 	for _, r := range user.Roles {
-		if r.Role == "non-sfbay" {
+		if r == "non-sfbay" {
 			mainRole = "non-sfbay"
 			break
 		}
 
-		if r.Role == "admin" {
+		if r == "admin" {
 			mainRole = "admin"
 			break
 		}
 
-		if r.Role == "organizer" {
+		if r == "organizer" {
 			mainRole = "organizer"
 		}
 
-		if r.Role == "attendance" && mainRole != "organizer" {
+		if r == "attendance" && mainRole != "organizer" {
 			mainRole = "attendance"
 		}
 	}
@@ -525,7 +526,7 @@ func (c MainController) TokenSignInHandler(w http.ResponseWriter, r *http.Reques
 		panic(err)
 	}
 
-	adbUser, err := model.GetADBUser(c.db, 0, claims.Email)
+	adbUser, err := persistence.GetADBUser(c.db, 0, claims.Email)
 	if err != nil {
 		log.Println(err.Error())
 	}
@@ -898,24 +899,12 @@ func renderTemplate(w io.Writer, name string, data interface{}) {
 }
 
 func writeJSON(w io.Writer, v interface{}) {
-	enc := json.NewEncoder(w)
-	err := enc.Encode(v)
-	if err != nil {
-		log.Printf("Error writing JSON! %v", err.Error())
-		//panic(err)
-	}
+	transport.WriteJSON(w, v)
 }
 
 /* Accepts a non-nil error and sends an error response */
 func sendErrorMessage(w io.Writer, err error) {
-	if err == nil {
-		panic(errors.Wrap(err, "Cannot send error message if error is nil"))
-	}
-	log.Printf("ERROR: %+v\n", err.Error())
-	writeJSON(w, map[string]string{
-		"status":  "error",
-		"message": err.Error(),
-	})
+	transport.SendErrorMessage(w, err)
 }
 
 func (c MainController) UpdateEventHandler(w http.ResponseWriter, r *http.Request) {
@@ -1670,105 +1659,19 @@ func (c MainController) CSRFTokenHandler(w http.ResponseWriter, r *http.Request)
 }
 
 func (c MainController) UsersListHandler(w http.ResponseWriter, r *http.Request) {
-	users, err := model.GetUsers(c.db, model.GetUserOptions{})
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-
-	writeJSON(w, map[string]interface{}{
-		"users": dto.FromModels(users),
-	})
+	transport.UsersListHandler(w, r, c.db)
 }
-
 func (c MainController) UserGetHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	rawID := vars["id"]
-	userID, err := strconv.Atoi(rawID)
-	if err != nil {
-		sendErrorMessage(w, errors.Wrapf(err, "invalid user id %s", rawID))
-		return
-	}
-
-	users, err := model.GetUsers(c.db, model.GetUserOptions{ID: userID})
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-	if len(users) == 0 {
-		sendErrorMessage(w, errors.Errorf("no user found with ID %d", userID))
-		return
-	}
-
-	userJSON := dto.FromModel(users[0])
-
-	writeJSON(w, map[string]interface{}{
-		"user": userJSON,
-	})
+	transport.UserGetHandler(w, r, c.db)
 }
-
 func (c MainController) UserCreateHandler(w http.ResponseWriter, r *http.Request) {
-	input, err := model.CleanUserWithRolesData(r.Body)
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-
-	createdUser, err := model.CreateUserWithRoles(c.db, input)
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-
-	writeJSON(w, map[string]interface{}{
-		"status": "success",
-		"user":   dto.FromModel(createdUser),
-	})
+	transport.UserCreateHandler(w, r, c.db)
 }
-
 func (c MainController) UserUpdateHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	rawID := vars["id"]
-	userID, err := strconv.Atoi(rawID)
-	if err != nil {
-		sendErrorMessage(w, errors.Wrapf(err, "invalid user id %s", rawID))
-		return
-	}
-
-	input, err := model.CleanUserWithRolesData(r.Body)
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-
-	if input.ID != 0 && input.ID != userID {
-		sendErrorMessage(w, errors.Errorf("mismatched user ids %d and %d", input.ID, userID))
-		return
-	}
-
-	input.ID = userID
-
-	updatedUser, err := model.UpdateUserWithRoles(c.db, input)
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-
-	writeJSON(w, map[string]interface{}{
-		"status": "success",
-		"user":   dto.FromModel(updatedUser),
-	})
+	transport.UserUpdateHandler(w, r, c.db)
 }
-
 func (c MainController) UserListHandler(w http.ResponseWriter, r *http.Request) {
-	users, err := model.GetUsers(c.db, model.GetUserOptions{})
-
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-
-	writeJSON(w, dto.FromModels(users))
+	transport.UserListHandler(w, r, c.db)
 }
 
 func (c MainController) AdminFeatureEventHandler(w http.ResponseWriter, r *http.Request) {
