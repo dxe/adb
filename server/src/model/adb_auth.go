@@ -15,14 +15,20 @@ type UserRole struct {
 	Role   string `db:"role"`
 }
 
+type GetUserOptions struct {
+	ID            int
+	Name          string
+	PopulateRoles bool
+}
+
+// Interface for querying and updating users. This avoids a dependency on the persistence package which could create a
+// cyclical package reference.
+type UserRepository interface {
+	GetUser(id int, email string) (ADBUser, error)
+	GetUsers(options GetUserOptions) ([]ADBUser, error)
+	CreateUser(user ADBUser) (ADBUser, error)
+	UpdateUser(user ADBUser) (ADBUser, error)
+}
+
 const DevTestUserId = 1
 const DevTestUserEmail = "test@example.org"
-
-func roleListHas(roles []string, target string) bool {
-	for _, r := range roles {
-		if r == target {
-			return true
-		}
-	}
-	return false
-}

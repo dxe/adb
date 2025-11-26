@@ -119,7 +119,6 @@ export function UserForm({ userId }: { userId?: number }) {
         chapter_id: parsed.data.chapterId,
         disabled: parsed.data.disabled,
         roles: parsed.data.roles,
-        admin: parsed.data.roles.includes('admin'),
       }
 
       await mutation.mutateAsync(payload)

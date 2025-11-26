@@ -19,16 +19,13 @@ export type Role = z.infer<typeof Role>
 
 const AuthedUserResp = z.object({
   user: z.object({
-    Admin: z.boolean(),
     ChapterID: z.number(),
     ChapterName: z.string(),
     Disabled: z.boolean(),
     Email: z.string(),
     ID: z.number(),
     Name: z.string(),
-    Roles: z
-      .array(z.object({ Role: Role }))
-      .transform((roles) => roles.map((it) => it.Role)),
+    Roles: z.array(Role),
   }),
   mainRole: Role,
 })
@@ -56,7 +53,6 @@ const UserSchema = z.object({
   id: z.number(),
   email: z.string(),
   name: z.string(),
-  admin: z.boolean(),
   disabled: z.boolean(),
   roles: RolesSchema,
   chapter_id: z.number(),

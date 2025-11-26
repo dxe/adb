@@ -8,9 +8,7 @@ import (
 	"strings"
 
 	"github.com/dxe/adb/model"
-	"github.com/dxe/adb/persistence"
 	"github.com/gorilla/mux"
-	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 )
 
@@ -50,8 +48,8 @@ func UserJsonFromModels(users []model.ADBUser) []UserJson {
 	return out
 }
 
-func UsersListHandler(w http.ResponseWriter, r *http.Request, db *sqlx.DB) {
-	users, err := persistence.GetUsers(db, persistence.GetUserOptions{PopulateRoles: true})
+func UsersListHandler(w http.ResponseWriter, r *http.Request, repo model.UserRepository) {
+	users, err := repo.GetUsers(model.GetUserOptions{PopulateRoles: true})
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
@@ -62,7 +60,7 @@ func UsersListHandler(w http.ResponseWriter, r *http.Request, db *sqlx.DB) {
 	})
 }
 
-func UserGetHandler(w http.ResponseWriter, r *http.Request, db *sqlx.DB) {
+func UserGetHandler(w http.ResponseWriter, r *http.Request, repo model.UserRepository) {
 	vars := mux.Vars(r)
 	rawID := vars["id"]
 	userID, err := strconv.Atoi(rawID)
@@ -71,7 +69,7 @@ func UserGetHandler(w http.ResponseWriter, r *http.Request, db *sqlx.DB) {
 		return
 	}
 
-	users, err := persistence.GetUsers(db, persistence.GetUserOptions{ID: userID, PopulateRoles: true})
+	users, err := repo.GetUsers(model.GetUserOptions{ID: userID, PopulateRoles: true})
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
@@ -88,14 +86,14 @@ func UserGetHandler(w http.ResponseWriter, r *http.Request, db *sqlx.DB) {
 	})
 }
 
-func UserCreateHandler(w http.ResponseWriter, r *http.Request, db *sqlx.DB) {
+func UserCreateHandler(w http.ResponseWriter, r *http.Request, repo model.UserRepository) {
 	input, err := CleanUserWithRolesData(r.Body)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
 	}
 
-	createdUser, err := persistence.CreateUserWithRoles(db, input)
+	createdUser, err := repo.CreateUser(input)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
@@ -107,7 +105,7 @@ func UserCreateHandler(w http.ResponseWriter, r *http.Request, db *sqlx.DB) {
 	})
 }
 
-func UserUpdateHandler(w http.ResponseWriter, r *http.Request, db *sqlx.DB) {
+func UserUpdateHandler(w http.ResponseWriter, r *http.Request, repo model.UserRepository) {
 	vars := mux.Vars(r)
 	rawID := vars["id"]
 	userID, err := strconv.Atoi(rawID)
@@ -129,7 +127,7 @@ func UserUpdateHandler(w http.ResponseWriter, r *http.Request, db *sqlx.DB) {
 
 	input.ID = userID
 
-	updatedUser, err := persistence.UpdateUserWithRoles(db, input)
+	updatedUser, err := repo.UpdateUser(input)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
@@ -141,8 +139,8 @@ func UserUpdateHandler(w http.ResponseWriter, r *http.Request, db *sqlx.DB) {
 	})
 }
 
-func UserListHandler(w http.ResponseWriter, r *http.Request, db *sqlx.DB) {
-	users, err := persistence.GetUsers(db, persistence.GetUserOptions{PopulateRoles: true})
+func UserListHandler(w http.ResponseWriter, r *http.Request, repo model.UserRepository) {
+	users, err := repo.GetUsers(model.GetUserOptions{PopulateRoles: true})
 
 	if err != nil {
 		sendErrorMessage(w, err)

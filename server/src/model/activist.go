@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/dxe/adb/mailing_list_signup"
-	"github.com/dxe/adb/persistence"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
@@ -1847,7 +1846,7 @@ type CommunityProspectHubSpotInfo struct {
 	InterestDate string `db:"interest_date"`
 }
 
-func CleanActivistData(body io.Reader, db *sqlx.DB) (ActivistExtra, error) {
+func CleanActivistData(body io.Reader, db *sqlx.DB, userRepo UserRepository) (ActivistExtra, error) {
 	var activistJSON ActivistJSON
 	err := json.NewDecoder(body).Decode(&activistJSON)
 	if err != nil {
@@ -1948,7 +1947,7 @@ func CleanActivistData(body io.Reader, db *sqlx.DB) (ActivistExtra, error) {
 	var assignedToInt int
 	assignedToName := strings.TrimSpace(activistJSON.AssignedToName)
 	if assignedToName != "" {
-		users, err := persistence.GetUsers(db, persistence.GetUserOptions{Name: assignedToName, PopulateRoles: false})
+		users, err := userRepo.GetUsers(GetUserOptions{Name: assignedToName, PopulateRoles: false})
 		if err != nil {
 			panic(err)
 		}

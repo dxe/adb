@@ -6,38 +6,21 @@ import (
 	"strings"
 
 	"github.com/dxe/adb/model"
-	"github.com/dxe/adb/persistence"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 )
 
-type UserRepository interface {
+type DBUserRepository struct {
+	db *sqlx.DB
 }
 
-type GetUserOptions struct {
-	ID            int
-	Name          string
-	PopulateRoles bool
+var _ model.UserRepository = (*DBUserRepository)(nil)
+
+func NewUserRepository(db *sqlx.DB) *DBUserRepository {
+	return &DBUserRepository{db: db}
 }
 
-const selectUserBaseQuery string = `
-SELECT
-  id,
-  email,
-  name,
-  disabled,
-  chapter_id
-FROM adb_users
-`
-
-const selectUsersRolesBaseQuery string = `
-SELECT
-  ur.user_id,
-  ur.role
-FROM users_roles ur
-`
-
-func GetADBUser(db *sqlx.DB, id int, email string) (model.ADBUser, error) {
+func (r *DBUserRepository) GetUser(id int, email string) (model.ADBUser, error) {
 	query := `
 SELECT
   id,
@@ -64,11 +47,11 @@ FROM adb_users
 	}
 
 	adbUser := &model.ADBUser{}
-	if err := db.Get(adbUser, query, queryArgs...); err != nil {
+	if err := r.db.Get(adbUser, query, queryArgs...); err != nil {
 		return model.ADBUser{}, errors.Wrapf(err, "cannot get adb user %d", id)
 	}
 
-	usersRoles, err := getUsersRoles(db)
+	usersRoles, err := getUsersRoles(r.db)
 
 	// We don't want non-SF Bay users to have access to any of the other roles, so just replace it.
 	if adbUser.ChapterName != model.SFBayChapterName {
@@ -93,8 +76,8 @@ FROM adb_users
 	return *adbUser, nil
 }
 
-func GetUsers(db *sqlx.DB, options persistence.GetUserOptions) ([]model.ADBUser, error) {
-	users, err := getUsers(db, options)
+func (r *DBUserRepository) GetUsers(options model.GetUserOptions) ([]model.ADBUser, error) {
+	users, err := getUsers(r.db, options)
 
 	if err != nil {
 		return nil, err
@@ -108,7 +91,7 @@ func GetUsers(db *sqlx.DB, options persistence.GetUserOptions) ([]model.ADBUser,
 		return users, nil
 	}
 
-	usersRoles, err := getUsersRoles(db)
+	usersRoles, err := getUsersRoles(r.db)
 
 	if err != nil {
 		return nil, err
@@ -132,110 +115,7 @@ func GetUsers(db *sqlx.DB, options persistence.GetUserOptions) ([]model.ADBUser,
 	return users, nil
 }
 
-func getUsers(db *sqlx.DB, options GetUserOptions) ([]model.ADBUser, error) {
-	query := selectUserBaseQuery
-
-	var queryArgs []interface{}
-
-	if options.ID != 0 && options.Name != "" {
-		return nil, errors.New("You may provide ID or Name but not both.")
-	}
-
-	if options.ID != 0 {
-		query += " WHERE id = ? "
-		queryArgs = append(queryArgs, options.ID)
-	}
-
-	if options.Name != "" {
-		query += " WHERE name = ? "
-		queryArgs = append(queryArgs, options.Name)
-	}
-
-	query += " ORDER BY email "
-
-	var users []model.ADBUser
-	if err := db.Select(&users, query, queryArgs...); err != nil {
-		return nil, errors.Wrapf(err, "failed to get users")
-	}
-
-	return users, nil
-}
-
-func getUsersRoles(db *sqlx.DB) ([]model.UserRole, error) {
-	query := selectUsersRolesBaseQuery
-
-	var userRoles []model.UserRole
-	err := db.Select(&userRoles, query)
-
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to select UserRoles")
-	}
-
-	if len(userRoles) == 0 {
-		return nil, nil
-	}
-
-	return userRoles, nil
-}
-
-func validateUserForWrite(user model.ADBUser) error {
-	if user.Email == "" {
-		return errors.New("User Email cannot be empty")
-	}
-
-	if user.Name == "" {
-		return errors.New("User Name cannot be empty")
-	}
-
-	return nil
-}
-
-func syncUserRolesTx(tx *sqlx.Tx, userID int, roles []string) error {
-	existingRoles, err := getUserRolesTx(tx, userID)
-	if err != nil {
-		return err
-	}
-
-	existingSet := map[string]struct{}{}
-	for _, r := range existingRoles {
-		existingSet[r] = struct{}{}
-	}
-
-	desiredSet := map[string]struct{}{}
-	for _, r := range roles {
-		desiredSet[r] = struct{}{}
-	}
-
-	for role := range existingSet {
-		if _, ok := desiredSet[role]; ok {
-			continue
-		}
-		if _, err := tx.Exec(`DELETE FROM users_roles WHERE user_id = ? AND role = ?`, userID, role); err != nil {
-			return errors.Wrapf(err, "failed to remove role %s for user %d", role, userID)
-		}
-	}
-
-	for role := range desiredSet {
-		if _, ok := existingSet[role]; ok {
-			continue
-		}
-		if _, err := tx.Exec(`INSERT INTO users_roles (user_id, role) VALUES (?, ?)`, userID, role); err != nil {
-			return errors.Wrapf(err, "failed to add role %s for user %d", role, userID)
-		}
-	}
-
-	return nil
-}
-
-func getUserRolesTx(tx *sqlx.Tx, userID int) ([]string, error) {
-	var roles []string
-	if err := tx.Select(&roles, `SELECT role FROM users_roles WHERE user_id = ?`, userID); err != nil {
-		return nil, errors.Wrapf(err, "failed to fetch roles for user %d", userID)
-	}
-	return roles, nil
-}
-
-func CreateUserWithRoles(db *sqlx.DB, user model.ADBUser) (model.ADBUser, error) {
+func (r *DBUserRepository) CreateUser(user model.ADBUser) (model.ADBUser, error) {
 	if user.ID != 0 {
 		return model.ADBUser{}, errors.New("User ID must be 0 when creating a user")
 	}
@@ -243,11 +123,7 @@ func CreateUserWithRoles(db *sqlx.DB, user model.ADBUser) (model.ADBUser, error)
 	user.Email = strings.TrimSpace(user.Email)
 	user.Name = strings.TrimSpace(user.Name)
 
-	if err := validateUserForWrite(user); err != nil {
-		return model.ADBUser{}, err
-	}
-
-	tx, err := db.Beginx()
+	tx, err := r.db.Beginx()
 	if err != nil {
 		return model.ADBUser{}, errors.Wrap(err, "failed to start create user transaction")
 	}
@@ -301,7 +177,7 @@ INSERT INTO adb_users (
 		return model.ADBUser{}, errors.Wrap(err, "failed to commit create user transaction")
 	}
 
-	users, err := GetUsers(db, GetUserOptions{ID: userID, PopulateRoles: true})
+	users, err := r.GetUsers(model.GetUserOptions{ID: userID, PopulateRoles: true})
 	if err != nil {
 		return model.ADBUser{}, err
 	}
@@ -311,7 +187,7 @@ INSERT INTO adb_users (
 	return users[0], nil
 }
 
-func UpdateUserWithRoles(db *sqlx.DB, user model.ADBUser) (model.ADBUser, error) {
+func (r *DBUserRepository) UpdateUser(user model.ADBUser) (model.ADBUser, error) {
 	if user.ID == 0 {
 		return model.ADBUser{}, errors.New("User ID cannot be 0 when updating a user")
 	}
@@ -319,11 +195,7 @@ func UpdateUserWithRoles(db *sqlx.DB, user model.ADBUser) (model.ADBUser, error)
 	user.Email = strings.TrimSpace(user.Email)
 	user.Name = strings.TrimSpace(user.Name)
 
-	if err := validateUserForWrite(user); err != nil {
-		return model.ADBUser{}, err
-	}
-
-	tx, err := db.Beginx()
+	tx, err := r.db.Beginx()
 	if err != nil {
 		return model.ADBUser{}, errors.Wrap(err, "failed to start update user transaction")
 	}
@@ -375,7 +247,7 @@ SET
 		return model.ADBUser{}, errors.Wrap(err, "failed to commit update user transaction")
 	}
 
-	users, err := GetUsers(db, GetUserOptions{ID: user.ID, PopulateRoles: true})
+	users, err := r.GetUsers(model.GetUserOptions{ID: user.ID, PopulateRoles: true})
 	if err != nil {
 		return model.ADBUser{}, err
 	}
@@ -383,4 +255,108 @@ SET
 		return model.ADBUser{}, errors.Errorf("no user found with ID %d after update", user.ID)
 	}
 	return users[0], nil
+}
+
+func getUsers(db *sqlx.DB, options model.GetUserOptions) ([]model.ADBUser, error) {
+	query := `
+SELECT
+  id,
+  email,
+  name,
+  disabled,
+  chapter_id
+FROM adb_users
+`
+
+	var queryArgs []interface{}
+
+	if options.ID != 0 && options.Name != "" {
+		return nil, errors.New("You may provide ID or Name but not both.")
+	}
+
+	if options.ID != 0 {
+		query += " WHERE id = ? "
+		queryArgs = append(queryArgs, options.ID)
+	}
+
+	if options.Name != "" {
+		query += " WHERE name = ? "
+		queryArgs = append(queryArgs, options.Name)
+	}
+
+	query += " ORDER BY email "
+
+	var users []model.ADBUser
+	if err := db.Select(&users, query, queryArgs...); err != nil {
+		return nil, errors.Wrapf(err, "failed to get users")
+	}
+
+	return users, nil
+}
+
+func getUsersRoles(db *sqlx.DB) ([]model.UserRole, error) {
+	query := `
+SELECT
+  ur.user_id,
+  ur.role
+FROM users_roles ur
+`
+
+	var userRoles []model.UserRole
+	err := db.Select(&userRoles, query)
+
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to select UserRoles")
+	}
+
+	if len(userRoles) == 0 {
+		return nil, nil
+	}
+
+	return userRoles, nil
+}
+
+func syncUserRolesTx(tx *sqlx.Tx, userID int, roles []string) error {
+	existingRoles, err := getUserRolesTx(tx, userID)
+	if err != nil {
+		return err
+	}
+
+	existingSet := map[string]struct{}{}
+	for _, r := range existingRoles {
+		existingSet[r] = struct{}{}
+	}
+
+	desiredSet := map[string]struct{}{}
+	for _, r := range roles {
+		desiredSet[r] = struct{}{}
+	}
+
+	for role := range existingSet {
+		if _, ok := desiredSet[role]; ok {
+			continue
+		}
+		if _, err := tx.Exec(`DELETE FROM users_roles WHERE user_id = ? AND role = ?`, userID, role); err != nil {
+			return errors.Wrapf(err, "failed to remove role %s for user %d", role, userID)
+		}
+	}
+
+	for role := range desiredSet {
+		if _, ok := existingSet[role]; ok {
+			continue
+		}
+		if _, err := tx.Exec(`INSERT INTO users_roles (user_id, role) VALUES (?, ?)`, userID, role); err != nil {
+			return errors.Wrapf(err, "failed to add role %s for user %d", role, userID)
+		}
+	}
+
+	return nil
+}
+
+func getUserRolesTx(tx *sqlx.Tx, userID int) ([]string, error) {
+	var roles []string
+	if err := tx.Select(&roles, `SELECT role FROM users_roles WHERE user_id = ?`, userID); err != nil {
+		return nil, errors.Wrapf(err, "failed to fetch roles for user %d", userID)
+	}
+	return roles, nil
 }
