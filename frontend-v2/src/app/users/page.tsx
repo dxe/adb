@@ -26,12 +26,12 @@ export default async function UsersListPage() {
 
   return (
     <AuthedPageLayout pageName="UserList">
-      <Navbar />
-      <ContentWrapper size="xl" className="gap-6">
-        <HydrationBoundary state={dehydrate(queryClient)}>
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <Navbar />
+        <ContentWrapper size="xl" className="gap-6">
           <UsersPage />
-        </HydrationBoundary>
-      </ContentWrapper>
+        </ContentWrapper>
+      </HydrationBoundary>
     </AuthedPageLayout>
   )
 }

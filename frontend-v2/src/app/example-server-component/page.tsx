@@ -22,20 +22,27 @@ export default async function ActivistsPage() {
     queryFn: apiClient.getActivistNames,
   })
 
+  // For navbar. TODO: only do if user is admin.
+  // https://app.asana.com/1/71341131816665/project/1209217418568645/task/1212207774751674
+  await queryClient.prefetchQuery({
+    queryKey: [API_PATH.CHAPTER_LIST],
+    queryFn: apiClient.getChapterList,
+  })
+
   return (
     <AuthedPageLayout pageName="TestPage">
-      <Navbar />
-      <ContentWrapper size="sm" className="gap-6">
-        <p>Hello from App Router!</p>
+      {
+        // Serialization is as easy as passing props.
+        // HydrationBoundary is a Client Component, so hydration will happen there.
+      }
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <Navbar />
+        <ContentWrapper size="sm" className="gap-6">
+          <p>Hello from App Router!</p>
 
-        {
-          // Serialization is as easy as passing props.
-          // HydrationBoundary is a Client Component, so hydration will happen there.
-        }
-        <HydrationBoundary state={dehydrate(queryClient)}>
           <Activists />
-        </HydrationBoundary>
-      </ContentWrapper>
+        </ContentWrapper>
+      </HydrationBoundary>
     </AuthedPageLayout>
   )
 }

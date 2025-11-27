@@ -21,12 +21,12 @@ export default async function NewUserPage() {
 
   return (
     <AuthedPageLayout pageName="UserList">
-      <Navbar />
-      <ContentWrapper size="lg" className="gap-6">
-        <HydrationBoundary state={dehydrate(queryClient)}>
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <Navbar />
+        <ContentWrapper size="lg" className="gap-6">
           <UserForm />
-        </HydrationBoundary>
-      </ContentWrapper>
+        </ContentWrapper>
+      </HydrationBoundary>
     </AuthedPageLayout>
   )
 }

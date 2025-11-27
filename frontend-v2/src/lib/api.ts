@@ -153,8 +153,12 @@ export class ApiClient {
   }
 
   getChapterList = async () => {
-    const resp = await this.client.get(API_PATH.CHAPTER_LIST).json()
-    return ChapterListResp.parse(resp).chapters
+    try {
+      const resp = await this.client.get(API_PATH.CHAPTER_LIST).json()
+      return ChapterListResp.parse(resp).chapters
+    } catch (err) {
+      return this.handleKyError(err)
+    }
   }
 
   getUsers = async () => {

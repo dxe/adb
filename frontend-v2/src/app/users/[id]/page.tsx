@@ -31,12 +31,12 @@ export default async function EditUserPage({
 
   return (
     <AuthedPageLayout pageName="UserList">
-      <Navbar />
-      <ContentWrapper size="lg" className="gap-6">
-        <HydrationBoundary state={dehydrate(queryClient)}>
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <Navbar />
+        <ContentWrapper size="lg" className="gap-6">
           <UserForm userId={userId} />
-        </HydrationBoundary>
-      </ContentWrapper>
+        </ContentWrapper>
+      </HydrationBoundary>
     </AuthedPageLayout>
   )
 }
