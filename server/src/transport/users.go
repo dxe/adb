@@ -2,7 +2,6 @@ package transport
 
 import (
 	"encoding/json"
-	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -26,7 +25,23 @@ type UserRoleJSON struct {
 	Role   string `json:"role"`
 }
 
-func UserJsonFromModel(u model.ADBUser) UserJson {
+func userFromJson(json UserJson) (model.ADBUser, error) {
+	user := model.ADBUser{
+		ID:        json.ID,
+		Email:     strings.TrimSpace(json.Email),
+		Name:      strings.TrimSpace(json.Name),
+		Disabled:  json.Disabled,
+		Roles:     json.Roles,
+		ChapterID: json.ChapterID,
+	}
+	if err := model.ValidateADBUser(user); err != nil {
+		return model.ADBUser{}, err
+	}
+
+	return user, nil
+}
+
+func userToJson(u model.ADBUser) UserJson {
 	var roles []string
 	roles = append(roles, u.Roles...)
 
@@ -40,10 +55,10 @@ func UserJsonFromModel(u model.ADBUser) UserJson {
 	}
 }
 
-func UserJsonFromModels(users []model.ADBUser) []UserJson {
+func usersToJson(users []model.ADBUser) []UserJson {
 	out := make([]UserJson, 0, len(users))
 	for _, u := range users {
-		out = append(out, UserJsonFromModel(u))
+		out = append(out, userToJson(u))
 	}
 	return out
 }
@@ -56,7 +71,7 @@ func UsersListHandler(w http.ResponseWriter, r *http.Request, repo model.UserRep
 	}
 
 	writeJSON(w, map[string]interface{}{
-		"users": UserJsonFromModels(users),
+		"users": usersToJson(users),
 	})
 }
 
@@ -79,7 +94,7 @@ func UserGetHandler(w http.ResponseWriter, r *http.Request, repo model.UserRepos
 		return
 	}
 
-	userJSON := UserJsonFromModel(users[0])
+	userJSON := userToJson(users[0])
 
 	writeJSON(w, map[string]interface{}{
 		"user": userJSON,
@@ -87,7 +102,13 @@ func UserGetHandler(w http.ResponseWriter, r *http.Request, repo model.UserRepos
 }
 
 func UserCreateHandler(w http.ResponseWriter, r *http.Request, repo model.UserRepository) {
-	input, err := CleanUserWithRolesData(r.Body)
+	var payload UserJson
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	input, err := userFromJson(payload)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
@@ -101,7 +122,7 @@ func UserCreateHandler(w http.ResponseWriter, r *http.Request, repo model.UserRe
 
 	writeJSON(w, map[string]interface{}{
 		"status": "success",
-		"user":   UserJsonFromModel(createdUser),
+		"user":   userToJson(createdUser),
 	})
 }
 
@@ -114,7 +135,13 @@ func UserUpdateHandler(w http.ResponseWriter, r *http.Request, repo model.UserRe
 		return
 	}
 
-	input, err := CleanUserWithRolesData(r.Body)
+	var payload UserJson
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	input, err := userFromJson(payload)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
@@ -135,7 +162,7 @@ func UserUpdateHandler(w http.ResponseWriter, r *http.Request, repo model.UserRe
 
 	writeJSON(w, map[string]interface{}{
 		"status": "success",
-		"user":   UserJsonFromModel(updatedUser),
+		"user":   userToJson(updatedUser),
 	})
 }
 
@@ -147,23 +174,5 @@ func UserListHandler(w http.ResponseWriter, r *http.Request, repo model.UserRepo
 		return
 	}
 
-	writeJSON(w, UserJsonFromModels(users))
-}
-
-func CleanUserWithRolesData(body io.Reader) (model.ADBUser, error) {
-	var payload UserJson
-
-	if err := json.NewDecoder(body).Decode(&payload); err != nil {
-		return model.ADBUser{}, err
-	}
-
-	user := model.ADBUser{
-		ID:        payload.ID,
-		Email:     strings.TrimSpace(payload.Email),
-		Name:      strings.TrimSpace(payload.Name),
-		Disabled:  payload.Disabled,
-		ChapterID: payload.ChapterID,
-	}
-
-	return user, nil
+	writeJSON(w, usersToJson(users))
 }
