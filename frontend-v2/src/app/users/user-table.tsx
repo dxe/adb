@@ -57,7 +57,9 @@ export function UserTable({
             className="flex items-center gap-1"
           >
             <span>Name</span>
-            <span className="text-xs">{sortIndicator(column.getIsSorted())}</span>
+            <span className="text-xs">
+              {sortIndicator(column.getIsSorted())}
+            </span>
           </button>
         ),
         accessorKey: 'name',
@@ -78,7 +80,9 @@ export function UserTable({
             className="flex items-center gap-1"
           >
             <span>Email</span>
-            <span className="text-xs">{sortIndicator(column.getIsSorted())}</span>
+            <span className="text-xs">
+              {sortIndicator(column.getIsSorted())}
+            </span>
           </button>
         ),
         accessorKey: 'email',
@@ -95,7 +99,9 @@ export function UserTable({
             className="flex items-center gap-1"
           >
             <span>Chapter</span>
-            <span className="text-xs">{sortIndicator(column.getIsSorted())}</span>
+            <span className="text-xs">
+              {sortIndicator(column.getIsSorted())}
+            </span>
           </button>
         ),
         accessorFn: (row) => chapterMap.get(row.chapter_id) ?? '',
@@ -122,7 +128,9 @@ export function UserTable({
             className="flex items-center gap-1"
           >
             <span>Status</span>
-            <span className="text-xs">{sortIndicator(column.getIsSorted())}</span>
+            <span className="text-xs">
+              {sortIndicator(column.getIsSorted())}
+            </span>
           </button>
         ),
         accessorFn: (row) => (row.disabled ? 'Disabled' : 'Active'),
