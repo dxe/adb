@@ -66,7 +66,7 @@ func usersToJson(users []model.ADBUser) []UserJson {
 func UsersListHandler(w http.ResponseWriter, r *http.Request, repo model.UserRepository) {
 	users, err := repo.GetUsers(model.GetUserOptions{PopulateRoles: true})
 	if err != nil {
-		sendErrorMessage(w, err)
+		sendErrorMessage(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -80,17 +80,17 @@ func UserGetHandler(w http.ResponseWriter, r *http.Request, repo model.UserRepos
 	rawID := vars["id"]
 	userID, err := strconv.Atoi(rawID)
 	if err != nil {
-		sendErrorMessage(w, errors.Wrapf(err, "invalid user id %s", rawID))
+		sendErrorMessage(w, http.StatusBadRequest, errors.Wrapf(err, "invalid user id %s", rawID))
 		return
 	}
 
 	users, err := repo.GetUsers(model.GetUserOptions{ID: userID, PopulateRoles: true})
 	if err != nil {
-		sendErrorMessage(w, err)
+		sendErrorMessage(w, http.StatusInternalServerError, err)
 		return
 	}
 	if len(users) == 0 {
-		sendErrorMessage(w, errors.Errorf("no user found with ID %d", userID))
+		sendErrorMessage(w, http.StatusNotFound, errors.Errorf("no user found with ID %d", userID))
 		return
 	}
 
@@ -104,19 +104,19 @@ func UserGetHandler(w http.ResponseWriter, r *http.Request, repo model.UserRepos
 func UserCreateHandler(w http.ResponseWriter, r *http.Request, repo model.UserRepository) {
 	var payload UserJson
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		sendErrorMessage(w, err)
+		sendErrorMessage(w, http.StatusBadRequest, err)
 		return
 	}
 
 	input, err := userFromJson(payload)
 	if err != nil {
-		sendErrorMessage(w, err)
+		sendErrorMessage(w, http.StatusBadRequest, err)
 		return
 	}
 
 	createdUser, err := repo.CreateUser(input)
 	if err != nil {
-		sendErrorMessage(w, err)
+		sendErrorMessage(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -131,24 +131,24 @@ func UserUpdateHandler(w http.ResponseWriter, r *http.Request, repo model.UserRe
 	rawID := vars["id"]
 	userID, err := strconv.Atoi(rawID)
 	if err != nil {
-		sendErrorMessage(w, errors.Wrapf(err, "invalid user id %s", rawID))
+		sendErrorMessage(w, http.StatusBadRequest, errors.Wrapf(err, "invalid user id %s", rawID))
 		return
 	}
 
 	var payload UserJson
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		sendErrorMessage(w, err)
+		sendErrorMessage(w, http.StatusBadRequest, err)
 		return
 	}
 
 	input, err := userFromJson(payload)
 	if err != nil {
-		sendErrorMessage(w, err)
+		sendErrorMessage(w, http.StatusBadRequest, err)
 		return
 	}
 
 	if input.ID != 0 && input.ID != userID {
-		sendErrorMessage(w, errors.Errorf("mismatched user ids %d and %d", input.ID, userID))
+		sendErrorMessage(w, http.StatusBadRequest, errors.Errorf("mismatched user ids %d and %d", input.ID, userID))
 		return
 	}
 
@@ -156,7 +156,7 @@ func UserUpdateHandler(w http.ResponseWriter, r *http.Request, repo model.UserRe
 
 	updatedUser, err := repo.UpdateUser(input)
 	if err != nil {
-		sendErrorMessage(w, err)
+		sendErrorMessage(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -170,7 +170,7 @@ func UserListHandler(w http.ResponseWriter, r *http.Request, repo model.UserRepo
 	users, err := repo.GetUsers(model.GetUserOptions{PopulateRoles: true})
 
 	if err != nil {
-		sendErrorMessage(w, err)
+		sendErrorMessage(w, http.StatusInternalServerError, err)
 		return
 	}
 

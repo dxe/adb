@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"log"
+	"net/http"
 
 	"github.com/pkg/errors"
 )
@@ -12,12 +13,6 @@ import (
 // migrated to this package.
 func WriteJSON(w io.Writer, v interface{}) {
 	writeJSON(w, v)
-}
-
-// Temporarily make public for use by main package until all of its transport logic is
-// migrated to this package.
-func SendErrorMessage(w io.Writer, err error) {
-	sendErrorMessage(w, err)
 }
 
 func writeJSON(w io.Writer, v interface{}) {
@@ -29,12 +24,14 @@ func writeJSON(w io.Writer, v interface{}) {
 	}
 }
 
-/* Accepts a non-nil error and sends an error response */
-func sendErrorMessage(w io.Writer, err error) {
+/* Accepts a non-nil error, logs it, and sends an error response */
+func sendErrorMessage(w http.ResponseWriter, status int, err error) {
 	if err == nil {
 		panic(errors.Wrap(err, "Cannot send error message if error is nil"))
 	}
 	log.Printf("ERROR: %+v\n", err.Error())
+
+	w.WriteHeader(status)
 	writeJSON(w, map[string]string{
 		"status":  "error",
 		"message": err.Error(),

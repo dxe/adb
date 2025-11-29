@@ -904,9 +904,16 @@ func writeJSON(w io.Writer, v interface{}) {
 	transport.WriteJSON(w, v)
 }
 
-/* Accepts a non-nil error and sends an error response */
+/* Accepts a non-nil error and sends HTTP 200 with an error in the body response */
 func sendErrorMessage(w io.Writer, err error) {
-	transport.SendErrorMessage(w, err)
+	if err == nil {
+		panic(errors.Wrap(err, "Cannot send error message if error is nil"))
+	}
+	log.Printf("ERROR: %+v\n", err.Error())
+	writeJSON(w, map[string]string{
+		"status":  "error",
+		"message": err.Error(),
+	})
 }
 
 func (c MainController) UpdateEventHandler(w http.ResponseWriter, r *http.Request) {
