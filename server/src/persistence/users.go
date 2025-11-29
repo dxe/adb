@@ -217,7 +217,7 @@ func (r *DBUserRepository) UpdateUser(user model.ADBUser) (model.ADBUser, error)
 		return model.ADBUser{}, errors.Errorf("user with email %s already exists", user.Email)
 	}
 
-	result, err := tx.NamedExec(`UPDATE adb_users
+	_, err = tx.NamedExec(`UPDATE adb_users
 SET
   email = :email,
   name  = :name,
@@ -228,15 +228,6 @@ SET
 
 	if err != nil {
 		return model.ADBUser{}, errors.Wrap(err, "failed to update user data")
-	}
-
-	rowsUpdated, err := result.RowsAffected()
-	if err != nil {
-		return model.ADBUser{}, errors.Wrap(err, "failed to read rows affected when updating user")
-	}
-
-	if rowsUpdated == 0 {
-		return model.ADBUser{}, errors.Errorf("no user found with ID %d", user.ID)
 	}
 
 	if err := syncUserRolesTx(tx, user.ID, user.Roles); err != nil {
