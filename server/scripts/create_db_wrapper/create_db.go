@@ -90,16 +90,16 @@ INSERT INTO events VALUES
 INSERT INTO event_attendance (activist_id, event_id) VALUES
   (1, 1), (1, 2), (2, 2), (3,3), (4,6), (5,5), (5,1), (5,6);
 
-INSERT INTO adb_users (id, email, name, admin, disabled, chapter_id) VALUES
-  (1, '`+model.DevTestUserEmail+`', 'Test User', 1, 0, `+model.SFBayChapterIdDevTestStr+`),
-  (2, 'cwbailey20042@gmail.com', 'Cameron Bailey', 1, 0, 1),
-  (3, 'jakehobbs@gmail.com', 'Jake Hobbs', 1, 0, 1),
-  (4, 'samer@directactioneverywhere.com', 'The Real Samer', 1, 0, 0),
-  (5, 'jake@directactioneverywhere.com', 'The Real Jake Hobbs', 1, 0, 3),
-  (6, '%s', 'Dev User', 1, 0, 1);
+INSERT INTO adb_users (id, email, name, disabled, chapter_id) VALUES
+  (1, '`+model.DevTestUserEmail+`', 'Test User', 0, `+model.SFBayChapterIdDevTestStr+`),
+  (2, 'cwbailey20042@gmail.com', 'Cameron Bailey', 0, 1),
+  (3, 'jakehobbs@gmail.com', 'Jake Hobbs', 0, 1),
+  (4, 'samer@directactioneverywhere.com', 'The Real Samer', 0, 0),
+  (5, 'jake@directactioneverywhere.com', 'The Real Jake Hobbs', 0, 3),
+  (6, '%s', 'Dev User', 0, 1);
 
 INSERT INTO users_roles (user_id, role)
-SELECT id, 'admin' FROM adb_users WHERE id IN(1, 2, 3, 4, 5, 6);
+SELECT id, 1 FROM adb_users WHERE id IN(1, 2, 3, 4, 5, 6);
 
 INSERT INTO fb_pages (id, name, flag, fb_url, twitter_url, insta_url, email, region, lat, lng, token, organizers) VALUES
 (1, '`+model.SFBayChapterName+`', 'z', 'facebook.com/a', 'twitter.com/a', 'instagram.com/a', 'a@dxe.io', 'North America', '1.000', '2.000', 'xyz', "[]"),

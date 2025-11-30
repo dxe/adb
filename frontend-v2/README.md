@@ -45,6 +45,12 @@ not only when loading the initial page but also while navigating within the app.
 
 [rsc]: https://react.dev/reference/rsc/server-components
 
+## CSRF implementation
+
+When the application loads, the Node server (in `app/layout.tsx` server component) fetches a CSRF token and makes it
+available via the `csrf-token` meta element for client components to make state-changing requests. The Go server checks
+it against an HTTP-only cookie (not readable from Javascript) on state-changing endpoints.
+
 ## TanStack React Query
 
 This project uses TanStack React Query to make data fetching and mutation

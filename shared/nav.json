@@ -127,7 +127,7 @@
         },
         {
           "label": "Users",
-          "href": "/admin/users",
+          "href": "/v2/users",
           "page": "UserList"
         },
         {
@@ -145,6 +145,11 @@
           "label": "Test Page",
           "href": "/v2/example-server-component",
           "page": "TestPage"
+        },
+        {
+          "label": "Interest Form Generator",
+          "href": "/v2/interest/generator",
+          "page": "InterestFormGenerator"
         }
       ]
     }

@@ -1846,7 +1846,7 @@ type CommunityProspectHubSpotInfo struct {
 	InterestDate string `db:"interest_date"`
 }
 
-func CleanActivistData(body io.Reader, db *sqlx.DB) (ActivistExtra, error) {
+func CleanActivistData(body io.Reader, db *sqlx.DB, userRepo UserRepository) (ActivistExtra, error) {
 	var activistJSON ActivistJSON
 	err := json.NewDecoder(body).Decode(&activistJSON)
 	if err != nil {
@@ -1947,7 +1947,7 @@ func CleanActivistData(body io.Reader, db *sqlx.DB) (ActivistExtra, error) {
 	var assignedToInt int
 	assignedToName := strings.TrimSpace(activistJSON.AssignedToName)
 	if assignedToName != "" {
-		users, err := getUsers(db, GetUserOptions{Name: assignedToName})
+		users, err := userRepo.GetUsers(GetUserOptions{Name: assignedToName, PopulateRoles: false})
 		if err != nil {
 			panic(err)
 		}

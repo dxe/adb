@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Toaster } from 'react-hot-toast'
+import { ApiClient } from '@/lib/api'
+import { getCookies } from '@/lib/auth'
 import Providers from './providers'
 import '@/styles/globals.css'
 
@@ -16,7 +18,7 @@ export const viewport: Viewport = {
   userScalable: false,
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
@@ -25,6 +27,8 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
+        {/* See README for notes on CSRF implementation. */}
+        <meta name="csrf-token" content={await fetchCsrfToken()} />
       </head>
       {/* Top padding is to make room for the fixed navbar. */}
       <body className="antialiased pt-[3.25rem]">
@@ -33,4 +37,14 @@ export default function RootLayout({
       </body>
     </html>
   )
+}
+
+async function fetchCsrfToken(): Promise<string | undefined> {
+  const apiClient = new ApiClient(await getCookies())
+  try {
+    return await apiClient.fetchCsrfToken()
+  } catch (err) {
+    console.error(`Failed to preload CSRF token: ${err}`)
+    return undefined
+  }
 }

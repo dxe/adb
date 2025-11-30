@@ -23,6 +23,7 @@ import {
   SelectItem,
 } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 
@@ -273,12 +274,10 @@ export default function GeneratorForm(props: { adbRootUrl?: string }) {
             </Button>
           </div>
 
-          <FormItem>
-            <FormLabel>URL</FormLabel>
-            <FormControl>
-              <Textarea readOnly value={output} />
-            </FormControl>
-          </FormItem>
+          <div>
+            <Label htmlFor={'generated-url'}>URL</Label>
+            <Textarea id={'generated-url'} readOnly value={output} />
+          </div>
         </form>
       </Form>
     </div>
