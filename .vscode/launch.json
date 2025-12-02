@@ -8,7 +8,7 @@
       // Note: This configuration does not serve the front-end app, but
       // compiles, watches for changes and recompiles it. The app is
       // served via the Go server.
-      "name": "Launch Vue Frontend build watcher",
+      "name": "Vue Frontend build watcher",
       "request": "launch",
       "runtimeArgs": ["run-script", "watch"],
       "cwd": "${workspaceFolder}/frontend",
@@ -20,7 +20,7 @@
       "console": "integratedTerminal",
     },
     {
-      "name": "Launch React Frontend",
+      "name": "React Frontend",
       "request": "launch",
       "runtimeArgs": ["run-script", "dev"],
       "cwd": "${workspaceFolder}/frontend-v2",
@@ -37,7 +37,7 @@
       // filesystem, but this launch configuration does not wait for
       // the Vue frontend build watcher to finish the initial build.
       // There may be a delay before the latest changes take effect.
-      "name": "Launch Go Server",
+      "name": "Go Server",
       "type": "go",
       "request": "launch",
       "mode": "debug",
@@ -49,9 +49,9 @@
     {
       "name": "Launch all",
       "configurations": [
-        "Launch Go Server",
-        "Launch Vue Frontend build watcher",
-        "Launch React Frontend",
+        "Go Server",
+        "Vue Frontend build watcher",
+        "React Frontend",
       ],
     },
   ],
