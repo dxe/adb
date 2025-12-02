@@ -76,6 +76,7 @@ FROM adb_users
 	return *adbUser, nil
 }
 
+// TODO(https://github.com/dxe/adb/issues/292): switch lookup by ID or exact match on name to GetUser
 func (r *DBUserRepository) GetUsers(options model.GetUserOptions) ([]model.ADBUser, error) {
 	users, err := getUsers(r.db, options)
 
