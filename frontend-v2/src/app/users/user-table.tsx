@@ -20,6 +20,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
+import clsx from 'clsx'
 
 type Chapter = {
   ChapterID: number
@@ -35,11 +36,10 @@ export function UserTable({
 }) {
   const [sorting, setSorting] = useState<SortingState>([])
 
-  const chapterMap = useMemo(() => {
-    const lookup = new Map<number, string>()
-    chapters.forEach((chapter) => lookup.set(chapter.ChapterID, chapter.Name))
-    return lookup
-  }, [chapters])
+  const chapterMap = useMemo(
+    () => new Map(chapters.map((c) => [c.ChapterID, c.Name])),
+    [chapters],
+  )
 
   const columns = useMemo<ColumnDef<User>[]>(() => {
     const sortIndicator = (state: false | 'asc' | 'desc') => {
@@ -139,11 +139,10 @@ export function UserTable({
           const isDisabled = row.original.disabled
           return (
             <span
-              className={
-                isDisabled
-                  ? 'text-xs font-semibold text-destructive'
-                  : 'text-xs font-semibold text-emerald-700'
-              }
+              className={clsx(
+                'text-xs font-semibold',
+                isDisabled ? 'text-destructive' : 'text-emerald-700',
+              )}
             >
               {status}
             </span>
