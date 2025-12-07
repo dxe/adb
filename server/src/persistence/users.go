@@ -98,10 +98,6 @@ func (r *DBUserRepository) GetUsers(options model.GetUserOptions) ([]model.ADBUs
 		return nil, err
 	}
 
-	if len(usersRoles) == 0 {
-		return users, nil
-	}
-
 	userIDToIndex := map[int]int{}
 	for i, user := range users {
 		userIDToIndex[user.ID] = i

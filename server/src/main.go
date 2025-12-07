@@ -907,7 +907,7 @@ func writeJSON(w io.Writer, v interface{}) {
 /* Accepts a non-nil error and sends HTTP 200 with an error in the body response */
 func sendErrorMessage(w io.Writer, err error) {
 	if err == nil {
-		panic(errors.Wrap(err, "Cannot send error message if error is nil"))
+		panic(errors.New("Cannot send error message if error is nil"))
 	}
 	log.Printf("ERROR: %+v\n", err.Error())
 	writeJSON(w, map[string]string{
