@@ -118,7 +118,11 @@ See frontend-v2/README.md for more information on the React app. See above for
 instructions on building and running the React app along with other components
 of ADB.
 
-## Required environment variables for running in prod:
+## Environment variables
+
+### Required environment variables
+
+These variables are always required in prod:
 
 - ADB_URL_PATH: For example, "http://adb.domain.com"
 - PORT: The port to run the webserver on
@@ -132,9 +136,9 @@ of ADB.
 - COOKIE_SECRET: [a random string]
 - CSRF_AUTH_KEY: [a random string]
 
-## Optional environment variables
+### For signing people up to DxE's main mailing list & chapter-specific mailing lists
 
-### For signing people up to DxE's main mailing list & chapter-specific mailing lists (please reach out to tech@dxe.io to get an API key to sign people up)
+Please reach out to tech@dxe.io to get an API key to sign people up.
 
 - SIGNUP_ENDPOINT
 - SIGNUP_KEY
