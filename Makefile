@@ -12,13 +12,18 @@ NVM_SCRIPT := $(shell \
       exit 1; \
     fi)
 
+# Please keep in sync with launch.json
+VUE_FRONTEND_NODE_VERSION := 16
+# Please keep in sync with launch.json
+REACT_FRONTEND_NODE_VERSION := 20
+
 # Runs the application (builds Vue.js files, starts Next.js dev server, starts Go server).
-# As of January 2025, upgrading past Node 16 breaks old Vue dependencies, and Node 18 is required to use the latest version of React.
+# As of January 2025, upgrading past Node 16 breaks old Vue dependencies, and Node 20 is required to use the latest version of React.
 run_all:
 	. $(NVM_SCRIPT) && \
 	export NEXT_PUBLIC_API_BASE_URL=http://localhost:8080; \
-    (cd frontend && nvm use 16 && npm run dev-build); \
-	(cd frontend-v2 && nvm use 18 && pnpm dev) &
+    (cd frontend && nvm use $(VUE_FRONTEND_NODE_VERSION) && npm run dev-build); \
+	(cd frontend-v2 && nvm use $(REACT_FRONTEND_NODE_VERSION) && pnpm dev) &
 	$(MAKE) run
 
 # Just start the go program without recompiling the JS.
@@ -31,7 +36,7 @@ run:
 
 # Builds the frontend Vue JS files.
 js:
-	. $(NVM_SCRIPT) && nvm use 16 && cd frontend && npm run dev-build
+	. $(NVM_SCRIPT) && nvm use $(VUE_FRONTEND_NODE_VERSION) && cd frontend && npm run dev-build
 
 # Automatically rebuilds the Vue JS app when you edit a file. This is
 # more convenient then manually running `make run_all` every time you
@@ -50,8 +55,8 @@ dev_db:
 # Note: `go tool` cannot yet be used to install golang-migrate: https://github.com/golang-migrate/migrate/issues/1232
 deps:
 	. $(NVM_SCRIPT) && nvm i 22 && npm i -g pnpm && pnpm i
-	. $(NVM_SCRIPT) && cd frontend && nvm i 16 && npm i --legacy-peer-deps
-	. $(NVM_SCRIPT) && cd frontend-v2 && nvm i 18 && npm i -g pnpm && pnpm i
+	. $(NVM_SCRIPT) && cd frontend && nvm i $(VUE_FRONTEND_NODE_VERSION) && npm i --legacy-peer-deps
+	. $(NVM_SCRIPT) && cd frontend-v2 && nvm i $(REACT_FRONTEND_NODE_VERSION) && npm i -g pnpm && pnpm i
 	cd server/src && go get -t github.com/dxe/adb/...
 	go install -tags 'mysql' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 

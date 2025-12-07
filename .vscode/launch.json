@@ -15,6 +15,7 @@
       "runtimeExecutable": "npm",
       "skipFiles": ["<node_internals>/**"],
       "type": "node",
+      // Please keep in sync with Makefile
       "runtimeVersion": "16",
       // Webpack watch only shows build status when TTY is detected
       "console": "integratedTerminal",
@@ -27,7 +28,8 @@
       "runtimeExecutable": "npm",
       "skipFiles": ["<node_internals>/**"],
       "type": "node",
-      "runtimeVersion": "18",
+      // Please keep in sync with Makefile
+      "runtimeVersion": "20",
       "env": {
         "NEXT_PUBLIC_API_BASE_URL": "http://localhost:8080",
       },
