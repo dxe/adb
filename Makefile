@@ -12,9 +12,9 @@ NVM_SCRIPT := $(shell \
       exit 1; \
     fi)
 
-# Please keep in sync with launch.json
+# Please keep in sync with launch.json and Dockerfiles
 VUE_FRONTEND_NODE_VERSION := 16
-# Please keep in sync with launch.json
+# Please keep in sync with launch.json and Dockerfiles
 REACT_FRONTEND_NODE_VERSION := 20
 
 # Runs the application (builds Vue.js files, starts Next.js dev server, starts Go server).

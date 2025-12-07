@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1.7-labs
 # Based off of Next.js Docker example
 # https://github.com/vercel/next.js/tree/canary/examples/with-docker
+# Please keep Node version in sync with Makefile
 FROM node:20-alpine AS base
 
 # Install dependencies only when needed

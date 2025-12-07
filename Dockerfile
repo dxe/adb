@@ -6,6 +6,7 @@ RUN GOFLAGS=-mod=readonly GOPROXY=https://proxy.golang.org go mod download
 RUN CGO_ENABLED=0 go build -o adb
 
 ## Build web UI frontend.
+# Please keep Node version in sync with Makefile
 FROM node:16 AS build-ui
 WORKDIR /src
 # Copy shared directory at the correct relative path
