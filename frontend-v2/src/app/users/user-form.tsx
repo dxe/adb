@@ -24,16 +24,16 @@ import { Loader2 } from 'lucide-react'
 const userFormSchema = z.object({
   name: z.string().trim().min(1, 'Name is required'),
   email: z.string().trim().email('Enter a valid email'),
-  chapterId: z
-    .number()
-    .int()
-    .positive('Select a chapter')
-    .nullable()
-    .refine((val): val is number => val !== null, {
-      message: 'Select a chapter',
-    }),
+  // Make nullable so a chapter isn't chosen arbitrarily during new user creation. The user might not notice that
+  // a chapter was selected automatically, and they may save the new user under the wrong chapter.
+  chapterId: z.number().int().nullable(),
   disabled: z.boolean(),
   roles: z.array(Role),
+})
+
+const userFormSubmitSchema = userFormSchema.extend({
+  // Make chapter non-nullable at submit time.
+  chapterId: z.number({ message: 'Select a chapter' }).int(),
 })
 
 type UserFormValues = z.infer<typeof userFormSchema>
@@ -97,17 +97,12 @@ export function UserForm({ userId }: { userId?: number }) {
   const form = useForm<UserFormValues>({
     defaultValues: initialValues,
     validators: {
-      onSubmit: userFormSchema,
+      onSubmit: userFormSubmitSchema,
     },
     onSubmit: async ({ value }) => {
-      const parsed = userFormSchema.safeParse(value)
+      const parsed = userFormSubmitSchema.safeParse(value)
       if (!parsed.success) {
         toast.error('Please fix the highlighted errors.')
-        return
-      }
-
-      if (parsed.data.chapterId === null) {
-        toast.error('Select a chapter')
         return
       }
 
