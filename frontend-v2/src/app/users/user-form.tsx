@@ -21,11 +21,9 @@ import {
 import { API_PATH, apiClient, Role, User, UserWithoutId } from '@/lib/api'
 import { Loader2 } from 'lucide-react'
 
-const roleOptions: Role[] = ['admin', 'organizer', 'attendance', 'non-sfbay']
-
 const userFormSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  email: z.string().email('Enter a valid email'),
+  name: z.string().trim().min(1, 'Name is required'),
+  email: z.string().trim().email('Enter a valid email'),
   chapterId: z
     .number()
     .int()
@@ -46,9 +44,9 @@ export function UserForm({ userId }: { userId?: number }) {
 
   const {
     data: chapters,
-    isLoading: chaptersLoading,
-    isError: chaptersError,
-    error: chaptersErrorObj,
+    isLoading: isChaptersLoading,
+    isError: isChaptersError,
+    error: chaptersError,
   } = useQuery({
     queryKey: [API_PATH.CHAPTER_LIST],
     queryFn: apiClient.getChapterList,
@@ -62,7 +60,7 @@ export function UserForm({ userId }: { userId?: number }) {
   } = useQuery<User | undefined>({
     queryKey: [API_PATH.USERS, userId],
     queryFn: userId ? () => apiClient.getUser(userId) : async () => undefined,
-    enabled: Boolean(userId),
+    enabled: !!userId,
   })
 
   const mutation = useMutation({
@@ -114,8 +112,8 @@ export function UserForm({ userId }: { userId?: number }) {
       }
 
       const payload: UserWithoutId = {
-        name: parsed.data.name.trim(),
-        email: parsed.data.email.trim(),
+        name: parsed.data.name,
+        email: parsed.data.email,
         chapter_id: parsed.data.chapterId,
         disabled: parsed.data.disabled,
         roles: parsed.data.roles,
@@ -134,10 +132,10 @@ export function UserForm({ userId }: { userId?: number }) {
     return role.charAt(0).toUpperCase() + role.slice(1)
   }
 
-  const isLoading = chaptersLoading || userLoading
-  const loadError = chaptersError || userError
+  const isLoading = isChaptersLoading || userLoading
+  const loadError = isChaptersError || userError
   const loadErrorMessage =
-    (chaptersErrorObj as Error | undefined)?.message ||
+    (chaptersError as Error | undefined)?.message ||
     (userErrorObj as Error | undefined)?.message ||
     'Unable to load user data.'
 
@@ -260,7 +258,7 @@ export function UserForm({ userId }: { userId?: number }) {
                       const next = parseInt(value, 10)
                       field.handleChange(Number.isNaN(next) ? null : next)
                     }}
-                    disabled={chaptersLoading}
+                    disabled={isChaptersLoading}
                   >
                     <SelectTrigger id="user-chapter">
                       <SelectValue placeholder="Select a chapter" />
@@ -311,7 +309,7 @@ export function UserForm({ userId }: { userId?: number }) {
               <div className="space-y-2">
                 <Label>Roles</Label>
                 <div className="flex max-w-xs flex-col gap-2">
-                  {roleOptions.map((role) => {
+                  {Role.options.map((role) => {
                     const checked = field.state.value.includes(role)
                     return (
                       <label
