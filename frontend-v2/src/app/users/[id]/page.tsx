@@ -19,15 +19,16 @@ export default async function EditUserPage({
   const apiClient = new ApiClient(await getCookies())
   const queryClient = new QueryClient()
 
-  await queryClient.prefetchQuery({
-    queryKey: [API_PATH.USERS, userId],
-    queryFn: () => apiClient.getUser(userId),
-  })
-
-  await queryClient.prefetchQuery({
-    queryKey: [API_PATH.CHAPTER_LIST],
-    queryFn: apiClient.getChapterList,
-  })
+  await Promise.all([
+    queryClient.prefetchQuery({
+      queryKey: [API_PATH.USERS, userId],
+      queryFn: () => apiClient.getUser(userId),
+    }),
+    queryClient.prefetchQuery({
+      queryKey: [API_PATH.CHAPTER_LIST],
+      queryFn: apiClient.getChapterList,
+    }),
+  ])
 
   return (
     <AuthedPageLayout pageName="UserList">
