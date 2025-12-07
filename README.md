@@ -76,6 +76,11 @@ Access the Members app at members.dxesf.org at http://localhost:8081/
 
 Please run `make fmt` before sending a pull request.
 
+Note that `prettier` is configured at the root of the repo and not within individual projects, although project-specifc
+configuration can be applied in the configuration file. This allows formatting the repo with one invocation of prettier,
+and is necessary as VS Code only accepts one prettier configuration. It also ensures consistency by avoiding multiple
+versions or configurations of prettier.
+
 ### Test
 
 Please run `make test` before sending a pull request.

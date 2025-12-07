@@ -1,20 +1,16 @@
-// Modeled from example from React Query docs:
-// https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr
-
 import {
   dehydrate,
   HydrationBoundary,
   QueryClient,
 } from '@tanstack/react-query'
-import { ContentWrapper } from '@/app/content-wrapper'
 import { AuthedPageLayout } from '@/app/authed-page-layout'
+import { Navbar } from '@/components/nav'
+import { ContentWrapper } from '@/app/content-wrapper'
 import { API_PATH, ApiClient } from '@/lib/api'
 import { getCookies } from '@/lib/auth'
-import { Navbar } from '@/components/nav'
+import { UserForm } from '../user-form'
 
-import GeneratorForm from './generator-form'
-
-export default async function InterestGeneratorPage() {
+export default async function NewUserPage() {
   const apiClient = new ApiClient(await getCookies())
   const queryClient = new QueryClient()
 
@@ -24,13 +20,11 @@ export default async function InterestGeneratorPage() {
   })
 
   return (
-    <AuthedPageLayout pageName="InterestFormGenerator">
+    <AuthedPageLayout pageName="UserList">
       <HydrationBoundary state={dehydrate(queryClient)}>
         <Navbar />
-        <ContentWrapper size="sm" className="gap-6">
-          <h1 className="text-lg">Interest Form Generator</h1>
-
-          <GeneratorForm />
+        <ContentWrapper size="lg" className="gap-6">
+          <UserForm />
         </ContentWrapper>
       </HydrationBoundary>
     </AuthedPageLayout>

@@ -20,6 +20,7 @@ import (
 
 	"github.com/dxe/adb/international_application_processor"
 	"github.com/dxe/adb/members"
+	"github.com/dxe/adb/persistence"
 
 	oidc "github.com/coreos/go-oidc"
 	"github.com/dxe/adb/config"
@@ -28,6 +29,7 @@ import (
 	"github.com/dxe/adb/google_groups_sync"
 	"github.com/dxe/adb/model"
 	"github.com/dxe/adb/survey_mailer"
+	"github.com/dxe/adb/transport"
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -93,23 +95,23 @@ func augmentUserWithChapterFromSession(db *sqlx.DB, r *http.Request, adbUser mod
 	return adbUser, nil
 }
 
-func authADBUser(db *sqlx.DB, r *http.Request, w http.ResponseWriter) (adbUser model.ADBUser, authed bool) {
-	adbUser, authed = getAuthedADBUser(db, r)
+func (c MainController) authADBUser(r *http.Request, w http.ResponseWriter) (adbUser model.ADBUser, authed bool) {
+	adbUser, authed = c.getAuthedADBUser(r)
 
 	if !authed && !config.IsProd {
-		testUser, testUserErr := model.GetADBUser(db, model.DevTestUserId, "")
+		testUser, testUserErr := c.userRepo.GetUser(model.DevTestUserId, "")
 		if testUserErr != nil {
 			panic(fmt.Errorf("error getting test user: %v", testUserErr))
 		}
 
 		setAuthSession(w, r, testUser)
-		adbUser, authed = getAuthedADBUser(db, r)
+		adbUser, authed = c.getAuthedADBUser(r)
 	}
 
 	return adbUser, authed
 }
 
-func getAuthedADBUser(db *sqlx.DB, r *http.Request) (adbUser model.ADBUser, authed bool) {
+func (c MainController) getAuthedADBUser(r *http.Request) (adbUser model.ADBUser, authed bool) {
 	// First, check the cookie.
 	authSession, err := sessionStore.Get(r, "auth-session")
 	if err != nil {
@@ -128,7 +130,7 @@ func getAuthedADBUser(db *sqlx.DB, r *http.Request) (adbUser model.ADBUser, auth
 	}
 
 	// Then, check that the user is still authed.
-	adbUser, err = model.GetADBUser(db, adbUserID, "")
+	adbUser, err = c.userRepo.GetUser(adbUserID, "")
 	if err != nil {
 		return model.ADBUser{}, false
 	}
@@ -136,7 +138,7 @@ func getAuthedADBUser(db *sqlx.DB, r *http.Request) (adbUser model.ADBUser, auth
 		return model.ADBUser{}, false
 	}
 
-	augmentedUser, err := augmentUserWithChapterFromSession(db, r, adbUser)
+	augmentedUser, err := augmentUserWithChapterFromSession(c.db, r, adbUser)
 	if err != nil {
 		return model.ADBUser{}, false
 	}
@@ -170,8 +172,8 @@ func setAuthSession(w http.ResponseWriter, r *http.Request, adbUser model.ADBUse
 	return sessionStore.Save(r, w, authSession)
 }
 
-func getAuthedADBChapter(db *sqlx.DB, r *http.Request) int {
-	user, authed := getAuthedADBUser(db, r)
+func (c MainController) getAuthedADBChapter(r *http.Request) int {
+	user, authed := c.getAuthedADBUser(r)
 	if !authed {
 		panic("Tried getting chapter for unauthorized user.")
 	}
@@ -212,7 +214,8 @@ func (c MainController) corsAllowGetMiddleware(h http.Handler) http.Handler {
 
 func router() (*mux.Router, *sqlx.DB) {
 	db := model.NewDB(config.DBDataSource())
-	main := MainController{db: db}
+	userRepo := persistence.NewUserRepository(db)
+	main := MainController{db: db, userRepo: userRepo}
 	csrfMiddleware := csrf.Protect(
 		[]byte(config.CsrfAuthKey),
 		csrf.Secure(config.IsProd), // disable secure flag in dev
@@ -257,7 +260,6 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/list_geocircles", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListGeoCirclesHandler))
 
 	// Authed Admin pages
-	admin.Handle("/admin/users", alice.New(main.authAdminMiddleware).ThenFunc(main.ListUsersHandler))
 	admin.Handle("/list_chapters", alice.New(main.authAdminMiddleware).ThenFunc(main.ListChaptersHandler))
 	admin.Handle("/admin/external_events", alice.New(main.authAdminMiddleware).ThenFunc(main.ListAdminExternalEventsHandler))
 
@@ -279,6 +281,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/geocircles", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.CircleGroupGeoListHandler)) // TODO: maybe the public endpoints should return less info
 
 	// Authed API
+	router.Handle("/api/csrf-token", csrfMiddleware(alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.CSRFTokenHandler))).Methods(http.MethodGet)
 	router.Handle("/activist_names/get", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteActivistsHandler))
 	router.Handle("/activist_names/get_organizers", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteOrganizersHandler))
 	router.Handle("/activist_names/get_chaptermembers", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteChapterMembersHandler))
@@ -312,16 +315,16 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/user/me", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AuthedUserInfoHandler))
 
 	// Authed Admin API
-	admin.Handle("/user/save", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserSaveHandler))
-	admin.Handle("/user/delete", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserDeleteHandler))
 	admin.Handle("/chapter/list", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.ChapterListHandler))
 	admin.Handle("/chapter/delete", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.ChapterDeleteHandler))
 	admin.Handle("/chapter/save", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.ChapterSaveHandler))
-	admin.Handle("/users-roles/add", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UsersRolesAddHandler))
-	admin.Handle("/users-roles/remove", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UsersRolesRemoveHandler))
 	admin.Handle("/admin/external_events/feature", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.AdminFeatureEventHandler))
 	admin.Handle("/admin/external_events/cancel", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.AdminCancelEventHandler))
 	admin.Handle("/auth/switch_chapter", alice.New(main.authAdminMiddleware).ThenFunc(main.SwitchActiveChapterHandler))
+	admin.Handle("/api/users", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UsersListHandler)).Methods(http.MethodGet)
+	admin.Handle("/api/users", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserCreateHandler)).Methods(http.MethodPost)
+	admin.Handle("/api/users/{id:[0-9]+}", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserUpdateHandler)).Methods(http.MethodPut)
+	admin.Handle("/api/users/{id:[0-9]+}", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserGetHandler)).Methods(http.MethodGet)
 
 	if !config.IsProd {
 		admin.Handle("/dev-testing/process-interest-forms", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.DevTestingProcessInterestForms))
@@ -352,12 +355,13 @@ func router() (*mux.Router, *sqlx.DB) {
 }
 
 type MainController struct {
-	db *sqlx.DB
+	db       *sqlx.DB
+	userRepo model.UserRepository
 }
 
 func (c MainController) authRoleMiddleware(h http.Handler, allowedRoles []string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, authed := authADBUser(c.db, r, w)
+		user, authed := c.authADBUser(r, w)
 		if !authed {
 			// Delete the cookie if it doesn't auth.
 			c := &http.Cookie{
@@ -402,7 +406,7 @@ func (c MainController) authAdminMiddleware(h http.Handler) http.Handler {
 func userIsAllowed(roles []string, user model.ADBUser) bool {
 	for i := 0; i < len(roles); i++ {
 		for _, r := range user.Roles {
-			if r.Role == roles[i] {
+			if r == roles[i] {
 				return true
 			}
 		}
@@ -418,21 +422,21 @@ func getUserMainRole(user model.ADBUser) string {
 
 	var mainRole string
 	for _, r := range user.Roles {
-		if r.Role == "non-sfbay" {
+		if r == "non-sfbay" {
 			mainRole = "non-sfbay"
 			break
 		}
 
-		if r.Role == "admin" {
+		if r == "admin" {
 			mainRole = "admin"
 			break
 		}
 
-		if r.Role == "organizer" {
+		if r == "organizer" {
 			mainRole = "organizer"
 		}
 
-		if r.Role == "attendance" && mainRole != "organizer" {
+		if r == "attendance" && mainRole != "organizer" {
 			mainRole = "attendance"
 		}
 	}
@@ -442,7 +446,7 @@ func getUserMainRole(user model.ADBUser) string {
 
 func (c MainController) apiRoleMiddleware(h http.Handler, allowedRoles []string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, authed := authADBUser(c.db, r, w)
+		user, authed := c.authADBUser(r, w)
 
 		if !authed {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -524,7 +528,7 @@ func (c MainController) TokenSignInHandler(w http.ResponseWriter, r *http.Reques
 		panic(err)
 	}
 
-	adbUser, err := model.GetADBUser(c.db, 0, claims.Email)
+	adbUser, err := c.userRepo.GetUser(0, claims.Email)
 	if err != nil {
 		log.Println(err.Error())
 	}
@@ -725,10 +729,6 @@ func (c MainController) ListGeoCirclesHandler(w http.ResponseWriter, r *http.Req
 	renderPage(w, r, "circles_list", PageData{PageName: "GeoCirclesList"})
 }
 
-func (c MainController) ListUsersHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, r, "user_list", PageData{PageName: "UserList"})
-}
-
 func (c MainController) ListChaptersHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, r, "chapters_list", PageData{PageName: "ChaptersList"})
 }
@@ -901,18 +901,13 @@ func renderTemplate(w io.Writer, name string, data interface{}) {
 }
 
 func writeJSON(w io.Writer, v interface{}) {
-	enc := json.NewEncoder(w)
-	err := enc.Encode(v)
-	if err != nil {
-		log.Printf("Error writing JSON! %v", err.Error())
-		//panic(err)
-	}
+	transport.WriteJSON(w, v)
 }
 
-/* Accepts a non-nil error and sends an error response */
+/* Accepts a non-nil error and sends HTTP 200 with an error in the body response */
 func sendErrorMessage(w io.Writer, err error) {
 	if err == nil {
-		panic(errors.Wrap(err, "Cannot send error message if error is nil"))
+		panic(errors.New("Cannot send error message if error is nil"))
 	}
 	log.Printf("ERROR: %+v\n", err.Error())
 	writeJSON(w, map[string]string{
@@ -960,7 +955,7 @@ func (c MainController) UpdateConnectionHandler(w http.ResponseWriter, r *http.R
 }
 
 func (c MainController) AutocompleteActivistsHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := getAuthedADBChapter(c.db, r)
+	chapter := c.getAuthedADBChapter(r)
 
 	names := model.GetAutocompleteNames(c.db, chapter)
 	writeJSON(w, map[string][]string{
@@ -969,7 +964,7 @@ func (c MainController) AutocompleteActivistsHandler(w http.ResponseWriter, r *h
 }
 
 func (c MainController) AutocompleteOrganizersHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := getAuthedADBChapter(c.db, r)
+	chapter := c.getAuthedADBChapter(r)
 
 	names := model.GetAutocompleteOrganizerNames(c.db, chapter)
 	writeJSON(w, map[string][]string{
@@ -978,7 +973,7 @@ func (c MainController) AutocompleteOrganizersHandler(w http.ResponseWriter, r *
 }
 
 func (c MainController) AutocompleteChapterMembersHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := getAuthedADBChapter(c.db, r)
+	chapter := c.getAuthedADBChapter(r)
 
 	names := model.GetAutocompleteChapterMembersNames(c.db, chapter)
 	writeJSON(w, map[string][]string{
@@ -1007,9 +1002,9 @@ func (c MainController) ActivistInfiniteScrollHandler(w http.ResponseWriter, r *
 
 func (c MainController) ActivistSaveHandler(w http.ResponseWriter, r *http.Request) {
 	// get requesting user's (for logging)
-	user, _ := getAuthedADBUser(c.db, r)
+	user, _ := c.getAuthedADBUser(r)
 
-	activistExtra, err := model.CleanActivistData(r.Body, c.db)
+	activistExtra, err := model.CleanActivistData(r.Body, c.db, c.userRepo)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
@@ -1066,7 +1061,7 @@ func (c MainController) ActivistHideHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (c MainController) ActivistMergeHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := getAuthedADBChapter(c.db, r)
+	chapter := c.getAuthedADBChapter(r)
 
 	var activistMergeData struct {
 		CurrentActivistID  int    `json:"current_activist_id"`
@@ -1099,7 +1094,7 @@ func (c MainController) ActivistMergeHandler(w http.ResponseWriter, r *http.Requ
 }
 
 func (c MainController) EventGetHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := getAuthedADBChapter(c.db, r)
+	chapter := c.getAuthedADBChapter(r)
 
 	eventID, err := strconv.Atoi(mux.Vars(r)["event_id"])
 	if err != nil {
@@ -1122,7 +1117,7 @@ func (c MainController) EventGetHandler(w http.ResponseWriter, r *http.Request) 
 }
 
 func (c MainController) EventSaveHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := getAuthedADBChapter(c.db, r)
+	chapter := c.getAuthedADBChapter(r)
 
 	event, err := model.CleanEventData(c.db, r.Body, chapter)
 	if err != nil {
@@ -1157,7 +1152,7 @@ func (c MainController) EventSaveHandler(w http.ResponseWriter, r *http.Request)
 }
 
 func (c MainController) ConnectionSaveHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := getAuthedADBChapter(c.db, r)
+	chapter := c.getAuthedADBChapter(r)
 
 	event, err := model.CleanEventData(c.db, r.Body, chapter)
 	if err != nil {
@@ -1192,7 +1187,7 @@ func (c MainController) ConnectionSaveHandler(w http.ResponseWriter, r *http.Req
 }
 
 func (c MainController) EventListHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := getAuthedADBChapter(c.db, r)
+	chapter := c.getAuthedADBChapter(r)
 
 	err := r.ParseForm()
 	if err != nil {
@@ -1234,7 +1229,7 @@ func (c MainController) EventDeleteHandler(w http.ResponseWriter, r *http.Reques
 		panic(err)
 	}
 
-	chapter := getAuthedADBChapter(c.db, r)
+	chapter := c.getAuthedADBChapter(r)
 
 	// We pass in the chapter ID to make sure people don't delete event that don't belong to their chapter.
 	if err := model.DeleteEvent(c.db, eventID, chapter); err != nil {
@@ -1248,7 +1243,7 @@ func (c MainController) EventDeleteHandler(w http.ResponseWriter, r *http.Reques
 }
 
 func (c MainController) WorkingGroupSaveHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := getAuthedADBChapter(c.db, r)
+	chapter := c.getAuthedADBChapter(r)
 
 	wg, err := model.CleanWorkingGroupData(c.db, r.Body, chapter)
 	if err != nil {
@@ -1314,7 +1309,7 @@ func (c MainController) WorkingGroupDeleteHandler(w http.ResponseWriter, r *http
 }
 
 func (c MainController) CircleGroupSaveHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := getAuthedADBChapter(c.db, r)
+	chapter := c.getAuthedADBChapter(r)
 
 	cir, err := model.CleanCircleGroupData(c.db, r.Body, chapter)
 	if err != nil {
@@ -1414,7 +1409,7 @@ func (c MainController) ActivistListHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	user, _ := getAuthedADBUser(c.db, r)
+	user, _ := c.getAuthedADBUser(r)
 	options.ChapterID = user.ChapterID
 
 	if options.AssignedToCurrentUser {
@@ -1435,7 +1430,7 @@ func (c MainController) ActivistListHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (c MainController) ActivistListBasicHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := getAuthedADBChapter(c.db, r)
+	chapter := c.getAuthedADBChapter(r)
 
 	activists := model.GetActivistListBasicJSON(c.db, chapter)
 
@@ -1448,7 +1443,7 @@ func (c MainController) ActivistListBasicHandler(w http.ResponseWriter, r *http.
 }
 
 func (c MainController) ChapterMemberSpokeCSVHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := getAuthedADBChapter(c.db, r)
+	chapter := c.getAuthedADBChapter(r)
 
 	activists, err := model.GetChapterMemberSpokeInfo(c.db, chapter)
 	if err != nil {
@@ -1478,7 +1473,7 @@ func (c MainController) ChapterMemberSpokeCSVHandler(w http.ResponseWriter, r *h
 }
 
 func (c MainController) SupporterSpokeCSVHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := getAuthedADBChapter(c.db, r)
+	chapter := c.getAuthedADBChapter(r)
 
 	startDate := r.URL.Query().Get("start_date")
 	endDate := r.URL.Query().Get("end_date")
@@ -1510,7 +1505,7 @@ func (c MainController) SupporterSpokeCSVHandler(w http.ResponseWriter, r *http.
 }
 
 func (c MainController) NewActivistsSpokeCSVHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := getAuthedADBChapter(c.db, r)
+	chapter := c.getAuthedADBChapter(r)
 
 	startDate := r.URL.Query().Get("start_date")
 	endDate := r.URL.Query().Get("end_date")
@@ -1542,7 +1537,7 @@ func (c MainController) NewActivistsSpokeCSVHandler(w http.ResponseWriter, r *ht
 }
 
 func (c MainController) NewActivistsPendingWorkshopSpokeCSVHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := getAuthedADBChapter(c.db, r)
+	chapter := c.getAuthedADBChapter(r)
 
 	startDate := r.URL.Query().Get("start_date")
 	endDate := r.URL.Query().Get("end_date")
@@ -1620,7 +1615,7 @@ func (c MainController) EventAttendanceCSVHandler(w http.ResponseWriter, r *http
 		}
 	}
 
-	chapter := getAuthedADBChapter(c.db, r)
+	chapter := c.getAuthedADBChapter(r)
 	event, err := model.GetEvent(c.db, model.GetEventOptions{
 		EventID:   eventID,
 		ChapterID: chapter,
@@ -1651,7 +1646,7 @@ func (c MainController) EventAttendanceCSVHandler(w http.ResponseWriter, r *http
 }
 
 func (c MainController) AuthedUserInfoHandler(w http.ResponseWriter, r *http.Request) {
-	user, _ := getAuthedADBUser(c.db, r)
+	user, _ := c.getAuthedADBUser(r)
 
 	writeJSON(w, map[string]interface{}{
 		"user":     user,
@@ -1665,135 +1660,27 @@ func (c MainController) StaticResourcesHashHandler(w http.ResponseWriter, r *htt
 	})
 }
 
+func (c MainController) CSRFTokenHandler(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, map[string]interface{}{
+		"status":    "success",
+		"csrfToken": csrf.Token(r),
+	})
+}
+
+func (c MainController) UsersListHandler(w http.ResponseWriter, r *http.Request) {
+	transport.UsersListHandler(w, r, c.userRepo)
+}
+func (c MainController) UserGetHandler(w http.ResponseWriter, r *http.Request) {
+	transport.UserGetHandler(w, r, c.userRepo)
+}
+func (c MainController) UserCreateHandler(w http.ResponseWriter, r *http.Request) {
+	transport.UserCreateHandler(w, r, c.userRepo)
+}
+func (c MainController) UserUpdateHandler(w http.ResponseWriter, r *http.Request) {
+	transport.UserUpdateHandler(w, r, c.userRepo)
+}
 func (c MainController) UserListHandler(w http.ResponseWriter, r *http.Request) {
-	users, err := model.GetUsersJSON(c.db)
-
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-
-	writeJSON(w, users)
-}
-
-func (c MainController) UserSaveHandler(w http.ResponseWriter, r *http.Request) {
-	user, err := model.CleanUserData(r.Body)
-
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-
-	// Check if we're updating an existing User or creating one
-
-	var userID int
-	if user.ID == 0 {
-		// new user
-		userID, err = model.CreateUser(c.db, user)
-	} else {
-		userID, err = model.UpdateUser(c.db, user)
-	}
-
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-
-	// Retrieve updated User Data and send back in response
-
-	userJSON, err := model.GetUserJSON(c.db, model.GetUserOptions{ID: userID})
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-
-	out := map[string]interface{}{
-		"status": "success",
-		"user":   userJSON,
-	}
-
-	writeJSON(w, out)
-}
-
-func (c MainController) UserDeleteHandler(w http.ResponseWriter, r *http.Request) {
-	user, err := model.CleanUserData(r.Body)
-
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-
-	userID, err := model.RemoveUser(c.db, user.ID)
-
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-
-	out := map[string]interface{}{
-		"status": "success",
-		"userID": userID,
-	}
-
-	writeJSON(w, out)
-}
-
-func (c MainController) UsersRolesAddHandler(w http.ResponseWriter, r *http.Request) {
-	var userRoleData struct {
-		UserID int    `json:"user_id"`
-		Role   string `json:"role"`
-	}
-
-	err := json.NewDecoder(r.Body).Decode(&userRoleData)
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-
-	userRole := model.UserRole{
-		UserID: userRoleData.UserID,
-		Role:   userRoleData.Role,
-	}
-
-	userId, err := model.CreateUserRole(c.db, userRole)
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-
-	writeJSON(w, map[string]interface{}{
-		"status":  "success",
-		"user_id": userId,
-	})
-}
-
-func (c MainController) UsersRolesRemoveHandler(w http.ResponseWriter, r *http.Request) {
-	var userRoleData struct {
-		UserID int    `json:"user_id"`
-		Role   string `json:"role"`
-	}
-
-	err := json.NewDecoder(r.Body).Decode(&userRoleData)
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-
-	userRole := model.UserRole{
-		UserID: userRoleData.UserID,
-		Role:   userRoleData.Role,
-	}
-
-	userId, err := model.RemoveUserRole(c.db, userRole)
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-
-	writeJSON(w, map[string]interface{}{
-		"status":  "success",
-		"user_id": userId,
-	})
+	transport.UserListHandler(w, r, c.userRepo)
 }
 
 func (c MainController) AdminFeatureEventHandler(w http.ResponseWriter, r *http.Request) {
@@ -2154,7 +2041,7 @@ func (c MainController) InteractionSaveHandler(w http.ResponseWriter, r *http.Re
 
 	if interaction.UserID == 0 {
 		// new interaction, so create it using the current user's id
-		user, _ := getAuthedADBUser(c.db, r)
+		user, _ := c.getAuthedADBUser(r)
 		interaction.UserID = user.ID
 	}
 

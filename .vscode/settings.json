@@ -13,5 +13,5 @@
   "go.toolsManagement.autoUpdate": true,
   // Ensures same settings are used by VS Code extension and CLI.
   "prettier.requireConfig": true,
-  "prettier.prettierPath": "./frontend-v2/node_modules/prettier",
+  "prettier.prettierPath": "./node_modules/prettier",
 }

@@ -15,6 +15,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rs/zerolog v1.20.0 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
+	golang.org/x/text v0.23.0 // indirect
 )
 
 replace github.com/dxe/adb => ../../src
