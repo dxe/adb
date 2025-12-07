@@ -275,8 +275,8 @@ export default function GeneratorForm(props: { adbRootUrl?: string }) {
           </div>
 
           <div>
-            <Label htmlFor={'generated-url'}>URL</Label>
-            <Textarea id={'generated-url'} readOnly value={output} />
+            <Label htmlFor="generated-url">URL</Label>
+            <Textarea id="generated-url" readOnly value={output} />
           </div>
         </form>
       </Form>
