@@ -41,16 +41,16 @@ WORKDIR /app
 ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
+WORKDIR /app/frontend-v2
 COPY --from=builder /app/frontend-v2/public/ ./public/
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
-COPY --from=builder --chown=nextjs:nodejs /app/frontend-v2/.next/standalone/ ./
+COPY --from=builder --chown=nextjs:nodejs /app/frontend-v2/.next/standalone/frontend-v2/ ./
 COPY --from=builder --chown=nextjs:nodejs /app/frontend-v2/.next/static/ ./.next/static/
 USER nextjs
-WORKDIR /app
 EXPOSE 3000
 ENV PORT=3000
 # server.js is created by next build from the standalone output
 # https://nextjs.org/docs/pages/api-reference/config/next-config-js/output
 ENV HOSTNAME="0.0.0.0"
-CMD ["node", "server.js"]
+CMD ["node", "/app/frontend-v2/server.js"]
