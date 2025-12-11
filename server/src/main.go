@@ -330,6 +330,7 @@ func router() (*mux.Router, *sqlx.DB) {
 		admin.Handle("/dev-testing/process-interest-forms", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.DevTestingProcessInterestForms))
 		admin.Handle("/dev-testing/process-application-forms", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.DevTestingProcessApplicationForms))
 		admin.Handle("/dev-testing/process-intl-app-forms", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.DevTestingProcessIntlAppForms))
+		admin.Handle("/dev-testing/sync-fb-events", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.DevTestingSyncFbEvents))
 	}
 
 	// Pprof debug routes
@@ -837,6 +838,10 @@ func (c MainController) DevTestingProcessApplicationForms(w http.ResponseWriter,
 
 func (c MainController) DevTestingProcessIntlAppForms(w http.ResponseWriter, r *http.Request) {
 	international_application_processor.ProcessFormSubmissions(c.db)
+}
+
+func (c MainController) DevTestingSyncFbEvents(w http.ResponseWriter, r *http.Request) {
+	event_sync.SyncFacebookEvents(c.db)
 }
 
 var templates = template.Must(template.New("").Funcs(

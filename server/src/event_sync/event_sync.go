@@ -11,7 +11,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func syncFacebookEvents(db *sqlx.DB) {
+func SyncFacebookEvents(db *sqlx.DB) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Info().Msgf("Recovered from panic in Facebook event sync: %v", r)
@@ -339,7 +339,7 @@ func StartExternalEventSync(db *sqlx.DB) {
 
 	for {
 		log.Info().Msg("Starting Facebook event sync")
-		syncFacebookEvents(db)
+		SyncFacebookEvents(db)
 		log.Info().Msg("Finished Facebook event sync")
 
 		log.Info().Msg("Starting Eventbrite event sync")
