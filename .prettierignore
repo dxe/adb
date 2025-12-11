@@ -4,6 +4,7 @@ frontend/static/external/**
 frontend/package-lock.json
 frontend-v2/.next/**
 frontend-v2/pnpm-lock.yaml
+frontend-v2/next-env.d.ts
 
 # Never formatted yet.
 server/
