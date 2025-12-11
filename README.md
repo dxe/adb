@@ -186,10 +186,17 @@ and the tech team is notified.
 
 ## Authentication
 
-Pages protected by authentication check the cookies to see if a valid session exists and redirect to /login which serves
-up `login.html`. This page handles authentication with Google client-side to get a token and then makes a POST request
-to ADB's `/tokensignin` endpoint with the token. The backend endpoint verifies the token, obtains the user indicated by
-the token and creates a session cookie. When the endpoint returns, login.html redirects to the homepage.
-
-`/v2/login` is a replacement that uses a newer version of Sign in with Google:
+Authentication is provided by Google Identity's 'Sign in with Google' for Web:
 https://developers.google.com/identity/gsi/web/guides/overview
+
+This makes use of our OAuth 2.0 client ID in Google Cloud Platform. However many OAuth 2.0 details are taken care of
+for us by Google.
+
+Pages protected by authentication check the cookies to see if a valid session exists and redirect to `/v2/login` which
+serves up `frontend-v2/src/app/login/page.tsx`. This page handles authentication with Google client-side to get a token
+and then makes a POST request to ADB's `/tokensignin` endpoint with the token. The backend endpoint verifies the token,
+obtains the user indicated by the token and creates a session cookie. If the backend returns a successful response,
+the login page then redirects to the homepage.
+
+For local testing, you may need to add an ngrok authorized origin in GCP console. The origin `http://localhost:8080`
+does not seem to work as of December 2025.

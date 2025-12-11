@@ -373,7 +373,7 @@ func (c MainController) authRoleMiddleware(h http.Handler, allowedRoles []string
 			}
 			http.SetCookie(w, c)
 
-			http.Redirect(w, r, "/login", http.StatusFound)
+			http.Redirect(w, r, "/v2/login", http.StatusFound)
 			return
 		}
 

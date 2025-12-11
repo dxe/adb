@@ -13,9 +13,8 @@ export const AuthedPageLayout = async ({
 }>) => {
   const session = await fetchSession(await getCookies())
   if (!session.user) {
-    // Go one level up from the Next.js app root (`/v2`), to get to the
-    // absolute URL root, and go to /login from there.
-    redirect('/../login')
+    // This goes to /v2/login
+    redirect('/login')
   }
 
   return (
