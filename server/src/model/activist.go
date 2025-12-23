@@ -1278,6 +1278,9 @@ func MergeActivist(db *sqlx.DB, originalActivistID, targetActivistID int) error 
 		return errors.Wrapf(err, "failed to hide original activist %d", originalActivistID)
 	}
 
+	// Below are two calls to the same function. One merges attendance for events that both original and target
+	// attended (deleting the duplicate), and the other merges attendance for events that only the original attended
+	// (replacing the original with the target).
 	err = updateMergedActivistData(tx, originalActivistID, targetActivistID, true)
 	if err != nil {
 		tx.Rollback()
