@@ -336,6 +336,8 @@ const ActivistAllDataFieldAssignments = ActivistUserEditableDataFieldAssignments
   dev_application_type = :dev_application_type
 `
 
+const hideActivistQuery = `UPDATE activists SET hidden = true, name = concat(name,' ', id) WHERE id = ?`
+
 const DescOrder int = 2
 const AscOrder int = 1
 
@@ -1244,7 +1246,7 @@ func HideActivist(db *sqlx.DB, activistID int) error {
 		return errors.Errorf("Activist with id %d does not exist", activistID)
 	}
 
-	_, err = db.Exec(`UPDATE activists SET hidden = true WHERE id = ?`, activistID)
+	_, err = db.Exec(hideActivistQuery, activistID)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update activist %d", activistID)
 	}
@@ -1270,7 +1272,7 @@ func MergeActivist(db *sqlx.DB, originalActivistID, targetActivistID int) error 
 		return errors.Wrap(err, "could not create transaction")
 	}
 
-	_, err = tx.Exec(`UPDATE activists SET hidden = true, name = concat(name,' ', id) WHERE id = ?`, originalActivistID)
+	_, err = tx.Exec(hideActivistQuery, originalActivistID)
 	if err != nil {
 		tx.Rollback()
 		return errors.Wrapf(err, "failed to hide original activist %d", originalActivistID)
