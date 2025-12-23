@@ -2,6 +2,7 @@ package model
 
 import (
 	"database/sql"
+	"strconv"
 	"testing"
 	"time"
 
@@ -448,14 +449,17 @@ func TestHideActivist(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, a1JSON.ID, a1.ID)
 
+	// ID is appended to name once hidden
+	a1Name := a1.Name + " " + strconv.Itoa(a1.ID)
+
 	// Hidden activists *should* show up in the event attendance
 	event, err := GetEvent(db, GetEventOptions{EventID: eventID})
 	require.NoError(t, err)
-	assertStringsSliceUnorderedEquals(t, event.Attendees, []string{a1.Name, a2.Name})
+	assertStringsSliceUnorderedEquals(t, event.Attendees, []string{a1Name, a2.Name})
 
 	attendanceNames, err := GetEventAttendance(db, eventID)
 	require.NoError(t, err)
-	assertStringsSliceUnorderedEquals(t, attendanceNames, []string{a1.Name, a2.Name})
+	assertStringsSliceUnorderedEquals(t, attendanceNames, []string{a1Name, a2.Name})
 }
 
 func mustParseTime(t *testing.T, s string) time.Time {
