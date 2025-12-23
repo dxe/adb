@@ -324,11 +324,19 @@
               - All of {{ currentActivist.name }}'s attendance data will be merged into the target
               activist.
             </li>
+            <li>
+              - {{ currentActivist.name }}'s email, phone, address / location will replace the
+              corresponding fields in the target if updated more recently.
+            </li>
+            <li>
+              - {{ currentActivist.name }}'s pronouns, language, notes and most other fields will
+              each replace the corresponding field in the target if the target's value is blank.
+            </li>
+            <li>
+              - The target's activist level will be set to the maximum of either activist's level.
+            </li>
             <li>- {{ currentActivist.name }} will be hidden.</li>
           </ul>
-          <p class="mb-5">
-            Non-attendance data (e.g. email, location, etc) is <strong>NOT</strong> merged.
-          </p>
           <p class="mb-2">
             <strong>Merge {{ currentActivist.name }} into another activist:</strong>
           </p>
