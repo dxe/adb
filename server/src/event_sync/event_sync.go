@@ -241,11 +241,18 @@ func createOrUpdateEventbriteEvents(db *sqlx.DB, chapter model.ChapterWithToken,
 		}
 	}
 
+	hasError := false
 	for _, dbEvent := range dbEvents {
-		err := createOrUpdateEventbriteEvent(db, chapter, dbEvent, ebEventsMap)
-		if err != nil {
-			return fmt.Errorf("error syncing event '%v': %v", dbEvent.Name, err)
+		singleEventErr := createOrUpdateEventbriteEvent(db, chapter, dbEvent, ebEventsMap)
+		if singleEventErr != nil {
+			// Warn instead of err until known issues are fixed.
+			log.Warn().Msgf("Error syncing event %v '%v': %v", dbEvent.ID, dbEvent.Name, singleEventErr)
+			hasError = true
 		}
+	}
+
+	if hasError {
+		return errors.New("encountered at least one error syncing events")
 	}
 
 	return nil
