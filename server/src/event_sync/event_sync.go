@@ -242,6 +242,11 @@ func createOrUpdateEventbriteEvents(db *sqlx.DB, chapter model.ChapterWithToken,
 	}
 
 	for _, dbEvent := range dbEvents {
+		if dbEvent.LocationCity == "" {
+			log.Warn().Msgf("Skipping Eventbrite sync for event without required 'city' field: ID: %v, Chapter ID: %v, Name: %v", dbEvent.ID, chapter.ChapterID, dbEvent.Name)
+			continue
+		}
+
 		err := createOrUpdateEventbriteEvent(db, chapter, dbEvent, ebEventsMap)
 		if err != nil {
 			return fmt.Errorf("error syncing event '%v': %v", dbEvent.Name, err)
