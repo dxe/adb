@@ -82,7 +82,7 @@ func GetExternalOnlineEvents(db *sqlx.DB, startTime time.Time, endTime time.Time
 
 func getExternalEvents(db *sqlx.DB, pageIDs []int, startTime time.Time, endTime time.Time, onlineOnly bool) ([]ExternalEvent, error) {
 	query := `SELECT id, page_id, name, start_time, end_time, location_name,
-		location_country, location_country, location_state, location_address, location_zip,
+		location_country, location_city, location_state, location_address, location_zip,
 		lat, lng, cover, attending_count, interested_count, is_canceled, last_update, eventbrite_id, eventbrite_url, description, featured FROM fb_events`
 
 	query += " WHERE is_canceled = 0"
