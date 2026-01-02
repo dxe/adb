@@ -186,6 +186,8 @@ and the tech team is notified.
 
 ## Authentication
 
+Note: authentication is bypassed during development in the server's `model.authADBUser` function.
+
 Authentication is provided by Google Identity's 'Sign in with Google' for Web:
 https://developers.google.com/identity/gsi/web/guides/overview
 
