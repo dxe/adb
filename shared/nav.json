@@ -142,6 +142,16 @@
       "roleRequired": ["admin"],
       "items": [
         {
+          "label": "New Event",
+          "href": "/v2/event",
+          "page": "NewEvent_beta"
+        },
+        {
+          "label": "New Connection",
+          "href": "/v2/coaching",
+          "page": "NewConnection_beta"
+        },
+        {
           "label": "Test Page",
           "href": "/v2/example-server-component",
           "page": "TestPage"
