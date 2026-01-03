@@ -25,7 +25,7 @@ export default async function LoginPage() {
   //
   // This invokes the Sign-in-with-Google HTML API. Note that Google also provides a JavaScript API for more complex
   // use cases.
-  let signInwithGoogleHtmlInvocation = (
+  const signInwithGoogleHtmlInvocation = (
     <>
       <div
         id="g_id_onload"
