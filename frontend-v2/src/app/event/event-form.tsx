@@ -14,16 +14,19 @@ import { useParams, useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
 import { SF_BAY_CHAPTER_ID } from '@/lib/constants'
-import { ActivistRegistry } from '@/lib/activist-registry'
 import { AttendeeInputField } from './attendee-input-field'
+import { ActivistRegistry } from './activist-registry'
 
 // TODO(jh):
 // - test in prod
 // - improve styling
 // - replace vue page w/ react page & update api to not return a redirect response on save
-// - LATER: store list of names from server in indexed db & only update what's been created, updated, or deleted since last load?
-// - LATER: store unsaved data in session storage to prevent accidental loss?
-// - LATER: dark mode
+
+// TODO: store list of names from server in indexed db & only update what's been created, updated, or deleted since last load?
+//   - https://app.asana.com/1/71341131816665/project/1209217418568645/task/1212688232815554
+
+// TODO: store unsaved data in session storage to prevent accidental loss?
+//   - https://app.asana.com/1/71341131816665/project/1209217418568645/task/1212688232815556
 
 const EVENT_TYPES = [
   'Action',
@@ -99,24 +102,15 @@ export const EventForm = ({ mode }: EventFormProps) => {
     enabled: !!eventId,
   })
 
-  // Create activist registry for lookups.
-  const registry = useMemo(
+  // Create activist registry for autocomplete.
+  const activistRegistry = useMemo(
     () => new ActivistRegistry(activistData?.activists || []),
     [activistData?.activists],
   )
 
-  // Mutation for saving event.
   const saveEventMutation = useMutation({
     mutationFn: apiClient.saveEvent,
     onSuccess: (result, variables) => {
-      if (result.status === 'error') {
-        toast.error(
-          result.message ||
-            `Error saving ${isConnection ? 'connection' : 'event'}`,
-        )
-        return
-      }
-
       toast.success(`${isConnection ? 'Connection' : 'Event'} saved!`)
 
       // TODO(jh): once the vue page is removed, update the api to just
@@ -192,7 +186,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
         eventData?.attendees && eventData.attendees.length > 0
           ? [
               ...eventData.attendees.map((name) => ({ name })),
-              ...Array(Math.max(0, MIN_EMPTY_FIELDS))
+              ...Array(MIN_EMPTY_FIELDS)
                 .fill(null)
                 .map(() => ({ name: '' })),
             ]
@@ -254,7 +248,6 @@ export const EventForm = ({ mode }: EventFormProps) => {
     },
   })
 
-  // Helper functions.
   const checkForDuplicate = (value: string, currentIndex: number): boolean => {
     const attendees = form.state.values.attendees
     const matches = attendees.filter(
@@ -267,8 +260,8 @@ export const EventForm = ({ mode }: EventFormProps) => {
   const eventType = useStore(form.store, (state) => state.values.eventType)
   const eventName = useStore(form.store, (state) => state.values.eventName)
 
+  // Predicts whether the server will send a survey by default.
   const shouldShowSuppressSurveyCheckbox = useMemo(() => {
-    // Only ever shown for SF Bay Area chapter.
     if (user.ChapterID !== SF_BAY_CHAPTER_ID) return false
 
     const surveyMatchers = [
@@ -285,15 +278,15 @@ export const EventForm = ({ mode }: EventFormProps) => {
       // If event name, check if included (case-insensitive).
       if (
         matcher.nameContains &&
-        eventName.toLowerCase().includes(matcher.nameContains)
+        !eventName.toLowerCase().includes(matcher.nameContains)
       ) {
-        return true
+        return false
       }
       // If event type, check for match.
-      if (matcher.type && matcher.type === eventType) {
-        return true
+      if (matcher.type && matcher.type !== eventType) {
+        return false
       }
-      return false
+      return true
     })
   }, [eventName, eventType, user.ChapterID])
 
@@ -316,6 +309,10 @@ export const EventForm = ({ mode }: EventFormProps) => {
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (form.state.isDirty) {
+        // `preventDefault()` + setting `returnValue` triggers the
+        // browser's native unsaved changes warning dialog. Modern
+        // browsers ignore custom messages in returnValue for security,
+        // so we use empty string.
         e.preventDefault()
         e.returnValue = ''
       }
@@ -326,8 +323,12 @@ export const EventForm = ({ mode }: EventFormProps) => {
   }, [form.state.isDirty])
 
   const setDateToToday = () => {
-    const today = new Date().toISOString().split('T')[0]
-    form.setFieldValue('eventDate', today)
+    // Get today's date in YYYY-MM-DD format in the browser's local timezone
+    const today = new Date()
+    const year = today.getFullYear()
+    const month = String(today.getMonth() + 1).padStart(2, '0')
+    const day = String(today.getDate()).padStart(2, '0')
+    form.setFieldValue('eventDate', `${year}-${month}-${day}`)
   }
 
   // Only show loading for activist list since event data is prefetched during SSR
@@ -452,6 +453,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
                   field.handleChange(Boolean(checked))
                 }
               />
+              {/* TODO: Consider renaming to "Send survey" with box checked by default. */}
               <Label htmlFor="suppressSurvey" className="cursor-pointer">
                 Don&apos;t send survey
               </Label>
@@ -475,7 +477,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
                         field={field}
                         index={index}
                         isFocused={isFocused}
-                        registry={registry}
+                        registry={activistRegistry}
                         checkForDuplicate={checkForDuplicate}
                         inputRef={(el) => {
                           inputRefs.current[index] = el

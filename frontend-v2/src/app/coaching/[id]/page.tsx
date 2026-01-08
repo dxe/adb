@@ -28,13 +28,11 @@ export default async function EditCoachingPage({
   })
 
   return (
-    <AuthedPageLayout pageName="NewConnection_beta">
+    <AuthedPageLayout pageName="EditConnection_beta">
       <HydrationBoundary state={dehydrate(queryClient)}>
         <Navbar />
         <ContentWrapper size="md" className="gap-8">
-          <div className="flex flex-col gap-3">
-            <h1 className="text-3xl font-bold">Coaching</h1>
-          </div>
+          <h1 className="text-3xl font-bold">Coaching</h1>
           <EventForm mode="connection" />
         </ContentWrapper>
       </HydrationBoundary>

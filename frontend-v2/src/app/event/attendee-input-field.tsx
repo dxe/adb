@@ -2,8 +2,8 @@ import { KeyboardEvent, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { MailX, PhoneMissed, UserRoundPlus, Check } from 'lucide-react'
-import { ActivistRegistry } from '@/lib/activist-registry'
 import { AnyFieldApi } from '@tanstack/react-form'
+import { ActivistRegistry } from './activist-registry'
 
 type AttendeeInputFieldProps = {
   field: AnyFieldApi
@@ -69,12 +69,12 @@ export const AttendeeInputField = ({
       }
       case 'Enter': {
         e.preventDefault()
-        const trimmedValue = field.state.value?.trim() ?? ''
+        const trimmedValue: string = field.state.value?.trim() ?? ''
         if (!trimmedValue.length) {
           return
         }
         const selectedValue =
-          selectedSuggestionIndex >= 0 && suggestions[selectedSuggestionIndex]
+          selectedSuggestionIndex >= 0
             ? suggestions[selectedSuggestionIndex]
             : trimmedValue
         handleSelectSuggestion(selectedValue)
@@ -90,7 +90,7 @@ export const AttendeeInputField = ({
         }
         e.preventDefault()
         const selectedValue =
-          selectedSuggestionIndex >= 0 && suggestions[selectedSuggestionIndex]
+          selectedSuggestionIndex >= 0
             ? suggestions[selectedSuggestionIndex]
             : trimmedValue
         handleSelectSuggestion(selectedValue)

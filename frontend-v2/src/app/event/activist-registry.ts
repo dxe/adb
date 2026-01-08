@@ -43,7 +43,6 @@ export class ActivistRegistry {
   }
 }
 
-// Like the Vue nameFilter: internal whitespace matches anything.
 function nameFilter(text: string, input: string): boolean {
   const pattern = input
     .trim()
