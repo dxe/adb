@@ -8,26 +8,25 @@ type ActivistRecord = {
  * Encapsulates basic activist data and provides lookup methods.
  */
 export class ActivistRegistry {
-  private byName: Map<string, ActivistRecord>
-  private names: Set<string>
   private activists: ActivistRecord[]
+  private activistsByName: Map<string, ActivistRecord>
 
   constructor(activists: ActivistRecord[]) {
     this.activists = activists
-    this.byName = new Map(activists.map((a) => [a.name, a]))
-    this.names = new Set(activists.map((a) => a.name))
+    this.activistsByName = new Map(activists.map((a) => [a.name, a]))
   }
 
-  hasEmail(name: string): boolean {
-    return !!this.byName.get(name)?.email
-  }
-
-  hasPhone(name: string): boolean {
-    return !!this.byName.get(name)?.phone
-  }
-
-  exists(name: string): boolean {
-    return this.names.has(name)
+  getActivist(name: string): {
+    exists: boolean
+    hasEmail: boolean
+    hasPhone: boolean
+  } {
+    const activist = this.activistsByName.get(name)
+    return {
+      exists: !!activist,
+      hasEmail: !!activist?.email,
+      hasPhone: !!activist?.phone,
+    }
   }
 
   getSuggestions(input: string, maxResults = 10): string[] {

@@ -9,24 +9,24 @@ type AttendeeInputFieldProps = {
   field: AnyFieldApi
   index: number
   isFocused: boolean
-  registry: ActivistRegistry
-  checkForDuplicate: (value: string, index: number) => boolean
   inputRef: (el: HTMLInputElement | null) => void
   onFocus: (index: number) => void
   onAdvanceFocus: () => void
-  ensureMinimumEmptyFields: () => void
+  onChange: () => void
+  registry: ActivistRegistry
+  checkForDuplicate: (value: string, index: number) => boolean
 }
 
 export const AttendeeInputField = ({
   field,
   index,
   isFocused,
-  registry,
-  checkForDuplicate,
   inputRef,
   onFocus,
   onAdvanceFocus,
-  ensureMinimumEmptyFields,
+  onChange,
+  registry,
+  checkForDuplicate,
 }: AttendeeInputFieldProps) => {
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1)
@@ -35,7 +35,7 @@ export const AttendeeInputField = ({
     field.handleChange(value)
     setSuggestions(registry.getSuggestions(value))
     setSelectedSuggestionIndex(-1)
-    ensureMinimumEmptyFields()
+    onChange()
   }
 
   const handleSelectSuggestion = (value: string) => {
@@ -100,10 +100,11 @@ export const AttendeeInputField = ({
 
   const trimmedName = field.state.value?.trim() ?? ''
   const isDuplicate = !!trimmedName && checkForDuplicate(trimmedName, index)
-  const isNewName = !!trimmedName && !registry.exists(trimmedName)
-  const isExisting = !!trimmedName && !isNewName
-  const isMissingEmail = isExisting && !registry.hasEmail(trimmedName)
-  const isMissingPhone = isExisting && !registry.hasPhone(trimmedName)
+  const activist = registry.getActivist(trimmedName)
+  const isNewName = !!trimmedName && !activist.exists
+  const isExisting = !!trimmedName && activist.exists
+  const isMissingEmail = isExisting && !activist.hasEmail
+  const isMissingPhone = isExisting && !activist.hasPhone
   const hasAllInfo = isExisting && !isMissingEmail && !isMissingPhone
   const isError = !!field.state.meta.errors[0]
 
