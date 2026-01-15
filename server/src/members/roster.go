@@ -86,7 +86,8 @@ type member struct {
 	Email         string
 	ActivistLevel string
 
-	Eligible mysqlBool
+	EligibleToVote    mysqlBool
+	EligibleForOffice mysqlBool
 
 	// Past3 and Past12 are how many of the past 3
 	// and 12 months, respectively, the activist
@@ -108,7 +109,14 @@ func (s *server) fetchRoster(queryMonth int) (members []member, err error) {
 	// of the two-level aggregation, we'd actually need a
 	// sub-subquery; and subqueries can only access variables from
 	// the immediately outer context.
-	// TODO: consider not hard-coding the SF Bay chapter ID in the WHERE clause
+
+	// See https://dxe.io/bylaws for eligibility rules.
+	//
+	// For eligibility to run for office, we approximate whether an activist has been an organizer for 6 months by
+	// checking whether they are currently an organizer and comparing the month that they became an organizer with the
+	// month of the election. We do not know if someone was offboarded and onboarded as an organizer during that time
+	// (perhaps in theory the date column would be updated to the most recent onboarding time), and we do not know
+	// the date of the election.
 	const q = `
 with target as (select ?),
 sfbay as (
@@ -120,7 +128,8 @@ sfbay as (
 ),
 raw_mpi as (
   select a.id, e.month, (max(e.direct_action) and (max(e.community) or e.month >= 202001)) as mpi,
-    period_diff(e.month, (select * from target)) as month_delta
+    period_diff(e.month, (select * from target)) as month_delta,
+    date_organizer
   from sfbay a
   left join event_attendance ea on (a.id = ea.activist_id)
   left join (
@@ -138,29 +147,44 @@ roster as (
   sum(x.mpi and x.month_delta >= -3  and x.month_delta < 0) as mpi_past3,
   sum(x.mpi and x.month_delta >= -12 and x.month_delta < 0) as mpi_past12,
 
-  period_diff(extract(year_month from a.cm_approval_email), (select * from target)) < -6 as cm_approved6
+  period_diff(extract(year_month from a.cm_approval_email), (select * from target)) < -6 as cm_approved6,
+
+  a.date_organizer
 
   from sfbay a left join raw_mpi x using (id)
   group by id
-)
-select json_arrayagg(json_object(
-  'ID',            r.id,
-  'Name',          r.name,
-  'Email',         r.email,
-  'ActivistLevel', r.activist_level,
+),
+rosterWithEligibility as (
+  select id, name, email, activist_level,
 
-  'Eligible', case r.activist_level
+  case r.activist_level
     when 'Organizer'      then r.mpi_past3 >= 2 or r.mpi_past12 >= 8
     when 'Chapter Member' then r.mpi_past12 >= 8 and r.cm_approved6 and r.voting_agreement
     else                       false
-  end,
+  end as eligible_to_vote,
 
-  'VotingAgreement', r.voting_agreement,
-  'MPIPast3',        r.mpi_past3,
-  'MPIPast12',       r.mpi_past12,
-  'CMApproval',      r.cm_approval_email
+  voting_agreement,
+  mpi_past3,
+  mpi_past12,
+  date_organizer,
+  cm_approval_email
+
+  from roster r
+)
+select json_arrayagg(json_object(
+  'ID',                r.id,
+  'Name',              r.name,
+  'Email',             r.email,
+  'ActivistLevel',     r.activist_level,
+  'EligibleToVote',    r.eligible_to_vote,
+  'EligibleForOffice', r.eligible_to_vote and r.activist_level = 'Organizer' and period_diff(extract(year_month from r.date_organizer), (select * from target)) < -6,
+  'VotingAgreement',   r.voting_agreement,
+  'MPIPast3',          r.mpi_past3,
+  'MPIPast12',         r.mpi_past12,
+  'DateOrganizer',     r.date_organizer,
+  'CMApproval',        r.cm_approval_email
 ))
-from roster r
+from rosterWithEligibility r
 `
 
 	if err = s.queryJSON(&members, q, queryMonth); err != nil {
@@ -210,9 +234,9 @@ func (s *server) sendCsvResponse(queryMonth int, members []member) {
 	}
 
 	w := csv.NewWriter(s.w)
-	w.Write([]string{"ID", "Name", "Email", "Activist Level", "Eligible", "MPI (3 months)", "MPI (12 months)", "CM Approval", "Voting Agreement"})
+	w.Write([]string{"ID", "Name", "Email", "Activist Level", "EligibleToVote", "EligibleForOffice", "MPI (3 months)", "MPI (12 months)", "CM Approval", "Voting Agreement"})
 	for _, member := range members {
-		w.Write([]string{fmt.Sprint(member.ID), member.Name, member.Email, member.ActivistLevel, yesNo(member.Eligible != 0), fmt.Sprint(member.MPIPast3), fmt.Sprint(member.MPIPast12), member.CMApproval, yesNo(member.VotingAgreement != 0)})
+		w.Write([]string{fmt.Sprint(member.ID), member.Name, member.Email, member.ActivistLevel, yesNo(member.EligibleToVote != 0), yesNo(member.EligibleForOffice != 0), fmt.Sprint(member.MPIPast3), fmt.Sprint(member.MPIPast12), member.CMApproval, yesNo(member.VotingAgreement != 0)})
 	}
 	w.Flush()
 
@@ -236,7 +260,7 @@ func (s *server) sendNamesOnlyResponse(queryMonth int, members []member) {
 		day))
 
 	for _, member := range members {
-		if member.Eligible == 0 {
+		if member.EligibleToVote == 0 {
 			continue
 		}
 		responseText.WriteString(member.Name)
