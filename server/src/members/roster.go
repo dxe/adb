@@ -101,6 +101,8 @@ type member struct {
 	// VotingAgreement is whether the member has
 	// signing the voting agreement.
 	VotingAgreement mysqlBool
+
+	DateOrganizer string
 }
 
 func (s *server) fetchRoster(queryMonth int) (members []member, err error) {
@@ -109,6 +111,9 @@ func (s *server) fetchRoster(queryMonth int) (members []member, err error) {
 	// of the two-level aggregation, we'd actually need a
 	// sub-subquery; and subqueries can only access variables from
 	// the immediately outer context.
+	//
+	// if(x, 1, 0) is used to convert boolean to tinyint. We standardize on tinyint rather than boolean because even
+	// "true" and "false" literals seem to result in tinyint values, making it difficult to standardize on booleans.
 
 	// See https://dxe.io/bylaws for eligibility rules.
 	//
@@ -177,12 +182,12 @@ select json_arrayagg(json_object(
   'Email',             r.email,
   'ActivistLevel',     r.activist_level,
   'EligibleToVote',    r.eligible_to_vote,
-  'EligibleForOffice', r.eligible_to_vote and r.activist_level = 'Organizer' and period_diff(extract(year_month from r.date_organizer), (select * from target)) < -6,
-  'VotingAgreement',   r.voting_agreement,
+  'EligibleForOffice', if(r.eligible_to_vote and r.activist_level = 'Organizer' and period_diff(extract(year_month from r.date_organizer), (select * from target)) < -6, 1, 0),
   'MPIPast3',          r.mpi_past3,
   'MPIPast12',         r.mpi_past12,
-  'DateOrganizer',     r.date_organizer,
-  'CMApproval',        r.cm_approval_email
+  'CMApproval',        r.cm_approval_email,
+  'VotingAgreement',   r.voting_agreement,
+  'DateOrganizer',     r.date_organizer
 ))
 from rosterWithEligibility r
 `
@@ -234,9 +239,33 @@ func (s *server) sendCsvResponse(queryMonth int, members []member) {
 	}
 
 	w := csv.NewWriter(s.w)
-	w.Write([]string{"ID", "Name", "Email", "Activist Level", "EligibleToVote", "EligibleForOffice", "MPI (3 months)", "MPI (12 months)", "CM Approval", "Voting Agreement"})
+	w.Write([]string{
+		"ID",
+		"Name",
+		"Email",
+		"Activist Level",
+		"EligibleToVote",
+		"EligibleForOffice",
+		"MPI (3 months)",
+		"MPI (12 months)",
+		"CM Approval",
+		"Voting Agreement",
+		"Date Organizer",
+	})
 	for _, member := range members {
-		w.Write([]string{fmt.Sprint(member.ID), member.Name, member.Email, member.ActivistLevel, yesNo(member.EligibleToVote != 0), yesNo(member.EligibleForOffice != 0), fmt.Sprint(member.MPIPast3), fmt.Sprint(member.MPIPast12), member.CMApproval, yesNo(member.VotingAgreement != 0)})
+		w.Write([]string{
+			fmt.Sprint(member.ID),
+			member.Name,
+			member.Email,
+			member.ActivistLevel,
+			yesNo(member.EligibleToVote != 0),
+			yesNo(member.EligibleForOffice != 0),
+			fmt.Sprint(member.MPIPast3),
+			fmt.Sprint(member.MPIPast12),
+			member.CMApproval,
+			yesNo(member.VotingAgreement != 0),
+			member.DateOrganizer,
+		})
 	}
 	w.Flush()
 
