@@ -2174,6 +2174,22 @@ func assignActivistToUser(db *sqlx.DB, activistID, userID int) error {
 	return nil
 }
 
+func QueryActivists(authedUser ADBUser, options QueryActivistOptions, repo ActivistRepository) (QueryActivistResult, error) {
+	if !UserHasRole("admin", authedUser) {
+		if authedUser.ChapterID != options.Filters.ChapterId || authedUser.ChapterID == 0 {
+			return QueryActivistResult{}, fmt.Errorf("Cannot query activists in other chapters without admin access")
+		}
+	}
+
+	if !UserHasAnyRole([]string{"admin", "organizer", "non-sfbay"}, authedUser) {
+		return QueryActivistResult{}, fmt.Errorf("Lacking permission to query activists")
+	}
+
+	options.normalizeAndValidate()
+
+	return repo.QueryActivists(options)
+}
+
 // Interface for querying and updating activists. This avoids a dependency on the persistence package which could create
 // a cyclical package reference.
 type ActivistRepository interface {
@@ -2183,6 +2199,8 @@ type ActivistRepository interface {
 type ActivistColumnName string
 
 var ValidActivistColumnNames = map[ActivistColumnName]struct{}{
+	"chapter": {},
+
 	"email":                    {},
 	"facebook":                 {},
 	"id":                       {},
@@ -2263,8 +2281,12 @@ type QueryActivistOptions struct {
 }
 
 type QueryActivistFilters struct {
-	Name      ActivistNameFilter `json:"name"`
-	LastEvent LastEventFilter    `json:"last_event"`
+	// 0 means search all chapters. Requires that the "chapter" column be visible.
+	// Must be set to ID of current chapter if user only has permission for current chapter.
+	ChapterId     int                `json:"chapter_id"`
+	Name          ActivistNameFilter `json:"name"`
+	LastEvent     LastEventFilter    `json:"last_event"`
+	IncludeHidden bool               `json:"include_hidden"`
 }
 
 type ActivistNameFilter struct {
@@ -2301,4 +2323,10 @@ type activistPaginationCursor struct {
 
 	// ID of the activist in the last row of the previous page.
 	idOffset int
+}
+
+func (o *QueryActivistOptions) normalizeAndValidate() error {
+	// TODO: remove invalid characters from o.nameFilter.name
+
+	return nil
 }
