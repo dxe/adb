@@ -215,7 +215,8 @@ func (c MainController) corsAllowGetMiddleware(h http.Handler) http.Handler {
 func router() (*mux.Router, *sqlx.DB) {
 	db := model.NewDB(config.DBDataSource())
 	userRepo := persistence.NewUserRepository(db)
-	main := MainController{db: db, userRepo: userRepo}
+	activistRepo := persistence.NewActivistRepository(db)
+	main := MainController{db: db, userRepo: userRepo, activistRepo: activistRepo}
 	csrfMiddleware := csrf.Protect(
 		[]byte(config.CsrfAuthKey),
 		csrf.Secure(config.IsProd), // disable secure flag in dev

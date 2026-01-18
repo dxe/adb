@@ -2316,15 +2316,6 @@ type QueryActivistResultPagination struct {
 	NextCursor string `json:"next_cursor"`
 }
 
-type activistPaginationCursor struct {
-	// values of the last row of the previous page corresponding to the sort columns.
-	// Required for this cursor pagination implementation.
-	sortOffsetValues []any
-
-	// ID of the activist in the last row of the previous page.
-	idOffset int
-}
-
 func (o *QueryActivistOptions) normalizeAndValidate() error {
 	// TODO: remove invalid characters from o.nameFilter.name
 
