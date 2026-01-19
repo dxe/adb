@@ -37,8 +37,24 @@ func (r DBActivistRepository) QueryActivists(options model.QueryActivistOptions)
 			return model.QueryActivistResult{}, fmt.Errorf("invalid pagination cursor: %w", err)
 		}
 	}
+	// TODO: use cursor value
 	_ = cursor
 
-	// TODO: implement this function
-	return model.QueryActivistResult{}, nil
+	query := NewSqlQueryBuilder()
+	// TODO: translate query options to query builder inputs to construct SQL
+
+	sqlStr, args := query.ToSQL()
+
+	var activists []model.ActivistExtra
+	if err := r.db.Select(&activists, sqlStr, args...); err != nil {
+		return model.QueryActivistResult{}, fmt.Errorf("query activists: %w", err)
+	}
+
+	return model.QueryActivistResult{
+		Activists: activists,
+		Pagination: model.QueryActivistResultPagination{
+			// TODO: set NextCursor if there are more results
+			NextCursor: "",
+		},
+	}, nil
 }

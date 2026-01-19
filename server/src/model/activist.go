@@ -2313,6 +2313,7 @@ type QueryActivistResult struct {
 }
 
 type QueryActivistResultPagination struct {
+	// An opaque string if more results are available; otherwise, the empty string.
 	NextCursor string `json:"next_cursor"`
 }
 
