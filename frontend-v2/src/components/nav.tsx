@@ -16,8 +16,7 @@ import buefyStyles from './nav.module.css'
 import clsx from 'clsx'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { API_PATH, apiClient } from '@/lib/api'
-
-const SF_BAY_CHAPTER_ID = process.env.NODE_ENV === 'production' ? 47 : 1
+import { SF_BAY_CHAPTER_ID } from '@/lib/constants'
 
 function userHasAccess(
   /** Auth'd user. */

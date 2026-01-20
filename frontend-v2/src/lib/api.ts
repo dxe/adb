@@ -4,10 +4,13 @@ import { z } from 'zod'
 export const API_PATH = {
   STATIC_RESOURCE_HASH: 'static_resources_hash',
   ACTIVIST_NAMES_GET: 'activist_names/get',
+  ACTIVIST_LIST_BASIC: 'activist/list_basic',
   USER_ME: 'user/me',
   CSRF_TOKEN: 'api/csrf-token',
   CHAPTER_LIST: 'chapter/list',
   USERS: 'api/users',
+  EVENT_GET: 'event/get',
+  EVENT_SAVE: 'event/save',
 }
 
 export const StaticResourcesHashResp = z.object({
@@ -75,6 +78,46 @@ const UserGetResp = z.object({
 
 export const ActivistNamesResp = z.object({
   activist_names: z.array(z.string()),
+})
+
+export const ActivistListBasicResp = z.object({
+  activists: z.array(
+    z.object({
+      name: z.string(),
+      email: z.string().optional(),
+      phone: z.string().optional(),
+    }),
+  ),
+})
+
+export type ActivistListBasic = z.infer<typeof ActivistListBasicResp>
+
+const EventGetResp = z.object({
+  event: z.object({
+    event_name: z.string(),
+    event_type: z.string(),
+    event_date: z.string(),
+    attendees: z.array(z.string()).nullable(),
+    suppress_survey: z.boolean(),
+  }),
+})
+
+export type EventData = z.infer<typeof EventGetResp>['event']
+
+interface SaveEventParams {
+  event_id: number
+  event_name: string
+  event_date: string
+  event_type: string
+  added_attendees: string[]
+  deleted_attendees: string[]
+  suppress_survey: boolean
+}
+
+const EventSaveResp = z.object({
+  status: z.literal('success'),
+  redirect: z.string().optional(),
+  attendees: z.array(z.string()).nullish(),
 })
 
 const ApiErrorResp = z.object({
@@ -152,6 +195,11 @@ export class ApiClient {
     return ActivistNamesResp.parse(resp)
   }
 
+  getActivistListBasic = async () => {
+    const resp = await this.client.get(API_PATH.ACTIVIST_LIST_BASIC).json()
+    return ActivistListBasicResp.parse(resp)
+  }
+
   getChapterList = async () => {
     try {
       const resp = await this.client.get(API_PATH.CHAPTER_LIST).json()
@@ -204,6 +252,32 @@ export class ApiClient {
         })
         .json()
       return UserSaveResp.parse(resp).user
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  getEvent = async (eventId: number) => {
+    try {
+      const resp = await this.client
+        .get(`${API_PATH.EVENT_GET}/${eventId}`)
+        .json()
+      return EventGetResp.parse(resp).event
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  saveEvent = async (payload: SaveEventParams) => {
+    try {
+      const csrfToken = this.getCsrfToken()
+      const resp = await this.client
+        .post(API_PATH.EVENT_SAVE, {
+          json: payload,
+          headers: { 'X-CSRF-Token': csrfToken },
+        })
+        .json()
+      return EventSaveResp.parse(resp)
     } catch (err) {
       return this.handleKyError(err)
     }

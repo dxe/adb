@@ -94,7 +94,7 @@ export function UserForm({ userId }: { userId?: number }) {
     [user],
   )
 
-  const form = useForm<UserFormValues>({
+  const form = useForm({
     defaultValues: initialValues,
     validators: {
       onSubmit: userFormSubmitSchema,
@@ -211,7 +211,7 @@ export function UserForm({ userId }: { userId?: number }) {
                   />
                   {field.state.meta.errors[0] && (
                     <p className="text-sm text-destructive">
-                      {field.state.meta.errors[0]}
+                      {field.state.meta.errors[0]?.message}
                     </p>
                   )}
                 </div>
@@ -232,7 +232,7 @@ export function UserForm({ userId }: { userId?: number }) {
                   />
                   {field.state.meta.errors[0] && (
                     <p className="text-sm text-destructive">
-                      {field.state.meta.errors[0]}
+                      {field.state.meta.errors[0]?.message}
                     </p>
                   )}
                 </div>
@@ -271,7 +271,7 @@ export function UserForm({ userId }: { userId?: number }) {
                   </Select>
                   {field.state.meta.errors[0] && (
                     <p className="text-sm text-destructive">
-                      {field.state.meta.errors[0]}
+                      {field.state.meta.errors[0]?.message}
                     </p>
                   )}
                 </div>
@@ -327,7 +327,7 @@ export function UserForm({ userId }: { userId?: number }) {
                 </div>
                 {field.state.meta.errors[0] && (
                   <p className="text-sm text-destructive">
-                    {field.state.meta.errors[0]}
+                    {field.state.meta.errors[0]?.message}
                   </p>
                 )}
               </div>
