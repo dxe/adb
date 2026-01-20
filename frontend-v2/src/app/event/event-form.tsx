@@ -488,7 +488,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
                             inputRefs.current[index + 1]?.focus()
                           }
                         }}
-                        ensureMinimumEmptyFields={ensureMinimumEmptyFields}
+                        onChange={ensureMinimumEmptyFields}
                       />
                     )}
                   </form.Field>

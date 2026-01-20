@@ -101,10 +101,10 @@ export const AttendeeInputField = ({
   const trimmedName = field.state.value?.trim() ?? ''
   const isDuplicate = !!trimmedName && checkForDuplicate(trimmedName, index)
   const activist = registry.getActivist(trimmedName)
-  const isNewName = !!trimmedName && !activist.exists
-  const isExisting = !!trimmedName && activist.exists
-  const isMissingEmail = isExisting && !activist.hasEmail
-  const isMissingPhone = isExisting && !activist.hasPhone
+  const isNewName = !!trimmedName && !activist
+  const isExisting = !!trimmedName && !!activist
+  const isMissingEmail = isExisting && !activist.email
+  const isMissingPhone = isExisting && !activist.phone
   const hasAllInfo = isExisting && !isMissingEmail && !isMissingPhone
   const isError = !!field.state.meta.errors[0]
 

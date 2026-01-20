@@ -16,17 +16,8 @@ export class ActivistRegistry {
     this.activistsByName = new Map(activists.map((a) => [a.name, a]))
   }
 
-  getActivist(name: string): {
-    exists: boolean
-    hasEmail: boolean
-    hasPhone: boolean
-  } {
-    const activist = this.activistsByName.get(name)
-    return {
-      exists: !!activist,
-      hasEmail: !!activist?.email,
-      hasPhone: !!activist?.phone,
-    }
+  getActivist(name: string): ActivistRecord | null {
+    return this.activistsByName.get(name) ?? null
   }
 
   getSuggestions(input: string, maxResults = 10): string[] {
@@ -42,6 +33,16 @@ export class ActivistRegistry {
   }
 }
 
+/**
+ * Filters text based on a flexible name matching pattern.
+ * Treats whitespace as a wildcard allowing any characters in between,
+ * enabling partial and out-of-order matching (e.g., "john doe" matches "John Q. Doe").
+ * Matching is case-insensitive.
+ *
+ * @param text - The text to search within
+ * @param input - The search pattern
+ * @returns true if the pattern matches the text
+ */
 function nameFilter(text: string, input: string): boolean {
   const pattern = input
     .trim()
