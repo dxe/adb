@@ -203,7 +203,12 @@ rosterWithEligibility as (
   end as potential_voter_fixed_mpi,
 
   case r.activist_level
-    when 'Organizer'      then mpi_prior_month = 0 and (r.mpi_past3 = 1 or r.mpi_past12 = 7)
+    when 'Organizer'      then mpi_prior_month = 0 and
+		(
+			(r.mpi_past3 = 1 and r.mpi_past12 <= 7)  -- past3 is short by 1 and past12 is insufficient
+		or
+			(r.mpi_past3 <= 1 and r.mpi_past12 = 7)  -- past12 is short by 1 and past3 is insufficient
+		)
     when 'Chapter Member' then r.cm_approved6 and ((mpi_prior_month = 0 and r.mpi_past12 = 7) or (r.mpi_past12 >= 8 and not r.voting_agreement))
     else                       false
   end as potential_voter_with_prior_month_mpi,
