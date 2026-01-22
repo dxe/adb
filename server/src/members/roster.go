@@ -132,7 +132,7 @@ sfbay as (
     and not a.hidden
 ),
 raw_mpi as (
-  select a.id, e.month, (max(e.direct_action) and (max(e.community) or e.month >= 202001)) as mpi,
+  select a.id, e.month, max(e.direct_action) as mpi,
     period_diff(e.month, (select * from target)) as month_delta,
     date_organizer
   from sfbay a
@@ -140,7 +140,7 @@ raw_mpi as (
   left join (
           select id,
                  extract(year_month from date) as month,
-                 event_type in ('Circle', 'Community', 'Training') as community,
+                 -- event_type in ('Circle', 'Community', 'Training') as community,
                  event_type in ('Action', 'Campaign Action', 'Frontline Surveillance', 'Outreach', 'Animal Care') as direct_action
           from events
         ) e on (e.id = ea.event_id)
