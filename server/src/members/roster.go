@@ -103,6 +103,25 @@ type member struct {
 	VotingAgreement mysqlBool
 
 	DateOrganizer string
+
+	// "Potential*" columns indicate whether some action can be taken to become eligible for something:
+	//  - PotentialVoterFixedMpi
+	//  - PotentialVoterWithPriorMonthMpi
+	//  - PotentialOfficerFixedMpi
+	//  - PotentialOfficerWithPriorMonthMpi
+	// "FixedMpi" considers potential to become eligible without changes to MPI, namely by signing the voting agreement.
+	//     This information is useful to increase eligibility when there are no further opportunities to change MPI,
+	//     e.g. for a finalized roster, or a "tentative" roster for the next month when there won't actually be any more
+	//     events in the month beforehand, e.g. it's the 27th day of the month and no more events are planned.
+	// "WithPriorMonthMpi" considers potential to become eligible assuming there are remaining opportunities in the
+	//     prior month to change MPI, which is only relevant when next month's tentative roster is downloaded.
+	//     The value will be true if the chapter member, in order to become eligible, needs only to join the MPI of the
+	//     prior month, sign the voting agreement, or both.
+
+	PotentialVoterFixedMpi            mysqlBool
+	PotentialVoterWithPriorMonthMpi   mysqlBool
+	PotentialOfficerFixedMpi          mysqlBool
+	PotentialOfficerWithPriorMonthMpi mysqlBool
 }
 
 func (s *server) fetchRoster(queryMonth int) (members []member, err error) {
@@ -116,12 +135,15 @@ func (s *server) fetchRoster(queryMonth int) (members []member, err error) {
 	// "true" and "false" literals seem to result in tinyint values, making it difficult to standardize on booleans.
 
 	// See https://dxe.io/bylaws for eligibility rules.
+	// See https://dxe.io/mpp for MPI requirements.
 	//
 	// For eligibility to run for office, we approximate whether an activist has been an organizer for 6 months by
 	// checking whether they are currently an organizer and comparing the month that they became an organizer with the
 	// month of the election. We do not know if someone was offboarded and onboarded as an organizer during that time
 	// (perhaps in theory the date column would be updated to the most recent onboarding time), and we do not know
 	// the date of the election.
+	//
+	// See `member` comments for more details.
 	const q = `
 with target as (select ?),
 sfbay as (
@@ -131,6 +153,9 @@ sfbay as (
     and a.activist_level in ('Organizer', 'Chapter Member')
     and not a.hidden
 ),
+-- raw_mpi is a table of chapter members * months and whether the chapter member was on the MPI (i.e. whether they
+-- attended an action) that month.
+-- Months are expressed in terms of how many months ago it was (-1 for last month, -2 for 2 months ago)
 raw_mpi as (
   select a.id, e.month, max(e.direct_action) as mpi,
     period_diff(e.month, (select * from target)) as month_delta,
@@ -151,6 +176,7 @@ roster as (
 
   sum(x.mpi and x.month_delta >= -3  and x.month_delta < 0) as mpi_past3,
   sum(x.mpi and x.month_delta >= -12 and x.month_delta < 0) as mpi_past12,
+  sum(x.mpi and x.month_delta = -1) as mpi_prior_month,
 
   period_diff(extract(year_month from a.cm_approval_email), (select * from target)) < -6 as cm_approved6,
 
@@ -164,14 +190,29 @@ rosterWithEligibility as (
 
   case r.activist_level
     when 'Organizer'      then r.mpi_past3 >= 2 or r.mpi_past12 >= 8
-    when 'Chapter Member' then r.mpi_past12 >= 8 and r.cm_approved6 and r.voting_agreement
+    when 'Chapter Member' then r.cm_approved6 and r.mpi_past12 >= 8 and r.voting_agreement
     else                       false
   end as eligible_to_vote,
+
+  -- See comments at top of function.
+
+  case r.activist_level
+    when 'Organizer'      then false
+    when 'Chapter Member' then r.cm_approved6 and r.mpi_past12 >= 8 and not r.voting_agreement
+    else                       false
+  end as potential_voter_fixed_mpi,
+
+  case r.activist_level
+    when 'Organizer'      then mpi_prior_month = 0 and (r.mpi_past3 = 1 or r.mpi_past12 = 7)
+    when 'Chapter Member' then r.cm_approved6 and ((mpi_prior_month = 0 and r.mpi_past12 = 7) or (r.mpi_past12 >= 8 and not r.voting_agreement))
+    else                       false
+  end as potential_voter_with_prior_month_mpi,
 
   voting_agreement,
   mpi_past3,
   mpi_past12,
   date_organizer,
+  period_diff(extract(year_month from r.date_organizer), (select * from target)) < -6 as organizer_past6,
   cm_approval_email
 
   from roster r
@@ -181,10 +222,18 @@ select json_arrayagg(json_object(
   'Name',              r.name,
   'Email',             r.email,
   'ActivistLevel',     r.activist_level,
+
   'EligibleToVote',    r.eligible_to_vote,
-  'EligibleForOffice', if(r.eligible_to_vote and r.activist_level = 'Organizer' and period_diff(extract(year_month from r.date_organizer), (select * from target)) < -6, 1, 0),
+  'PotentialVoterFixedMpi', r.potential_voter_fixed_mpi,
+  'PotentialVoterWithPriorMonthMpi', r.potential_voter_with_prior_month_mpi,
+
+  'EligibleForOffice', if(r.eligible_to_vote and r.activist_level = 'Organizer' and r.organizer_past6, 1, 0),
+  'PotentialOfficerFixedMpi', if(r.potential_voter_fixed_mpi and r.activist_level = 'Organizer' and r.organizer_past6, 1, 0),
+  'PotentialOfficerWithPriorMonthMpi', if(r.potential_voter_with_prior_month_mpi and r.activist_level = 'Organizer' and r.organizer_past6, 1, 0),
+
   'MPIPast3',          r.mpi_past3,
   'MPIPast12',         r.mpi_past12,
+
   'CMApproval',        r.cm_approval_email,
   'VotingAgreement',   r.voting_agreement,
   'DateOrganizer',     r.date_organizer
@@ -251,6 +300,10 @@ func (s *server) sendCsvResponse(queryMonth int, members []member) {
 		"CM Approval",
 		"Voting Agreement",
 		"Date Organizer",
+		"PotentialVoterFixedMpi",
+		"PotentialVoterWithPriorMonthMpi",
+		"PotentialOfficerFixedMpi",
+		"PotentialOfficerWithPriorMonthMpi",
 	})
 	for _, member := range members {
 		w.Write([]string{
@@ -265,6 +318,10 @@ func (s *server) sendCsvResponse(queryMonth int, members []member) {
 			member.CMApproval,
 			yesNo(member.VotingAgreement != 0),
 			member.DateOrganizer,
+			yesNo(member.PotentialVoterFixedMpi != 0),
+			yesNo(member.PotentialVoterWithPriorMonthMpi != 0),
+			yesNo(member.PotentialOfficerFixedMpi != 0),
+			yesNo(member.PotentialOfficerWithPriorMonthMpi != 0),
 		})
 	}
 	w.Flush()
