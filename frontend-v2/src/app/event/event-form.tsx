@@ -259,6 +259,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
   // Subscribe to form state to reactively show/hide the survey checkbox.
   const eventType = useStore(form.store, (state) => state.values.eventType)
   const eventName = useStore(form.store, (state) => state.values.eventName)
+  const isDirty = useStore(form.store, (state) => state.isDirty)
 
   // Predicts whether the server will send a survey by default.
   const shouldShowSuppressSurveyCheckbox = useMemo(() => {
@@ -308,7 +309,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
   // Warn before leaving with unsaved changes.
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (form.state.isDirty) {
+      if (isDirty) {
         // `preventDefault()` + setting `returnValue` triggers the
         // browser's native unsaved changes warning dialog. Modern
         // browsers ignore custom messages in returnValue for security,
@@ -320,7 +321,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
 
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [form.state.isDirty])
+  }, [isDirty])
 
   const setDateToToday = () => {
     // Get today's date in YYYY-MM-DD format in the browser's local timezone
@@ -428,6 +429,9 @@ export const EventForm = ({ mode }: EventFormProps) => {
                   className={cn(
                     field.state.meta.errors[0] && 'border-red-500'
                   )}
+                  style={{
+                    color: field.state.value ? undefined : 'transparent',
+                  }}
                 />
                 {field.state.meta.errors[0] && (
                   <p className="text-sm text-red-500 mt-1">
@@ -511,7 +515,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
         </div>
         <div className="flex items-center gap-4">
           <div className="text-sm">
-            {form.state.isDirty && (
+            {isDirty && (
               <span className="text-red-500 font-medium">Unsaved changes</span>
             )}
           </div>
