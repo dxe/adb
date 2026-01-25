@@ -121,7 +121,7 @@ export const AttendeeInputField = ({
               name="attendee"
               placeholder=""
               className={cn(
-                'w-full transition-colors duration-300 border-2',
+                'w-full transition-colors duration-300',
                 isDuplicate || isError
                   ? 'text-red-500 border-red-500 focus:border-red-500'
                   : isNewName

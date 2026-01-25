@@ -389,7 +389,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
                 className={cn(
-                  'flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
+                  'h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus:border-input focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
                   field.state.meta.errors[0] && 'border-red-500',
                 )}
               >
@@ -425,7 +425,9 @@ export const EventForm = ({ mode }: EventFormProps) => {
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
                   onBlur={field.handleBlur}
-                  className={cn(field.state.meta.errors[0] && 'border-red-500')}
+                  className={cn(
+                    field.state.meta.errors[0] && 'border-red-500'
+                  )}
                 />
                 {field.state.meta.errors[0] && (
                   <p className="text-sm text-red-500 mt-1">
