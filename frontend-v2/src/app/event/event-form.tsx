@@ -138,24 +138,26 @@ export const EventForm = ({ mode }: EventFormProps) => {
 
       // Reset the form's dirty state after successful save.
       // This prevents "unsaved changes" warning after successful save.
-      // TanStack form has a bug requiring the `keepDefaultValues` option:
-      // https://github.com/TanStack/form/issues/1798.
-      form.reset(
-        {
-          eventName: variables.event_name,
-          eventType: variables.event_type,
-          eventDate: variables.event_date,
-          suppressSurvey: variables.suppress_survey,
-          attendees: (result.attendees ?? [])
-            .map((name) => ({ name }))
-            .concat(
-              Array(MIN_EMPTY_FIELDS)
-                .fill(null)
-                .map(() => ({ name: '' })),
-            ),
-        },
-        { keepDefaultValues: true },
-      )
+      const newValues = {
+        eventName: variables.event_name,
+        eventType: variables.event_type,
+        eventDate: variables.event_date,
+        suppressSurvey: variables.suppress_survey,
+        attendees: (result.attendees ?? [])
+          .map((name) => ({ name }))
+          .concat(
+            Array(MIN_EMPTY_FIELDS)
+              .fill(null)
+              .map(() => ({ name: '' })),
+          ),
+      }
+
+      // Use keepDefaultValues to work around TanStack Form bug:
+      // https://github.com/TanStack/form/issues/1798
+      form.reset(newValues, { keepDefaultValues: true })
+
+      // Manually update defaultValues since keepDefaultValues prevents it.
+      form.options.defaultValues = newValues
 
       // Refresh activist list to include newly created activists.
       // This ensures they appear in autocomplete suggestions.
