@@ -133,7 +133,6 @@ export const EventForm = ({ mode }: EventFormProps) => {
         )
         if (match) {
           const newEventId = match[2]
-          // Update URL to include the new event ID.
           const newPath = isConnection
             ? `/coaching/${newEventId}`
             : `/event/${newEventId}`
@@ -182,10 +181,9 @@ export const EventForm = ({ mode }: EventFormProps) => {
       queryClient.invalidateQueries({
         queryKey: [API_PATH.ACTIVIST_LIST_BASIC],
       })
-      // Note: We don't invalidate the EVENT_GET query here because that would
-      // refetch the event data from the server, which would reorder the attendees
-      // in arbitrary database order. We've already updated the form state above
-      // to preserve the user's input order.
+      queryClient.invalidateQueries({
+          queryKey: [API_PATH.EVENT_GET, eventId],
+      })
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Error saving event')
@@ -273,8 +271,8 @@ export const EventForm = ({ mode }: EventFormProps) => {
   })
 
   const checkForDuplicate = (value: string, currentIndex: number): boolean => {
-    const attendees = form.state.values.attendees
-    const matches = attendees.filter(
+    const currentAttendees = form.state.values.attendees
+    const matches = currentAttendees.filter(
       (a, idx) => idx !== currentIndex && a.name === value,
     )
     return matches.length > 0
@@ -315,16 +313,16 @@ export const EventForm = ({ mode }: EventFormProps) => {
     })
   }, [eventName, eventType, user.ChapterID])
 
+  // Subscribe to attendees changes to reactively update the count
+  const attendees = useStore(form.store, (state) => state.values.attendees)
   const attendeeCount = useMemo(
-    () =>
-      form.state.values.attendees.filter((a) => a.name.trim() !== '').length,
-    [form.state.values.attendees],
+    () => attendees.filter((a) => a.name.trim() !== '').length,
+    [attendees],
   )
 
   const ensureMinimumEmptyFields = () => {
-    const emptyCount = form.state.values.attendees.filter(
-      (it) => !it.name.length,
-    ).length
+    const currentAttendees = form.state.values.attendees
+    const emptyCount = currentAttendees.filter((it) => !it.name.length).length
     if (emptyCount < MIN_EMPTY_FIELDS) {
       form.pushFieldValue('attendees', { name: '' })
     }
