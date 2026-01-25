@@ -42,6 +42,15 @@ const EVENT_TYPES = [
 const DEFAULT_FIELD_COUNT = 5
 const MIN_EMPTY_FIELDS = 1
 
+// Get today's date in YYYY-MM-DD format in the browser's local timezone
+const getTodayDate = () => {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 // Zod schema for form validation.
 const attendeeSchema = z.object({
   name: z.string().refine(
@@ -124,7 +133,6 @@ export const EventForm = ({ mode }: EventFormProps) => {
         )
         if (match) {
           const newEventId = match[2]
-          // Update URL to include the new event ID.
           const newPath = isConnection
             ? `/coaching/${newEventId}`
             : `/event/${newEventId}`
@@ -138,24 +146,35 @@ export const EventForm = ({ mode }: EventFormProps) => {
 
       // Reset the form's dirty state after successful save.
       // This prevents "unsaved changes" warning after successful save.
-      // TanStack form has a bug requiring the `keepDefaultValues` option:
-      // https://github.com/TanStack/form/issues/1798.
-      form.reset(
-        {
-          eventName: variables.event_name,
-          eventType: variables.event_type,
-          eventDate: variables.event_date,
-          suppressSurvey: variables.suppress_survey,
-          attendees: (result.attendees ?? [])
-            .map((name) => ({ name }))
-            .concat(
-              Array(MIN_EMPTY_FIELDS)
-                .fill(null)
-                .map(() => ({ name: '' })),
-            ),
-        },
-        { keepDefaultValues: true },
-      )
+
+      // Use the attendee order from the current form state, not from the
+      // server response (result.attendees). The server returns attendees in
+      // arbitrary database order, but we want to preserve the user's input order.
+      // This matches the behavior of the legacy Vue version.
+      const savedAttendeeNames = form.state.values.attendees
+        .map((a) => a.name.trim())
+        .filter((n) => n !== '')
+
+      const newValues = {
+        eventName: variables.event_name,
+        eventType: variables.event_type,
+        eventDate: variables.event_date,
+        suppressSurvey: variables.suppress_survey,
+        attendees: savedAttendeeNames
+          .map((name) => ({ name }))
+          .concat(
+            Array(MIN_EMPTY_FIELDS)
+              .fill(null)
+              .map(() => ({ name: '' })),
+          ),
+      }
+
+      // Use keepDefaultValues to work around TanStack Form bug:
+      // https://github.com/TanStack/form/issues/1798
+      form.reset(newValues, { keepDefaultValues: true })
+
+      // Manually update defaultValues since keepDefaultValues prevents it.
+      form.options.defaultValues = newValues
 
       // Refresh activist list to include newly created activists.
       // This ensures they appear in autocomplete suggestions.
@@ -175,10 +194,13 @@ export const EventForm = ({ mode }: EventFormProps) => {
     if (eventId && !eventData) {
       throw new Error('Expected event data to be prefetched')
     }
+
+    // Default to today's date for new events to avoid Safari showing a confusing
+    // placeholder. Users can easily change it if needed.
     return {
       eventName: eventData?.event_name || '',
       eventType: eventData?.event_type || (isConnection ? 'Connection' : ''),
-      eventDate: eventData?.event_date || '',
+      eventDate: eventData?.event_date || getTodayDate(),
       // For new events, non-SF Bay chapters default to not sending surveys.
       suppressSurvey:
         eventData?.suppress_survey ?? user.ChapterID !== SF_BAY_CHAPTER_ID,
@@ -249,8 +271,8 @@ export const EventForm = ({ mode }: EventFormProps) => {
   })
 
   const checkForDuplicate = (value: string, currentIndex: number): boolean => {
-    const attendees = form.state.values.attendees
-    const matches = attendees.filter(
+    const currentAttendees = form.state.values.attendees
+    const matches = currentAttendees.filter(
       (a, idx) => idx !== currentIndex && a.name === value,
     )
     return matches.length > 0
@@ -259,6 +281,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
   // Subscribe to form state to reactively show/hide the survey checkbox.
   const eventType = useStore(form.store, (state) => state.values.eventType)
   const eventName = useStore(form.store, (state) => state.values.eventName)
+  const isDirty = useStore(form.store, (state) => state.isDirty)
 
   // Predicts whether the server will send a survey by default.
   const shouldShowSuppressSurveyCheckbox = useMemo(() => {
@@ -290,16 +313,16 @@ export const EventForm = ({ mode }: EventFormProps) => {
     })
   }, [eventName, eventType, user.ChapterID])
 
+  // Subscribe to attendees changes to reactively update the count
+  const attendees = useStore(form.store, (state) => state.values.attendees)
   const attendeeCount = useMemo(
-    () =>
-      form.state.values.attendees.filter((a) => a.name.trim() !== '').length,
-    [form.state.values.attendees],
+    () => attendees.filter((a) => a.name.trim() !== '').length,
+    [attendees],
   )
 
   const ensureMinimumEmptyFields = () => {
-    const emptyCount = form.state.values.attendees.filter(
-      (it) => !it.name.length,
-    ).length
+    const currentAttendees = form.state.values.attendees
+    const emptyCount = currentAttendees.filter((it) => !it.name.length).length
     if (emptyCount < MIN_EMPTY_FIELDS) {
       form.pushFieldValue('attendees', { name: '' })
     }
@@ -308,7 +331,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
   // Warn before leaving with unsaved changes.
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (form.state.isDirty) {
+      if (isDirty) {
         // `preventDefault()` + setting `returnValue` triggers the
         // browser's native unsaved changes warning dialog. Modern
         // browsers ignore custom messages in returnValue for security,
@@ -320,15 +343,10 @@ export const EventForm = ({ mode }: EventFormProps) => {
 
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [form.state.isDirty])
+  }, [isDirty])
 
   const setDateToToday = () => {
-    // Get today's date in YYYY-MM-DD format in the browser's local timezone
-    const today = new Date()
-    const year = today.getFullYear()
-    const month = String(today.getMonth() + 1).padStart(2, '0')
-    const day = String(today.getDate()).padStart(2, '0')
-    form.setFieldValue('eventDate', `${year}-${month}-${day}`)
+    form.setFieldValue('eventDate', getTodayDate())
   }
 
   // Only show loading for activist list since event data is prefetched during SSR
@@ -389,7 +407,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
                 className={cn(
-                  'flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
+                  'h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus:border-input focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
                   field.state.meta.errors[0] && 'border-red-500',
                 )}
               >
@@ -509,7 +527,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
         </div>
         <div className="flex items-center gap-4">
           <div className="text-sm">
-            {form.state.isDirty && (
+            {isDirty && (
               <span className="text-red-500 font-medium">Unsaved changes</span>
             )}
           </div>

@@ -60,5 +60,9 @@ export default {
       },
     },
   },
-  plugins: [twAnimate, require('tailwindcss-animate')],
+  plugins: [
+    require('@tailwindcss/forms'),
+    twAnimate,
+    require('tailwindcss-animate'),
+  ],
 } satisfies Config
