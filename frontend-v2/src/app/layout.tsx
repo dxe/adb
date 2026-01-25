@@ -37,7 +37,10 @@ export default async function RootLayout({
           pb-[3.25rem] Tailwind class when combined with body's background styles.
           Inline styles work reliably across all browsers.
         */}
-        <div className="pt-[3.25rem] min-h-screen" style={{ paddingBottom: '3rem' }}>
+        <div
+          className="pt-[3.25rem] min-h-screen"
+          style={{ paddingBottom: '3rem' }}
+        >
           <Providers>{children}</Providers>
         </div>
         <Toaster position="bottom-right" />

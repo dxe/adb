@@ -182,7 +182,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
         queryKey: [API_PATH.ACTIVIST_LIST_BASIC],
       })
       queryClient.invalidateQueries({
-          queryKey: [API_PATH.EVENT_GET, eventId],
+        queryKey: [API_PATH.EVENT_GET, eventId],
       })
     },
     onError: (error: Error) => {
@@ -443,9 +443,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
                   onBlur={field.handleBlur}
-                  className={cn(
-                    field.state.meta.errors[0] && 'border-red-500'
-                  )}
+                  className={cn(field.state.meta.errors[0] && 'border-red-500')}
                 />
                 {field.state.meta.errors[0] && (
                   <p className="text-sm text-red-500 mt-1">
