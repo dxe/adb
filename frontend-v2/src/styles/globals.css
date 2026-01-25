@@ -5,7 +5,6 @@
 @tailwind utilities;
 
 body {
-  min-height: 100vh;
   background:
     linear-gradient(rgba(80, 90, 170, 0.85), rgba(80, 90, 170, 0.85)),
     url('/v2/bg.jpg') no-repeat center center fixed;
