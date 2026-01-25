@@ -42,6 +42,15 @@ const EVENT_TYPES = [
 const DEFAULT_FIELD_COUNT = 5
 const MIN_EMPTY_FIELDS = 1
 
+// Get today's date in YYYY-MM-DD format in the browser's local timezone
+const getTodayDate = () => {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 // Zod schema for form validation.
 const attendeeSchema = z.object({
   name: z.string().refine(
@@ -138,12 +147,21 @@ export const EventForm = ({ mode }: EventFormProps) => {
 
       // Reset the form's dirty state after successful save.
       // This prevents "unsaved changes" warning after successful save.
+
+      // Use the attendee order from the current form state, not from the
+      // server response (result.attendees). The server returns attendees in
+      // arbitrary database order, but we want to preserve the user's input order.
+      // This matches the behavior of the legacy Vue version.
+      const savedAttendeeNames = form.state.values.attendees
+        .map((a) => a.name.trim())
+        .filter((n) => n !== '')
+
       const newValues = {
         eventName: variables.event_name,
         eventType: variables.event_type,
         eventDate: variables.event_date,
         suppressSurvey: variables.suppress_survey,
-        attendees: (result.attendees ?? [])
+        attendees: savedAttendeeNames
           .map((name) => ({ name }))
           .concat(
             Array(MIN_EMPTY_FIELDS)
@@ -164,9 +182,10 @@ export const EventForm = ({ mode }: EventFormProps) => {
       queryClient.invalidateQueries({
         queryKey: [API_PATH.ACTIVIST_LIST_BASIC],
       })
-      queryClient.invalidateQueries({
-        queryKey: [API_PATH.EVENT_GET, eventId],
-      })
+      // Note: We don't invalidate the EVENT_GET query here because that would
+      // refetch the event data from the server, which would reorder the attendees
+      // in arbitrary database order. We've already updated the form state above
+      // to preserve the user's input order.
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Error saving event')
@@ -177,10 +196,13 @@ export const EventForm = ({ mode }: EventFormProps) => {
     if (eventId && !eventData) {
       throw new Error('Expected event data to be prefetched')
     }
+
+    // Default to today's date for new events to avoid Safari showing a confusing
+    // placeholder. Users can easily change it if needed.
     return {
       eventName: eventData?.event_name || '',
       eventType: eventData?.event_type || (isConnection ? 'Connection' : ''),
-      eventDate: eventData?.event_date || '',
+      eventDate: eventData?.event_date || getTodayDate(),
       // For new events, non-SF Bay chapters default to not sending surveys.
       suppressSurvey:
         eventData?.suppress_survey ?? user.ChapterID !== SF_BAY_CHAPTER_ID,
@@ -326,12 +348,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
   }, [isDirty])
 
   const setDateToToday = () => {
-    // Get today's date in YYYY-MM-DD format in the browser's local timezone
-    const today = new Date()
-    const year = today.getFullYear()
-    const month = String(today.getMonth() + 1).padStart(2, '0')
-    const day = String(today.getDate()).padStart(2, '0')
-    form.setFieldValue('eventDate', `${year}-${month}-${day}`)
+    form.setFieldValue('eventDate', getTodayDate())
   }
 
   // Only show loading for activist list since event data is prefetched during SSR
@@ -431,9 +448,6 @@ export const EventForm = ({ mode }: EventFormProps) => {
                   className={cn(
                     field.state.meta.errors[0] && 'border-red-500'
                   )}
-                  style={{
-                    color: field.state.value ? undefined : 'transparent',
-                  }}
                 />
                 {field.state.meta.errors[0] && (
                   <p className="text-sm text-red-500 mt-1">
