@@ -215,7 +215,8 @@ func (c MainController) corsAllowGetMiddleware(h http.Handler) http.Handler {
 func router() (*mux.Router, *sqlx.DB) {
 	db := model.NewDB(config.DBDataSource())
 	userRepo := persistence.NewUserRepository(db)
-	main := MainController{db: db, userRepo: userRepo}
+	activistRepo := persistence.NewActivistRepository(db)
+	main := MainController{db: db, userRepo: userRepo, activistRepo: activistRepo}
 	csrfMiddleware := csrf.Protect(
 		[]byte(config.CsrfAuthKey),
 		csrf.Secure(config.IsProd), // disable secure flag in dev
@@ -282,6 +283,7 @@ func router() (*mux.Router, *sqlx.DB) {
 
 	// Authed API
 	router.Handle("/api/csrf-token", csrfMiddleware(alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.CSRFTokenHandler))).Methods(http.MethodGet)
+	router.Handle("/api/activists", alice.New(main.apiOrganizerOrNonSFBayAuthMiddleware).ThenFunc(main.ActivistsSearchHandler)).Methods(http.MethodPost)
 	router.Handle("/activist_names/get", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteActivistsHandler))
 	router.Handle("/activist_names/get_organizers", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteOrganizersHandler))
 	router.Handle("/activist_names/get_chaptermembers", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteChapterMembersHandler))
@@ -356,8 +358,9 @@ func router() (*mux.Router, *sqlx.DB) {
 }
 
 type MainController struct {
-	db       *sqlx.DB
-	userRepo model.UserRepository
+	db           *sqlx.DB
+	userRepo     model.UserRepository
+	activistRepo model.ActivistRepository
 }
 
 func (c MainController) authRoleMiddleware(h http.Handler, allowedRoles []string) http.Handler {
@@ -378,7 +381,7 @@ func (c MainController) authRoleMiddleware(h http.Handler, allowedRoles []string
 			return
 		}
 
-		if !userIsAllowed(allowedRoles, user) {
+		if !model.UserHasAnyRole(allowedRoles, user) {
 			http.Redirect(w, r.WithContext(setUserContext(r, user)), "/403", http.StatusFound)
 			return
 		}
@@ -402,18 +405,6 @@ func (c MainController) authOrganizerMiddleware(h http.Handler) http.Handler {
 
 func (c MainController) authAdminMiddleware(h http.Handler) http.Handler {
 	return c.authRoleMiddleware(h, []string{"admin"})
-}
-
-func userIsAllowed(roles []string, user model.ADBUser) bool {
-	for i := 0; i < len(roles); i++ {
-		for _, r := range user.Roles {
-			if r == roles[i] {
-				return true
-			}
-		}
-	}
-
-	return false
 }
 
 func getUserMainRole(user model.ADBUser) string {
@@ -454,7 +445,7 @@ func (c MainController) apiRoleMiddleware(h http.Handler, allowedRoles []string)
 			return
 		}
 
-		if !userIsAllowed(allowedRoles, user) {
+		if !model.UserHasAnyRole(allowedRoles, user) {
 			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 			return
 		}
@@ -1690,6 +1681,15 @@ func (c MainController) CSRFTokenHandler(w http.ResponseWriter, r *http.Request)
 		"status":    "success",
 		"csrfToken": csrf.Token(r),
 	})
+}
+
+func (c MainController) ActivistsSearchHandler(w http.ResponseWriter, r *http.Request) {
+	authedUser, authed := c.getAuthedADBUser(r)
+	if !authed {
+		panic("ActivistsSearchHandler requires authed ADB user")
+	}
+
+	transport.ActivistsSearchHandler(w, r, authedUser, c.activistRepo)
 }
 
 func (c MainController) UsersListHandler(w http.ResponseWriter, r *http.Request) {
