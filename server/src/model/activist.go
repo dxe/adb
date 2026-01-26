@@ -2226,3 +2226,152 @@ func assignActivistToUser(db *sqlx.DB, activistID, userID int) error {
 	}
 	return nil
 }
+
+func QueryActivists(authedUser ADBUser, options QueryActivistOptions, repo ActivistRepository) (QueryActivistResult, error) {
+	if !UserHasRole("admin", authedUser) {
+		if authedUser.ChapterID != options.Filters.ChapterId || authedUser.ChapterID == 0 {
+			return QueryActivistResult{}, fmt.Errorf("Cannot query activists in other chapters without admin access")
+		}
+	}
+
+	if !UserHasAnyRole([]string{"admin", "organizer", "non-sfbay"}, authedUser) {
+		return QueryActivistResult{}, fmt.Errorf("Lacking permission to query activists")
+	}
+
+	options.normalizeAndValidate()
+
+	return repo.QueryActivists(options)
+}
+
+// Interface for querying and updating activists. This avoids a dependency on the persistence package which could create
+// a cyclical package reference.
+type ActivistRepository interface {
+	QueryActivists(options QueryActivistOptions) (QueryActivistResult, error)
+}
+
+type ActivistColumnName string
+
+var ValidActivistColumnNames = map[ActivistColumnName]struct{}{
+	"chapter": {},
+
+	"email":                    {},
+	"facebook":                 {},
+	"id":                       {},
+	"location":                 {},
+	"name":                     {},
+	"preferred_name":           {},
+	"phone":                    {},
+	"pronouns":                 {},
+	"language":                 {},
+	"accessibility":            {},
+	"dob":                      {},
+	"chapter_id":               {},
+	"first_event":              {},
+	"last_event":               {},
+	"first_event_name":         {},
+	"last_event_name":          {},
+	"last_action":              {},
+	"months_since_last_action": {},
+	"total_events":             {},
+	"total_points":             {},
+	"active":                   {},
+	"status":                   {},
+	"activist_level":           {},
+	"source":                   {},
+	"hiatus":                   {},
+	"connector":                {},
+	"training0":                {},
+	"training1":                {},
+	"training4":                {},
+	"training5":                {},
+	"training6":                {},
+	"consent_quiz":             {},
+	"training_protest":         {},
+	"dev_application_date":     {},
+	"dev_application_type":     {},
+	"dev_quiz":                 {},
+	"dev_interest":             {},
+	"cm_first_email":           {},
+	"cm_approval_email":        {},
+	"prospect_organizer":       {},
+	"prospect_chapter_member":  {},
+	"last_connection":          {},
+	"referral_friends":         {},
+	"referral_apply":           {},
+	"referral_outlet":          {},
+	"interest_date":            {},
+	"mpi":                      {},
+	"notes":                    {},
+	"vision_wall":              {},
+	"mpp_requirements":         {},
+	"voting_agreement":         {},
+	"street_address":           {},
+	"city":                     {},
+	"state":                    {},
+	"geo_circles":              {},
+	"lat":                      {},
+	"lng":                      {},
+	"assigned_to":              {},
+	"assigned_to_name":         {},
+	"followup_date":            {},
+	"total_interactions":       {},
+	"last_interaction_date":    {},
+}
+
+type QueryActivistOptions struct {
+	// This model is currently shared with the transport layer and treated as part of the frontend API.
+	// Introduce transport DTOs when the wire format needs to differ from internal semantics.
+
+	Columns []ActivistColumnName `json:"columns"`
+	Filters QueryActivistFilters `json:"filters"`
+	Sort    ActivistSortOptions  `json:"sort"`
+
+	// Cursor pointing to last item in previous page (base 64 encoding of values of sort columns and ID).
+	// Must be a value returned by QueryActivistResultPagination.NextCursor.
+	// If empty, the first page of results will be returned.
+	// If invalid, an error is returned.
+	After string `json:"after"`
+}
+
+type QueryActivistFilters struct {
+	// 0 means search all chapters. Requires that the "chapter" column be visible.
+	// Must be set to ID of current chapter if user only has permission for current chapter.
+	ChapterId     int                `json:"chapter_id"`
+	Name          ActivistNameFilter `json:"name"`
+	LastEvent     LastEventFilter    `json:"last_event"`
+	IncludeHidden bool               `json:"include_hidden"`
+}
+
+type ActivistNameFilter struct {
+	Name string `json:"name"`
+}
+
+type LastEventFilter struct {
+	LastEventLt *time.Time `json:"last_event_lt"`
+	LastEventGt *time.Time `json:"last_event_gt"`
+}
+
+type ActivistSortOptions struct {
+	SortColumns []ActivistSortColumn `json:"sort_columns"`
+}
+
+type ActivistSortColumn struct {
+	ColumnName ActivistColumnName `json:"column_name"`
+	Desc       bool               `json:"desc"`
+}
+
+type QueryActivistResult struct {
+	Activists  []ActivistExtra               `json:"activists"`
+	Pagination QueryActivistResultPagination `json:"pagination"`
+}
+
+type QueryActivistResultPagination struct {
+	// An opaque string if more results are available; otherwise, the empty string.
+	NextCursor string `json:"next_cursor"`
+}
+
+func (o *QueryActivistOptions) normalizeAndValidate() error {
+	// TODO: remove invalid characters from o.nameFilter.name
+
+	return nil
+}
