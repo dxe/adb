@@ -40,8 +40,13 @@ func (r DBActivistRepository) QueryActivists(options model.QueryActivistOptions)
 	// TODO: use cursor value
 	_ = cursor
 
+	query := NewSqlQueryBuilder()
+	// TODO: translate query options to query builder inputs to construct SQL
+
+	sqlStr, args := query.ToSQL()
+
 	var activists []model.ActivistExtra
-	if err := r.db.Select(&activists, "-- TODO", []any{}); err != nil {
+	if err := r.db.Select(&activists, sqlStr, args...); err != nil {
 		return model.QueryActivistResult{}, fmt.Errorf("query activists: %w", err)
 	}
 
