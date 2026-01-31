@@ -233,7 +233,9 @@ export const Navbar = () => {
                   {user.role !== 'admin' && (
                     <>
                       {' '}
-                      <span className="text-neutral-500 text-sm">({user.ChapterName})</span>
+                      <span className="text-neutral-500 text-sm">
+                        ({user.ChapterName})
+                      </span>
                     </>
                   )}
                 </span>

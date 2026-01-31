@@ -58,7 +58,9 @@ export function useActivistRegistry() {
     queryFn: async () => {
       try {
         const lastSyncTime = await activistStorage.getLastSyncTime()
-        const result = await apiClient.getActivistListBasic(lastSyncTime ?? undefined)
+        const result = await apiClient.getActivistListBasic(
+          lastSyncTime ?? undefined,
+        )
         return result
       } catch (error) {
         console.error('[Registry] Server fetch failed:', error)
@@ -88,10 +90,12 @@ export function useActivistRegistry() {
 
       // Filter activists to only those newer than what we have
       const activistsToUpdate: ActivistRecord[] = []
-      const activistsToSave: Array<ActivistRecord & { lastUpdated: number }> = []
+      const activistsToSave: Array<ActivistRecord & { lastUpdated: number }> =
+        []
 
       for (const activist of newActivists) {
-        const existingTimestamp = activistTimestampsRef.current.get(activist.id) || 0
+        const existingTimestamp =
+          activistTimestampsRef.current.get(activist.id) || 0
         // Server provides Unix timestamp in seconds, convert to milliseconds for comparison
         const activistTimestamp = activist.last_updated * 1000
 
@@ -100,7 +104,10 @@ export function useActivistRegistry() {
           // Store without last_updated field for the registry
           const { last_updated, ...activistData } = activist
           activistsToUpdate.push(activistData)
-          activistsToSave.push({ ...activistData, lastUpdated: activistTimestamp })
+          activistsToSave.push({
+            ...activistData,
+            lastUpdated: activistTimestamp,
+          })
           activistTimestampsRef.current.set(activist.id, activistTimestamp)
         }
       }
