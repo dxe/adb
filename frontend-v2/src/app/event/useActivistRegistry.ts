@@ -1,22 +1,8 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { apiClient } from '@/lib/api'
+import { apiClient, API_PATH } from '@/lib/api'
 import { ActivistRegistry, type ActivistRecord } from './activist-registry'
 import { activistStorage } from './activist-storage'
-
-async function loadCachedActivists(): Promise<ActivistRecord[]> {
-  try {
-    return await activistStorage.getAllActivists()
-  } catch (error) {
-    console.error('Failed to load cached activists:', error)
-    return []
-  }
-}
-
-async function fetchActivists() {
-  const lastSyncTime = await activistStorage.getLastSyncTime()
-  return apiClient.getActivistListBasic(lastSyncTime ?? undefined)
-}
 
 /**
  * Custom hook to access the activist registry with React Query.
@@ -25,22 +11,34 @@ async function fetchActivists() {
  * @returns Object containing the registry instance and query state
  */
 export function useActivistRegistry() {
-  // Local state for activist data
-  const [activists, setActivists] = useState<ActivistRecord[]>([])
+  // Single registry instance updated in place (not recreated on every change)
+  const registryRef = useRef(new ActivistRegistry())
   const [isCacheLoaded, setIsCacheLoaded] = useState(false)
 
   // Load cached data on mount
   useEffect(() => {
-    loadCachedActivists().then((cached) => {
-      setActivists(cached)
-      setIsCacheLoaded(true)
-    })
+    activistStorage
+      .getAllActivists()
+      .then((cached) => {
+        registryRef.current.setActivists(cached)
+      })
+      .catch((err) => {
+        // TODO(jh): how to handle this? returning empty is probably not ideal.
+        console.error('Error loading cached activists:', err)
+        return []
+      })
+      .finally(() => {
+        setIsCacheLoaded(true)
+      })
   }, [])
 
   // Fetch from server with React Query
   const query = useQuery({
-    queryKey: ['activists'],
-    queryFn: fetchActivists,
+    queryKey: [API_PATH.ACTIVIST_LIST_BASIC],
+    queryFn: async () => {
+      const lastSyncTime = await activistStorage.getLastSyncTime()
+      return apiClient.getActivistListBasic(lastSyncTime ?? undefined)
+    },
     enabled: isCacheLoaded, // Wait for cache to load first
     staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
     refetchInterval: 10 * 60 * 1000, // Refetch every 10 minutes in background
@@ -53,41 +51,30 @@ export function useActivistRegistry() {
     const processServerData = async () => {
       const { activists: newActivists, hidden_ids: hiddenIds } = query.data
 
-      // Create temporary registry to perform merge operations
-      const tempRegistry = new ActivistRegistry(activists)
-
-      // Delete hidden activists
+      // Remove hidden activists from registry and IndexedDB
       if (hiddenIds.length > 0) {
+        registryRef.current.removeActivistsByIds(hiddenIds)
         await activistStorage.deleteActivistsByIds(hiddenIds)
-        tempRegistry.removeActivistsByIds(hiddenIds)
       }
 
-      // Merge new/updated activists
+      // Merge new/updated activists into registry and IndexedDB
       if (newActivists.length > 0) {
-        tempRegistry.mergeActivists(newActivists)
+        registryRef.current.mergeActivists(newActivists)
+        // saveActivists uses upsert semantics, so we can just save the new ones
+        await activistStorage.saveActivists(newActivists)
       }
-
-      // Get merged data and update state
-      const mergedActivists = tempRegistry.getActivists()
-      setActivists(mergedActivists)
-
-      // Save to IndexedDB
-      await activistStorage.saveActivists(mergedActivists)
 
       // Update last sync timestamp
       await activistStorage.setLastSyncTime(new Date().toISOString())
     }
 
-    processServerData().catch((error) => {
-      console.error('Failed to process server data:', error)
+    processServerData().catch((err) => {
+      console.error('Failed to process server data:', err)
     })
-  }, [query.data, activists])
-
-  // Create registry from current activist data (memoized)
-  const registry = useMemo(() => new ActivistRegistry(activists), [activists])
+  }, [query.data])
 
   return {
-    registry,
+    registry: registryRef.current,
     isLoading: !isCacheLoaded || query.isLoading,
   }
 }
