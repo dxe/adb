@@ -25,6 +25,7 @@ import { AttendeeInputField } from './attendee-input-field'
 import { useActivistRegistry } from './useActivistRegistry'
 import { DatePicker } from '@/components/ui/date-picker'
 import { format, parseISO } from 'date-fns'
+import { Save, Calendar } from 'lucide-react'
 
 // TODO(jh):
 // - test in prod
@@ -533,6 +534,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
             variant="default"
             disabled={saveEventMutation.isPending}
           >
+            <Save className="h-4 w-4" />
             {saveEventMutation.isPending ? 'Saving...' : 'Save'}
           </Button>
         </div>

@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import clsx from 'clsx'
+import { Pencil } from 'lucide-react'
 
 type Chapter = {
   ChapterID: number
@@ -154,7 +155,10 @@ export function UserTable({
         id: 'actions',
         cell: ({ row }) => (
           <Button size="sm" variant="outline" asChild>
-            <Link href={`/users/${row.original.id}`}>Edit</Link>
+            <Link href={`/users/${row.original.id}`}>
+              <Pencil className="h-4 w-4" />
+              Edit
+            </Link>
           </Button>
         ),
       },
@@ -242,7 +246,10 @@ export function UserTable({
                   </span>
                 </div>
                 <Button size="sm" variant="outline" asChild>
-                  <Link href={`/users/${row.original.id}`}>Edit</Link>
+                  <Link href={`/users/${row.original.id}`}>
+                    <Pencil className="h-4 w-4" />
+                    Edit
+                  </Link>
                 </Button>
               </div>
               <dl className="mt-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">

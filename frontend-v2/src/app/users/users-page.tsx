@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query'
 import { API_PATH, apiClient } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Loader2 } from 'lucide-react'
+import { Loader2, UserPlus } from 'lucide-react'
 import { UserTable } from './user-table'
 
 export default function UsersPage() {
@@ -40,7 +40,10 @@ export default function UsersPage() {
           </p>
         </div>
         <Button asChild>
-          <Link href="/users/new">New user</Link>
+          <Link href="/users/new">
+            <UserPlus className="h-4 w-4" />
+            New user
+          </Link>
         </Button>
       </div>
 
