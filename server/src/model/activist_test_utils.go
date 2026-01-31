@@ -27,12 +27,12 @@ func NewActivistBuilder() *ActivistBuilder {
 	return &ActivistBuilder{
 		activist: ActivistExtra{
 			Activist: Activist{
-				ID:           0,
-				Name:         "name" + fmt.Sprintf("%d", time.Now().UnixNano()),
-				ChapterID:    SFBayChapterIdDevTest,
-				EmailUpdated: defaultModificationTime,
-				PhoneUpdated: defaultModificationTime,
-
+				ID:              0,
+				Name:            "name" + fmt.Sprintf("%d", time.Now().UnixNano()),
+				ChapterID:       SFBayChapterIdDevTest,
+				NameUpdated:     defaultModificationTime,
+				EmailUpdated:    defaultModificationTime,
+				PhoneUpdated:    defaultModificationTime,
 				LocationUpdated: defaultModificationTime,
 			},
 			ActivistConnectionData: ActivistConnectionData{
