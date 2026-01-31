@@ -15,15 +15,12 @@ import toast from 'react-hot-toast'
 import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
 import { SF_BAY_CHAPTER_ID } from '@/lib/constants'
 import { AttendeeInputField } from './attendee-input-field'
-import { ActivistRegistry } from './activist-registry'
+import { useActivistRegistry } from './useActivistRegistry'
 
 // TODO(jh):
 // - test in prod
 // - improve styling
 // - replace vue page w/ react page & update api to not return a redirect response on save
-
-// TODO: store list of names from server in indexed db & only update what's been created, updated, or deleted since last load?
-//   - https://app.asana.com/1/71341131816665/project/1209217418568645/task/1212688232815554
 
 // TODO: store unsaved data in session storage to prevent accidental loss?
 //   - https://app.asana.com/1/71341131816665/project/1209217418568645/task/1212688232815556
@@ -94,14 +91,11 @@ export const EventForm = ({ mode }: EventFormProps) => {
   )
   const [activeInputIndex, setActiveInputIndex] = useState(0)
 
-  // Fetch activist list from server.
-  // We don't want to do this during SSR b/c it's several MB,
-  // and eventually we'd like to cache this data on the client
-  // to avoid sending it on every page load.
-  const { data: activistData, isLoading: isLoadingActivists } = useQuery({
-    queryKey: [API_PATH.ACTIVIST_LIST_BASIC],
-    queryFn: apiClient.getActivistListBasic,
-  })
+  // Initialize activist registry with IndexedDB caching and incremental sync.
+  // The registry loads cached data from IndexedDB first, then syncs any
+  // new/updated activists from the server in the background.
+  const { registry: activistRegistry, isLoading: isLoadingActivists } =
+    useActivistRegistry()
 
   // Fetch existing event/connection, if editing.
   // (Note: This data is prefetched during SSR for edit pages.)
@@ -110,12 +104,6 @@ export const EventForm = ({ mode }: EventFormProps) => {
     queryFn: () => apiClient.getEvent(Number(eventId)),
     enabled: !!eventId,
   })
-
-  // Create activist registry for autocomplete.
-  const activistRegistry = useMemo(
-    () => new ActivistRegistry(activistData?.activists || []),
-    [activistData?.activists],
-  )
 
   const saveEventMutation = useMutation({
     mutationFn: apiClient.saveEvent,
@@ -350,7 +338,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
   }
 
   // Only show loading for activist list since event data is prefetched during SSR
-  if (isLoadingActivists) {
+  if (isLoadingActivists || !activistRegistry) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="text-center">

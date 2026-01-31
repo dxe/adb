@@ -68,6 +68,7 @@ SELECT
   lat,
   lng,
   a.name,
+  name_updated,
   preferred_name,
   phone,
   phone_updated,
@@ -236,6 +237,7 @@ const insertActivistQuery string = `INSERT INTO activists SET ` +
 	ActivistAllDataFieldAssignments
 
 const insertActivistWithTimestampsQuery string = insertActivistQuery + `,
+  name_updated = :name_updated,
   email_updated = :email_updated,
   phone_updated = :phone_updated,
   address_updated = :address_updated,
@@ -251,6 +253,7 @@ SET ` +
 	// data value instead of the old and it will appear as if the values of the data fields did not change, e.g.
 	// `email` would always be equal to `:email`.
 	`
+  name_updated = IF(name <> :name OR preferred_name <> :preferred_name, NOW(), name_updated),
   email_updated = IF(email <> :email, NOW(), email_updated),
   phone_updated = IF(phone <> :phone, NOW(), phone_updated),
   address_updated = IF(street_address <> :street_address OR city <> :city OR state <> :state, NOW(), address_updated),
@@ -263,6 +266,7 @@ WHERE
 // parameterized (the caller of this query must provide the timestamp values).
 const updateActivistWithTimestampsQuery string = `UPDATE activists
 SET
+  name_updated =     :name_updated,
   email_updated =    :email_updated,
   phone_updated =    :phone_updated,
   address_updated =  :address_updated,
@@ -336,7 +340,7 @@ const ActivistAllDataFieldAssignments = ActivistUserEditableDataFieldAssignments
   dev_application_type = :dev_application_type
 `
 
-const hideActivistQuery = `UPDATE activists SET hidden = true, name = concat(name,' ', id) WHERE id = ?`
+const hideActivistQuery = `UPDATE activists SET hidden = true, hidden_at = NOW(), name = concat(name,' ', id) WHERE id = ?`
 
 const DescOrder int = 2
 const AscOrder int = 1
@@ -348,10 +352,12 @@ type Activist struct {
 	EmailUpdated    time.Time      `db:"email_updated"`
 	Facebook        string         `db:"facebook"`
 	Hidden          bool           `db:"hidden"`
+	HiddenAt        mysql.NullTime `db:"hidden_at"`
 	ID              int            `db:"id"`
 	Location        sql.NullString `db:"location"`
 	LocationUpdated time.Time      `db:"location_updated"`
 	Name            string         `db:"name"`
+	NameUpdated     time.Time      `db:"name_updated"`
 	PreferredName   string         `db:"preferred_name"`
 	Phone           string         `db:"phone"`
 	PhoneUpdated    time.Time      `db:"phone_updated"`
@@ -1418,6 +1424,8 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 
 	target.Email, target.EmailUpdated = stringMergeWithTimestamps(original.Email, original.EmailUpdated, target.Email, target.EmailUpdated)
 	target.Phone, target.PhoneUpdated = stringMergeWithTimestamps(original.Phone, original.PhoneUpdated, target.Phone, target.PhoneUpdated)
+	target.Name, target.NameUpdated = stringMergeWithTimestamps(original.Name, original.NameUpdated, target.Name, target.NameUpdated)
+	target.PreferredName = stringMerge(original.PreferredName, target.PreferredName)
 	target.Pronouns = stringMerge(original.Pronouns, target.Pronouns)
 	target.Language = stringMerge(original.Language, target.Language)
 	target.Accessibility = stringMerge(original.Accessibility, target.Accessibility)
@@ -1640,6 +1648,7 @@ GROUP BY a.name`, chapterID)
 }
 
 type ActivistBasicInfoJSON struct {
+	ID            int    `json:"id"`
 	Name          string `json:"name"`
 	Email         string `json:"email"`
 	Phone         string `json:"phone"`
@@ -1648,6 +1657,7 @@ type ActivistBasicInfoJSON struct {
 }
 
 type ActivistBasicInfo struct {
+	ID            int    `db:"id"`
 	Name          string `db:"name"`
 	Email         string `db:"email"`
 	Phone         string `db:"phone"`
@@ -1657,6 +1667,7 @@ type ActivistBasicInfo struct {
 
 func (activist *ActivistBasicInfo) ToJSON() ActivistBasicInfoJSON {
 	return ActivistBasicInfoJSON{
+		ID:            activist.ID,
 		Name:          activist.Name,
 		Email:         activist.Email,
 		Phone:         activist.Phone,
@@ -1665,17 +1676,37 @@ func (activist *ActivistBasicInfo) ToJSON() ActivistBasicInfoJSON {
 	}
 }
 
-func GetActivistListBasicJSON(db *sqlx.DB, chapterID int) []ActivistBasicInfoJSON {
+func GetActivistListBasicJSON(db *sqlx.DB, chapterID int, modifiedSince *time.Time) []ActivistBasicInfoJSON {
 	var activists []ActivistBasicInfo
 
-	// Order the activists by the last even they've been to.
-	err := db.Select(&activists, `
-SELECT a.name, a.email, a.phone, a.pronouns, a.preferred_name FROM activists a
+	query := `
+SELECT a.id, a.name, a.email, a.phone, a.pronouns, a.preferred_name
+FROM activists a
 LEFT OUTER JOIN event_attendance ea ON a.id = ea.activist_id
 LEFT OUTER JOIN events e ON e.id = ea.event_id
-WHERE a.hidden = 0 AND a.chapter_id = ?
+WHERE a.hidden = 0 AND a.chapter_id = ?`
+
+	// Add timestamp filter if provided
+	if modifiedSince != nil {
+		query += ` AND (
+			a.name_updated >= ? OR
+			a.email_updated >= ? OR
+			a.phone_updated >= ?
+		)`
+	}
+
+	query += `
 GROUP BY a.id
-ORDER BY MAX(e.date) DESC`, chapterID)
+ORDER BY MAX(e.date) DESC`
+
+	var err error
+	if modifiedSince != nil {
+		// Pass the timestamp 3 times for the 3 OR conditions
+		err = db.Select(&activists, query, chapterID, modifiedSince, modifiedSince, modifiedSince)
+	} else {
+		err = db.Select(&activists, query, chapterID)
+	}
+
 	if err != nil {
 		// TODO: return error
 		panic(err)
@@ -1688,6 +1719,26 @@ ORDER BY MAX(e.date) DESC`, chapterID)
 	}
 
 	return activistsJSON
+}
+
+// GetHiddenActivistIDs returns IDs of activists that were hidden since the given timestamp.
+// If modifiedSince is nil, returns an empty slice (no deletions to sync).
+func GetHiddenActivistIDs(db *sqlx.DB, chapterID int, modifiedSince *time.Time) ([]int, error) {
+	if modifiedSince == nil {
+		return []int{}, nil
+	}
+
+	var hiddenIDs []int
+	query := `
+SELECT id FROM activists
+WHERE chapter_id = ? AND hidden = 1 AND hidden_at >= ?`
+
+	err := db.Select(&hiddenIDs, query, chapterID, modifiedSince)
+	if err != nil {
+		return nil, err
+	}
+
+	return hiddenIDs, nil
 }
 
 type ActivistSpokeInfo struct {

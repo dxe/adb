@@ -83,11 +83,13 @@ export const ActivistNamesResp = z.object({
 export const ActivistListBasicResp = z.object({
   activists: z.array(
     z.object({
+      id: z.number(),
       name: z.string(),
       email: z.string().optional(),
       phone: z.string().optional(),
     }),
   ),
+  hidden_ids: z.array(z.number()),
 })
 
 export type ActivistListBasic = z.infer<typeof ActivistListBasicResp>
@@ -195,8 +197,14 @@ export class ApiClient {
     return ActivistNamesResp.parse(resp)
   }
 
-  getActivistListBasic = async () => {
-    const resp = await this.client.get(API_PATH.ACTIVIST_LIST_BASIC).json()
+  getActivistListBasic = async (modifiedSince?: string) => {
+    const options = modifiedSince
+      ? { searchParams: { modified_since: modifiedSince } }
+      : {}
+
+    const resp = await this.client
+      .get(API_PATH.ACTIVIST_LIST_BASIC, options)
+      .json()
     return ActivistListBasicResp.parse(resp)
   }
 
