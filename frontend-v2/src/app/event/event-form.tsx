@@ -7,6 +7,13 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { API_PATH, apiClient } from '@/lib/api'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
@@ -358,7 +365,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
         e.stopPropagation()
         await form.handleSubmit()
       }}
-      className="flex flex-col gap-6"
+      className="flex flex-col gap-4"
     >
       {/* Event/Connection Name Field */}
       <form.Field name="eventName">
@@ -390,25 +397,24 @@ export const EventForm = ({ mode }: EventFormProps) => {
           {(field) => (
             <div className="flex flex-col gap-2">
               <Label htmlFor="eventType">Type</Label>
-              <select
-                id="eventType"
+              <Select
                 value={field.state.value}
-                onChange={(e) => field.handleChange(e.target.value)}
-                onBlur={field.handleBlur}
-                className={cn(
-                  'h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus:border-input focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
-                  field.state.meta.errors[0] && 'border-red-500',
-                )}
+                onValueChange={(value) => field.handleChange(value)}
               >
-                <option value="" disabled>
-                  Select event type
-                </option>
-                {EVENT_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger
+                  id="eventType"
+                  className={cn(field.state.meta.errors[0] && 'border-red-500')}
+                >
+                  <SelectValue placeholder="Select event type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {EVENT_TYPES.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {field.state.meta.errors[0] && (
                 <p className="text-sm text-red-500">
                   {field.state.meta.errors[0]?.message}
@@ -427,7 +433,9 @@ export const EventForm = ({ mode }: EventFormProps) => {
             <div className="flex gap-2">
               <div className="flex-1">
                 <DatePicker
-                  value={field.state.value ? parseISO(field.state.value) : undefined}
+                  value={
+                    field.state.value ? parseISO(field.state.value) : undefined
+                  }
                   onValueChange={(date) => {
                     field.handleChange(date ? format(date, 'yyyy-MM-dd') : '')
                   }}

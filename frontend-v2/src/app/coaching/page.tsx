@@ -8,7 +8,7 @@ export default async function CoachingPage() {
   return (
     <AuthedPageLayout pageName="NewConnection_beta">
       <Navbar />
-      <ContentWrapper size="md" className="gap-8">
+      <ContentWrapper size="sm" className="gap-8">
         <h1 className="text-3xl font-bold">Coaching</h1>
         <Suspense fallback={<div>Loading form...</div>}>
           <EventForm mode="connection" />

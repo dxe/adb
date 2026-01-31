@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils'
 import { ReactNode } from 'react'
 
 const contentWrapperClass = {
-  sm: 'lg:max-w-screen-sm',
+  sm: 'lg:max-w-lg',
   md: 'lg:max-w-screen-md',
   lg: 'lg:max-w-screen-lg',
   xl: 'lg:max-w-screen-xl',

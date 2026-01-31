@@ -29,7 +29,7 @@ export default async function EditEventPage({ params }: EditEventPageProps) {
     <AuthedPageLayout pageName="EditEvent_beta">
       <HydrationBoundary state={dehydrate(queryClient)}>
         <Navbar />
-        <ContentWrapper size="md" className="gap-8">
+        <ContentWrapper size="sm" className="gap-8">
           <h1 className="text-3xl font-bold">Attendance</h1>
           <EventForm mode="event" />
         </ContentWrapper>
