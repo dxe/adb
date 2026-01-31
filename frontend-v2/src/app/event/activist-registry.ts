@@ -3,6 +3,7 @@ export type ActivistRecord = {
   name: string
   email?: string
   phone?: string
+  lastUpdated: number // Unix timestamp in milliseconds
 }
 
 /**
@@ -12,18 +13,21 @@ export type ActivistRecord = {
 export class ActivistRegistry {
   private activists: ActivistRecord[]
   private activistsByName: Map<string, ActivistRecord>
+  private activistsById: Map<number, ActivistRecord>
 
   constructor(activists: ActivistRecord[] = []) {
     this.activists = activists
     this.activistsByName = new Map(activists.map((a) => [a.name, a]))
+    this.activistsById = new Map(activists.map((a) => [a.id, a]))
   }
 
   /**
-   * Replace all activists with new data and rebuild index.
+   * Replace all activists with new data and rebuild indexes.
    */
   setActivists(activists: ActivistRecord[]): void {
     this.activists = activists
     this.activistsByName = new Map(activists.map((a) => [a.name, a]))
+    this.activistsById = new Map(activists.map((a) => [a.id, a]))
   }
 
   /**
@@ -49,8 +53,9 @@ export class ActivistRegistry {
         this.activists.push(activist)
       }
 
-      // Update name index
+      // Update indexes
       this.activistsByName.set(activist.name, activist)
+      this.activistsById.set(activist.id, activist)
     }
   }
 
@@ -63,6 +68,7 @@ export class ActivistRegistry {
     this.activists = this.activists.filter((activist) => {
       if (idsToRemove.has(activist.id)) {
         this.activistsByName.delete(activist.name)
+        this.activistsById.delete(activist.id)
         return false
       }
       return true
@@ -78,6 +84,10 @@ export class ActivistRegistry {
 
   getActivist(name: string): ActivistRecord | null {
     return this.activistsByName.get(name) ?? null
+  }
+
+  getActivistById(id: number): ActivistRecord | null {
+    return this.activistsById.get(id) ?? null
   }
 
   getSuggestions(input: string, maxResults = 10): string[] {

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { apiClient, API_PATH } from '@/lib/api'
 import { ActivistRegistry, type ActivistRecord } from './activist-registry'
 import { activistStorage } from './activist-storage'
+import toast from 'react-hot-toast'
 
 /**
  * Custom hook to access the activist registry with React Query.
@@ -13,9 +14,6 @@ import { activistStorage } from './activist-storage'
 export function useActivistRegistry() {
   // Single registry instance updated in place (not recreated on every change)
   const registryRef = useRef(new ActivistRegistry())
-  // Map to track lastUpdated timestamp for each activist
-  const activistTimestampsRef = useRef(new Map<number, number>())
-  // Track loading states
   const [isCacheLoaded, setIsCacheLoaded] = useState(false)
   const [isServerLoaded, setIsServerLoaded] = useState(false)
 
@@ -24,14 +22,6 @@ export function useActivistRegistry() {
     activistStorage
       .getAllActivists()
       .then((cached) => {
-        // Build timestamp map from cached data
-        const timestamps = new Map<number, number>()
-        for (const activist of cached) {
-          timestamps.set(activist.id, activist.lastUpdated)
-        }
-        activistTimestampsRef.current = timestamps
-
-        // Load into registry (without lastUpdated field)
         registryRef.current.setActivists(cached)
         setIsCacheLoaded(true)
       })
@@ -48,29 +38,39 @@ export function useActivistRegistry() {
           // to no-cache mode - the app still works via server fetches, just slower.
           // This is preferable to blocking the user completely.
         }
-        setIsCacheLoaded(true) // Mark as loaded even on error
+        setIsCacheLoaded(true)
       })
   }, [])
 
-  // Fetch from server with React Query (start immediately, don't wait for cache)
   const query = useQuery({
     queryKey: [API_PATH.ACTIVIST_LIST_BASIC],
     queryFn: async () => {
-      try {
-        const lastSyncTime = await activistStorage.getLastSyncTime()
-        const result = await apiClient.getActivistListBasic(
-          lastSyncTime ?? undefined,
-        )
-        return result
-      } catch (error) {
-        console.error('[Registry] Server fetch failed:', error)
-        throw error
-      }
+      const lastSyncTime = await activistStorage.getLastSyncTime()
+      const result = await apiClient.getActivistListBasic(
+        lastSyncTime ?? undefined,
+      )
+      return result
     },
-    retry: 1, // Only retry once to avoid infinite loops during development
-    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
-    refetchInterval: 10 * 60 * 1000, // Refetch every 10 minutes in background
+    retry: 1,
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 10 * 60 * 1000,
   })
+
+  // Handle query errors
+  useEffect(() => {
+    if (query.isError) {
+      console.error('[Registry] Server fetch failed:', query.error)
+      // Show error to user if we have no cached data
+      if (registryRef.current.size() === 0) {
+        toast.error('Failed to fetch activist data. Please refresh the page.')
+      } else {
+        toast.error(
+          'Failed to fetch latest activist data. Activist data may be out of date.',
+        )
+      }
+      setIsServerLoaded(true) // Mark as loaded to unblock UI (with stale data)
+    }
+  }, [query.isError, query.error])
 
   // Merge server data when it arrives
   useEffect(() => {
@@ -79,43 +79,35 @@ export function useActivistRegistry() {
     const processServerData = async () => {
       const { activists: newActivists, hidden_ids: hiddenIds } = query.data
 
-      // Remove hidden activists from registry, IndexedDB, and timestamp map
+      // Remove hidden activists from registry and IndexedDB
       if (hiddenIds.length > 0) {
         registryRef.current.removeActivistsByIds(hiddenIds)
         await activistStorage.deleteActivistsByIds(hiddenIds)
-        for (const id of hiddenIds) {
-          activistTimestampsRef.current.delete(id)
-        }
       }
 
       // Filter activists to only those newer than what we have
       const activistsToUpdate: ActivistRecord[] = []
-      const activistsToSave: Array<ActivistRecord & { lastUpdated: number }> =
-        []
 
       for (const activist of newActivists) {
-        const existingTimestamp =
-          activistTimestampsRef.current.get(activist.id) || 0
-        // Server provides Unix timestamp in seconds, convert to milliseconds for comparison
-        const activistTimestamp = activist.last_updated * 1000
+        // Server provides Unix timestamp in seconds, convert to milliseconds
+        const incomingTimestamp = activist.last_updated * 1000
+        const existingActivist = registryRef.current.getActivistById(activist.id)
+        const existingTimestamp = existingActivist?.lastUpdated || 0
 
-        // Only update if this data is newer
-        if (activistTimestamp > existingTimestamp) {
-          // Store without last_updated field for the registry
+        // Only update if this data is newer (handles out-of-order responses)
+        if (incomingTimestamp > existingTimestamp) {
           const { last_updated, ...activistData } = activist
-          activistsToUpdate.push(activistData)
-          activistsToSave.push({
+          activistsToUpdate.push({
             ...activistData,
-            lastUpdated: activistTimestamp,
+            lastUpdated: incomingTimestamp,
           })
-          activistTimestampsRef.current.set(activist.id, activistTimestamp)
         }
       }
 
       // Merge newer activists into registry and IndexedDB
       if (activistsToUpdate.length > 0) {
         registryRef.current.mergeActivists(activistsToUpdate)
-        await activistStorage.saveActivists(activistsToSave)
+        await activistStorage.saveActivists(activistsToUpdate)
       }
 
       // Update last sync timestamp
@@ -126,7 +118,15 @@ export function useActivistRegistry() {
 
     processServerData().catch((err) => {
       console.error('Failed to process server data:', err)
-      setIsServerLoaded(true) // Mark as loaded even on error
+      // Show error to user if we have no cached data
+      if (registryRef.current.size() === 0) {
+        toast.error('Failed to sync activist data. Please refresh the page.')
+      } else {
+        toast.error(
+          'Failed to sync latest activist data. Activist data may be out of date.',
+        )
+      }
+      setIsServerLoaded(true) // Mark as loaded to unblock UI
     })
   }, [query.data])
 

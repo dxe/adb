@@ -27,14 +27,6 @@ import { DatePicker } from '@/components/ui/date-picker'
 import { format, parseISO } from 'date-fns'
 import { Save, Calendar } from 'lucide-react'
 
-// TODO(jh):
-// - test in prod
-// - improve styling
-// - replace vue page w/ react page & update api to not return a redirect response on save
-
-// TODO: store unsaved data in session storage to prevent accidental loss?
-//   - https://app.asana.com/1/71341131816665/project/1209217418568645/task/1212688232815556
-
 const EVENT_TYPES = [
   'Action',
   'Campaign Action',
@@ -193,7 +185,6 @@ export const EventForm = ({ mode }: EventFormProps) => {
       throw new Error('Expected event data to be prefetched')
     }
 
-    // Default to blank for new events. Users can click "Today" button if needed.
     return {
       eventName: eventData?.event_name || '',
       eventType: eventData?.event_type || (isConnection ? 'Connection' : ''),
