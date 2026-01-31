@@ -169,9 +169,7 @@ export const AttendeeInputField = ({
           {field.state.meta.errors[0]?.message}
         </p>
       )}
-      {isDuplicate && (
-        <p className="text-sm text-red-500 mt-1">Duplicate entry</p>
-      )}
+      {isDuplicate && <p className="text-xs text-red-500">Duplicate entry</p>}
     </div>
   )
 }

@@ -16,6 +16,8 @@ import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
 import { SF_BAY_CHAPTER_ID } from '@/lib/constants'
 import { AttendeeInputField } from './attendee-input-field'
 import { useActivistRegistry } from './useActivistRegistry'
+import { DatePicker } from '@/components/ui/date-picker'
+import { format, parseISO } from 'date-fns'
 
 // TODO(jh):
 // - test in prod
@@ -183,12 +185,11 @@ export const EventForm = ({ mode }: EventFormProps) => {
       throw new Error('Expected event data to be prefetched')
     }
 
-    // Default to today's date for new events to avoid Safari showing a confusing
-    // placeholder. Users can easily change it if needed.
+    // Default to blank for new events. Users can click "Today" button if needed.
     return {
       eventName: eventData?.event_name || '',
       eventType: eventData?.event_type || (isConnection ? 'Connection' : ''),
-      eventDate: eventData?.event_date || getTodayDate(),
+      eventDate: eventData?.event_date || '',
       // For new events, non-SF Bay chapters default to not sending surveys.
       suppressSurvey:
         eventData?.suppress_survey ?? user.ChapterID !== SF_BAY_CHAPTER_ID,
@@ -425,12 +426,12 @@ export const EventForm = ({ mode }: EventFormProps) => {
             <Label htmlFor="eventDate">Date</Label>
             <div className="flex gap-2">
               <div className="flex-1">
-                <Input
-                  id="eventDate"
-                  type="date"
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  onBlur={field.handleBlur}
+                <DatePicker
+                  value={field.state.value ? parseISO(field.state.value) : undefined}
+                  onValueChange={(date) => {
+                    field.handleChange(date ? format(date, 'yyyy-MM-dd') : '')
+                  }}
+                  placeholder="Pick a date"
                   className={cn(field.state.meta.errors[0] && 'border-red-500')}
                 />
                 {field.state.meta.errors[0] && (
@@ -473,7 +474,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
         {(arrayField) => (
           <div className="flex flex-col gap-2">
             <Label>{isConnection ? 'Coachees' : 'Attendees'}</Label>
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1">
               {arrayField.state.value.map((_, index) => {
                 const isFocused = index === activeInputIndex
                 return (
