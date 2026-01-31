@@ -1648,31 +1648,28 @@ GROUP BY a.name`, chapterID)
 }
 
 type ActivistBasicInfoJSON struct {
-	ID            int    `json:"id"`
-	Name          string `json:"name"`
-	Email         string `json:"email"`
-	Phone         string `json:"phone"`
-	Pronouns      string `json:"pronouns"`
-	PreferredName string `json:"preferred_name"`
+	ID          int    `json:"id"`
+	Name        string `json:"name"`
+	Email       string `json:"email"`
+	Phone       string `json:"phone"`
+	LastUpdated int64  `json:"last_updated"` // Unix timestamp in seconds
 }
 
 type ActivistBasicInfo struct {
-	ID            int    `db:"id"`
-	Name          string `db:"name"`
-	Email         string `db:"email"`
-	Phone         string `db:"phone"`
-	Pronouns      string `db:"pronouns"`
-	PreferredName string `db:"preferred_name"`
+	ID          int       `db:"id"`
+	Name        string    `db:"name"`
+	Email       string    `db:"email"`
+	Phone       string    `db:"phone"`
+	LastUpdated time.Time `db:"last_updated"`
 }
 
 func (activist *ActivistBasicInfo) ToJSON() ActivistBasicInfoJSON {
 	return ActivistBasicInfoJSON{
-		ID:            activist.ID,
-		Name:          activist.Name,
-		Email:         activist.Email,
-		Phone:         activist.Phone,
-		Pronouns:      activist.Pronouns,
-		PreferredName: activist.PreferredName,
+		ID:          activist.ID,
+		Name:        activist.Name,
+		Email:       activist.Email,
+		Phone:       activist.Phone,
+		LastUpdated: activist.LastUpdated.Unix(), // Convert to Unix timestamp
 	}
 }
 
@@ -1680,7 +1677,12 @@ func GetActivistListBasicJSON(db *sqlx.DB, chapterID int, modifiedSince *time.Ti
 	var activists []ActivistBasicInfo
 
 	query := `
-SELECT a.id, a.name, a.email, a.phone, a.pronouns, a.preferred_name
+SELECT
+	a.id,
+	a.name,
+	a.email,
+	a.phone,
+	GREATEST(a.name_updated, a.email_updated, a.phone_updated) as last_updated
 FROM activists a
 LEFT OUTER JOIN event_attendance ea ON a.id = ea.activist_id
 LEFT OUTER JOIN events e ON e.id = ea.event_id
@@ -1696,7 +1698,7 @@ WHERE a.hidden = 0 AND a.chapter_id = ?`
 	}
 
 	query += `
-GROUP BY a.id
+GROUP BY a.id, a.name, a.email, a.phone, a.name_updated, a.email_updated, a.phone_updated
 ORDER BY MAX(e.date) DESC`
 
 	var err error
@@ -1728,7 +1730,7 @@ func GetHiddenActivistIDs(db *sqlx.DB, chapterID int, modifiedSince *time.Time) 
 		return []int{}, nil
 	}
 
-	var hiddenIDs []int
+	hiddenIDs := make([]int, 0)
 	query := `
 SELECT id FROM activists
 WHERE chapter_id = ? AND hidden = 1 AND hidden_at >= ?`

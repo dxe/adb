@@ -13,6 +13,7 @@ export interface StoredActivist {
   name: string
   email?: string
   phone?: string
+  lastUpdated: number // Unix timestamp in milliseconds (server provides seconds, we convert)
 }
 
 interface SyncMetadata {

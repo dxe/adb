@@ -87,6 +87,7 @@ export const ActivistListBasicResp = z.object({
       name: z.string(),
       email: z.string().optional(),
       phone: z.string().optional(),
+      last_updated: z.number(), // Unix timestamp in seconds
     }),
   ),
   hidden_ids: z.array(z.number()),
