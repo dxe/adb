@@ -1,5 +1,4 @@
 -- Add hidden_at timestamp to track when activists are hidden/deleted
--- Remove preferred_name_updated as it's not used by frontend
 -- This enables sync of deletions/hides via incremental API
 
 -- Add hidden_at column with sentinel value for existing hidden records
@@ -11,7 +10,3 @@ ALTER TABLE activists
 UPDATE activists
 SET hidden_at = '1970-01-01 00:00:01'
 WHERE hidden = 1 AND hidden_at IS NULL;
-
--- Remove unused preferred_name_updated column
-ALTER TABLE activists
-    DROP COLUMN preferred_name_updated;
