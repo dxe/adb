@@ -2,17 +2,11 @@ import { useState, useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api'
 import { ActivistRegistry, type ActivistRecord } from './activist-registry'
-import {
-  getAllActivists,
-  getLastSyncTime,
-  setLastSyncTime,
-  saveActivists,
-  deleteActivistsByIds,
-} from './activist-storage'
+import { activistStorage } from './activist-storage'
 
 async function loadCachedActivists(): Promise<ActivistRecord[]> {
   try {
-    return await getAllActivists()
+    return await activistStorage.getAllActivists()
   } catch (error) {
     console.error('Failed to load cached activists:', error)
     return []
@@ -20,7 +14,7 @@ async function loadCachedActivists(): Promise<ActivistRecord[]> {
 }
 
 async function fetchActivists() {
-  const lastSyncTime = await getLastSyncTime()
+  const lastSyncTime = await activistStorage.getLastSyncTime()
   return apiClient.getActivistListBasic(lastSyncTime ?? undefined)
 }
 
@@ -64,7 +58,7 @@ export function useActivistRegistry() {
 
       // Delete hidden activists
       if (hiddenIds.length > 0) {
-        await deleteActivistsByIds(hiddenIds)
+        await activistStorage.deleteActivistsByIds(hiddenIds)
         tempRegistry.removeActivistsByIds(hiddenIds)
       }
 
@@ -78,10 +72,10 @@ export function useActivistRegistry() {
       setActivists(mergedActivists)
 
       // Save to IndexedDB
-      await saveActivists(mergedActivists)
+      await activistStorage.saveActivists(mergedActivists)
 
       // Update last sync timestamp
-      await setLastSyncTime(new Date().toISOString())
+      await activistStorage.setLastSyncTime(new Date().toISOString())
     }
 
     processServerData().catch((error) => {
