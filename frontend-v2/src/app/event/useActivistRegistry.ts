@@ -91,7 +91,9 @@ export function useActivistRegistry() {
       for (const activist of newActivists) {
         // Server provides Unix timestamp in seconds, convert to milliseconds
         const incomingTimestamp = activist.last_updated * 1000
-        const existingActivist = registryRef.current.getActivistById(activist.id)
+        const existingActivist = registryRef.current.getActivistById(
+          activist.id,
+        )
         const existingTimestamp = existingActivist?.lastUpdated || 0
 
         // Only update if this data is newer (handles out-of-order responses)
