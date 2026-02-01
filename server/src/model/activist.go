@@ -340,7 +340,7 @@ const ActivistAllDataFieldAssignments = ActivistUserEditableDataFieldAssignments
   dev_application_type = :dev_application_type
 `
 
-const hideActivistQuery = `UPDATE activists SET hidden = true, hidden_at = NOW(), name = concat(name,' ', id) WHERE id = ?`
+const hideActivistQuery = `UPDATE activists SET hidden = true, hidden_updated = NOW(), name = concat(name,' ', id) WHERE id = ?`
 
 const DescOrder int = 2
 const AscOrder int = 1
@@ -348,23 +348,23 @@ const AscOrder int = 1
 /** Type Definitions */
 
 type Activist struct {
-	Email           string         `db:"email"`
-	EmailUpdated    time.Time      `db:"email_updated"`
-	Facebook        string         `db:"facebook"`
-	Hidden          bool           `db:"hidden"`
-	HiddenAt        mysql.NullTime `db:"hidden_at"`
-	ID              int            `db:"id"`
-	Location        sql.NullString `db:"location"`
-	LocationUpdated time.Time      `db:"location_updated"`
-	Name            string         `db:"name"`
-	NameUpdated     time.Time      `db:"name_updated"`
-	PreferredName   string         `db:"preferred_name"`
-	Phone           string         `db:"phone"`
-	PhoneUpdated    time.Time      `db:"phone_updated"`
-	Pronouns        string         `db:"pronouns"`
-	Language        string         `db:"language"`
-	Accessibility   string         `db:"accessibility"`
-	Birthday        sql.NullString `db:"dob"`
+	Email          string         `db:"email"`
+	EmailUpdated   time.Time      `db:"email_updated"`
+	Facebook       string         `db:"facebook"`
+	Hidden         bool           `db:"hidden"`
+	HiddenUpdated  mysql.NullTime `db:"hidden_updated"`
+	ID             int            `db:"id"`
+	Location       sql.NullString `db:"location"`
+	LocationUpdated time.Time     `db:"location_updated"`
+	Name           string         `db:"name"`
+	NameUpdated    time.Time      `db:"name_updated"`
+	PreferredName  string         `db:"preferred_name"`
+	Phone          string         `db:"phone"`
+	PhoneUpdated   time.Time      `db:"phone_updated"`
+	Pronouns       string         `db:"pronouns"`
+	Language       string         `db:"language"`
+	Accessibility  string         `db:"accessibility"`
+	Birthday       sql.NullString `db:"dob"`
 	Coords
 	ChapterID int `db:"chapter_id"`
 }
@@ -1733,7 +1733,7 @@ func GetHiddenActivistIDs(db *sqlx.DB, chapterID int, modifiedSince *time.Time) 
 	hiddenIDs := make([]int, 0)
 	query := `
 SELECT id FROM activists
-WHERE chapter_id = ? AND hidden = 1 AND hidden_at >= ?`
+WHERE chapter_id = ? AND hidden = 1 AND hidden_updated >= ?`
 
 	err := db.Select(&hiddenIDs, query, chapterID, modifiedSince)
 	if err != nil {
