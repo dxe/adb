@@ -76,15 +76,19 @@ export class ActivistStorage {
   }
 
   /**
-   * Update the last sync timestamp in IndexedDB.
+   * Update or delete the last sync timestamp in IndexedDB.
+   * Pass null to delete the timestamp (forcing a full sync on next load).
    */
-  async setLastSyncTime(timestamp: string): Promise<void> {
+  async setLastSyncTime(timestamp: string | null): Promise<void> {
     const db = await this.openDB()
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([METADATA_STORE], 'readwrite')
       const store = transaction.objectStore(METADATA_STORE)
-      const metadata: SyncMetadata = { lastSyncTime: timestamp }
-      const request = store.put(metadata, 'lastSync')
+
+      const request =
+        timestamp === null
+          ? store.delete('lastSync')
+          : store.put({ lastSyncTime: timestamp }, 'lastSync')
 
       request.onsuccess = () => resolve()
       request.onerror = () => reject(request.error)
@@ -109,6 +113,7 @@ export class ActivistStorage {
   /**
    * Store or update activists in IndexedDB.
    * Uses upsert semantics - adds new activists and updates existing ones.
+   * @throws Error if quota exceeded or transaction fails
    */
   async saveActivists(activists: StoredActivist[]): Promise<void> {
     const db = await this.openDB()
@@ -122,7 +127,9 @@ export class ActivistStorage {
       }
 
       transaction.oncomplete = () => resolve()
-      transaction.onerror = () => reject(transaction.error)
+      transaction.onerror = () => {
+        reject(transaction.error)
+      }
     })
   }
 
