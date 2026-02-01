@@ -40,13 +40,22 @@ async function getCachedSession(cookies: string) {
       timestamp: now,
     })
 
-    // Cleanup old entries (keep cache from growing indefinitely)
+    // Cleanup expired entries on every cache set
+    const cutoff = now - CACHE_TTL
+    for (const [key, value] of sessionCache.entries()) {
+      if (value.timestamp < cutoff) {
+        sessionCache.delete(key)
+      }
+    }
+
+    // Additional cleanup if cache grows too large (safety net)
     if (sessionCache.size > MAX_CACHE_SIZE) {
-      const cutoff = now - CACHE_TTL
-      for (const [key, value] of sessionCache.entries()) {
-        if (value.timestamp < cutoff) {
-          sessionCache.delete(key)
-        }
+      // Remove oldest entries first
+      const entries = Array.from(sessionCache.entries())
+      entries.sort((a, b) => a[1].timestamp - b[1].timestamp)
+      const toRemove = sessionCache.size - MAX_CACHE_SIZE
+      for (let i = 0; i < toRemove; i++) {
+        sessionCache.delete(entries[i][0])
       }
     }
   }
