@@ -103,6 +103,14 @@ export class ActivistRegistry {
   }
 
   /**
+   * Get last sync timestamp from storage.
+   */
+  async getLastSyncTime(): Promise<string | null> {
+    if (!this.storage) return null
+    return await this.storage.getLastSyncTime()
+  }
+
+  /**
    * Update last sync timestamp in storage.
    */
   async setLastSyncTime(timestamp: string): Promise<void> {

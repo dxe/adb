@@ -171,5 +171,18 @@ export class ActivistStorage {
   }
 }
 
-// Singleton instance
-export const activistStorage = new ActivistStorage()
+/**
+ * Check if IndexedDB is available and accessible.
+ * Returns false in environments where IndexedDB is blocked (e.g., iOS lockdown mode).
+ */
+function isIndexedDBAvailable(): boolean {
+  try {
+    return typeof indexedDB !== 'undefined' && indexedDB !== null
+  } catch {
+    return false
+  }
+}
+
+// Singleton instance - only create if IndexedDB is available
+export const activistStorage: ActivistStorage | undefined =
+  isIndexedDBAvailable() ? new ActivistStorage() : undefined

@@ -14,14 +14,23 @@ import toast from 'react-hot-toast'
  * @returns Object containing the registry instance and query state
  */
 export function useActivistRegistry() {
-  // Single registry instance with write-through storage to IndexedDB
+  // Single registry instance with write-through storage to IndexedDB (if available)
   const registryRef = useRef(new ActivistRegistry(activistStorage))
   const [isStorageLoaded, setIsStorageLoaded] = useState(false)
   const [isServerLoaded, setIsServerLoaded] = useState(false)
 
-  // Load stored data on mount
+  // Load stored data on mount (skip if storage is not available)
   useEffect(() => {
     let mounted = true
+
+    // If IndexedDB is not available (e.g., iOS lockdown mode), skip loading from storage
+    if (!activistStorage) {
+      console.info(
+        '[Registry] IndexedDB not available - running without local caching',
+      )
+      setIsStorageLoaded(true)
+      return
+    }
 
     registryRef.current
       .loadFromStorage()
@@ -39,7 +48,7 @@ export function useActivistRegistry() {
         }
 
         toast.error(
-          'Error loading activists. Please refresh the page. Contact support if issue persists.',
+          'Error loading activist cache. Please refresh the page. Contact support if issue persists.',
         )
 
         if (mounted) setIsStorageLoaded(true)
@@ -53,7 +62,8 @@ export function useActivistRegistry() {
   const query = useQuery({
     queryKey: [API_PATH.ACTIVIST_LIST_BASIC],
     queryFn: async () => {
-      const lastSyncTime = await activistStorage.getLastSyncTime()
+      // Get last sync time from registry (returns null if storage is unavailable)
+      const lastSyncTime = await registryRef.current.getLastSyncTime()
       const result = await apiClient.getActivistListBasic(
         lastSyncTime ?? undefined,
       )
