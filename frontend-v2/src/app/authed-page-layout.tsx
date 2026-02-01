@@ -1,8 +1,6 @@
 import { PropsWithChildren } from 'react'
-import { fetchSession } from '@/app/session'
-import { redirect } from 'next/navigation'
-import { getCookies } from '@/lib/auth'
 import { AuthedPageProvider } from './authed-page-provider'
+import { getServerUser } from '@/lib/server-user'
 
 export const AuthedPageLayout = async ({
   pageName,
@@ -11,17 +9,13 @@ export const AuthedPageLayout = async ({
   /** The name of the active page, corresponding to the name in Vue. */
   pageName: string
 }>) => {
-  const session = await fetchSession(await getCookies())
-  if (!session.user) {
-    // This goes to /v2/login
-    redirect('/login')
-  }
+  const user = await getServerUser()
 
   return (
     <AuthedPageProvider
       ctx={{
         pageName,
-        user: session.user,
+        user,
       }}
     >
       {children}

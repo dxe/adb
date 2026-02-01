@@ -14,6 +14,7 @@ export default async function NewUserPage() {
   const apiClient = new ApiClient(await getCookies())
   const queryClient = new QueryClient()
 
+  // Prefetch chapter list for form
   await queryClient.prefetchQuery({
     queryKey: [API_PATH.CHAPTER_LIST],
     queryFn: apiClient.getChapterList,
@@ -21,12 +22,12 @@ export default async function NewUserPage() {
 
   return (
     <AuthedPageLayout pageName="UserList">
-      <HydrationBoundary state={dehydrate(queryClient)}>
-        <Navbar />
-        <ContentWrapper size="lg" className="gap-6">
+      <Navbar />
+      <ContentWrapper size="lg" className="gap-6">
+        <HydrationBoundary state={dehydrate(queryClient)}>
           <UserForm />
-        </ContentWrapper>
-      </HydrationBoundary>
+        </HydrationBoundary>
+      </ContentWrapper>
     </AuthedPageLayout>
   )
 }

@@ -15,29 +15,25 @@ export default async function EditUserPage({
 }: {
   params: Promise<{ id: string }>
 }) {
-  const userId = Number((await params).id)
+  const { id } = await params
+  const userId = Number(id)
   const apiClient = new ApiClient(await getCookies())
   const queryClient = new QueryClient()
 
-  await Promise.all([
-    queryClient.prefetchQuery({
-      queryKey: [API_PATH.USERS, userId],
-      queryFn: () => apiClient.getUser(userId),
-    }),
-    queryClient.prefetchQuery({
-      queryKey: [API_PATH.CHAPTER_LIST],
-      queryFn: apiClient.getChapterList,
-    }),
-  ])
+  // Prefetch user data on server
+  await queryClient.prefetchQuery({
+    queryKey: [API_PATH.USERS, userId],
+    queryFn: () => apiClient.getUser(userId),
+  })
 
   return (
     <AuthedPageLayout pageName="UserList">
-      <HydrationBoundary state={dehydrate(queryClient)}>
-        <Navbar />
-        <ContentWrapper size="lg" className="gap-6">
+      <Navbar />
+      <ContentWrapper size="lg" className="gap-6">
+        <HydrationBoundary state={dehydrate(queryClient)}>
           <UserForm userId={userId} />
-        </ContentWrapper>
-      </HydrationBoundary>
+        </HydrationBoundary>
+      </ContentWrapper>
     </AuthedPageLayout>
   )
 }
