@@ -348,23 +348,23 @@ const AscOrder int = 1
 /** Type Definitions */
 
 type Activist struct {
-	Email          string         `db:"email"`
-	EmailUpdated   time.Time      `db:"email_updated"`
-	Facebook       string         `db:"facebook"`
-	Hidden         bool           `db:"hidden"`
-	HiddenUpdated  mysql.NullTime `db:"hidden_updated"`
-	ID             int            `db:"id"`
-	Location       sql.NullString `db:"location"`
-	LocationUpdated time.Time     `db:"location_updated"`
-	Name           string         `db:"name"`
-	NameUpdated    time.Time      `db:"name_updated"`
-	PreferredName  string         `db:"preferred_name"`
-	Phone          string         `db:"phone"`
-	PhoneUpdated   time.Time      `db:"phone_updated"`
-	Pronouns       string         `db:"pronouns"`
-	Language       string         `db:"language"`
-	Accessibility  string         `db:"accessibility"`
-	Birthday       sql.NullString `db:"dob"`
+	Email           string         `db:"email"`
+	EmailUpdated    time.Time      `db:"email_updated"`
+	Facebook        string         `db:"facebook"`
+	Hidden          bool           `db:"hidden"`
+	HiddenUpdated   mysql.NullTime `db:"hidden_updated"`
+	ID              int            `db:"id"`
+	Location        sql.NullString `db:"location"`
+	LocationUpdated time.Time      `db:"location_updated"`
+	Name            string         `db:"name"`
+	NameUpdated     time.Time      `db:"name_updated"`
+	PreferredName   string         `db:"preferred_name"`
+	Phone           string         `db:"phone"`
+	PhoneUpdated    time.Time      `db:"phone_updated"`
+	Pronouns        string         `db:"pronouns"`
+	Language        string         `db:"language"`
+	Accessibility   string         `db:"accessibility"`
+	Birthday        sql.NullString `db:"dob"`
 	Coords
 	ChapterID int `db:"chapter_id"`
 }
@@ -1650,16 +1650,16 @@ GROUP BY a.name`, chapterID)
 type ActivistBasicInfoJSON struct {
 	ID          int    `json:"id"`
 	Name        string `json:"name"`
-	Email       string `json:"email"`
-	Phone       string `json:"phone"`
+	Email       bool   `json:"email"`
+	Phone       bool   `json:"phone"`
 	LastUpdated int64  `json:"last_updated"` // Unix timestamp in seconds
 }
 
 type ActivistBasicInfo struct {
 	ID          int       `db:"id"`
 	Name        string    `db:"name"`
-	Email       string    `db:"email"`
-	Phone       string    `db:"phone"`
+	Email       bool      `db:"email"`
+	Phone       bool      `db:"phone"`
 	LastUpdated time.Time `db:"last_updated"`
 }
 
@@ -1680,8 +1680,8 @@ func GetActivistListBasicJSON(db *sqlx.DB, chapterID int, modifiedSince *time.Ti
 SELECT
 	a.id,
 	a.name,
-	a.email,
-	a.phone,
+	IF(a.email != '', 1, 0) as email,
+	IF(a.phone != '', 1, 0) as phone,
 	GREATEST(a.name_updated, a.email_updated, a.phone_updated) as last_updated
 FROM activists a
 LEFT OUTER JOIN event_attendance ea ON a.id = ea.activist_id

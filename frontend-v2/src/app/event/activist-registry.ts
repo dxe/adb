@@ -1,8 +1,8 @@
 export type ActivistRecord = {
   id: number
   name: string
-  email?: string
-  phone?: string
+  email: boolean
+  phone: boolean
   lastUpdated: number // Unix timestamp in milliseconds
 }
 
