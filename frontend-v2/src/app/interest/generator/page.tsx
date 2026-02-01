@@ -1,4 +1,3 @@
-
 import { ContentWrapper } from '@/app/content-wrapper'
 import { AuthedPageLayout } from '@/app/authed-page-layout'
 import { Navbar } from '@/components/nav'
