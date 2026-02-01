@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { fetchSession } from '@/app/session'
+import { fetchSession, type User } from '@/app/session'
 import { SERVER_USER_HEADER } from '@/lib/server-user'
 
 // Simple in-memory cache for middleware (Edge Runtime compatible)
 // Maps cookie hash to { user, timestamp }
-const sessionCache = new Map<string, { user: any; timestamp: number }>()
+const sessionCache = new Map<string, { user: User; timestamp: number }>()
 const CACHE_TTL = 3600 * 1000 // 1 hour in milliseconds
+const MAX_CACHE_SIZE = 1000 // Maximum number of cached sessions before cleanup
 
 // Simple hash function for cookie string (for cache key)
 function hashString(str: string): string {
@@ -40,7 +41,7 @@ async function getCachedSession(cookies: string) {
     })
 
     // Cleanup old entries (keep cache from growing indefinitely)
-    if (sessionCache.size > 1000) {
+    if (sessionCache.size > MAX_CACHE_SIZE) {
       const cutoff = now - CACHE_TTL
       for (const [key, value] of sessionCache.entries()) {
         if (value.timestamp < cutoff) {
