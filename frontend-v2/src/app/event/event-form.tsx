@@ -7,6 +7,13 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { API_PATH, apiClient } from '@/lib/api'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
@@ -15,18 +22,10 @@ import toast from 'react-hot-toast'
 import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
 import { SF_BAY_CHAPTER_ID } from '@/lib/constants'
 import { AttendeeInputField } from './attendee-input-field'
-import { ActivistRegistry } from './activist-registry'
-
-// TODO(jh):
-// - test in prod
-// - improve styling
-// - replace vue page w/ react page & update api to not return a redirect response on save
-
-// TODO: store list of names from server in indexed db & only update what's been created, updated, or deleted since last load?
-//   - https://app.asana.com/1/71341131816665/project/1209217418568645/task/1212688232815554
-
-// TODO: store unsaved data in session storage to prevent accidental loss?
-//   - https://app.asana.com/1/71341131816665/project/1209217418568645/task/1212688232815556
+import { useActivistRegistry } from './useActivistRegistry'
+import { DatePicker } from '@/components/ui/date-picker'
+import { format, parseISO } from 'date-fns'
+import { Save, Calendar } from 'lucide-react'
 
 const EVENT_TYPES = [
   'Action',
@@ -94,14 +93,11 @@ export const EventForm = ({ mode }: EventFormProps) => {
   )
   const [activeInputIndex, setActiveInputIndex] = useState(0)
 
-  // Fetch activist list from server.
-  // We don't want to do this during SSR b/c it's several MB,
-  // and eventually we'd like to cache this data on the client
-  // to avoid sending it on every page load.
-  const { data: activistData, isLoading: isLoadingActivists } = useQuery({
-    queryKey: [API_PATH.ACTIVIST_LIST_BASIC],
-    queryFn: apiClient.getActivistListBasic,
-  })
+  // Initialize activist registry with IndexedDB caching and incremental sync.
+  // The registry loads cached data from IndexedDB first, then syncs any
+  // new/updated activists from the server in the background.
+  const { registry: activistRegistry, isLoading: isLoadingActivists } =
+    useActivistRegistry()
 
   // Fetch existing event/connection, if editing.
   // (Note: This data is prefetched during SSR for edit pages.)
@@ -110,12 +106,6 @@ export const EventForm = ({ mode }: EventFormProps) => {
     queryFn: () => apiClient.getEvent(Number(eventId)),
     enabled: !!eventId,
   })
-
-  // Create activist registry for autocomplete.
-  const activistRegistry = useMemo(
-    () => new ActivistRegistry(activistData?.activists || []),
-    [activistData?.activists],
-  )
 
   const saveEventMutation = useMutation({
     mutationFn: apiClient.saveEvent,
@@ -195,12 +185,10 @@ export const EventForm = ({ mode }: EventFormProps) => {
       throw new Error('Expected event data to be prefetched')
     }
 
-    // Default to today's date for new events to avoid Safari showing a confusing
-    // placeholder. Users can easily change it if needed.
     return {
       eventName: eventData?.event_name || '',
       eventType: eventData?.event_type || (isConnection ? 'Connection' : ''),
-      eventDate: eventData?.event_date || getTodayDate(),
+      eventDate: eventData?.event_date || '',
       // For new events, non-SF Bay chapters default to not sending surveys.
       suppressSurvey:
         eventData?.suppress_survey ?? user.ChapterID !== SF_BAY_CHAPTER_ID,
@@ -350,7 +338,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
   }
 
   // Only show loading for activist list since event data is prefetched during SSR
-  if (isLoadingActivists) {
+  if (isLoadingActivists || !activistRegistry) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
@@ -369,7 +357,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
         e.stopPropagation()
         await form.handleSubmit()
       }}
-      className="flex flex-col gap-6"
+      className="flex flex-col gap-4"
     >
       {/* Event/Connection Name Field */}
       <form.Field name="eventName">
@@ -401,25 +389,24 @@ export const EventForm = ({ mode }: EventFormProps) => {
           {(field) => (
             <div className="flex flex-col gap-2">
               <Label htmlFor="eventType">Type</Label>
-              <select
-                id="eventType"
+              <Select
                 value={field.state.value}
-                onChange={(e) => field.handleChange(e.target.value)}
-                onBlur={field.handleBlur}
-                className={cn(
-                  'h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm focus:border-input focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
-                  field.state.meta.errors[0] && 'border-red-500',
-                )}
+                onValueChange={(value) => field.handleChange(value)}
               >
-                <option value="" disabled>
-                  Select event type
-                </option>
-                {EVENT_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger
+                  id="eventType"
+                  className={cn(field.state.meta.errors[0] && 'border-red-500')}
+                >
+                  <SelectValue placeholder="Select event type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {EVENT_TYPES.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {field.state.meta.errors[0] && (
                 <p className="text-sm text-red-500">
                   {field.state.meta.errors[0]?.message}
@@ -437,12 +424,14 @@ export const EventForm = ({ mode }: EventFormProps) => {
             <Label htmlFor="eventDate">Date</Label>
             <div className="flex gap-2">
               <div className="flex-1">
-                <Input
-                  id="eventDate"
-                  type="date"
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  onBlur={field.handleBlur}
+                <DatePicker
+                  value={
+                    field.state.value ? parseISO(field.state.value) : undefined
+                  }
+                  onValueChange={(date) => {
+                    field.handleChange(date ? format(date, 'yyyy-MM-dd') : '')
+                  }}
+                  placeholder="Pick a date"
                   className={cn(field.state.meta.errors[0] && 'border-red-500')}
                 />
                 {field.state.meta.errors[0] && (
@@ -485,7 +474,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
         {(arrayField) => (
           <div className="flex flex-col gap-2">
             <Label>{isConnection ? 'Coachees' : 'Attendees'}</Label>
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1">
               {arrayField.state.value.map((_, index) => {
                 const isFocused = index === activeInputIndex
                 return (
@@ -536,6 +525,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
             variant="default"
             disabled={saveEventMutation.isPending}
           >
+            <Save className="h-4 w-4" />
             {saveEventMutation.isPending ? 'Saving...' : 'Save'}
           </Button>
         </div>

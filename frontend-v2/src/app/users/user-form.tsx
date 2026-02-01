@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { API_PATH, apiClient, Role, User, UserWithoutId } from '@/lib/api'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Save, ArrowLeft } from 'lucide-react'
 
 const userFormSchema = z.object({
   name: z.string().trim().min(1, 'Name is required'),
@@ -145,7 +145,10 @@ export function UserForm({ userId }: { userId?: number }) {
             <h1 className="text-2xl font-semibold">Users</h1>
           </div>
           <Button variant="ghost" asChild>
-            <Link href="/users">Back to list</Link>
+            <Link href="/users">
+              <ArrowLeft className="h-4 w-4" />
+              Back to list
+            </Link>
           </Button>
         </div>
         <div className="rounded-md border p-4 text-sm text-destructive">
@@ -165,7 +168,10 @@ export function UserForm({ userId }: { userId?: number }) {
           <h1 className="text-2xl font-semibold">{user?.name ?? 'New User'}</h1>
         </div>
         <Button variant="ghost" asChild>
-          <Link href="/users">Back to list</Link>
+          <Link href="/users">
+            <ArrowLeft className="h-4 w-4" />
+            Back to list
+          </Link>
         </Button>
       </div>
 
@@ -188,11 +194,14 @@ export function UserForm({ userId }: { userId?: number }) {
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   Saving...
                 </>
               ) : (
-                'Save user'
+                <>
+                  <Save className="h-4 w-4" />
+                  Save user
+                </>
               )}
             </Button>
           </div>

@@ -1437,11 +1437,31 @@ func (c MainController) ActivistListHandler(w http.ResponseWriter, r *http.Reque
 func (c MainController) ActivistListBasicHandler(w http.ResponseWriter, r *http.Request) {
 	chapter := c.getAuthedADBChapter(r)
 
-	activists := model.GetActivistListBasicJSON(c.db, chapter)
+	// Parse optional modified_since query parameter (RFC3339 format)
+	var modifiedSince *time.Time
+	modifiedSinceStr := r.URL.Query().Get("modified_since")
+	if modifiedSinceStr != "" {
+		parsed, err := time.Parse(time.RFC3339, modifiedSinceStr)
+		if err != nil {
+			http.Error(w, "Invalid modified_since parameter. Use RFC3339 format (e.g., 2024-01-15T10:30:00Z)", http.StatusBadRequest)
+			return
+		}
+		modifiedSince = &parsed
+	}
+
+	activists := model.GetActivistListBasicJSON(c.db, chapter, modifiedSince)
+
+	// Get IDs of activists that were hidden since the last sync
+	hiddenIDs, err := model.GetHiddenActivistIDs(c.db, chapter, modifiedSince)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	out := map[string]interface{}{
-		"status":    "success",
-		"activists": activists,
+		"status":     "success",
+		"activists":  activists,
+		"hidden_ids": hiddenIDs,
 	}
 
 	writeJSON(w, out)

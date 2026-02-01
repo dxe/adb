@@ -143,12 +143,12 @@ export const AttendeeInputField = ({
             </div>
           </div>
           {isFocused && !!suggestions.length && (
-            <ul className="absolute z-10 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg">
+            <ul className="absolute z-10 mt-0.5 w-full rounded-md border border-gray-200 bg-white shadow-lg">
               {suggestions.map((suggestion, i) => (
                 <li
                   key={suggestion}
                   className={cn(
-                    'cursor-pointer px-4 py-2 hover:bg-gray-100',
+                    'cursor-pointer px-3 py-1 hover:bg-gray-100',
                     i === selectedSuggestionIndex ? 'bg-neutral-100' : '',
                   )}
                   onMouseDown={(e) => {
@@ -169,9 +169,7 @@ export const AttendeeInputField = ({
           {field.state.meta.errors[0]?.message}
         </p>
       )}
-      {isDuplicate && (
-        <p className="text-sm text-red-500 mt-1">Duplicate entry</p>
-      )}
+      {isDuplicate && <p className="text-xs text-red-500">Duplicate entry</p>}
     </div>
   )
 }

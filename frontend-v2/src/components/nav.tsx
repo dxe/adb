@@ -153,7 +153,7 @@ const ChapterSwitcher = () => {
       <select
         onChange={switchChapter}
         value={user.ChapterID}
-        className="cursor-pointer"
+        className="cursor-pointer rounded-lg border border-input pl-3 pr-8 py-1.5 text-sm bg-white hover:border-gray-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
         disabled={isLoading || !data?.length}
       >
         {data?.map((chapter) => (
@@ -224,21 +224,27 @@ export const Navbar = () => {
 
         <div className={buefyStyles['navbar-end']}>
           <div className={buefyStyles['navbar-item']}>
-            <div className="flex gap-3 justify-between">
+            <div className="flex gap-4 items-center">
               <div className="flex items-center gap-2">
                 <CircleUser className="text-neutral-600" size={20} />
                 <span>
-                  <span>{user.Name}</span>
+                  <span className="font-medium">{user.Name}</span>
                   {/* Admins see the ChapterSwitcher instead of the active chapter after the user name. */}
                   {user.role !== 'admin' && (
                     <>
                       {' '}
-                      <span>({user.ChapterName})</span>
+                      <span className="text-neutral-500 text-sm">
+                        ({user.ChapterName})
+                      </span>
                     </>
                   )}
                 </span>
               </div>
-              <a href="/logout" style={{ color: 'linktext' }}>
+              <div className="h-5 w-px bg-neutral-300" />
+              <a
+                href="/logout"
+                className="text-sm text-neutral-700 hover:text-neutral-900 hover:underline transition-colors"
+              >
                 Log out
               </a>
             </div>
