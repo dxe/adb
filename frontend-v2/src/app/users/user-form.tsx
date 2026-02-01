@@ -256,7 +256,7 @@ export function UserForm({ userId }: { userId?: number }) {
                     value={
                       field.state.value !== null
                         ? String(field.state.value)
-                        : undefined
+                        : ""
                     }
                     onValueChange={(value: string) => {
                       const next = parseInt(value, 10)

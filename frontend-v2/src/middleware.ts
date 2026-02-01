@@ -3,6 +3,56 @@ import type { NextRequest } from 'next/server'
 import { fetchSession } from '@/app/session'
 import { SERVER_USER_HEADER } from '@/lib/server-user'
 
+// Simple in-memory cache for middleware (Edge Runtime compatible)
+// Maps cookie hash to { user, timestamp }
+const sessionCache = new Map<string, { user: any; timestamp: number }>()
+const CACHE_TTL = 3600 * 1000 // 1 hour in milliseconds
+
+// Simple hash function for cookie string (for cache key)
+function hashString(str: string): string {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i)
+    hash = (hash << 5) - hash + char
+    hash = hash & hash // Convert to 32-bit integer
+  }
+  return hash.toString(36)
+}
+
+async function getCachedSession(cookies: string) {
+  const cacheKey = hashString(cookies)
+  const cached = sessionCache.get(cacheKey)
+  const now = Date.now()
+
+  // Return cached if valid
+  if (cached && now - cached.timestamp < CACHE_TTL) {
+    return { user: cached.user }
+  }
+
+  // Fetch fresh session
+  const session = await fetchSession(cookies)
+
+  // Cache it
+  if (session.user) {
+    sessionCache.set(cacheKey, {
+      user: session.user,
+      timestamp: now,
+    })
+
+    // Cleanup old entries (keep cache from growing indefinitely)
+    if (sessionCache.size > 1000) {
+      const cutoff = now - CACHE_TTL
+      for (const [key, value] of sessionCache.entries()) {
+        if (value.timestamp < cutoff) {
+          sessionCache.delete(key)
+        }
+      }
+    }
+  }
+
+  return session
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
@@ -14,8 +64,8 @@ export async function middleware(request: NextRequest) {
   // Get cookies from request
   const cookieHeader = request.headers.get('cookie') || ''
 
-  // Fetch session
-  const session = await fetchSession(cookieHeader)
+  // Fetch session (cached)
+  const session = await getCachedSession(cookieHeader)
 
   // Redirect to login if no user
   if (!session.user) {
