@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"slices"
 
 	"github.com/dxe/adb/model"
 	"github.com/jmoiron/sqlx"
@@ -16,6 +17,8 @@ type DBActivistRepository struct {
 func NewActivistRepository(db *sqlx.DB) *DBActivistRepository {
 	return &DBActivistRepository{db: db}
 }
+
+const activistTableAlias = "a"
 
 type activistPaginationCursor struct {
 	// values of the last row of the previous page corresponding to the sort columns.
@@ -41,13 +44,55 @@ func (r DBActivistRepository) QueryActivists(options model.QueryActivistOptions)
 	_ = cursor
 
 	query := NewSqlQueryBuilder()
-	// TODO: translate query options to query builder inputs to construct SQL
+	query.From(fmt.Sprintf("FROM activists %s", activistTableAlias))
+
+	// Convert options to filters and columns
+	filters := buildFiltersFromOptions(options)
+
+	// Ensure chapter_id is in columns if not filtering by chapter
+	columns := options.Columns
+	if options.Filters.ChapterId == 0 && !slices.Contains(columns, "chapter_id") {
+		columns = append(columns, "chapter_id")
+	}
+
+	registry := newJoinRegistry()
+
+	columnSpecs := []*activistColumn{}
+	for _, colName := range columns {
+		colSpec := getColumnSpec(colName)
+		if colSpec == nil {
+			return model.QueryActivistResult{}, fmt.Errorf("invalid column name: '%v'", colName)
+		}
+		columnSpecs = append(columnSpecs, colSpec)
+		query.SelectColumn(colSpec.sql)
+		for _, joinSpec := range colSpec.joins {
+			registry.registerJoin(joinSpec)
+		}
+	}
+
+	for _, filter := range filters {
+		for _, whereClause := range filter.buildWhere() {
+			query.Where(whereClause.sql, whereClause.args...)
+		}
+		for _, joinSpec := range filter.getJoins() {
+			registry.registerJoin(joinSpec)
+		}
+	}
+
+	for _, joinSQL := range registry.getJoins() {
+		query.Join(joinSQL)
+	}
+
+	// TODO: Apply sort options from options.Sort
+	// TODO: Increase pagination limit for prod
+	limit := 20
+	query.Limit(limit)
 
 	sqlStr, args := query.ToSQL()
 
 	var activists []model.ActivistExtra
 	if err := r.db.Select(&activists, sqlStr, args...); err != nil {
-		return model.QueryActivistResult{}, fmt.Errorf("query activists: %w", err)
+		return model.QueryActivistResult{}, fmt.Errorf("querying activists: %w", err)
 	}
 
 	return model.QueryActivistResult{
@@ -57,4 +102,29 @@ func (r DBActivistRepository) QueryActivists(options model.QueryActivistOptions)
 			NextCursor: "",
 		},
 	}, nil
+}
+
+func buildFiltersFromOptions(options model.QueryActivistOptions) []filter {
+	var filters []filter
+
+	if options.Filters.ChapterId != 0 {
+		filters = append(filters, &chapterFilter{ChapterId: options.Filters.ChapterId})
+	}
+
+	if options.Filters.Name.Name != "" {
+		filters = append(filters, &nameFilter{Name: options.Filters.Name.Name})
+	}
+
+	if options.Filters.LastEvent.LastEventLt != nil || options.Filters.LastEvent.LastEventGt != nil {
+		filters = append(filters, &lastEventFilter{
+			After:  options.Filters.LastEvent.LastEventGt,
+			Before: options.Filters.LastEvent.LastEventLt,
+		})
+	}
+
+	if !options.Filters.IncludeHidden {
+		filters = append(filters, &hiddenFilter{})
+	}
+
+	return filters
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"slices"
 
 	"regexp"
 	"strconv"
@@ -388,9 +389,10 @@ type ActivistEventData struct {
 }
 
 type ActivistMembershipData struct {
-	ActivistLevel string `db:"activist_level"`
-	Source        string `db:"source"`
-	Hiatus        bool   `db:"hiatus"`
+	ActivistLevel string       `db:"activist_level"`
+	DateOrganizer sql.NullTime `db:"date_organizer"`
+	Source        string       `db:"source"`
+	Hiatus        bool         `db:"hiatus"`
 }
 
 type ActivistConnectionData struct {
@@ -445,72 +447,72 @@ type ActivistExtra struct {
 }
 
 type ActivistJSON struct {
-	Email         string `json:"email"`
-	Facebook      string `json:"facebook"`
-	ID            int    `json:"id"`
-	Location      string `json:"location"`
-	Name          string `json:"name"`
-	PreferredName string `json:"preferred_name"`
-	Phone         string `json:"phone"`
-	Pronouns      string `json:"pronouns"`
-	Language      string `json:"language"`
-	Accessibility string `json:"accessibility"`
-	Birthday      string `json:"dob"`
-	ChapterID     int    `json:"chapter_id"`
+	Email         string `json:"email,omitempty"`
+	Facebook      string `json:"facebook,omitempty"`
+	ID            int    `json:"id,omitempty"`
+	Location      string `json:"location,omitempty"`
+	Name          string `json:"name,omitempty"`
+	PreferredName string `json:"preferred_name,omitempty"`
+	Phone         string `json:"phone,omitempty"`
+	Pronouns      string `json:"pronouns,omitempty"`
+	Language      string `json:"language,omitempty"`
+	Accessibility string `json:"accessibility,omitempty"`
+	Birthday      string `json:"dob,omitempty"`
+	ChapterID     int    `json:"chapter_id,omitempty"`
 
-	FirstEvent            string `json:"first_event"`
-	LastEvent             string `json:"last_event"`
-	FirstEventName        string `json:"first_event_name"`
-	LastEventName         string `json:"last_event_name"`
-	LastAction            string `json:"last_action"`
-	MonthsSinceLastAction int    `json:"months_since_last_action"`
-	TotalEvents           int    `json:"total_events"`
-	TotalPoints           int    `json:"total_points"`
-	Active                bool   `json:"active"`
-	Status                string `json:"status"`
+	FirstEvent            string `json:"first_event,omitempty"`
+	LastEvent             string `json:"last_event,omitempty"`
+	FirstEventName        string `json:"first_event_name,omitempty"`
+	LastEventName         string `json:"last_event_name,omitempty"`
+	LastAction            string `json:"last_action,omitempty"`
+	MonthsSinceLastAction int    `json:"months_since_last_action,omitempty"`
+	TotalEvents           int    `json:"total_events,omitempty"`
+	TotalPoints           int    `json:"total_points,omitempty"`
+	Active                bool   `json:"active,omitempty"`
+	Status                string `json:"status,omitempty"`
 
-	ActivistLevel string `json:"activist_level"`
-	Source        string `json:"source"`
-	Hiatus        bool   `json:"hiatus"`
+	ActivistLevel string `json:"activist_level,omitempty"`
+	Source        string `json:"source,omitempty"`
+	Hiatus        bool   `json:"hiatus,omitempty"`
 
-	Connector       string `json:"connector"`
-	Training0       string `json:"training0"`
-	Training1       string `json:"training1"`
-	Training4       string `json:"training4"`
-	Training5       string `json:"training5"`
-	Training6       string `json:"training6"`
-	ConsentQuiz     string `json:"consent_quiz"`
-	TrainingProtest string `json:"training_protest"`
-	ApplicationDate string `json:"dev_application_date"`
-	ApplicationType string `json:"dev_application_type"`
-	Quiz            string `json:"dev_quiz"`
-	DevInterest     string `json:"dev_interest"`
+	Connector       string `json:"connector,omitempty"`
+	Training0       string `json:"training0,omitempty"`
+	Training1       string `json:"training1,omitempty"`
+	Training4       string `json:"training4,omitempty"`
+	Training5       string `json:"training5,omitempty"`
+	Training6       string `json:"training6,omitempty"`
+	ConsentQuiz     string `json:"consent_quiz,omitempty"`
+	TrainingProtest string `json:"training_protest,omitempty"`
+	ApplicationDate string `json:"dev_application_date,omitempty"`
+	ApplicationType string `json:"dev_application_type,omitempty"`
+	Quiz            string `json:"dev_quiz,omitempty"`
+	DevInterest     string `json:"dev_interest,omitempty"`
 
-	CMFirstEmail          string  `json:"cm_first_email"`
-	CMApprovalEmail       string  `json:"cm_approval_email"`
-	ProspectOrganizer     bool    `json:"prospect_organizer"`
-	ProspectChapterMember bool    `json:"prospect_chapter_member"`
-	LastConnection        string  `json:"last_connection"`
-	ReferralFriends       string  `json:"referral_friends"`
-	ReferralApply         string  `json:"referral_apply"`
-	ReferralOutlet        string  `json:"referral_outlet"`
-	InterestDate          string  `json:"interest_date"`
-	MPI                   bool    `json:"mpi"`
-	Notes                 string  `json:"notes"`
-	VisionWall            string  `json:"vision_wall"`
-	MPPRequirements       string  `json:"mpp_requirements"`
-	VotingAgreement       bool    `json:"voting_agreement"`
-	StreetAddress         string  `json:"street_address"`
-	City                  string  `json:"city"`
-	State                 string  `json:"state"`
-	GeoCircles            string  `json:"geo_circles"`
-	Lat                   float64 `json:"lat"`
-	Lng                   float64 `json:"lng"`
-	AssignedTo            int     `json:"assigned_to"`
-	AssignedToName        string  `json:"assigned_to_name"`
-	FollowupDate          string  `json:"followup_date"`
-	TotalInteractions     int     `json:"total_interactions"`
-	LastInteractionDate   string  `json:"last_interaction_date"`
+	CMFirstEmail          string  `json:"cm_first_email,omitempty"`
+	CMApprovalEmail       string  `json:"cm_approval_email,omitempty"`
+	ProspectOrganizer     bool    `json:"prospect_organizer,omitempty"`
+	ProspectChapterMember bool    `json:"prospect_chapter_member,omitempty"`
+	LastConnection        string  `json:"last_connection,omitempty"`
+	ReferralFriends       string  `json:"referral_friends,omitempty"`
+	ReferralApply         string  `json:"referral_apply,omitempty"`
+	ReferralOutlet        string  `json:"referral_outlet,omitempty"`
+	InterestDate          string  `json:"interest_date,omitempty"`
+	MPI                   bool    `json:"mpi,omitempty"`
+	Notes                 string  `json:"notes,omitempty"`
+	VisionWall            string  `json:"vision_wall,omitempty"`
+	MPPRequirements       string  `json:"mpp_requirements,omitempty"`
+	VotingAgreement       bool    `json:"voting_agreement,omitempty"`
+	StreetAddress         string  `json:"street_address,omitempty"`
+	City                  string  `json:"city,omitempty"`
+	State                 string  `json:"state,omitempty"`
+	GeoCircles            string  `json:"geo_circles,omitempty"`
+	Lat                   float64 `json:"lat,omitempty"`
+	Lng                   float64 `json:"lng,omitempty"`
+	AssignedTo            int     `json:"assigned_to,omitempty"`
+	AssignedToName        string  `json:"assigned_to_name,omitempty"`
+	FollowupDate          string  `json:"followup_date,omitempty"`
+	TotalInteractions     int     `json:"total_interactions,omitempty"`
+	LastInteractionDate   string  `json:"last_interaction_date,omitempty"`
 }
 
 type GetActivistOptions struct {
@@ -575,7 +577,7 @@ func getActivistsJSON(db *sqlx.DB, options GetActivistOptions) ([]ActivistJSON, 
 	if err != nil {
 		return nil, err
 	}
-	return buildActivistJSONArray(activists), nil
+	return BuildActivistJSONArray(activists), nil
 }
 
 func GetActivistRangeJSON(db *sqlx.DB, options ActivistRangeOptionsJSON) ([]ActivistJSON, error) {
@@ -583,10 +585,11 @@ func GetActivistRangeJSON(db *sqlx.DB, options ActivistRangeOptionsJSON) ([]Acti
 	if err != nil {
 		return nil, err
 	}
-	return buildActivistJSONArray(activists), nil
+	return BuildActivistJSONArray(activists), nil
 }
 
-func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
+// TODO: move to transport layer and make private once obsolete activist query options are removed.
+func BuildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 	var activistsJSON []ActivistJSON
 
 	for _, a := range activists {
@@ -2251,73 +2254,6 @@ type ActivistRepository interface {
 
 type ActivistColumnName string
 
-var ValidActivistColumnNames = map[ActivistColumnName]struct{}{
-	"chapter": {},
-
-	"email":                    {},
-	"facebook":                 {},
-	"id":                       {},
-	"location":                 {},
-	"name":                     {},
-	"preferred_name":           {},
-	"phone":                    {},
-	"pronouns":                 {},
-	"language":                 {},
-	"accessibility":            {},
-	"dob":                      {},
-	"chapter_id":               {},
-	"first_event":              {},
-	"last_event":               {},
-	"first_event_name":         {},
-	"last_event_name":          {},
-	"last_action":              {},
-	"months_since_last_action": {},
-	"total_events":             {},
-	"total_points":             {},
-	"active":                   {},
-	"status":                   {},
-	"activist_level":           {},
-	"source":                   {},
-	"hiatus":                   {},
-	"connector":                {},
-	"training0":                {},
-	"training1":                {},
-	"training4":                {},
-	"training5":                {},
-	"training6":                {},
-	"consent_quiz":             {},
-	"training_protest":         {},
-	"dev_application_date":     {},
-	"dev_application_type":     {},
-	"dev_quiz":                 {},
-	"dev_interest":             {},
-	"cm_first_email":           {},
-	"cm_approval_email":        {},
-	"prospect_organizer":       {},
-	"prospect_chapter_member":  {},
-	"last_connection":          {},
-	"referral_friends":         {},
-	"referral_apply":           {},
-	"referral_outlet":          {},
-	"interest_date":            {},
-	"mpi":                      {},
-	"notes":                    {},
-	"vision_wall":              {},
-	"mpp_requirements":         {},
-	"voting_agreement":         {},
-	"street_address":           {},
-	"city":                     {},
-	"state":                    {},
-	"geo_circles":              {},
-	"lat":                      {},
-	"lng":                      {},
-	"assigned_to":              {},
-	"assigned_to_name":         {},
-	"followup_date":            {},
-	"total_interactions":       {},
-	"last_interaction_date":    {},
-}
-
 type QueryActivistOptions struct {
 	// This model is currently shared with the transport layer and treated as part of the frontend API.
 	// Introduce transport DTOs when the wire format needs to differ from internal semantics.
@@ -2334,7 +2270,7 @@ type QueryActivistOptions struct {
 }
 
 type QueryActivistFilters struct {
-	// 0 means search all chapters. Requires that the "chapter" column be visible.
+	// 0 means search all chapters. Requires that the "chapter" column be requested.
 	// Must be set to ID of current chapter if user only has permission for current chapter.
 	ChapterId     int                `json:"chapter_id"`
 	Name          ActivistNameFilter `json:"name"`
@@ -2372,6 +2308,10 @@ type QueryActivistResultPagination struct {
 
 func (o *QueryActivistOptions) normalizeAndValidate() error {
 	// TODO: remove invalid characters from o.nameFilter.name
+
+	if o.Filters.ChapterId == 0 && !slices.Contains(o.Columns, "chapter") {
+		return fmt.Errorf("Must choose 'chapter' column when not filtering by chapter ID.")
+	}
 
 	return nil
 }
