@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"slices"
 
 	"regexp"
 	"strconv"
@@ -366,7 +367,8 @@ type Activist struct {
 	Accessibility   string         `db:"accessibility"`
 	Birthday        sql.NullString `db:"dob"`
 	Coords
-	ChapterID int `db:"chapter_id"`
+	ChapterID   int    `db:"chapter_id"`
+	ChapterName string `db:"chapter_name"`
 }
 
 type Coords struct {
@@ -388,9 +390,10 @@ type ActivistEventData struct {
 }
 
 type ActivistMembershipData struct {
-	ActivistLevel string `db:"activist_level"`
-	Source        string `db:"source"`
-	Hiatus        bool   `db:"hiatus"`
+	ActivistLevel string       `db:"activist_level"`
+	DateOrganizer sql.NullTime `db:"date_organizer"`
+	Source        string       `db:"source"`
+	Hiatus        bool         `db:"hiatus"`
 }
 
 type ActivistConnectionData struct {
@@ -445,72 +448,73 @@ type ActivistExtra struct {
 }
 
 type ActivistJSON struct {
-	Email         string `json:"email"`
-	Facebook      string `json:"facebook"`
-	ID            int    `json:"id"`
-	Location      string `json:"location"`
-	Name          string `json:"name"`
-	PreferredName string `json:"preferred_name"`
-	Phone         string `json:"phone"`
-	Pronouns      string `json:"pronouns"`
-	Language      string `json:"language"`
-	Accessibility string `json:"accessibility"`
-	Birthday      string `json:"dob"`
-	ChapterID     int    `json:"chapter_id"`
+	Email         string `json:"email,omitempty"`
+	Facebook      string `json:"facebook,omitempty"`
+	ID            int    `json:"id,omitempty"`
+	Location      string `json:"location,omitempty"`
+	Name          string `json:"name,omitempty"`
+	PreferredName string `json:"preferred_name,omitempty"`
+	Phone         string `json:"phone,omitempty"`
+	Pronouns      string `json:"pronouns,omitempty"`
+	Language      string `json:"language,omitempty"`
+	Accessibility string `json:"accessibility,omitempty"`
+	Birthday      string `json:"dob,omitempty"`
+	ChapterID     int    `json:"chapter_id,omitempty"`
+	ChapterName   string `json:"chapter_name,omitempty"`
 
-	FirstEvent            string `json:"first_event"`
-	LastEvent             string `json:"last_event"`
-	FirstEventName        string `json:"first_event_name"`
-	LastEventName         string `json:"last_event_name"`
-	LastAction            string `json:"last_action"`
-	MonthsSinceLastAction int    `json:"months_since_last_action"`
-	TotalEvents           int    `json:"total_events"`
-	TotalPoints           int    `json:"total_points"`
-	Active                bool   `json:"active"`
-	Status                string `json:"status"`
+	FirstEvent            string `json:"first_event,omitempty"`
+	LastEvent             string `json:"last_event,omitempty"`
+	FirstEventName        string `json:"first_event_name,omitempty"`
+	LastEventName         string `json:"last_event_name,omitempty"`
+	LastAction            string `json:"last_action,omitempty"`
+	MonthsSinceLastAction int    `json:"months_since_last_action,omitempty"`
+	TotalEvents           int    `json:"total_events,omitempty"`
+	TotalPoints           int    `json:"total_points,omitempty"`
+	Active                bool   `json:"active,omitempty"`
+	Status                string `json:"status,omitempty"`
 
-	ActivistLevel string `json:"activist_level"`
-	Source        string `json:"source"`
-	Hiatus        bool   `json:"hiatus"`
+	ActivistLevel string `json:"activist_level,omitempty"`
+	Source        string `json:"source,omitempty"`
+	Hiatus        bool   `json:"hiatus,omitempty"`
 
-	Connector       string `json:"connector"`
-	Training0       string `json:"training0"`
-	Training1       string `json:"training1"`
-	Training4       string `json:"training4"`
-	Training5       string `json:"training5"`
-	Training6       string `json:"training6"`
-	ConsentQuiz     string `json:"consent_quiz"`
-	TrainingProtest string `json:"training_protest"`
-	ApplicationDate string `json:"dev_application_date"`
-	ApplicationType string `json:"dev_application_type"`
-	Quiz            string `json:"dev_quiz"`
-	DevInterest     string `json:"dev_interest"`
+	Connector       string `json:"connector,omitempty"`
+	Training0       string `json:"training0,omitempty"`
+	Training1       string `json:"training1,omitempty"`
+	Training4       string `json:"training4,omitempty"`
+	Training5       string `json:"training5,omitempty"`
+	Training6       string `json:"training6,omitempty"`
+	ConsentQuiz     string `json:"consent_quiz,omitempty"`
+	TrainingProtest string `json:"training_protest,omitempty"`
+	ApplicationDate string `json:"dev_application_date,omitempty"`
+	ApplicationType string `json:"dev_application_type,omitempty"`
+	Quiz            string `json:"dev_quiz,omitempty"`
+	DevInterest     string `json:"dev_interest,omitempty"`
 
-	CMFirstEmail          string  `json:"cm_first_email"`
-	CMApprovalEmail       string  `json:"cm_approval_email"`
-	ProspectOrganizer     bool    `json:"prospect_organizer"`
-	ProspectChapterMember bool    `json:"prospect_chapter_member"`
-	LastConnection        string  `json:"last_connection"`
-	ReferralFriends       string  `json:"referral_friends"`
-	ReferralApply         string  `json:"referral_apply"`
-	ReferralOutlet        string  `json:"referral_outlet"`
-	InterestDate          string  `json:"interest_date"`
-	MPI                   bool    `json:"mpi"`
-	Notes                 string  `json:"notes"`
-	VisionWall            string  `json:"vision_wall"`
-	MPPRequirements       string  `json:"mpp_requirements"`
-	VotingAgreement       bool    `json:"voting_agreement"`
-	StreetAddress         string  `json:"street_address"`
-	City                  string  `json:"city"`
-	State                 string  `json:"state"`
-	GeoCircles            string  `json:"geo_circles"`
-	Lat                   float64 `json:"lat"`
-	Lng                   float64 `json:"lng"`
-	AssignedTo            int     `json:"assigned_to"`
-	AssignedToName        string  `json:"assigned_to_name"`
-	FollowupDate          string  `json:"followup_date"`
-	TotalInteractions     int     `json:"total_interactions"`
-	LastInteractionDate   string  `json:"last_interaction_date"`
+	CMFirstEmail          string  `json:"cm_first_email,omitempty"`
+	CMApprovalEmail       string  `json:"cm_approval_email,omitempty"`
+	ProspectOrganizer     bool    `json:"prospect_organizer,omitempty"`
+	ProspectChapterMember bool    `json:"prospect_chapter_member,omitempty"`
+	LastConnection        string  `json:"last_connection,omitempty"`
+	ReferralFriends       string  `json:"referral_friends,omitempty"`
+	ReferralApply         string  `json:"referral_apply,omitempty"`
+	ReferralOutlet        string  `json:"referral_outlet,omitempty"`
+	InterestDate          string  `json:"interest_date,omitempty"`
+	MPI                   bool    `json:"mpi,omitempty"`
+	Notes                 string  `json:"notes,omitempty"`
+	VisionWall            string  `json:"vision_wall,omitempty"`
+	MPPRequirements       string  `json:"mpp_requirements,omitempty"`
+	VotingAgreement       bool    `json:"voting_agreement,omitempty"`
+	StreetAddress         string  `json:"street_address,omitempty"`
+	City                  string  `json:"city,omitempty"`
+	State                 string  `json:"state,omitempty"`
+	GeoCircles            string  `json:"geo_circles,omitempty"`
+	Lat                   float64 `json:"lat,omitempty"`
+	Lng                   float64 `json:"lng,omitempty"`
+	AssignedTo            int     `json:"assigned_to,omitempty"`
+	AssignedToName        string  `json:"assigned_to_name,omitempty"`
+	FollowupDate          string  `json:"followup_date,omitempty"`
+	TotalInteractions     int     `json:"total_interactions,omitempty"`
+	LastInteractionDate   string  `json:"last_interaction_date,omitempty"`
 }
 
 type GetActivistOptions struct {
@@ -575,7 +579,7 @@ func getActivistsJSON(db *sqlx.DB, options GetActivistOptions) ([]ActivistJSON, 
 	if err != nil {
 		return nil, err
 	}
-	return buildActivistJSONArray(activists), nil
+	return BuildActivistJSONArray(activists), nil
 }
 
 func GetActivistRangeJSON(db *sqlx.DB, options ActivistRangeOptionsJSON) ([]ActivistJSON, error) {
@@ -583,11 +587,12 @@ func GetActivistRangeJSON(db *sqlx.DB, options ActivistRangeOptionsJSON) ([]Acti
 	if err != nil {
 		return nil, err
 	}
-	return buildActivistJSONArray(activists), nil
+	return BuildActivistJSONArray(activists), nil
 }
 
-func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
-	var activistsJSON []ActivistJSON
+// TODO: move to transport layer and make private once obsolete activist query options are removed.
+func BuildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
+	activistsJSON := []ActivistJSON{}
 
 	for _, a := range activists {
 		firstEvent := ""
@@ -677,6 +682,7 @@ func buildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			Facebook:      a.Facebook,
 			ID:            a.ID,
 			ChapterID:     a.ChapterID,
+			ChapterName:   a.ChapterName,
 			Location:      location,
 			Name:          a.Name,
 			PreferredName: a.PreferredName,
@@ -2269,7 +2275,7 @@ type QueryActivistOptions struct {
 }
 
 type QueryActivistFilters struct {
-	// 0 means search all chapters. Requires that the "chapter" column be visible.
+	// 0 means search all chapters and requires that the "chapter" column be requested.
 	// Must be set to ID of current chapter if user only has permission for current chapter.
 	ChapterId     int                `json:"chapter_id"`
 	Name          ActivistNameFilter `json:"name"`
@@ -2278,12 +2284,51 @@ type QueryActivistFilters struct {
 }
 
 type ActivistNameFilter struct {
-	Name string `json:"name"`
+	NameContains string `json:"name_contains"`
+}
+
+// DateOnly represents a date without time information (YYYY-MM-DD format).
+// The time component is always 00:00:00 UTC.
+type DateOnly struct {
+	time.Time
+}
+
+// Compile-time check that DateOnly implements json.Unmarshaler
+var _ json.Unmarshaler = (*DateOnly)(nil)
+
+// UnmarshalJSON parses a date string in YYYY-MM-DD format as UTC midnight
+func (d *DateOnly) UnmarshalJSON(data []byte) error {
+	// Remove quotes from JSON string
+	dateStr := string(data)
+	if len(dateStr) < 2 {
+		return nil
+	}
+	dateStr = dateStr[1 : len(dateStr)-1]
+
+	if dateStr == "" {
+		return nil
+	}
+
+	parsed, err := time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		return fmt.Errorf("invalid date format (expected YYYY-MM-DD): %w", err)
+	}
+
+	d.Time = time.Date(parsed.Year(), parsed.Month(), parsed.Day(), 0, 0, 0, 0, time.UTC)
+	return nil
+}
+
+// MarshalJSON formats the date as YYYY-MM-DD
+func (d DateOnly) MarshalJSON() ([]byte, error) {
+	if d.Time.IsZero() {
+		return []byte("null"), nil
+	}
+	return []byte(`"` + d.Time.Format("2006-01-02") + `"`), nil
 }
 
 type LastEventFilter struct {
-	LastEventLt  time.Time `json:"last_event_lt"`
-	LastEventGte time.Time `json:"last_event_gte"`
+	LastEventLt  DateOnly `json:"last_event_lt"`
+	LastEventGte DateOnly `json:"last_event_gte"`
 }
 
 type ActivistSortOptions struct {
@@ -2307,6 +2352,10 @@ type QueryActivistResultPagination struct {
 
 func (o *QueryActivistOptions) normalizeAndValidate() error {
 	// TODO: remove invalid characters from o.nameFilter.name
+
+	if o.Filters.ChapterId == 0 && !slices.Contains(o.Columns, "chapter_name") {
+		return fmt.Errorf("must choose 'chapter_name' column when not filtering by chapter ID.")
+	}
 
 	return nil
 }

@@ -805,7 +805,7 @@ func TestActivistRange_NameNoLimitAscOrder_returnsSubsetOfActivists(t *testing.T
 	activistOptions.Name = "F"
 	fetchedActivists, err = GetActivistRangeJSON(db, activistOptions)
 	require.NoError(t, err)
-	require.Nil(t, fetchedActivists)
+	require.Len(t, fetchedActivists, 0)
 
 }
 
@@ -836,7 +836,7 @@ func TestActivistRange_NameNoLimitDescOrder_returnsSubsetOfActivists(t *testing.
 	activistOptions.Name = "A"
 	fetchedActivists, err = GetActivistRangeJSON(db, activistOptions)
 	require.NoError(t, err)
-	require.Nil(t, fetchedActivists)
+	require.Len(t, fetchedActivists, 0)
 
 }
 
@@ -885,7 +885,7 @@ func TestActivistRange_NameAndLimitAscOrder_returnsSubsetOfActivists(t *testing.
 	activistOptions.Name = "F"
 	fetchedActivists, err = GetActivistRangeJSON(db, activistOptions)
 	require.NoError(t, err)
-	require.Nil(t, fetchedActivists)
+	require.Len(t, fetchedActivists, 0)
 }
 
 // Specifying limit restricts number of returned entries
@@ -917,7 +917,7 @@ func TestActivistRange_NameAndLimitDescOrder_returnsSubsetofActivists(t *testing
 	activistOptions.Name = "A"
 	fetchedActivists, err = GetActivistRangeJSON(db, activistOptions)
 	require.NoError(t, err)
-	require.Nil(t, fetchedActivists)
+	require.Len(t, fetchedActivists, 0)
 }
 
 func assertStringsSliceUnorderedEquals(t *testing.T, s0, s1 []string) {
