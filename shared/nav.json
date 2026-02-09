@@ -142,6 +142,11 @@
       "roleRequired": ["admin"],
       "items": [
         {
+          "label": "Activists",
+          "href": "/v2/activists",
+          "page": "ActivistList"
+        },
+        {
           "label": "New Event",
           "href": "/v2/event",
           "page": "NewEvent_beta"
