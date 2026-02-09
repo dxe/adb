@@ -1,10 +1,12 @@
 import ky, { HTTPError, KyInstance } from 'ky'
 import { z } from 'zod'
+import { QueryActivistOptions, QueryActivistResult } from './api/activists'
 
 export const API_PATH = {
   STATIC_RESOURCE_HASH: 'static_resources_hash',
   ACTIVIST_NAMES_GET: 'activist_names/get',
   ACTIVIST_LIST_BASIC: 'activist/list_basic',
+  ACTIVISTS_SEARCH: 'api/activists',
   USER_ME: 'user/me',
   CSRF_TOKEN: 'api/csrf-token',
   CHAPTER_LIST: 'chapter/list',
@@ -94,6 +96,20 @@ export const ActivistListBasicResp = z.object({
 })
 
 export type ActivistListBasic = z.infer<typeof ActivistListBasicResp>
+
+// Re-export activist search types from dedicated module
+export {
+  ActivistJSON,
+  ActivistColumnName,
+  QueryActivistOptions,
+  QueryActivistResult,
+} from './api/activists'
+export type {
+  ActivistJSON as ActivistJSONType,
+  ActivistColumnName as ActivistColumnNameType,
+  QueryActivistOptions as QueryActivistOptionsType,
+  QueryActivistResult as QueryActivistResultType,
+} from './api/activists'
 
 const EventGetResp = z.object({
   event: z.object({
@@ -207,6 +223,17 @@ export class ApiClient {
       .get(API_PATH.ACTIVIST_LIST_BASIC, options)
       .json()
     return ActivistListBasicResp.parse(resp)
+  }
+
+  searchActivists = async (options: QueryActivistOptions) => {
+    try {
+      const resp = await this.client
+        .post(API_PATH.ACTIVISTS_SEARCH, { json: options })
+        .json()
+      return QueryActivistResult.parse(resp)
+    } catch (err) {
+      return this.handleKyError(err)
+    }
   }
 
   getChapterList = async () => {
