@@ -2251,6 +2251,9 @@ func QueryActivists(authedUser ADBUser, options QueryActivistOptions, repo Activ
 	return repo.QueryActivists(options)
 }
 
+// ErrValidation is a sentinel error for query validation failures
+var ErrValidation = errors.New("validation error")
+
 // Interface for querying and updating activists. This avoids a dependency on the persistence package which could create
 // a cyclical package reference.
 type ActivistRepository interface {
@@ -2331,6 +2334,15 @@ type LastEventFilter struct {
 	LastEventGte DateOnly `json:"last_event_gte"`
 }
 
+func (f *LastEventFilter) Validate() error {
+	if !f.LastEventGte.IsZero() && !f.LastEventLt.IsZero() {
+		if !f.LastEventGte.Time.Before(f.LastEventLt.Time) {
+			return fmt.Errorf("%w: invalid date range", ErrValidation)
+		}
+	}
+	return nil
+}
+
 type ActivistSortOptions struct {
 	SortColumns []ActivistSortColumn `json:"sort_columns"`
 }
@@ -2355,6 +2367,10 @@ func (o *QueryActivistOptions) normalizeAndValidate() error {
 
 	if o.Filters.ChapterId == 0 && !slices.Contains(o.Columns, "chapter_name") {
 		return fmt.Errorf("must choose 'chapter_name' column when not filtering by chapter ID.")
+	}
+
+	if err := o.Filters.LastEvent.Validate(); err != nil {
+		return fmt.Errorf("invalid Last Event filter: %w", err)
 	}
 
 	return nil
