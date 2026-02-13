@@ -14,7 +14,10 @@ import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
 import { ActivistTable } from './activists-table'
 import { ActivistFilters } from './activist-filters'
 import { ColumnSelector } from './column-selector'
-import { normalizeColumnsForFilters } from './column-definitions'
+import {
+  normalizeColumnsForFilters,
+  DEFAULT_COLUMNS,
+} from './column-definitions'
 import {
   FilterState,
   buildQueryOptions,
@@ -46,11 +49,23 @@ const buildUrlParams = (
     params.set('includeHidden', 'true')
   }
 
-  const columnsToStore = visibleColumns.filter(
-    (col) => col !== 'chapter_name' && col !== 'name',
+  const defaultColumns = normalizeColumnsForFilters(
+    DEFAULT_COLUMNS,
+    filters.searchAcrossChapters,
   )
-  if (columnsToStore.length > 0) {
-    params.set('columns', columnsToStore.join(','))
+
+  // Only include columns in URL if they differ from defaults
+  const columnsMatch =
+    visibleColumns.length === defaultColumns.length &&
+    visibleColumns.every((col, idx) => col === defaultColumns[idx])
+
+  if (!columnsMatch) {
+    const columnsToStore = visibleColumns.filter(
+      (col) => col !== 'chapter_name' && col !== 'name',
+    )
+    if (columnsToStore.length > 0) {
+      params.set('columns', columnsToStore.join(','))
+    }
   }
 
   return params
