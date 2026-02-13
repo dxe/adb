@@ -31,6 +31,7 @@ export function ColumnSelector({
   isChapterColumnShown,
 }: ColumnSelectorProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [localColumns, setLocalColumns] = useState(visibleColumns)
   const groupedColumns = groupColumnsByCategory()
   const slugifyCategory = (category: ColumnCategory) =>
     category
@@ -39,10 +40,10 @@ export function ColumnSelector({
       .replace(/^-+|-+$/g, '')
 
   const handleToggleColumn = (columnName: ActivistColumnName) => {
-    const newColumns = visibleColumns.includes(columnName)
-      ? visibleColumns.filter((col) => col !== columnName)
-      : [...visibleColumns, columnName]
-    onColumnsChange(normalizeColumns(newColumns))
+    const newColumns = localColumns.includes(columnName)
+      ? localColumns.filter((col) => col !== columnName)
+      : [...localColumns, columnName]
+    setLocalColumns(normalizeColumns(newColumns))
   }
 
   const handleToggleCategory = (category: ColumnCategory) => {
@@ -51,25 +52,25 @@ export function ColumnSelector({
       .map((col) => col.name)
       .filter((name) => name !== 'chapter_name') // chapter_name is managed outside of this component
     const allVisible = categoryColumnNames.every((col) =>
-      visibleColumns.includes(col),
+      localColumns.includes(col),
     )
 
     let newColumns: ActivistColumnName[]
     if (allVisible) {
       // Remove all columns in this category
-      newColumns = visibleColumns.filter(
+      newColumns = localColumns.filter(
         (col) => !categoryColumnNames.includes(col),
       )
     } else {
       // Add all columns in this category
-      newColumns = [...visibleColumns]
+      newColumns = [...localColumns]
       categoryColumnNames.forEach((col) => {
         if (!newColumns.includes(col)) {
           newColumns.push(col)
         }
       })
     }
-    onColumnsChange(normalizeColumns(newColumns))
+    setLocalColumns(normalizeColumns(newColumns))
   }
 
   const getCategorySelectionState = (
@@ -80,7 +81,7 @@ export function ColumnSelector({
       (col) => col.name !== 'chapter_name' && col.name !== 'name',
     )
     const selectedCount = userToggleableColumns.filter((col) =>
-      visibleColumns.includes(col.name),
+      localColumns.includes(col.name),
     ).length
 
     if (selectedCount === 0) return 'none'
@@ -88,8 +89,21 @@ export function ColumnSelector({
     return 'partial'
   }
 
+  const handleOpenChange = (open: boolean) => {
+    if (
+      !open &&
+      JSON.stringify(localColumns) !== JSON.stringify(visibleColumns)
+    ) {
+      onColumnsChange(localColumns)
+    }
+    if (open) {
+      setLocalColumns(visibleColumns)
+    }
+    setIsOpen(open)
+  }
+
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
+    <Popover open={isOpen} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button variant="outline" size="sm" className="h-12">
           <Columns3 className="mr-2 h-4 w-4" />
@@ -100,7 +114,11 @@ export function ColumnSelector({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h4 className="font-medium">Select Columns</h4>
-            <Button variant="ghost" size="sm" onClick={() => setIsOpen(false)}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleOpenChange(false)}
+            >
               Done
             </Button>
           </div>
@@ -147,7 +165,7 @@ export function ColumnSelector({
                         <div key={col.name} className="flex items-center gap-2">
                           <Checkbox
                             id={`column-${col.name}`}
-                            checked={visibleColumns.includes(col.name)}
+                            checked={localColumns.includes(col.name)}
                             onCheckedChange={() => handleToggleColumn(col.name)}
                             disabled={isDisabled}
                           />
