@@ -2,6 +2,7 @@ package transport
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 
@@ -26,7 +27,11 @@ func ActivistsSearchHandler(w http.ResponseWriter, r *http.Request, authedUser m
 
 	result, err := model.QueryActivists(authedUser, options, repo)
 	if err != nil {
-		sendErrorMessage(w, http.StatusInternalServerError, err)
+		if errors.Is(err, model.ErrValidation) {
+			sendErrorMessage(w, http.StatusBadRequest, err)
+		} else {
+			sendErrorMessage(w, http.StatusInternalServerError, err)
+		}
 		return
 	}
 

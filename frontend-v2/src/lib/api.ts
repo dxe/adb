@@ -144,6 +144,16 @@ const ApiErrorResp = z.object({
   message: z.string(),
 })
 
+export class HTTPStatusError extends Error {
+  constructor(
+    public status: number,
+    message: string,
+  ) {
+    super(message)
+    this.name = 'HTTPStatusError'
+  }
+}
+
 export class ApiClient {
   private client: KyInstance
 
@@ -167,8 +177,9 @@ export class ApiClient {
         await err.response.json().catch(() => null),
       )
       if (parsed.success) {
-        throw new Error(parsed.data.message)
+        throw new HTTPStatusError(err.response.status, parsed.data.message)
       }
+      throw new HTTPStatusError(err.response.status, err.message)
     }
     throw err
   }
