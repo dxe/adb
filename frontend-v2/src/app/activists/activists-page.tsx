@@ -191,7 +191,7 @@ export default function ActivistsPage() {
       {isError && (
         <div className="flex items-center justify-center py-12 text-destructive">
           {error instanceof Error
-            ? error.message
+            ? error.message.replace(/^invalid query options:\s*/i, '') // Remove message prefix / boilerplate
             : 'Failed to load activists. Please try again.'}
         </div>
       )}

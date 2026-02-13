@@ -2245,7 +2245,7 @@ func QueryActivists(authedUser ADBUser, options QueryActivistOptions, repo Activ
 	}
 
 	if err := options.normalizeAndValidate(); err != nil {
-		return QueryActivistResult{}, fmt.Errorf("invalid query options: %v", err)
+		return QueryActivistResult{}, fmt.Errorf("invalid query options: %w", err)
 	}
 
 	return repo.QueryActivists(options)
@@ -2253,6 +2253,25 @@ func QueryActivists(authedUser ADBUser, options QueryActivistOptions, repo Activ
 
 // ErrValidation is a sentinel error for query validation failures
 var ErrValidation = errors.New("validation error")
+
+// ValidationError is a custom error type for validation failures that can be
+// detected with errors.Is(err, ErrValidation) but doesn't include "validation error"
+// in the message.
+type ValidationError struct {
+	msg string
+}
+
+func (e *ValidationError) Error() string {
+	return e.msg
+}
+
+func (e *ValidationError) Is(target error) bool {
+	return target == ErrValidation
+}
+
+func (e *ValidationError) Unwrap() error {
+	return ErrValidation
+}
 
 // Interface for querying and updating activists. This avoids a dependency on the persistence package which could create
 // a cyclical package reference.
@@ -2337,7 +2356,7 @@ type LastEventFilter struct {
 func (f *LastEventFilter) Validate() error {
 	if !f.LastEventGte.IsZero() && !f.LastEventLt.IsZero() {
 		if !f.LastEventGte.Time.Before(f.LastEventLt.Time) {
-			return fmt.Errorf("%w: invalid date range", ErrValidation)
+			return &ValidationError{msg: "invalid date range"}
 		}
 	}
 	return nil
