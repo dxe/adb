@@ -55,10 +55,11 @@ export default async function ActivistsListPage({ searchParams }: PageProps) {
     sort,
   })
 
-  // Prefetch initial activists data
-  await queryClient.prefetchQuery({
+  // Prefetch first page of activists data for SSR hydration
+  await queryClient.prefetchInfiniteQuery({
     queryKey: [API_PATH.ACTIVISTS_SEARCH, initialQueryOptions],
     queryFn: () => apiClient.searchActivists(initialQueryOptions),
+    initialPageParam: undefined as string | undefined,
   })
 
   return (

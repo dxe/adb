@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState, useEffect, useCallback, useReducer } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useInfiniteQuery } from '@tanstack/react-query'
 import { liteDebounce } from '@tanstack/pacer-lite'
 import { useSearchParams, useRouter } from 'next/navigation'
 import {
@@ -9,7 +9,9 @@ import {
   API_PATH,
   QueryActivistOptions,
   ActivistColumnName,
+  type ActivistJSON,
 } from '@/lib/api'
+import { Button } from '@/components/ui/button'
 import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
 import { ActivistTable } from './activists-table'
 import { ActivistFilters } from './activist-filters'
@@ -20,6 +22,7 @@ import {
   DEFAULT_COLUMNS,
 } from './column-definitions'
 import {
+  DEFAULT_SORT,
   FilterState,
   SortColumn,
   buildQueryOptions,
@@ -115,10 +118,9 @@ const activistsReducer = (
       )
 
       // Reset sorting when sorted column is unselected
-      let sort = state.sort
-      if (!state.sort.every((s) => selectedColumns.includes(s.column))) {
-        sort = []
-      }
+      const sort = state.sort.every((s) => selectedColumns.includes(s.column))
+        ? state.sort
+        : []
 
       return { ...state, selectedColumns, sort }
     }
@@ -204,10 +206,31 @@ export default function ActivistsPage() {
     [filters, selectedColumns, user.ChapterID, debouncedNameSearch, sort],
   )
 
-  const { data, isLoading, isError, error } = useQuery({
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
     queryKey: [API_PATH.ACTIVISTS_SEARCH, queryOptions],
-    queryFn: () => apiClient.searchActivists(queryOptions),
+    queryFn: ({ pageParam }) =>
+      apiClient.searchActivists({
+        ...queryOptions,
+        after: pageParam,
+      }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) =>
+      lastPage.pagination.next_cursor || undefined,
   })
+
+  // Flatten pages of activists into one array
+  const activists: ActivistJSON[] = useMemo(
+    () => data?.pages.flatMap((page) => page.activists) ?? [],
+    [data],
+  )
 
   return (
     <div className="flex flex-col gap-6">
@@ -229,12 +252,15 @@ export default function ActivistsPage() {
           label="Sort by"
           value={sort[0]}
           onChange={(primary) =>
-            handleSortChange(sort.length > 1 ? [primary, sort[1]] : [primary])
+            handleSortChange(
+              sort.length > 1 && sort[1].column !== primary.column
+                ? [primary, sort[1]]
+                : [primary],
+            )
           }
           onClear={() => handleSortChange([])}
           canClear={isExplicitSort}
           availableColumns={selectedColumns}
-          excludeColumns={sort.length > 1 ? [sort[1].column] : []}
         />
         {isExplicitSort && (
           <SortSelector
@@ -243,8 +269,9 @@ export default function ActivistsPage() {
             value={sort[1]}
             onChange={(secondary) => handleSortChange([sort[0], secondary])}
             onClear={() => handleSortChange([sort[0]])}
-            availableColumns={selectedColumns}
-            excludeColumns={[sort[0].column]}
+            availableColumns={selectedColumns.filter(
+              (col) => col !== sort[0].column,
+            )}
           />
         )}
       </ActivistFilters>
@@ -263,19 +290,30 @@ export default function ActivistsPage() {
         </div>
       )}
 
-      {data && !isLoading && (
+      {activists.length > 0 && !isLoading && (
         <>
           <div className="text-sm text-muted-foreground">
-            {data.activists.length} activist
-            {data.activists.length !== 1 ? 's' : ''} shown
+            {activists.length} activist
+            {activists.length !== 1 ? 's' : ''} shown
           </div>
 
           <ActivistTable
-            activists={data.activists}
+            activists={activists}
             visibleColumns={selectedColumns}
             sort={sort}
             onSortChange={handleSortChange}
           />
+
+          {hasNextPage && (
+            <Button
+              variant="outline"
+              className="self-center"
+              onClick={() => fetchNextPage()}
+              disabled={isFetchingNextPage}
+            >
+              {isFetchingNextPage ? 'Loading...' : 'Load more'}
+            </Button>
+          )}
         </>
       )}
     </div>

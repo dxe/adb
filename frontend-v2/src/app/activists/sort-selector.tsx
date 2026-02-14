@@ -31,8 +31,6 @@ interface SortSelectorProps {
   canClear?: boolean
   /** Columns available for sorting (subset of visible columns). */
   availableColumns: ActivistColumnName[]
-  /** Columns to exclude (already used by the other sort selector). */
-  excludeColumns?: ActivistColumnName[]
 }
 
 function getColumnLabel(name: ActivistColumnName): string {
@@ -52,16 +50,12 @@ export function SortSelector({
   onClear,
   canClear = true,
   availableColumns,
-  excludeColumns = [],
 }: SortSelectorProps) {
-  const filteredColumns = availableColumns.filter(
-    (col) => !excludeColumns.includes(col),
-  )
-
   const handleColumnChange = (column: string) => {
     onChange({
       column: column as ActivistColumnName,
-      desc: value?.desc ?? false,
+      // Force ASC when selecting 'id' (DESC not allowed); otherwise preserve current direction.
+      desc: column === 'id' ? false : (value?.desc ?? false),
     })
   }
 
@@ -109,7 +103,7 @@ export function SortSelector({
                   <SelectValue placeholder="Choose column..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {filteredColumns.map((col) => (
+                  {availableColumns.map((col) => (
                     <SelectItem key={col} value={col}>
                       {getColumnLabel(col)}
                     </SelectItem>
@@ -135,6 +129,7 @@ export function SortSelector({
                     size="sm"
                     className="flex-1 gap-1"
                     onClick={() => handleDirectionChange(true)}
+                    disabled={value.column === 'id'}
                   >
                     <ArrowDown className="h-3.5 w-3.5" />
                     Descending

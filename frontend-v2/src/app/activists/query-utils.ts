@@ -57,11 +57,16 @@ export const parseSortFromParams = (
     .filter((s) => visibleColumns.includes(s.column))
 }
 
-/** Builds URL param value for sort state. Returns undefined for default sort. */
+/** Builds URL param value for sort state. Returns undefined for default/empty sort. */
 export const buildSortParam = (sort: SortColumn[]): string | undefined => {
+  if (sort.length === 0) return undefined
   const isDefault =
-    sort.length === 1 && sort[0].column === 'name' && !sort[0].desc
-  if (sort.length === 0 || isDefault) return undefined
+    sort.length === DEFAULT_SORT.length &&
+    sort.every(
+      (s, i) =>
+        s.column === DEFAULT_SORT[i].column && s.desc === DEFAULT_SORT[i].desc,
+    )
+  if (isDefault) return undefined
 
   return sort.map((s) => (s.desc ? `-${s.column}` : s.column)).join(',')
 }

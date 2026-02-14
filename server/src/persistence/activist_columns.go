@@ -2,6 +2,7 @@ package persistence
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/dxe/adb/model"
 )
@@ -11,6 +12,16 @@ type activistColumn struct {
 	// sql is the SQL expression for this column in the SELECT clause.
 	sql   string
 	joins []joinSpec
+}
+
+// orderByExpr returns the SQL expression to use in ORDER BY and WHERE clauses.
+// Strips the " as alias" suffix if present, since ORDER BY/WHERE need the raw expression.
+func (c *activistColumn) orderByExpr() string {
+	// Extract the part before " as " (case-insensitive).
+	if idx := strings.Index(strings.ToLower(c.sql), " as "); idx != -1 {
+		return strings.TrimSpace(c.sql[:idx])
+	}
+	return c.sql
 }
 
 var simpleColumns = map[model.ActivistColumnName]string{

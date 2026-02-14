@@ -1,8 +1,6 @@
 package persistence
 
 import (
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"slices"
 
@@ -20,29 +18,7 @@ func NewActivistRepository(db *sqlx.DB) *DBActivistRepository {
 
 const activistTableAlias = "a"
 
-type activistPaginationCursor struct {
-	// values of the last row of the previous page corresponding to the sort columns.
-	// Required for this cursor pagination implementation.
-	SortOffsetValues []any `json:"sort_values"`
-
-	// ID of the activist in the last row of the previous page.
-	IdOffset int `json:"activist_id"`
-}
-
 func (r DBActivistRepository) QueryActivists(options model.QueryActivistOptions) (model.QueryActivistResult, error) {
-	var cursor activistPaginationCursor
-	if len(options.After) > 0 {
-		decoded, err := base64.StdEncoding.DecodeString(options.After)
-		if err != nil {
-			return model.QueryActivistResult{}, fmt.Errorf("invalid pagination cursor: %w", err)
-		}
-		if err := json.Unmarshal(decoded, &cursor); err != nil {
-			return model.QueryActivistResult{}, fmt.Errorf("invalid pagination cursor: %w", err)
-		}
-	}
-	// TODO: use cursor value
-	_ = cursor
-
 	query := NewSqlQueryBuilder()
 	query.From(fmt.Sprintf("FROM activists %s", activistTableAlias))
 
@@ -79,10 +55,20 @@ func (r DBActivistRepository) QueryActivists(options model.QueryActivistOptions)
 		}
 	}
 
-	// Register joins needed by sort columns and add to SELECT if missing.
-	// Sorted columns must be selected for cursor pagination.
+	// Normalize sort columns: default to name ASC, and append ID as tiebreaker
+	// for deterministic ordering (required for cursor pagination).
 	sortColumns := options.Sort.SortColumns
-	for _, sc := range sortColumns {
+	if len(sortColumns) == 0 {
+		sortColumns = []model.ActivistSortColumn{{ColumnName: "name"}}
+	}
+	if sortColumns[len(sortColumns)-1].ColumnName != "id" {
+		sortColumns = append(sortColumns, model.ActivistSortColumn{ColumnName: "id"})
+	}
+
+	// Register joins needed by sort columns, add to SELECT if missing
+	// (sorted columns must be selected for cursor pagination), and build sortSpecs.
+	sortSpecs := make([]sortSpec, len(sortColumns))
+	for i, sc := range sortColumns {
 		colSpec := getColumnSpec(sc.ColumnName)
 		if colSpec == nil {
 			return model.QueryActivistResult{}, fmt.Errorf("invalid sort column: '%v'", sc.ColumnName)
@@ -93,33 +79,42 @@ func (r DBActivistRepository) QueryActivists(options model.QueryActivistOptions)
 		if !slices.Contains(columns, sc.ColumnName) {
 			query.SelectColumn(colSpec.sql)
 		}
+		sortSpecs[i] = sortSpec{
+			expr: colSpec.orderByExpr(),
+			desc: sc.Desc,
+		}
 	}
 
 	for _, joinSQL := range registry.getJoins() {
 		query.Join(joinSQL)
 	}
 
-	// Apply default sorting configuration
-	if len(sortColumns) == 0 {
-		sortColumns = []model.ActivistSortColumn{{ColumnName: "name"}}
+	// Apply cursor seek condition if paginating.
+	if len(options.After) > 0 {
+		cursor, err := parsePaginationCursor(options.After)
+		if err != nil {
+			return model.QueryActivistResult{}, fmt.Errorf("parsing pagination cursor: %w", err)
+		}
+
+		numExpectedValues := len(sortColumns) - 1 // all sort columns except the id tiebreaker
+		if len(cursor.SortOffsetValues) != numExpectedValues {
+			return model.QueryActivistResult{}, fmt.Errorf("invalid pagination cursor: expected %d sort values, got %d", numExpectedValues, len(cursor.SortOffsetValues))
+		}
+		cursorWhere := buildCursorWhere(sortSpecs, cursor)
+		query.Where(cursorWhere.sql, cursorWhere.args...)
 	}
 
-	// Append ID as tiebreaker for deterministic ordering (required for cursor pagination).
-	if sortColumns[len(sortColumns)-1].ColumnName != "id" {
-		sortColumns = append(sortColumns, model.ActivistSortColumn{ColumnName: "id"})
-	}
-
-	for _, sc := range sortColumns {
+	for _, si := range sortSpecs {
 		dir := "ASC"
-		if sc.Desc {
+		if si.desc {
 			dir = "DESC"
 		}
-		query.OrderBy(fmt.Sprintf("%s %s", string(sc.ColumnName), dir))
+		query.OrderBy(fmt.Sprintf("%s %s", si.expr, dir))
 	}
 
-	// TODO: Increase pagination limit for prod
-	limit := 20
-	query.Limit(limit)
+	// Fetch one extra row to detect if there are more results.
+	limit := 50
+	query.Limit(limit + 1)
 
 	sqlStr, args := query.ToSQL()
 
@@ -128,11 +123,25 @@ func (r DBActivistRepository) QueryActivists(options model.QueryActivistOptions)
 		return model.QueryActivistResult{}, fmt.Errorf("querying activists: %w", err)
 	}
 
+	// Determine if there are more pages and trim the extra row.
+	hasMore := len(activists) > limit
+	if hasMore {
+		activists = activists[:limit]
+	}
+
+	nextCursor := ""
+	if hasMore {
+		var err error
+		nextCursor, err = buildPaginationCursor(sortColumns, activists[len(activists)-1])
+		if err != nil {
+			return model.QueryActivistResult{}, fmt.Errorf("generating pagination cursor: %w", err)
+		}
+	}
+
 	return model.QueryActivistResult{
 		Activists: activists,
 		Pagination: model.QueryActivistResultPagination{
-			// TODO: set NextCursor if there are more results
-			NextCursor: "",
+			NextCursor: nextCursor,
 		},
 	}, nil
 }

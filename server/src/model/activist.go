@@ -2397,8 +2397,13 @@ func (o *QueryActivistOptions) normalizeAndValidate() error {
 	}
 
 	for i, sc := range o.Sort.SortColumns {
-		if sc.ColumnName == "id" && i != len(o.Sort.SortColumns)-1 {
-			return &ValidationError{msg: "'id' must be the last sort column when present"}
+		if sc.ColumnName == "id" {
+			if i != len(o.Sort.SortColumns)-1 {
+				return &ValidationError{msg: "'id' must be the last sort column if present"}
+			}
+			if sc.Desc {
+				return &ValidationError{msg: "'id' cannot be sorted in descending order"}
+			}
 		}
 	}
 

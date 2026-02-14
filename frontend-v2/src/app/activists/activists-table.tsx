@@ -95,7 +95,8 @@ export function ActivistTable({
 
       const handleHeaderClick = () => {
         if (sort.length === 1 && sort[0].column === colName) {
-          // Toggle direction on the sole sort column
+          // Toggle direction on the sole sort column (id is always ASC for cursor pagination)
+          if (colName === 'id') return
           onSortChange([{ column: colName, desc: !sort[0].desc }])
         } else {
           // Replace all sorting with this column ascending
