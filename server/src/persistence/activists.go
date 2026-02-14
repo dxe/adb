@@ -40,7 +40,7 @@ func (r DBActivistRepository) QueryActivists(options model.QueryActivistOptions)
 			return model.QueryActivistResult{}, fmt.Errorf("invalid column name: '%v'", colName)
 		}
 		columnSpecs = append(columnSpecs, colSpec)
-		query.SelectColumn(colSpec.sql)
+		query.SelectColumn(colSpec.selectExpr())
 		for _, joinSpec := range colSpec.joins {
 			registry.registerJoin(joinSpec)
 		}
@@ -77,10 +77,10 @@ func (r DBActivistRepository) QueryActivists(options model.QueryActivistOptions)
 			registry.registerJoin(joinSpec)
 		}
 		if !slices.Contains(columns, sc.ColumnName) {
-			query.SelectColumn(colSpec.sql)
+			query.SelectColumn(colSpec.selectExpr())
 		}
 		sortSpecs[i] = sortSpec{
-			expr: colSpec.orderByExpr(),
+			expr: colSpec.expr,
 			desc: sc.Desc,
 		}
 	}
