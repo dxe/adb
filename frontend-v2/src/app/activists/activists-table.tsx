@@ -15,12 +15,16 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { ArrowDown, ArrowUp } from 'lucide-react'
 import { ActivistJSON, ActivistColumnName } from '@/lib/api'
 import { COLUMN_DEFINITIONS } from './column-definitions'
+import type { SortColumn } from './query-utils'
 
 interface ActivistTableProps {
   activists: ActivistJSON[]
   visibleColumns: ActivistColumnName[]
+  sort: SortColumn[]
+  onSortChange: (sort: SortColumn[]) => void
 }
 
 // Gets the underlying type of a column from the ActivistJSON schema
@@ -78,15 +82,47 @@ const formatValue = (
 export function ActivistTable({
   activists,
   visibleColumns,
+  sort,
+  onSortChange,
 }: ActivistTableProps) {
   const columns = useMemo<ColumnDef<ActivistJSON>[]>(() => {
     return visibleColumns.map((colName) => {
       const definition = COLUMN_DEFINITIONS.find((d) => d.name === colName)
       const label = definition?.label || colName
+      const sortIndex = sort.findIndex((s) => s.column === colName)
+      const sortEntry = sortIndex !== -1 ? sort[sortIndex] : undefined
+      const SortIcon = sortEntry?.desc ? ArrowDown : ArrowUp
+
+      const handleHeaderClick = () => {
+        if (sort.length === 1 && sort[0].column === colName) {
+          // Toggle direction on the sole sort column
+          onSortChange([{ column: colName, desc: !sort[0].desc }])
+        } else {
+          // Replace all sorting with this column ascending
+          onSortChange([{ column: colName, desc: false }])
+        }
+      }
 
       return {
         id: colName,
-        header: () => <span className="font-medium">{label}</span>,
+        header: () => (
+          <button
+            className="flex items-center gap-1 font-medium hover:text-foreground transition-colors"
+            onClick={handleHeaderClick}
+          >
+            {label}
+            {sortEntry && (
+              <>
+                <SortIcon className="h-3 w-3 text-muted-foreground" />
+                {sort.length > 1 && (
+                  <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-muted px-1 text-[10px] font-semibold text-muted-foreground">
+                    {sortIndex + 1}
+                  </span>
+                )}
+              </>
+            )}
+          </button>
+        ),
         accessorFn: (row) => row[colName as keyof ActivistJSON],
         cell: ({ row }) => {
           const value = row.original[colName as keyof ActivistJSON]
@@ -94,7 +130,7 @@ export function ActivistTable({
         },
       }
     })
-  }, [visibleColumns])
+  }, [visibleColumns, sort])
 
   const table = useReactTable({
     data: activists,

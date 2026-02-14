@@ -14,7 +14,9 @@ import {
   buildQueryOptions,
   parseColumnsFromParams,
   parseFiltersFromParams,
+  parseSortFromParams,
 } from './query-utils'
+import { normalizeColumnsForFilters } from './column-definitions'
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
@@ -41,10 +43,16 @@ export default async function ActivistsListPage({ searchParams }: PageProps) {
   }
   const filters = parseFiltersFromParams(getParam)
   const selectedColumns = parseColumnsFromParams(getParam)
+  const normalizedColumns = normalizeColumnsForFilters(
+    selectedColumns,
+    filters.searchAcrossChapters,
+  )
+  const sort = parseSortFromParams(getParam, normalizedColumns)
   const initialQueryOptions = buildQueryOptions({
     filters,
     selectedColumns,
     chapterId: session.user.ChapterID,
+    sort,
   })
 
   // Prefetch initial activists data

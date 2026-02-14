@@ -14,15 +14,19 @@ import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
 import { ActivistTable } from './activists-table'
 import { ActivistFilters } from './activist-filters'
 import { ColumnSelector } from './column-selector'
+import { SortSelector } from './sort-selector'
 import {
   normalizeColumnsForFilters,
   DEFAULT_COLUMNS,
 } from './column-definitions'
 import {
   FilterState,
+  SortColumn,
   buildQueryOptions,
+  buildSortParam,
   parseColumnsFromParams,
   parseFiltersFromParams,
+  parseSortFromParams,
 } from './query-utils'
 
 const BASE_PATH = '/activists'
@@ -30,6 +34,7 @@ const BASE_PATH = '/activists'
 const buildUrlParams = (
   filters: FilterState,
   visibleColumns: ActivistColumnName[],
+  sort: SortColumn[],
 ): URLSearchParams => {
   const params = new URLSearchParams()
 
@@ -68,17 +73,24 @@ const buildUrlParams = (
     }
   }
 
+  const sortParam = buildSortParam(sort)
+  if (sortParam) {
+    params.set('sort', sortParam)
+  }
+
   return params
 }
 
 type ActivistsState = {
   filters: FilterState
   selectedColumns: ActivistColumnName[]
+  sort: SortColumn[]
 }
 
 type ActivistsAction =
   | { type: 'setFilters'; filters: FilterState }
   | { type: 'setSelectedColumns'; columns: ActivistColumnName[] }
+  | { type: 'setSort'; sort: SortColumn[] }
 
 const activistsReducer = (
   state: ActivistsState,
@@ -94,16 +106,24 @@ const activistsReducer = (
               state.selectedColumns,
               filters.searchAcrossChapters,
             )
-      return { filters, selectedColumns }
+      return { ...state, filters, selectedColumns }
     }
     case 'setSelectedColumns': {
-      return {
-        filters: state.filters,
-        selectedColumns: normalizeColumnsForFilters(
-          action.columns,
-          state.filters.searchAcrossChapters,
-        ),
+      const selectedColumns = normalizeColumnsForFilters(
+        action.columns,
+        state.filters.searchAcrossChapters,
+      )
+
+      // Reset sorting when sorted column is unselected
+      let sort = state.sort
+      if (!state.sort.every((s) => selectedColumns.includes(s.column))) {
+        sort = []
       }
+
+      return { ...state, selectedColumns, sort }
+    }
+    case 'setSort': {
+      return { ...state, sort: action.sort }
     }
     default:
       return state
@@ -121,16 +141,19 @@ export default function ActivistsPage() {
     [searchParams],
   )
   const initialFilters = parseFiltersFromParams(getParam)
-  const initialColumns = parseColumnsFromParams(getParam)
+  const initialColumns = normalizeColumnsForFilters(
+    parseColumnsFromParams(getParam),
+    initialFilters.searchAcrossChapters,
+  )
+
+  const initialSort = parseSortFromParams(getParam, initialColumns)
 
   const [state, dispatch] = useReducer(activistsReducer, {
     filters: initialFilters,
-    selectedColumns: normalizeColumnsForFilters(
-      initialColumns,
-      initialFilters.searchAcrossChapters,
-    ),
+    selectedColumns: initialColumns,
+    sort: initialSort,
   })
-  const { filters, selectedColumns } = state
+  const { filters, selectedColumns, sort } = state
 
   const [debouncedNameSearch, setDebouncedNameSearch] = useState(
     filters.nameSearch,
@@ -148,12 +171,12 @@ export default function ActivistsPage() {
     debouncedSetNameSearch(filters.nameSearch)
   }, [filters.nameSearch, debouncedSetNameSearch])
 
-  // Update URL when filters or columns change
+  // Update URL when filters, columns, or sort change
   useEffect(() => {
-    const params = buildUrlParams(filters, selectedColumns).toString()
+    const params = buildUrlParams(filters, selectedColumns, sort).toString()
     const newUrl = params ? `?${params}` : BASE_PATH
     router.replace(newUrl, { scroll: false })
-  }, [filters, selectedColumns, router])
+  }, [filters, selectedColumns, sort, router])
 
   const handleFiltersChange = useCallback((newFilters: FilterState) => {
     dispatch({ type: 'setFilters', filters: newFilters })
@@ -163,6 +186,12 @@ export default function ActivistsPage() {
     dispatch({ type: 'setSelectedColumns', columns })
   }, [])
 
+  const handleSortChange = useCallback((newSort: SortColumn[]) => {
+    dispatch({ type: 'setSort', sort: newSort })
+  }, [])
+
+  const isExplicitSort = sort.length > 0
+
   const queryOptions = useMemo<QueryActivistOptions>(
     () =>
       buildQueryOptions({
@@ -170,8 +199,9 @@ export default function ActivistsPage() {
         selectedColumns,
         chapterId: user.ChapterID,
         nameSearch: debouncedNameSearch,
+        sort,
       }),
-    [filters, selectedColumns, user.ChapterID, debouncedNameSearch],
+    [filters, selectedColumns, user.ChapterID, debouncedNameSearch, sort],
   )
 
   const { data, isLoading, isError, error } = useQuery({
@@ -195,6 +225,28 @@ export default function ActivistsPage() {
           onColumnsChange={handleColumnsChange}
           isChapterColumnShown={filters.searchAcrossChapters}
         />
+        <SortSelector
+          label="Sort by"
+          value={sort[0]}
+          onChange={(primary) =>
+            handleSortChange(sort.length > 1 ? [primary, sort[1]] : [primary])
+          }
+          onClear={() => handleSortChange([])}
+          canClear={isExplicitSort}
+          availableColumns={selectedColumns}
+          excludeColumns={sort.length > 1 ? [sort[1].column] : []}
+        />
+        {isExplicitSort && (
+          <SortSelector
+            label="Then by"
+            inactiveLabel="Then sort by"
+            value={sort[1]}
+            onChange={(secondary) => handleSortChange([sort[0], secondary])}
+            onClear={() => handleSortChange([sort[0]])}
+            availableColumns={selectedColumns}
+            excludeColumns={[sort[0].column]}
+          />
+        )}
       </ActivistFilters>
 
       {isLoading && (
@@ -221,6 +273,8 @@ export default function ActivistsPage() {
           <ActivistTable
             activists={data.activists}
             visibleColumns={selectedColumns}
+            sort={sort}
+            onSortChange={handleSortChange}
           />
         </>
       )}

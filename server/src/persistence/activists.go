@@ -79,11 +79,44 @@ func (r DBActivistRepository) QueryActivists(options model.QueryActivistOptions)
 		}
 	}
 
+	// Register joins needed by sort columns and add to SELECT if missing.
+	// Sorted columns must be selected for cursor pagination.
+	sortColumns := options.Sort.SortColumns
+	for _, sc := range sortColumns {
+		colSpec := getColumnSpec(sc.ColumnName)
+		if colSpec == nil {
+			return model.QueryActivistResult{}, fmt.Errorf("invalid sort column: '%v'", sc.ColumnName)
+		}
+		for _, joinSpec := range colSpec.joins {
+			registry.registerJoin(joinSpec)
+		}
+		if !slices.Contains(columns, sc.ColumnName) {
+			query.SelectColumn(colSpec.sql)
+		}
+	}
+
 	for _, joinSQL := range registry.getJoins() {
 		query.Join(joinSQL)
 	}
 
-	// TODO: Apply sort options from options.Sort
+	// Apply default sorting configuration
+	if len(sortColumns) == 0 {
+		sortColumns = []model.ActivistSortColumn{{ColumnName: "name"}}
+	}
+
+	// Append ID as tiebreaker for deterministic ordering (required for cursor pagination).
+	if sortColumns[len(sortColumns)-1].ColumnName != "id" {
+		sortColumns = append(sortColumns, model.ActivistSortColumn{ColumnName: "id"})
+	}
+
+	for _, sc := range sortColumns {
+		dir := "ASC"
+		if sc.Desc {
+			dir = "DESC"
+		}
+		query.OrderBy(fmt.Sprintf("%s %s", string(sc.ColumnName), dir))
+	}
+
 	// TODO: Increase pagination limit for prod
 	limit := 20
 	query.Limit(limit)
