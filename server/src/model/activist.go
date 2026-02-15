@@ -386,7 +386,9 @@ type ActivistEventData struct {
 	TotalEvents           int            `db:"total_events"`
 	TotalPoints           int            `db:"total_points"`
 	Active                bool           `db:"active"`
-	Status                string
+	// Status is computed in SQL by the "status" column in persistence/activist_columns.go.
+	// Must be kept in sync with getStatus() below.
+	Status string `db:"status"`
 }
 
 type ActivistMembershipData struct {
@@ -2188,7 +2190,8 @@ func CleanGetActivistOptions(body io.Reader) (GetActivistOptions, error) {
 //   - Former
 //   - No attendance
 //
-// Must be kept in sync with the list in frontend/ActivistList.vue
+// Must be kept in sync with the "status" column CASE expression in persistence/activist_columns.go
+// and the list in frontend/ActivistList.vue.
 func getStatus(firstEvent mysql.NullTime, lastEvent mysql.NullTime, totalEvents int) string {
 	if !firstEvent.Valid || !lastEvent.Valid {
 		return "No attendance"

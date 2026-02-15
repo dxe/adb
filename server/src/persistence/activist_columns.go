@@ -117,19 +117,84 @@ func getColumnSpec(colName model.ActivistColumnName) *activistColumn {
 			expr:  fmt.Sprintf("COALESCE(%s.event_count, 0)", totalEventsSubqueryJoin.Key),
 			alias: "total_events",
 		}
+	case "last_action":
+		return &activistColumn{
+			joins: []joinSpec{lastActionSubqueryJoin},
+			expr:  fmt.Sprintf("%s.last_action_date", lastActionSubqueryJoin.Key),
+			alias: "last_action",
+		}
+	case "months_since_last_action":
+		return &activistColumn{
+			joins: []joinSpec{lastActionSubqueryJoin},
+			expr:  fmt.Sprintf("COALESCE(%s.months_since_last_action, 9999)", lastActionSubqueryJoin.Key),
+			alias: "months_since_last_action",
+		}
+	case "total_points":
+		return &activistColumn{
+			joins: []joinSpec{totalPointsSubqueryJoin},
+			expr:  fmt.Sprintf("COALESCE(%s.total_points, 0)", totalPointsSubqueryJoin.Key),
+			alias: "total_points",
+		}
+	case "active":
+		return &activistColumn{
+			joins: []joinSpec{lastEventSubqueryJoin},
+			expr:  fmt.Sprintf("IF(%s.last_event_date >= NOW() - INTERVAL 30 DAY, 1, 0)", lastEventSubqueryJoin.Key),
+			alias: "active",
+		}
+	case "status":
+		// Must be kept in sync with getStatus() in model/activist.go.
+		return &activistColumn{
+			joins: []joinSpec{firstEventSubqueryJoin, lastEventSubqueryJoin, totalEventsSubqueryJoin},
+			expr: fmt.Sprintf(`CASE
+	WHEN %[1]s.first_event_date IS NULL OR %[2]s.last_event_date IS NULL THEN 'No attendance'
+	WHEN %[2]s.last_event_date < NOW() - INTERVAL 60 DAY THEN 'Former'
+	WHEN %[1]s.first_event_date > NOW() - INTERVAL 90 DAY AND COALESCE(%[3]s.event_count, 0) < 5 THEN 'New'
+	ELSE 'Current'
+END`, firstEventSubqueryJoin.Key, lastEventSubqueryJoin.Key, totalEventsSubqueryJoin.Key),
+			alias: "status",
+		}
+	case "last_connection":
+		return &activistColumn{
+			joins: []joinSpec{lastConnectionSubqueryJoin},
+			expr:  fmt.Sprintf("%s.last_connection_date", lastConnectionSubqueryJoin.Key),
+			alias: "last_connection",
+		}
+	case "geo_circles":
+		return &activistColumn{
+			joins: []joinSpec{geoCirclesSubqueryJoin},
+			expr:  fmt.Sprintf("COALESCE(%s.circle_names, '')", geoCirclesSubqueryJoin.Key),
+			alias: "geo_circles",
+		}
+	case "assigned_to_name":
+		return &activistColumn{
+			joins: []joinSpec{assignedToUserJoin},
+			expr:  fmt.Sprintf("COALESCE(%s.name, '')", assignedToUserJoin.Key),
+			alias: "assigned_to_name",
+		}
+	case "total_interactions":
+		return &activistColumn{
+			joins: []joinSpec{interactionsSubqueryJoin},
+			expr:  fmt.Sprintf("COALESCE(%s.interaction_count, 0)", interactionsSubqueryJoin.Key),
+			alias: "total_interactions",
+		}
+	case "last_interaction_date":
+		return &activistColumn{
+			joins: []joinSpec{interactionsSubqueryJoin},
+			expr:  fmt.Sprintf("COALESCE(%s.last_interaction_date, '')", interactionsSubqueryJoin.Key),
+			alias: "last_interaction_date",
+		}
+	case "mpp_requirements":
+		return &activistColumn{
+			joins: []joinSpec{mppRequirementsSubqueryJoin},
+			expr: fmt.Sprintf(`CASE
+	WHEN %[1]s.has_da = 1 AND %[1]s.has_community = 1 THEN 'Fulfilling requirements'
+	WHEN %[1]s.has_da = 1 THEN 'Missing Community event'
+	WHEN %[1]s.has_community = 1 THEN 'Missing DA event'
+	ELSE 'Missing Community & DA events'
+END`, mppRequirementsSubqueryJoin.Key),
+			alias: "mpp_requirements",
+		}
 	}
-
-	// TODO: Implement these columns with proper joins:
-	// - last_action
-	// - months_since_last_action
-	// - total_points
-	// - active
-	// - status
-	// - last_connection
-	// - geo_circles
-	// - assigned_to_name
-	// - total_interactions
-	// - last_interaction_date
 
 	return nil
 }

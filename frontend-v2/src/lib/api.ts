@@ -241,7 +241,8 @@ export class ApiClient {
       const resp = await this.client
         .post(API_PATH.ACTIVISTS_SEARCH, { json: options })
         .json()
-      return QueryActivistResult.parse(resp)
+      const parsed = QueryActivistResult.parse(resp)
+      return fillActivistBlankNumericFieldsWithZero(parsed, options.columns)
     } catch (err) {
       return this.handleKyError(err)
     }
@@ -328,6 +329,41 @@ export class ApiClient {
     } catch (err) {
       return this.handleKyError(err)
     }
+  }
+}
+
+const BLANK_TO_ZERO_FIELDS = [
+  'total_events',
+  'months_since_last_action',
+  'total_points',
+  'total_interactions',
+] as const
+
+// If a column is requested but not set, this is due to use of "omitempty" in Go JSON serialization. The real value of
+// the field is still 0, so this fills in those missing values until we implement a more semantic serialization in Go.
+function fillActivistBlankNumericFieldsWithZero(
+  result: z.infer<typeof QueryActivistResult>,
+  requestedColumns: QueryActivistOptions['columns'],
+): z.infer<typeof QueryActivistResult> {
+  const requested = new Set(requestedColumns)
+  const fillableFields = BLANK_TO_ZERO_FIELDS.filter((field) =>
+    requested.has(field),
+  )
+  if (fillableFields.length === 0) {
+    return result
+  }
+
+  return {
+    ...result,
+    activists: result.activists.map((activist) => {
+      const normalized = { ...activist }
+      for (const field of fillableFields) {
+        if (normalized[field] === undefined) {
+          normalized[field] = 0
+        }
+      }
+      return normalized
+    }),
   }
 }
 

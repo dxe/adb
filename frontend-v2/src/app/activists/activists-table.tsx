@@ -133,7 +133,7 @@ export function ActivistTable({
         },
       }
     })
-  }, [visibleColumns, sort])
+  }, [visibleColumns, sort, onSortChange])
 
   const table = useReactTable({
     data: activists,

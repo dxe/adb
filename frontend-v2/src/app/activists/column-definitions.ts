@@ -28,13 +28,6 @@ export const DEFAULT_COLUMNS: ActivistColumnName[] = [
   'activist_level',
 ]
 
-// TODO: add columns not yet implemented in the backend:
-// last_connection
-// geo_circles
-// assigned_to_name
-// total_interactions
-// last_interaction_date
-// mpp_requirements
 export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   // Chapter (conditionally shown based on filters)
   { name: 'chapter_name', label: 'Chapter', category: 'Basic Info' },
@@ -83,6 +76,29 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     label: 'Last Event Name',
     category: 'Event Attendance',
   },
+  {
+    name: 'last_action',
+    label: 'Last Action',
+    category: 'Event Attendance',
+    isDate: true,
+  },
+  {
+    name: 'months_since_last_action',
+    label: 'Mo. Since Last Action',
+    category: 'Event Attendance',
+  },
+  {
+    name: 'total_points',
+    label: 'Points',
+    category: 'Event Attendance',
+  },
+  { name: 'active', label: 'Active', category: 'Event Attendance' },
+  { name: 'status', label: 'Status', category: 'Event Attendance' },
+  {
+    name: 'mpp_requirements',
+    label: 'DA&C Current Month',
+    category: 'Event Attendance',
+  },
   { name: 'mpi', label: 'MPI', category: 'Event Attendance' },
 
   // Trainings
@@ -129,11 +145,30 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     category: 'Application Info',
   },
 
+  // Circle Info
+  { name: 'geo_circles', label: 'Geo-Circle', category: 'Circle Info' },
+
   // Prospect Info
   { name: 'assigned_to', label: 'Assigned To', category: 'Prospect Info' },
   {
+    name: 'assigned_to_name',
+    label: 'Assigned To Name',
+    category: 'Prospect Info',
+  },
+  {
     name: 'followup_date',
     label: 'Follow-up Date',
+    category: 'Prospect Info',
+    isDate: true,
+  },
+  {
+    name: 'total_interactions',
+    label: 'Interactions',
+    category: 'Prospect Info',
+  },
+  {
+    name: 'last_interaction_date',
+    label: 'Last Interaction',
     category: 'Prospect Info',
     isDate: true,
   },
@@ -158,6 +193,12 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   { name: 'dev_quiz', label: 'Quiz', category: 'Development' },
   { name: 'dev_interest', label: 'Interests', category: 'Development' },
   { name: 'connector', label: 'Coach', category: 'Development' },
+  {
+    name: 'last_connection',
+    label: 'Last Coaching',
+    category: 'Development',
+    isDate: true,
+  },
 
   // Chapter Membership
   {
