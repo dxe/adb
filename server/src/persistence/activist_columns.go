@@ -82,7 +82,7 @@ func getColumnSpec(colName model.ActivistColumnName) *activistColumn {
 	case "chapter_name":
 		return &activistColumn{
 			joins: []joinSpec{chapterJoin},
-			expr:  fmt.Sprintf("%s.name", chapterJoin.Key),
+			expr:  fmt.Sprintf("COALESCE(%s.name, '<invalid chapter id>')", chapterJoin.Key),
 			alias: "chapter_name",
 		}
 	case "first_event":
