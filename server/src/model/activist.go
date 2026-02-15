@@ -2392,5 +2392,20 @@ func (o *QueryActivistOptions) normalizeAndValidate() error {
 		return fmt.Errorf("invalid Last Event filter: %w", err)
 	}
 
+	if len(o.Sort.SortColumns) > 2 {
+		return &ValidationError{msg: "cannot sort by more than 2 columns"}
+	}
+
+	for i, sc := range o.Sort.SortColumns {
+		if sc.ColumnName == "id" {
+			if i != len(o.Sort.SortColumns)-1 {
+				return &ValidationError{msg: "'id' must be the last sort column if present"}
+			}
+			if sc.Desc {
+				return &ValidationError{msg: "'id' cannot be sorted in descending order"}
+			}
+		}
+	}
+
 	return nil
 }
