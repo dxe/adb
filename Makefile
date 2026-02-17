@@ -15,10 +15,10 @@ NVM_SCRIPT := $(shell \
 # Please keep in sync with launch.json and Dockerfiles
 VUE_FRONTEND_NODE_VERSION := 16
 # Please keep in sync with launch.json and Dockerfiles
-REACT_FRONTEND_NODE_VERSION := 20
+REACT_FRONTEND_NODE_VERSION := 25
 
 # Runs the application (builds Vue.js files, starts Next.js dev server, starts Go server).
-# As of January 2025, upgrading past Node 16 breaks old Vue dependencies, and Node 20 is required to use the latest version of React.
+# As of January 2025, upgrading past Node 16 breaks old Vue dependencies.
 run_all:
 	. $(NVM_SCRIPT) && \
 	export NEXT_PUBLIC_API_BASE_URL=http://localhost:8080; \
