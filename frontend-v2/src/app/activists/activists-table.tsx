@@ -19,6 +19,7 @@ import { ArrowDown, ArrowUp } from 'lucide-react'
 import { ActivistJSON, ActivistColumnName } from '@/lib/api'
 import { COLUMN_DEFINITIONS } from './column-definitions'
 import type { SortColumn } from './query-utils'
+import { z } from 'zod'
 
 interface ActivistTableProps {
   activists: ActivistJSON[]
@@ -31,17 +32,18 @@ interface ActivistTableProps {
 const getColumnType = (
   columnName: ActivistColumnName,
 ): 'string' | 'number' | 'boolean' => {
-  const schema =
-    ActivistJSON.shape[columnName as keyof typeof ActivistJSON.shape]
+  const schema = ActivistJSON.shape[
+    columnName as keyof typeof ActivistJSON.shape
+  ] as z.ZodTypeAny
   if (!schema) throw new Error('column not in schema: ' + columnName)
 
-  // Unwrap optional to get the base type
-  const unwrapped = schema._def.innerType || schema
+  const unwrapped =
+    schema instanceof z.ZodOptional || schema instanceof z.ZodNullable
+      ? schema.unwrap()
+      : schema
 
-  // Check the Zod type
-  const typeName = unwrapped._def.typeName
-  if (typeName === 'ZodNumber') return 'number'
-  if (typeName === 'ZodBoolean') return 'boolean'
+  if (unwrapped instanceof z.ZodNumber) return 'number'
+  if (unwrapped instanceof z.ZodBoolean) return 'boolean'
   return 'string'
 }
 
