@@ -1764,6 +1764,16 @@ export default Vue.extend({
             return;
           }
           this.allActivists = parsed.activist_list ? parsed.activist_list : [];
+          // These columns should always be numeric, but zero values are omitted for efficiency, especially for
+          // the new frontend. This puts the values back so columns will sort properly.
+          this.allActivists.forEach((a) => {
+            if (a.months_since_last_action === undefined) {
+              a.months_since_last_action = 0;
+            }
+            if (a.total_interactions === undefined) {
+              a.total_interactions = 0;
+            }
+          });
           this.refreshHOTData();
           this.lastRequestTimestamp = parsed.request_timestamp;
           this.loading = false;
