@@ -57,7 +57,9 @@ deps:
 	. $(NVM_SCRIPT) && nvm i 22 && npm i -g pnpm && pnpm i
 	. $(NVM_SCRIPT) && cd frontend && nvm i $(VUE_FRONTEND_NODE_VERSION) && npm i --legacy-peer-deps
 	. $(NVM_SCRIPT) && cd frontend-v2 && nvm i $(REACT_FRONTEND_NODE_VERSION) && npm i -g pnpm && pnpm i
+	cd pkg && go mod download
 	cd server/src && go get -t github.com/dxe/adb/...
+	cd cli && go mod download
 	go install -tags 'mysql' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 
 # Run all tests
@@ -66,7 +68,8 @@ test:
 
 # Clean all built outputs
 clean:
-	rm -f server/adb
+	rm -f cli/adb
+	rm -f server/adb-server
 	rm -rf frontend/dist
 	rm -rf frontend-v2/out
 
@@ -90,6 +93,7 @@ docker_shell:
 prod_build:
 	docker build . -t dxe/adb
 	docker build . -f Dockerfile.frontend-v2 -t dxe/adb-next
+	docker build . -f Dockerfile.cli -t dxe/adb-cli
 
 # Reformat source files.
 # Keep in sync with hooks/pre-commit.

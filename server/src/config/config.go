@@ -8,6 +8,8 @@ import (
 	"runtime"
 	"strconv"
 	"time"
+
+	"github.com/dxe/adb/pkg/shared"
 )
 
 var (
@@ -135,11 +137,7 @@ func mustGetenvAsBool(key string) bool {
 }
 
 func DBDataSource() string {
-	connectionString := DataSourceBase + "/" + DBName + "?parseTime=true&charset=utf8mb4"
-	if IsProd {
-		return connectionString + "&tls=true"
-	}
-	return connectionString
+	return shared.BuildDBDataSource(DBUser, DBPassword, DBProtocol, DBName, IsProd)
 }
 
 func DBTestDataSource() string {

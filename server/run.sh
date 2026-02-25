@@ -6,4 +6,4 @@ if [[ -d adb-config ]]; then
   flags="-prod"
 fi
 
-./adb $flags
+./adb-server $flags
