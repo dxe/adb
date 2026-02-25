@@ -66,7 +66,7 @@ test:
 
 # Clean all built outputs
 clean:
-	rm -f server/adb
+	rm -f server/adb-server
 	rm -rf frontend/dist
 	rm -rf frontend-v2/out
 
