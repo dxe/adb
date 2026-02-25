@@ -28,6 +28,7 @@ import (
 	"github.com/dxe/adb/form_processor"
 	"github.com/dxe/adb/google_groups_sync"
 	"github.com/dxe/adb/model"
+	"github.com/dxe/adb/pkg/shared"
 	"github.com/dxe/adb/survey_mailer"
 	"github.com/dxe/adb/transport"
 	"github.com/gorilla/csrf"
@@ -2152,9 +2153,8 @@ func main() {
 	config.SetCommandLineFlags(*isProdArgument, *logLevel)
 	log.Println("IsProd =", config.IsProd)
 
-	err := model.ApplyAllMigrations(
+	err := shared.ApplyMigrations(
 		model.NewDB(config.DBDataSource()+"&multiStatements=true"),
-		config.DBMigrationsLocation(),
 		true)
 	if err != nil {
 		log.Panicf("error applying database schema migrations: %v", err)

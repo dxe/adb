@@ -47,8 +47,7 @@ watch:
 # Wipe and re-create the dev databases. See the readme for more
 # details.
 dev_db:
-	export DXE_DEV_EMAIL=test-dev@directactioneverywhere.com && \
-	cd server/scripts/create_db_wrapper && ./create_db_wrapper.sh
+	cd cli && go run . db create --dev-email="${DXE_DEV_EMAIL:-test-dev@directactioneverywhere.com}"
 
 # Install all deps for this project.
 # Note: PNPM must be installed separately for each version of NPM used, since it is installed within each NPM installation.

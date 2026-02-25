@@ -4,16 +4,15 @@ go 1.23.0
 
 toolchain go1.24.3
 
-require github.com/dxe/adb/pkg v0.0.0-00010101000000-000000000000
+require github.com/dxe/adb/pkg v0.0.0-20260225205251-45e9461211d6
 
 require (
 	github.com/coreos/go-oidc v2.1.0+incompatible
-	github.com/go-sql-driver/mysql v1.5.0
-	github.com/golang-migrate/migrate/v4 v4.18.3
+	github.com/go-sql-driver/mysql v1.7.1
 	github.com/gorilla/csrf v1.6.2
 	github.com/gorilla/mux v1.7.4
 	github.com/gorilla/sessions v1.2.0
-	github.com/jmoiron/sqlx v1.2.0
+	github.com/jmoiron/sqlx v1.3.5
 	github.com/justinas/alice v1.2.0
 	github.com/pkg/errors v0.9.1
 	github.com/robfig/cron/v3 v3.0.1
@@ -32,6 +31,7 @@ require (
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/golang-migrate/migrate/v4 v4.18.3 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/s2a-go v0.1.7 // indirect

@@ -24,6 +24,17 @@ func DBDataSource() string {
 	)
 }
 
+// DBDataSourceForDB builds a MySQL DSN for a specific database name.
+func DBDataSourceForDB(dbName string) string {
+	return shared.BuildDBDataSource(
+		getEnv("DB_USER", ""),
+		getEnv("DB_PASSWORD", ""),
+		getEnv("DB_PROTOCOL", ""),
+		dbName,
+		IsProd(),
+	)
+}
+
 func getEnv(key, fallback string) string {
 	if v := os.Getenv(key); v != "" {
 		return v
