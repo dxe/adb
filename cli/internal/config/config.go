@@ -1,9 +1,10 @@
 package config
 
 import (
-	"fmt"
 	"os"
 	"strconv"
+
+	"github.com/dxe/adb/pkg/shared"
 )
 
 // IsProd returns true when the PROD environment variable is set to a truthy value (same convention as the ADB server).
@@ -14,16 +15,13 @@ func IsProd() bool {
 
 // DBDataSource builds the MySQL DSN from environment variables.
 func DBDataSource() string {
-	user := getEnv("DB_USER", "")
-	password := getEnv("DB_PASSWORD", "")
-	name := getEnv("DB_NAME", "")
-	protocol := getEnv("DB_PROTOCOL", "")
-
-	dsn := fmt.Sprintf("%s:%s@%s/%s?parseTime=true&charset=utf8mb4", user, password, protocol, name)
-	if IsProd() {
-		dsn += "&tls=true"
-	}
-	return dsn
+	return shared.BuildDBDataSource(
+		getEnv("DB_USER", ""),
+		getEnv("DB_PASSWORD", ""),
+		getEnv("DB_PROTOCOL", ""),
+		getEnv("DB_NAME", ""),
+		IsProd(),
+	)
 }
 
 func getEnv(key, fallback string) string {

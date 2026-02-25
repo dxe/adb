@@ -1,6 +1,7 @@
 package model
 
 import (
+	"github.com/dxe/adb/pkg/shared"
 	"github.com/pkg/errors"
 )
 
@@ -83,5 +84,5 @@ type UserRepository interface {
 	UpdateUser(user ADBUser) (ADBUser, error)
 }
 
-const DevTestUserId = 1
-const DevTestUserEmail = "test@example.org"
+const DevTestUserId = shared.DevTestUserId
+const DevTestUserEmail = shared.DevTestUserEmail

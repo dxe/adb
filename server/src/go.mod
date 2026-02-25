@@ -4,6 +4,8 @@ go 1.23.0
 
 toolchain go1.24.3
 
+require github.com/dxe/adb/pkg v0.0.0-00010101000000-000000000000
+
 require (
 	github.com/coreos/go-oidc v2.1.0+incompatible
 	github.com/go-sql-driver/mysql v1.5.0
@@ -57,3 +59,5 @@ require (
 	gopkg.in/square/go-jose.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/dxe/adb/pkg => ../../pkg
