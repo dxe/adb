@@ -35,6 +35,15 @@
       },
     },
     {
+      "name": "CLI",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/cli",
+      "args": "${input:adbCliArgs}",
+      "console": "integratedTerminal",
+    },
+    {
       // Warning: The Go server serves the Vue frontend files from the
       // filesystem, but this launch configuration does not wait for
       // the Vue frontend build watcher to finish the initial build.
@@ -49,12 +58,19 @@
   ],
   "compounds": [
     {
-      "name": "Launch all",
+      "name": "All servers",
       "configurations": [
         "Go Server",
         "Vue Frontend build watcher",
         "React Frontend",
       ],
+    },
+  ],
+  "inputs": [
+    {
+      "id": "adbCliArgs",
+      "type": "promptString",
+      "description": "ADB CLI args (example: activists count)",
     },
   ],
 }

@@ -6,6 +6,7 @@
 adb
 adb-config
 adb.db
+cli/adb
 frontend/dist
 frontend/node_modules
 frontend-v2/node_modules
