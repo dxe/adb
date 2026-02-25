@@ -23,7 +23,6 @@ RUN apk add --no-cache ca-certificates tzdata
 RUN addgroup -S adb && adduser -S adb -G adb
 WORKDIR /app
 COPY server/run.sh ./
-COPY server/scripts/db-migrations db-migrations/
 COPY server/templates templates/
 COPY frontend/static static/
 COPY --from=build-api /adb-server ./

@@ -6,25 +6,23 @@ The `make deps` command installs the CLI and makes the `migrate` command availab
 
 ## Executing migrations
 
-ADB will automatically apply all migrations when it starts.
+ADB automatically applies all migrations on startup (via embedded files in `pkg/shared`).
 
 To apply migrations manually, run:
 
 ```bash
-migrate -source "file://server/scripts/db-migrations/" -database "mysql://$DB_USER:$DB_PASSWORD@$DB_PROTOCOL/$DB_NAME?parseTime=true&charset=utf8mb4&multiStatements=true" up
+migrate -source "file://pkg/shared/db-migrations/" -database "mysql://$DB_USER:$DB_PASSWORD@$DB_PROTOCOL/$DB_NAME?parseTime=true&charset=utf8mb4&multiStatements=true" up
 ```
 
 If using the devcontainer, note that the environment variables should already be set.
 
-The database flag accepts the value we pass to `migrate.New` in the codebase.
-
 ## Creating migrations
 
 To create a new migration, create a pair of blank, timestamped "up"/"down" files, replacing `<name>` with a lower snake
-case name for the migration such as `add_activist_middle_name_column.
+case name for the migration such as `add_activist_middle_name_column`.
 
 ```bash
-migrate create -dir server/scripts/db-migrations/ -ext sql <name>
+migrate create -dir pkg/shared/db-migrations/ -ext sql <name>
 ```
 
 Then write the migration code in the SQL files.
