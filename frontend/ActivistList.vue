@@ -1418,7 +1418,9 @@ function initialDateToValue() {
 
 function generateBooleanSortFn(field: string, ascending: boolean) {
   return function (a: Activist, b: Activist) {
-    const order = a[field] === b[field] ? 0 : Number(a[field]) - Number(b[field]);
+    const valueA = Number(a[field] !== undefined && a[field] !== null ? a[field] : 0);
+    const valueB = Number(b[field] !== undefined && b[field] !== null ? b[field] : 0);
+    const order = valueA === valueB ? 0 : valueA - valueB;
     if (ascending) {
       return order;
     }
@@ -1428,7 +1430,23 @@ function generateBooleanSortFn(field: string, ascending: boolean) {
 
 function generateStringSortFn(field: string, ascending: boolean) {
   return function (a: Activist, b: Activist) {
-    const order = a[field].toLowerCase() < b[field].toLowerCase() ? -1 : 1;
+    const hasA = !!a[field];
+    const hasB = !!b[field];
+
+    // Always sort empty values to the bottom, no matter the order.
+    if (!hasA && !hasB) {
+      return 0;
+    }
+    if (!hasA) {
+      return 1;
+    }
+    if (!hasB) {
+      return -1;
+    }
+
+    const valueA = String(a[field]).toLowerCase();
+    const valueB = String(b[field]).toLowerCase();
+    const order = valueA === valueB ? 0 : valueA < valueB ? -1 : 1;
     if (ascending) {
       return order;
     }
@@ -1438,7 +1456,21 @@ function generateStringSortFn(field: string, ascending: boolean) {
 
 function generateGenericSortFn(field: string, ascending: boolean) {
   return function (a: Activist, b: Activist) {
-    const order = a[field] < b[field] ? -1 : 1;
+    const hasA = a[field] !== undefined && a[field] !== null;
+    const hasB = b[field] !== undefined && b[field] !== null;
+
+    // Always sort empty values to the bottom, no matter the order.
+    if (!hasA && !hasB) {
+      return 0;
+    }
+    if (!hasA) {
+      return 1;
+    }
+    if (!hasB) {
+      return -1;
+    }
+
+    const order = a[field] === b[field] ? 0 : a[field] < b[field] ? -1 : 1;
     if (ascending) {
       return order;
     }
