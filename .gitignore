@@ -1,4 +1,5 @@
 *.test
+.claude
 .DS_Store
 .env
 .idea
