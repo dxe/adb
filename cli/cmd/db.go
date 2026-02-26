@@ -122,8 +122,8 @@ INSERT INTO users_roles (user_id, role)
 SELECT id, 'admin' FROM adb_users WHERE id IN(`+shared.SFBayChapterIdDevTestStr+`, 2, 3, 4, 5, 6);
 
 INSERT INTO fb_pages (id, name, flag, fb_url, twitter_url, insta_url, email, region, lat, lng, token, organizers) VALUES
-(1, '`+shared.SFBayChapterName+`', 'z', 'facebook.com/a', 'twitter.com/a', 'instagram.com/a', 'a@dxe.io', 'North America', '1.000', '2.000', 'xyz', "[]"),
-(2, 'Chapter B', 'z', 'facebook.com/b', 'twitter.com/b', 'instagram.com/b', 'b@dxe.io', 'North America', '3.000', '2.000', '', "[]"),
-(3, 'Chapter C', 'z', 'facebook.com/c', 'twitter.com/c', 'instagram.com/c', 'c@dxe.io', 'North America', '7.000', '1.000', '', "[]");
+(1, '`+shared.SFBayChapterName+`', '🇺🇸', 'facebook.com/a', 'twitter.com/a', 'instagram.com/a', 'a@dxe.io', 'North America', '1.000', '2.000', 'xyz', "[]"),
+(2, 'Chapter B', '🇺🇸', 'facebook.com/b', 'twitter.com/b', 'instagram.com/b', 'b@dxe.io', 'North America', '3.000', '2.000', '', "[]"),
+(3, 'Chapter C', '🇺🇸', 'facebook.com/c', 'twitter.com/c', 'instagram.com/c', 'c@dxe.io', 'North America', '7.000', '1.000', '', "[]");
 `, buildEventsSQL(), devEmail)
 }
