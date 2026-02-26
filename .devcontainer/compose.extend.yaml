@@ -16,6 +16,7 @@ services:
     # could exit immediately. Command taken from VS Code devcontainer docs.
     command: /bin/sh -c "while sleep 1000; do :; done"
     environment:
+      - DB_HOST=mysql
       - DB_PROTOCOL=tcp(mysql:3306)
       - DB_USER=adb_user
       - DB_PASSWORD=adbpassword

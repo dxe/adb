@@ -35,11 +35,7 @@ If you are using the devcontainer, just run this command in the container:
 make dev_db
 ```
 
-You can log into the database from the devcontainer using this command:
-
-```bash
-mysql -u adb_user -h mysql -D adb_db --password=adbpassword
-```
+You can log into the database from the devcontainer by just typing `db` in the terminal (an alias in .bashrc).
 
 ### Run
 
