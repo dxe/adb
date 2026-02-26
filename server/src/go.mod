@@ -4,7 +4,7 @@ go 1.23.0
 
 toolchain go1.24.3
 
-require github.com/dxe/adb/pkg v0.0.0-20260225205251-45e9461211d6
+require github.com/dxe/adb/pkg v0.0.0-20260225225627-b212e5a48a8e
 
 require (
 	github.com/coreos/go-oidc v2.1.0+incompatible
