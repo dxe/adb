@@ -19,6 +19,7 @@ export interface ColumnDefinition {
   label: string
   category: ColumnCategory
   isDate?: boolean // If true, format string values as dates
+  hidden?: boolean // If true, hide from user-facing column selectors
 }
 
 export const DEFAULT_COLUMNS: ActivistColumnName[] = [
@@ -149,10 +150,15 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   { name: 'geo_circles', label: 'Geo-Circle', category: 'Circle Info' },
 
   // Prospect Info
-  { name: 'assigned_to', label: 'Assigned To', category: 'Prospect Info' },
+  {
+    name: 'assigned_to',
+    label: 'Assigned To ID',
+    category: 'Prospect Info',
+    hidden: true,
+  },
   {
     name: 'assigned_to_name',
-    label: 'Assigned To Name',
+    label: 'Assigned To',
     category: 'Prospect Info',
   },
   {

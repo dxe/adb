@@ -49,6 +49,7 @@ export function ColumnSelector({
   const handleToggleCategory = (category: ColumnCategory) => {
     const categoryColumns = groupedColumns.get(category) || []
     const categoryColumnNames = categoryColumns
+      .filter((col) => !col.hidden)
       .map((col) => col.name)
       .filter((name) => name !== 'chapter_name') // chapter_name is managed outside of this component
     const allVisible = categoryColumnNames.every((col) =>
@@ -78,7 +79,8 @@ export function ColumnSelector({
   ): 'none' | 'partial' | 'full' => {
     const categoryColumns = groupedColumns.get(category) || []
     const userToggleableColumns = categoryColumns.filter(
-      (col) => col.name !== 'chapter_name' && col.name !== 'name',
+      (col) =>
+        !col.hidden && col.name !== 'chapter_name' && col.name !== 'name',
     )
     const selectedCount = userToggleableColumns.filter((col) =>
       localColumns.includes(col.name),
@@ -154,7 +156,8 @@ export function ColumnSelector({
                   {columns
                     .filter(
                       (col) =>
-                        col.name !== 'chapter_name' || isChapterColumnShown,
+                        !col.hidden &&
+                        (col.name !== 'chapter_name' || isChapterColumnShown),
                     )
                     .map((col) => {
                       const isNameColumn = col.name === 'name'
