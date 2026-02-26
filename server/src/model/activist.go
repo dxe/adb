@@ -392,15 +392,18 @@ type ActivistEventData struct {
 }
 
 type ActivistMembershipData struct {
-	ActivistLevel string       `db:"activist_level"`
+	ActivistLevel string `db:"activist_level"`
+	// May be updated by https://github.com/dxe/dxe-db-functions
 	DateOrganizer sql.NullTime `db:"date_organizer"`
 	Source        string       `db:"source"`
 	Hiatus        bool         `db:"hiatus"`
 }
 
 type ActivistConnectionData struct {
-	Connector       string         `db:"connector"`
-	Training0       sql.NullString `db:"training0"`
+	Connector string `db:"connector"`
+	// May be updated by https://github.com/dxe/dxe-db-functions
+	Training0 sql.NullString `db:"training0"`
+	// May be updated by https://github.com/dxe/dxe-db-functions
 	Training1       sql.NullString `db:"training1"`
 	Training4       sql.NullString `db:"training4"`
 	Training5       sql.NullString `db:"training5"`
@@ -492,31 +495,35 @@ type ActivistJSON struct {
 	Quiz            string `json:"dev_quiz,omitempty"`
 	DevInterest     string `json:"dev_interest,omitempty"`
 
-	CMFirstEmail          string  `json:"cm_first_email,omitempty"`
-	CMApprovalEmail       string  `json:"cm_approval_email,omitempty"`
-	ProspectOrganizer     bool    `json:"prospect_organizer,omitempty"`
-	ProspectChapterMember bool    `json:"prospect_chapter_member,omitempty"`
-	LastConnection        string  `json:"last_connection,omitempty"`
-	ReferralFriends       string  `json:"referral_friends,omitempty"`
-	ReferralApply         string  `json:"referral_apply,omitempty"`
-	ReferralOutlet        string  `json:"referral_outlet,omitempty"`
-	InterestDate          string  `json:"interest_date,omitempty"`
-	MPI                   bool    `json:"mpi,omitempty"`
-	Notes                 string  `json:"notes,omitempty"`
-	VisionWall            string  `json:"vision_wall,omitempty"`
-	MPPRequirements       string  `json:"mpp_requirements,omitempty"`
-	VotingAgreement       bool    `json:"voting_agreement,omitempty"`
-	StreetAddress         string  `json:"street_address,omitempty"`
-	City                  string  `json:"city,omitempty"`
-	State                 string  `json:"state,omitempty"`
-	GeoCircles            string  `json:"geo_circles,omitempty"`
-	Lat                   float64 `json:"lat,omitempty"`
-	Lng                   float64 `json:"lng,omitempty"`
-	AssignedTo            int     `json:"assigned_to,omitempty"`
-	AssignedToName        string  `json:"assigned_to_name,omitempty"`
-	FollowupDate          string  `json:"followup_date,omitempty"`
-	TotalInteractions     int     `json:"total_interactions,omitempty"`
-	LastInteractionDate   string  `json:"last_interaction_date,omitempty"`
+	CMFirstEmail          string `json:"cm_first_email,omitempty"`
+	CMApprovalEmail       string `json:"cm_approval_email,omitempty"`
+	ProspectOrganizer     bool   `json:"prospect_organizer,omitempty"`
+	ProspectChapterMember bool   `json:"prospect_chapter_member,omitempty"`
+	LastConnection        string `json:"last_connection,omitempty"`
+	ReferralFriends       string `json:"referral_friends,omitempty"`
+	ReferralApply         string `json:"referral_apply,omitempty"`
+	ReferralOutlet        string `json:"referral_outlet,omitempty"`
+	InterestDate          string `json:"interest_date,omitempty"`
+
+	// May be updated by https://github.com/dxe/dxe-db-functions
+	MPI             bool   `json:"mpi,omitempty"`
+	Notes           string `json:"notes,omitempty"`
+	VisionWall      string `json:"vision_wall,omitempty"`
+	MPPRequirements string `json:"mpp_requirements,omitempty"`
+	VotingAgreement bool   `json:"voting_agreement,omitempty"`
+
+	StreetAddress string  `json:"street_address,omitempty"`
+	City          string  `json:"city,omitempty"`
+	State         string  `json:"state,omitempty"`
+	GeoCircles    string  `json:"geo_circles,omitempty"`
+	Lat           float64 `json:"lat,omitempty"`
+	Lng           float64 `json:"lng,omitempty"`
+
+	AssignedTo          int    `json:"assigned_to,omitempty"`
+	AssignedToName      string `json:"assigned_to_name,omitempty"`
+	FollowupDate        string `json:"followup_date,omitempty"`
+	TotalInteractions   int    `json:"total_interactions,omitempty"`
+	LastInteractionDate string `json:"last_interaction_date,omitempty"`
 }
 
 type GetActivistOptions struct {

@@ -200,3 +200,7 @@ the login page then redirects to the homepage.
 
 For local testing, you may need to add an ngrok authorized origin in GCP console. The origin `http://localhost:8080`
 does not seem to work as of December 2025.
+
+## More documentation
+
+More documentation is available in [Tech team's Coda doc](https://coda.io/d/Tech-Team_dR-UIgVShEf/Activist-Database-ADB_suydmBkX#_luDOewMC).
