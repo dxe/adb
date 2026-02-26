@@ -9,7 +9,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { Columns3 } from 'lucide-react'
+import { CircleHelp, Columns3 } from 'lucide-react'
 import { ActivistColumnName } from '@/lib/api'
 import {
   groupColumnsByCategory,
@@ -176,7 +176,18 @@ export function ColumnSelector({
                             htmlFor={`column-${col.name}`}
                             className={`text-sm ${isDisabled ? 'cursor-default opacity-60' : 'cursor-pointer'}`}
                           >
-                            {col.label}
+                            {/* Show column description in tooltip when hovering over question mark icon */}
+                            <span className="inline-flex items-center gap-1">
+                              {col.label}
+                              {col.description ? (
+                                <span
+                                  title={col.description}
+                                  aria-label={col.description}
+                                >
+                                  <CircleHelp className="h-3.5 w-3.5 text-muted-foreground" />
+                                </span>
+                              ) : null}
+                            </span>
                             {isNameColumn && (
                               <span className="ml-1 text-xs text-muted-foreground">
                                 (required)
