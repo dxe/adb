@@ -57,8 +57,10 @@
     // notification. They will still appear in the "ports" tab of the Panel
     // in VS Code.
     "onAutoForward": "silent"
-  }
+  },
 
   // Configure tool-specific properties.
   // "customizations": {},
+
+  "postCreateCommand": "cat /workspace/.devcontainer/.bashrc >> ~/.bashrc"
 }
