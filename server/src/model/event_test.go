@@ -38,7 +38,7 @@ func TestGetEvents(t *testing.T) {
 		ID:             2,
 		EventName:      "event two",
 		EventDate:      d2,
-		EventType:      "Protest",
+		EventType:      "Action",
 		Attendees:      []string{"Hello", "Hi"},
 		AttendeeEmails: []string{"test1@example.org", "test2@example.org"},
 		AttendeePhones: []string{"123-456-7890", "888-888-8888"},
@@ -105,7 +105,7 @@ func TestGetEvents_orderBy(t *testing.T) {
 		ID:             2,
 		EventName:      "later event",
 		EventDate:      d2,
-		EventType:      "Protest",
+		EventType:      "Action",
 		AddedAttendees: []Activist{a1},
 		ChapterID:      1,
 	}}
@@ -234,7 +234,7 @@ func TestDeleteEvents(t *testing.T) {
 		ID:             2,
 		EventName:      "event two",
 		EventDate:      d2,
-		EventType:      "Protest",
+		EventType:      "Action",
 		AddedAttendees: []Activist{a1, a2},
 		ChapterID:      1,
 	}}

@@ -65,7 +65,7 @@ func buildEventsSQL() string {
 	days := []int{15, 16, 17, 18, 19, 13}
 	formats := []string{
 		"(1, 'Event One', '%s', 'Working Group', '0', '0', '0', '1'),",
-		"(2, 'Event Two', '%s', 'Protest', '0', '0', '0', '1'),",
+		"(2, 'Event Two', '%s', 'Action', '0', '0', '0', '1'),",
 		"(3, 'Event Three', '%s', 'Community', '0', '0', '0', '1'),",
 		"(4, 'Event Four', '%s', 'Outreach', '0', '0', '0', '1'),",
 		"(5, 'Event Five', '%s', 'Key Event', '0', '0', '0', '1'),",
