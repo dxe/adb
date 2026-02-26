@@ -2,26 +2,18 @@
 
 A command-line interface for managing and querying the Activist Database (ADB).
 
-## Building
-
-```sh
-cd cli && go build -o adb .
-```
-
-This produces an `adb` binary in the `cli/` directory.
-
 ## Usage
-
-First set environment variables defined in `adb --help`. Note that the devcontainer already defines all the required
-variables.
-
-Then run:
 
 ```
 adb [command]
 ```
 
 Run `adb --help`, or any subcommand with `--help`, to see available commands.
+
+If not using the devcontainer, be sure to set environment variables defined in `adb --help`. The devcontainer already
+defines all the required variables.
+
+Note that the devcontainer provides a bash alias to run `adb` without explicitly building any binary file.
 
 ## Docker image
 

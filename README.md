@@ -37,6 +37,8 @@ make dev_db
 
 You can log into the database from the devcontainer by just typing `db` in the terminal (an alias in .bashrc).
 
+To seed data into the database for various testing scenarios, check out the [ADB CLI](./cli/README.md) "seed" command.
+
 ### Run
 
 After downloading the dependencies, start the development servers. There are two
