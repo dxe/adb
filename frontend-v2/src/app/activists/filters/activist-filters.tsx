@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -67,6 +68,51 @@ function parseIncludeExclude(value?: string): {
   return { include, exclude }
 }
 
+/** Parse "=a,b" or "=~a,b" into mode + values. */
+function parseActivistLevelValue(value?: string): {
+  mode: 'include' | 'exclude'
+  values: Set<string>
+} {
+  const empty = { mode: 'include' as const, values: new Set<string>() }
+  if (!value) return empty
+
+  // New syntax: "=a,b" or "=~a,b"
+  if (value.startsWith('=')) {
+    const payload = value.slice(1)
+    const mode: 'include' | 'exclude' = payload.startsWith('~')
+      ? 'exclude'
+      : 'include'
+    const rawValues = mode === 'exclude' ? payload.slice(1) : payload
+    const values = new Set(
+      rawValues
+        .split(',')
+        .map((v) => v.trim())
+        .filter(Boolean),
+    )
+    return { mode, values }
+  }
+
+  // Backward compatibility for legacy URL values.
+  const { include, exclude } = parseIncludeExclude(value)
+  if (exclude.size > 0 && include.size === 0) {
+    return { mode: 'exclude', values: exclude }
+  }
+  if (include.size > 0) {
+    return { mode: 'include', values: include }
+  }
+  return empty
+}
+
+/** Build "=a,b" or "=~a,b" from mode + values. */
+function buildActivistLevelValue(
+  mode: 'include' | 'exclude',
+  values: Set<string>,
+): string | undefined {
+  const list = Array.from(values)
+  if (list.length === 0) return undefined
+  return mode === 'exclude' ? `=~${list.join(',')}` : `=${list.join(',')}`
+}
+
 /** Build "a,b,-c" from include/exclude sets. */
 function buildIncludeExclude(
   include: Set<string>,
@@ -102,21 +148,17 @@ function ActivistLevelFilter({
   value?: string
   onChange: (value?: string) => void
 }) {
-  const { include, exclude } = parseIncludeExclude(value)
-  const hasFilter = include.size > 0 || exclude.size > 0
-  // Determine current mode: "include" if any includes exist, "exclude" if any excludes exist, default "include".
-  const mode: 'include' | 'exclude' =
-    exclude.size > 0 && include.size === 0 ? 'exclude' : 'include'
-  const selected = mode === 'include' ? include : exclude
+  const [emptyMode, setEmptyMode] = useState<'include' | 'exclude'>('include')
+  const parsed = parseActivistLevelValue(value)
+  const hasFilter = parsed.values.size > 0
+  const mode: 'include' | 'exclude' = hasFilter ? parsed.mode : emptyMode
+  const selected = parsed.values
 
   const handleModeChange = (newMode: 'include' | 'exclude') => {
+    setEmptyMode(newMode)
     if (newMode === mode) return
-    // When switching mode, transfer all selected items to the other set.
-    if (newMode === 'include') {
-      onChange(buildIncludeExclude(new Set(exclude), new Set()))
-    } else {
-      onChange(buildIncludeExclude(new Set(), new Set(include)))
-    }
+    if (!hasFilter) return
+    onChange(buildActivistLevelValue(newMode, new Set(selected)))
   }
 
   const handleToggle = (level: string) => {
@@ -126,11 +168,7 @@ function ActivistLevelFilter({
     } else {
       newSelected.add(level)
     }
-    if (mode === 'include') {
-      onChange(buildIncludeExclude(newSelected, new Set()))
-    } else {
-      onChange(buildIncludeExclude(new Set(), newSelected))
-    }
+    onChange(buildActivistLevelValue(mode, newSelected))
   }
 
   return (

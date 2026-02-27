@@ -89,8 +89,8 @@ const IntRangeFilter = z.object({
 })
 
 const ActivistLevelFilter = z.object({
-  include: z.array(z.string()).optional(),
-  exclude: z.array(z.string()).optional(),
+  mode: z.enum(['include', 'exclude']).optional(),
+  values: z.array(z.string()).optional(),
 })
 
 const SourceFilter = z.object({

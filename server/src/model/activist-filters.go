@@ -89,16 +89,17 @@ type NameFilter struct {
 	NameContains string `json:"name_contains"`
 }
 
-// ActivistLevelFilter filters by activist_level values.
-// Include: match any of these levels. Exclude: exclude these levels.
-// JSON: {"include": ["Supporter"], "exclude": ["Organizer"]}
+// ActivistLevelFilter filters by activist_level values using one mode.
+// mode="include" means match any listed values.
+// mode="exclude" means exclude any listed values.
+// JSON: {"mode": "include", "values": ["Supporter"]}
 type ActivistLevelFilter struct {
-	Include []string `json:"include,omitempty"`
-	Exclude []string `json:"exclude,omitempty"`
+	Mode   string   `json:"mode,omitempty"`
+	Values []string `json:"values,omitempty"`
 }
 
 func (f *ActivistLevelFilter) IsEmpty() bool {
-	return len(f.Include) == 0 && len(f.Exclude) == 0
+	return len(f.Values) == 0
 }
 
 var ValidActivistLevels = map[string]bool{
@@ -110,12 +111,13 @@ var ValidActivistLevels = map[string]bool{
 }
 
 func (f *ActivistLevelFilter) Validate() error {
-	for _, v := range f.Include {
-		if !ValidActivistLevels[v] {
-			return fmt.Errorf("invalid activist level: %q", v)
-		}
+	if len(f.Values) == 0 {
+		return nil
 	}
-	for _, v := range f.Exclude {
+	if f.Mode != "include" && f.Mode != "exclude" {
+		return fmt.Errorf("invalid activist level mode: %q", f.Mode)
+	}
+	for _, v := range f.Values {
 		if !ValidActivistLevels[v] {
 			return fmt.Errorf("invalid activist level: %q", v)
 		}

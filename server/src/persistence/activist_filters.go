@@ -164,8 +164,8 @@ func (f *intRangeFilter) buildWhere() []queryClause {
 
 // activistLevelFilter filters by activist_level values.
 type activistLevelFilter struct {
-	Include []string
-	Exclude []string
+	Mode   string
+	Values []string
 }
 
 func (f *activistLevelFilter) getJoins() []joinSpec {
@@ -173,29 +173,26 @@ func (f *activistLevelFilter) getJoins() []joinSpec {
 }
 
 func (f *activistLevelFilter) buildWhere() []queryClause {
-	var clauses []queryClause
-
-	if len(f.Include) > 0 {
-		placeholders := make([]string, len(f.Include))
-		args := make([]any, len(f.Include))
-		for i, v := range f.Include {
-			placeholders[i] = "?"
-			args[i] = v
-		}
-		clauses = append(clauses, queryClause{
-			sql:  fmt.Sprintf("%s.activist_level IN (%s)", activistTableAlias, strings.Join(placeholders, ",")),
-			args: args,
-		})
+	if len(f.Values) == 0 {
+		return nil
 	}
 
-	for _, v := range f.Exclude {
-		clauses = append(clauses, queryClause{
-			sql:  fmt.Sprintf("%s.activist_level <> ?", activistTableAlias),
-			args: []any{v},
-		})
+	placeholders := make([]string, len(f.Values))
+	args := make([]any, len(f.Values))
+	for i, v := range f.Values {
+		placeholders[i] = "?"
+		args[i] = v
 	}
 
-	return clauses
+	operator := "IN"
+	if f.Mode == "exclude" {
+		operator = "NOT IN"
+	}
+
+	return []queryClause{{
+		sql:  fmt.Sprintf("%s.activist_level %s (%s)", activistTableAlias, operator, strings.Join(placeholders, ",")),
+		args: args,
+	}}
 }
 
 // sourceFilter filters by the source column using LIKE patterns.

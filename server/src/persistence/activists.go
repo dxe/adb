@@ -173,8 +173,8 @@ func buildFiltersFromOptions(options model.QueryActivistOptions) []filter {
 
 	if !f.ActivistLevel.IsEmpty() {
 		result = append(result, &activistLevelFilter{
-			Include: f.ActivistLevel.Include,
-			Exclude: f.ActivistLevel.Exclude,
+			Mode:   f.ActivistLevel.Mode,
+			Values: f.ActivistLevel.Values,
 		})
 	}
 

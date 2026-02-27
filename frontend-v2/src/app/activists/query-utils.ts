@@ -15,7 +15,7 @@ export type FilterState = {
   firstEvent?: string
   totalEvents?: string
   totalInteractions?: string
-  // Include/exclude filters stored as URL-format strings (e.g. "Supporter,-Organizer")
+  // Activist level filter stored as "=a,b" or "=~a,b" ("~" means exclude mode)
   activistLevel?: string
   source?: string
   training?: string
@@ -158,6 +158,37 @@ function parseIncludeExclude(
   return { include, exclude }
 }
 
+/** Parse "=a,b" or "=~a,b" into { mode, values }. */
+function parseActivistLevelFilter(
+  value?: string,
+): { mode: 'include' | 'exclude'; values: string[] } | undefined {
+  if (!value) return undefined
+
+  if (value.startsWith('=')) {
+    const payload = value.slice(1)
+    const mode: 'include' | 'exclude' = payload.startsWith('~')
+      ? 'exclude'
+      : 'include'
+    const rawValues = mode === 'exclude' ? payload.slice(1) : payload
+    const values = rawValues
+      .split(',')
+      .map((v) => v.trim())
+      .filter(Boolean)
+    return values.length > 0 ? { mode, values } : undefined
+  }
+
+  // Backward compatibility for legacy values like "Supporter,-Organizer".
+  const legacy = parseIncludeExclude(value)
+  if (!legacy) return undefined
+  if (legacy.exclude.length > 0 && legacy.include.length === 0) {
+    return { mode: 'exclude', values: legacy.exclude }
+  }
+  if (legacy.include.length > 0) {
+    return { mode: 'include', values: legacy.include }
+  }
+  return undefined
+}
+
 /** Convert assignedTo URL value ("me"|"any"|id) to backend integer. */
 function parseAssignedTo(value: string | undefined, userId: number): number | undefined {
   if (!value) return undefined
@@ -198,7 +229,7 @@ export const buildQueryOptions = ({
   const firstEvent = parseDateRange(filters.firstEvent)
   const totalEvents = parseIntRange(filters.totalEvents)
   const totalInteractions = parseIntRange(filters.totalInteractions)
-  const activistLevel = parseIncludeExclude(filters.activistLevel)
+  const activistLevel = parseActivistLevelFilter(filters.activistLevel)
   const source = parseIncludeExclude(filters.source)
   const training = parseIncludeExclude(filters.training)
 
@@ -213,21 +244,12 @@ export const buildQueryOptions = ({
         ? { gte: lastEvent.gte, lt: lastEvent.lt, or_null: lastEvent.orNull }
         : undefined,
       include_hidden: filters.includeHidden,
-      activist_level:
-        activistLevel &&
-        (activistLevel.include.length > 0 ||
-          activistLevel.exclude.length > 0)
-          ? {
-              include:
-                activistLevel.include.length > 0
-                  ? activistLevel.include
-                  : undefined,
-              exclude:
-                activistLevel.exclude.length > 0
-                  ? activistLevel.exclude
-                  : undefined,
-            }
-          : undefined,
+      activist_level: activistLevel
+        ? {
+            mode: activistLevel.mode,
+            values: activistLevel.values,
+          }
+        : undefined,
       interest_date: interestDate
         ? { gte: interestDate.gte, lt: interestDate.lt, or_null: interestDate.orNull }
         : undefined,
