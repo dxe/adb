@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useEffect, useCallback, useReducer } from 'react'
+import { useMemo, useState, useEffect, useCallback, useReducer, useRef } from 'react'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { liteDebounce } from '@tanstack/pacer-lite'
 import { useSearchParams, useRouter } from 'next/navigation'
@@ -14,7 +14,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
 import { ActivistTable } from './activists-table'
-import { ActivistFilters } from './activist-filters'
+import { ActivistFilters } from './filters/activist-filters'
 import { ColumnSelector } from './column-selector'
 import { SortSelector } from './sort-selector'
 import {
@@ -41,18 +41,10 @@ const buildUrlParams = (
 ): URLSearchParams => {
   const params = new URLSearchParams()
 
-  if (filters.searchAcrossChapters) {
-    params.set('searchAcrossChapters', 'true')
-  }
-  if (filters.nameSearch) {
-    params.set('nameSearch', filters.nameSearch)
-  }
-  if (filters.includeHidden) {
-    params.set('includeHidden', 'true')
-  }
-
-  // Range and value filters — stored as-is from FilterState
-  const optionalParams: [string, string | undefined][] = [
+  const filterParams: [string, string | undefined][] = [
+    ['searchAcrossChapters', filters.searchAcrossChapters ? 'true' : undefined],
+    ['nameSearch', filters.nameSearch || undefined],
+    ['includeHidden', filters.includeHidden ? 'true' : undefined],
     ['lastEvent', filters.lastEvent],
     ['interestDate', filters.interestDate],
     ['firstEvent', filters.firstEvent],
@@ -65,7 +57,7 @@ const buildUrlParams = (
     ['followups', filters.followups],
     ['prospect', filters.prospect],
   ]
-  for (const [key, value] of optionalParams) {
+  for (const [key, value] of filterParams) {
     if (value) params.set(key, value)
   }
 
@@ -106,6 +98,7 @@ type ActivistsAction =
   | { type: 'setFilters'; filters: FilterState }
   | { type: 'setSelectedColumns'; columns: ActivistColumnName[] }
   | { type: 'setSort'; sort: SortColumn[] }
+  | { type: 'resetAll'; filters: FilterState; selectedColumns: ActivistColumnName[]; sort: SortColumn[] }
 
 const activistsReducer = (
   state: ActivistsState,
@@ -138,6 +131,9 @@ const activistsReducer = (
     }
     case 'setSort': {
       return { ...state, sort: action.sort }
+    }
+    case 'resetAll': {
+      return { filters: action.filters, selectedColumns: action.selectedColumns, sort: action.sort }
     }
     default:
       return state
@@ -185,9 +181,32 @@ export default function ActivistsPage() {
     debouncedSetNameSearch(filters.nameSearch)
   }, [filters.nameSearch, debouncedSetNameSearch])
 
+  // Track the last URL params we wrote so we can distinguish our own URL
+  // updates from external navigation (e.g. clicking a nav preset link).
+  const lastWrittenParams = useRef(
+    buildUrlParams(filters, selectedColumns, sort).toString(),
+  )
+
+  // Sync state from URL on external navigation (e.g. nav preset links).
+  // When the user clicks a Link to the same route with different params,
+  // React doesn't remount the component, so the reducer keeps stale state.
+  useEffect(() => {
+    const currentParams = searchParams.toString()
+    if (currentParams === lastWrittenParams.current) return
+    const urlFilters = parseFiltersFromParams(getParam)
+    const urlColumns = normalizeColumnsForFilters(
+      parseColumnsFromParams(getParam),
+      urlFilters.searchAcrossChapters,
+    )
+    const urlSort = parseSortFromParams(getParam, urlColumns)
+    dispatch({ type: 'resetAll', filters: urlFilters, selectedColumns: urlColumns, sort: urlSort })
+    setDebouncedNameSearch(urlFilters.nameSearch)
+  }, [searchParams, getParam])
+
   // Update URL when filters, columns, or sort change
   useEffect(() => {
     const params = buildUrlParams(filters, selectedColumns, sort).toString()
+    lastWrittenParams.current = params
     const newUrl = params ? `?${params}` : BASE_PATH
     router.replace(newUrl, { scroll: false })
   }, [filters, selectedColumns, sort, router])

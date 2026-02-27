@@ -1,6 +1,4 @@
-// Package filters defines the filter types used to query activists.
-// Filter types are shared between the transport (JSON API) and persistence (SQL) layers.
-package filters
+package model
 
 import (
 	"encoding/json"
@@ -136,6 +134,11 @@ func (f *SourceFilter) IsEmpty() bool {
 	return len(f.ContainsAny) == 0 && len(f.NotContainsAny) == 0
 }
 
+// SourceFilter doesn't need complex validation beyond non-empty checks.
+func (f *SourceFilter) Validate() error {
+	return nil
+}
+
 // TrainingFilter filters by training column completion status.
 // JSON: {"completed": ["training0"], "not_completed": ["training1"]}
 type TrainingFilter struct {
@@ -176,10 +179,10 @@ func (f *TrainingFilter) Validate() error {
 type QueryActivistFilters struct {
 	// 0 means search all chapters and requires that the "chapter" column be requested.
 	// Must be set to ID of current chapter if user only has permission for current chapter.
-	ChapterId     int              `json:"chapter_id"`
-	Name          NameFilter       `json:"name"`
-	LastEvent     DateRangeFilter  `json:"last_event"`
-	IncludeHidden bool             `json:"include_hidden"`
+	ChapterId     int             `json:"chapter_id"`
+	Name          NameFilter      `json:"name"`
+	LastEvent     DateRangeFilter `json:"last_event"`
+	IncludeHidden bool            `json:"include_hidden"`
 
 	ActivistLevel     ActivistLevelFilter `json:"activist_level"`
 	InterestDate      DateRangeFilter     `json:"interest_date"`
@@ -227,10 +230,5 @@ func (f *QueryActivistFilters) Validate() error {
 	if f.Prospect != "" && f.Prospect != "chapter_member" && f.Prospect != "organizer" {
 		return fmt.Errorf("invalid prospect value: %q", f.Prospect)
 	}
-	return nil
-}
-
-// SourceFilter doesn't need complex validation beyond non-empty checks.
-func (f *SourceFilter) Validate() error {
 	return nil
 }

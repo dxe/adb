@@ -148,37 +148,37 @@
         },
         {
           "label": "New Activists",
-          "href": "/v2/activists?totalEvents=..4&lastEvent={6mo}..",
+          "href": "/v2/activists?totalEvents=..4&lastEvent={6mo}..&columns=activist_level,total_events,first_event,last_event,source",
           "page": "ActivistList"
         },
         {
           "label": "New Activists Pending Workshop",
-          "href": "/v2/activists?activistLevel=Supporter&training=-training0&firstEvent={6mo}..",
+          "href": "/v2/activists?activistLevel=Supporter&training=-training0&firstEvent={6mo}..&columns=activist_level,training0,first_event,source",
           "page": "ActivistList"
         },
         {
           "label": "Community Prospects",
-          "href": "/v2/activists?source=form,dxe-signup,arc-signup,petition,eventbrite,-application&activistLevel=Supporter&totalInteractions=..1&lastEvent=..{12mo}|null",
+          "href": "/v2/activists?source=form,dxe-signup,arc-signup,petition,eventbrite,-application&activistLevel=Supporter&totalInteractions=..1&lastEvent=..{12mo}|null&columns=source,interest_date,total_interactions,last_event",
           "page": "ActivistList"
         },
         {
           "label": "Community Prospects Follow-up",
-          "href": "/v2/activists?assignedTo=any&followups=due",
+          "href": "/v2/activists?assignedTo=any&followups=due&columns=assigned_to_name,followup_date,total_interactions,last_interaction_date",
           "page": "ActivistList"
         },
         {
           "label": "Chapter Member Prospects",
-          "href": "/v2/activists?prospect=chapterMember&activistLevel=-Chapter Member,-Organizer",
+          "href": "/v2/activists?prospect=chapterMember&activistLevel=-Chapter Member,-Organizer&columns=activist_level,prospect_chapter_member,total_events,last_event",
           "page": "ActivistList"
         },
         {
           "label": "Chapter Members",
-          "href": "/v2/activists?activistLevel=Chapter Member,Organizer",
+          "href": "/v2/activists?activistLevel=Chapter Member,Organizer&columns=activist_level,total_events,last_event,training0",
           "page": "ActivistList"
         },
         {
           "label": "Organizer Prospects",
-          "href": "/v2/activists?prospect=organizer&activistLevel=-Organizer",
+          "href": "/v2/activists?prospect=organizer&activistLevel=-Organizer&columns=activist_level,prospect_organizer,total_events,last_event",
           "page": "ActivistList",
           "separatorBelow": true
         },

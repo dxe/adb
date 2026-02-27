@@ -28,7 +28,18 @@ function toDateString(date?: Date) {
     : undefined
 }
 
-/** Parse "2025-01-01..2025-06-01|null" into parts. */
+/**
+ * Parses the URL date range syntax into component parts.
+ *
+ * Syntax: [gte]..[lt][|null]
+ *   "2025-01-01..2025-06-01"       → gte + lt (between two dates)
+ *   "2025-01-01.."                  → gte only (on or after)
+ *   "..2025-06-01"                  → lt only (before)
+ *   "..2025-06-01|null"             → lt, including NULL values
+ *   "2025-01-01..|null"             → gte, including NULL values
+ *   "2025-01-01..2025-06-01|null"   → gte + lt, including NULL values
+ *   "null"                          → only NULL values
+ */
 function parseValue(value?: string): {
   gte?: string
   lt?: string
@@ -51,7 +62,7 @@ function parseValue(value?: string): {
   }
 }
 
-/** Build URL-format range string from parts. */
+/** Inverse of parseValue — see parseValue for full syntax. */
 function buildValue(gte?: string, lt?: string, orNull?: boolean): string | undefined {
   if (!gte && !lt && !orNull) return undefined
   if (!gte && !lt && orNull) return 'null'

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dxe/adb/model/filters"
+	"github.com/dxe/adb/model"
 )
 
 type filter interface {
@@ -66,7 +66,7 @@ func (f *hiddenFilter) buildWhere() []queryClause {
 
 // dateRangeFilter filters by a date column with optional NULL inclusion.
 type dateRangeFilter struct {
-	filter filters.DateRangeFilter
+	filter model.DateRangeFilter
 	// joinSpec to use for the date column, or nil if on the main table.
 	join *joinSpec
 	// SQL expression for the date column (e.g. "a.interest_date" or "first_event_subquery.first_event_date").
@@ -81,40 +81,54 @@ func (f *dateRangeFilter) getJoins() []joinSpec {
 }
 
 func (f *dateRangeFilter) buildWhere() []queryClause {
-	var clauses []queryClause
 	hasGte := !f.filter.Gte.IsZero()
 	hasLt := !f.filter.Lt.IsZero()
 
+	// OrNull: no range conditions, just IS NULL.
+	if !hasGte && !hasLt && f.filter.OrNull {
+		return []queryClause{{
+			sql: fmt.Sprintf("%s IS NULL", f.expr),
+		}}
+	}
+
+	// No OrNull: emit each bound as a separate AND clause.
+	if !f.filter.OrNull {
+		var clauses []queryClause
+		if hasGte {
+			clauses = append(clauses, queryClause{
+				sql:  fmt.Sprintf("%s >= ?", f.expr),
+				args: []any{f.filter.Gte.Format("2006-01-02")},
+			})
+		}
+		if hasLt {
+			clauses = append(clauses, queryClause{
+				sql:  fmt.Sprintf("%s < ?", f.expr),
+				args: []any{f.filter.Lt.Format("2006-01-02")},
+			})
+		}
+		return clauses
+	}
+
+	// OrNull with range: ((range conditions) OR expr IS NULL).
+	var rangeParts []string
+	var args []any
 	if hasGte {
-		clauses = append(clauses, queryClause{
-			sql:  fmt.Sprintf("%s >= ?", f.expr),
-			args: []any{f.filter.Gte.Format("2006-01-02")},
-		})
+		rangeParts = append(rangeParts, fmt.Sprintf("%s >= ?", f.expr))
+		args = append(args, f.filter.Gte.Format("2006-01-02"))
 	}
-
-	if hasLt && f.filter.OrNull {
-		clauses = append(clauses, queryClause{
-			sql:  fmt.Sprintf("(%s < ? OR %s IS NULL)", f.expr, f.expr),
-			args: []any{f.filter.Lt.Format("2006-01-02")},
-		})
-	} else if hasLt {
-		clauses = append(clauses, queryClause{
-			sql:  fmt.Sprintf("%s < ?", f.expr),
-			args: []any{f.filter.Lt.Format("2006-01-02")},
-		})
-	} else if f.filter.OrNull {
-		clauses = append(clauses, queryClause{
-			sql:  fmt.Sprintf("%s IS NULL", f.expr),
-			args: nil,
-		})
+	if hasLt {
+		rangeParts = append(rangeParts, fmt.Sprintf("%s < ?", f.expr))
+		args = append(args, f.filter.Lt.Format("2006-01-02"))
 	}
-
-	return clauses
+	return []queryClause{{
+		sql:  fmt.Sprintf("((%s) OR %s IS NULL)", strings.Join(rangeParts, " AND "), f.expr),
+		args: args,
+	}}
 }
 
 // intRangeFilter filters by an integer column using COALESCE to treat NULL as 0.
 type intRangeFilter struct {
-	filter filters.IntRangeFilter
+	filter model.IntRangeFilter
 	// joinSpec to use, or nil if on the main table.
 	join *joinSpec
 	// SQL expression for the column (will be wrapped in COALESCE).

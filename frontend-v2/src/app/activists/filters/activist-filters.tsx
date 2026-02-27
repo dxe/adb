@@ -16,10 +16,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { SlidersHorizontal, ChevronDown, X } from 'lucide-react'
+import { SlidersHorizontal, ChevronDown, X, Users } from 'lucide-react'
 import { LastEventFilter } from './last-event-filter'
 import { DateRangeFilter } from './date-range-filter'
-import type { FilterState } from './query-utils'
+import type { FilterState } from '../query-utils'
 
 interface ActivistFiltersProps {
   filters: FilterState
@@ -38,7 +38,7 @@ const ACTIVIST_LEVELS = [
 
 const TRAINING_COLUMNS = [
   { value: 'training0', label: 'Workshop (101)' },
-  { value: 'training1', label: 'Training 1' },
+  { value: 'training1', label: 'Consent' },
   { value: 'training4', label: 'Training 4' },
   { value: 'training5', label: 'Training 5' },
   { value: 'training6', label: 'Training 6' },
@@ -104,23 +104,33 @@ function ActivistLevelFilter({
 }) {
   const { include, exclude } = parseIncludeExclude(value)
   const hasFilter = include.size > 0 || exclude.size > 0
+  // Determine current mode: "include" if any includes exist, "exclude" if any excludes exist, default "include".
+  const mode: 'include' | 'exclude' =
+    exclude.size > 0 && include.size === 0 ? 'exclude' : 'include'
+  const selected = mode === 'include' ? include : exclude
+
+  const handleModeChange = (newMode: 'include' | 'exclude') => {
+    if (newMode === mode) return
+    // When switching mode, transfer all selected items to the other set.
+    if (newMode === 'include') {
+      onChange(buildIncludeExclude(new Set(exclude), new Set()))
+    } else {
+      onChange(buildIncludeExclude(new Set(), new Set(include)))
+    }
+  }
 
   const handleToggle = (level: string) => {
-    const newInclude = new Set(include)
-    const newExclude = new Set(exclude)
-
-    if (newInclude.has(level)) {
-      // include -> exclude
-      newInclude.delete(level)
-      newExclude.add(level)
-    } else if (newExclude.has(level)) {
-      // exclude -> off
-      newExclude.delete(level)
+    const newSelected = new Set(selected)
+    if (newSelected.has(level)) {
+      newSelected.delete(level)
     } else {
-      // off -> include
-      newInclude.add(level)
+      newSelected.add(level)
     }
-    onChange(buildIncludeExclude(newInclude, newExclude))
+    if (mode === 'include') {
+      onChange(buildIncludeExclude(newSelected, new Set()))
+    } else {
+      onChange(buildIncludeExclude(new Set(), newSelected))
+    }
   }
 
   return (
@@ -140,11 +150,8 @@ function ActivistLevelFilter({
                 </span>
                 <div className="flex items-center gap-1">
                   <span className="text-sm">
-                    {include.size > 0 ? Array.from(include).join(', ') : ''}
-                    {include.size > 0 && exclude.size > 0 ? '; ' : ''}
-                    {exclude.size > 0
-                      ? `not ${Array.from(exclude).join(', ')}`
-                      : ''}
+                    {mode === 'exclude' ? 'not ' : ''}
+                    {Array.from(selected).join(', ')}
                   </span>
                   <ChevronDown className="h-3 w-3 text-muted-foreground" />
                 </div>
@@ -154,13 +161,25 @@ function ActivistLevelFilter({
         </PopoverTrigger>
         <PopoverContent className="w-64">
           <div className="space-y-3">
-            <h4 className="font-medium text-sm">Activist Level</h4>
-            <p className="text-xs text-muted-foreground">
-              Click to include, click again to exclude, click again to clear.
-            </p>
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium text-sm">Activist Level</h4>
+              <Select
+                value={mode}
+                onValueChange={(v) =>
+                  handleModeChange(v as 'include' | 'exclude')
+                }
+              >
+                <SelectTrigger className="h-7 w-[100px] text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="include">Include</SelectItem>
+                  <SelectItem value="exclude">Exclude</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             {ACTIVIST_LEVELS.map((level) => {
-              const isIncluded = include.has(level)
-              const isExcluded = exclude.has(level)
+              const isSelected = selected.has(level)
               return (
                 <button
                   key={level}
@@ -169,14 +188,14 @@ function ActivistLevelFilter({
                 >
                   <span
                     className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border text-xs font-bold ${
-                      isIncluded
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : isExcluded
-                          ? 'bg-destructive text-destructive-foreground border-destructive'
-                          : 'border-input'
+                      isSelected
+                        ? mode === 'include'
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-destructive text-destructive-foreground border-destructive'
+                        : 'border-input'
                     }`}
                   >
-                    {isIncluded ? '+' : isExcluded ? '-' : ''}
+                    {isSelected ? (mode === 'include' ? '+' : '-') : ''}
                   </span>
                   {level}
                 </button>
@@ -320,7 +339,9 @@ function SourceFilterControl({
               <>
                 <span className="text-xs text-muted-foreground">Source</span>
                 <div className="flex items-center gap-1">
-                  <span className="text-sm truncate max-w-[200px]">{value}</span>
+                  <span className="text-sm truncate max-w-[200px]">
+                    {value}
+                  </span>
                   <ChevronDown className="h-3 w-3 text-muted-foreground" />
                 </div>
               </>
@@ -476,14 +497,17 @@ export function ActivistFilters({
   isAdmin,
   children,
 }: ActivistFiltersProps) {
+  const prospectFilterCount = [
+    filters.assignedTo,
+    filters.followups,
+    filters.prospect,
+    filters.interestDate,
+    filters.totalInteractions,
+  ].filter(Boolean).length
+
   const moreFilterCount = [
     filters.searchAcrossChapters,
     filters.includeHidden,
-    filters.assignedTo,
-    filters.followups,
-    filters.interestDate,
-    filters.totalInteractions,
-    filters.prospect,
   ].filter(Boolean).length
 
   return (
@@ -504,11 +528,27 @@ export function ActivistFilters({
         {/* Non-filter components */}
         {children}
 
-        {/* Last event filter */}
+        {/* Event filters grouped together: last event, first event, total events */}
         <LastEventFilter
           value={filters.lastEvent}
           onChange={(value) =>
             onFiltersChange({ ...filters, lastEvent: value })
+          }
+        />
+
+        <DateRangeFilter
+          label="First event"
+          value={filters.firstEvent}
+          onChange={(value) =>
+            onFiltersChange({ ...filters, firstEvent: value })
+          }
+        />
+
+        <IntRangeFilterControl
+          label="Total events"
+          value={filters.totalEvents}
+          onChange={(value) =>
+            onFiltersChange({ ...filters, totalEvents: value })
           }
         />
 
@@ -520,98 +560,34 @@ export function ActivistFilters({
           }
         />
 
-        {/* Total events */}
-        <IntRangeFilterControl
-          label="Total events"
-          value={filters.totalEvents}
-          onChange={(value) =>
-            onFiltersChange({ ...filters, totalEvents: value })
-          }
-        />
-
-        {/* First event date */}
-        <DateRangeFilter
-          label="First event"
-          value={filters.firstEvent}
-          onChange={(value) =>
-            onFiltersChange({ ...filters, firstEvent: value })
-          }
-        />
-
         {/* Source */}
         <SourceFilterControl
           value={filters.source}
-          onChange={(value) =>
-            onFiltersChange({ ...filters, source: value })
-          }
+          onChange={(value) => onFiltersChange({ ...filters, source: value })}
         />
 
         {/* Training */}
         <TrainingFilterControl
           value={filters.training}
-          onChange={(value) =>
-            onFiltersChange({ ...filters, training: value })
-          }
+          onChange={(value) => onFiltersChange({ ...filters, training: value })}
         />
 
-        {/* More filters dropdown */}
+        {/* Prospects popover */}
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm" className="h-12 gap-2 shrink-0">
-              <SlidersHorizontal className="h-4 w-4" />
-              More filters
-              {moreFilterCount > 0 && (
+              <Users className="h-4 w-4" />
+              Prospects
+              {prospectFilterCount > 0 && (
                 <span className="ml-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-secondary px-1.5 text-xs font-medium text-secondary-foreground">
-                  {moreFilterCount}
+                  {prospectFilterCount}
                 </span>
               )}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-80">
             <div className="space-y-4">
-              <h4 className="font-medium">More Filters</h4>
-
-              {/* Search across chapters - only for admins */}
-              {isAdmin && (
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="search-across-chapters"
-                    checked={filters.searchAcrossChapters}
-                    onCheckedChange={(checked) =>
-                      onFiltersChange({
-                        ...filters,
-                        searchAcrossChapters: Boolean(checked),
-                      })
-                    }
-                  />
-                  <Label
-                    htmlFor="search-across-chapters"
-                    className="cursor-pointer text-sm font-normal"
-                  >
-                    Search across chapters
-                  </Label>
-                </div>
-              )}
-
-              {/* Include hidden activists */}
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="include-hidden"
-                  checked={filters.includeHidden}
-                  onCheckedChange={(checked) =>
-                    onFiltersChange({
-                      ...filters,
-                      includeHidden: Boolean(checked),
-                    })
-                  }
-                />
-                <Label
-                  htmlFor="include-hidden"
-                  className="cursor-pointer text-sm font-normal"
-                >
-                  Include hidden activists
-                </Label>
-              </div>
+              <h4 className="font-medium">Prospects</h4>
 
               {/* Assigned To */}
               <div className="space-y-2">
@@ -718,9 +694,71 @@ export function ActivistFilters({
             </div>
           </PopoverContent>
         </Popover>
+
+        {/* More filters popover */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="h-12 gap-2 shrink-0">
+              <SlidersHorizontal className="h-4 w-4" />
+              More filters
+              {moreFilterCount > 0 && (
+                <span className="ml-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-secondary px-1.5 text-xs font-medium text-secondary-foreground">
+                  {moreFilterCount}
+                </span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80">
+            <div className="space-y-4">
+              <h4 className="font-medium">More Filters</h4>
+
+              {/* Search across chapters - only for admins */}
+              {isAdmin && (
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="search-across-chapters"
+                    checked={filters.searchAcrossChapters}
+                    onCheckedChange={(checked) =>
+                      onFiltersChange({
+                        ...filters,
+                        searchAcrossChapters: Boolean(checked),
+                      })
+                    }
+                  />
+                  <Label
+                    htmlFor="search-across-chapters"
+                    className="cursor-pointer text-sm font-normal"
+                  >
+                    Search across chapters
+                  </Label>
+                </div>
+              )}
+
+              {/* Include hidden activists */}
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="include-hidden"
+                  checked={filters.includeHidden}
+                  onCheckedChange={(checked) =>
+                    onFiltersChange({
+                      ...filters,
+                      includeHidden: Boolean(checked),
+                    })
+                  }
+                />
+                <Label
+                  htmlFor="include-hidden"
+                  className="cursor-pointer text-sm font-normal"
+                >
+                  Include hidden activists
+                </Label>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
     </div>
   )
 }
 
-export type { FilterState } from './query-utils'
+export type { FilterState } from '../query-utils'

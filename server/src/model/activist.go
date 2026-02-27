@@ -13,8 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dxe/adb/model/filters"
-
 	"github.com/dxe/adb/mailing_list_signup"
 
 	"github.com/go-sql-driver/mysql"
@@ -2307,9 +2305,6 @@ type QueryActivistOptions struct {
 	// If invalid, an error is returned.
 	After string `json:"after"`
 }
-
-// QueryActivistFilters is defined in the filters package.
-type QueryActivistFilters = filters.QueryActivistFilters
 
 type ActivistSortOptions struct {
 	SortColumns []ActivistSortColumn `json:"sort_columns"`

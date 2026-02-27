@@ -94,7 +94,18 @@ export const buildSortParam = (sort: SortColumn[]): string | undefined => {
 
 // --- URL range syntax helpers ---
 
-/** Parse "2025-01-01..2025-06-01|null" into {gte, lt, orNull}. */
+/**
+ * Parses the URL date range syntax into API filter fields.
+ *
+ * Syntax: [gte]..[lt][|null]
+ *   "2025-01-01..2025-06-01"       → gte + lt (between two dates)
+ *   "2025-01-01.."                  → gte only (on or after)
+ *   "..2025-06-01"                  → lt only (before)
+ *   "..2025-06-01|null"             → lt, including NULL values
+ *   "2025-01-01..|null"             → gte, including NULL values
+ *   "2025-01-01..2025-06-01|null"   → gte + lt, including NULL values
+ *   "null"                          → only NULL values
+ */
 function parseDateRange(
   value?: string,
 ): { gte?: string; lt?: string; orNull?: boolean } | undefined {
@@ -148,9 +159,9 @@ function parseIncludeExclude(
 }
 
 /** Convert assignedTo URL value ("me"|"any"|id) to backend integer. */
-function parseAssignedTo(value?: string): number | undefined {
+function parseAssignedTo(value: string | undefined, userId: number): number | undefined {
   if (!value) return undefined
-  if (value === 'me') return 0
+  if (value === 'me') return userId
   if (value === 'any') return -1
   const n = parseInt(value, 10)
   return isNaN(n) ? undefined : n
@@ -191,11 +202,7 @@ export const buildQueryOptions = ({
   const source = parseIncludeExclude(filters.source)
   const training = parseIncludeExclude(filters.training)
 
-  let assignedTo = parseAssignedTo(filters.assignedTo)
-  // Resolve "me" (0) to actual user ID.
-  if (assignedTo === 0) {
-    assignedTo = userId
-  }
+  const assignedTo = parseAssignedTo(filters.assignedTo, userId)
 
   return {
     columns: columnsToRequest,
