@@ -17,8 +17,10 @@ export type ColumnCategory =
 export interface ColumnDefinition {
   name: ActivistColumnName
   label: string
+  description?: string // Optional help text shown in column selector tooltip
   category: ColumnCategory
   isDate?: boolean // If true, format string values as dates
+  hidden?: boolean // If true, hide from user-facing column selectors
 }
 
 export const DEFAULT_COLUMNS: ActivistColumnName[] = [
@@ -28,20 +30,18 @@ export const DEFAULT_COLUMNS: ActivistColumnName[] = [
   'activist_level',
 ]
 
-// TODO: add columns not yet implemented in the backend:
-// last_connection
-// geo_circles
-// assigned_to_name
-// total_interactions
-// last_interaction_date
-// mpp_requirements
 export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   // Chapter (conditionally shown based on filters)
   { name: 'chapter_name', label: 'Chapter', category: 'Basic Info' },
 
   // Basic Info
   { name: 'name', label: 'Name', category: 'Basic Info' },
-  { name: 'preferred_name', label: 'Preferred Name', category: 'Basic Info' },
+  {
+    name: 'preferred_name',
+    label: 'Preferred Name',
+    category: 'Basic Info',
+    description: 'First name or nickname, may be used for SMS',
+  },
   { name: 'pronouns', label: 'Pronouns', category: 'Basic Info' },
   { name: 'email', label: 'Email', category: 'Basic Info' },
   { name: 'phone', label: 'Phone', category: 'Basic Info' },
@@ -63,7 +63,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   { name: 'total_events', label: 'Total Events', category: 'Event Attendance' },
   {
     name: 'first_event',
-    label: 'First Event',
+    label: 'First Event Date',
     category: 'Event Attendance',
     isDate: true,
   },
@@ -74,7 +74,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     name: 'last_event',
-    label: 'Last Event',
+    label: 'Last Event Date',
     category: 'Event Attendance',
     isDate: true,
   },
@@ -83,7 +83,38 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     label: 'Last Event Name',
     category: 'Event Attendance',
   },
-  { name: 'mpi', label: 'MPI', category: 'Event Attendance' },
+  {
+    name: 'last_action',
+    label: 'Last Action Date',
+    category: 'Event Attendance',
+    isDate: true,
+  },
+  {
+    name: 'months_since_last_action',
+    label: 'Months Since Last Action',
+    category: 'Event Attendance',
+  },
+  {
+    name: 'total_points',
+    label: 'Leadership points',
+    category: 'Event Attendance',
+  },
+  { name: 'active', label: 'Active', category: 'Event Attendance' },
+  { name: 'status', label: 'Status', category: 'Event Attendance' },
+  {
+    name: 'mpp_requirements',
+    label: 'DA&C Current Month',
+    category: 'Event Attendance',
+    description:
+      'Attended both a Direct Action & a Community event in current month (historical requirement for MPP)',
+  },
+  {
+    name: 'mpi',
+    label: 'MPI',
+    category: 'Event Attendance',
+    description:
+      'Whether the activist satisfied the MPP in either the current month or the previous month (see dxe.io/mpp)',
+  },
 
   // Trainings
   { name: 'training0', label: 'Workshop', category: 'Trainings' },
@@ -129,11 +160,36 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     category: 'Application Info',
   },
 
+  // Circle Info
+  { name: 'geo_circles', label: 'Geo-Circle', category: 'Circle Info' },
+
   // Prospect Info
-  { name: 'assigned_to', label: 'Assigned To', category: 'Prospect Info' },
+  {
+    name: 'assigned_to',
+    label: 'Assigned To ID',
+    category: 'Prospect Info',
+    hidden: true,
+  },
+  {
+    name: 'assigned_to_name',
+    label: 'Assigned To',
+    category: 'Prospect Info',
+  },
   {
     name: 'followup_date',
     label: 'Follow-up Date',
+    category: 'Prospect Info',
+    isDate: true,
+    description: 'Date to follow up',
+  },
+  {
+    name: 'total_interactions',
+    label: 'Interactions',
+    category: 'Prospect Info',
+  },
+  {
+    name: 'last_interaction_date',
+    label: 'Last Interaction',
     category: 'Prospect Info',
     isDate: true,
   },
@@ -145,19 +201,32 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     label: 'Interest Date',
     category: 'Referral Info',
     isDate: true,
+    description: 'Date activist submitted the interest form',
   },
   { name: 'referral_friends', label: 'Close Ties', category: 'Referral Info' },
-  { name: 'referral_apply', label: 'Referral', category: 'Referral Info' },
+  {
+    name: 'referral_apply',
+    label: 'Referral',
+    category: 'Referral Info',
+    description: '"Who encouraged you to sign up?"',
+  },
   {
     name: 'referral_outlet',
     label: 'Referral Outlet',
     category: 'Referral Info',
+    description: '"How did you hear about DxE?"',
   },
 
   // Development
   { name: 'dev_quiz', label: 'Quiz', category: 'Development' },
   { name: 'dev_interest', label: 'Interests', category: 'Development' },
   { name: 'connector', label: 'Coach', category: 'Development' },
+  {
+    name: 'last_connection',
+    label: 'Last Coaching',
+    category: 'Development',
+    isDate: true,
+  },
 
   // Chapter Membership
   {
@@ -165,6 +234,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     label: 'First Text',
     category: 'Chapter Membership',
     isDate: true,
+    description: 'Date of first SMS message sent to activist',
   },
   {
     name: 'cm_approval_email',
@@ -184,7 +254,12 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   { name: 'hiatus', label: 'Hiatus', category: 'Other' },
 
   // Developer
-  { name: 'id', label: 'ID', category: 'Advanced' },
+  {
+    name: 'id',
+    label: 'ID',
+    category: 'Advanced',
+    description: 'Database ID of the activist',
+  },
 ]
 
 export const groupColumnsByCategory = () => {

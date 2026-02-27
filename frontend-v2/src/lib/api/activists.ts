@@ -55,6 +55,16 @@ export const ActivistJSON = z.object({
   last_event: z.string().optional(),
   last_event_name: z.string().optional(),
   total_events: z.number().optional(),
+  last_action: z.string().optional(),
+  months_since_last_action: z.number().optional(),
+  total_points: z.number().optional(),
+  active: z.boolean().optional(),
+  status: z.string().optional(),
+  last_connection: z.string().optional(),
+  geo_circles: z.string().optional(),
+  assigned_to_name: z.string().optional(),
+  total_interactions: z.number().optional(),
+  last_interaction_date: z.string().optional(),
 })
 export type ActivistJSON = z.infer<typeof ActivistJSON>
 

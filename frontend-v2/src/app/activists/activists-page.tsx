@@ -22,7 +22,6 @@ import {
   DEFAULT_COLUMNS,
 } from './column-definitions'
 import {
-  DEFAULT_SORT,
   FilterState,
   SortColumn,
   buildQueryOptions,
