@@ -9,8 +9,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { SlidersHorizontal } from 'lucide-react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { SlidersHorizontal, ChevronDown, X } from 'lucide-react'
 import { LastEventFilter } from './last-event-filter'
+import { DateRangeFilter } from './date-range-filter'
 import type { FilterState } from './query-utils'
 
 interface ActivistFiltersProps {
@@ -20,12 +28,464 @@ interface ActivistFiltersProps {
   children?: React.ReactNode
 }
 
+const ACTIVIST_LEVELS = [
+  'Supporter',
+  'Chapter Member',
+  'Organizer',
+  'Non-Local',
+  'Global Network Member',
+] as const
+
+const TRAINING_COLUMNS = [
+  { value: 'training0', label: 'Workshop (101)' },
+  { value: 'training1', label: 'Training 1' },
+  { value: 'training4', label: 'Training 4' },
+  { value: 'training5', label: 'Training 5' },
+  { value: 'training6', label: 'Training 6' },
+  { value: 'consent_quiz', label: 'Consent Quiz' },
+  { value: 'training_protest', label: 'Protest Training' },
+  { value: 'dev_quiz', label: 'Dev Quiz' },
+] as const
+
+/** Parse "a,b,-c" into include/exclude sets. */
+function parseIncludeExclude(value?: string): {
+  include: Set<string>
+  exclude: Set<string>
+} {
+  const include = new Set<string>()
+  const exclude = new Set<string>()
+  if (!value) return { include, exclude }
+  for (const part of value.split(',')) {
+    const trimmed = part.trim()
+    if (!trimmed) continue
+    if (trimmed.startsWith('-')) {
+      exclude.add(trimmed.slice(1))
+    } else {
+      include.add(trimmed)
+    }
+  }
+  return { include, exclude }
+}
+
+/** Build "a,b,-c" from include/exclude sets. */
+function buildIncludeExclude(
+  include: Set<string>,
+  exclude: Set<string>,
+): string | undefined {
+  const parts = [
+    ...Array.from(include),
+    ...Array.from(exclude).map((v) => `-${v}`),
+  ]
+  return parts.length > 0 ? parts.join(',') : undefined
+}
+
+/** Parse "1..4" into parts. */
+function parseIntRange(value?: string): { gte?: string; lt?: string } {
+  if (!value) return {}
+  const parts = value.split('..')
+  if (parts.length !== 2) return {}
+  return { gte: parts[0] || undefined, lt: parts[1] || undefined }
+}
+
+/** Build "1..4" from parts. */
+function buildIntRange(gte?: string, lt?: string): string | undefined {
+  if (!gte && !lt) return undefined
+  return `${gte || ''}..${lt || ''}`
+}
+
+// --- Filter sub-components ---
+
+function ActivistLevelFilter({
+  value,
+  onChange,
+}: {
+  value?: string
+  onChange: (value?: string) => void
+}) {
+  const { include, exclude } = parseIncludeExclude(value)
+  const hasFilter = include.size > 0 || exclude.size > 0
+
+  const handleToggle = (level: string) => {
+    const newInclude = new Set(include)
+    const newExclude = new Set(exclude)
+
+    if (newInclude.has(level)) {
+      // include -> exclude
+      newInclude.delete(level)
+      newExclude.add(level)
+    } else if (newExclude.has(level)) {
+      // exclude -> off
+      newExclude.delete(level)
+    } else {
+      // off -> include
+      newInclude.add(level)
+    }
+    onChange(buildIncludeExclude(newInclude, newExclude))
+  }
+
+  return (
+    <div className="flex shrink-0 items-stretch rounded-md border bg-card overflow-hidden h-12">
+      <Popover>
+        <PopoverTrigger asChild>
+          <button className="flex flex-col items-start justify-center px-3 hover:bg-muted transition-colors h-full">
+            {!hasFilter ? (
+              <div className="flex items-center gap-1">
+                <span className="text-sm">Activist level</span>
+                <ChevronDown className="h-3 w-3 text-muted-foreground" />
+              </div>
+            ) : (
+              <>
+                <span className="text-xs text-muted-foreground">
+                  Activist level
+                </span>
+                <div className="flex items-center gap-1">
+                  <span className="text-sm">
+                    {include.size > 0 ? Array.from(include).join(', ') : ''}
+                    {include.size > 0 && exclude.size > 0 ? '; ' : ''}
+                    {exclude.size > 0
+                      ? `not ${Array.from(exclude).join(', ')}`
+                      : ''}
+                  </span>
+                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                </div>
+              </>
+            )}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-64">
+          <div className="space-y-3">
+            <h4 className="font-medium text-sm">Activist Level</h4>
+            <p className="text-xs text-muted-foreground">
+              Click to include, click again to exclude, click again to clear.
+            </p>
+            {ACTIVIST_LEVELS.map((level) => {
+              const isIncluded = include.has(level)
+              const isExcluded = exclude.has(level)
+              return (
+                <button
+                  key={level}
+                  className="flex w-full items-center gap-2 rounded px-2 py-1 text-sm hover:bg-muted transition-colors"
+                  onClick={() => handleToggle(level)}
+                >
+                  <span
+                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border text-xs font-bold ${
+                      isIncluded
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : isExcluded
+                          ? 'bg-destructive text-destructive-foreground border-destructive'
+                          : 'border-input'
+                    }`}
+                  >
+                    {isIncluded ? '+' : isExcluded ? '-' : ''}
+                  </span>
+                  {level}
+                </button>
+              )
+            })}
+            {hasFilter && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => onChange(undefined)}
+              >
+                Clear
+              </Button>
+            )}
+          </div>
+        </PopoverContent>
+      </Popover>
+      {hasFilter && (
+        <button
+          onClick={() => onChange(undefined)}
+          className="border-l px-2 hover:bg-muted transition-colors"
+          aria-label="Clear filter"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      )}
+    </div>
+  )
+}
+
+function IntRangeFilterControl({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value?: string
+  onChange: (value?: string) => void
+}) {
+  const { gte, lt } = parseIntRange(value)
+  const hasFilter = !!value
+
+  return (
+    <div className="flex shrink-0 items-stretch rounded-md border bg-card overflow-hidden h-12">
+      <Popover>
+        <PopoverTrigger asChild>
+          <button className="flex flex-col items-start justify-center px-3 hover:bg-muted transition-colors h-full">
+            {!hasFilter ? (
+              <div className="flex items-center gap-1">
+                <span className="text-sm">{label}</span>
+                <ChevronDown className="h-3 w-3 text-muted-foreground" />
+              </div>
+            ) : (
+              <>
+                <span className="text-xs text-muted-foreground">{label}</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-sm">
+                    {gte && lt
+                      ? `${gte} to ${lt}`
+                      : gte
+                        ? `>= ${gte}`
+                        : `< ${lt}`}
+                  </span>
+                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                </div>
+              </>
+            )}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-64">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Min (inclusive)</Label>
+              <Input
+                type="number"
+                value={gte || ''}
+                onChange={(e) =>
+                  onChange(buildIntRange(e.target.value || undefined, lt))
+                }
+                placeholder="No minimum"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Max (exclusive)</Label>
+              <Input
+                type="number"
+                value={lt || ''}
+                onChange={(e) =>
+                  onChange(buildIntRange(gte, e.target.value || undefined))
+                }
+                placeholder="No maximum"
+              />
+            </div>
+            {hasFilter && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => onChange(undefined)}
+              >
+                Clear
+              </Button>
+            )}
+          </div>
+        </PopoverContent>
+      </Popover>
+      {hasFilter && (
+        <button
+          onClick={() => onChange(undefined)}
+          className="border-l px-2 hover:bg-muted transition-colors"
+          aria-label="Clear filter"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      )}
+    </div>
+  )
+}
+
+function SourceFilterControl({
+  value,
+  onChange,
+}: {
+  value?: string
+  onChange: (value?: string) => void
+}) {
+  const hasFilter = !!value
+
+  return (
+    <div className="flex shrink-0 items-stretch rounded-md border bg-card overflow-hidden h-12">
+      <Popover>
+        <PopoverTrigger asChild>
+          <button className="flex flex-col items-start justify-center px-3 hover:bg-muted transition-colors h-full">
+            {!hasFilter ? (
+              <div className="flex items-center gap-1">
+                <span className="text-sm">Source</span>
+                <ChevronDown className="h-3 w-3 text-muted-foreground" />
+              </div>
+            ) : (
+              <>
+                <span className="text-xs text-muted-foreground">Source</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-sm truncate max-w-[200px]">{value}</span>
+                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                </div>
+              </>
+            )}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-80">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Source patterns</Label>
+              <p className="text-xs text-muted-foreground">
+                Comma-separated. Prefix with - to exclude.
+              </p>
+              <Input
+                value={value || ''}
+                onChange={(e) => onChange(e.target.value || undefined)}
+                placeholder="e.g. form,petition,-application"
+              />
+            </div>
+            {hasFilter && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => onChange(undefined)}
+              >
+                Clear
+              </Button>
+            )}
+          </div>
+        </PopoverContent>
+      </Popover>
+      {hasFilter && (
+        <button
+          onClick={() => onChange(undefined)}
+          className="border-l px-2 hover:bg-muted transition-colors"
+          aria-label="Clear filter"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      )}
+    </div>
+  )
+}
+
+function TrainingFilterControl({
+  value,
+  onChange,
+}: {
+  value?: string
+  onChange: (value?: string) => void
+}) {
+  const { include, exclude } = parseIncludeExclude(value)
+  const hasFilter = include.size > 0 || exclude.size > 0
+
+  const handleToggle = (col: string) => {
+    const newInclude = new Set(include)
+    const newExclude = new Set(exclude)
+    if (newInclude.has(col)) {
+      newInclude.delete(col)
+      newExclude.add(col)
+    } else if (newExclude.has(col)) {
+      newExclude.delete(col)
+    } else {
+      newInclude.add(col)
+    }
+    onChange(buildIncludeExclude(newInclude, newExclude))
+  }
+
+  return (
+    <div className="flex shrink-0 items-stretch rounded-md border bg-card overflow-hidden h-12">
+      <Popover>
+        <PopoverTrigger asChild>
+          <button className="flex flex-col items-start justify-center px-3 hover:bg-muted transition-colors h-full">
+            {!hasFilter ? (
+              <div className="flex items-center gap-1">
+                <span className="text-sm">Training</span>
+                <ChevronDown className="h-3 w-3 text-muted-foreground" />
+              </div>
+            ) : (
+              <>
+                <span className="text-xs text-muted-foreground">Training</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-sm">
+                    {include.size + exclude.size} selected
+                  </span>
+                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                </div>
+              </>
+            )}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-64">
+          <div className="space-y-3">
+            <h4 className="font-medium text-sm">Training</h4>
+            <p className="text-xs text-muted-foreground">
+              Click to require completed, click again to require not completed,
+              click again to clear.
+            </p>
+            {TRAINING_COLUMNS.map(({ value: col, label }) => {
+              const isIncluded = include.has(col)
+              const isExcluded = exclude.has(col)
+              return (
+                <button
+                  key={col}
+                  className="flex w-full items-center gap-2 rounded px-2 py-1 text-sm hover:bg-muted transition-colors"
+                  onClick={() => handleToggle(col)}
+                >
+                  <span
+                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border text-xs font-bold ${
+                      isIncluded
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : isExcluded
+                          ? 'bg-destructive text-destructive-foreground border-destructive'
+                          : 'border-input'
+                    }`}
+                  >
+                    {isIncluded ? '+' : isExcluded ? '-' : ''}
+                  </span>
+                  {label}
+                </button>
+              )
+            })}
+            {hasFilter && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => onChange(undefined)}
+              >
+                Clear
+              </Button>
+            )}
+          </div>
+        </PopoverContent>
+      </Popover>
+      {hasFilter && (
+        <button
+          onClick={() => onChange(undefined)}
+          className="border-l px-2 hover:bg-muted transition-colors"
+          aria-label="Clear filter"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      )}
+    </div>
+  )
+}
+
 export function ActivistFilters({
   filters,
   onFiltersChange,
   isAdmin,
   children,
 }: ActivistFiltersProps) {
+  const moreFilterCount = [
+    filters.searchAcrossChapters,
+    filters.includeHidden,
+    filters.assignedTo,
+    filters.followups,
+    filters.interestDate,
+    filters.totalInteractions,
+    filters.prospect,
+  ].filter(Boolean).length
+
   return (
     <div className="flex flex-col gap-4">
       {/* Name search */}
@@ -46,10 +506,51 @@ export function ActivistFilters({
 
         {/* Last event filter */}
         <LastEventFilter
-          lastEventGte={filters.lastEventGte}
-          lastEventLt={filters.lastEventLt}
-          onChange={(gte, lt) =>
-            onFiltersChange({ ...filters, lastEventGte: gte, lastEventLt: lt })
+          value={filters.lastEvent}
+          onChange={(value) =>
+            onFiltersChange({ ...filters, lastEvent: value })
+          }
+        />
+
+        {/* Activist level */}
+        <ActivistLevelFilter
+          value={filters.activistLevel}
+          onChange={(value) =>
+            onFiltersChange({ ...filters, activistLevel: value })
+          }
+        />
+
+        {/* Total events */}
+        <IntRangeFilterControl
+          label="Total events"
+          value={filters.totalEvents}
+          onChange={(value) =>
+            onFiltersChange({ ...filters, totalEvents: value })
+          }
+        />
+
+        {/* First event date */}
+        <DateRangeFilter
+          label="First event"
+          value={filters.firstEvent}
+          onChange={(value) =>
+            onFiltersChange({ ...filters, firstEvent: value })
+          }
+        />
+
+        {/* Source */}
+        <SourceFilterControl
+          value={filters.source}
+          onChange={(value) =>
+            onFiltersChange({ ...filters, source: value })
+          }
+        />
+
+        {/* Training */}
+        <TrainingFilterControl
+          value={filters.training}
+          onChange={(value) =>
+            onFiltersChange({ ...filters, training: value })
           }
         />
 
@@ -59,14 +560,9 @@ export function ActivistFilters({
             <Button variant="outline" size="sm" className="h-12 gap-2 shrink-0">
               <SlidersHorizontal className="h-4 w-4" />
               More filters
-              {(filters.searchAcrossChapters || filters.includeHidden) && (
+              {moreFilterCount > 0 && (
                 <span className="ml-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-secondary px-1.5 text-xs font-medium text-secondary-foreground">
-                  {
-                    [
-                      filters.searchAcrossChapters,
-                      filters.includeHidden,
-                    ].filter(Boolean).length
-                  }
+                  {moreFilterCount}
                 </span>
               )}
             </Button>
@@ -115,6 +611,109 @@ export function ActivistFilters({
                 >
                   Include hidden activists
                 </Label>
+              </div>
+
+              {/* Assigned To */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Assigned to</Label>
+                <Select
+                  value={filters.assignedTo || '_none'}
+                  onValueChange={(v) =>
+                    onFiltersChange({
+                      ...filters,
+                      assignedTo: v === '_none' ? undefined : v,
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Not filtered" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_none">Not filtered</SelectItem>
+                    <SelectItem value="me">Assigned to me</SelectItem>
+                    <SelectItem value="any">Any assignee</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Followups */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Follow-ups</Label>
+                <Select
+                  value={filters.followups || '_none'}
+                  onValueChange={(v) =>
+                    onFiltersChange({
+                      ...filters,
+                      followups: v === '_none' ? undefined : v,
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Not filtered" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_none">Not filtered</SelectItem>
+                    <SelectItem value="all">All with follow-up</SelectItem>
+                    <SelectItem value="due">Due</SelectItem>
+                    <SelectItem value="upcoming">Upcoming</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Prospect */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Prospect</Label>
+                <Select
+                  value={filters.prospect || '_none'}
+                  onValueChange={(v) =>
+                    onFiltersChange({
+                      ...filters,
+                      prospect: v === '_none' ? undefined : v,
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Not filtered" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_none">Not filtered</SelectItem>
+                    <SelectItem value="chapterMember">
+                      Chapter Member Prospect
+                    </SelectItem>
+                    <SelectItem value="organizer">
+                      Organizer Prospect
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Interest date */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Interest date</Label>
+                <DateRangeFilter
+                  label="Interest date"
+                  value={filters.interestDate}
+                  onChange={(value) =>
+                    onFiltersChange({ ...filters, interestDate: value })
+                  }
+                />
+              </div>
+
+              {/* Total interactions */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">
+                  Total interactions
+                </Label>
+                <IntRangeFilterControl
+                  label="Total interactions"
+                  value={filters.totalInteractions}
+                  onChange={(value) =>
+                    onFiltersChange({
+                      ...filters,
+                      totalInteractions: value,
+                    })
+                  }
+                />
               </div>
             </div>
           </PopoverContent>

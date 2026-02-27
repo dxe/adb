@@ -33,6 +33,7 @@ import {
 
 const BASE_PATH = '/activists'
 
+/** Serializes filter/column/sort state to URL search params. */
 const buildUrlParams = (
   filters: FilterState,
   visibleColumns: ActivistColumnName[],
@@ -46,14 +47,26 @@ const buildUrlParams = (
   if (filters.nameSearch) {
     params.set('nameSearch', filters.nameSearch)
   }
-  if (filters.lastEventGte) {
-    params.set('lastEventGte', filters.lastEventGte)
-  }
-  if (filters.lastEventLt) {
-    params.set('lastEventLt', filters.lastEventLt)
-  }
   if (filters.includeHidden) {
     params.set('includeHidden', 'true')
+  }
+
+  // Range and value filters — stored as-is from FilterState
+  const optionalParams: [string, string | undefined][] = [
+    ['lastEvent', filters.lastEvent],
+    ['interestDate', filters.interestDate],
+    ['firstEvent', filters.firstEvent],
+    ['totalEvents', filters.totalEvents],
+    ['totalInteractions', filters.totalInteractions],
+    ['activistLevel', filters.activistLevel],
+    ['source', filters.source],
+    ['training', filters.training],
+    ['assignedTo', filters.assignedTo],
+    ['followups', filters.followups],
+    ['prospect', filters.prospect],
+  ]
+  for (const [key, value] of optionalParams) {
+    if (value) params.set(key, value)
   }
 
   const defaultColumns = normalizeColumnsForFilters(
@@ -199,10 +212,11 @@ export default function ActivistsPage() {
         filters,
         selectedColumns,
         chapterId: user.ChapterID,
+        userId: user.ID,
         nameSearch: debouncedNameSearch,
         sort,
       }),
-    [filters, selectedColumns, user.ChapterID, debouncedNameSearch, sort],
+    [filters, selectedColumns, user.ChapterID, user.ID, debouncedNameSearch, sort],
   )
 
   const {

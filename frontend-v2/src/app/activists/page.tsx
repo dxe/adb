@@ -52,6 +52,7 @@ export default async function ActivistsListPage({ searchParams }: PageProps) {
     filters,
     selectedColumns,
     chapterId: session.user.ChapterID,
+    userId: session.user.ID,
     sort,
   })
 

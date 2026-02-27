@@ -142,9 +142,45 @@
       "roleRequired": ["admin"],
       "items": [
         {
-          "label": "Activists",
+          "label": "All Activists",
           "href": "/v2/activists",
           "page": "ActivistList"
+        },
+        {
+          "label": "New Activists",
+          "href": "/v2/activists?totalEvents=..4&lastEvent={6mo}..",
+          "page": "ActivistList"
+        },
+        {
+          "label": "New Activists Pending Workshop",
+          "href": "/v2/activists?activistLevel=Supporter&training=-training0&firstEvent={6mo}..",
+          "page": "ActivistList"
+        },
+        {
+          "label": "Community Prospects",
+          "href": "/v2/activists?source=form,dxe-signup,arc-signup,petition,eventbrite,-application&activistLevel=Supporter&totalInteractions=..1&lastEvent=..{12mo}|null",
+          "page": "ActivistList"
+        },
+        {
+          "label": "Community Prospects Follow-up",
+          "href": "/v2/activists?assignedTo=any&followups=due",
+          "page": "ActivistList"
+        },
+        {
+          "label": "Chapter Member Prospects",
+          "href": "/v2/activists?prospect=chapterMember&activistLevel=-Chapter Member,-Organizer",
+          "page": "ActivistList"
+        },
+        {
+          "label": "Chapter Members",
+          "href": "/v2/activists?activistLevel=Chapter Member,Organizer",
+          "page": "ActivistList"
+        },
+        {
+          "label": "Organizer Prospects",
+          "href": "/v2/activists?prospect=organizer&activistLevel=-Organizer",
+          "page": "ActivistList",
+          "separatorBelow": true
         },
         {
           "label": "New Event",

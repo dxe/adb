@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dxe/adb/model/filters"
+
 	"github.com/dxe/adb/mailing_list_signup"
 
 	"github.com/go-sql-driver/mysql"
@@ -2306,71 +2308,8 @@ type QueryActivistOptions struct {
 	After string `json:"after"`
 }
 
-type QueryActivistFilters struct {
-	// 0 means search all chapters and requires that the "chapter" column be requested.
-	// Must be set to ID of current chapter if user only has permission for current chapter.
-	ChapterId     int                `json:"chapter_id"`
-	Name          ActivistNameFilter `json:"name"`
-	LastEvent     LastEventFilter    `json:"last_event"`
-	IncludeHidden bool               `json:"include_hidden"`
-}
-
-type ActivistNameFilter struct {
-	NameContains string `json:"name_contains"`
-}
-
-// DateOnly represents a date without time information (YYYY-MM-DD format).
-// The time component is always 00:00:00 UTC.
-type DateOnly struct {
-	time.Time
-}
-
-// Compile-time check that DateOnly implements json.Unmarshaler
-var _ json.Unmarshaler = (*DateOnly)(nil)
-
-// UnmarshalJSON parses a date string in YYYY-MM-DD format as UTC midnight
-func (d *DateOnly) UnmarshalJSON(data []byte) error {
-	// Remove quotes from JSON string
-	dateStr := string(data)
-	if len(dateStr) < 2 {
-		return nil
-	}
-	dateStr = dateStr[1 : len(dateStr)-1]
-
-	if dateStr == "" {
-		return nil
-	}
-
-	parsed, err := time.Parse("2006-01-02", dateStr)
-	if err != nil {
-		return fmt.Errorf("invalid date format (expected YYYY-MM-DD): %w", err)
-	}
-
-	d.Time = time.Date(parsed.Year(), parsed.Month(), parsed.Day(), 0, 0, 0, 0, time.UTC)
-	return nil
-}
-
-// MarshalJSON formats the date as YYYY-MM-DD
-func (d DateOnly) MarshalJSON() ([]byte, error) {
-	if d.Time.IsZero() {
-		return []byte("null"), nil
-	}
-	return []byte(`"` + d.Time.Format("2006-01-02") + `"`), nil
-}
-
-type LastEventFilter struct {
-	LastEventLt  DateOnly `json:"last_event_lt"`
-	LastEventGte DateOnly `json:"last_event_gte"`
-}
-
-func (f *LastEventFilter) Validate() error {
-	if !f.LastEventGte.IsZero() && !f.LastEventLt.IsZero() {
-		if !f.LastEventGte.Time.Before(f.LastEventLt.Time) {
-			return &ValidationError{msg: "invalid date range"}
-		}
-	}
-	return nil
-}
+// QueryActivistFilters is defined in the filters package.
+type QueryActivistFilters = filters.QueryActivistFilters
 
 type ActivistSortOptions struct {
 	SortColumns []ActivistSortColumn `json:"sort_columns"`
@@ -2398,8 +2337,8 @@ func (o *QueryActivistOptions) normalizeAndValidate() error {
 		return fmt.Errorf("must choose 'chapter_name' column when not filtering by chapter ID.")
 	}
 
-	if err := o.Filters.LastEvent.Validate(); err != nil {
-		return fmt.Errorf("invalid Last Event filter: %w", err)
+	if err := o.Filters.Validate(); err != nil {
+		return err
 	}
 
 	if len(o.Sort.SortColumns) > 2 {

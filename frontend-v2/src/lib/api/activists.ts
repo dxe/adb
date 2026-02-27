@@ -77,16 +77,47 @@ const ActivistNameFilter = z.object({
   name_contains: z.string().optional(),
 })
 
-const LastEventFilter = z.object({
-  last_event_lt: z.string().optional(), // ISO date string (YYYY-MM-DD)
-  last_event_gte: z.string().optional(), // ISO date string (YYYY-MM-DD)
+const DateRangeFilter = z.object({
+  gte: z.string().optional(),
+  lt: z.string().optional(),
+  or_null: z.boolean().optional(),
+})
+
+const IntRangeFilter = z.object({
+  gte: z.number().optional(),
+  lt: z.number().optional(),
+})
+
+const ActivistLevelFilter = z.object({
+  include: z.array(z.string()).optional(),
+  exclude: z.array(z.string()).optional(),
+})
+
+const SourceFilter = z.object({
+  contains_any: z.array(z.string()).optional(),
+  not_contains_any: z.array(z.string()).optional(),
+})
+
+const TrainingFilter = z.object({
+  completed: z.array(z.string()).optional(),
+  not_completed: z.array(z.string()).optional(),
 })
 
 const QueryActivistFilters = z.object({
   chapter_id: z.number().optional(),
   name: ActivistNameFilter.optional(),
-  last_event: LastEventFilter.optional(),
+  last_event: DateRangeFilter.optional(),
   include_hidden: z.boolean().optional(),
+  activist_level: ActivistLevelFilter.optional(),
+  interest_date: DateRangeFilter.optional(),
+  first_event: DateRangeFilter.optional(),
+  total_events: IntRangeFilter.optional(),
+  total_interactions: IntRangeFilter.optional(),
+  source: SourceFilter.optional(),
+  training: TrainingFilter.optional(),
+  assigned_to: z.number().optional(),
+  followups: z.enum(['all', 'due', 'upcoming']).optional(),
+  prospect: z.enum(['chapter_member', 'organizer']).optional(),
 })
 
 const ActivistSortColumn = z.object({

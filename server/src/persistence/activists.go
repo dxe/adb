@@ -147,26 +147,96 @@ func (r DBActivistRepository) QueryActivists(options model.QueryActivistOptions)
 }
 
 func buildFiltersFromOptions(options model.QueryActivistOptions) []filter {
-	var filters []filter
+	var result []filter
+	f := options.Filters
 
-	if options.Filters.ChapterId != 0 {
-		filters = append(filters, &chapterFilter{ChapterId: options.Filters.ChapterId})
+	if f.ChapterId != 0 {
+		result = append(result, &chapterFilter{ChapterId: f.ChapterId})
 	}
 
-	if options.Filters.Name.NameContains != "" {
-		filters = append(filters, &nameFilter{NameContains: options.Filters.Name.NameContains})
+	if f.Name.NameContains != "" {
+		result = append(result, &nameFilter{NameContains: f.Name.NameContains})
 	}
 
-	if !options.Filters.LastEvent.LastEventLt.IsZero() || !options.Filters.LastEvent.LastEventGte.IsZero() {
-		filters = append(filters, &lastEventFilter{
-			LastEventGte: options.Filters.LastEvent.LastEventGte,
-			LastEventLt:  options.Filters.LastEvent.LastEventLt,
+	if !f.LastEvent.IsEmpty() {
+		lastEventJoin := lastEventSubqueryJoin
+		result = append(result, &dateRangeFilter{
+			filter: f.LastEvent,
+			join:   &lastEventJoin,
+			expr:   fmt.Sprintf("%s.last_event_date", lastEventSubqueryJoin.Key),
 		})
 	}
 
-	if !options.Filters.IncludeHidden {
-		filters = append(filters, &hiddenFilter{})
+	if !f.IncludeHidden {
+		result = append(result, &hiddenFilter{})
 	}
 
-	return filters
+	if !f.ActivistLevel.IsEmpty() {
+		result = append(result, &activistLevelFilter{
+			Include: f.ActivistLevel.Include,
+			Exclude: f.ActivistLevel.Exclude,
+		})
+	}
+
+	if !f.InterestDate.IsEmpty() {
+		result = append(result, &dateRangeFilter{
+			filter: f.InterestDate,
+			expr:   fmt.Sprintf("%s.interest_date", activistTableAlias),
+		})
+	}
+
+	if !f.FirstEvent.IsEmpty() {
+		firstEventJoin := firstEventSubqueryJoin
+		result = append(result, &dateRangeFilter{
+			filter: f.FirstEvent,
+			join:   &firstEventJoin,
+			expr:   fmt.Sprintf("%s.first_event_date", firstEventSubqueryJoin.Key),
+		})
+	}
+
+	if !f.TotalEvents.IsEmpty() {
+		totalEventsJoin := totalEventsSubqueryJoin
+		result = append(result, &intRangeFilter{
+			filter: f.TotalEvents,
+			join:   &totalEventsJoin,
+			expr:   fmt.Sprintf("%s.event_count", totalEventsSubqueryJoin.Key),
+		})
+	}
+
+	if !f.TotalInteractions.IsEmpty() {
+		interactionsJoin := interactionsSubqueryJoin
+		result = append(result, &intRangeFilter{
+			filter: f.TotalInteractions,
+			join:   &interactionsJoin,
+			expr:   fmt.Sprintf("%s.interaction_count", interactionsSubqueryJoin.Key),
+		})
+	}
+
+	if !f.Source.IsEmpty() {
+		result = append(result, &sourceFilter{
+			ContainsAny:    f.Source.ContainsAny,
+			NotContainsAny: f.Source.NotContainsAny,
+		})
+	}
+
+	if !f.Training.IsEmpty() {
+		result = append(result, &trainingFilter{
+			Completed:    f.Training.Completed,
+			NotCompleted: f.Training.NotCompleted,
+		})
+	}
+
+	if f.AssignedTo != 0 {
+		result = append(result, &assignedToFilter{AssignedTo: f.AssignedTo})
+	}
+
+	if f.Followups != "" {
+		result = append(result, &followupsFilter{Followups: f.Followups})
+	}
+
+	if f.Prospect != "" {
+		result = append(result, &prospectFilter{Prospect: f.Prospect})
+	}
+
+	return result
 }
