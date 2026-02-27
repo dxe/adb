@@ -316,77 +316,6 @@ function IntRangeFilterControl({
   )
 }
 
-function SourceFilterControl({
-  value,
-  onChange,
-}: {
-  value?: string
-  onChange: (value?: string) => void
-}) {
-  const hasFilter = !!value
-
-  return (
-    <div className="flex shrink-0 items-stretch rounded-md border bg-card overflow-hidden h-12">
-      <Popover>
-        <PopoverTrigger asChild>
-          <button className="flex flex-col items-start justify-center px-3 hover:bg-muted transition-colors h-full">
-            {!hasFilter ? (
-              <div className="flex items-center gap-1">
-                <span className="text-sm">Source</span>
-                <ChevronDown className="h-3 w-3 text-muted-foreground" />
-              </div>
-            ) : (
-              <>
-                <span className="text-xs text-muted-foreground">Source</span>
-                <div className="flex items-center gap-1">
-                  <span className="text-sm truncate max-w-[200px]">
-                    {value}
-                  </span>
-                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
-                </div>
-              </>
-            )}
-          </button>
-        </PopoverTrigger>
-        <PopoverContent className="w-80">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Source patterns</Label>
-              <p className="text-xs text-muted-foreground">
-                Comma-separated. Prefix with - to exclude.
-              </p>
-              <Input
-                value={value || ''}
-                onChange={(e) => onChange(e.target.value || undefined)}
-                placeholder="e.g. form,petition,-application"
-              />
-            </div>
-            {hasFilter && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full"
-                onClick={() => onChange(undefined)}
-              >
-                Clear
-              </Button>
-            )}
-          </div>
-        </PopoverContent>
-      </Popover>
-      {hasFilter && (
-        <button
-          onClick={() => onChange(undefined)}
-          className="border-l px-2 hover:bg-muted transition-colors"
-          aria-label="Clear filter"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      )}
-    </div>
-  )
-}
-
 function TrainingFilterControl({
   value,
   onChange,
@@ -498,6 +427,7 @@ export function ActivistFilters({
   children,
 }: ActivistFiltersProps) {
   const prospectFilterCount = [
+    filters.source,
     filters.assignedTo,
     filters.followups,
     filters.prospect,
@@ -560,12 +490,6 @@ export function ActivistFilters({
           }
         />
 
-        {/* Source */}
-        <SourceFilterControl
-          value={filters.source}
-          onChange={(value) => onFiltersChange({ ...filters, source: value })}
-        />
-
         {/* Training */}
         <TrainingFilterControl
           value={filters.training}
@@ -588,6 +512,24 @@ export function ActivistFilters({
           <PopoverContent className="w-80">
             <div className="space-y-4">
               <h4 className="font-medium">Prospects</h4>
+
+              {/* Source */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Source</Label>
+                <Input
+                  value={filters.source || ''}
+                  onChange={(e) =>
+                    onFiltersChange({
+                      ...filters,
+                      source: e.target.value || undefined,
+                    })
+                  }
+                  placeholder="e.g. form,petition,-application"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Comma-separated. Prefix with - to exclude.
+                </p>
+              </div>
 
               {/* Assigned To */}
               <div className="space-y-2">

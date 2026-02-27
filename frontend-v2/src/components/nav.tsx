@@ -11,6 +11,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import logo1 from '$public/logo.png'
 import Link from 'next/link'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
 import buefyStyles from './nav.module.css'
 import clsx from 'clsx'
@@ -67,6 +68,26 @@ function computeNavHref(href: string): string {
   })
 }
 
+/** For ActivistList pages, check if the nav item's query params match the current URL exactly. */
+function isExactParamsMatch(
+  navHref: string,
+  pathname: string,
+  currentSearchParams: URLSearchParams,
+): boolean {
+  const qIndex = navHref.indexOf('?')
+  const navPath = qIndex >= 0 ? navHref.substring(0, qIndex) : navHref
+  if (pathname !== navPath) return false
+  const navParams = new URLSearchParams(
+    qIndex >= 0 ? navHref.substring(qIndex + 1) : '',
+  )
+  const sortEntries = (params: URLSearchParams) =>
+    Array.from(params.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([k, v]) => `${k}=${v}`)
+      .join('&')
+  return sortEntries(navParams) === sortEntries(currentSearchParams)
+}
+
 type TDropdownItem = (typeof navbarData.items)[number]
 
 const DropdownItem = ({
@@ -79,6 +100,8 @@ const DropdownItem = ({
   onClick: () => void
 }) => {
   const { user, pageName } = useAuthedPageContext()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
 
   if (!userHasAccess(user, item.roleRequired)) {
     return null
@@ -106,9 +129,19 @@ const DropdownItem = ({
           onClick={onClick}
         >
           {item.items.map((innerItem) => {
+            // For ActivistList v2 pages, highlight only when query params match exactly.
+            const isActive =
+              innerItem.page === 'ActivistList' &&
+              innerItem.href.startsWith('/v2')
+                ? isExactParamsMatch(
+                    computeNavHref(innerItem.href.substring(3)),
+                    pathname,
+                    searchParams,
+                  )
+                : pageName === innerItem.page
             const classNames = clsx(
               buefyStyles['navbar-item'],
-              { [buefyStyles['is-active']]: pageName === innerItem.page },
+              { [buefyStyles['is-active']]: isActive },
               { 'mb-2': innerItem.separatorBelow },
             )
             return (
