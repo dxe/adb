@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/select'
 import { FilterChip } from './filter-chip'
 import {
+  useDraftFilter,
   parseActivistLevelValue,
   buildActivistLevelValue,
 } from './filter-utils'
@@ -32,8 +33,9 @@ export function ActivistLevelFilter({
   value,
   onChange,
 }: ActivistLevelFilterProps) {
+  const [draft, setDraft, onOpenChange] = useDraftFilter(value, onChange)
   const [emptyMode, setEmptyMode] = useState<'include' | 'exclude'>('include')
-  const parsed = parseActivistLevelValue(value)
+  const parsed = parseActivistLevelValue(draft)
   const hasFilter = parsed.values.size > 0
   const mode: 'include' | 'exclude' = hasFilter ? parsed.mode : emptyMode
   const selected = parsed.values
@@ -42,7 +44,7 @@ export function ActivistLevelFilter({
     setEmptyMode(newMode)
     if (newMode === mode) return
     if (!hasFilter) return
-    onChange(buildActivistLevelValue(newMode, new Set(selected)))
+    setDraft(buildActivistLevelValue(newMode, new Set(selected)))
   }
 
   const handleToggle = (level: string) => {
@@ -52,18 +54,22 @@ export function ActivistLevelFilter({
     } else {
       newSelected.add(level)
     }
-    onChange(buildActivistLevelValue(mode, newSelected))
+    setDraft(buildActivistLevelValue(mode, newSelected))
   }
 
-  const summary = hasFilter
-    ? `${mode === 'exclude' ? 'not ' : ''}${Array.from(selected).join(', ')}`
-    : undefined
+  // Summary is derived from the committed value, not the draft.
+  const committed = parseActivistLevelValue(value)
+  const summary =
+    committed.values.size > 0
+      ? `${committed.mode === 'exclude' ? 'not ' : ''}${Array.from(committed.values).join(', ')}`
+      : undefined
 
   return (
     <FilterChip
       label="Activist level"
       summary={summary}
       onClear={() => onChange(undefined)}
+      onOpenChange={onOpenChange}
     >
       <div className="space-y-3">
         <div className="flex items-center justify-between">
@@ -111,7 +117,7 @@ export function ActivistLevelFilter({
             variant="outline"
             size="sm"
             className="w-full"
-            onClick={() => onChange(undefined)}
+            onClick={() => setDraft(undefined)}
           >
             Clear
           </Button>

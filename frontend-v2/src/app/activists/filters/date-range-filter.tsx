@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/select'
 import { DatePicker } from '@/components/ui/date-picker'
 import { FilterChip } from './filter-chip'
+import { useDraftFilter } from './filter-utils'
 import { format } from 'date-fns'
 
 interface DateRangeFilterProps {
@@ -206,8 +207,10 @@ export function DateRangeFilter({
   defaultOpen,
   removable,
 }: DateRangeFilterProps) {
-  const { gte, lt, orNull } = parseValue(value)
-  const hasFilter = !!value
+  const [draft, setDraft, onOpenChange] = useDraftFilter(value, onChange)
+
+  const { gte, lt, orNull } = parseValue(draft)
+  const hasDraft = !!draft
   const detectedMode = detectMode(gte, lt)
   const [preferredMode, setPreferredMode] = useState<Mode>('relative')
   const mode = detectedMode ?? preferredMode
@@ -216,22 +219,22 @@ export function DateRangeFilter({
     setPreferredMode(newMode)
     if (detectedMode && newMode !== detectedMode) {
       // Clear values when switching modes (preserve orNull)
-      onChange(orNull ? 'null' : undefined)
+      setDraft(orNull ? 'null' : undefined)
     }
   }
 
   // Absolute handlers
   const handleAbsGte = (date?: Date) =>
-    onChange(buildValue(toDateString(date), lt, orNull))
+    setDraft(buildValue(toDateString(date), lt, orNull))
   const handleAbsLt = (date?: Date) =>
-    onChange(buildValue(gte, toDateString(date), orNull))
+    setDraft(buildValue(gte, toDateString(date), orNull))
 
   // Relative handlers
   const gteRel = parseRelativeInput(gte)
   const ltRel = parseRelativeInput(lt)
 
   const handleRelGte = (amount: number, unit: DateUnit) =>
-    onChange(
+    setDraft(
       buildValue(
         amount > 0 ? buildRelativeValue(amount, unit) : undefined,
         lt,
@@ -239,7 +242,7 @@ export function DateRangeFilter({
       ),
     )
   const handleRelLt = (amount: number, unit: DateUnit) =>
-    onChange(
+    setDraft(
       buildValue(
         gte,
         amount > 0 ? buildRelativeValue(amount, unit) : undefined,
@@ -247,14 +250,21 @@ export function DateRangeFilter({
       ),
     )
 
+  // Summary is derived from the committed value, not the draft.
+  const committed = parseValue(value)
+  const summary = value
+    ? formatDateRange(committed.gte, committed.lt, committed.orNull)
+    : undefined
+
   return (
     <FilterChip
       label={label}
-      summary={hasFilter ? formatDateRange(gte, lt, orNull) : undefined}
+      summary={summary}
       onClear={() => onChange(undefined)}
       defaultOpen={defaultOpen}
       removable={removable}
       popoverClassName="w-80"
+      onOpenChange={onOpenChange}
     >
       <div className="space-y-4">
         {/* Mode toggle */}
@@ -317,12 +327,12 @@ export function DateRangeFilter({
           </>
         )}
 
-        {hasFilter && (
+        {hasDraft && (
           <Button
             variant="outline"
             size="sm"
             className="w-full"
-            onClick={() => onChange(undefined)}
+            onClick={() => setDraft(undefined)}
           >
             Clear
           </Button>

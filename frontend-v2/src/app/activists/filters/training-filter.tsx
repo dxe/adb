@@ -2,7 +2,11 @@
 
 import { Button } from '@/components/ui/button'
 import { FilterChip } from './filter-chip'
-import { parseIncludeExclude, buildIncludeExclude } from './filter-utils'
+import {
+  useDraftFilter,
+  parseIncludeExclude,
+  buildIncludeExclude,
+} from './filter-utils'
 
 const TRAINING_COLUMNS = [
   { value: 'training0', label: 'Workshop (101)' },
@@ -28,9 +32,10 @@ export function TrainingFilter({
   defaultOpen,
   removable,
 }: TrainingFilterProps) {
-  const { include, exclude } = parseIncludeExclude(value)
-  const count = include.size + exclude.size
-  const hasFilter = count > 0
+  const [draft, setDraft, onOpenChange] = useDraftFilter(value, onChange)
+  const { include, exclude } = parseIncludeExclude(draft)
+  const draftCount = include.size + exclude.size
+  const hasDraft = draftCount > 0
 
   const handleToggle = (col: string) => {
     const newInclude = new Set(include)
@@ -43,16 +48,22 @@ export function TrainingFilter({
     } else {
       newInclude.add(col)
     }
-    onChange(buildIncludeExclude(newInclude, newExclude))
+    setDraft(buildIncludeExclude(newInclude, newExclude))
   }
+
+  // Summary is derived from the committed value, not the draft.
+  const committed = parseIncludeExclude(value)
+  const committedCount = committed.include.size + committed.exclude.size
+  const summary = committedCount > 0 ? `${committedCount} selected` : undefined
 
   return (
     <FilterChip
       label="Training"
-      summary={hasFilter ? `${count} selected` : undefined}
+      summary={summary}
       onClear={() => onChange(undefined)}
       defaultOpen={defaultOpen}
       removable={removable}
+      onOpenChange={onOpenChange}
     >
       <div className="space-y-3">
         <h4 className="font-medium text-sm">Training</h4>
@@ -84,12 +95,12 @@ export function TrainingFilter({
             </button>
           )
         })}
-        {hasFilter && (
+        {hasDraft && (
           <Button
             variant="outline"
             size="sm"
             className="w-full"
-            onClick={() => onChange(undefined)}
+            onClick={() => setDraft(undefined)}
           >
             Clear
           </Button>

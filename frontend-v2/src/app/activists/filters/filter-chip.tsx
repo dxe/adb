@@ -1,3 +1,4 @@
+import { useState, useRef } from 'react'
 import {
   Popover,
   PopoverContent,
@@ -15,6 +16,9 @@ interface FilterChipProps {
   children: React.ReactNode
   defaultOpen?: boolean
   popoverClassName?: string
+  /** Called when the popover opens or closes. Used by useDraftFilter to
+   *  sync/commit draft state. Not called when the × button is pressed. */
+  onOpenChange?: (open: boolean) => void
 }
 
 export function FilterChip({
@@ -25,12 +29,33 @@ export function FilterChip({
   children,
   defaultOpen,
   popoverClassName,
+  onOpenChange,
 }: FilterChipProps) {
   const showClear = !!summary || removable
+  const [open, setOpen] = useState(defaultOpen ?? false)
+  // When × is clicked we close the popover and call onClear directly.
+  // The ref prevents onOpenChange from also firing (which would commit
+  // stale draft state over the cleared value).
+  const clearingRef = useRef(false)
+
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen)
+    if (clearingRef.current) {
+      clearingRef.current = false
+      return
+    }
+    onOpenChange?.(newOpen)
+  }
+
+  const handleClear = () => {
+    clearingRef.current = true
+    setOpen(false)
+    onClear()
+  }
 
   return (
     <div className="flex shrink-0 items-stretch rounded-md border bg-card overflow-hidden h-12">
-      <Popover defaultOpen={defaultOpen}>
+      <Popover open={open} onOpenChange={handleOpenChange}>
         <PopoverTrigger asChild>
           <button className="flex flex-col items-start justify-center px-3 hover:bg-muted transition-colors h-full">
             {!summary ? (
@@ -55,7 +80,7 @@ export function FilterChip({
       </Popover>
       {showClear && (
         <button
-          onClick={onClear}
+          onClick={handleClear}
           className="border-l px-2 hover:bg-muted transition-colors"
           aria-label="Clear filter"
         >

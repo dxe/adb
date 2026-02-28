@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { FilterChip } from './filter-chip'
-import { parseIntRange, buildIntRange } from './filter-utils'
+import { useDraftFilter, parseIntRange, buildIntRange } from './filter-utils'
 
 interface IntRangeFilterProps {
   label: string
@@ -28,16 +28,22 @@ export function IntRangeFilter({
   defaultOpen,
   removable,
 }: IntRangeFilterProps) {
-  const { gte, lt } = parseIntRange(value)
-  const hasFilter = !!value
+  const [draft, setDraft, onOpenChange] = useDraftFilter(value, onChange)
+  const { gte, lt } = parseIntRange(draft)
+  const hasDraft = !!draft
+
+  // Summary is derived from the committed value, not the draft.
+  const committed = parseIntRange(value)
+  const summary = value ? formatIntRange(committed.gte, committed.lt) : undefined
 
   return (
     <FilterChip
       label={label}
-      summary={hasFilter ? formatIntRange(gte, lt) : undefined}
+      summary={summary}
       onClear={() => onChange(undefined)}
       defaultOpen={defaultOpen}
       removable={removable}
+      onOpenChange={onOpenChange}
     >
       <div className="space-y-4">
         <div className="space-y-2">
@@ -46,7 +52,7 @@ export function IntRangeFilter({
             type="number"
             value={gte || ''}
             onChange={(e) =>
-              onChange(buildIntRange(e.target.value || undefined, lt))
+              setDraft(buildIntRange(e.target.value || undefined, lt))
             }
             placeholder="No minimum"
           />
@@ -57,17 +63,17 @@ export function IntRangeFilter({
             type="number"
             value={lt || ''}
             onChange={(e) =>
-              onChange(buildIntRange(gte, e.target.value || undefined))
+              setDraft(buildIntRange(gte, e.target.value || undefined))
             }
             placeholder="No maximum"
           />
         </div>
-        {hasFilter && (
+        {hasDraft && (
           <Button
             variant="outline"
             size="sm"
             className="w-full"
-            onClick={() => onChange(undefined)}
+            onClick={() => setDraft(undefined)}
           >
             Clear
           </Button>
