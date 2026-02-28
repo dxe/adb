@@ -21,8 +21,9 @@
       <div v-if="submitSuccess" class="content">
         <h2>Thank you!</h2>
         <p>
-          An organizer will reach out to you within the next week and let you know what next steps
-          need to be taken for your application to be approved!
+          An organizer from our Development Team will be reaching out to you about next steps and
+          how you can get more involved. If you'd like to see our upcoming events, please go to
+          <a href="https://dxe.io/events">dxe.io/events</a>.
         </p>
       </div>
     </transition>

@@ -1,9 +1,10 @@
 ## Build API backend.
 FROM golang:latest AS build-api
-WORKDIR /src
+WORKDIR /workspace/server/src
 COPY server/src ./
+COPY pkg/ /workspace/pkg/
 RUN GOFLAGS=-mod=readonly GOPROXY=https://proxy.golang.org go mod download
-RUN CGO_ENABLED=0 go build -o adb
+RUN CGO_ENABLED=0 go build -o /adb-server
 
 ## Build web UI frontend.
 # Please keep Node version in sync with Makefile
@@ -22,10 +23,9 @@ RUN apk add --no-cache ca-certificates tzdata
 RUN addgroup -S adb && adduser -S adb -G adb
 WORKDIR /app
 COPY server/run.sh ./
-COPY server/scripts/db-migrations db-migrations/
 COPY server/templates templates/
 COPY frontend/static static/
-COPY --from=build-api /src/adb ./
+COPY --from=build-api /adb-server ./
 COPY --from=build-ui /src/dist dist/
 USER adb
 ENTRYPOINT ["./run.sh"]

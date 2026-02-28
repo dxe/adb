@@ -8,6 +8,8 @@ import (
 	"runtime"
 	"strconv"
 	"time"
+
+	"github.com/dxe/adb/pkg/shared"
 )
 
 var (
@@ -22,7 +24,6 @@ var (
 	UrlPath     = mustGetenv("ADB_URL_PATH", "http://localhost:"+Port, true)
 
 	IsProd            = mustGetenvAsBool("PROD")
-	IsDocker          = IsProd || mustGetenvAsBool("ADB_IN_DOCKER")
 	RunBackgroundJobs = mustGetenvAsBool("RUN_BACKGROUND_JOBS")
 	LogLevel          = 1
 
@@ -135,25 +136,11 @@ func mustGetenvAsBool(key string) bool {
 }
 
 func DBDataSource() string {
-	connectionString := DataSourceBase + "/" + DBName + "?parseTime=true&charset=utf8mb4"
-	if IsProd {
-		return connectionString + "&tls=true"
-	}
-	return connectionString
+	return shared.BuildDBDataSource(DBUser, DBPassword, DBProtocol, DBName, IsProd)
 }
 
 func DBTestDataSource() string {
 	return DataSourceBase + "/adb_test_db?parseTime=true"
-}
-
-func DBMigrationsLocation() string {
-	if !IsDocker {
-		// Use `DevServerDir` to reliably locate the db-migrations directory, even when this package is invoked from
-		// another go module such as `create_db_wrapper`, or from a test in a dev or CI environment.
-		return "file://" + DevServerDir + "/scripts/db-migrations"
-	}
-
-	return "file://db-migrations"
 }
 
 var staticResourcesHash = strconv.FormatInt(rand.NewSource(time.Now().UnixNano()).Int63(), 10)

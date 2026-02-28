@@ -34,7 +34,7 @@
     "ghcr.io/rocker-org/devcontainer-features/apt-packages:1": {
       // mariadb-client package provides the `mysql` command for
       // development / debugging purposes (not an app dependeny).
-      "packages": "mariadb-client"
+      "packages": "mariadb-client,bash-completion"
     }
   },
   "customizations": {
@@ -57,8 +57,10 @@
     // notification. They will still appear in the "ports" tab of the Panel
     // in VS Code.
     "onAutoForward": "silent"
-  }
+  },
 
   // Configure tool-specific properties.
   // "customizations": {},
+
+  "postCreateCommand": "cat /workspace/.devcontainer/.bashrc >> ~/.bashrc"
 }

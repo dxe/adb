@@ -9,6 +9,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/dxe/adb/pkg/shared"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 )
@@ -85,11 +86,11 @@ type Organizer struct {
 
 type Organizers []*Organizer
 
-const SFBayChapterName = "SF Bay Area"
-const SFBayChapterId = 47
-const SFBayChapterIdStr = "47"
-const SFBayChapterIdDevTest = 1
-const SFBayChapterIdDevTestStr = "1"
+const SFBayChapterName = shared.SFBayChapterName
+const SFBayChapterId = shared.SFBayChapterId
+const SFBayChapterIdStr = shared.SFBayChapterIdStr
+const SFBayChapterIdDevTest = shared.SFBayChapterIdDevTest
+const SFBayChapterIdDevTestStr = shared.SFBayChapterIdDevTestStr
 
 func (o Organizers) Value() (driver.Value, error) {
 	return json.Marshal(o)

@@ -28,7 +28,11 @@ var (
 		Role:    "International Coordinator",
 		Address: "internationalcoordination@directactioneverywhere.com",
 	}
-	networkMemberProgramCoordinator = globalCoordinator
+	networkMemberProgramCoordinator = coordinator{
+		Name:    "Jay J",
+		Role:    "DxE Organizer",
+		Address: "jay@directactioneverywhere.com",
+	}
 )
 
 func stateIsCalifornia(state string) bool {

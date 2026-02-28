@@ -35,11 +35,9 @@ If you are using the devcontainer, just run this command in the container:
 make dev_db
 ```
 
-You can log into the database from the devcontainer using this command:
+You can log into the database from the devcontainer by just typing `db` in the terminal (an alias in .bashrc).
 
-```bash
-mysql -u adb_user -h mysql -D adb_db --password=adbpassword
-```
+To seed data into the database for various testing scenarios, check out the [ADB CLI](./cli/README.md) "seed" command.
 
 ### Run
 
@@ -202,3 +200,7 @@ the login page then redirects to the homepage.
 
 For local testing, you may need to add an ngrok authorized origin in GCP console. The origin `http://localhost:8080`
 does not seem to work as of December 2025.
+
+## More documentation
+
+More documentation is available in [Tech team's Coda doc](https://coda.io/d/Tech-Team_dR-UIgVShEf/Activist-Database-ADB_suydmBkX#_luDOewMC).

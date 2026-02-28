@@ -8,6 +8,7 @@ import (
 
 	"github.com/dxe/adb/config"
 	"github.com/dxe/adb/model"
+	"github.com/dxe/adb/pkg/shared"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -47,7 +48,7 @@ func dropTempDb(name string) {
 }
 func useTestDb() *sqlx.DB {
 	dataSource := config.DataSourceBase + "/" + dbName + "?parseTime=true"
-	model.WipeDatabase(dataSource+"&multiStatements=true", config.DBMigrationsLocation())
+	shared.WipeDatabase(dataSource+"&multiStatements=true", false)
 	return model.NewDB(dataSource)
 }
 

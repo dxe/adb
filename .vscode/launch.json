@@ -29,10 +29,19 @@
       "skipFiles": ["<node_internals>/**"],
       "type": "node",
       // Please keep in sync with Makefile
-      "runtimeVersion": "20",
+      "runtimeVersion": "25",
       "env": {
         "NEXT_PUBLIC_API_BASE_URL": "http://localhost:8080",
       },
+    },
+    {
+      "name": "CLI",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/cli",
+      "args": "${input:adbCliArgs}",
+      "console": "integratedTerminal",
     },
     {
       // Warning: The Go server serves the Vue frontend files from the
@@ -49,12 +58,19 @@
   ],
   "compounds": [
     {
-      "name": "Launch all",
+      "name": "All servers",
       "configurations": [
         "Go Server",
         "Vue Frontend build watcher",
         "React Frontend",
       ],
+    },
+  ],
+  "inputs": [
+    {
+      "id": "adbCliArgs",
+      "type": "promptString",
+      "description": "ADB CLI args (example: activists count)",
     },
   ],
 }

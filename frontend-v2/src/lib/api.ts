@@ -1,10 +1,12 @@
 import ky, { HTTPError, KyInstance } from 'ky'
 import { z } from 'zod'
+import { QueryActivistOptions, QueryActivistResult } from './api/activists'
 
 export const API_PATH = {
   STATIC_RESOURCE_HASH: 'static_resources_hash',
   ACTIVIST_NAMES_GET: 'activist_names/get',
   ACTIVIST_LIST_BASIC: 'activist/list_basic',
+  ACTIVISTS_SEARCH: 'api/activists',
   USER_ME: 'user/me',
   CSRF_TOKEN: 'api/csrf-token',
   CHAPTER_LIST: 'chapter/list',
@@ -95,6 +97,20 @@ export const ActivistListBasicResp = z.object({
 
 export type ActivistListBasic = z.infer<typeof ActivistListBasicResp>
 
+// Re-export activist search types from dedicated module
+export {
+  ActivistJSON,
+  ActivistColumnName,
+  QueryActivistOptions,
+  QueryActivistResult,
+} from './api/activists'
+export type {
+  ActivistJSON as ActivistJSONType,
+  ActivistColumnName as ActivistColumnNameType,
+  QueryActivistOptions as QueryActivistOptionsType,
+  QueryActivistResult as QueryActivistResultType,
+} from './api/activists'
+
 const EventGetResp = z.object({
   event: z.object({
     event_name: z.string(),
@@ -128,6 +144,16 @@ const ApiErrorResp = z.object({
   message: z.string(),
 })
 
+export class HTTPStatusError extends Error {
+  constructor(
+    public status: number,
+    message: string,
+  ) {
+    super(message)
+    this.name = 'HTTPStatusError'
+  }
+}
+
 export class ApiClient {
   private client: KyInstance
 
@@ -151,8 +177,9 @@ export class ApiClient {
         await err.response.json().catch(() => null),
       )
       if (parsed.success) {
-        throw new Error(parsed.data.message)
+        throw new HTTPStatusError(err.response.status, parsed.data.message)
       }
+      throw new HTTPStatusError(err.response.status, err.message)
     }
     throw err
   }
@@ -207,6 +234,18 @@ export class ApiClient {
       .get(API_PATH.ACTIVIST_LIST_BASIC, options)
       .json()
     return ActivistListBasicResp.parse(resp)
+  }
+
+  searchActivists = async (options: QueryActivistOptions) => {
+    try {
+      const resp = await this.client
+        .post(API_PATH.ACTIVISTS_SEARCH, { json: options })
+        .json()
+      const parsed = QueryActivistResult.parse(resp)
+      return fillActivistBlankNumericFieldsWithZero(parsed, options.columns)
+    } catch (err) {
+      return this.handleKyError(err)
+    }
   }
 
   getChapterList = async () => {
@@ -290,6 +329,41 @@ export class ApiClient {
     } catch (err) {
       return this.handleKyError(err)
     }
+  }
+}
+
+const BLANK_TO_ZERO_FIELDS = [
+  'total_events',
+  'months_since_last_action',
+  'total_points',
+  'total_interactions',
+] as const
+
+// If a column is requested but not set, this is due to use of "omitempty" in Go JSON serialization. The real value of
+// the field is still 0, so this fills in those missing values until we implement a more semantic serialization in Go.
+function fillActivistBlankNumericFieldsWithZero(
+  result: z.infer<typeof QueryActivistResult>,
+  requestedColumns: QueryActivistOptions['columns'],
+): z.infer<typeof QueryActivistResult> {
+  const requested = new Set(requestedColumns)
+  const fillableFields = BLANK_TO_ZERO_FIELDS.filter((field) =>
+    requested.has(field),
+  )
+  if (fillableFields.length === 0) {
+    return result
+  }
+
+  return {
+    ...result,
+    activists: result.activists.map((activist) => {
+      const normalized = { ...activist }
+      for (const field of fillableFields) {
+        if (normalized[field] === undefined) {
+          normalized[field] = 0
+        }
+      }
+      return normalized
+    }),
   }
 }
 

@@ -43,24 +43,33 @@ jobs:
           ./hooks/pre-commit
           cd ./server/src
           go test github.com/dxe/adb/...
-      - name: Deploy image to ECR (main)
+      - name: Configure AWS credentials
         if: ${{ github.event_name == 'push' }} # don't deploy branches
-        uses: kciter/aws-ecr-action@master
+        uses: aws-actions/configure-aws-credentials@v2
         with:
-          access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          account_id: ${{ secrets.AWS_ACCOUNT_ID }}
-          repo: dxe/adb
-          region: us-west-2
-          tags: latest,${{ github.sha }}
-      - name: Deploy image to ECR (next.js)
-        if: ${{ github.event_name == 'push' }} # don't deploy branches
-        uses: kciter/aws-ecr-action@master
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+      - name: Login to Amazon ECR
+        if: ${{ github.event_name == 'push' }}
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      - name: Build and push image to ECR (main)
+        if: ${{ github.event_name == 'push' && steps.login-ecr.outcome == 'success' }}
+        uses: docker/build-push-action@v5
         with:
-          access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          account_id: ${{ secrets.AWS_ACCOUNT_ID }}
-          repo: dxe/adb-next
-          region: us-west-2
-          dockerfile: Dockerfile.frontend-v2
-          tags: latest,${{ github.sha }}
+          context: .
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/dxe/adb:latest
+            ${{ steps.login-ecr.outputs.registry }}/dxe/adb:${{ github.sha }}
+      - name: Build and push image to ECR (next.js)
+        if: ${{ github.event_name == 'push' && steps.login-ecr.outcome == 'success' }}
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.frontend-v2
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/dxe/adb-next:latest
+            ${{ steps.login-ecr.outputs.registry }}/dxe/adb-next:${{ github.sha }}

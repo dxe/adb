@@ -1,6 +1,7 @@
 package model
 
 import (
+	"github.com/dxe/adb/pkg/shared"
 	"github.com/pkg/errors"
 )
 
@@ -54,6 +55,26 @@ func ValidateADBUser(user ADBUser) error {
 	return nil
 }
 
+func UserHasAnyRole(roles []string, user ADBUser) bool {
+	for i := 0; i < len(roles); i++ {
+		if UserHasRole(roles[i], user) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func UserHasRole(role string, user ADBUser) bool {
+	for _, r := range user.Roles {
+		if r == role {
+			return true
+		}
+	}
+
+	return false
+}
+
 // Interface for querying and updating users. This avoids a dependency on the persistence package which could create a
 // cyclical package reference.
 type UserRepository interface {
@@ -63,5 +84,5 @@ type UserRepository interface {
 	UpdateUser(user ADBUser) (ADBUser, error)
 }
 
-const DevTestUserId = 1
-const DevTestUserEmail = "test@example.org"
+const DevTestUserId = shared.DevTestUserId
+const DevTestUserEmail = shared.DevTestUserEmail

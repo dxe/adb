@@ -1,0 +1,26 @@
+# syntax=docker/dockerfile:1
+
+# Stage 1: build the CLI binary.
+FROM golang:latest AS builder
+
+WORKDIR /workspace/cli
+
+COPY pkg/go.mod /workspace/pkg/go.mod
+COPY cli/go.mod cli/go.sum ./
+RUN go mod download
+
+COPY pkg/ /workspace/pkg/
+COPY cli/ ./
+RUN CGO_ENABLED=0 GOOS=linux go build -o /adb .
+
+# Stage 2: minimal runtime image.
+FROM alpine:latest
+
+RUN apk --no-cache add ca-certificates tzdata
+
+RUN addgroup -S adb && adduser -S adb -G adb
+USER adb
+
+COPY --from=builder /adb /usr/local/bin/adb
+
+ENTRYPOINT ["adb"]

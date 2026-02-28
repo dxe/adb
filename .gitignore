@@ -1,4 +1,5 @@
 *.test
+.claude
 .DS_Store
 .env
 .idea
@@ -6,12 +7,14 @@
 adb
 adb-config
 adb.db
+cli/adb
 frontend/dist
 frontend/node_modules
 frontend-v2/node_modules
 frontend-v2/.next
 frontend-v2/out
 frontend-v2/tsconfig.tsbuildinfo
+frontend-v2/next-env.d.ts
 npm-debug.log
 server/src/__debug*
 server/src/**/test-output

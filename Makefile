@@ -15,10 +15,10 @@ NVM_SCRIPT := $(shell \
 # Please keep in sync with launch.json and Dockerfiles
 VUE_FRONTEND_NODE_VERSION := 16
 # Please keep in sync with launch.json and Dockerfiles
-REACT_FRONTEND_NODE_VERSION := 20
+REACT_FRONTEND_NODE_VERSION := 25
 
 # Runs the application (builds Vue.js files, starts Next.js dev server, starts Go server).
-# As of January 2025, upgrading past Node 16 breaks old Vue dependencies, and Node 20 is required to use the latest version of React.
+# As of January 2025, upgrading past Node 16 breaks old Vue dependencies.
 run_all:
 	. $(NVM_SCRIPT) && \
 	export NEXT_PUBLIC_API_BASE_URL=http://localhost:8080; \
@@ -47,8 +47,7 @@ watch:
 # Wipe and re-create the dev databases. See the readme for more
 # details.
 dev_db:
-	export DXE_DEV_EMAIL=test-dev@directactioneverywhere.com && \
-	cd server/scripts/create_db_wrapper && ./create_db_wrapper.sh
+	cd cli && go run . db create --dev-email="${DXE_DEV_EMAIL:-test-dev@directactioneverywhere.com}"
 
 # Install all deps for this project.
 # Note: PNPM must be installed separately for each version of NPM used, since it is installed within each NPM installation.
@@ -57,7 +56,9 @@ deps:
 	. $(NVM_SCRIPT) && nvm i 22 && npm i -g pnpm && pnpm i
 	. $(NVM_SCRIPT) && cd frontend && nvm i $(VUE_FRONTEND_NODE_VERSION) && npm i --legacy-peer-deps
 	. $(NVM_SCRIPT) && cd frontend-v2 && nvm i $(REACT_FRONTEND_NODE_VERSION) && npm i -g pnpm && pnpm i
+	cd pkg && go mod download
 	cd server/src && go get -t github.com/dxe/adb/...
+	cd cli && go mod download
 	go install -tags 'mysql' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 
 # Run all tests
@@ -66,7 +67,8 @@ test:
 
 # Clean all built outputs
 clean:
-	rm -f server/adb
+	rm -f cli/adb
+	rm -f server/adb-server
 	rm -rf frontend/dist
 	rm -rf frontend-v2/out
 
@@ -90,6 +92,7 @@ docker_shell:
 prod_build:
 	docker build . -t dxe/adb
 	docker build . -f Dockerfile.frontend-v2 -t dxe/adb-next
+	docker build . -f Dockerfile.cli -t dxe/adb-cli
 
 # Reformat source files.
 # Keep in sync with hooks/pre-commit.
