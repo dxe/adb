@@ -56,8 +56,9 @@ function decompose(absDays: number): { amount: number; unit: DateUnit } {
   return { amount: absDays, unit: 'days' }
 }
 
-/** Format an absolute day count as "6 months", "2 weeks", or "45 days". */
+/** Format an absolute day count as "6 months", "2 weeks", "45 days", or "today". */
 function formatDays(absDays: number): string {
+  if (absDays === 0) return 'today'
   const { amount, unit } = decompose(absDays)
   if (amount === 1) return `1 ${unit.slice(0, -1)}`
   return `${amount} ${unit}`
@@ -127,15 +128,19 @@ function formatDateRange(
 
   let rangeText: string | undefined
 
-  // Both relative
+  // Both relative — format each side independently so "today" isn't followed by "ago"
   if (gteRel && ltRel) {
     const gteAbs = Math.abs(parseInt(gte!, 10))
     const ltAbs = Math.abs(parseInt(lt!, 10))
-    rangeText = `${formatDays(ltAbs)} – ${formatDays(gteAbs)} ago`
+    const gteStr = gteAbs === 0 ? 'today' : `${formatDays(gteAbs)} ago`
+    const ltStr = ltAbs === 0 ? 'today' : `${formatDays(ltAbs)} ago`
+    rangeText = `${gteStr} – ${ltStr}`
   } else if (gteRel && !lt) {
-    rangeText = `Last ${formatDays(Math.abs(parseInt(gte!, 10)))}`
+    const gteAbs = Math.abs(parseInt(gte!, 10))
+    rangeText = gteAbs === 0 ? 'Today onward' : `Last ${formatDays(gteAbs)}`
   } else if (ltRel && !gte) {
-    rangeText = `Over ${formatDays(Math.abs(parseInt(lt!, 10)))} ago`
+    const ltAbs = Math.abs(parseInt(lt!, 10))
+    rangeText = ltAbs === 0 ? 'Before today' : `Over ${formatDays(ltAbs)} ago`
   } else if (gteRel || ltRel) {
     // Mixed: format each side independently
     const parts: string[] = []
@@ -239,19 +244,19 @@ export function DateRangeFilter({
   const gteRel = parseRelativeInput(gte)
   const ltRel = parseRelativeInput(lt)
 
-  const handleRelGte = (amount: number, unit: DateUnit) =>
+  const handleRelGte = (amount: number | undefined, unit: DateUnit) =>
     setDraft(
       buildValue(
-        amount > 0 ? buildRelativeValue(amount, unit) : undefined,
+        amount != null ? buildRelativeValue(amount, unit) : undefined,
         lt,
         orNull,
       ),
     )
-  const handleRelLt = (amount: number, unit: DateUnit) =>
+  const handleRelLt = (amount: number | undefined, unit: DateUnit) =>
     setDraft(
       buildValue(
         gte,
-        amount > 0 ? buildRelativeValue(amount, unit) : undefined,
+        amount != null ? buildRelativeValue(amount, unit) : undefined,
         orNull,
       ),
     )
@@ -379,18 +384,22 @@ function RelativeInput({
   label: string
   amount?: number
   unit: DateUnit
-  onChange: (amount: number, unit: DateUnit) => void
+  onChange: (amount: number | undefined, unit: DateUnit) => void
 }) {
   const [localUnit, setLocalUnit] = useState<DateUnit>(unit)
 
   const handleAmountChange = (newAmount: string) => {
+    if (newAmount === '') {
+      onChange(undefined, localUnit)
+      return
+    }
     const n = parseInt(newAmount, 10)
-    onChange(isNaN(n) || n < 0 ? 0 : n, localUnit)
+    onChange(isNaN(n) || n < 0 ? undefined : n, localUnit)
   }
 
   const handleUnitChange = (newUnit: DateUnit) => {
     setLocalUnit(newUnit)
-    if (amount && amount > 0) {
+    if (amount != null) {
       onChange(amount, newUnit)
     }
   }
