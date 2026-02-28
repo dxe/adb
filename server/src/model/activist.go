@@ -1667,7 +1667,7 @@ type ActivistBasicInfoJSON struct {
 	Name          string `json:"name"`
 	Email         bool   `json:"email"`
 	Phone         bool   `json:"phone"`
-	LastUpdated   int64  `json:"last_updated"`   // Unix timestamp in seconds
+	LastUpdated   int64  `json:"last_updated"`    // Unix timestamp in seconds
 	LastEventDate int64  `json:"last_event_date"` // Unix timestamp in seconds, 0 if no events
 }
 

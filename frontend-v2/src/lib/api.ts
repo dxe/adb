@@ -89,7 +89,7 @@ export const ActivistListBasicResp = z.object({
       name: z.string(),
       email: z.boolean(),
       phone: z.boolean(),
-      last_updated: z.number(),    // Unix timestamp in seconds
+      last_updated: z.number(), // Unix timestamp in seconds
       last_event_date: z.number(), // Unix timestamp in seconds, 0 if no events
     }),
   ),

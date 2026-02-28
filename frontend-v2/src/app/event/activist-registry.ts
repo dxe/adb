@@ -5,7 +5,7 @@ export type ActivistRecord = {
   name: string
   email: boolean
   phone: boolean
-  lastUpdated: number   // Unix timestamp in milliseconds
+  lastUpdated: number // Unix timestamp in milliseconds
   lastEventDate: number // Unix timestamp in milliseconds, 0 if no events
 }
 

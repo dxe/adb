@@ -4,11 +4,7 @@ import { cn } from '@/lib/utils'
 import { MailX, PhoneMissed, UserRoundPlus, Check } from 'lucide-react'
 import { AnyFieldApi } from '@tanstack/react-form'
 import { ActivistRegistry } from './activist-registry'
-import {
-  Popover,
-  PopoverContent,
-  PopoverAnchor,
-} from '@/components/ui/popover'
+import { Popover, PopoverContent, PopoverAnchor } from '@/components/ui/popover'
 
 type AttendeeInputFieldProps = {
   field: AnyFieldApi
@@ -158,7 +154,9 @@ export const AttendeeInputField = ({
                   {hasAllInfo && <Check className="text-green-500" />}
                   {isNewName && <UserRoundPlus className="text-purple-500" />}
                   {isMissingEmail && <MailX className="text-orange-500" />}
-                  {isMissingPhone && <PhoneMissed className="text-orange-500" />}
+                  {isMissingPhone && (
+                    <PhoneMissed className="text-orange-500" />
+                  )}
                 </div>
               </div>
             </PopoverAnchor>
