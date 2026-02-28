@@ -66,6 +66,30 @@ export function ActivistFilters({
   const [visibleFilters, setVisibleFilters] = useState<Set<string>>(new Set())
   const [addFilterOpen, setAddFilterOpen] = useState(false)
 
+  // Prune visibleFilters entries that have no corresponding filter value when
+  // filters change (e.g. navigation). Uses the React "adjust state during
+  // render" pattern instead of useEffect to avoid cascading renders.
+  const [prevFilters, setPrevFilters] = useState(filters)
+  if (filters !== prevFilters) {
+    setPrevFilters(filters)
+    let pruned = false
+    for (const key of visibleFilters) {
+      if (filters[key as OptionalFilterKey] === undefined) {
+        pruned = true
+        break
+      }
+    }
+    if (pruned) {
+      const next = new Set<string>()
+      for (const key of visibleFilters) {
+        if (filters[key as OptionalFilterKey] !== undefined) {
+          next.add(key)
+        }
+      }
+      setVisibleFilters(next)
+    }
+  }
+
   const isFilterVisible = useCallback(
     (key: OptionalFilterKey) =>
       filters[key] !== undefined || visibleFilters.has(key),

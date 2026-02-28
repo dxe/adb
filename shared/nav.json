@@ -153,12 +153,12 @@
         },
         {
           "label": "New Activists Pending Workshop",
-          "href": "/v2/activists?activistLevel=Supporter&training=-training0&firstEvent=-180..&columns=activist_level,training0,first_event,source",
+          "href": "/v2/activists?activistLevel=Supporter&training=-training0&firstEvent=-180..&columns=activist_level,first_event,training0,source",
           "page": "ActivistList"
         },
         {
           "label": "Community Prospects",
-          "href": "/v2/activists?source=form,dxe-signup,arc-signup,petition,eventbrite,-application&activistLevel=Supporter&totalInteractions=..1&lastEvent=..-360|null&columns=source,interest_date,total_interactions,last_event",
+          "href": "/v2/activists?source=form,dxe-signup,arc-signup,petition,eventbrite,-application&activistLevel=Supporter&totalInteractions=..1&lastEvent=..-360|null&columns=last_event,total_interactions,source,interest_date",
           "page": "ActivistList"
         },
         {
