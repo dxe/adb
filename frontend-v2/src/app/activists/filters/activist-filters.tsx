@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import {
@@ -65,13 +65,6 @@ export function ActivistFilters({
   // Tracks optional filters added from the menu that may not yet have values.
   const [visibleFilters, setVisibleFilters] = useState<Set<string>>(new Set())
   const [addFilterOpen, setAddFilterOpen] = useState(false)
-  // Set on the render when a filter is added from the menu so its popover
-  // mounts with defaultOpen={true}. Cleared on the next render cycle.
-  const [lastAddedFilter, setLastAddedFilter] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (lastAddedFilter) setLastAddedFilter(null)
-  }, [lastAddedFilter])
 
   const isFilterVisible = useCallback(
     (key: OptionalFilterKey) =>
@@ -80,9 +73,13 @@ export function ActivistFilters({
   )
 
   const showFilter = useCallback((key: string) => {
-    setVisibleFilters((prev) => new Set(prev).add(key))
-    setLastAddedFilter(key)
+    // Close the popover first, then set filters on the next frame. The popover has a CSS exit animation, so it stays
+    // mounted while it fades out. If the filter chips shift layout in the same render, the popover follows its trigger,
+    // causing a flicker.
     setAddFilterOpen(false)
+    requestAnimationFrame(() => {
+      setVisibleFilters((prev) => new Set(prev).add(key))
+    })
   }, [])
 
   /** onChange handler for optional filters — clears visibility when value is removed. */
@@ -140,7 +137,6 @@ export function ActivistFilters({
             label="First event"
             value={filters.firstEvent}
             onChange={(v) => optionalOnChange('firstEvent', v)}
-            defaultOpen={lastAddedFilter === 'firstEvent'}
             removable
           />
         )}
@@ -150,7 +146,6 @@ export function ActivistFilters({
             label="Total events"
             value={filters.totalEvents}
             onChange={(v) => optionalOnChange('totalEvents', v)}
-            defaultOpen={lastAddedFilter === 'totalEvents'}
             removable
           />
         )}
@@ -159,7 +154,6 @@ export function ActivistFilters({
           <TrainingFilter
             value={filters.training}
             onChange={(v) => optionalOnChange('training', v)}
-            defaultOpen={lastAddedFilter === 'training'}
             removable
           />
         )}
@@ -168,7 +162,6 @@ export function ActivistFilters({
           <SourceFilterChip
             value={filters.source}
             onChange={(v) => optionalOnChange('source', v)}
-            defaultOpen={lastAddedFilter === 'source'}
             removable
           />
         )}
@@ -178,7 +171,6 @@ export function ActivistFilters({
             label="Interest date"
             value={filters.interestDate}
             onChange={(v) => optionalOnChange('interestDate', v)}
-            defaultOpen={lastAddedFilter === 'interestDate'}
             removable
           />
         )}
@@ -188,7 +180,6 @@ export function ActivistFilters({
             label="Total interactions"
             value={filters.totalInteractions}
             onChange={(v) => optionalOnChange('totalInteractions', v)}
-            defaultOpen={lastAddedFilter === 'totalInteractions'}
             removable
           />
         )}
@@ -202,7 +193,6 @@ export function ActivistFilters({
               { value: 'me', label: 'Assigned to me' },
               { value: 'any', label: 'Any assignee' },
             ]}
-            defaultOpen={lastAddedFilter === 'assignedTo'}
             removable
           />
         )}
@@ -217,7 +207,6 @@ export function ActivistFilters({
               { value: 'due', label: 'Due' },
               { value: 'upcoming', label: 'Upcoming' },
             ]}
-            defaultOpen={lastAddedFilter === 'followups'}
             removable
           />
         )}
@@ -231,7 +220,6 @@ export function ActivistFilters({
               { value: 'chapterMember', label: 'Chapter Member' },
               { value: 'organizer', label: 'Organizer' },
             ]}
-            defaultOpen={lastAddedFilter === 'prospect'}
             removable
           />
         )}
@@ -302,11 +290,16 @@ export function ActivistFilters({
                   <button
                     className="flex w-full items-center rounded px-2 py-1.5 text-sm hover:bg-muted transition-colors text-left"
                     onClick={() => {
-                      onFiltersChange({
-                        ...filters,
-                        searchAcrossChapters: true,
-                      })
+                      // Close the popover first, then set filters on the next frame. The popover has a CSS exit
+                      // animation, so it stays mounted while it fades out. If the filter chips shift layout in the same
+                      // render, the popover follows its trigger, causing a flicker.
                       setAddFilterOpen(false)
+                      requestAnimationFrame(() => {
+                        onFiltersChange({
+                          ...filters,
+                          searchAcrossChapters: true,
+                        })
+                      })
                     }}
                   >
                     Search across chapters
@@ -316,8 +309,13 @@ export function ActivistFilters({
                   <button
                     className="flex w-full items-center rounded px-2 py-1.5 text-sm hover:bg-muted transition-colors text-left"
                     onClick={() => {
-                      onFiltersChange({ ...filters, includeHidden: true })
+                      // Close the popover first, then set filters on the next frame. The popover has a CSS exit
+                      // animation, so it stays mounted while it fades out. If the filter chips shift layout in the same
+                      // render, the popover follows its trigger, causing a flicker.
                       setAddFilterOpen(false)
+                      requestAnimationFrame(() => {
+                        onFiltersChange({ ...filters, includeHidden: true })
+                      })
                     }}
                   >
                     Include hidden

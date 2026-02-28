@@ -44,10 +44,10 @@ export function SelectFilterChip({
           onValueChange={(v) => onChange(v === '_none' ? undefined : v)}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Not filtered" />
+            <SelectValue placeholder="" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="_none">Not filtered</SelectItem>
+            <SelectItem value="_none">&nbsp;</SelectItem>
             {options.map((opt) => (
               <SelectItem key={opt.value} value={opt.value}>
                 {opt.label}
