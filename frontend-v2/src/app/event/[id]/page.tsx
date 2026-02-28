@@ -3,6 +3,7 @@ import {
   HydrationBoundary,
   QueryClient,
 } from '@tanstack/react-query'
+import { notFound } from 'next/navigation'
 import { ContentWrapper } from '@/app/content-wrapper'
 import { AuthedPageLayout } from '@/app/authed-page-layout'
 import { EventForm } from '../event-form'
@@ -16,7 +17,10 @@ export default async function EditEventPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const eventId = Number(id)
+  const eventId = parseInt(id)
+  if (Number.isNaN(eventId)) {
+    notFound()
+  }
   const apiClient = new ApiClient(await getCookies())
   const queryClient = new QueryClient()
 

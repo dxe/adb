@@ -62,7 +62,14 @@ export async function middleware(request: NextRequest) {
 
   const cookieHeader = request.headers.get('cookie') || ''
 
-  const session = await getCachedSession(cookieHeader)
+  let session
+  try {
+    session = await getCachedSession(cookieHeader)
+  } catch (error) {
+    console.error('Session fetch failed - redirecting to login:', error)
+    const loginUrl = new URL('/login', request.url)
+    return NextResponse.redirect(loginUrl)
+  }
 
   if (!session.user) {
     const loginUrl = new URL('/login', request.url)

@@ -3,6 +3,7 @@ import {
   HydrationBoundary,
   QueryClient,
 } from '@tanstack/react-query'
+import { notFound } from 'next/navigation'
 import { AuthedPageLayout } from '@/app/authed-page-layout'
 import { Navbar } from '@/components/nav'
 import { ContentWrapper } from '@/app/content-wrapper'
@@ -16,7 +17,10 @@ export default async function EditUserPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const userId = Number(id)
+  const userId = parseInt(id)
+  if (Number.isNaN(userId)) {
+    notFound()
+  }
   const apiClient = new ApiClient(await getCookies())
   const queryClient = new QueryClient()
 
