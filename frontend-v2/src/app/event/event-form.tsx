@@ -112,11 +112,6 @@ export const EventForm = ({ mode }: EventFormProps) => {
     onSuccess: (result, variables) => {
       toast.success(`${isConnection ? 'Connection' : 'Event'} saved!`)
 
-      // Invalidate activist registry to refresh sort order with new event data
-      queryClient.invalidateQueries({
-        queryKey: [API_PATH.ACTIVIST_LIST_BASIC],
-      })
-
       // TODO(jh): once the vue page is removed, update the api to just
       // return a json payload w/ the event id instead of a redirect.
       // for now, we'll extract the id from the redirect url to stay

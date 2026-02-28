@@ -77,6 +77,7 @@ export const AttendeeInputField = ({
       }
       case 'Escape': {
         setSuggestions([])
+        setSelectedSuggestionIndex(-1)
         setOpen(false)
         return
       }
@@ -148,6 +149,7 @@ export const AttendeeInputField = ({
                   onBlur={() => {
                     field.handleBlur()
                     setSuggestions([])
+                    setSelectedSuggestionIndex(-1)
                   }}
                 />
                 <div className="right-0 top-0 bottom-0 h-full pointer-events-none absolute flex gap-2 items-center p-1.5 opacity-80">

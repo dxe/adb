@@ -33,6 +33,19 @@ export class ActivistRegistry {
   }
 
   /**
+   * Sorts activists in-place by lastEventDate descending (most recent first).
+   * Activists with no events (lastEventDate === 0) are placed at the end.
+   */
+  private sortActivists(): void {
+    this.activists.sort((a, b) => {
+      if (a.lastEventDate === 0 && b.lastEventDate === 0) return 0
+      if (a.lastEventDate === 0) return 1 // a has no events, move to end
+      if (b.lastEventDate === 0) return -1 // b has no events, move to end
+      return b.lastEventDate - a.lastEventDate // Descending (newest first)
+    })
+  }
+
+  /**
    * Loads activists from IndexedDB storage into memory.
    * Call once after construction, before first use of the registry.
    * @throws Error if storage is not configured
@@ -46,6 +59,7 @@ export class ActivistRegistry {
 
     const stored = await this.storage.getAllActivists()
     this.activists = stored
+    this.sortActivists()
     this.activistsByName = new Map(stored.map((a) => [a.name, a]))
     this.activistsById = new Map(stored.map((a) => [a.id, a]))
   }
@@ -78,6 +92,9 @@ export class ActivistRegistry {
       this.activistsByName.set(activist.name, activist)
       this.activistsById.set(activist.id, activist)
     }
+
+    // Re-sort after batch updates to maintain sort order
+    this.sortActivists()
 
     // Write through to storage if configured
     await this.storage?.saveActivists(newActivists)
@@ -148,16 +165,9 @@ export class ActivistRegistry {
       return []
     }
 
+    // this.activists is pre-sorted by lastEventDate descending
     return this.activists
       .filter(({ name }) => nameFilter(name, input))
-      .sort((a, b) => {
-        // Sort by lastEventDate descending (most recent first)
-        // 0 sorts to end (activists with no events)
-        if (a.lastEventDate === 0 && b.lastEventDate === 0) return 0
-        if (a.lastEventDate === 0) return 1 // a has no events, move to end
-        if (b.lastEventDate === 0) return -1 // b has no events, move to end
-        return b.lastEventDate - a.lastEventDate // Descending (newest first)
-      })
       .slice(0, maxResults)
       .map((a) => a.name)
   }
