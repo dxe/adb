@@ -120,7 +120,7 @@ export function useActivistRegistry() {
 
         // Only update if profile data OR event data is newer (handles out-of-order responses)
         if (incomingTimestamp > existingTimestamp || hasNewAttendanceData) {
-          const { last_updated, last_event_date, ...activistData } = activist
+          const { last_event_date, ...activistData } = activist
           activistsToUpdate.push({
             ...activistData,
             lastUpdated: incomingTimestamp,

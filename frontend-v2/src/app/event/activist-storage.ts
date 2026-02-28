@@ -38,7 +38,21 @@ export class ActivistStorage {
         const request = indexedDB.open(DB_NAME, DB_VERSION)
 
         request.onerror = () => reject(request.error)
-        request.onsuccess = () => resolve(request.result)
+        request.onsuccess = () => {
+          const db = request.result
+          // Close connection immediately if another tab needs to upgrade
+          db.onversionchange = () => db.close()
+          resolve(db)
+        }
+
+        // Reject if upgrade is blocked by another tab with an open connection
+        request.onblocked = () => {
+          reject(
+            new Error(
+              `Database upgrade to version ${DB_VERSION} blocked by another tab. Please close other tabs and refresh.`,
+            ),
+          )
+        }
 
         request.onupgradeneeded = (event) => {
           const db = (event.target as IDBOpenDBRequest).result

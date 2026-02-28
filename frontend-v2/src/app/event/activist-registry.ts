@@ -73,10 +73,10 @@ export class ActivistRegistry {
       return
     }
 
+    const indexById = new Map(this.activists.map((a, i) => [a.id, i]))
+
     for (const activist of newActivists) {
-      const existingIndex = this.activists.findIndex(
-        (a) => a.id === activist.id,
-      )
+      const existingIndex = indexById.get(activist.id) ?? -1
 
       if (existingIndex >= 0) {
         // Update existing activist (handles renames properly)
@@ -90,6 +90,7 @@ export class ActivistRegistry {
       } else {
         // Add new activist
         this.activists.push(activist)
+        indexById.set(activist.id, this.activists.length - 1)
       }
 
       // Update indexes

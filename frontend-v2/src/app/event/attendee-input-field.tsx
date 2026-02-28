@@ -63,16 +63,20 @@ export const AttendeeInputField = ({
     switch (e.key) {
       case 'ArrowDown': {
         e.preventDefault()
-        setSelectedSuggestionIndex((prev) =>
-          prev === suggestions.length - 1 ? 0 : prev + 1,
-        )
+        if (suggestions.length > 0) {
+          setSelectedSuggestionIndex((prev) =>
+            prev === suggestions.length - 1 ? 0 : prev + 1,
+          )
+        }
         return
       }
       case 'ArrowUp': {
         e.preventDefault()
-        setSelectedSuggestionIndex((prev) =>
-          prev === 0 ? suggestions.length - 1 : prev - 1,
-        )
+        if (suggestions.length > 0) {
+          setSelectedSuggestionIndex((prev) =>
+            prev === 0 ? suggestions.length - 1 : prev - 1,
+          )
+        }
         return
       }
       case 'Escape': {
@@ -88,7 +92,8 @@ export const AttendeeInputField = ({
           return
         }
         const selectedValue =
-          selectedSuggestionIndex >= 0
+          selectedSuggestionIndex >= 0 &&
+          selectedSuggestionIndex < suggestions.length
             ? suggestions[selectedSuggestionIndex]
             : trimmedValue
         handleSelectSuggestion(selectedValue)
@@ -104,7 +109,8 @@ export const AttendeeInputField = ({
         }
         e.preventDefault()
         const selectedValue =
-          selectedSuggestionIndex >= 0
+          selectedSuggestionIndex >= 0 &&
+          selectedSuggestionIndex < suggestions.length
             ? suggestions[selectedSuggestionIndex]
             : trimmedValue
         handleSelectSuggestion(selectedValue)
