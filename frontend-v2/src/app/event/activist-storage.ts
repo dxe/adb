@@ -13,7 +13,7 @@ export interface StoredActivist {
   name: string
   email: boolean
   phone: boolean
-  lastUpdated: number   // Unix timestamp in milliseconds
+  lastUpdated: number // Unix timestamp in milliseconds
   lastEventDate: number // Unix timestamp in milliseconds, 0 if no events
 }
 
@@ -53,7 +53,7 @@ export class ActivistStorage {
             }
             if (db.objectStoreNames.contains(METADATA_STORE)) {
               const metadataStore = transaction.objectStore(METADATA_STORE)
-              metadataStore.clear() // Clear lastSyncTime to force full sync
+              metadataStore.clear()
             }
           }
 
@@ -112,9 +112,6 @@ export class ActivistStorage {
 
   /**
    * Gets all activists from IndexedDB.
-   *
-   * Note: Could be enhanced to sort by lastUpdated (most recent first) to prioritize
-   * recently active activists in autocomplete, especially useful with partial syncs.
    */
   async getAllActivists(): Promise<StoredActivist[]> {
     const db = await this.openDB()
