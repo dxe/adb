@@ -40,17 +40,26 @@ export function FilterChip({
 
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen)
-    if (clearingRef.current) {
-      clearingRef.current = false
-      return
+    if (newOpen) {
+      // Always sync draft from value when opening.
+      onOpenChange?.(true)
+    } else if (!clearingRef.current) {
+      // Commit draft on normal close, but not when × was clicked.
+      onOpenChange?.(false)
     }
-    onOpenChange?.(newOpen)
+    clearingRef.current = false
   }
 
   const handleClear = () => {
     clearingRef.current = true
     setOpen(false)
     onClear()
+    // If the popover was already closed, Radix won't call handleOpenChange
+    // to consume clearingRef. Reset it asynchronously so it doesn't block
+    // the next open.
+    requestAnimationFrame(() => {
+      clearingRef.current = false
+    })
   }
 
   return (

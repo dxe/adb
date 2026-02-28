@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/select'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Checkbox } from '@/components/ui/checkbox'
+import { CircleHelp } from 'lucide-react'
 import { FilterChip } from './filter-chip'
 import { useDraftFilter } from './filter-utils'
 import { format } from 'date-fns'
@@ -356,6 +357,11 @@ export function DateRangeFilter({
               >
                 {nullLabel}
               </label>
+              {bothBoundsSet && (
+                <span title="This option is only available for open-ended ranges (leave one bound empty).">
+                  <CircleHelp className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                </span>
+              )}
             </div>
           )
         })()}
