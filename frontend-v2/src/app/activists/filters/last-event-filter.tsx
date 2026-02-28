@@ -8,5 +8,12 @@ interface LastEventFilterProps {
 }
 
 export function LastEventFilter({ value, onChange }: LastEventFilterProps) {
-  return <DateRangeFilter label="Last event" value={value} onChange={onChange} />
+  return (
+    <DateRangeFilter
+      label="Last event"
+      value={value}
+      onChange={onChange}
+      nullLabel="Include activists with no events"
+    />
+  )
 }

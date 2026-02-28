@@ -62,6 +62,9 @@ func (f *DateRangeFilter) Validate() error {
 		if !f.Gte.Time.Before(f.Lt.Time) {
 			return fmt.Errorf("invalid date range")
 		}
+		if f.OrNull {
+			return fmt.Errorf("or_null is only valid for open-ended ranges (one bound must be missing)")
+		}
 	}
 	return nil
 }

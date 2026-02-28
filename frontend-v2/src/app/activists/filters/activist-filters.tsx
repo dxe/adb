@@ -162,6 +162,7 @@ export function ActivistFilters({
             value={filters.firstEvent}
             onChange={(v) => optionalOnChange('firstEvent', v)}
             removable
+            nullLabel="Include activists with no events"
           />
         )}
 
@@ -196,6 +197,7 @@ export function ActivistFilters({
             value={filters.interestDate}
             onChange={(v) => optionalOnChange('interestDate', v)}
             removable
+            nullLabel="Include activists who never submitted the interest form"
           />
         )}
 

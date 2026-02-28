@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { DatePicker } from '@/components/ui/date-picker'
+import { Checkbox } from '@/components/ui/checkbox'
 import { FilterChip } from './filter-chip'
 import { useDraftFilter } from './filter-utils'
 import { format } from 'date-fns'
@@ -23,6 +24,8 @@ interface DateRangeFilterProps {
   onChange: (value?: string) => void
   defaultOpen?: boolean
   removable?: boolean
+  /** Label for the "or null" checkbox, e.g. "Include activists with no events". */
+  nullLabel?: string
 }
 
 // --- Date helpers ---
@@ -104,10 +107,12 @@ function buildValue(
   lt?: string,
   orNull?: boolean,
 ): string | undefined {
-  if (!gte && !lt && !orNull) return undefined
-  if (!gte && !lt && orNull) return 'null'
+  // "or null" only makes sense for open-ended ranges (one bound missing).
+  const effectiveOrNull = orNull && !(gte && lt)
+  if (!gte && !lt && !effectiveOrNull) return undefined
+  if (!gte && !lt && effectiveOrNull) return 'null'
   const range = `${gte || ''}..${lt || ''}`
-  return orNull ? `${range}|null` : range
+  return effectiveOrNull ? `${range}|null` : range
 }
 
 // --- Chip summary formatting ---
@@ -206,6 +211,7 @@ export function DateRangeFilter({
   onChange,
   defaultOpen,
   removable,
+  nullLabel,
 }: DateRangeFilterProps) {
   const [draft, setDraft, onOpenChange] = useDraftFilter(value, onChange)
 
@@ -326,6 +332,28 @@ export function DateRangeFilter({
             />
           </>
         )}
+
+        {nullLabel && (() => {
+          const bothBoundsSet = !!gte && !!lt
+          return (
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="or-null"
+                checked={orNull && !bothBoundsSet}
+                disabled={bothBoundsSet}
+                onCheckedChange={(checked) =>
+                  setDraft(buildValue(gte, lt, !!checked))
+                }
+              />
+              <label
+                htmlFor="or-null"
+                className={`text-sm ${bothBoundsSet ? 'text-muted-foreground' : ''}`}
+              >
+                {nullLabel}
+              </label>
+            </div>
+          )
+        })()}
 
         {hasDraft && (
           <Button
