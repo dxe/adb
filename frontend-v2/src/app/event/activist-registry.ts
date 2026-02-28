@@ -69,6 +69,10 @@ export class ActivistRegistry {
    * If storage is configured, persists updates to IndexedDB.
    */
   async mergeActivists(newActivists: ActivistRecord[]): Promise<void> {
+    if (newActivists.length === 0) {
+      return
+    }
+
     for (const activist of newActivists) {
       const existingIndex = this.activists.findIndex(
         (a) => a.id === activist.id,

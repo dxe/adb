@@ -1720,7 +1720,7 @@ HAVING (
 	a.name_updated >= ? OR
 	a.email_updated >= ? OR
 	a.phone_updated >= ? OR
-	MAX(e.date) >= ?
+	MAX(e.date) >= DATE(?)
 )`
 	}
 
