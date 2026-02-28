@@ -76,17 +76,26 @@ export function useActivistRegistry() {
 
   // Handle query errors
   useEffect(() => {
+    let mounted = true
+
     if (query.isError) {
       console.error('[Registry] Server fetch failed:', query.error)
       toast.error(
         'Failed to fetch activist data. Information may be out of date.',
       )
-      setIsServerLoaded(true) // Mark as loaded to unblock UI (with stale data)
+      if (mounted) setIsServerLoaded(true) // Mark as loaded to unblock UI (with stale data)
     }
-  }, [query.isError, query.error])
+
+    return () => {
+      mounted = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- query.error is only read when query.isError is true
+  }, [query.isError])
 
   // Merge server data when it arrives
   useEffect(() => {
+    let mounted = true
+
     if (!query.data) return
 
     const processServerData = async () => {
@@ -101,19 +110,22 @@ export function useActivistRegistry() {
       const activistsToUpdate: ActivistRecord[] = []
 
       for (const activist of newActivists) {
-        // Server provides Unix timestamp in seconds, convert to milliseconds
         const incomingTimestamp = activist.last_updated * 1000
         const existingActivist = registryRef.current.getActivistById(
           activist.id,
         )
         const existingTimestamp = existingActivist?.lastUpdated || 0
+        const hasNewAttendanceData =
+          activist.last_event_date * 1000 >
+          (existingActivist?.lastEventDate || 0)
 
-        // Only update if this data is newer (handles out-of-order responses)
-        if (incomingTimestamp > existingTimestamp) {
-          const { last_updated, ...activistData } = activist
+        // Only update if profile data OR event data is newer (handles out-of-order responses)
+        if (incomingTimestamp > existingTimestamp || hasNewAttendanceData) {
+          const { last_event_date, ...activistData } = activist
           activistsToUpdate.push({
             ...activistData,
             lastUpdated: incomingTimestamp,
+            lastEventDate: last_event_date * 1000,
           })
         }
       }
@@ -126,7 +138,7 @@ export function useActivistRegistry() {
       // Update last sync timestamp
       await registryRef.current.setLastSyncTime(new Date().toISOString())
 
-      setIsServerLoaded(true)
+      if (mounted) setIsServerLoaded(true)
     }
 
     processServerData().catch((err) => {
@@ -134,8 +146,12 @@ export function useActivistRegistry() {
       toast.error(
         'Failed to sync activist data. Information may be out of date.',
       )
-      setIsServerLoaded(true) // Mark as loaded to unblock UI
+      if (mounted) setIsServerLoaded(true) // Mark as loaded to unblock UI
     })
+
+    return () => {
+      mounted = false
+    }
   }, [query.data])
 
   return {

@@ -1430,7 +1430,7 @@ func (c MainController) ActivistListBasicHandler(w http.ResponseWriter, r *http.
 	chapter := c.getAuthedADBChapter(r)
 
 	// Parse optional modified_since query parameter (RFC3339 format)
-	var modifiedSince *time.Time
+	var modifiedSince time.Time
 	modifiedSinceStr := r.URL.Query().Get("modified_since")
 	if modifiedSinceStr != "" {
 		parsed, err := time.Parse(time.RFC3339, modifiedSinceStr)
@@ -1438,7 +1438,7 @@ func (c MainController) ActivistListBasicHandler(w http.ResponseWriter, r *http.
 			http.Error(w, "Invalid modified_since parameter. Use RFC3339 format (e.g., 2024-01-15T10:30:00Z)", http.StatusBadRequest)
 			return
 		}
-		modifiedSince = &parsed
+		modifiedSince = parsed
 	}
 
 	activists := model.GetActivistListBasicJSON(c.db, chapter, modifiedSince)

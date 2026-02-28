@@ -6,6 +6,7 @@ export type ActivistRecord = {
   email: boolean
   phone: boolean
   lastUpdated: number // Unix timestamp in milliseconds
+  lastEventDate: number // Unix timestamp in milliseconds, 0 if no events
 }
 
 /**
@@ -13,6 +14,10 @@ export type ActivistRecord = {
  *
  * Reads are synchronous (from memory) for fast autocomplete/filtering.
  * Writes are async and automatically persist to IndexedDB when storage is configured.
+ *
+ * @param storage - Optional IndexedDB storage for persistence.
+ *                  When provided, enables automatic write-through caching.
+ *                  When omitted, registry operates in memory-only mode.
  */
 export class ActivistRegistry {
   private activists: ActivistRecord[]
@@ -28,8 +33,21 @@ export class ActivistRegistry {
   }
 
   /**
-   * Load activists from IndexedDB storage into memory.
-   * Should be called once on initialization.
+   * Sorts activists in-place by lastEventDate descending (most recent first).
+   * Activists with no events (lastEventDate === 0) are placed at the end.
+   */
+  private sortActivists(): void {
+    this.activists.sort((a, b) => {
+      if (a.lastEventDate === 0 && b.lastEventDate === 0) return 0
+      if (a.lastEventDate === 0) return 1 // a has no events, move to end
+      if (b.lastEventDate === 0) return -1 // b has no events, move to end
+      return b.lastEventDate - a.lastEventDate // Descending (newest first)
+    })
+  }
+
+  /**
+   * Loads activists from IndexedDB storage into memory.
+   * Call once after construction, before first use of the registry.
    * @throws Error if storage is not configured
    */
   async loadFromStorage(): Promise<void> {
@@ -41,21 +59,24 @@ export class ActivistRegistry {
 
     const stored = await this.storage.getAllActivists()
     this.activists = stored
+    this.sortActivists()
     this.activistsByName = new Map(stored.map((a) => [a.name, a]))
     this.activistsById = new Map(stored.map((a) => [a.id, a]))
   }
 
   /**
-   * Merge new activists with existing data, replacing duplicates by id.
+   * Merges new activists with existing data, replacing duplicates by id.
    * If storage is configured, persists updates to IndexedDB.
    */
   async mergeActivists(newActivists: ActivistRecord[]): Promise<void> {
-    if (newActivists.length === 0) return
+    if (newActivists.length === 0) {
+      return
+    }
+
+    const indexById = new Map(this.activists.map((a, i) => [a.id, i]))
 
     for (const activist of newActivists) {
-      const existingIndex = this.activists.findIndex(
-        (a) => a.id === activist.id,
-      )
+      const existingIndex = indexById.get(activist.id) ?? -1
 
       if (existingIndex >= 0) {
         // Update existing activist (handles renames properly)
@@ -69,6 +90,7 @@ export class ActivistRegistry {
       } else {
         // Add new activist
         this.activists.push(activist)
+        indexById.set(activist.id, this.activists.length - 1)
       }
 
       // Update indexes
@@ -76,16 +98,21 @@ export class ActivistRegistry {
       this.activistsById.set(activist.id, activist)
     }
 
+    // Re-sort after batch updates to maintain sort order
+    this.sortActivists()
+
     // Write through to storage if configured
     await this.storage?.saveActivists(newActivists)
   }
 
   /**
-   * Remove activists by their IDs from memory and storage.
+   * Removes activists by their IDs from memory and storage.
    * If storage is configured, deletes from IndexedDB.
    */
   async removeActivistsByIds(ids: number[]): Promise<void> {
-    if (ids.length === 0) return
+    if (ids.length === 0) {
+      return
+    }
 
     const idsToRemove = new Set(ids)
 
@@ -103,7 +130,7 @@ export class ActivistRegistry {
   }
 
   /**
-   * Get last sync timestamp from storage.
+   * Gets last sync timestamp from storage.
    */
   async getLastSyncTime(): Promise<string | null> {
     if (!this.storage) return null
@@ -111,14 +138,14 @@ export class ActivistRegistry {
   }
 
   /**
-   * Update last sync timestamp in storage.
+   * Updates last sync timestamp in storage.
    */
   async setLastSyncTime(timestamp: string): Promise<void> {
     await this.storage?.setLastSyncTime(timestamp)
   }
 
   /**
-   * Clear all stored data and reset sync timestamp.
+   * Clears all stored data and reset sync timestamp.
    * Used when storage is corrupted or quota exceeded.
    */
   async clearStorage(): Promise<void> {
@@ -127,7 +154,7 @@ export class ActivistRegistry {
   }
 
   /**
-   * Get all activists as an array.
+   * Gets all activists as an array.
    */
   getActivists(): ActivistRecord[] {
     return this.activists
@@ -147,8 +174,18 @@ export class ActivistRegistry {
       return []
     }
 
+    // Build regex once for flexible name matching pattern:
+    // - Treats whitespace as a wildcard allowing any characters in between
+    // - Enables partial and out-of-order matching (e.g., "john doe" matches "John Q. Doe")
+    // - Matching is case-insensitive
+    const pattern = trimmedInput
+      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // escape special regex chars
+      .replace(/ +/g, '.*') // whitespace matches anything
+    const regex = new RegExp(pattern, 'i')
+
+    // this.activists is pre-sorted by lastEventDate descending
     return this.activists
-      .filter(({ name }) => nameFilter(name, input))
+      .filter(({ name }) => regex.test(name))
       .slice(0, maxResults)
       .map((a) => a.name)
   }
@@ -156,22 +193,4 @@ export class ActivistRegistry {
   size(): number {
     return this.activists.length
   }
-}
-
-/**
- * Filters text based on a flexible name matching pattern.
- * Treats whitespace as a wildcard allowing any characters in between,
- * enabling partial and out-of-order matching (e.g., "john doe" matches "John Q. Doe").
- * Matching is case-insensitive.
- *
- * @param text - The text to search within
- * @param input - The search pattern
- * @returns true if the pattern matches the text
- */
-function nameFilter(text: string, input: string): boolean {
-  const pattern = input
-    .trim()
-    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // escape special regex chars
-    .replace(/ +/g, '.*') // whitespace matches anything
-  return new RegExp(pattern, 'i').test(text)
 }

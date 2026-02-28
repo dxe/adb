@@ -14,6 +14,7 @@ export interface StoredActivist {
   email: boolean
   phone: boolean
   lastUpdated: number // Unix timestamp in milliseconds
+  lastEventDate: number // Unix timestamp in milliseconds, 0 if no events
 }
 
 interface SyncMetadata {
@@ -21,7 +22,7 @@ interface SyncMetadata {
 }
 
 const DB_NAME = 'activist-registry'
-const DB_VERSION = 1
+const DB_VERSION = 2
 const STORE_NAME = 'activists'
 const METADATA_STORE = 'metadata'
 
@@ -37,10 +38,42 @@ export class ActivistStorage {
         const request = indexedDB.open(DB_NAME, DB_VERSION)
 
         request.onerror = () => reject(request.error)
-        request.onsuccess = () => resolve(request.result)
+        request.onsuccess = () => {
+          const db = request.result
+          // Close connection immediately if another tab needs to upgrade
+          db.onversionchange = () => {
+            db.close()
+            this.dbPromise = null // Reset cache so subsequent calls reopen
+          }
+          resolve(db)
+        }
+
+        // Reject if upgrade is blocked by another tab with an open connection
+        request.onblocked = () => {
+          this.dbPromise = null // Reset cache to allow retry
+          reject(
+            new Error(
+              `Database upgrade to version ${DB_VERSION} blocked by another tab. Please close other tabs and refresh.`,
+            ),
+          )
+        }
 
         request.onupgradeneeded = (event) => {
           const db = (event.target as IDBOpenDBRequest).result
+          const oldVersion = event.oldVersion
+          const transaction = (event.target as IDBOpenDBRequest).transaction!
+
+          // Migration from v1 to v2: Clear cache AND metadata to force full sync
+          if (oldVersion === 1) {
+            if (db.objectStoreNames.contains(STORE_NAME)) {
+              const activistStore = transaction.objectStore(STORE_NAME)
+              activistStore.clear()
+            }
+            if (db.objectStoreNames.contains(METADATA_STORE)) {
+              const metadataStore = transaction.objectStore(METADATA_STORE)
+              metadataStore.clear()
+            }
+          }
 
           // Create activists store with id as key
           if (!db.objectStoreNames.contains(STORE_NAME)) {
@@ -96,7 +129,7 @@ export class ActivistStorage {
   }
 
   /**
-   * Get all activists from IndexedDB.
+   * Gets all activists from IndexedDB.
    */
   async getAllActivists(): Promise<StoredActivist[]> {
     const db = await this.openDB()
