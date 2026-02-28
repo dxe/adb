@@ -9,7 +9,7 @@ import QuickLRU from 'quick-lru'
 const sessionCache = new QuickLRU<string, { user: User; timestamp: number }>({
   maxSize: 1000,
 })
-const CACHE_TTL = 3600 * 1000 // 1 hour in milliseconds
+const CACHE_TTL = 15 * 60 * 1000 // 15 minutes in milliseconds
 
 // Simple hash function for cookie string (for cache key)
 function hashString(str: string): string {
