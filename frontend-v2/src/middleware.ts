@@ -2,12 +2,14 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { fetchSession, type User } from '@/app/session'
 import { SERVER_USER_HEADER } from '@/lib/server-user'
+import QuickLRU from 'quick-lru'
 
-// Simple in-memory cache for middleware (Edge Runtime compatible)
+// LRU cache for middleware (Edge Runtime compatible)
 // Maps cookie hash to { user, timestamp }
-const sessionCache = new Map<string, { user: User; timestamp: number }>()
+const sessionCache = new QuickLRU<string, { user: User; timestamp: number }>({
+  maxSize: 1000,
+})
 const CACHE_TTL = 3600 * 1000 // 1 hour in milliseconds
-const MAX_CACHE_SIZE = 1000 // Maximum number of cached sessions before cleanup
 
 // Simple hash function for cookie string (for cache key)
 function hashString(str: string): string {
@@ -30,10 +32,8 @@ async function getCachedSession(cookies: string) {
     return { user: cached.user }
   }
 
-  // Fetch fresh session
   const session = await fetchSession(cookies)
 
-  // Cache it
   if (session.user) {
     sessionCache.set(cacheKey, {
       user: session.user,
@@ -45,17 +45,6 @@ async function getCachedSession(cookies: string) {
     for (const [key, value] of sessionCache.entries()) {
       if (value.timestamp < cutoff) {
         sessionCache.delete(key)
-      }
-    }
-
-    // Additional cleanup if cache grows too large (safety net)
-    if (sessionCache.size > MAX_CACHE_SIZE) {
-      // Remove oldest entries first
-      const entries = Array.from(sessionCache.entries())
-      entries.sort((a, b) => a[1].timestamp - b[1].timestamp)
-      const toRemove = sessionCache.size - MAX_CACHE_SIZE
-      for (let i = 0; i < toRemove; i++) {
-        sessionCache.delete(entries[i][0])
       }
     }
   }
@@ -71,13 +60,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Get cookies from request
   const cookieHeader = request.headers.get('cookie') || ''
 
-  // Fetch session (cached)
   const session = await getCachedSession(cookieHeader)
 
-  // Redirect to login if no user
   if (!session.user) {
     const loginUrl = new URL('/login', request.url)
     return NextResponse.redirect(loginUrl)
@@ -87,7 +73,6 @@ export async function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers)
   requestHeaders.set(SERVER_USER_HEADER, JSON.stringify(session.user))
 
-  // Continue with modified headers
   return NextResponse.next({
     request: {
       headers: requestHeaders,
@@ -95,7 +80,6 @@ export async function middleware(request: NextRequest) {
   })
 }
 
-// Configure which routes use this middleware
 export const config = {
   matcher: [
     /*

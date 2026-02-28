@@ -12,9 +12,7 @@ export async function getServerUser(): Promise<User> {
   const userHeader = headersList.get(SERVER_USER_HEADER)
 
   if (!userHeader) {
-    throw new Error(
-      'User not found in headers. This should not happen if middleware is working correctly.',
-    )
+    throw new Error('User not found in headers.')
   }
 
   return JSON.parse(userHeader) as User
