@@ -3,6 +3,7 @@ import {
   HydrationBoundary,
   QueryClient,
 } from '@tanstack/react-query'
+import { notFound } from 'next/navigation'
 import { AuthedPageLayout } from '@/app/authed-page-layout'
 import { Navbar } from '@/components/nav'
 import { ContentWrapper } from '@/app/content-wrapper'
@@ -15,7 +16,11 @@ export default async function EditUserPage({
 }: {
   params: Promise<{ id: string }>
 }) {
-  const userId = Number((await params).id)
+  const { id } = await params
+  const userId = parseInt(id)
+  if (Number.isNaN(userId)) {
+    notFound()
+  }
   const apiClient = new ApiClient(await getCookies())
   const queryClient = new QueryClient()
 
@@ -32,12 +37,12 @@ export default async function EditUserPage({
 
   return (
     <AuthedPageLayout pageName="UserList">
-      <HydrationBoundary state={dehydrate(queryClient)}>
-        <Navbar />
-        <ContentWrapper size="lg" className="gap-6">
+      <Navbar />
+      <ContentWrapper size="lg" className="gap-6">
+        <HydrationBoundary state={dehydrate(queryClient)}>
           <UserForm userId={userId} />
-        </ContentWrapper>
-      </HydrationBoundary>
+        </HydrationBoundary>
+      </ContentWrapper>
     </AuthedPageLayout>
   )
 }

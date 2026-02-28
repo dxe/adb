@@ -1,41 +1,45 @@
+import {
+  dehydrate,
+  HydrationBoundary,
+  QueryClient,
+} from '@tanstack/react-query'
+import { notFound } from 'next/navigation'
 import { ContentWrapper } from '@/app/content-wrapper'
 import { AuthedPageLayout } from '@/app/authed-page-layout'
 import { EventForm } from '../../event/event-form'
 import { Navbar } from '@/components/nav'
-import { ApiClient, API_PATH } from '@/lib/api'
-import {
-  QueryClient,
-  HydrationBoundary,
-  dehydrate,
-} from '@tanstack/react-query'
+import { API_PATH, ApiClient } from '@/lib/api'
 import { getCookies } from '@/lib/auth'
-
-type EditCoachingPageProps = {
-  params: Promise<{ id: string }>
-}
 
 export default async function EditCoachingPage({
   params,
-}: EditCoachingPageProps) {
+}: {
+  params: Promise<{ id: string }>
+}) {
   const { id } = await params
+  const eventId = parseInt(id)
+  if (Number.isNaN(eventId)) {
+    notFound()
+  }
+
   const apiClient = new ApiClient(await getCookies())
   const queryClient = new QueryClient()
 
-  // Prefetch event data during SSR
+  // Prefetch event data on server
   await queryClient.prefetchQuery({
-    queryKey: [API_PATH.EVENT_GET, id],
-    queryFn: () => apiClient.getEvent(Number(id)),
+    queryKey: [API_PATH.EVENT_GET, String(eventId)],
+    queryFn: () => apiClient.getEvent(eventId),
   })
 
   return (
     <AuthedPageLayout pageName="EditConnection_beta">
-      <HydrationBoundary state={dehydrate(queryClient)}>
-        <Navbar />
-        <ContentWrapper size="sm" className="gap-8">
+      <Navbar />
+      <ContentWrapper size="sm" className="gap-8">
+        <HydrationBoundary state={dehydrate(queryClient)}>
           <h1 className="text-3xl font-bold">Coaching</h1>
           <EventForm mode="connection" />
-        </ContentWrapper>
-      </HydrationBoundary>
+        </HydrationBoundary>
+      </ContentWrapper>
     </AuthedPageLayout>
   )
 }
