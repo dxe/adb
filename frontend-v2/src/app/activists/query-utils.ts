@@ -94,16 +94,26 @@ export const buildSortParam = (sort: SortColumn[]): string | undefined => {
 
 // --- URL range syntax helpers ---
 
+/** Resolve a date bound value to an absolute YYYY-MM-DD string.
+ * If the value is a relative day offset (integer, e.g. "-180"), computes
+ * today + offset days. Otherwise returns the value as-is. */
+function resolveDate(value: string): string {
+  if (/^-?\d+$/.test(value)) {
+    const d = new Date()
+    d.setDate(d.getDate() + parseInt(value, 10))
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  }
+  return value
+}
+
 /**
  * Parses the URL date range syntax into API filter fields.
+ * Resolves relative day offsets (integers) to absolute YYYY-MM-DD dates.
  *
  * Syntax: [gte]..[lt][|null]
- *   "2025-01-01..2025-06-01"       → gte + lt (between two dates)
- *   "2025-01-01.."                  → gte only (on or after)
- *   "..2025-06-01"                  → lt only (before)
- *   "..2025-06-01|null"             → lt, including NULL values
- *   "2025-01-01..|null"             → gte, including NULL values
- *   "2025-01-01..2025-06-01|null"   → gte + lt, including NULL values
+ *   "2025-01-01..2025-06-01"       → absolute gte + lt
+ *   "-180.."                        → relative gte (within last 180 days)
+ *   "..-360|null"                   → relative lt (over 360 days ago) or null
  *   "null"                          → only NULL values
  */
 function parseDateRange(
@@ -119,8 +129,8 @@ function parseDateRange(
   if (range === 'null') return { orNull: true }
   const parts = range.split('..')
   if (parts.length !== 2) return undefined
-  const gte = parts[0] || undefined
-  const lt = parts[1] || undefined
+  const gte = parts[0] ? resolveDate(parts[0]) : undefined
+  const lt = parts[1] ? resolveDate(parts[1]) : undefined
   if (!gte && !lt && !orNull) return undefined
   return { gte, lt, orNull: orNull || undefined }
 }

@@ -57,17 +57,6 @@ function userHasAccess(
   })
 }
 
-/** Replace date placeholders like {6mo} and {12mo} with actual YYYY-MM-DD dates. */
-function computeNavHref(href: string): string {
-  if (!href.includes('{')) return href
-  const now = new Date()
-  return href.replace(/\{(\d+)mo\}/g, (_, months) => {
-    const d = new Date(now)
-    d.setMonth(d.getMonth() - parseInt(months, 10))
-    return d.toISOString().split('T')[0]
-  })
-}
-
 /** For ActivistList pages, check if the nav item's query params match the current URL exactly. */
 function isExactParamsMatch(
   navHref: string,
@@ -134,7 +123,7 @@ const DropdownItem = ({
               innerItem.page === 'ActivistList' &&
               innerItem.href.startsWith('/v2')
                 ? isExactParamsMatch(
-                    computeNavHref(innerItem.href.substring(3)),
+                    innerItem.href.substring(3),
                     pathname,
                     searchParams,
                   )
@@ -148,7 +137,7 @@ const DropdownItem = ({
               userHasAccess(user, innerItem.roleRequired) &&
               (innerItem.href.startsWith('/v2') ? (
                 <Link
-                  href={computeNavHref(innerItem.href.substring(3))}
+                  href={innerItem.href.substring(3)}
                   className={classNames}
                   key={innerItem.href}
                 >
