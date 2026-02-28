@@ -5,7 +5,8 @@ export type ActivistRecord = {
   name: string
   email: boolean
   phone: boolean
-  lastUpdated: number // Unix timestamp in milliseconds
+  lastUpdated: number   // Unix timestamp in milliseconds
+  lastEventDate: number // Unix timestamp in milliseconds, 0 if no events
 }
 
 /**
@@ -13,6 +14,10 @@ export type ActivistRecord = {
  *
  * Reads are synchronous (from memory) for fast autocomplete/filtering.
  * Writes are async and automatically persist to IndexedDB when storage is configured.
+ *
+ * @param storage - Optional IndexedDB storage for persistence.
+ *                  When provided, enables automatic write-through caching.
+ *                  When omitted, registry operates in memory-only mode.
  */
 export class ActivistRegistry {
   private activists: ActivistRecord[]
@@ -28,8 +33,8 @@ export class ActivistRegistry {
   }
 
   /**
-   * Load activists from IndexedDB storage into memory.
-   * Should be called once on initialization.
+   * Loads activists from IndexedDB storage into memory.
+   * Call once after construction, before first use of the registry.
    * @throws Error if storage is not configured
    */
   async loadFromStorage(): Promise<void> {
@@ -46,12 +51,10 @@ export class ActivistRegistry {
   }
 
   /**
-   * Merge new activists with existing data, replacing duplicates by id.
+   * Merges new activists with existing data, replacing duplicates by id.
    * If storage is configured, persists updates to IndexedDB.
    */
   async mergeActivists(newActivists: ActivistRecord[]): Promise<void> {
-    if (newActivists.length === 0) return
-
     for (const activist of newActivists) {
       const existingIndex = this.activists.findIndex(
         (a) => a.id === activist.id,
@@ -81,12 +84,10 @@ export class ActivistRegistry {
   }
 
   /**
-   * Remove activists by their IDs from memory and storage.
+   * Removes activists by their IDs from memory and storage.
    * If storage is configured, deletes from IndexedDB.
    */
   async removeActivistsByIds(ids: number[]): Promise<void> {
-    if (ids.length === 0) return
-
     const idsToRemove = new Set(ids)
 
     this.activists = this.activists.filter((activist) => {
@@ -103,7 +104,7 @@ export class ActivistRegistry {
   }
 
   /**
-   * Get last sync timestamp from storage.
+   * Gets last sync timestamp from storage.
    */
   async getLastSyncTime(): Promise<string | null> {
     if (!this.storage) return null
@@ -111,14 +112,14 @@ export class ActivistRegistry {
   }
 
   /**
-   * Update last sync timestamp in storage.
+   * Updates last sync timestamp in storage.
    */
   async setLastSyncTime(timestamp: string): Promise<void> {
     await this.storage?.setLastSyncTime(timestamp)
   }
 
   /**
-   * Clear all stored data and reset sync timestamp.
+   * Clears all stored data and reset sync timestamp.
    * Used when storage is corrupted or quota exceeded.
    */
   async clearStorage(): Promise<void> {
@@ -127,7 +128,7 @@ export class ActivistRegistry {
   }
 
   /**
-   * Get all activists as an array.
+   * Gets all activists as an array.
    */
   getActivists(): ActivistRecord[] {
     return this.activists
@@ -149,6 +150,14 @@ export class ActivistRegistry {
 
     return this.activists
       .filter(({ name }) => nameFilter(name, input))
+      .sort((a, b) => {
+        // Sort by lastEventDate descending (most recent first)
+        // 0 sorts to end (activists with no events)
+        if (a.lastEventDate === 0 && b.lastEventDate === 0) return 0
+        if (a.lastEventDate === 0) return 1 // a has no events, move to end
+        if (b.lastEventDate === 0) return -1 // b has no events, move to end
+        return b.lastEventDate - a.lastEventDate // Descending (newest first)
+      })
       .slice(0, maxResults)
       .map((a) => a.name)
   }

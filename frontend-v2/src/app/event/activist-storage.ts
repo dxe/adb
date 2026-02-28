@@ -13,7 +13,8 @@ export interface StoredActivist {
   name: string
   email: boolean
   phone: boolean
-  lastUpdated: number // Unix timestamp in milliseconds
+  lastUpdated: number   // Unix timestamp in milliseconds
+  lastEventDate: number // Unix timestamp in milliseconds, 0 if no events
 }
 
 interface SyncMetadata {
@@ -21,7 +22,7 @@ interface SyncMetadata {
 }
 
 const DB_NAME = 'activist-registry'
-const DB_VERSION = 1
+const DB_VERSION = 2
 const STORE_NAME = 'activists'
 const METADATA_STORE = 'metadata'
 
@@ -41,6 +42,20 @@ export class ActivistStorage {
 
         request.onupgradeneeded = (event) => {
           const db = (event.target as IDBOpenDBRequest).result
+          const oldVersion = event.oldVersion
+          const transaction = (event.target as IDBOpenDBRequest).transaction!
+
+          // Migration from v1 to v2: Clear cache AND metadata to force full sync
+          if (oldVersion === 1) {
+            if (db.objectStoreNames.contains(STORE_NAME)) {
+              const activistStore = transaction.objectStore(STORE_NAME)
+              activistStore.clear()
+            }
+            if (db.objectStoreNames.contains(METADATA_STORE)) {
+              const metadataStore = transaction.objectStore(METADATA_STORE)
+              metadataStore.clear() // Clear lastSyncTime to force full sync
+            }
+          }
 
           // Create activists store with id as key
           if (!db.objectStoreNames.contains(STORE_NAME)) {
@@ -96,7 +111,10 @@ export class ActivistStorage {
   }
 
   /**
-   * Get all activists from IndexedDB.
+   * Gets all activists from IndexedDB.
+   *
+   * Note: Could be enhanced to sort by lastUpdated (most recent first) to prioritize
+   * recently active activists in autocomplete, especially useful with partial syncs.
    */
   async getAllActivists(): Promise<StoredActivist[]> {
     const db = await this.openDB()

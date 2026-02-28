@@ -112,6 +112,9 @@ export const EventForm = ({ mode }: EventFormProps) => {
     onSuccess: (result, variables) => {
       toast.success(`${isConnection ? 'Connection' : 'Event'} saved!`)
 
+      // Invalidate activist registry to refresh sort order with new event data
+      queryClient.invalidateQueries({ queryKey: [API_PATH.ACTIVIST_LIST_BASIC] })
+
       // TODO(jh): once the vue page is removed, update the api to just
       // return a json payload w/ the event id instead of a redirect.
       // for now, we'll extract the id from the redirect url to stay
@@ -142,7 +145,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
       // arbitrary database order, but we want to preserve the user's input order.
       // This matches the behavior of the legacy Vue version.
       const savedAttendeeNames = form.state.values.attendees
-        .map((a) => a.name.trim())
+        .map((a) => (a.name || '').trim())
         .filter((n) => n !== '')
 
       const newValues = {
@@ -217,7 +220,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
     onSubmit: async ({ value }) => {
       // Filter out empty attendees.
       const attendeeNames = value.attendees
-        .map((a) => a.name.trim())
+        .map((a) => (a.name || '').trim())
         .filter((n) => n !== '')
 
       if (attendeeNames.length === 0) {
@@ -235,7 +238,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
       // Calculate diff from original.
       const oldAttendeesSet = new Set(
         (form.options.defaultValues?.attendees || [])
-          .map((a) => a.name.trim())
+          .map((a) => (a.name || '').trim())
           .filter((n) => n !== ''),
       )
 
@@ -304,7 +307,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
   // Subscribe to attendees changes to reactively update the count
   const attendees = useStore(form.store, (state) => state.values.attendees)
   const attendeeCount = useMemo(
-    () => attendees.filter((a) => a.name.trim() !== '').length,
+    () => attendees.filter((a) => (a.name || '').trim() !== '').length,
     [attendees],
   )
 

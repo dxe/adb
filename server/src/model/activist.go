@@ -1663,32 +1663,40 @@ GROUP BY a.name`, chapterID)
 }
 
 type ActivistBasicInfoJSON struct {
-	ID          int    `json:"id"`
-	Name        string `json:"name"`
-	Email       bool   `json:"email"`
-	Phone       bool   `json:"phone"`
-	LastUpdated int64  `json:"last_updated"` // Unix timestamp in seconds
+	ID            int    `json:"id"`
+	Name          string `json:"name"`
+	Email         bool   `json:"email"`
+	Phone         bool   `json:"phone"`
+	LastUpdated   int64  `json:"last_updated"`   // Unix timestamp in seconds
+	LastEventDate int64  `json:"last_event_date"` // Unix timestamp in seconds, 0 if no events
 }
 
 type ActivistBasicInfo struct {
-	ID          int       `db:"id"`
-	Name        string    `db:"name"`
-	Email       bool      `db:"email"`
-	Phone       bool      `db:"phone"`
-	LastUpdated time.Time `db:"last_updated"`
+	ID            int            `db:"id"`
+	Name          string         `db:"name"`
+	Email         bool           `db:"email"`
+	Phone         bool           `db:"phone"`
+	LastUpdated   time.Time      `db:"last_updated"`
+	LastEventDate mysql.NullTime `db:"last_event_date"`
 }
 
 func (activist *ActivistBasicInfo) ToJSON() ActivistBasicInfoJSON {
+	var lastEventDate int64 = 0
+	if activist.LastEventDate.Valid {
+		lastEventDate = activist.LastEventDate.Time.Unix()
+	}
+
 	return ActivistBasicInfoJSON{
-		ID:          activist.ID,
-		Name:        activist.Name,
-		Email:       activist.Email,
-		Phone:       activist.Phone,
-		LastUpdated: activist.LastUpdated.Unix(), // Convert to Unix timestamp
+		ID:            activist.ID,
+		Name:          activist.Name,
+		Email:         activist.Email,
+		Phone:         activist.Phone,
+		LastUpdated:   activist.LastUpdated.Unix(),
+		LastEventDate: lastEventDate,
 	}
 }
 
-func GetActivistListBasicJSON(db *sqlx.DB, chapterID int, modifiedSince *time.Time) []ActivistBasicInfoJSON {
+func GetActivistListBasicJSON(db *sqlx.DB, chapterID int, modifiedSince time.Time) []ActivistBasicInfoJSON {
 	var activists []ActivistBasicInfo
 
 	query := `
@@ -1697,29 +1705,32 @@ SELECT
 	a.name,
 	IF(a.email != '', 1, 0) as email,
 	IF(a.phone != '', 1, 0) as phone,
-	GREATEST(a.name_updated, a.email_updated, a.phone_updated) as last_updated
+	GREATEST(a.name_updated, a.email_updated, a.phone_updated) as last_updated,
+	MAX(e.date) as last_event_date
 FROM activists a
 LEFT OUTER JOIN event_attendance ea ON a.id = ea.activist_id
 LEFT OUTER JOIN events e ON e.id = ea.event_id
-WHERE a.hidden = 0 AND a.chapter_id = ?`
+WHERE a.hidden = 0 AND a.chapter_id = ?
+GROUP BY a.id, a.name, a.email, a.phone, a.name_updated, a.email_updated, a.phone_updated`
 
-	// Add timestamp filter if provided
-	if modifiedSince != nil {
-		query += ` AND (
-			a.name_updated >= ? OR
-			a.email_updated >= ? OR
-			a.phone_updated >= ?
-		)`
+	// Add timestamp filter if provided - use HAVING for aggregate functions
+	if !modifiedSince.IsZero() {
+		query += `
+HAVING (
+	a.name_updated >= ? OR
+	a.email_updated >= ? OR
+	a.phone_updated >= ? OR
+	MAX(e.date) >= ?
+)`
 	}
 
 	query += `
-GROUP BY a.id, a.name, a.email, a.phone, a.name_updated, a.email_updated, a.phone_updated
 ORDER BY MAX(e.date) DESC`
 
 	var err error
-	if modifiedSince != nil {
-		// Pass the timestamp 3 times for the 3 OR conditions
-		err = db.Select(&activists, query, chapterID, modifiedSince, modifiedSince, modifiedSince)
+	if !modifiedSince.IsZero() {
+		// Pass the timestamp 4 times for the 4 OR conditions
+		err = db.Select(&activists, query, chapterID, modifiedSince, modifiedSince, modifiedSince, modifiedSince)
 	} else {
 		err = db.Select(&activists, query, chapterID)
 	}
@@ -1739,9 +1750,8 @@ ORDER BY MAX(e.date) DESC`
 }
 
 // GetHiddenActivistIDs returns IDs of activists that were hidden since the given timestamp.
-// If modifiedSince is nil, returns an empty slice (no deletions to sync).
-func GetHiddenActivistIDs(db *sqlx.DB, chapterID int, modifiedSince *time.Time) ([]int, error) {
-	if modifiedSince == nil {
+func GetHiddenActivistIDs(db *sqlx.DB, chapterID int, modifiedSince time.Time) ([]int, error) {
+	if modifiedSince.IsZero() {
 		return []int{}, nil
 	}
 

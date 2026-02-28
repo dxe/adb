@@ -1,9 +1,14 @@
-import { KeyboardEvent, useState } from 'react'
+import { KeyboardEvent, useState, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { MailX, PhoneMissed, UserRoundPlus, Check } from 'lucide-react'
 import { AnyFieldApi } from '@tanstack/react-form'
 import { ActivistRegistry } from './activist-registry'
+import {
+  Popover,
+  PopoverContent,
+  PopoverAnchor,
+} from '@/components/ui/popover'
 
 type AttendeeInputFieldProps = {
   field: AnyFieldApi
@@ -30,6 +35,16 @@ export const AttendeeInputField = ({
 }: AttendeeInputFieldProps) => {
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1)
+  const [open, setOpen] = useState(false)
+
+  // Sync popover open state with suggestions and focus
+  useEffect(() => {
+    if (suggestions.length > 0 && isFocused) {
+      setOpen(true)
+    } else {
+      setOpen(false)
+    }
+  }, [suggestions.length, isFocused])
 
   const handleInputChange = (value: string) => {
     field.handleChange(value)
@@ -44,6 +59,7 @@ export const AttendeeInputField = ({
     field.validate('change')
     setSuggestions([])
     setSelectedSuggestionIndex(-1)
+    setOpen(false)
     onAdvanceFocus()
   }
 
@@ -65,6 +81,7 @@ export const AttendeeInputField = ({
       }
       case 'Escape': {
         setSuggestions([])
+        setOpen(false)
         return
       }
       case 'Enter': {
@@ -112,56 +129,65 @@ export const AttendeeInputField = ({
     <div className="relative">
       <div className="flex items-center gap-2">
         <div className="relative w-full">
-          <div className="relative">
-            <Input
-              ref={inputRef}
-              value={field.state.value ?? ''}
-              onChange={(e) => handleInputChange(e.target.value)}
-              onKeyDown={handleKeyDown}
-              name="attendee"
-              placeholder=""
-              className={cn(
-                'w-full transition-colors duration-300',
-                isDuplicate || isError
-                  ? 'text-red-500 border-red-500 focus:border-red-500'
-                  : isNewName
-                    ? 'border-purple-500 focus:border-transparent'
-                    : '',
-              )}
-              autoComplete="off"
-              onFocus={() => onFocus(index)}
-              onBlur={() => {
-                field.handleBlur()
-                setSuggestions([])
-              }}
-            />
-            <div className="right-0 top-0 bottom-0 h-full pointer-events-none absolute flex gap-2 items-center p-1.5 opacity-80">
-              {hasAllInfo && <Check className="text-green-500" />}
-              {isNewName && <UserRoundPlus className="text-purple-500" />}
-              {isMissingEmail && <MailX className="text-orange-500" />}
-              {isMissingPhone && <PhoneMissed className="text-orange-500" />}
-            </div>
-          </div>
-          {isFocused && !!suggestions.length && (
-            <ul className="absolute z-10 mt-0.5 w-full rounded-md border border-gray-200 bg-white shadow-lg">
-              {suggestions.map((suggestion, i) => (
-                <li
-                  key={suggestion}
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverAnchor asChild>
+              <div className="relative">
+                <Input
+                  ref={inputRef}
+                  value={field.state.value ?? ''}
+                  onChange={(e) => handleInputChange(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  name="attendee"
+                  placeholder=""
                   className={cn(
-                    'cursor-pointer px-3 py-1 hover:bg-gray-100',
-                    i === selectedSuggestionIndex ? 'bg-neutral-100' : '',
+                    'w-full transition-colors duration-300',
+                    isDuplicate || isError
+                      ? 'text-red-500 border-red-500 focus:border-red-500'
+                      : isNewName
+                        ? 'border-purple-500 focus:border-transparent'
+                        : '',
                   )}
-                  onMouseDown={(e) => {
-                    // Use onMouseDown instead of onClick to fire before onBlur.
-                    e.preventDefault()
-                    handleSelectSuggestion(suggestion)
+                  autoComplete="off"
+                  onFocus={() => onFocus(index)}
+                  onBlur={() => {
+                    field.handleBlur()
+                    setSuggestions([])
                   }}
-                >
-                  {suggestion}
-                </li>
-              ))}
-            </ul>
-          )}
+                />
+                <div className="right-0 top-0 bottom-0 h-full pointer-events-none absolute flex gap-2 items-center p-1.5 opacity-80">
+                  {hasAllInfo && <Check className="text-green-500" />}
+                  {isNewName && <UserRoundPlus className="text-purple-500" />}
+                  {isMissingEmail && <MailX className="text-orange-500" />}
+                  {isMissingPhone && <PhoneMissed className="text-orange-500" />}
+                </div>
+              </div>
+            </PopoverAnchor>
+            <PopoverContent
+              className="p-0 w-[var(--radix-popover-trigger-width)]"
+              align="start"
+              sideOffset={4}
+              onOpenAutoFocus={(e) => e.preventDefault()}
+              onCloseAutoFocus={(e) => e.preventDefault()}
+            >
+              <ul className="max-h-[300px] overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg">
+                {suggestions.map((suggestion, i) => (
+                  <li
+                    key={suggestion}
+                    className={cn(
+                      'cursor-pointer px-3 py-1 hover:bg-gray-100',
+                      i === selectedSuggestionIndex ? 'bg-neutral-100' : '',
+                    )}
+                    onMouseDown={(e) => {
+                      e.preventDefault() // Prevents input blur from firing
+                      handleSelectSuggestion(suggestion)
+                    }}
+                  >
+                    {suggestion}
+                  </li>
+                ))}
+              </ul>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
       {field.state.meta.errors[0] && (
