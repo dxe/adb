@@ -25,11 +25,10 @@ export class ActivistRegistry {
   private activistsById: Map<number, ActivistRecord>
   private storage?: ActivistStorage
 
-  constructor(storage?: ActivistStorage) {
+  constructor() {
     this.activists = []
     this.activistsByName = new Map()
     this.activistsById = new Map()
-    this.storage = storage
   }
 
   /**
@@ -48,14 +47,9 @@ export class ActivistRegistry {
   /**
    * Loads activists from IndexedDB storage into memory.
    * Call once after construction, before first use of the registry.
-   * @throws Error if storage is not configured
    */
-  async loadFromStorage(): Promise<void> {
-    if (!this.storage) {
-      throw new Error(
-        'Cannot load activists from storage: storage not configured.',
-      )
-    }
+  async loadFromStorage(storage: ActivistStorage): Promise<void> {
+    this.storage = storage
 
     const stored = await this.storage.getAllActivists()
     this.activists = stored
@@ -65,7 +59,7 @@ export class ActivistRegistry {
   }
 
   /**
-   * Merges new activists with existing data, replacing duplicates by id.
+   * Merges new activists with existing data, replacing duplicates by id and name.
    * If storage is configured, persists updates to IndexedDB.
    */
   async mergeActivists(newActivists: ActivistRecord[]): Promise<void> {
@@ -116,14 +110,16 @@ export class ActivistRegistry {
 
     const idsToRemove = new Set(ids)
 
-    this.activists = this.activists.filter((activist) => {
+    const remainingActivists: ActivistRecord[] = []
+    for (const activist of this.activists) {
       if (idsToRemove.has(activist.id)) {
         this.activistsByName.delete(activist.name)
         this.activistsById.delete(activist.id)
-        return false
+        continue
       }
-      return true
-    })
+      remainingActivists.push(activist)
+    }
+    this.activists = remainingActivists
 
     // Write through to storage if configured
     await this.storage?.deleteActivistsByIds(ids)
