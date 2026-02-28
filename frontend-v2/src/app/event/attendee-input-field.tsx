@@ -31,16 +31,9 @@ export const AttendeeInputField = ({
 }: AttendeeInputFieldProps) => {
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1)
-  const [open, setOpen] = useState(false)
 
-  // Sync popover open state with suggestions and focus
-  useEffect(() => {
-    if (suggestions.length > 0 && isFocused) {
-      setOpen(true)
-    } else {
-      setOpen(false)
-    }
-  }, [suggestions.length, isFocused])
+  // Derive popover open state from suggestions and focus
+  const open = suggestions.length > 0 && isFocused
 
   const handleInputChange = (value: string) => {
     field.handleChange(value)
@@ -55,7 +48,6 @@ export const AttendeeInputField = ({
     field.validate('change')
     setSuggestions([])
     setSelectedSuggestionIndex(-1)
-    setOpen(false)
     onAdvanceFocus()
   }
 
@@ -74,7 +66,7 @@ export const AttendeeInputField = ({
         e.preventDefault()
         if (suggestions.length > 0) {
           setSelectedSuggestionIndex((prev) =>
-            prev === 0 ? suggestions.length - 1 : prev - 1,
+            prev === -1 || prev === 0 ? suggestions.length - 1 : prev - 1,
           )
         }
         return
@@ -82,7 +74,6 @@ export const AttendeeInputField = ({
       case 'Escape': {
         setSuggestions([])
         setSelectedSuggestionIndex(-1)
-        setOpen(false)
         return
       }
       case 'Enter': {
@@ -132,7 +123,7 @@ export const AttendeeInputField = ({
     <div className="relative">
       <div className="flex items-center gap-2">
         <div className="relative w-full">
-          <Popover open={open} onOpenChange={setOpen}>
+          <Popover open={open}>
             <PopoverAnchor asChild>
               <div className="relative">
                 <Input

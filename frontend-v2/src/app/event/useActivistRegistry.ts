@@ -89,7 +89,8 @@ export function useActivistRegistry() {
     return () => {
       mounted = false
     }
-  }, [query.isError, query.error])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- query.error is only read when query.isError is true
+  }, [query.isError])
 
   // Merge server data when it arrives
   useEffect(() => {

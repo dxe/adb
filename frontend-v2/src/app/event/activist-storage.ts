@@ -41,12 +41,16 @@ export class ActivistStorage {
         request.onsuccess = () => {
           const db = request.result
           // Close connection immediately if another tab needs to upgrade
-          db.onversionchange = () => db.close()
+          db.onversionchange = () => {
+            db.close()
+            this.dbPromise = null // Reset cache so subsequent calls reopen
+          }
           resolve(db)
         }
 
         // Reject if upgrade is blocked by another tab with an open connection
         request.onblocked = () => {
+          this.dbPromise = null // Reset cache to allow retry
           reject(
             new Error(
               `Database upgrade to version ${DB_VERSION} blocked by another tab. Please close other tabs and refresh.`,

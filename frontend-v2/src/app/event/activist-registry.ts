@@ -110,6 +110,10 @@ export class ActivistRegistry {
    * If storage is configured, deletes from IndexedDB.
    */
   async removeActivistsByIds(ids: number[]): Promise<void> {
+    if (ids.length === 0) {
+      return
+    }
+
     const idsToRemove = new Set(ids)
 
     this.activists = this.activists.filter((activist) => {
@@ -170,9 +174,18 @@ export class ActivistRegistry {
       return []
     }
 
+    // Build regex once for flexible name matching pattern:
+    // - Treats whitespace as a wildcard allowing any characters in between
+    // - Enables partial and out-of-order matching (e.g., "john doe" matches "John Q. Doe")
+    // - Matching is case-insensitive
+    const pattern = trimmedInput
+      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // escape special regex chars
+      .replace(/ +/g, '.*') // whitespace matches anything
+    const regex = new RegExp(pattern, 'i')
+
     // this.activists is pre-sorted by lastEventDate descending
     return this.activists
-      .filter(({ name }) => nameFilter(name, input))
+      .filter(({ name }) => regex.test(name))
       .slice(0, maxResults)
       .map((a) => a.name)
   }
@@ -180,22 +193,4 @@ export class ActivistRegistry {
   size(): number {
     return this.activists.length
   }
-}
-
-/**
- * Filters text based on a flexible name matching pattern.
- * Treats whitespace as a wildcard allowing any characters in between,
- * enabling partial and out-of-order matching (e.g., "john doe" matches "John Q. Doe").
- * Matching is case-insensitive.
- *
- * @param text - The text to search within
- * @param input - The search pattern
- * @returns true if the pattern matches the text
- */
-function nameFilter(text: string, input: string): boolean {
-  const pattern = input
-    .trim()
-    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // escape special regex chars
-    .replace(/ +/g, '.*') // whitespace matches anything
-  return new RegExp(pattern, 'i').test(text)
 }
