@@ -14,9 +14,7 @@ import toast from 'react-hot-toast'
  * @returns Object containing the registry instance and query state
  */
 export function useActivistRegistry() {
-  // Single registry instance with write-through storage to IndexedDB (if available)
-  const registry = new ActivistRegistry()
-  const registryRef = useRef(registry)
+  const registryRef = useRef(new ActivistRegistry())
   const [isStorageLoaded, setIsStorageLoaded] = useState(false)
   const [isServerLoaded, setIsServerLoaded] = useState(false)
 
@@ -120,8 +118,10 @@ export function useActivistRegistry() {
           continue
         }
 
-        const hasNewerProfile = activist.lastUpdated > existingActivist.lastUpdated
-        const hasNewerAttendance = activist.lastEventDate > existingActivist.lastEventDate
+        const hasNewerProfile =
+          activist.lastUpdated > existingActivist.lastUpdated
+        const hasNewerAttendance =
+          activist.lastEventDate > existingActivist.lastEventDate
 
         if (hasNewerProfile || hasNewerAttendance) {
           activistsToUpdate.push({
@@ -132,7 +132,9 @@ export function useActivistRegistry() {
               phone: activist.phone,
               lastUpdated: activist.lastUpdated,
             }),
-            ...(hasNewerAttendance && { lastEventDate: activist.lastEventDate }),
+            ...(hasNewerAttendance && {
+              lastEventDate: activist.lastEventDate,
+            }),
           })
         }
       }
