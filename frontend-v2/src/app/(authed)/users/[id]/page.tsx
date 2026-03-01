@@ -1,5 +1,12 @@
+import {
+  dehydrate,
+  HydrationBoundary,
+  QueryClient,
+} from '@tanstack/react-query'
 import { notFound } from 'next/navigation'
 import { ContentWrapper } from '@/app/content-wrapper'
+import { API_PATH, ApiClient } from '@/lib/api'
+import { getCookies } from '@/lib/auth'
 import { UserForm } from '../user-form'
 
 export default async function EditUserPage({
@@ -13,9 +20,25 @@ export default async function EditUserPage({
     notFound()
   }
 
+  const apiClient = new ApiClient(await getCookies())
+  const queryClient = new QueryClient()
+
+  await Promise.all([
+    queryClient.prefetchQuery({
+      queryKey: [API_PATH.USERS, userId],
+      queryFn: () => apiClient.getUser(userId),
+    }),
+    queryClient.prefetchQuery({
+      queryKey: [API_PATH.CHAPTER_LIST],
+      queryFn: apiClient.getChapterList,
+    }),
+  ])
+
   return (
     <ContentWrapper size="lg" className="gap-6">
-      <UserForm userId={userId} />
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <UserForm userId={userId} />
+      </HydrationBoundary>
     </ContentWrapper>
   )
 }

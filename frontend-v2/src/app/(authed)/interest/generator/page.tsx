@@ -1,11 +1,28 @@
+import {
+  dehydrate,
+  HydrationBoundary,
+  QueryClient,
+} from '@tanstack/react-query'
 import { ContentWrapper } from '@/app/content-wrapper'
+import { API_PATH, ApiClient } from '@/lib/api'
+import { getCookies } from '@/lib/auth'
 import GeneratorForm from './generator-form'
 
-export default function InterestGeneratorPage() {
+export default async function InterestGeneratorPage() {
+  const apiClient = new ApiClient(await getCookies())
+  const queryClient = new QueryClient()
+
+  await queryClient.prefetchQuery({
+    queryKey: [API_PATH.CHAPTER_LIST],
+    queryFn: apiClient.getChapterList,
+  })
+
   return (
     <ContentWrapper size="sm" className="gap-6">
-      <h1 className="text-lg">Interest Form Generator</h1>
-      <GeneratorForm />
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <h1 className="text-lg">Interest Form Generator</h1>
+        <GeneratorForm />
+      </HydrationBoundary>
     </ContentWrapper>
   )
 }

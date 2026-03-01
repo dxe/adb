@@ -1,6 +1,13 @@
+import {
+  dehydrate,
+  HydrationBoundary,
+  QueryClient,
+} from '@tanstack/react-query'
 import { notFound } from 'next/navigation'
 import { ContentWrapper } from '@/app/content-wrapper'
 import { EventForm } from '../event-form'
+import { API_PATH, ApiClient } from '@/lib/api'
+import { getCookies } from '@/lib/auth'
 
 export default async function EditEventPage({
   params,
@@ -13,10 +20,20 @@ export default async function EditEventPage({
     notFound()
   }
 
+  const apiClient = new ApiClient(await getCookies())
+  const queryClient = new QueryClient()
+
+  await queryClient.prefetchQuery({
+    queryKey: [API_PATH.EVENT_GET, String(eventId)],
+    queryFn: () => apiClient.getEvent(eventId),
+  })
+
   return (
     <ContentWrapper size="sm" className="gap-8">
-      <h1 className="text-3xl font-bold">Attendance</h1>
-      <EventForm mode="event" />
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <h1 className="text-3xl font-bold">Attendance</h1>
+        <EventForm mode="event" />
+      </HydrationBoundary>
     </ContentWrapper>
   )
 }
