@@ -1,7 +1,6 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import Link from 'next/link'
 import {
   ColumnDef,
   flexRender,
@@ -20,6 +19,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import clsx from 'clsx'
+import { IntentPrefetchLink } from '@/components/intent-prefetch-link'
 
 type Chapter = {
   ChapterID: number
@@ -63,13 +63,12 @@ export function UserTable({
         ),
         accessorKey: 'name',
         cell: ({ row }) => (
-          <Link
+          <IntentPrefetchLink
             href={`/users/${row.original.id}`}
-            prefetch={false}
             className="font-semibold hover:underline"
           >
             {row.original.name}
-          </Link>
+          </IntentPrefetchLink>
         ),
       },
       {
@@ -222,13 +221,12 @@ export function UserTable({
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-1">
-                  <Link
+                  <IntentPrefetchLink
                     href={`/users/${row.original.id}`}
-                    prefetch={false}
                     className="text-base font-semibold hover:underline"
                   >
                     {row.original.name}
-                  </Link>
+                  </IntentPrefetchLink>
                   <span className="block text-sm text-muted-foreground">
                     {row.original.email}
                   </span>
