@@ -110,22 +110,28 @@ export function useActivistRegistry() {
       const activistsToUpdate: ActivistRecord[] = []
 
       for (const activist of newActivists) {
-        const incomingTimestamp = activist.last_updated * 1000
         const existingActivist = registryRef.current.getActivistById(
           activist.id,
         )
-        const existingTimestamp = existingActivist?.lastUpdated || 0
-        const hasNewAttendanceData =
-          activist.last_event_date * 1000 >
-          (existingActivist?.lastEventDate || 0)
 
-        // Only update if profile data OR event data is newer (handles out-of-order responses)
-        if (incomingTimestamp > existingTimestamp || hasNewAttendanceData) {
-          const { last_event_date, ...activistData } = activist
+        if (!existingActivist) {
+          activistsToUpdate.push(activist)
+          continue
+        }
+
+        const hasNewerProfile = activist.lastUpdated > existingActivist.lastUpdated
+        const hasNewerAttendance = activist.lastEventDate > existingActivist.lastEventDate
+
+        if (hasNewerProfile || hasNewerAttendance) {
           activistsToUpdate.push({
-            ...activistData,
-            lastUpdated: incomingTimestamp,
-            lastEventDate: last_event_date * 1000,
+            ...existingActivist,
+            ...(hasNewerProfile && {
+              name: activist.name,
+              email: activist.email,
+              phone: activist.phone,
+              lastUpdated: activist.lastUpdated,
+            }),
+            ...(hasNewerAttendance && { lastEventDate: activist.lastEventDate }),
           })
         }
       }

@@ -84,14 +84,23 @@ export const ActivistNamesResp = z.object({
 
 export const ActivistListBasicResp = z.object({
   activists: z.array(
-    z.object({
-      id: z.number(),
-      name: z.string(),
-      email: z.boolean(),
-      phone: z.boolean(),
-      last_updated: z.number(), // Unix timestamp in seconds
-      last_event_date: z.number(), // Unix timestamp in seconds, 0 if no events
-    }),
+    z
+      .object({
+        id: z.number(),
+        name: z.string(),
+        email: z.boolean(),
+        phone: z.boolean(),
+        last_updated: z.number(),
+        last_event_date: z.number(),
+      })
+      .transform((a) => ({
+        id: a.id,
+        name: a.name,
+        email: a.email,
+        phone: a.phone,
+        lastUpdated: a.last_updated * 1000,
+        lastEventDate: a.last_event_date * 1000,
+      })),
   ),
   hidden_ids: z.array(z.number()),
 })
