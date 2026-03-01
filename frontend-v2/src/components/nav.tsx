@@ -83,12 +83,14 @@ const DropdownItem = ({
   item,
   isExpanded,
   onClick,
+  onNavigate,
 }: {
   item: TDropdownItem
   isExpanded: boolean
   onClick: () => void
+  onNavigate: () => void
 }) => {
-  const { user, pageName } = useAuthedPageContext()
+  const { user } = useAuthedPageContext()
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
@@ -115,19 +117,20 @@ const DropdownItem = ({
       {isExpanded && (
         <div
           className={clsx(buefyStyles['navbar-dropdown'], '!block')}
-          onClick={onClick}
+          onClick={onNavigate}
         >
           {item.items.map((innerItem) => {
-            // For ActivistListV2 pages, highlight only when query params match exactly.
+            const navPath = innerItem.href.startsWith('/v2')
+              ? innerItem.href.substring(3)
+              : null
+
             const isActive =
-              innerItem.page === 'ActivistListV2' &&
-              innerItem.href.startsWith('/v2')
-                ? isExactParamsMatch(
-                    innerItem.href.substring(3),
-                    pathname,
-                    searchParams,
-                  )
-                : pageName === innerItem.page
+              navPath === '/activists' || navPath?.startsWith('/activists?')
+                ? // For activists pages (in frontend-v2), highlight only when query params match exactly.
+                  isExactParamsMatch(navPath, pathname, searchParams)
+                : navPath !== null &&
+                  (pathname === navPath || pathname.startsWith(navPath + '/'))
+
             const classNames = clsx(
               buefyStyles['navbar-item'],
               { [buefyStyles['is-active']]: isActive },
@@ -218,6 +221,11 @@ export const Navbar = () => {
   const [isMobileExpanded, setMobileExpanded] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
 
+  const closeNav = () => {
+    setMobileExpanded(false)
+    setActiveDropdown(null)
+  }
+
   // Note that this navbar currently uses the Vue stylesheet. Once we
   // are no longer using Vue, we should update this using tailwind.
   return (
@@ -265,6 +273,7 @@ export const Navbar = () => {
                   prev === item.label ? null : item.label,
                 )
               }
+              onNavigate={closeNav}
             />
           ))}
         </div>
