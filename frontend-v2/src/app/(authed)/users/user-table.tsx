@@ -18,8 +18,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import clsx from 'clsx'
+import { Button } from '@/components/ui/button'
 import { IntentPrefetchLink } from '@/components/intent-prefetch-link'
+import { Pencil } from 'lucide-react'
+import clsx from 'clsx'
 
 type Chapter = {
   ChapterID: number
@@ -63,12 +65,7 @@ export function UserTable({
         ),
         accessorKey: 'name',
         cell: ({ row }) => (
-          <IntentPrefetchLink
-            href={`/users/${row.original.id}`}
-            className="font-semibold hover:underline"
-          >
-            {row.original.name}
-          </IntentPrefetchLink>
+          <span className="font-semibold">{row.original.name}</span>
         ),
       },
       {
@@ -148,6 +145,18 @@ export function UserTable({
           )
         },
       },
+      {
+        id: 'edit',
+        header: '',
+        cell: ({ row }) => (
+          <Button asChild variant="outline" size="sm">
+            <IntentPrefetchLink href={`/users/${row.original.id}`}>
+              <Pencil />
+              Edit
+            </IntentPrefetchLink>
+          </Button>
+        ),
+      },
     ]
   }, [chapterMap])
 
@@ -221,16 +230,19 @@ export function UserTable({
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-1">
-                  <IntentPrefetchLink
-                    href={`/users/${row.original.id}`}
-                    className="text-base font-semibold hover:underline"
-                  >
+                  <span className="text-base font-semibold">
                     {row.original.name}
-                  </IntentPrefetchLink>
+                  </span>
                   <span className="block text-sm text-muted-foreground">
                     {row.original.email}
                   </span>
                 </div>
+                <Button asChild variant="outline" size="sm">
+                  <IntentPrefetchLink href={`/users/${row.original.id}`}>
+                    <Pencil />
+                    Edit
+                  </IntentPrefetchLink>
+                </Button>
               </div>
               <dl className="mt-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
                 <div className="flex gap-2">

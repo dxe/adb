@@ -165,7 +165,11 @@ export function UserForm({ userId }: { userId?: number }) {
           <p className="text-sm uppercase tracking-wide text-muted-foreground">
             {userId ? 'Edit user' : 'Create user'}
           </p>
-          <h1 className="text-2xl font-semibold">{user?.name ?? 'New User'}</h1>
+          {!userLoading && (
+            <h1 className="text-2xl font-semibold">
+              {user?.name ?? 'New User'}
+            </h1>
+          )}
         </div>
         <Button variant="ghost" asChild>
           <Link href="/users">
