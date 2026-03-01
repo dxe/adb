@@ -129,17 +129,31 @@ const DropdownItem = ({
 
 const ChapterSwitcher = () => {
   const { user } = useAuthedPageContext()
-
   const queryClient = useQueryClient()
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: [API_PATH.CHAPTER_LIST],
     queryFn: apiClient.getChapterList,
-    enabled: user.role === 'admin',
   })
 
-  if (user.role !== 'admin') {
-    return null
+  if (isLoading) {
+    return (
+      <div
+        className={buefyStyles['navbar-item']}
+        role="status"
+        aria-live="polite"
+      >
+        <span className="text-sm text-neutral-500">Loading chapters...</span>
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className={buefyStyles['navbar-item']} role="alert">
+        <span className="text-sm text-neutral-500">Chapters unavailable</span>
+      </div>
+    )
   }
 
   const switchChapter = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -154,7 +168,7 @@ const ChapterSwitcher = () => {
         onChange={switchChapter}
         value={user.ChapterID}
         className="cursor-pointer rounded-lg border border-input pl-3 pr-8 py-1.5 text-sm bg-white hover:border-gray-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
-        disabled={isLoading || !data?.length}
+        disabled={!data?.length}
       >
         {data?.map((chapter) => (
           <option key={chapter.ChapterID} value={chapter.ChapterID}>
