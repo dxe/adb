@@ -19,9 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
 import clsx from 'clsx'
-import { Pencil } from 'lucide-react'
 
 type Chapter = {
   ChapterID: number
@@ -67,6 +65,7 @@ export function UserTable({
         cell: ({ row }) => (
           <Link
             href={`/users/${row.original.id}`}
+            prefetch={false}
             className="font-semibold hover:underline"
           >
             {row.original.name}
@@ -150,18 +149,6 @@ export function UserTable({
           )
         },
       },
-      {
-        header: '',
-        id: 'actions',
-        cell: ({ row }) => (
-          <Button size="sm" variant="outline" asChild>
-            <Link href={`/users/${row.original.id}`}>
-              <Pencil className="h-4 w-4" />
-              Edit
-            </Link>
-          </Button>
-        ),
-      },
     ]
   }, [chapterMap])
 
@@ -237,6 +224,7 @@ export function UserTable({
                 <div className="space-y-1">
                   <Link
                     href={`/users/${row.original.id}`}
+                    prefetch={false}
                     className="text-base font-semibold hover:underline"
                   >
                     {row.original.name}
@@ -245,12 +233,6 @@ export function UserTable({
                     {row.original.email}
                   </span>
                 </div>
-                <Button size="sm" variant="outline" asChild>
-                  <Link href={`/users/${row.original.id}`}>
-                    <Pencil className="h-4 w-4" />
-                    Edit
-                  </Link>
-                </Button>
               </div>
               <dl className="mt-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
                 <div className="flex gap-2">
