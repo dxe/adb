@@ -7,14 +7,14 @@
 
 import navbarData from '$shared/nav.json'
 import { CircleUser } from 'lucide-react'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import Image from 'next/image'
 import logo1 from '$public/logo.png'
 import Link from 'next/link'
 import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
 import buefyStyles from './nav.module.css'
 import clsx from 'clsx'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { API_PATH, apiClient } from '@/lib/api'
 import { SF_BAY_CHAPTER_ID } from '@/lib/constants'
 
@@ -129,18 +129,12 @@ const DropdownItem = ({
 
 const ChapterSwitcher = () => {
   const { user } = useAuthedPageContext()
-
   const queryClient = useQueryClient()
 
-  const { data, isLoading } = useQuery({
+  const { data } = useSuspenseQuery({
     queryKey: [API_PATH.CHAPTER_LIST],
     queryFn: apiClient.getChapterList,
-    enabled: user.role === 'admin',
   })
-
-  if (user.role !== 'admin') {
-    return null
-  }
 
   const switchChapter = (e: React.ChangeEvent<HTMLSelectElement>) => {
     queryClient.invalidateQueries() // invalidate existing cache for previous chapter
@@ -154,7 +148,7 @@ const ChapterSwitcher = () => {
         onChange={switchChapter}
         value={user.ChapterID}
         className="cursor-pointer rounded-lg border border-input pl-3 pr-8 py-1.5 text-sm bg-white hover:border-gray-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
-        disabled={isLoading || !data?.length}
+        disabled={!data?.length}
       >
         {data?.map((chapter) => (
           <option key={chapter.ChapterID} value={chapter.ChapterID}>
@@ -165,6 +159,12 @@ const ChapterSwitcher = () => {
     </div>
   )
 }
+
+const ChapterSwitcherFallback = () => (
+  <div className={buefyStyles['navbar-item']}>
+    <span className="text-sm text-neutral-500">Loading chapters...</span>
+  </div>
+)
 
 export const Navbar = () => {
   const { user } = useAuthedPageContext()
@@ -249,7 +249,11 @@ export const Navbar = () => {
               </a>
             </div>
           </div>
-          {user.role === 'admin' && <ChapterSwitcher />}
+          {user.role === 'admin' && (
+            <Suspense fallback={<ChapterSwitcherFallback />}>
+              <ChapterSwitcher />
+            </Suspense>
+          )}
         </div>
       </div>
     </nav>
