@@ -20,15 +20,15 @@ export function IntentPrefetchLink({
   onFocus,
   ...props
 }: IntentPrefetchLinkProps) {
-  const [prefetch, setPrefetch] = useState(false)
+  const [prefetch, setPrefetch] = useState<boolean | null>(false)
 
   const handleMouseEnter = (event: MouseEvent<HTMLAnchorElement>) => {
-    setPrefetch(true)
+    setPrefetch(null)
     onMouseEnter?.(event)
   }
 
   const handleFocus = (event: FocusEvent<HTMLAnchorElement>) => {
-    setPrefetch(true)
+    setPrefetch(null)
     onFocus?.(event)
   }
 
