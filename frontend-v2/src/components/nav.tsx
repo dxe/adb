@@ -7,14 +7,14 @@
 
 import navbarData from '$shared/nav.json'
 import { CircleUser } from 'lucide-react'
-import { Suspense, useState } from 'react'
+import { useState } from 'react'
 import Image from 'next/image'
 import logo1 from '$public/logo.png'
 import Link from 'next/link'
 import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
 import buefyStyles from './nav.module.css'
 import clsx from 'clsx'
-import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { API_PATH, apiClient } from '@/lib/api'
 import { SF_BAY_CHAPTER_ID } from '@/lib/constants'
 
@@ -131,10 +131,30 @@ const ChapterSwitcher = () => {
   const { user } = useAuthedPageContext()
   const queryClient = useQueryClient()
 
-  const { data } = useSuspenseQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: [API_PATH.CHAPTER_LIST],
     queryFn: apiClient.getChapterList,
   })
+
+  if (isLoading) {
+    return (
+      <div
+        className={buefyStyles['navbar-item']}
+        role="status"
+        aria-live="polite"
+      >
+        <span className="text-sm text-neutral-500">Loading chapters...</span>
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className={buefyStyles['navbar-item']} role="alert">
+        <span className="text-sm text-neutral-500">Chapters unavailable</span>
+      </div>
+    )
+  }
 
   const switchChapter = (e: React.ChangeEvent<HTMLSelectElement>) => {
     queryClient.invalidateQueries() // invalidate existing cache for previous chapter
@@ -159,12 +179,6 @@ const ChapterSwitcher = () => {
     </div>
   )
 }
-
-const ChapterSwitcherFallback = () => (
-  <div className={buefyStyles['navbar-item']}>
-    <span className="text-sm text-neutral-500">Loading chapters...</span>
-  </div>
-)
 
 export const Navbar = () => {
   const { user } = useAuthedPageContext()
@@ -249,11 +263,7 @@ export const Navbar = () => {
               </a>
             </div>
           </div>
-          {user.role === 'admin' && (
-            <Suspense fallback={<ChapterSwitcherFallback />}>
-              <ChapterSwitcher />
-            </Suspense>
-          )}
+          {user.role === 'admin' && <ChapterSwitcher />}
         </div>
       </div>
     </nav>
