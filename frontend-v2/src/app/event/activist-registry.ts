@@ -51,15 +51,14 @@ export class ActivistRegistry {
   async loadFromStorage(storage: ActivistStorage): Promise<void> {
     this.storage = storage
 
-    const stored = await this.storage.getAllActivists()
-    this.activists = stored
+    this.activists = await this.storage.getAllActivists()
     this.sortActivists()
-    this.activistsByName = new Map(stored.map((a) => [a.name, a]))
-    this.activistsById = new Map(stored.map((a) => [a.id, a]))
+    this.activistsByName = new Map(this.activists.map((a) => [a.name, a]))
+    this.activistsById = new Map(this.activists.map((a) => [a.id, a]))
   }
 
   /**
-   * Merges new activists with existing data, replacing duplicates by id and name.
+   * Merges new activists with existing data.
    * If storage is configured, persists updates to IndexedDB.
    */
   async mergeActivists(newActivists: ActivistRecord[]): Promise<void> {
@@ -73,27 +72,17 @@ export class ActivistRegistry {
       const existingIndex = indexById.get(activist.id) ?? -1
 
       if (existingIndex >= 0) {
-        // Update existing activist (handles renames properly)
-        const oldActivist = this.activists[existingIndex]
         this.activists[existingIndex] = activist
-
-        // Remove old name from index if name changed
-        if (oldActivist.name !== activist.name) {
-          this.activistsByName.delete(oldActivist.name)
-        }
       } else {
-        // Add new activist
         this.activists.push(activist)
         indexById.set(activist.id, this.activists.length - 1)
       }
 
-      // Update indexes
-      this.activistsByName.set(activist.name, activist)
       this.activistsById.set(activist.id, activist)
     }
 
-    // Re-sort after batch updates to maintain sort order
     this.sortActivists()
+    this.activistsByName = new Map(this.activists.map((a) => [a.name, a]))
 
     // Write through to storage if configured
     await this.storage?.saveActivists(newActivists)
