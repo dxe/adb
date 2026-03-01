@@ -100,8 +100,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
     useActivistRegistry()
 
   // Fetch existing event/connection, if editing.
-  // (Note: This data is prefetched during SSR for edit pages.)
-  const { data: eventData } = useQuery({
+  const { data: eventData, isLoading: isEventLoading } = useQuery({
     queryKey: [API_PATH.EVENT_GET, eventId],
     queryFn: () => apiClient.getEvent(Number(eventId)),
     enabled: !!eventId,
@@ -181,10 +180,6 @@ export const EventForm = ({ mode }: EventFormProps) => {
   })
 
   const initialValues: FormValues = useMemo(() => {
-    if (eventId && !eventData) {
-      throw new Error('Expected event data to be prefetched')
-    }
-
     return {
       eventName: eventData?.event_name || '',
       eventType: eventData?.event_type || (isConnection ? 'Connection' : ''),
@@ -337,13 +332,12 @@ export const EventForm = ({ mode }: EventFormProps) => {
     form.setFieldValue('eventDate', getTodayDate())
   }
 
-  // Only show loading for activist list since event data is prefetched during SSR
-  if (isLoadingActivists || !activistRegistry) {
+  if (isLoadingActivists || (eventId && isEventLoading) || !activistRegistry) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading activist names...</p>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     )
