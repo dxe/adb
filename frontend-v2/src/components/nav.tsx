@@ -11,6 +11,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import logo1 from '$public/logo.png'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
 import buefyStyles from './nav.module.css'
 import clsx from 'clsx'
@@ -67,7 +68,8 @@ const DropdownItem = ({
   isExpanded: boolean
   onClick: () => void
 }) => {
-  const { user, pageName } = useAuthedPageContext()
+  const { user } = useAuthedPageContext()
+  const pathname = usePathname()
 
   if (!userHasAccess(user, item.roleRequired)) {
     return null
@@ -95,9 +97,15 @@ const DropdownItem = ({
           onClick={onClick}
         >
           {item.items.map((innerItem) => {
+            const navPath = innerItem.href.startsWith('/v2')
+              ? innerItem.href.substring(3)
+              : null
+            const isActive =
+              navPath !== null &&
+              (pathname === navPath || pathname.startsWith(navPath + '/'))
             const classNames = clsx(
               buefyStyles['navbar-item'],
-              { [buefyStyles['is-active']]: pageName === innerItem.page },
+              { [buefyStyles['is-active']]: isActive },
               { 'mb-2': innerItem.separatorBelow },
             )
             return (

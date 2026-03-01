@@ -4,7 +4,6 @@ import { createContext, PropsWithChildren } from 'react'
 import { User } from './session'
 
 export type TAuthedPageContext = {
-  pageName: string
   user: User
 }
 
