@@ -4,12 +4,14 @@ import { fetchSession, type User } from '@/app/session'
 import { SERVER_USER_HEADER } from '@/lib/server-user'
 import QuickLRU from 'quick-lru'
 
-// LRU cache for middleware (Edge Runtime compatible)
-// Maps cookie hash to { user, timestamp }
-const sessionCache = new QuickLRU<string, { user: User; timestamp: number }>({
-  maxSize: 1000,
-})
 const CACHE_TTL = 15 * 60 * 1000 // 15 minutes in milliseconds
+
+// LRU cache for middleware (Edge Runtime compatible)
+// Maps cookie hash to user; QuickLRU handles TTL-based expiry automatically.
+const sessionCache = new QuickLRU<string, User>({
+  maxSize: 1000,
+  maxAge: CACHE_TTL,
+})
 
 // Simple hash function for cookie string (for cache key)
 function hashString(str: string): string {
@@ -25,28 +27,13 @@ function hashString(str: string): string {
 async function getCachedSession(cookies: string) {
   const cacheKey = hashString(cookies)
   const cached = sessionCache.get(cacheKey)
-  const now = Date.now()
 
-  // Return cached if valid
-  if (cached && now - cached.timestamp < CACHE_TTL) {
-    return { user: cached.user }
-  }
+  if (cached) return { user: cached }
 
   const session = await fetchSession(cookies)
 
   if (session.user) {
-    sessionCache.set(cacheKey, {
-      user: session.user,
-      timestamp: now,
-    })
-
-    // Cleanup expired entries on every cache set
-    const cutoff = now - CACHE_TTL
-    for (const [key, value] of sessionCache.entries()) {
-      if (value.timestamp < cutoff) {
-        sessionCache.delete(key)
-      }
-    }
+    sessionCache.set(cacheKey, session.user)
   }
 
   return session
