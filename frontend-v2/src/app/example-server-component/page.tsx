@@ -1,48 +1,31 @@
-// Modeled from example from React Query docs:
-// https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr
-
-import {
-  dehydrate,
-  HydrationBoundary,
-  QueryClient,
-} from '@tanstack/react-query'
-import Activists from './activists'
+import { Suspense } from 'react'
 import { ContentWrapper } from '@/app/content-wrapper'
 import { AuthedPageLayout } from '@/app/authed-page-layout'
-import { API_PATH, ApiClient } from '@/lib/api'
-import { getCookies } from '@/lib/auth'
 import { Navbar } from '@/components/nav'
+import { Loader2 } from 'lucide-react'
+import { ActivistsSection } from './activists-section'
 
 export default async function ActivistsPage() {
-  const apiClient = new ApiClient(await getCookies())
-  const queryClient = new QueryClient()
-
-  await queryClient.prefetchQuery({
-    queryKey: [API_PATH.ACTIVIST_NAMES_GET],
-    queryFn: apiClient.getActivistNames,
-  })
-
-  // For navbar. TODO: only do if user is admin.
-  // https://app.asana.com/1/71341131816665/project/1209217418568645/task/1212207774751674
-  await queryClient.prefetchQuery({
-    queryKey: [API_PATH.CHAPTER_LIST],
-    queryFn: apiClient.getChapterList,
-  })
-
   return (
     <AuthedPageLayout pageName="TestPage">
-      {
-        // Serialization is as easy as passing props.
-        // HydrationBoundary is a Client Component, so hydration will happen there.
-      }
-      <HydrationBoundary state={dehydrate(queryClient)}>
-        <Navbar />
-        <ContentWrapper size="sm" className="gap-6">
-          <p>Hello from App Router!</p>
-
-          <Activists />
-        </ContentWrapper>
-      </HydrationBoundary>
+      <Navbar />
+      <ContentWrapper size="sm" className="gap-6">
+        <p>Hello from App Router!</p>
+        <p className="text-sm text-muted-foreground">
+          This page streams the activists section so slow DB queries do not
+          block the full page render.
+        </p>
+        <Suspense fallback={<ActivistsFallback />}>
+          <ActivistsSection />
+        </Suspense>
+      </ContentWrapper>
     </AuthedPageLayout>
   )
 }
+
+const ActivistsFallback = () => (
+  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+    <span>Loading activists...</span>
+  </div>
+)
