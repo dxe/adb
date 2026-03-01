@@ -1,7 +1,13 @@
+import { cache } from 'react'
 import { API_PATH, ApiClient } from '@/lib/api'
 import { QueryClient } from '@tanstack/react-query'
+import { getCookies } from '@/lib/auth'
 
 export type User = NonNullable<Awaited<ReturnType<typeof fetchSession>>['user']>
+
+export const getCachedSession = cache(async () =>
+  fetchSession(await getCookies()),
+)
 
 export const fetchSession = async (cookies?: string) => {
   const queryClient = new QueryClient()
