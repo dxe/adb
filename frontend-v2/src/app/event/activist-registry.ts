@@ -15,9 +15,7 @@ export type ActivistRecord = {
  * Reads are synchronous (from memory) for fast autocomplete/filtering.
  * Writes are async and automatically persist to IndexedDB when storage is configured.
  *
- * @param storage - Optional IndexedDB storage for persistence.
- *                  When provided, enables automatic write-through caching.
- *                  When omitted, registry operates in memory-only mode.
+ * When storage is not configured, registry operates in memory-only mode.
  */
 export class ActivistRegistry {
   private activists: ActivistRecord[]
@@ -25,11 +23,10 @@ export class ActivistRegistry {
   private activistsById: Map<number, ActivistRecord>
   private storage?: ActivistStorage
 
-  constructor(storage?: ActivistStorage) {
+  constructor() {
     this.activists = []
     this.activistsByName = new Map()
     this.activistsById = new Map()
-    this.storage = storage
   }
 
   /**
@@ -48,24 +45,18 @@ export class ActivistRegistry {
   /**
    * Loads activists from IndexedDB storage into memory.
    * Call once after construction, before first use of the registry.
-   * @throws Error if storage is not configured
    */
-  async loadFromStorage(): Promise<void> {
-    if (!this.storage) {
-      throw new Error(
-        'Cannot load activists from storage: storage not configured.',
-      )
-    }
+  async loadFromStorage(storage: ActivistStorage): Promise<void> {
+    this.storage = storage
 
-    const stored = await this.storage.getAllActivists()
-    this.activists = stored
+    this.activists = await this.storage.getAllActivists()
     this.sortActivists()
-    this.activistsByName = new Map(stored.map((a) => [a.name, a]))
-    this.activistsById = new Map(stored.map((a) => [a.id, a]))
+    this.activistsByName = new Map(this.activists.map((a) => [a.name, a]))
+    this.activistsById = new Map(this.activists.map((a) => [a.id, a]))
   }
 
   /**
-   * Merges new activists with existing data, replacing duplicates by id.
+   * Merges new activists with existing data.
    * If storage is configured, persists updates to IndexedDB.
    */
   async mergeActivists(newActivists: ActivistRecord[]): Promise<void> {
@@ -79,27 +70,17 @@ export class ActivistRegistry {
       const existingIndex = indexById.get(activist.id) ?? -1
 
       if (existingIndex >= 0) {
-        // Update existing activist (handles renames properly)
-        const oldActivist = this.activists[existingIndex]
         this.activists[existingIndex] = activist
-
-        // Remove old name from index if name changed
-        if (oldActivist.name !== activist.name) {
-          this.activistsByName.delete(oldActivist.name)
-        }
       } else {
-        // Add new activist
         this.activists.push(activist)
         indexById.set(activist.id, this.activists.length - 1)
       }
 
-      // Update indexes
-      this.activistsByName.set(activist.name, activist)
       this.activistsById.set(activist.id, activist)
     }
 
-    // Re-sort after batch updates to maintain sort order
     this.sortActivists()
+    this.activistsByName = new Map(this.activists.map((a) => [a.name, a]))
 
     // Write through to storage if configured
     await this.storage?.saveActivists(newActivists)
@@ -116,14 +97,16 @@ export class ActivistRegistry {
 
     const idsToRemove = new Set(ids)
 
-    this.activists = this.activists.filter((activist) => {
+    const remainingActivists: ActivistRecord[] = []
+    for (const activist of this.activists) {
       if (idsToRemove.has(activist.id)) {
         this.activistsByName.delete(activist.name)
         this.activistsById.delete(activist.id)
-        return false
+        continue
       }
-      return true
-    })
+      remainingActivists.push(activist)
+    }
+    this.activists = remainingActivists
 
     // Write through to storage if configured
     await this.storage?.deleteActivistsByIds(ids)
