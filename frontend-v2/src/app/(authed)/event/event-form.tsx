@@ -100,7 +100,11 @@ export const EventForm = ({ mode }: EventFormProps) => {
     useActivistRegistry()
 
   // Fetch existing event/connection, if editing.
-  const { data: eventData, isLoading: isEventLoading } = useQuery({
+  const {
+    data: eventData,
+    isLoading: isEventLoading,
+    isError: isEventError,
+  } = useQuery({
     queryKey: [API_PATH.EVENT_GET, eventId],
     queryFn: () => apiClient.getEvent(Number(eventId)),
     enabled: !!eventId,
@@ -339,6 +343,14 @@ export const EventForm = ({ mode }: EventFormProps) => {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading...</p>
         </div>
+      </div>
+    )
+  }
+
+  if (eventId && isEventError) {
+    return (
+      <div className="rounded-md border p-4 text-sm text-destructive">
+        Failed to load {isConnection ? 'connection' : 'event'} data.
       </div>
     )
   }

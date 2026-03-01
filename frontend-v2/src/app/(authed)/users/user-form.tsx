@@ -77,8 +77,7 @@ export function UserForm({ userId }: { userId?: number }) {
       router.push('/users')
     },
     onError: (err: unknown) => {
-      const message =
-        err instanceof Error ? err.message : 'Unable to save user right now'
+      const message = err instanceof Error ? err.message : 'Failed to save user'
       toast.error(message)
     },
   })
@@ -132,7 +131,7 @@ export function UserForm({ userId }: { userId?: number }) {
   const loadErrorMessage =
     (chaptersError as Error | undefined)?.message ||
     (userErrorObj as Error | undefined)?.message ||
-    'Unable to load user data.'
+    'Failed to load user data.'
 
   if (loadError) {
     return (

@@ -69,9 +69,7 @@ export default function UsersPage() {
       ) : users && chapters ? (
         <UserTable users={filteredUsers} chapters={chapters} />
       ) : (
-        <div className="text-sm text-destructive">
-          Unable to load users right now.
-        </div>
+        <div className="text-sm text-destructive">Failed to load users</div>
       )}
     </div>
   )
