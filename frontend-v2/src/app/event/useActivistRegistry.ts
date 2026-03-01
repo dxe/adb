@@ -15,7 +15,8 @@ import toast from 'react-hot-toast'
  */
 export function useActivistRegistry() {
   // Single registry instance with write-through storage to IndexedDB (if available)
-  const registryRef = useRef(new ActivistRegistry(activistStorage))
+  const registry = new ActivistRegistry()
+  const registryRef = useRef(registry)
   const [isStorageLoaded, setIsStorageLoaded] = useState(false)
   const [isServerLoaded, setIsServerLoaded] = useState(false)
 
@@ -33,7 +34,7 @@ export function useActivistRegistry() {
     }
 
     registryRef.current
-      .loadFromStorage()
+      .loadFromStorage(activistStorage)
       .then(() => {
         if (mounted) setIsStorageLoaded(true)
       })
@@ -137,9 +138,7 @@ export function useActivistRegistry() {
       }
 
       // Merge newer activists (registry handles both memory and storage)
-      if (activistsToUpdate.length > 0) {
-        await registryRef.current.mergeActivists(activistsToUpdate)
-      }
+      await registryRef.current.mergeActivists(activistsToUpdate)
 
       // Update last sync timestamp
       await registryRef.current.setLastSyncTime(new Date().toISOString())

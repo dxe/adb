@@ -3,7 +3,7 @@
  * Provides caching and incremental sync capabilities.
  *
  * Why IndexedDB instead of localStorage:
- * - Data size: ~3MB currently, approaching localStorage's 5-10MB limit
+ * - Data size: ~3MB as of January 2026, approaching localStorage's 5-10MB limit
  * - Async operations: Avoid blocking main thread with large JSON parse/stringify
  * - Structured storage: Store by ID with built-in indexing
  */
@@ -121,7 +121,10 @@ export class ActivistStorage {
       const request =
         timestamp === null
           ? store.delete('lastSync')
-          : store.put({ lastSyncTime: timestamp }, 'lastSync')
+          : store.put(
+              { lastSyncTime: timestamp } satisfies SyncMetadata,
+              'lastSync',
+            )
 
       request.onsuccess = () => resolve()
       request.onerror = () => reject(request.error)
