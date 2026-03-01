@@ -15,9 +15,7 @@ export type ActivistRecord = {
  * Reads are synchronous (from memory) for fast autocomplete/filtering.
  * Writes are async and automatically persist to IndexedDB when storage is configured.
  *
- * @param storage - Optional IndexedDB storage for persistence.
- *                  When provided, enables automatic write-through caching.
- *                  When omitted, registry operates in memory-only mode.
+ * When storage is not configured, registry operates in memory-only mode.
  */
 export class ActivistRegistry {
   private activists: ActivistRecord[]
