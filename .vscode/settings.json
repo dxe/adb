@@ -15,4 +15,5 @@
   "prettier.requireConfig": true,
   "prettier.prettierPath": "./node_modules/prettier",
   "files.insertFinalNewline": true,
+  "editor.rulers": [80],
 }
