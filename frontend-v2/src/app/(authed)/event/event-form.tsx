@@ -336,6 +336,14 @@ export const EventForm = ({ mode }: EventFormProps) => {
     form.setFieldValue('eventDate', getTodayDate())
   }
 
+  if (eventId && isEventError) {
+    return (
+      <div className="rounded-md border p-4 text-sm text-destructive">
+        Failed to load {isConnection ? 'connection' : 'event'} data.
+      </div>
+    )
+  }
+
   if (isLoadingActivists || (eventId && isEventLoading) || !activistRegistry) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -343,14 +351,6 @@ export const EventForm = ({ mode }: EventFormProps) => {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading...</p>
         </div>
-      </div>
-    )
-  }
-
-  if (eventId && isEventError) {
-    return (
-      <div className="rounded-md border p-4 text-sm text-destructive">
-        Failed to load {isConnection ? 'connection' : 'event'} data.
       </div>
     )
   }
