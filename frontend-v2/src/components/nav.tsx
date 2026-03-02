@@ -98,46 +98,48 @@ const DropdownItem = ({
           className={clsx(buefyStyles['navbar-dropdown'], '!block')}
           onClick={onNavigate}
         >
-          {item.items.map((innerItem) => {
-            const navPath = innerItem.href.startsWith('/v2')
-              ? innerItem.href.substring(3)
-              : null
-            const siblingExactMatch = item.items.some(
-              (sibling) =>
-                sibling !== innerItem &&
-                sibling.href.startsWith('/v2') &&
-                pathname === sibling.href.substring(3),
-            )
-            const isActive =
-              navPath !== null &&
-              (pathname === navPath ||
-                (!siblingExactMatch && pathname.startsWith(navPath + '/')))
-            const classNames = clsx(
-              buefyStyles['navbar-item'],
-              { [buefyStyles['is-active']]: isActive },
-              { 'mb-2': innerItem.separatorBelow },
-            )
-            return (
-              userHasAccess(user, innerItem.roleRequired) &&
-              (innerItem.href.startsWith('/v2') ? (
-                <Link
-                  href={innerItem.href.substring(3)}
-                  className={classNames}
-                  key={innerItem.href}
-                >
-                  {innerItem.label}
-                </Link>
-              ) : (
-                <a
-                  href={innerItem.href}
-                  className={classNames}
-                  key={innerItem.href}
-                >
-                  {innerItem.label}
-                </a>
-              ))
-            )
-          })}
+          {(() => {
+            return item.items.map((innerItem) => {
+              const navPath = innerItem.href.startsWith('/v2')
+                ? innerItem.href.substring(3)
+                : null
+              const siblingExactMatch = item.items.some(
+                (sibling) =>
+                  sibling !== innerItem &&
+                  sibling.href.startsWith('/v2') &&
+                  pathname === sibling.href.substring(3),
+              )
+              const isActive =
+                navPath !== null &&
+                (pathname === navPath ||
+                  (!siblingExactMatch && pathname.startsWith(navPath + '/')))
+              const classNames = clsx(
+                buefyStyles['navbar-item'],
+                { [buefyStyles['is-active']]: isActive },
+                { 'mb-2': innerItem.separatorBelow },
+              )
+              return (
+                userHasAccess(user, innerItem.roleRequired) &&
+                (innerItem.href.startsWith('/v2') ? (
+                  <Link
+                    href={innerItem.href.substring(3)}
+                    className={classNames}
+                    key={innerItem.href}
+                  >
+                    {innerItem.label}
+                  </Link>
+                ) : (
+                  <a
+                    href={innerItem.href}
+                    className={classNames}
+                    key={innerItem.href}
+                  >
+                    {innerItem.label}
+                  </a>
+                ))
+              )
+            })
+          })()}
         </div>
       )}
     </div>

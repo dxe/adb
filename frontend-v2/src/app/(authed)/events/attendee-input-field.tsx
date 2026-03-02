@@ -1,10 +1,12 @@
-import { KeyboardEvent, useState, useEffect } from 'react'
+import { KeyboardEvent } from 'react'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { MailX, PhoneMissed, UserRoundPlus, Check } from 'lucide-react'
 import { AnyFieldApi } from '@tanstack/react-form'
 import { ActivistRegistry } from './activist-registry'
-import { Popover, PopoverContent, PopoverAnchor } from '@/components/ui/popover'
+import { Popover, PopoverAnchor } from '@/components/ui/popover'
+import { useSuggestions } from './use-suggestions'
+import { SuggestionList } from './suggestion-list'
 
 type AttendeeInputFieldProps = {
   field: AnyFieldApi
@@ -29,16 +31,15 @@ export const AttendeeInputField = ({
   registry,
   checkForDuplicate,
 }: AttendeeInputFieldProps) => {
-  const [suggestions, setSuggestions] = useState<string[]>([])
-  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1)
+  const { suggestions, selectedIndex, onInputChange, onSelect, onKeyDown } =
+    useSuggestions((v) => registry.getSuggestions(v))
 
   // Derive popover open state from suggestions and focus
   const open = suggestions.length > 0 && isFocused
 
   const handleInputChange = (value: string) => {
     field.handleChange(value)
-    setSuggestions(registry.getSuggestions(value))
-    setSelectedSuggestionIndex(-1)
+    onInputChange(value)
     onChange()
   }
 
@@ -46,63 +47,32 @@ export const AttendeeInputField = ({
     field.handleChange(value)
     field.handleBlur()
     field.validate('change')
-    setSuggestions([])
-    setSelectedSuggestionIndex(-1)
+    onSelect()
     onAdvanceFocus()
   }
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    onKeyDown(e)
     switch (e.key) {
-      case 'ArrowDown': {
-        e.preventDefault()
-        if (suggestions.length > 0) {
-          setSelectedSuggestionIndex((prev) =>
-            prev === suggestions.length - 1 ? 0 : prev + 1,
-          )
-        }
-        return
-      }
-      case 'ArrowUp': {
-        e.preventDefault()
-        if (suggestions.length > 0) {
-          setSelectedSuggestionIndex((prev) =>
-            prev === -1 || prev === 0 ? suggestions.length - 1 : prev - 1,
-          )
-        }
-        return
-      }
-      case 'Escape': {
-        setSuggestions([])
-        setSelectedSuggestionIndex(-1)
-        return
-      }
       case 'Enter': {
         e.preventDefault()
         const trimmedValue: string = field.state.value?.trim() ?? ''
-        if (!trimmedValue.length) {
-          return
-        }
+        if (!trimmedValue.length) return
         const selectedValue =
-          selectedSuggestionIndex >= 0 &&
-          selectedSuggestionIndex < suggestions.length
-            ? suggestions[selectedSuggestionIndex]
+          selectedIndex >= 0 && selectedIndex < suggestions.length
+            ? suggestions[selectedIndex]
             : trimmedValue
         handleSelectSuggestion(selectedValue)
         return
       }
       case 'Tab': {
-        if (e.shiftKey) {
-          return
-        }
+        if (e.shiftKey) return
         const trimmedValue = field.state.value?.trim() ?? ''
-        if (!trimmedValue.length) {
-          return
-        }
+        if (!trimmedValue.length) return
         e.preventDefault()
         const selectedValue =
-          selectedSuggestionIndex >= 0 &&
-          selectedSuggestionIndex < suggestions.length
-            ? suggestions[selectedSuggestionIndex]
+          selectedIndex >= 0 && selectedIndex < suggestions.length
+            ? suggestions[selectedIndex]
             : trimmedValue
         handleSelectSuggestion(selectedValue)
       }
@@ -145,8 +115,7 @@ export const AttendeeInputField = ({
                   onFocus={() => onFocus(index)}
                   onBlur={() => {
                     field.handleBlur()
-                    setSuggestions([])
-                    setSelectedSuggestionIndex(-1)
+                    onSelect()
                   }}
                 />
                 <div className="right-0 top-0 bottom-0 h-full pointer-events-none absolute flex gap-2 items-center p-1.5 opacity-80">
@@ -159,31 +128,11 @@ export const AttendeeInputField = ({
                 </div>
               </div>
             </PopoverAnchor>
-            <PopoverContent
-              className="p-0 w-[var(--radix-popover-trigger-width)]"
-              align="start"
-              sideOffset={4}
-              onOpenAutoFocus={(e) => e.preventDefault()}
-              onCloseAutoFocus={(e) => e.preventDefault()}
-            >
-              <ul className="max-h-[300px] overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg">
-                {suggestions.map((suggestion, i) => (
-                  <li
-                    key={suggestion}
-                    className={cn(
-                      'cursor-pointer px-3 py-1 hover:bg-gray-100',
-                      i === selectedSuggestionIndex ? 'bg-neutral-100' : '',
-                    )}
-                    onMouseDown={(e) => {
-                      e.preventDefault() // Prevents input blur from firing
-                      handleSelectSuggestion(suggestion)
-                    }}
-                  >
-                    {suggestion}
-                  </li>
-                ))}
-              </ul>
-            </PopoverContent>
+            <SuggestionList
+              suggestions={suggestions}
+              selectedIndex={selectedIndex}
+              onSelect={handleSelectSuggestion}
+            />
           </Popover>
         </div>
       </div>

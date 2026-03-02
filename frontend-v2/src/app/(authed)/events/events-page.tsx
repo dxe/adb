@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, KeyboardEvent } from 'react'
+import { useState, KeyboardEvent, useMemo } from 'react'
 import Link from 'next/link'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { CalendarPlus, Filter, Loader2, RotateCcw } from 'lucide-react'
@@ -16,7 +16,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover'
+import { Popover, PopoverAnchor } from '@/components/ui/popover'
 import {
   Select,
   SelectContent,
@@ -26,6 +26,8 @@ import {
 } from '@/components/ui/select'
 import { DatePicker } from '@/components/ui/date-picker'
 import { useActivistRegistry } from './useActivistRegistry'
+import { useSuggestions } from './use-suggestions'
+import { SuggestionList } from './suggestion-list'
 import { EventListTable } from './event-list-table'
 import { cn } from '@/lib/utils'
 
@@ -47,45 +49,38 @@ const EVENT_TYPES: { value: EventType; label: string }[] = [
 
 // Activist autocomplete input backed by the activist registry
 function ActivistFilterInput({
+  registry,
   value,
   onChange,
   onEnter,
   label,
+  className,
 }: {
+  registry: ReturnType<typeof useActivistRegistry>['registry']
   value: string
   onChange: (v: string) => void
   onEnter: () => void
   label: string
+  className?: string
 }) {
-  const { registry } = useActivistRegistry()
-  const [suggestions, setSuggestions] = useState<string[]>([])
-  const [selectedIndex, setSelectedIndex] = useState(-1)
+  const { suggestions, selectedIndex, onInputChange, onSelect, onKeyDown } =
+    useSuggestions((v) => registry.getSuggestions(v))
   const [focused, setFocused] = useState(false)
   const open = focused && suggestions.length > 0
 
   const handleChange = (v: string) => {
     onChange(v)
-    setSuggestions(registry.getSuggestions(v))
-    setSelectedIndex(-1)
+    onInputChange(v)
   }
 
   const handleSelect = (name: string) => {
     onChange(name)
-    setSuggestions([])
-    setSelectedIndex(-1)
+    onSelect()
   }
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault()
-      setSelectedIndex((i) => (i === suggestions.length - 1 ? 0 : i + 1))
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault()
-      setSelectedIndex((i) => (i <= 0 ? suggestions.length - 1 : i - 1))
-    } else if (e.key === 'Escape') {
-      setSuggestions([])
-      setSelectedIndex(-1)
-    } else if (e.key === 'Enter') {
+    onKeyDown(e)
+    if (e.key === 'Enter') {
       e.preventDefault()
       if (selectedIndex >= 0 && selectedIndex < suggestions.length) {
         handleSelect(suggestions[selectedIndex])
@@ -96,7 +91,7 @@ function ActivistFilterInput({
   }
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className={cn('flex flex-col gap-1.5', className)}>
       <Label htmlFor="filter-activist">{label}</Label>
       <Popover open={open}>
         <PopoverAnchor asChild>
@@ -108,38 +103,18 @@ function ActivistFilterInput({
             onFocus={() => setFocused(true)}
             onBlur={() => {
               setFocused(false)
-              setSuggestions([])
-              setSelectedIndex(-1)
+              onSelect()
             }}
-            className="w-48"
+            className="w-full"
             autoComplete="off"
           />
         </PopoverAnchor>
-        <PopoverContent
-          className="p-0 w-[var(--radix-popover-trigger-width)]"
-          align="start"
-          sideOffset={4}
-          onOpenAutoFocus={(e) => e.preventDefault()}
-          onCloseAutoFocus={(e) => e.preventDefault()}
-        >
-          <ul className="max-h-[300px] overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg">
-            {suggestions.map((name, i) => (
-              <li
-                key={name}
-                className={cn(
-                  'cursor-pointer px-3 py-1 hover:bg-gray-100 text-sm',
-                  i === selectedIndex ? 'bg-neutral-100' : '',
-                )}
-                onMouseDown={(e) => {
-                  e.preventDefault()
-                  handleSelect(name)
-                }}
-              >
-                {name}
-              </li>
-            ))}
-          </ul>
-        </PopoverContent>
+        <SuggestionList
+          suggestions={suggestions}
+          selectedIndex={selectedIndex}
+          onSelect={handleSelect}
+          size="sm"
+        />
       </Popover>
     </div>
   )
@@ -159,9 +134,10 @@ type Props = {
 }
 
 export default function EventsPage({ mode = 'events' }: Props) {
-  const defaultParams = buildDefaultParams(mode)
+  const defaultParams = useMemo(() => buildDefaultParams(mode), [mode])
   const isConnections = mode === 'connections'
   const queryClient = useQueryClient()
+  const { registry } = useActivistRegistry()
 
   // URL params = committed filters (drives the query + shareable link)
   const [urlParams, setUrlParams] = useQueryStates({
@@ -195,8 +171,11 @@ export default function EventsPage({ mode = 'events' }: Props) {
     setUrlParams({
       name: formName || null,
       activist: formActivist || null,
-      start: formStart !== defaultParams.event_date_start ? formStart : null,
-      end: formEnd !== defaultParams.event_date_end ? formEnd : null,
+      start:
+        formStart && formStart !== defaultParams.event_date_start
+          ? formStart
+          : null,
+      end: formEnd && formEnd !== defaultParams.event_date_end ? formEnd : null,
       type: formType !== defaultParams.event_type ? formType : null,
     })
   }
@@ -243,7 +222,7 @@ export default function EventsPage({ mode = 'events' }: Props) {
 
   const handleDelete = (event: EventListItem) => {
     const confirmed = window.confirm(
-      `Are you sure you want to delete "${event.event_name}"?\n\nPress OK to delete this event.`,
+      `Are you sure you want to delete "${event.event_name}"?`,
     )
     if (confirmed) {
       deleteMutation.mutate(event.event_id)
@@ -279,35 +258,31 @@ export default function EventsPage({ mode = 'events' }: Props) {
         </div>
 
         {showFilters && (
-          <div className="flex flex-wrap items-end gap-4 rounded-md border p-4">
-            {/* Event Name — full width on mobile so activist+type share the next row */}
-            <div className="flex flex-col gap-1.5 w-full sm:w-auto">
-              <Label htmlFor="filter-name">
-                {isConnections ? 'Coach' : 'Event Name'}
-              </Label>
-              <Input
-                id="filter-name"
-                value={formName}
-                onChange={(e) => setFormName(e.target.value)}
-                className="w-full sm:w-48"
-                onKeyDown={(e) => e.key === 'Enter' && handleFilter()}
-              />
-            </div>
+          <div className="flex flex-col gap-4 rounded-md border p-4">
+            <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+              <div className="flex flex-col gap-1.5 sm:flex-1 sm:max-w-xs">
+                <Label htmlFor="filter-name">
+                  {isConnections ? 'Coach' : 'Event Name'}
+                </Label>
+                <Input
+                  id="filter-name"
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleFilter()}
+                />
+              </div>
 
-            {/* Activist + Type grouped so they wrap together */}
-            <div className="flex items-end gap-4">
               <ActivistFilterInput
+                registry={registry}
                 value={formActivist}
                 onChange={setFormActivist}
                 onEnter={handleFilter}
                 label={isConnections ? 'Coachee' : 'Activist'}
+                className="sm:flex-1 sm:max-w-xs"
               />
 
               {!isConnections && (
-                <div
-                  className="flex flex-col gap-1.5 shrink-0"
-                  style={{ width: '11rem', minWidth: 0 }}
-                >
+                <div className="flex flex-col gap-1.5 sm:w-44">
                   <Label>Type</Label>
                   <Select
                     value={formType}
@@ -328,7 +303,7 @@ export default function EventsPage({ mode = 'events' }: Props) {
               )}
             </div>
 
-            <div className="flex items-end gap-4">
+            <div className="flex flex-wrap items-end gap-4">
               <div className="flex flex-col gap-1.5">
                 <Label>From</Label>
                 <DatePicker
@@ -352,16 +327,16 @@ export default function EventsPage({ mode = 'events' }: Props) {
                   className="w-40"
                 />
               </div>
-            </div>
 
-            <div className="flex gap-2">
-              <Button onClick={handleFilter}>Filter</Button>
-              {isDirty && (
-                <Button variant="ghost" onClick={handleReset}>
-                  <RotateCcw className="h-4 w-4" />
-                  Reset filters
-                </Button>
-              )}
+              <div className="flex gap-2">
+                <Button onClick={handleFilter}>Filter</Button>
+                {isDirty && (
+                  <Button variant="ghost" onClick={handleReset}>
+                    <RotateCcw className="h-4 w-4" />
+                    Reset filters
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         )}

@@ -96,6 +96,7 @@ export function EventListTable({
               variant="outline"
               size="sm"
               className="text-destructive hover:text-destructive"
+              aria-label={`Delete event: ${row.original.event_name}`}
               onClick={() => onDelete(row.original)}
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -289,6 +290,7 @@ export function EventListTable({
                     variant="outline"
                     size="sm"
                     className="text-destructive hover:text-destructive"
+                    aria-label={`Delete event: ${row.original.event_name}`}
                     onClick={() => onDelete(row.original)}
                   >
                     <Trash2 className="h-3.5 w-3.5" />

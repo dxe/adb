@@ -389,13 +389,13 @@ export class ApiClient {
 
   getEventList = async (params: EventListParams) => {
     try {
-      const body = new URLSearchParams()
-      if (params.event_name) body.set('event_name', params.event_name)
-      if (params.event_activist)
-        body.set('event_activist', params.event_activist)
-      body.set('event_date_start', params.event_date_start)
-      body.set('event_date_end', params.event_date_end)
-      body.set('event_type', params.event_type)
+      const body = new URLSearchParams({
+        ...(params.event_name && { event_name: params.event_name }),
+        ...(params.event_activist && { event_activist: params.event_activist }),
+        event_date_start: params.event_date_start,
+        event_date_end: params.event_date_end,
+        event_type: params.event_type,
+      })
       const resp = await this.client.post(API_PATH.EVENT_LIST, { body }).json()
       return EventListResp.parse(resp)
     } catch (err) {
@@ -405,9 +405,13 @@ export class ApiClient {
 
   deleteEvent = async (eventId: number) => {
     try {
+      const csrfToken = this.getCsrfToken()
       const body = new URLSearchParams({ event_id: String(eventId) })
       const resp = await this.client
-        .post(API_PATH.EVENT_DELETE, { body })
+        .post(API_PATH.EVENT_DELETE, {
+          body,
+          headers: { 'X-CSRF-Token': csrfToken },
+        })
         .json()
       return EventDeleteResp.parse(resp)
     } catch (err) {
