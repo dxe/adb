@@ -42,7 +42,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>
 
 export default function GeneratorForm(props: { adbRootUrl?: string }) {
-  const { data: chapterList, isLoading: isChapterListLoading } = useQuery({
+  const { data: chapterList } = useQuery({
     queryKey: [API_PATH.CHAPTER_LIST],
     queryFn: apiClient.getChapterList,
   })
@@ -138,11 +138,7 @@ export default function GeneratorForm(props: { adbRootUrl?: string }) {
                   Chapter <span className="text-red-500">*</span>
                 </FormLabel>
 
-                <Select
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  disabled={isChapterListLoading}
-                >
+                <Select value={field.value} onValueChange={field.onChange}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select a chapter" />

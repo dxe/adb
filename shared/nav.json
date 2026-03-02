@@ -183,13 +183,23 @@
           "separatorBelow": true
         },
         {
+          "label": "All Events",
+          "href": "/v2/events",
+          "page": "EventList_beta"
+        },
+        {
           "label": "New Event",
-          "href": "/v2/event",
+          "href": "/v2/events/new",
           "page": "NewEvent_beta"
         },
         {
-          "label": "New Connection",
+          "label": "All Coachings",
           "href": "/v2/coaching",
+          "page": "ConnectionsList_beta"
+        },
+        {
+          "label": "New Coaching",
+          "href": "/v2/coaching/new",
           "page": "NewConnection_beta"
         },
         {
