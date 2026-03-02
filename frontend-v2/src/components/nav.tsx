@@ -63,10 +63,12 @@ const DropdownItem = ({
   item,
   isExpanded,
   onClick,
+  onNavigate,
 }: {
   item: TDropdownItem
   isExpanded: boolean
   onClick: () => void
+  onNavigate: () => void
 }) => {
   const { user } = useAuthedPageContext()
   const pathname = usePathname()
@@ -94,7 +96,7 @@ const DropdownItem = ({
       {isExpanded && (
         <div
           className={clsx(buefyStyles['navbar-dropdown'], '!block')}
-          onClick={onClick}
+          onClick={onNavigate}
         >
           {item.items.map((innerItem) => {
             const navPath = innerItem.href.startsWith('/v2')
@@ -193,6 +195,11 @@ export const Navbar = () => {
   const [isMobileExpanded, setMobileExpanded] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
 
+  const closeNav = () => {
+    setMobileExpanded(false)
+    setActiveDropdown(null)
+  }
+
   // Note that this navbar currently uses the Vue stylesheet. Once we
   // are no longer using Vue, we should update this using tailwind.
   return (
@@ -240,6 +247,7 @@ export const Navbar = () => {
                   prev === item.label ? null : item.label,
                 )
               }
+              onNavigate={closeNav}
             />
           ))}
         </div>

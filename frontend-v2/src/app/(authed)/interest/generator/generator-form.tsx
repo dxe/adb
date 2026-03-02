@@ -42,10 +42,6 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>
 
 export default function GeneratorForm(props: { adbRootUrl?: string }) {
-  // adbRootUrl may be provided by parent for testing purposes.
-  const adbRootUrl =
-    props.adbRootUrl ?? `${window.location.protocol}//${window.location.host}`
-
   const { data: chapterList, isLoading: isChapterListLoading } = useQuery({
     queryKey: [API_PATH.CHAPTER_LIST],
     queryFn: apiClient.getChapterList,
@@ -69,6 +65,9 @@ export default function GeneratorForm(props: { adbRootUrl?: string }) {
   const [output, setOutput] = useState('')
 
   const onSubmit = (data: FormValues) => {
+    // adbRootUrl may be provided by parent for testing purposes.
+    const adbRootUrl =
+      props.adbRootUrl ?? `${window.location.protocol}//${window.location.host}`
     const params = new URLSearchParams()
     params.append('name', data.name)
     params.append('title', data.title)

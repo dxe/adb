@@ -23,7 +23,7 @@ interface PageProps {
 export default async function ActivistsListPage({ searchParams }: PageProps) {
   const [cookies, session] = await Promise.all([
     getCookies(),
-    getCachedSession(), // deduplicated with layout — no extra network call
+    getCachedSession(), // de-duped since this is also called in layout
   ])
 
   if (!session.user) {
