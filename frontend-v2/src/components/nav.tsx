@@ -102,9 +102,16 @@ const DropdownItem = ({
             const navPath = innerItem.href.startsWith('/v2')
               ? innerItem.href.substring(3)
               : null
+            const siblingExactMatch = item.items.some(
+              (sibling) =>
+                sibling !== innerItem &&
+                sibling.href.startsWith('/v2') &&
+                pathname === sibling.href.substring(3),
+            )
             const isActive =
               navPath !== null &&
-              (pathname === navPath || pathname.startsWith(navPath + '/'))
+              (pathname === navPath ||
+                (!siblingExactMatch && pathname.startsWith(navPath + '/')))
             const classNames = clsx(
               buefyStyles['navbar-item'],
               { [buefyStyles['is-active']]: isActive },

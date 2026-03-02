@@ -13,6 +13,8 @@ export const API_PATH = {
   USERS: 'api/users',
   EVENT_GET: 'event/get',
   EVENT_SAVE: 'event/save',
+  EVENT_LIST: 'event/list',
+  EVENT_DELETE: 'event/delete',
 }
 
 export const StaticResourcesHashResp = z.object({
@@ -147,6 +149,50 @@ const EventSaveResp = z.object({
   status: z.literal('success'),
   redirect: z.string().optional(),
   attendees: z.array(z.string()).nullish(),
+})
+
+const EventListItemSchema = z.object({
+  event_id: z.number(),
+  event_name: z.string(),
+  event_date: z.string(),
+  event_type: z.string(),
+  attendees: z
+    .array(z.string())
+    .nullable()
+    .transform((v) => v ?? []),
+  attendee_emails: z
+    .array(z.string())
+    .nullable()
+    .transform((v) => v ?? []),
+})
+export type EventListItem = z.infer<typeof EventListItemSchema>
+
+const EventListResp = z.array(EventListItemSchema)
+
+export type EventType =
+  | 'noConnections'
+  | 'Connection'
+  | 'Action'
+  | 'Campaign Action'
+  | 'Community'
+  | 'Frontline Surveillance'
+  | 'Meeting'
+  | 'Outreach'
+  | 'Animal Care'
+  | 'Training'
+  | 'mpiDA'
+  | 'mpiCOM'
+
+export interface EventListParams {
+  event_name?: string
+  event_activist?: string
+  event_date_start: string
+  event_date_end: string
+  event_type: EventType
+}
+
+const EventDeleteResp = z.object({
+  status: z.literal('success'),
 })
 
 const ApiErrorResp = z.object({
@@ -336,6 +382,34 @@ export class ApiClient {
         })
         .json()
       return EventSaveResp.parse(resp)
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  getEventList = async (params: EventListParams) => {
+    try {
+      const body = new URLSearchParams()
+      if (params.event_name) body.set('event_name', params.event_name)
+      if (params.event_activist)
+        body.set('event_activist', params.event_activist)
+      body.set('event_date_start', params.event_date_start)
+      body.set('event_date_end', params.event_date_end)
+      body.set('event_type', params.event_type)
+      const resp = await this.client.post(API_PATH.EVENT_LIST, { body }).json()
+      return EventListResp.parse(resp)
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  deleteEvent = async (eventId: number) => {
+    try {
+      const body = new URLSearchParams({ event_id: String(eventId) })
+      const resp = await this.client
+        .post(API_PATH.EVENT_DELETE, { body })
+        .json()
+      return EventDeleteResp.parse(resp)
     } catch (err) {
       return this.handleKyError(err)
     }

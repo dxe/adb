@@ -1,10 +1,10 @@
 import { ContentWrapper } from '@/app/content-wrapper'
-import CoachingListPage from './coaching-list-page'
+import EventsPage from './events-page'
 
-export default function CoachingPage() {
+export default function EventsListPage() {
   return (
     <ContentWrapper size="xl" className="gap-6">
-      <CoachingListPage />
+      <EventsPage />
     </ContentWrapper>
   )
 }
