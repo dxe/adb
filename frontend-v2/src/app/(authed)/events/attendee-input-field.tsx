@@ -1,12 +1,8 @@
-import { KeyboardEvent } from 'react'
-import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { MailX, PhoneMissed, UserRoundPlus, Check } from 'lucide-react'
 import { AnyFieldApi } from '@tanstack/react-form'
 import { ActivistRegistry } from './activist-registry'
-import { Popover, PopoverAnchor } from '@/components/ui/popover'
-import { useSuggestions } from './use-suggestions'
-import { SuggestionList } from './suggestion-list'
+import { SuggestionInput } from './suggestion-input'
 
 type AttendeeInputFieldProps = {
   field: AnyFieldApi
@@ -31,52 +27,15 @@ export const AttendeeInputField = ({
   registry,
   checkForDuplicate,
 }: AttendeeInputFieldProps) => {
-  const { suggestions, selectedIndex, onInputChange, onSelect, onKeyDown } =
-    useSuggestions((v) => registry.getSuggestions(v))
-
-  // Derive popover open state from suggestions and focus
-  const open = suggestions.length > 0 && isFocused
-
   const handleInputChange = (value: string) => {
     field.handleChange(value)
-    onInputChange(value)
     onChange()
   }
 
-  const handleSelectSuggestion = (value: string) => {
-    field.handleChange(value)
+  const handleCommit = () => {
     field.handleBlur()
     field.validate('change')
-    onSelect()
     onAdvanceFocus()
-  }
-
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    onKeyDown(e)
-    switch (e.key) {
-      case 'Enter': {
-        e.preventDefault()
-        const trimmedValue: string = field.state.value?.trim() ?? ''
-        if (!trimmedValue.length) return
-        const selectedValue =
-          selectedIndex >= 0 && selectedIndex < suggestions.length
-            ? suggestions[selectedIndex]
-            : trimmedValue
-        handleSelectSuggestion(selectedValue)
-        return
-      }
-      case 'Tab': {
-        if (e.shiftKey) return
-        const trimmedValue = field.state.value?.trim() ?? ''
-        if (!trimmedValue.length) return
-        e.preventDefault()
-        const selectedValue =
-          selectedIndex >= 0 && selectedIndex < suggestions.length
-            ? suggestions[selectedIndex]
-            : trimmedValue
-        handleSelectSuggestion(selectedValue)
-      }
-    }
   }
 
   const trimmedName = field.state.value?.trim() ?? ''
@@ -93,47 +52,35 @@ export const AttendeeInputField = ({
     <div className="relative">
       <div className="flex items-center gap-2">
         <div className="relative w-full">
-          <Popover open={open}>
-            <PopoverAnchor asChild>
-              <div className="relative">
-                <Input
-                  ref={inputRef}
-                  value={field.state.value ?? ''}
-                  onChange={(e) => handleInputChange(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  name="attendee"
-                  placeholder=""
-                  className={cn(
-                    'w-full transition-colors duration-300',
-                    isDuplicate || isError
-                      ? 'text-red-500 border-red-500 focus:border-red-500'
-                      : isNewName
-                        ? 'border-purple-500 focus:border-transparent'
-                        : '',
-                  )}
-                  autoComplete="off"
-                  onFocus={() => onFocus(index)}
-                  onBlur={() => {
-                    field.handleBlur()
-                    onSelect()
-                  }}
-                />
-                <div className="right-0 top-0 bottom-0 h-full pointer-events-none absolute flex gap-2 items-center p-1.5 opacity-80">
-                  {hasAllInfo && <Check className="text-green-500" />}
-                  {isNewName && <UserRoundPlus className="text-purple-500" />}
-                  {isMissingEmail && <MailX className="text-orange-500" />}
-                  {isMissingPhone && (
-                    <PhoneMissed className="text-orange-500" />
-                  )}
-                </div>
+          <SuggestionInput
+            inputRef={inputRef}
+            value={field.state.value ?? ''}
+            onValueChange={handleInputChange}
+            getSuggestions={(value) => registry.getSuggestions(value)}
+            onCommit={handleCommit}
+            commitOnTab
+            isFocused={isFocused}
+            name="attendee"
+            placeholder=""
+            className={cn(
+              'w-full transition-colors duration-300',
+              isDuplicate || isError
+                ? 'text-red-500 border-red-500 focus:border-red-500'
+                : isNewName
+                  ? 'border-purple-500 focus:border-transparent'
+                  : '',
+            )}
+            onFocus={() => onFocus(index)}
+            onBlur={() => field.handleBlur()}
+            endAdornment={
+              <div className="right-0 top-0 bottom-0 h-full pointer-events-none absolute flex gap-2 items-center p-1.5 opacity-80">
+                {hasAllInfo && <Check className="text-green-500" />}
+                {isNewName && <UserRoundPlus className="text-purple-500" />}
+                {isMissingEmail && <MailX className="text-orange-500" />}
+                {isMissingPhone && <PhoneMissed className="text-orange-500" />}
               </div>
-            </PopoverAnchor>
-            <SuggestionList
-              suggestions={suggestions}
-              selectedIndex={selectedIndex}
-              onSelect={handleSelectSuggestion}
-            />
-          </Popover>
+            }
+          />
         </div>
       </div>
       {field.state.meta.errors[0] && (

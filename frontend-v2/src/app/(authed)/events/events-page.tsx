@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, KeyboardEvent, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { CalendarPlus, Filter, Loader2, RotateCcw } from 'lucide-react'
@@ -16,7 +16,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Popover, PopoverAnchor } from '@/components/ui/popover'
 import {
   Select,
   SelectContent,
@@ -26,8 +25,7 @@ import {
 } from '@/components/ui/select'
 import { DatePicker } from '@/components/ui/date-picker'
 import { useActivistRegistry } from './useActivistRegistry'
-import { useSuggestions } from './use-suggestions'
-import { SuggestionList } from './suggestion-list'
+import { SuggestionInput } from './suggestion-input'
 import { EventListTable } from './event-list-table'
 import { cn } from '@/lib/utils'
 
@@ -63,59 +61,22 @@ function ActivistFilterInput({
   label: string
   className?: string
 }) {
-  const { suggestions, selectedIndex, onInputChange, onSelect, onKeyDown } =
-    useSuggestions((v) => registry.getSuggestions(v))
-  const [focused, setFocused] = useState(false)
-  const open = focused && suggestions.length > 0
-
-  const handleChange = (v: string) => {
-    onChange(v)
-    onInputChange(v)
-  }
-
-  const handleSelect = (name: string) => {
-    onChange(name)
-    onSelect()
-  }
-
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    onKeyDown(e)
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      if (selectedIndex >= 0 && selectedIndex < suggestions.length) {
-        handleSelect(suggestions[selectedIndex])
-      } else {
-        onEnter()
-      }
-    }
-  }
-
   return (
     <div className={cn('flex flex-col gap-1.5', className)}>
       <Label htmlFor="filter-activist">{label}</Label>
-      <Popover open={open}>
-        <PopoverAnchor asChild>
-          <Input
-            id="filter-activist"
-            value={value}
-            onChange={(e) => handleChange(e.target.value)}
-            onKeyDown={handleKeyDown}
-            onFocus={() => setFocused(true)}
-            onBlur={() => {
-              setFocused(false)
-              onSelect()
-            }}
-            className="w-full"
-            autoComplete="off"
-          />
-        </PopoverAnchor>
-        <SuggestionList
-          suggestions={suggestions}
-          selectedIndex={selectedIndex}
-          onSelect={handleSelect}
-          size="sm"
-        />
-      </Popover>
+      <SuggestionInput
+        id="filter-activist"
+        value={value}
+        onValueChange={onChange}
+        getSuggestions={(v) => registry.getSuggestions(v)}
+        onCommit={({ key }) => {
+          if (key === 'Enter') {
+            onEnter()
+          }
+        }}
+        className="w-full"
+        size="sm"
+      />
     </div>
   )
 }
