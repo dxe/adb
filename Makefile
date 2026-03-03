@@ -71,6 +71,7 @@ clean:
 	rm -f server/adb-server
 	rm -rf frontend/dist
 	rm -rf frontend-v2/out
+	rm -rf frontend-v2/.next
 
 # Set git hooks
 set_git_hooks:
