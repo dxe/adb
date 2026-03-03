@@ -289,12 +289,14 @@ export default function ActivistsPage() {
         </div>
       )}
 
-      {activists.length > 0 && !isLoading && (
+      {!isLoading && !isError && (
         <>
-          <div className="text-sm text-muted-foreground">
-            {activists.length} activist
-            {activists.length !== 1 ? 's' : ''} shown
-          </div>
+          {activists.length > 0 && (
+            <div className="text-sm text-muted-foreground">
+              {activists.length} activist
+              {activists.length !== 1 ? 's' : ''} shown
+            </div>
+          )}
 
           <ActivistTable
             activists={activists}
