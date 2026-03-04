@@ -154,7 +154,7 @@ func buildFiltersFromOptions(options model.QueryActivistOptions) []filter {
 		result = append(result, &chapterFilter{ChapterId: f.ChapterId})
 	}
 
-	if f.Name.NameContains != "" {
+	if !f.Name.IsEmpty() {
 		result = append(result, &nameFilter{NameContains: f.Name.NameContains})
 	}
 

@@ -103,6 +103,10 @@ type NameFilter struct {
 	NameContains string `json:"name_contains"`
 }
 
+func (f *NameFilter) IsEmpty() bool {
+	return f.NameContains == ""
+}
+
 // ActivistLevelFilter filters by activist_level values using one mode.
 // mode="include" means match any listed values.
 // mode="exclude" means exclude any listed values.
