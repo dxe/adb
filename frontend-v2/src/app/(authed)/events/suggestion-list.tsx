@@ -2,6 +2,7 @@ import { PopoverContent } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 
 type Props = {
+  listboxId: string
   suggestions: string[]
   selectedIndex: number
   onSelect: (value: string) => void
@@ -9,6 +10,7 @@ type Props = {
 }
 
 export function SuggestionList({
+  listboxId,
   suggestions,
   selectedIndex,
   onSelect,
@@ -22,10 +24,17 @@ export function SuggestionList({
       onOpenAutoFocus={(e) => e.preventDefault()}
       onCloseAutoFocus={(e) => e.preventDefault()}
     >
-      <ul className="max-h-[300px] overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg">
+      <ul
+        id={listboxId}
+        role="listbox"
+        className="max-h-[300px] overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg"
+      >
         {suggestions.map((suggestion, i) => (
           <li
             key={suggestion}
+            id={`${listboxId}-option-${i}`}
+            role="option"
+            aria-selected={i === selectedIndex}
             className={cn(
               'cursor-pointer px-3 py-1 hover:bg-gray-100',
               size === 'sm' ? 'text-sm' : 'text-base',
