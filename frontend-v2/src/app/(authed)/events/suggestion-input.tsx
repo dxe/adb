@@ -124,7 +124,10 @@ export function SuggestionInput({
         : null
     const resolvedValue = selectedSuggestion ?? value.trim()
 
-    event.preventDefault()
+    // Allow onCommit to handle tab behavior if provided, otherwise allow browser to focus next field.
+    if (!isTabCommit || !!onCommit) {
+      event.preventDefault()
+    }
     onValueChange(resolvedValue)
     onCommit?.({
       key: event.key as 'Enter' | 'Tab',
