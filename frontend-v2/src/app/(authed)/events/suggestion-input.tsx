@@ -1,4 +1,10 @@
-import { ComponentProps, KeyboardEvent, ReactNode, useState } from 'react'
+import {
+  ComponentProps,
+  KeyboardEvent,
+  ReactNode,
+  useId,
+  useState,
+} from 'react'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverAnchor } from '@/components/ui/popover'
 import { SuggestionList } from './suggestion-list'
@@ -49,7 +55,13 @@ export function SuggestionInput({
   const hasFocus = isFocused ?? focused
   const shouldFetchSuggestions = isOpen && hasFocus && value.trim().length > 0
   const suggestions = shouldFetchSuggestions ? getSuggestions(value) : []
-  const selectedIndex = selection.value === value ? selection.index : -1
+  const selectedIndex =
+    // Avoid selectedIndex becoming stale when the suggestion list changes
+    selection.value === value &&
+    selection.index >= 0 &&
+    selection.index < suggestions.length
+      ? selection.index
+      : -1
   const open = shouldFetchSuggestions && suggestions.length > 0
 
   const clearSuggestions = () => {
@@ -135,7 +147,9 @@ export function SuggestionInput({
     onBlur?.()
   }
 
-  const listboxId = `${inputProps.id ?? 'suggestion-input'}-listbox`
+  const fallbackId = useId()
+  const inputId = inputProps.id ?? fallbackId
+  const listboxId = `${inputId}-listbox`
   const activeOptionId =
     selectedIndex >= 0 ? `${listboxId}-option-${selectedIndex}` : undefined
 
@@ -149,6 +163,7 @@ export function SuggestionInput({
       <PopoverAnchor asChild>
         <div className="relative">
           <Input
+            id={inputId}
             role="combobox"
             aria-autocomplete="list"
             aria-expanded={open}
