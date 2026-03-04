@@ -13,8 +13,9 @@ type DateOnly struct {
 	time.Time
 }
 
-// Compile-time check that DateOnly implements json.Unmarshaler
+// Compile-time checks that DateOnly implements json.Marshaler/json.Unmarshaler
 var _ json.Unmarshaler = (*DateOnly)(nil)
+var _ json.Marshaler = DateOnly{}
 
 // UnmarshalJSON parses a date string in YYYY-MM-DD format as UTC midnight
 func (d *DateOnly) UnmarshalJSON(data []byte) error {
@@ -243,6 +244,9 @@ type QueryActivistFilters struct {
 }
 
 func (f *QueryActivistFilters) Validate() error {
+	if f.ChapterId < 0 {
+		return fmt.Errorf("invalid chapter_id value: %d", f.ChapterId)
+	}
 	if err := f.LastEvent.Validate(); err != nil {
 		return fmt.Errorf("invalid last event filter: %w", err)
 	}
