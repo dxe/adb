@@ -10,13 +10,13 @@ import { API_PATH, ApiClient } from '@/lib/api'
 import { getCookies } from '@/lib/auth'
 import { fetchSession } from '@/app/session'
 import ActivistsPage from './activists-page'
+import { normalizeColumnsForFilters } from './column-definitions'
+import { buildQueryOptions } from './filter-api-query'
 import {
-  buildQueryOptions,
   parseColumnsFromParams,
   parseFiltersFromParams,
   parseSortFromParams,
-} from './query-utils'
-import { normalizeColumnsForFilters } from './column-definitions'
+} from './filter-url-state'
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
@@ -52,6 +52,7 @@ export default async function ActivistsListPage({ searchParams }: PageProps) {
     filters,
     selectedColumns,
     chapterId: session.user.ChapterID,
+    userId: session.user.ID,
     sort,
   })
 

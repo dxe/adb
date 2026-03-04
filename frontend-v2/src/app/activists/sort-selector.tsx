@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/select'
 import { ArrowDownUp, ArrowDown, ArrowUp, ChevronDown, X } from 'lucide-react'
 import { ActivistColumnName } from '@/lib/api'
-import type { SortColumn } from './query-utils'
+import type { SortColumn } from './query-state'
 import { COLUMN_DEFINITIONS } from './column-definitions'
 
 interface SortSelectorProps {

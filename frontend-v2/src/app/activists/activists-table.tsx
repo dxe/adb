@@ -18,7 +18,7 @@ import {
 import { ArrowDown, ArrowUp } from 'lucide-react'
 import { ActivistJSON, ActivistColumnName } from '@/lib/api'
 import { COLUMN_DEFINITIONS } from './column-definitions'
-import type { SortColumn } from './query-utils'
+import type { SortColumn } from './query-state'
 import { z } from 'zod'
 
 interface ActivistTableProps {

@@ -1,8 +1,7 @@
 'use client'
 
-import { useMemo, useState, useEffect, useCallback, useReducer } from 'react'
+import { useMemo, useEffect, useCallback, useReducer, useRef } from 'react'
 import { useInfiniteQuery } from '@tanstack/react-query'
-import { liteDebounce } from '@tanstack/pacer-lite'
 import { useSearchParams, useRouter } from 'next/navigation'
 import {
   apiClient,
@@ -14,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
 import { ActivistTable } from './activists-table'
-import { ActivistFilters } from './activist-filters'
+import { ActivistFilters } from './filters/activist-filters'
 import { ColumnSelector } from './column-selector'
 import { SortSelector } from './sort-selector'
 import {
@@ -22,17 +21,22 @@ import {
   DEFAULT_COLUMNS,
 } from './column-definitions'
 import {
-  FilterState,
-  SortColumn,
-  buildQueryOptions,
+  buildFilterParamEntries,
   buildSortParam,
   parseColumnsFromParams,
   parseFiltersFromParams,
   parseSortFromParams,
-} from './query-utils'
+} from './filter-url-state'
+import {
+  type ActivistsQueryState,
+  type FilterState,
+  type SortColumn,
+} from './query-state'
+import { buildQueryOptions } from './filter-api-query'
 
 const BASE_PATH = '/activists'
 
+/** Serializes filter/column/sort state to URL search params. */
 const buildUrlParams = (
   filters: FilterState,
   visibleColumns: ActivistColumnName[],
@@ -40,20 +44,9 @@ const buildUrlParams = (
 ): URLSearchParams => {
   const params = new URLSearchParams()
 
-  if (filters.searchAcrossChapters) {
-    params.set('searchAcrossChapters', 'true')
-  }
-  if (filters.nameSearch) {
-    params.set('nameSearch', filters.nameSearch)
-  }
-  if (filters.lastEventGte) {
-    params.set('lastEventGte', filters.lastEventGte)
-  }
-  if (filters.lastEventLt) {
-    params.set('lastEventLt', filters.lastEventLt)
-  }
-  if (filters.includeHidden) {
-    params.set('includeHidden', 'true')
+  const filterParams = buildFilterParamEntries(filters)
+  for (const [key, value] of filterParams) {
+    if (value) params.set(key, value)
   }
 
   const defaultColumns = normalizeColumnsForFilters(
@@ -83,21 +76,39 @@ const buildUrlParams = (
   return params
 }
 
-type ActivistsState = {
-  filters: FilterState
-  selectedColumns: ActivistColumnName[]
-  sort: SortColumn[]
+const buildStateFromUrl = (
+  getParam: (key: string) => string | undefined,
+): ActivistsQueryState => {
+  const filters = parseFiltersFromParams(getParam)
+  const selectedColumns = normalizeColumnsForFilters(
+    parseColumnsFromParams(getParam),
+    filters.searchAcrossChapters,
+  )
+  const sort = parseSortFromParams(getParam, selectedColumns)
+
+  return { filters, selectedColumns, sort }
 }
+
+const isExternalNavigation = (
+  searchParams: { toString: () => string },
+  lastWrittenParams: { current: string },
+): boolean => searchParams.toString() !== lastWrittenParams.current
 
 type ActivistsAction =
   | { type: 'setFilters'; filters: FilterState }
   | { type: 'setSelectedColumns'; columns: ActivistColumnName[] }
   | { type: 'setSort'; sort: SortColumn[] }
+  | {
+      type: 'resetAll'
+      filters: FilterState
+      selectedColumns: ActivistColumnName[]
+      sort: SortColumn[]
+    }
 
 const activistsReducer = (
-  state: ActivistsState,
+  state: ActivistsQueryState,
   action: ActivistsAction,
-): ActivistsState => {
+): ActivistsQueryState => {
   switch (action.type) {
     case 'setFilters': {
       const { filters } = action
@@ -126,6 +137,13 @@ const activistsReducer = (
     case 'setSort': {
       return { ...state, sort: action.sort }
     }
+    case 'resetAll': {
+      return {
+        filters: action.filters,
+        selectedColumns: action.selectedColumns,
+        sort: action.sort,
+      }
+    }
     default:
       return state
   }
@@ -141,40 +159,40 @@ export default function ActivistsPage() {
     (key: string) => searchParams.get(key) || undefined,
     [searchParams],
   )
-  const initialFilters = parseFiltersFromParams(getParam)
-  const initialColumns = normalizeColumnsForFilters(
-    parseColumnsFromParams(getParam),
-    initialFilters.searchAcrossChapters,
-  )
-
-  const initialSort = parseSortFromParams(getParam, initialColumns)
+  const initialState = buildStateFromUrl(getParam)
 
   const [state, dispatch] = useReducer(activistsReducer, {
-    filters: initialFilters,
-    selectedColumns: initialColumns,
-    sort: initialSort,
+    filters: initialState.filters,
+    selectedColumns: initialState.selectedColumns,
+    sort: initialState.sort,
   })
   const { filters, selectedColumns, sort } = state
 
-  const [debouncedNameSearch, setDebouncedNameSearch] = useState(
-    filters.nameSearch,
+  // Track the last URL params we wrote so we can distinguish our own URL
+  // updates from external navigation (e.g. clicking a nav preset link).
+  const lastWrittenParams = useRef(
+    buildUrlParams(filters, selectedColumns, sort).toString(),
   )
 
-  const debouncedSetNameSearch = useMemo(
-    () =>
-      liteDebounce((value: string) => setDebouncedNameSearch(value), {
-        wait: 300,
-      }),
-    [],
-  )
-
+  // Reset local UI state when URL changes come from navigation, as if the user
+  // was coming to a new "page" even if switching between links in the
+  // navigation that come to this same Next.js page. This prevents stale state
+  // (such as `visibleFilters` in activist-filters.tsx).
   useEffect(() => {
-    debouncedSetNameSearch(filters.nameSearch)
-  }, [filters.nameSearch, debouncedSetNameSearch])
+    if (!isExternalNavigation(searchParams, lastWrittenParams)) return
+    const urlState = buildStateFromUrl(getParam)
+    dispatch({
+      type: 'resetAll',
+      filters: urlState.filters,
+      selectedColumns: urlState.selectedColumns,
+      sort: urlState.sort,
+    })
+  }, [searchParams, getParam])
 
   // Update URL when filters, columns, or sort change
   useEffect(() => {
     const params = buildUrlParams(filters, selectedColumns, sort).toString()
+    lastWrittenParams.current = params
     const newUrl = params ? `?${params}` : BASE_PATH
     router.replace(newUrl, { scroll: false })
   }, [filters, selectedColumns, sort, router])
@@ -199,10 +217,10 @@ export default function ActivistsPage() {
         filters,
         selectedColumns,
         chapterId: user.ChapterID,
-        nameSearch: debouncedNameSearch,
+        userId: user.ID,
         sort,
       }),
-    [filters, selectedColumns, user.ChapterID, debouncedNameSearch, sort],
+    [filters, selectedColumns, user.ChapterID, user.ID, sort],
   )
 
   const {
@@ -289,12 +307,14 @@ export default function ActivistsPage() {
         </div>
       )}
 
-      {activists.length > 0 && !isLoading && (
+      {!isLoading && !isError && (
         <>
-          <div className="text-sm text-muted-foreground">
-            {activists.length} activist
-            {activists.length !== 1 ? 's' : ''} shown
-          </div>
+          {activists.length > 0 && (
+            <div className="text-sm text-muted-foreground">
+              {activists.length} activist
+              {activists.length !== 1 ? 's' : ''} shown
+            </div>
+          )}
 
           <ActivistTable
             activists={activists}
