@@ -115,6 +115,8 @@ export {
   QueryActivistResult,
 } from './api/activists'
 export type {
+  ApiDateRangeFilter,
+  ApiIntRangeFilter,
   ActivistJSON as ActivistJSONType,
   ActivistColumnName as ActivistColumnNameType,
   QueryActivistOptions as QueryActivistOptionsType,

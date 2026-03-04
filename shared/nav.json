@@ -142,9 +142,45 @@
       "roleRequired": ["admin"],
       "items": [
         {
-          "label": "Activists",
+          "label": "All Activists",
           "href": "/v2/activists",
           "page": "ActivistList"
+        },
+        {
+          "label": "New Activists",
+          "href": "/v2/activists?lastEvent=-180..&totalEvents=..4&columns=activist_level,total_events,first_event,last_event,source",
+          "page": "ActivistList"
+        },
+        {
+          "label": "New Activists Pending Workshop",
+          "href": "/v2/activists?firstEvent=-180..&level=supporter&training=-training0&columns=activist_level,first_event,training0,source",
+          "page": "ActivistList"
+        },
+        {
+          "label": "Community Prospects",
+          "href": "/v2/activists?lastEvent=..-360|null&totalInteractions=..1&level=supporter&source=form,dxe-signup,arc-signup,petition,eventbrite,-application&columns=last_event,total_interactions,source,interest_date",
+          "page": "ActivistList"
+        },
+        {
+          "label": "Community Prospects Follow-up",
+          "href": "/v2/activists?assignedTo=any&followups=due&columns=assigned_to_name,followup_date,total_interactions,last_interaction_date",
+          "page": "ActivistList"
+        },
+        {
+          "label": "Chapter Member Prospects",
+          "href": "/v2/activists?level=~chapter-member,organizer&prospect=chapterMember&columns=activist_level,total_events,last_event,prospect_chapter_member",
+          "page": "ActivistList"
+        },
+        {
+          "label": "Chapter Members",
+          "href": "/v2/activists?level=chapter-member,organizer&columns=activist_level,total_events,last_event,training0",
+          "page": "ActivistList"
+        },
+        {
+          "label": "Organizer Prospects",
+          "href": "/v2/activists?prospect=organizer&level=~organizer&columns=activist_level,total_events,last_event,prospect_organizer",
+          "page": "ActivistList",
+          "separatorBelow": true
         },
         {
           "label": "New Event",
