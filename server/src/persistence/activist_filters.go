@@ -237,12 +237,18 @@ func (f *trainingFilter) buildWhere() []queryClause {
 	var clauses []queryClause
 
 	for _, col := range f.Completed {
+		if _, ok := model.ValidTrainingColumns[col]; !ok {
+			continue
+		}
 		clauses = append(clauses, queryClause{
 			sql: fmt.Sprintf("%s.%s IS NOT NULL", activistTableAlias, col),
 		})
 	}
 
 	for _, col := range f.NotCompleted {
+		if _, ok := model.ValidTrainingColumns[col]; !ok {
+			continue
+		}
 		clauses = append(clauses, queryClause{
 			sql: fmt.Sprintf("%s.%s IS NULL", activistTableAlias, col),
 		})

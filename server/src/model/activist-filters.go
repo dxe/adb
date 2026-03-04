@@ -164,7 +164,7 @@ func (f *TrainingFilter) IsEmpty() bool {
 	return len(f.Completed) == 0 && len(f.NotCompleted) == 0
 }
 
-var validTrainingColumns = map[string]bool{
+var ValidTrainingColumns = map[string]bool{
 	"training0":        true,
 	"training1":        true,
 	"training4":        true,
@@ -185,7 +185,7 @@ func (f *TrainingFilter) Validate() error {
 		if strings.TrimSpace(v) == "" {
 			return fmt.Errorf("completed[%d] cannot be empty", i)
 		}
-		if !validTrainingColumns[v] {
+		if !ValidTrainingColumns[v] {
 			return fmt.Errorf("invalid training column: %q", v)
 		}
 	}
@@ -193,7 +193,7 @@ func (f *TrainingFilter) Validate() error {
 		if strings.TrimSpace(v) == "" {
 			return fmt.Errorf("not_completed[%d] cannot be empty", i)
 		}
-		if !validTrainingColumns[v] {
+		if !ValidTrainingColumns[v] {
 			return fmt.Errorf("invalid training column: %q", v)
 		}
 	}
