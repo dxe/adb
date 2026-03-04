@@ -248,6 +248,9 @@ func (f *QueryActivistFilters) Validate() error {
 	if err := f.Training.Validate(); err != nil {
 		return fmt.Errorf("invalid training filter: %w", err)
 	}
+	if f.AssignedTo < -1 {
+		return fmt.Errorf("invalid assigned_to value: %d", f.AssignedTo)
+	}
 	if f.Followups != "" && f.Followups != "all" && f.Followups != "due" && f.Followups != "upcoming" {
 		return fmt.Errorf("invalid followups value: %q", f.Followups)
 	}

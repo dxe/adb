@@ -64,6 +64,10 @@ export function ActivistFilters({
 
   // Prune visibleFilters entries that have no corresponding filter value when
   // filters change (e.g. navigation).
+  //
+  // Note: it is safe to conditionally derive state during render from props and
+  // state from previous renders:
+  // https://react.dev/reference/eslint-plugin-react-hooks/lints/set-state-in-render
   const [prevFilters, setPrevFilters] = useState(filters)
   if (filters !== prevFilters) {
     setPrevFilters(filters)

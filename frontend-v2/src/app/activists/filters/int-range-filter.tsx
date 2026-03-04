@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { FilterChip } from './filter-chip'
 import { useDraftFilter } from './filter-utils'
 import type { IntRangeFilterValue } from '../filter-types'
+import { parseOptionalSafeInteger } from '../number-utils'
 
 interface IntRangeFilterProps {
   label: string
@@ -23,12 +24,6 @@ function normalizeIntRange(
   const lt = value.lt
   if (gte === undefined && lt === undefined) return undefined
   return { gte, lt }
-}
-
-function parseInputInt(raw: string): number | undefined {
-  if (raw === '') return undefined
-  const n = parseInt(raw, 10)
-  return isNaN(n) ? undefined : n
 }
 
 function formatIntRange(gte?: number, lt?: number): string | undefined {
@@ -76,7 +71,7 @@ export function IntRangeFilter({
             value={gte ?? ''}
             onChange={(e) =>
               updateDraft({
-                gte: parseInputInt(e.target.value),
+                gte: parseOptionalSafeInteger(e.target.value),
                 lt,
               })
             }
@@ -93,7 +88,7 @@ export function IntRangeFilter({
             onChange={(e) =>
               updateDraft({
                 gte,
-                lt: parseInputInt(e.target.value),
+                lt: parseOptionalSafeInteger(e.target.value),
               })
             }
             placeholder="No maximum"

@@ -259,7 +259,10 @@ func (f *trainingFilter) buildWhere() []queryClause {
 
 // assignedToFilter filters by the assigned_to column.
 type assignedToFilter struct {
-	AssignedTo int // -1 = any assignee, >0 = specific user ID
+	// -1 = any non-null assignee
+	// 0 = any value (filter is not applied)
+	// >0 = specific user ID
+	AssignedTo int
 }
 
 func (f *assignedToFilter) getJoins() []joinSpec {

@@ -23,6 +23,7 @@ import type {
   DateRangeFilterValue,
   RelativeDateBound,
 } from '../filter-types'
+import { parseSafeInteger } from '../number-utils'
 
 interface DateRangeFilterProps {
   label: string
@@ -419,8 +420,8 @@ function RelativeInput({
       onChange(undefined, localUnit)
       return
     }
-    const n = parseInt(newAmount, 10)
-    onChange(isNaN(n) || n < 0 ? undefined : n, localUnit)
+    const n = parseSafeInteger(newAmount)
+    onChange(n === undefined || n < 0 ? undefined : n, localUnit)
   }
 
   const handleUnitChange = (newUnit: DateUnit) => {
@@ -437,6 +438,8 @@ function RelativeInput({
         <Input
           type="number"
           min={0}
+          step={1}
+          inputMode={'numeric'}
           className="w-20"
           value={amount ?? ''}
           onChange={(e) => handleAmountChange(e.target.value)}

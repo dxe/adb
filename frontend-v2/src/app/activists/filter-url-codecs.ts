@@ -5,6 +5,7 @@ import type {
   DateRangeFilterValue,
 } from './filter-types'
 import type { FilterState } from './query-state'
+import { parseOptionalSafeInteger, parseSafeInteger } from './number-utils'
 
 const ACTIVIST_LEVEL_SLUG_BY_VALUE: Record<ActivistLevelValue, string> = {
   Supporter: 'supporter',
@@ -25,14 +26,16 @@ function decodeActivistLevelToken(
   token: string,
 ): ActivistLevelValue | undefined {
   if (!token) return undefined
+  return ACTIVIST_LEVEL_FROM_SLUG.get(token)
 }
 
 function decodeDateRangeBound(value?: string): DateRangeBoundValue | undefined {
   if (!value) return undefined
-  if (/^-?\d+$/.test(value)) {
+  const daysOffset = parseSafeInteger(value)
+  if (daysOffset !== undefined) {
     return {
       mode: 'relative',
-      daysOffset: parseInt(value, 10),
+      daysOffset,
     }
   }
   return {
@@ -183,12 +186,6 @@ export function encodeActivistLevel(
     : encodedValues.join(',')
 }
 
-function parseIntValue(raw?: string): number | undefined {
-  if (!raw) return undefined
-  const n = parseInt(raw, 10)
-  return isNaN(n) ? undefined : n
-}
-
 export const parseSearchAcrossChaptersParam = (
   raw: string | undefined,
 ): FilterState['searchAcrossChapters'] => raw === 'true'
@@ -230,8 +227,8 @@ export const parseIntRangeParam = (
 ): FilterState['totalEvents'] => {
   const parsed = decodeIntRange(value)
   if (!parsed) return undefined
-  const gte = parseIntValue(parsed.gte)
-  const lt = parseIntValue(parsed.lt)
+  const gte = parseOptionalSafeInteger(parsed.gte)
+  const lt = parseOptionalSafeInteger(parsed.lt)
   if (gte === undefined && lt === undefined) return undefined
   return { gte, lt }
 }
@@ -270,7 +267,10 @@ export const parseAssignedToParam = (
 ): FilterState['assignedTo'] => {
   if (!value) return undefined
   if (value === 'me' || value === 'any') return value
-  return /^-?\d+$/.test(value) ? (value as `${number}`) : undefined
+  const n = parseSafeInteger(value)
+  if (n === undefined) return undefined
+
+  return value as `${number}`
 }
 
 export const serializeAssignedToParam = (

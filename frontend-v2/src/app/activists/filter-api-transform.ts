@@ -9,6 +9,7 @@ import type {
   ProspectFilterValue,
 } from './filter-types'
 import type { FilterState } from './query-state'
+import { parseSafeInteger } from './number-utils'
 
 type ApiFilters = QueryActivistOptions['filters']
 
@@ -62,8 +63,7 @@ export function toApiAssignedTo(
   if (!value) return undefined
   if (value === 'me') return userId
   if (value === 'any') return -1
-  const n = parseInt(value, 10)
-  return isNaN(n) ? undefined : n
+  return parseSafeInteger(value)
 }
 
 const toApiSourceOrTraining = (value?: IncludeExcludeFilterValue) =>

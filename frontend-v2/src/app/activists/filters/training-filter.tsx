@@ -28,8 +28,13 @@ function normalizeIncludeExclude(
 ): IncludeExcludeFilterValue | undefined {
   if (!value) return undefined
 
-  const include = Array.from(new Set(value.include))
-  const exclude = Array.from(new Set(value.exclude))
+  const includeSet = new Set(value.include)
+  const excludeSet = new Set(value.exclude)
+  for (const v of includeSet) {
+    excludeSet.delete(v)
+  }
+  const include = Array.from(includeSet)
+  const exclude = Array.from(excludeSet)
 
   if (include.length === 0 && exclude.length === 0) return undefined
 
