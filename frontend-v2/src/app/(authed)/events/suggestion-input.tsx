@@ -167,6 +167,7 @@ export function SuggestionInput({
         </div>
       </PopoverAnchor>
       <SuggestionList
+        listboxId={listboxId}
         suggestions={suggestions}
         selectedIndex={selectedIndex}
         onSelect={handleSuggestionSelect}
