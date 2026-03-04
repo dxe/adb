@@ -25,11 +25,6 @@ function decodeActivistLevelToken(
   token: string,
 ): ActivistLevelValue | undefined {
   if (!token) return undefined
-  const level = ACTIVIST_LEVEL_FROM_SLUG.get(token)
-  if (level === undefined) {
-    throw Error('invalid level: ' + token)
-  }
-  return level
 }
 
 function decodeDateRangeBound(value?: string): DateRangeBoundValue | undefined {

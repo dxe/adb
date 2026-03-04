@@ -69,14 +69,7 @@ function getBoundsMode(
   gte?: DateRangeBoundValue,
   lt?: DateRangeBoundValue,
 ): Mode | undefined {
-  const gteMode = gte?.mode
-  const ltMode = lt?.mode
-  if (gteMode && ltMode && gteMode !== ltMode) {
-    throw new Error(
-      'Date range bounds must both be relative or both be absolute.',
-    )
-  }
-  return gteMode ?? ltMode
+  return gte?.mode ?? lt?.mode
 }
 
 /** Decompose an absolute day count into the largest clean unit. */

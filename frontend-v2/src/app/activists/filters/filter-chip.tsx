@@ -66,7 +66,10 @@ export function FilterChip({
     <div className="flex shrink-0 items-stretch rounded-md border bg-card overflow-hidden h-12">
       <Popover open={open} onOpenChange={handleOpenChange}>
         <PopoverTrigger asChild>
-          <button className="flex flex-col items-start justify-center px-3 hover:bg-muted transition-colors h-full">
+          <button
+            type="button"
+            className="flex flex-col items-start justify-center px-3 hover:bg-muted transition-colors h-full"
+          >
             {!summary ? (
               <div className="flex items-center gap-1">
                 <span className="text-sm">{label}</span>
@@ -89,6 +92,7 @@ export function FilterChip({
       </Popover>
       {showClear && (
         <button
+          type="button"
           onClick={handleClear}
           className="border-l px-2 hover:bg-muted transition-colors"
           aria-label="Clear filter"

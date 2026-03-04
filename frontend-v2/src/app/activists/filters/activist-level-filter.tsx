@@ -46,6 +46,20 @@ function toValue(state: DraftState): ActivistLevelFilterValue | undefined {
   }
 }
 
+function isSameValue(
+  a?: ActivistLevelFilterValue,
+  b?: ActivistLevelFilterValue,
+): boolean {
+  if (!a && !b) return true
+  if (!a || !b) return false
+  if (a.mode !== b.mode) return false
+  if (a.values.length !== b.values.length) return false
+
+  const aSorted = [...a.values].sort()
+  const bSorted = [...b.values].sort()
+  return aSorted.every((value, index) => value === bSorted[index])
+}
+
 function reducer(state: DraftState, action: Action): DraftState {
   switch (action.type) {
     case 'reset':
@@ -77,7 +91,10 @@ export function ActivistLevelFilter({
     if (open) {
       dispatch({ type: 'reset', value })
     } else {
-      onChange(toValue(draft))
+      const nextValue = toValue(draft)
+      if (!isSameValue(nextValue, value)) {
+        onChange(nextValue)
+      }
     }
   }
 
@@ -124,6 +141,7 @@ export function ActivistLevelFilter({
           const isSelected = draft.values.has(level)
           return (
             <button
+              type="button"
               key={level}
               className="flex w-full items-center gap-2 rounded px-2 py-1 text-sm hover:bg-muted transition-colors"
               onClick={() => handleToggle(level)}

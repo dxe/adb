@@ -95,6 +95,7 @@ export function TrainingFilter({
           const isExcluded = exclude.has(col)
           return (
             <button
+              type="button"
               key={col}
               className="flex w-full items-center gap-2 rounded px-2 py-1 text-sm hover:bg-muted transition-colors"
               onClick={() => handleToggle(col)}
@@ -116,6 +117,7 @@ export function TrainingFilter({
         })}
         {hasDraft && (
           <Button
+            type="button"
             variant="outline"
             size="sm"
             className="w-full"

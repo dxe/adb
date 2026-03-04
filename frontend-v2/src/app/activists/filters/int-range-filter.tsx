@@ -71,6 +71,8 @@ export function IntRangeFilter({
           <Label className="text-sm font-medium">Min (inclusive)</Label>
           <Input
             type="number"
+            step={1}
+            inputMode="numeric"
             value={gte ?? ''}
             onChange={(e) =>
               updateDraft({
@@ -85,6 +87,8 @@ export function IntRangeFilter({
           <Label className="text-sm font-medium">Max (exclusive)</Label>
           <Input
             type="number"
+            step={1}
+            inputMode="numeric"
             value={lt ?? ''}
             onChange={(e) =>
               updateDraft({

@@ -48,15 +48,8 @@ export function toApiDateRange(
 export function toApiIntRange(
   value?: FilterState['totalEvents'],
 ): ApiIntRangeFilter | undefined {
-  const parts = value
-    ? {
-        gte: value.gte?.toString(),
-        lt: value.lt?.toString(),
-      }
-    : undefined
-  if (!parts) return undefined
-  const gte = parts.gte ? parseInt(parts.gte, 10) : undefined
-  const lt = parts.lt ? parseInt(parts.lt, 10) : undefined
+  if (!value) return undefined
+  const { gte, lt } = value
   if (gte === undefined && lt === undefined) return undefined
   return { gte, lt }
 }

@@ -246,6 +246,7 @@ export function ActivistFilters({
               Search across chapters
             </span>
             <button
+              type="button"
               onClick={() =>
                 onFiltersChange({ ...filters, searchAcrossChapters: false })
               }
@@ -263,6 +264,7 @@ export function ActivistFilters({
               Include hidden
             </span>
             <button
+              type="button"
               onClick={() =>
                 onFiltersChange({ ...filters, includeHidden: false })
               }
@@ -292,6 +294,7 @@ export function ActivistFilters({
                 {availableFilters.map((f) => (
                   <button
                     key={f.key}
+                    type="button"
                     className="flex w-full items-center rounded px-2 py-1.5 text-sm hover:bg-muted transition-colors text-left"
                     onClick={() => showFilter(f.key)}
                   >
@@ -303,6 +306,7 @@ export function ActivistFilters({
                 )}
                 {isAdmin && !filters.searchAcrossChapters && (
                   <button
+                    type="button"
                     className="flex w-full items-center rounded px-2 py-1.5 text-sm hover:bg-muted transition-colors text-left"
                     onClick={() => {
                       // Close the popover first, then set filters on the next
@@ -324,6 +328,7 @@ export function ActivistFilters({
                 )}
                 {!filters.includeHidden && (
                   <button
+                    type="button"
                     className="flex w-full items-center rounded px-2 py-1.5 text-sm hover:bg-muted transition-colors text-left"
                     onClick={() => {
                       // Close the popover first, then set filters on the next
