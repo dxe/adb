@@ -87,6 +87,8 @@ export function encodeDateRange(
 ): string | undefined {
   const gteToken = encodeDateRangeBound(gte)
   const ltToken = encodeDateRangeBound(lt)
+  // Including nulls in a bounded range usually doesn't make sense, and may be
+  // disallowed by the server.
   const effectiveOrNull = !!orNull && !(gte && lt)
   if (!gteToken && !ltToken && !effectiveOrNull) return undefined
   if (!gteToken && !ltToken && effectiveOrNull) return 'null'
@@ -136,7 +138,9 @@ export function decodeIncludeExcludeSet(
     const trimmed = part.trim()
     if (!trimmed) continue
     if (trimmed.startsWith('-')) {
-      exclude.add(trimmed.slice(1))
+      const token = trimmed.slice(1).trim()
+      if (!token) continue
+      exclude.add(token)
     } else {
       include.add(trimmed)
     }

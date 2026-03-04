@@ -38,11 +38,13 @@ export function toApiDateRange(
   value?: FilterState['lastEvent'],
 ): ApiDateRangeFilter | undefined {
   if (!value) return undefined
-  return {
-    gte: value.gte ? resolveDateBound(value.gte) : undefined,
-    lt: value.lt ? resolveDateBound(value.lt) : undefined,
-    or_null: value.orNull || undefined,
+  const gte = value.gte ? resolveDateBound(value.gte) : undefined
+  const lt = value.lt ? resolveDateBound(value.lt) : undefined
+  const or_null = value.orNull || undefined
+  if (gte === undefined && lt === undefined && or_null === undefined) {
+    return undefined
   }
+  return { gte, lt, or_null }
 }
 
 /** Converts typed int range state into numeric bounds for API filters. */

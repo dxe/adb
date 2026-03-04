@@ -181,6 +181,7 @@ const (
 )
 
 func (f *TrainingFilter) Validate() error {
+	completedSet := make(map[string]struct{}, len(f.Completed))
 	for i, v := range f.Completed {
 		if strings.TrimSpace(v) == "" {
 			return fmt.Errorf("completed[%d] cannot be empty", i)
@@ -188,6 +189,7 @@ func (f *TrainingFilter) Validate() error {
 		if !ValidTrainingColumns[v] {
 			return fmt.Errorf("invalid training column: %q", v)
 		}
+		completedSet[v] = struct{}{}
 	}
 	for i, v := range f.NotCompleted {
 		if strings.TrimSpace(v) == "" {
@@ -196,8 +198,12 @@ func (f *TrainingFilter) Validate() error {
 		if !ValidTrainingColumns[v] {
 			return fmt.Errorf("invalid training column: %q", v)
 		}
+		if _, exists := completedSet[v]; exists {
+			return fmt.Errorf("training column %q cannot be both completed and not_completed", v)
+		}
 	}
 	return nil
+}
 }
 
 // QueryActivistFilters contains all filter parameters for querying activists.
