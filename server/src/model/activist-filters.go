@@ -90,6 +90,13 @@ func (f *IntRangeFilter) Validate() error {
 	return nil
 }
 
+func assertNonNegative(f IntRangeFilter) error {
+	if (f.Gte != nil && *f.Gte < 0) || (f.Lt != nil && *f.Lt < 0) {
+		return fmt.Errorf("negative bounds")
+	}
+	return nil
+}
+
 // NameFilter filters activists by name using LIKE.
 type NameFilter struct {
 	NameContains string `json:"name_contains"`
@@ -141,14 +148,21 @@ func (f *SourceFilter) IsEmpty() bool {
 }
 
 func (f *SourceFilter) Validate() error {
+	containsSet := make(map[string]struct{}, len(f.ContainsAny))
 	for i, v := range f.ContainsAny {
-		if strings.TrimSpace(v) == "" {
+		v = strings.TrimSpace(v)
+		if v == "" {
 			return fmt.Errorf("contains_any[%d] cannot be empty", i)
 		}
+		containsSet[v] = struct{}{}
 	}
 	for i, v := range f.NotContainsAny {
-		if strings.TrimSpace(v) == "" {
+		v = strings.TrimSpace(v)
+		if v == "" {
 			return fmt.Errorf("not_contains_any[%d] cannot be empty", i)
+		}
+		if _, exists := containsSet[v]; exists {
+			return fmt.Errorf("source token %q cannot be both contains_any and not_contains_any", v)
 		}
 	}
 	return nil
@@ -241,8 +255,14 @@ func (f *QueryActivistFilters) Validate() error {
 	if err := f.FirstEvent.Validate(); err != nil {
 		return fmt.Errorf("invalid first event filter: %w", err)
 	}
+	if err := assertNonNegative(f.TotalEvents); err != nil {
+		return fmt.Errorf("invalid total events filter: %w", err)
+	}
 	if err := f.TotalEvents.Validate(); err != nil {
 		return fmt.Errorf("invalid total events filter: %w", err)
+	}
+	if err := assertNonNegative(f.TotalInteractions); err != nil {
+		return fmt.Errorf("invalid total interactions filter: %w", err)
 	}
 	if err := f.TotalInteractions.Validate(); err != nil {
 		return fmt.Errorf("invalid total interactions filter: %w", err)
