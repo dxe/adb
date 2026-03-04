@@ -58,7 +58,6 @@ export const AttendeeInputField = ({
             onValueChange={handleInputChange}
             getSuggestions={(value) => registry.getSuggestions(value)}
             onCommit={handleCommit}
-            commitOnTab
             isFocused={isFocused}
             name="attendee"
             placeholder=""

@@ -13,7 +13,6 @@ type Props = {
   onValueChange: (value: string) => void
   getSuggestions: (value: string) => string[]
   onCommit?: (meta: SelectMeta) => void
-  commitOnTab?: boolean
   isFocused?: boolean
   inputRef?: (el: HTMLInputElement | null) => void
   size?: 'sm' | 'base'
@@ -31,7 +30,6 @@ export function SuggestionInput({
   onValueChange,
   getSuggestions,
   onCommit,
-  commitOnTab = false,
   isFocused,
   inputRef,
   size = 'base',
@@ -103,17 +101,16 @@ export function SuggestionInput({
       return
     }
 
-    const shouldCommit =
-      event.key === 'Enter' ||
-      (commitOnTab && event.key === 'Tab' && !event.shiftKey)
+    const isTabCommit = event.key === 'Tab' && !event.shiftKey
+    const shouldCommit = event.key === 'Enter' || isTabCommit
     if (!shouldCommit) return
+    if (isTabCommit && !open) return
 
     const selectedSuggestion =
       selectedIndex >= 0 && selectedIndex < suggestions.length
         ? suggestions[selectedIndex]
         : null
     const resolvedValue = selectedSuggestion ?? value.trim()
-    if (!resolvedValue.length) return
 
     event.preventDefault()
     onValueChange(resolvedValue)
