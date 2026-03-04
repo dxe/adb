@@ -204,7 +204,6 @@ func (f *TrainingFilter) Validate() error {
 	}
 	return nil
 }
-}
 
 // QueryActivistFilters contains all filter parameters for querying activists.
 type QueryActivistFilters struct {
