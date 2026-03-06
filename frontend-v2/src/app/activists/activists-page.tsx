@@ -18,6 +18,7 @@ import { ColumnSelector } from './column-selector'
 import { SortSelector } from './sort-selector'
 import {
   normalizeColumnsForFilters,
+  columnsForNewFilters,
   DEFAULT_COLUMNS,
 } from './column-definitions'
 import {
@@ -112,13 +113,16 @@ const activistsReducer = (
   switch (action.type) {
     case 'setFilters': {
       const { filters } = action
-      const selectedColumns =
-        filters.searchAcrossChapters === state.filters.searchAcrossChapters
-          ? state.selectedColumns
-          : normalizeColumnsForFilters(
-              state.selectedColumns,
-              filters.searchAcrossChapters,
-            )
+      // Auto-add columns for filters that just got a value set.
+      const autoColumns = columnsForNewFilters(state.filters, filters)
+      const withAutoColumns =
+        autoColumns.length > 0
+          ? [...state.selectedColumns, ...autoColumns]
+          : state.selectedColumns
+      const selectedColumns = normalizeColumnsForFilters(
+        withAutoColumns,
+        filters.searchAcrossChapters,
+      )
       return { ...state, filters, selectedColumns }
     }
     case 'setSelectedColumns': {
