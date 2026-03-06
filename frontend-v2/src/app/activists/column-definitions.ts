@@ -1,4 +1,5 @@
 import { ActivistColumnName } from '@/lib/api'
+import type { FilterState } from './query-state'
 
 export type ColumnCategory =
   | 'Basic Info'
@@ -299,6 +300,38 @@ export const normalizeColumns = (
     const orderB = orderMap.get(b) ?? Number.MAX_SAFE_INTEGER
     return orderA - orderB
   })
+}
+
+// Maps filter keys to the column that should be auto-shown when the filter
+// gets a value. Excludes training, searchAcrossChapters (handled separately),
+// includeHidden, and nameSearch which have no single corresponding column.
+const FILTER_COLUMN_MAP: Partial<
+  Record<keyof FilterState, ActivistColumnName>
+> = {
+  lastEvent: 'last_event',
+  firstEvent: 'first_event',
+  totalEvents: 'total_events',
+  interestDate: 'interest_date',
+  totalInteractions: 'total_interactions',
+  activistLevel: 'activist_level',
+  source: 'source',
+  assignedTo: 'assigned_to_name',
+  followups: 'followup_date',
+}
+
+/** Returns columns that should be added based on newly-set filter values. */
+export const columnsForNewFilters = (
+  prev: FilterState,
+  next: FilterState,
+): ActivistColumnName[] => {
+  const newColumns: ActivistColumnName[] = []
+  for (const [filterKey, columnName] of Object.entries(FILTER_COLUMN_MAP)) {
+    const key = filterKey as keyof FilterState
+    if (prev[key] === undefined && next[key] !== undefined) {
+      newColumns.push(columnName)
+    }
+  }
+  return newColumns
 }
 
 // Normalizes columns and ensures chapter_name is present if and only if
