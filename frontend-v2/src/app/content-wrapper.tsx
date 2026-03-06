@@ -15,14 +15,23 @@ const contentWrapperClass = {
  */
 export const ContentWrapper = (props: {
   size: keyof typeof contentWrapperClass
+  /**
+   * Whether to make the content wrapper take the full width of the viewport.
+   * Be sure to keep in sync with `isFullScreenPage` in
+   * site-background-controller.tsx
+   */
+  fullScreen?: boolean
   className?: string
   children: ReactNode
 }) => {
   return (
     <div
       className={cn(
-        'bg-white w-full lg:rounded-md py-6 px-4 md:px-10 shadow-2xl backdrop-blur-md bg-opacity-95 lg:mt-6 lg:mx-auto flex flex-col',
-        contentWrapperClass[props.size],
+        'bg-white w-full py-6 px-4 md:px-10 flex flex-col',
+        props.fullScreen
+          ? 'lg:max-w-none lg:mt-0 lg:mx-0 lg:rounded-none shadow-none bg-opacity-100'
+          : 'lg:rounded-md shadow-2xl backdrop-blur-md bg-opacity-95 lg:mt-6 lg:mx-auto',
+        !props.fullScreen && contentWrapperClass[props.size],
         props.className,
       )}
     >
