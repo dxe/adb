@@ -57,7 +57,7 @@ function userHasAccess(
   })
 }
 
-/** For ActivistList pages, check if the nav item's query params match the current URL exactly. */
+/** For ActivistListV2 pages, check if the nav item's query params match the current URL exactly. */
 function isExactParamsMatch(
   navHref: string,
   pathname: string,
@@ -118,9 +118,9 @@ const DropdownItem = ({
           onClick={onClick}
         >
           {item.items.map((innerItem) => {
-            // For ActivistList v2 pages, highlight only when query params match exactly.
+            // For ActivistListV2 pages, highlight only when query params match exactly.
             const isActive =
-              innerItem.page === 'ActivistList' &&
+              innerItem.page === 'ActivistListV2' &&
               innerItem.href.startsWith('/v2')
                 ? isExactParamsMatch(
                     innerItem.href.substring(3),

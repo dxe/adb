@@ -144,42 +144,42 @@
         {
           "label": "All Activists",
           "href": "/v2/activists",
-          "page": "ActivistList"
+          "page": "ActivistListV2"
         },
         {
           "label": "Chapter Members",
           "href": "/v2/activists?level=chapter-member,organizer&columns=activist_level,total_events,last_event,training0",
-          "page": "ActivistList"
+          "page": "ActivistListV2"
         },
         {
           "label": "New Activists",
           "href": "/v2/activists?lastEvent=-180..&totalEvents=..4&columns=activist_level,total_events,first_event,last_event,source&sort=-last_event",
-          "page": "ActivistList"
+          "page": "ActivistListV2"
         },
         {
           "label": "New Activists Pending Workshop",
           "href": "/v2/activists?firstEvent=-180..&level=supporter&training=-training0&columns=activist_level,first_event,last_event,training0,source&sort=-last_event",
-          "page": "ActivistList"
+          "page": "ActivistListV2"
         },
         {
           "label": "Community Prospects",
           "href": "/v2/activists?lastEvent=..-360%7Cnull&totalInteractions=..1&level=supporter&source=form,dxe-signup,arc-signup,petition,eventbrite,-application&columns=pronouns,email,phone,total_events,first_event,first_event_name,last_event,assigned_to_name,followup_date,total_interactions,last_interaction_date,source,interest_date,notes&sort=-interest_date",
-          "page": "ActivistList"
+          "page": "ActivistListV2"
         },
         {
           "label": "Community Prospects Follow-up",
           "href": "/v2/activists?assignedTo=me&followups=due&columns=pronouns,email,phone,total_events,first_event,first_event_name,last_event,assigned_to_name,followup_date,total_interactions,last_interaction_date,source,interest_date,notes&sort=-interest_date",
-          "page": "ActivistList"
+          "page": "ActivistListV2"
         },
         {
           "label": "Chapter Member Prospects",
           "href": "/v2/activists?level=~chapter-member,organizer&prospect=chapterMember&columns=pronouns,email,phone,activist_level,total_events,last_event,mpi,training0,consent_quiz,dev_application_date,dev_application_type,prospect_chapter_member,cm_first_email,cm_approval_email,notes&sort=-dev_application_date",
-          "page": "ActivistList"
+          "page": "ActivistListV2"
         },
         {
           "label": "Organizer Prospects",
           "href": "/v2/activists?prospect=organizer&level=~organizer&columns=pronouns,activist_level,total_events,last_event,mpi,training0,training1,training4,training5,training6,dev_application_date,dev_application_type,prospect_organizer,dev_quiz,dev_interest,notes&sort=-dev_application_date",
-          "page": "ActivistList",
+          "page": "ActivistListV2",
           "separatorBelow": true
         },
         {

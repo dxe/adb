@@ -64,7 +64,7 @@ export default async function ActivistsListPage({ searchParams }: PageProps) {
   })
 
   return (
-    <AuthedPageLayout pageName="ActivistList">
+    <AuthedPageLayout pageName="ActivistListV2">
       <HydrationBoundary state={dehydrate(queryClient)}>
         <Navbar />
         <ContentWrapper size="xl" fullScreen className="gap-6">
