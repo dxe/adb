@@ -43,11 +43,11 @@ export function UserTable({
   )
 
   const columns = useMemo<ColumnDef<User>[]>(() => {
-    const sortIndicator = (state: false | 'asc' | 'desc') => {
-      if (state === 'asc') return '▲'
-      if (state === 'desc') return '▼'
-      return ''
-    }
+    const SortIndicator = ({ sorted }: { sorted: false | 'asc' | 'desc' }) => (
+      <span className={`text-xs${sorted ? '' : ' invisible'}`}>
+        {sorted === 'desc' ? '▼' : '▲'}
+      </span>
+    )
 
     return [
       {
@@ -58,9 +58,7 @@ export function UserTable({
             className="flex items-center gap-1"
           >
             <span>Name</span>
-            <span className="text-xs">
-              {sortIndicator(column.getIsSorted())}
-            </span>
+            <SortIndicator sorted={column.getIsSorted()} />
           </button>
         ),
         accessorKey: 'name',
@@ -76,9 +74,7 @@ export function UserTable({
             className="flex items-center gap-1"
           >
             <span>Email</span>
-            <span className="text-xs">
-              {sortIndicator(column.getIsSorted())}
-            </span>
+            <SortIndicator sorted={column.getIsSorted()} />
           </button>
         ),
         accessorKey: 'email',
@@ -95,9 +91,7 @@ export function UserTable({
             className="flex items-center gap-1"
           >
             <span>Chapter</span>
-            <span className="text-xs">
-              {sortIndicator(column.getIsSorted())}
-            </span>
+            <SortIndicator sorted={column.getIsSorted()} />
           </button>
         ),
         accessorFn: (row) => chapterMap.get(row.chapter_id) ?? '',
@@ -124,9 +118,7 @@ export function UserTable({
             className="flex items-center gap-1"
           >
             <span>Status</span>
-            <span className="text-xs">
-              {sortIndicator(column.getIsSorted())}
-            </span>
+            <SortIndicator sorted={column.getIsSorted()} />
           </button>
         ),
         accessorFn: (row) => (row.disabled ? 'Disabled' : 'Active'),
