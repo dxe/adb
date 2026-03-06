@@ -152,8 +152,8 @@ export function ActivistTable({
   return (
     <>
       {/* Desktop table */}
-      <div className="hidden overflow-auto rounded-md border md:block">
-        <Table>
+      <div className="mx-auto hidden w-fit max-w-full overflow-x-auto rounded-md border md:block">
+        <Table className="w-max [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
