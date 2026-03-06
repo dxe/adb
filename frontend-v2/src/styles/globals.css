@@ -5,6 +5,10 @@
 @tailwind utilities;
 
 body {
+  scrollbar-gutter: stable;
+}
+
+body.with-site-bg {
   background:
     linear-gradient(rgba(80, 90, 170, 0.85), rgba(80, 90, 170, 0.85)),
     url('/v2/bg.jpg') no-repeat center center fixed;
@@ -12,7 +16,6 @@ body {
   -moz-background-size: cover;
   -o-background-size: cover;
   background-size: cover;
-  scrollbar-gutter: stable;
 }
 
 html {

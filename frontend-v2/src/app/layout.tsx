@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast'
 import { ApiClient } from '@/lib/api'
 import { getCookies } from '@/lib/auth'
 import Providers from './providers'
+import SiteBackgroundController from './site-background-controller'
 import '@/styles/globals.css'
 
 export const metadata: Metadata = {
@@ -32,6 +33,7 @@ export default async function RootLayout({
       </head>
       {/* Top padding is to make room for the fixed navbar. */}
       <body className="antialiased">
+        <SiteBackgroundController />
         {/*
           Bottom padding uses inline style because Safari doesn't respect
           pb-[3.25rem] Tailwind class when combined with body's background styles.
