@@ -10,7 +10,6 @@ import {
   ActivistColumnName,
   type ActivistJSON,
 } from '@/lib/api'
-import { Button } from '@/components/ui/button'
 import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
 import { ActivistTable } from './activists-table'
 import { ActivistFilters } from './filters/activist-filters'
@@ -151,6 +150,50 @@ const activistsReducer = (
     default:
       return state
   }
+}
+
+function LoadMoreTrigger({
+  onLoadMore,
+  isLoading,
+  canLoadMore,
+}: {
+  onLoadMore: () => Promise<unknown> | void
+  isLoading: boolean
+  canLoadMore: boolean
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  const inFlightRef = useRef(false)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el || isLoading || !canLoadMore) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // isLoading may not have been updated yet. Observer can fire multiple
+        // tiems before the next time React renders this effect.
+        if (!entry.isIntersecting || inFlightRef.current) return
+        inFlightRef.current = true
+        void Promise.resolve(onLoadMore()).finally(() => {
+          inFlightRef.current = false
+        })
+      },
+      { rootMargin: '200px' },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [onLoadMore, isLoading, canLoadMore])
+
+  return (
+    <div
+      ref={ref}
+      className="flex items-center justify-center py-4 text-sm text-muted-foreground"
+    >
+      <span role="status" aria-live="polite">
+        {isLoading ? 'Loading more activists…' : ''}
+      </span>
+    </div>
+  )
 }
 
 export default function ActivistsPage() {
@@ -328,14 +371,11 @@ export default function ActivistsPage() {
           />
 
           {hasNextPage && (
-            <Button
-              variant="outline"
-              className="self-center"
-              onClick={() => fetchNextPage()}
-              disabled={isFetchingNextPage}
-            >
-              {isFetchingNextPage ? 'Loading...' : 'Load more'}
-            </Button>
+            <LoadMoreTrigger
+              onLoadMore={fetchNextPage}
+              isLoading={isFetchingNextPage}
+              canLoadMore={hasNextPage}
+            />
           )}
         </>
       )}
