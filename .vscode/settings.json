@@ -16,4 +16,9 @@
   "prettier.prettierPath": "./node_modules/prettier",
   "files.insertFinalNewline": true,
   "editor.rulers": [80],
+  "search.exclude": {
+    "**/.next": true,
+    "**/tsconfig.tsbuildinfo": true,
+    "frontend/dist/**": true,
+  },
 }
