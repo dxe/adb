@@ -172,22 +172,38 @@ export function ColumnSelector({
                             onCheckedChange={() => handleToggleColumn(col.name)}
                             disabled={isDisabled}
                           />
-                          <Label
-                            htmlFor={`column-${col.name}`}
-                            className={`text-sm ${isDisabled ? 'cursor-default opacity-60' : 'cursor-pointer'}`}
+                          <div
+                            className={`inline-flex items-center gap-1 text-sm ${isDisabled ? 'opacity-60' : ''}`}
                           >
-                            {/* Show column description in tooltip when hovering over question mark icon */}
-                            <span className="inline-flex items-center gap-1">
+                            <Label
+                              htmlFor={`column-${col.name}`}
+                              className={
+                                isDisabled ? 'cursor-default' : 'cursor-pointer'
+                              }
+                            >
                               {col.label}
-                              {col.description ? (
-                                <span
-                                  title={col.description}
-                                  aria-label={col.description}
+                            </Label>
+                            {col.description ? (
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <button
+                                    type="button"
+                                    aria-label={`About ${col.label}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="inline-flex items-center"
+                                  >
+                                    <CircleHelp className="h-3.5 w-3.5 text-muted-foreground" />
+                                  </button>
+                                </PopoverTrigger>
+                                <PopoverContent
+                                  className="w-64 p-2 text-xs"
+                                  side="top"
+                                  align="start"
                                 >
-                                  <CircleHelp className="h-3.5 w-3.5 text-muted-foreground" />
-                                </span>
-                              ) : null}
-                            </span>
+                                  {col.description}
+                                </PopoverContent>
+                              </Popover>
+                            ) : null}
                             {isNameColumn && (
                               <span className="ml-1 text-xs text-muted-foreground">
                                 (required)
@@ -198,7 +214,7 @@ export function ColumnSelector({
                                 (auto)
                               </span>
                             )}
-                          </Label>
+                          </div>
                         </div>
                       )
                     })}
