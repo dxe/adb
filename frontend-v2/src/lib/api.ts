@@ -248,10 +248,13 @@ export class ApiClient {
     return ActivistListBasicResp.parse(resp)
   }
 
-  searchActivists = async (options: QueryActivistOptions) => {
+  searchActivists = async (
+    options: QueryActivistOptions,
+    signal?: AbortSignal,
+  ) => {
     try {
       const resp = await this.client
-        .post(API_PATH.ACTIVISTS_SEARCH, { json: options })
+        .post(API_PATH.ACTIVISTS_SEARCH, { json: options, signal })
         .json()
       const parsed = QueryActivistResult.parse(resp)
       return fillActivistBlankNumericFieldsWithZero(parsed, options.columns)
