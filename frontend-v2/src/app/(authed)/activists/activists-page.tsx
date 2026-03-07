@@ -1,8 +1,16 @@
 'use client'
 
-import { useMemo, useEffect, useCallback, useReducer, useRef } from 'react'
+import {
+  useMemo,
+  useEffect,
+  useCallback,
+  useReducer,
+  useRef,
+  useState,
+} from 'react'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { useSearchParams, useRouter } from 'next/navigation'
+import { Loader2 } from 'lucide-react'
 import {
   apiClient,
   API_PATH,
@@ -214,6 +222,9 @@ export default function ActivistsPage() {
     sort: initialState.sort,
   })
   const { filters, selectedColumns, sort } = state
+  const [settledColumns, setSettledColumns] =
+    useState<ActivistColumnName[]>(selectedColumns)
+  const [settledSort, setSettledSort] = useState<SortColumn[]>(sort)
 
   // Track the last URL params we wrote so we can distinguish our own URL
   // updates from external navigation (e.g. clicking a nav preset link).
@@ -278,6 +289,7 @@ export default function ActivistsPage() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    isPlaceholderData,
   } = useInfiniteQuery({
     queryKey: [API_PATH.ACTIVISTS_SEARCH, queryOptions],
     queryFn: ({ pageParam }) =>
@@ -285,6 +297,19 @@ export default function ActivistsPage() {
         ...queryOptions,
         after: pageParam,
       }),
+    placeholderData: (previousData) => {
+      // Show old data while loading new query, unless the last query returned
+      // no results, since doing so would continue showing "No activists found
+      // matching the current filters." which could be more easily mistaken for
+      // the result of the pending query. Instead, this will show the loading
+      // message instead an empty table.
+      const previousCount =
+        previousData?.pages.reduce(
+          (total, page) => total + page.activists.length,
+          0,
+        ) ?? 0
+      return previousCount > 0 ? previousData : undefined
+    },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) =>
       lastPage.pagination.next_cursor || undefined,
@@ -295,6 +320,18 @@ export default function ActivistsPage() {
     () => data?.pages.flatMap((page) => page.activists) ?? [],
     [data],
   )
+
+  // Keep table columns stable while showing placeholder data so column layout
+  // does not shift until matching fresh rows arrive.
+  useEffect(() => {
+    if (!isPlaceholderData) {
+      setSettledColumns(selectedColumns)
+      setSettledSort(sort)
+    }
+  }, [isPlaceholderData, selectedColumns, sort])
+
+  const tableColumns = isPlaceholderData ? settledColumns : selectedColumns
+  const tableSort = isPlaceholderData ? settledSort : sort
 
   return (
     <div className="flex flex-col gap-6">
@@ -365,12 +402,24 @@ export default function ActivistsPage() {
 
           <ActivistTable
             activists={activists}
-            visibleColumns={selectedColumns}
-            sort={sort}
+            visibleColumns={tableColumns}
+            sort={tableSort}
             onSortChange={handleSortChange}
+            isStale={isPlaceholderData}
           />
+          {isPlaceholderData && (
+            <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 -translate-x-1/2 px-4">
+              <div
+                className="flex items-center gap-2 rounded-full border border-border bg-background/95 px-4 py-2 text-sm font-medium text-foreground shadow-lg backdrop-blur"
+                role="status"
+              >
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                <span>Loading updated results...</span>
+              </div>
+            </div>
+          )}
 
-          {hasNextPage && (
+          {hasNextPage && !isPlaceholderData && (
             <LoadMoreTrigger
               onLoadMore={fetchNextPage}
               isLoading={isFetchingNextPage}

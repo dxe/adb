@@ -26,6 +26,7 @@ interface ActivistTableProps {
   visibleColumns: ActivistColumnName[]
   sort: SortColumn[]
   onSortChange: (sort: SortColumn[]) => void
+  isStale?: boolean
 }
 
 // Gets the underlying type of a column from the ActivistJSON schema
@@ -86,6 +87,7 @@ export function ActivistTable({
   visibleColumns,
   sort,
   onSortChange,
+  isStale = false,
 }: ActivistTableProps) {
   const columns = useMemo<ColumnDef<ActivistJSON>[]>(() => {
     return visibleColumns.map((colName) => {
@@ -152,7 +154,11 @@ export function ActivistTable({
   return (
     <>
       {/* Desktop table */}
-      <div className="mx-auto hidden w-fit max-w-full overflow-x-auto rounded-md border md:block">
+      <div
+        className={`mx-auto hidden w-fit max-w-full overflow-x-auto rounded-md border transition-opacity md:block ${
+          isStale ? 'opacity-60' : ''
+        }`}
+      >
         <Table className="w-max [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -187,7 +193,12 @@ export function ActivistTable({
       {/* Mobile card layout */}
       <div className="flex flex-col gap-4 md:hidden">
         {activists.map((activist) => (
-          <div key={activist.id} className="rounded-lg border bg-card p-4">
+          <div
+            key={activist.id}
+            className={`rounded-lg border bg-card p-4 transition-opacity ${
+              isStale ? 'opacity-60' : ''
+            }`}
+          >
             <div className="flex flex-col gap-2">
               {visibleColumns.map((colName) => {
                 const definition = COLUMN_DEFINITIONS.find(
