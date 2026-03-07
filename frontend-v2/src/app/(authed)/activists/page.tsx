@@ -58,7 +58,8 @@ export default async function ActivistsListPage({ searchParams }: PageProps) {
 
   await queryClient.prefetchInfiniteQuery({
     queryKey: [API_PATH.ACTIVISTS_SEARCH, initialQueryOptions],
-    queryFn: () => apiClient.searchActivists(initialQueryOptions),
+    queryFn: ({ signal }) =>
+      apiClient.searchActivists(initialQueryOptions, signal),
     initialPageParam: undefined as string | undefined,
   })
 

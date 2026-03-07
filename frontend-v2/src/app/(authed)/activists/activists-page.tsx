@@ -280,11 +280,14 @@ export default function ActivistsPage() {
     isFetchingNextPage,
   } = useInfiniteQuery({
     queryKey: [API_PATH.ACTIVISTS_SEARCH, queryOptions],
-    queryFn: ({ pageParam }) =>
-      apiClient.searchActivists({
-        ...queryOptions,
-        after: pageParam,
-      }),
+    queryFn: ({ pageParam, signal }) =>
+      apiClient.searchActivists(
+        {
+          ...queryOptions,
+          after: pageParam,
+        },
+        signal,
+      ),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) =>
       lastPage.pagination.next_cursor || undefined,
