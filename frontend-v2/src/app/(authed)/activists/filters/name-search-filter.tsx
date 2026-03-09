@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
-import { liteDebounce } from '@tanstack/pacer-lite'
+import { useState } from 'react'
+import { useDebouncedCallback } from '@tanstack/react-pacer'
 import { Input } from '@/components/ui/input'
 import type { FilterState } from '../query-state'
 
@@ -24,29 +24,20 @@ export function NameSearchFilter({
     setNameInput(filters.nameSearch)
   }
 
-  const debouncedNameSearchChange = useMemo(
-    () =>
-      liteDebounce(
-        (nextNameSearch: string, nextFilters: FilterState) => {
-          onFiltersChange({ ...nextFilters, nameSearch: nextNameSearch })
-        },
-        { wait: 300 },
-      ),
-    [onFiltersChange],
+  const debouncedUpdate = useDebouncedCallback(
+    (v: string) => onFiltersChange({ ...filters, nameSearch: v }),
+    { wait: 300 },
   )
-
-  useEffect(() => {
-    if (nameInput === filters.nameSearch) return
-
-    debouncedNameSearchChange(nameInput, filters)
-  }, [nameInput, filters, debouncedNameSearchChange])
 
   return (
     <Input
       type="text"
       placeholder="Search activists by name..."
       value={nameInput}
-      onChange={(e) => setNameInput(e.target.value)}
+      onChange={(e) => {
+        setNameInput(e.target.value)
+        debouncedUpdate(e.target.value)
+      }}
     />
   )
 }

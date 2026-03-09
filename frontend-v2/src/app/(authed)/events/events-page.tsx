@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useCallback } from 'react'
+import { useDebouncedCallback } from '@tanstack/react-pacer'
 import Link from 'next/link'
 import {
   useQuery,
@@ -40,7 +41,6 @@ import { SuggestionInput } from './suggestion-input'
 import { EventListTable } from './event-list-table'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
-import { useDebouncedState } from '@/hooks/use-debounced-state'
 import { ActivistRegistry } from './activist-registry'
 
 export type EventListMode = 'events' | 'connections'
@@ -132,9 +132,10 @@ export default function EventsPage({ mode = 'events' }: Props) {
     ),
   })
 
-  // Name input debounces into URL params
-  const [nameInput, setNameInput] = useDebouncedState(urlParams.name, (v) =>
-    setUrlParams({ name: v || null }),
+  const [nameInput, setNameInput] = useState(urlParams.name)
+  const debouncedSetName = useDebouncedCallback(
+    (v: string) => setUrlParams({ name: v || null }),
+    { wait: 300 },
   )
 
   // Activist input only commits to URL when a suggestion is explicitly selected.
@@ -167,6 +168,7 @@ export default function EventsPage({ mode = 'events' }: Props) {
     urlParams.type !== defaultParams.event_type
 
   const handleReset = () => {
+    setNameInput('')
     setUrlParams({
       name: null,
       activist: null,
@@ -265,7 +267,10 @@ export default function EventsPage({ mode = 'events' }: Props) {
               <Input
                 id="filter-name"
                 value={nameInput}
-                onChange={(e) => setNameInput(e.target.value)}
+                onChange={(e) => {
+                  setNameInput(e.target.value)
+                  debouncedSetName(e.target.value)
+                }}
               />
             </div>
 
