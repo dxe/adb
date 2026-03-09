@@ -1,11 +1,11 @@
 import { ContentWrapper } from '@/app/content-wrapper'
-import { Loading } from '@/app/loading'
+import { EventForm } from '../../events/event-form'
 
-export default function CoachingLoading() {
+export default function NewCoachingPage() {
   return (
     <ContentWrapper size="sm" className="gap-8">
       <h1 className="text-3xl font-bold">Coaching</h1>
-      <Loading inline />
+      <EventForm mode="connection" />
     </ContentWrapper>
   )
 }

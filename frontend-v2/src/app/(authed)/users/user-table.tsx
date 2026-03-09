@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button'
 import { IntentPrefetchLink } from '@/components/intent-prefetch-link'
 import { Pencil } from 'lucide-react'
 import clsx from 'clsx'
+import { SortIndicator } from '@/components/ui/sort-indicator'
 
 type Chapter = {
   ChapterID: number
@@ -43,12 +44,6 @@ export function UserTable({
   )
 
   const columns = useMemo<ColumnDef<User>[]>(() => {
-    const sortIndicator = (state: false | 'asc' | 'desc') => {
-      if (state === 'asc') return '▲'
-      if (state === 'desc') return '▼'
-      return ''
-    }
-
     return [
       {
         header: ({ column }) => (
@@ -58,9 +53,7 @@ export function UserTable({
             className="flex items-center gap-1"
           >
             <span>Name</span>
-            <span className="text-xs">
-              {sortIndicator(column.getIsSorted())}
-            </span>
+            <SortIndicator sorted={column.getIsSorted()} />
           </button>
         ),
         accessorKey: 'name',
@@ -76,9 +69,7 @@ export function UserTable({
             className="flex items-center gap-1"
           >
             <span>Email</span>
-            <span className="text-xs">
-              {sortIndicator(column.getIsSorted())}
-            </span>
+            <SortIndicator sorted={column.getIsSorted()} />
           </button>
         ),
         accessorKey: 'email',
@@ -95,9 +86,7 @@ export function UserTable({
             className="flex items-center gap-1"
           >
             <span>Chapter</span>
-            <span className="text-xs">
-              {sortIndicator(column.getIsSorted())}
-            </span>
+            <SortIndicator sorted={column.getIsSorted()} />
           </button>
         ),
         accessorFn: (row) => chapterMap.get(row.chapter_id) ?? '',
@@ -124,9 +113,7 @@ export function UserTable({
             className="flex items-center gap-1"
           >
             <span>Status</span>
-            <span className="text-xs">
-              {sortIndicator(column.getIsSorted())}
-            </span>
+            <SortIndicator sorted={column.getIsSorted()} />
           </button>
         ),
         accessorFn: (row) => (row.disabled ? 'Disabled' : 'Active'),

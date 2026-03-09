@@ -127,8 +127,8 @@ export const EventForm = ({ mode }: EventFormProps) => {
         if (match) {
           const newEventId = match[2]
           const newPath = isConnection
-            ? `/coaching/${newEventId}`
-            : `/event/${newEventId}`
+            ? `/coachings/${newEventId}`
+            : `/events/${newEventId}`
           router.push(newPath)
         } else {
           // Fallback: redirect to legacy route if we can't parse it.

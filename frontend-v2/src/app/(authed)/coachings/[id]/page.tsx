@@ -5,7 +5,7 @@ import {
 } from '@tanstack/react-query'
 import { notFound } from 'next/navigation'
 import { ContentWrapper } from '@/app/content-wrapper'
-import { EventForm } from '../../event/event-form'
+import { EventForm } from '../../events/event-form'
 import { API_PATH, ApiClient } from '@/lib/api'
 import { getCookies } from '@/lib/auth'
 

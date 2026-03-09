@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { FilterChip } from './filter-chip'
-import { useDraftFilter } from './filter-utils'
+import { useDraftFilter } from '@/hooks/use-draft-filter'
 import type { IncludeExcludeFilterValue } from '../filter-types'
 
 const TRAINING_COLUMNS = [

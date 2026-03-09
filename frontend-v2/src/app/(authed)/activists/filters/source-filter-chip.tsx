@@ -7,7 +7,7 @@ import {
   encodeIncludeExclude,
 } from '../filter-url-codecs'
 import { FilterChip } from './filter-chip'
-import { useDraftFilter } from './filter-utils'
+import { useDraftFilter } from '@/hooks/use-draft-filter'
 import type { IncludeExcludeFilterValue } from '../filter-types'
 
 interface SourceFilterChipProps {

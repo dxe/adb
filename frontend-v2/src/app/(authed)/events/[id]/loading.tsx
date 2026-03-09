@@ -1,11 +1,11 @@
 import { ContentWrapper } from '@/app/content-wrapper'
-import { EventForm } from './event-form'
+import { Loading } from '@/app/loading'
 
-export default function AttendancePage() {
+export default function EditEventLoading() {
   return (
     <ContentWrapper size="sm" className="gap-8">
       <h1 className="text-3xl font-bold">Attendance</h1>
-      <EventForm mode="event" />
+      <Loading inline />
     </ContentWrapper>
   )
 }
