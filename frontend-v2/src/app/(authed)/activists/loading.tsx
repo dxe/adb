@@ -3,7 +3,7 @@ import { Loading } from '@/app/loading'
 
 export default function ActivistsLoading() {
   return (
-    <ContentWrapper size="xl" className="gap-6">
+    <ContentWrapper size="xl" className="gap-6" fullScreen>
       <h1 className="text-2xl font-semibold">Activists</h1>
       <Loading inline />
     </ContentWrapper>
