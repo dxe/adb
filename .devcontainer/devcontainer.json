@@ -33,7 +33,9 @@
     "ghcr.io/jungaretti/features/make:1": {},
     "ghcr.io/rocker-org/devcontainer-features/apt-packages:1": {
       // mariadb-client package provides the `mysql` command for
-      // development / debugging purposes (not an app dependeny).
+      //     development / debugging purposes (not an app dependeny).
+      // bash-completion is useful for entering git commands in the devcontainer
+      //     and our .bashrc requires this.
       "packages": "mariadb-client,bash-completion"
     }
   },

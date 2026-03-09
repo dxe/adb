@@ -1,4 +1,5 @@
-# Add git support for bash-completion.
+# Add git support for bash-completion. Assumes bash-completion apt package is
+# installed. devcontainer.json should install it automatically.
 source /usr/share/bash-completion/completions/git
 
 ### Useful aliases for development ###
