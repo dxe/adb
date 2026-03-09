@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
-import { liteDebounce } from '@tanstack/pacer-lite'
 import { Input } from '@/components/ui/input'
+import { useDebouncedState } from '@/hooks/use-debounced-state'
 import type { FilterState } from '../query-state'
 
 interface NameSearchFilterProps {
@@ -14,32 +13,11 @@ export function NameSearchFilter({
   filters,
   onFiltersChange,
 }: NameSearchFilterProps) {
-  const [nameInput, setNameInput] = useState(filters.nameSearch)
-  const [prevNameSearch, setPrevNameSearch] = useState(filters.nameSearch)
-
-  // Keep local input in sync when nameSearch changes externally
-  // (e.g. URL navigation between preset views).
-  if (filters.nameSearch !== prevNameSearch) {
-    setPrevNameSearch(filters.nameSearch)
-    setNameInput(filters.nameSearch)
-  }
-
-  const debouncedNameSearchChange = useMemo(
-    () =>
-      liteDebounce(
-        (nextNameSearch: string, nextFilters: FilterState) => {
-          onFiltersChange({ ...nextFilters, nameSearch: nextNameSearch })
-        },
-        { wait: 300 },
-      ),
-    [onFiltersChange],
+  const [nameInput, setNameInput] = useDebouncedState(
+    filters.nameSearch,
+    (nextNameSearch) =>
+      onFiltersChange({ ...filters, nameSearch: nextNameSearch }),
   )
-
-  useEffect(() => {
-    if (nameInput === filters.nameSearch) return
-
-    debouncedNameSearchChange(nameInput, filters)
-  }, [nameInput, filters, debouncedNameSearchChange])
 
   return (
     <Input

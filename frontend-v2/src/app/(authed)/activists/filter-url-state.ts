@@ -3,14 +3,13 @@ import { DEFAULT_COLUMNS, normalizeColumns } from './column-definitions'
 import { DEFAULT_SORT, type SortColumn } from './query-state'
 import {
   FILTER_PARAM_KEYS,
-  buildFilterParamEntries,
   parseFiltersFromParams,
   type FilterParamGetter,
 } from './filter-schema'
 
 export type ParamGetter = FilterParamGetter
 
-export { FILTER_PARAM_KEYS, parseFiltersFromParams, buildFilterParamEntries }
+export { FILTER_PARAM_KEYS, parseFiltersFromParams }
 
 export const parseColumnsFromParams = (
   getParam: ParamGetter,
