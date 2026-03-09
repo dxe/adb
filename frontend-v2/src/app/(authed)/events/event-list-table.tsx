@@ -40,6 +40,7 @@ export function EventListTable({
 }: {
   events: EventListItem[]
   mode: EventListMode
+  /** Must be a stable reference (e.g. wrapped in useCallback) — it is a dep of the columns useMemo. */
   onDelete: (event: EventListItem) => void
 }) {
   const isConnections = mode === 'connections'

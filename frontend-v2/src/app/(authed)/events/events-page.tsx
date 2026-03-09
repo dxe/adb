@@ -206,16 +206,20 @@ export default function EventsPage({ mode = 'events' }: Props) {
     },
   })
 
+  // deleteMutation.mutate is stable across renders (TanStack Query guarantee).
+  // Destructuring it lets useCallback hold a stable dep so handleDelete doesn't
+  // change every render and needlessly bust the columns useMemo in EventListTable.
+  const { mutate: deleteEvent } = deleteMutation
   const handleDelete = useCallback(
     (event: EventListItem) => {
       const confirmed = window.confirm(
         `Are you sure you want to delete "${event.event_name}"?`,
       )
       if (confirmed) {
-        deleteMutation.mutate(event.event_id)
+        deleteEvent(event.event_id)
       }
     },
-    [deleteMutation],
+    [deleteEvent],
   )
 
   const title = isConnections ? 'All Coachings' : 'All Events'
