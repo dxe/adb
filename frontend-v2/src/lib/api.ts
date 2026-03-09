@@ -171,19 +171,22 @@ export type EventListItem = z.infer<typeof EventListItemSchema>
 
 const EventListResp = z.array(EventListItemSchema)
 
-export type EventType =
-  | 'noConnections'
-  | 'Connection'
-  | 'Action'
-  | 'Campaign Action'
-  | 'Community'
-  | 'Frontline Surveillance'
-  | 'Meeting'
-  | 'Outreach'
-  | 'Animal Care'
-  | 'Training'
-  | 'mpiDA'
-  | 'mpiCOM'
+export const EVENT_TYPE_VALUES = [
+  'noConnections',
+  'Connection',
+  'Action',
+  'Campaign Action',
+  'Community',
+  'Frontline Surveillance',
+  'Meeting',
+  'Outreach',
+  'Animal Care',
+  'Training',
+  'mpiDA',
+  'mpiCOM',
+] as const
+
+export type EventType = (typeof EVENT_TYPE_VALUES)[number]
 
 export interface EventListParams {
   event_name?: string

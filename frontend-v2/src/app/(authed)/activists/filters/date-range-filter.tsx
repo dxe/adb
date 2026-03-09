@@ -15,7 +15,7 @@ import { DatePicker } from '@/components/ui/date-picker'
 import { Checkbox } from '@/components/ui/checkbox'
 import { CircleHelp } from 'lucide-react'
 import { FilterChip } from './filter-chip'
-import { useDraftFilter } from './filter-utils'
+import { useDraftFilter } from '@/hooks/use-draft-filter'
 import { format } from 'date-fns'
 import type {
   AbsoluteDateBound,

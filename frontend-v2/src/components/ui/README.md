@@ -6,6 +6,10 @@ Components in this directory are generated via [shadcn](https://ui.shadcn.com/do
 
 When upgrading shadcn components, preserve the following customizations:
 
+### date-picker.tsx
+
+Changed the date display format from `PPP` (e.g. "January 1st, 2025") to `PP` (e.g. "Jan 1, 2025") so the selected date fits in narrow inputs without overflow. Also added `truncate` to the label span and `shrink-0` to the calendar icon to handle any remaining overflow gracefully.
+
 ### select.tsx
 
 SelectTrigger includes custom border styling for improved visual feedback:

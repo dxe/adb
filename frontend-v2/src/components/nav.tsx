@@ -97,6 +97,23 @@ const DropdownItem = ({
   if (!userHasAccess(user, item.roleRequired)) {
     return null
   }
+  const childrenItems = isExpanded
+    ? item.items
+        .filter((innerItem) => userHasAccess(user, innerItem.roleRequired))
+        .map((innerItem) => {
+          const navPath = innerItem.href.startsWith('/v2')
+            ? innerItem.href.substring(3)
+            : null
+          const siblingExactMatch =
+            navPath === '/activists' || navPath?.startsWith('/activists?')
+          const isActive = siblingExactMatch
+            ? isExactParamsMatch(navPath!, pathname, searchParams)
+            : navPath !== null &&
+              (pathname === navPath || pathname.startsWith(navPath + '/'))
+          return { innerItem, isActive }
+        })
+    : null
+
   return (
     <div
       className={clsx(buefyStyles['navbar-item'], buefyStyles['has-dropdown'])}
@@ -114,47 +131,33 @@ const DropdownItem = ({
         {item.label}
         <span className="border-[#7957d5] mt-[-0.375rem] right-[1.125rem] border-[3px] border-solid rounded-[2px] border-r-0 border-t-0 block h-[.625rem] absolute pointer-events-none top-[50%] -rotate-45 origin-center w-[.625rem]" />
       </a>
-      {isExpanded && (
+      {childrenItems && (
         <div
           className={clsx(buefyStyles['navbar-dropdown'], '!block')}
           onClick={onNavigate}
         >
-          {item.items.map((innerItem) => {
-            const navPath = innerItem.href.startsWith('/v2')
-              ? innerItem.href.substring(3)
-              : null
-
-            const isActive =
-              navPath === '/activists' || navPath?.startsWith('/activists?')
-                ? // For activists pages (in frontend-v2), highlight only when query params match exactly.
-                  isExactParamsMatch(navPath, pathname, searchParams)
-                : navPath !== null &&
-                  (pathname === navPath || pathname.startsWith(navPath + '/'))
-
+          {childrenItems.map(({ innerItem, isActive }) => {
             const classNames = clsx(
               buefyStyles['navbar-item'],
               { [buefyStyles['is-active']]: isActive },
               { 'mb-2': innerItem.separatorBelow },
             )
-            return (
-              userHasAccess(user, innerItem.roleRequired) &&
-              (innerItem.href.startsWith('/v2') ? (
-                <Link
-                  href={innerItem.href.substring(3)}
-                  className={classNames}
-                  key={innerItem.href}
-                >
-                  {innerItem.label}
-                </Link>
-              ) : (
-                <a
-                  href={innerItem.href}
-                  className={classNames}
-                  key={innerItem.href}
-                >
-                  {innerItem.label}
-                </a>
-              ))
+            return innerItem.href.startsWith('/v2') ? (
+              <Link
+                href={innerItem.href.substring(3)}
+                className={classNames}
+                key={innerItem.href}
+              >
+                {innerItem.label}
+              </Link>
+            ) : (
+              <a
+                href={innerItem.href}
+                className={classNames}
+                key={innerItem.href}
+              >
+                {innerItem.label}
+              </a>
             )
           })}
         </div>

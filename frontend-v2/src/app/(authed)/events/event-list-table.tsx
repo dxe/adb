@@ -84,7 +84,7 @@ export function EventListTable({
               <IntentPrefetchLink
                 href={
                   isConnections
-                    ? `/coaching/${row.original.event_id}`
+                    ? `/coachings/${row.original.event_id}`
                     : `/events/${row.original.event_id}`
                 }
               >
@@ -278,7 +278,7 @@ export function EventListTable({
                     <IntentPrefetchLink
                       href={
                         isConnections
-                          ? `/coaching/${row.original.event_id}`
+                          ? `/coachings/${row.original.event_id}`
                           : `/events/${row.original.event_id}`
                       }
                     >
@@ -353,7 +353,7 @@ function ExpandedDetail({
   isConnections: boolean
 }) {
   const emailLink = event.attendee_emails?.length
-    ? `https://mail.google.com/mail/?view=cm&fs=1&bcc=${event.attendee_emails.join(',')}`
+    ? `https://mail.google.com/mail/?view=cm&fs=1&bcc=${event.attendee_emails.map(encodeURIComponent).join(',')}`
     : null
   const csvLink = `/csv/event_attendance/${event.event_id}`
 

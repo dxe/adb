@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { FilterChip } from './filter-chip'
-import { useDraftFilter } from './filter-utils'
+import { useDraftFilter } from '@/hooks/use-draft-filter'
 import type { IntRangeFilterValue } from '../filter-types'
 import { parseOptionalSafeInteger } from '../number-utils'
 

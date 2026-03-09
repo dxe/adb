@@ -1,3 +1,6 @@
+// no prefetching on this page b/c the way we do the default date filter is a little weird.
+// might need to make changes on backend later to enable this.
+// https://github.com/dxe/adb/pull/314#discussion_r2900328919
 'use client'
 
 import { useState, useMemo } from 'react'
@@ -5,10 +8,16 @@ import Link from 'next/link'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { CalendarPlus, Filter, Loader2, RotateCcw } from 'lucide-react'
 import { parseISO, format, subMonths, startOfMonth } from 'date-fns'
-import { parseAsString, useQueryStates } from 'nuqs'
+import {
+  createParser,
+  parseAsString,
+  parseAsStringLiteral,
+  useQueryStates,
+} from 'nuqs'
 import {
   API_PATH,
   apiClient,
+  EVENT_TYPE_VALUES,
   EventListItem,
   EventListParams,
   EventType,
@@ -28,8 +37,15 @@ import { useActivistRegistry } from './useActivistRegistry'
 import { SuggestionInput } from './suggestion-input'
 import { EventListTable } from './event-list-table'
 import { cn } from '@/lib/utils'
+import { useDebouncedState } from '@/hooks/use-debounced-state'
+import { ActivistRegistry } from './activist-registry'
 
 export type EventListMode = 'events' | 'connections'
+
+const parseAsDateString = createParser({
+  parse: (v) => (/^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null),
+  serialize: (v) => v,
+})
 
 const EVENT_TYPES: { value: EventType; label: string }[] = [
   { value: 'noConnections', label: 'All' },
@@ -50,14 +66,12 @@ function ActivistFilterInput({
   registry,
   value,
   onChange,
-  onEnter,
   label,
   className,
 }: {
-  registry: ReturnType<typeof useActivistRegistry>['registry']
+  registry: ActivistRegistry
   value: string
   onChange: (v: string) => void
-  onEnter: () => void
   label: string
   className?: string
 }) {
@@ -69,11 +83,6 @@ function ActivistFilterInput({
         value={value}
         onValueChange={onChange}
         getSuggestions={(v) => registry.getSuggestions(v)}
-        onCommit={({ key }) => {
-          if (key === 'Enter') {
-            onEnter()
-          }
-        }}
         className="w-full"
         size="sm"
       />
@@ -100,24 +109,26 @@ export default function EventsPage({ mode = 'events' }: Props) {
   const queryClient = useQueryClient()
   const { registry } = useActivistRegistry()
 
-  // URL params = committed filters (drives the query + shareable link)
+  // URL params drive the query and are the source of truth for committed filters
   const [urlParams, setUrlParams] = useQueryStates({
     name: parseAsString.withDefault(''),
     activist: parseAsString.withDefault(''),
-    start: parseAsString.withDefault(defaultParams.event_date_start),
-    end: parseAsString.withDefault(defaultParams.event_date_end),
-    type: parseAsString.withDefault(defaultParams.event_type),
+    start: parseAsDateString.withDefault(defaultParams.event_date_start),
+    end: parseAsDateString.withDefault(defaultParams.event_date_end),
+    type: parseAsStringLiteral(EVENT_TYPE_VALUES).withDefault(
+      defaultParams.event_type,
+    ),
   })
 
-  // Form state — local, uncommitted until Filter is clicked
-  // Initialized from URL so shared links pre-populate the form
-  const [formName, setFormName] = useState(urlParams.name)
-  const [formActivist, setFormActivist] = useState(urlParams.activist)
-  const [formStart, setFormStart] = useState(urlParams.start)
-  const [formEnd, setFormEnd] = useState(urlParams.end)
-  const [formType, setFormType] = useState<EventType>(
-    urlParams.type as EventType,
+  // Text inputs debounce into URL params; all other filters write directly
+  const [nameInput, setNameInput] = useDebouncedState(urlParams.name, (v) =>
+    setUrlParams({ name: v || null }),
   )
+  const [activistInput, setActivistInput] = useDebouncedState(
+    urlParams.activist,
+    (v) => setUrlParams({ activist: v || null }),
+  )
+
   const [showFilters, setShowFilters] = useState(false)
 
   // Dirty = committed filters differ from defaults (controls Reset button)
@@ -128,25 +139,7 @@ export default function EventsPage({ mode = 'events' }: Props) {
     urlParams.end !== defaultParams.event_date_end ||
     urlParams.type !== defaultParams.event_type
 
-  const handleFilter = () => {
-    setUrlParams({
-      name: formName || null,
-      activist: formActivist || null,
-      start:
-        formStart && formStart !== defaultParams.event_date_start
-          ? formStart
-          : null,
-      end: formEnd && formEnd !== defaultParams.event_date_end ? formEnd : null,
-      type: formType !== defaultParams.event_type ? formType : null,
-    })
-  }
-
   const handleReset = () => {
-    setFormName('')
-    setFormActivist('')
-    setFormStart(defaultParams.event_date_start)
-    setFormEnd(defaultParams.event_date_end)
-    setFormType(defaultParams.event_type as EventType)
     setUrlParams({
       name: null,
       activist: null,
@@ -161,7 +154,7 @@ export default function EventsPage({ mode = 'events' }: Props) {
     event_activist: urlParams.activist || undefined,
     event_date_start: urlParams.start,
     event_date_end: urlParams.end,
-    event_type: isConnections ? 'Connection' : (urlParams.type as EventType),
+    event_type: isConnections ? 'Connection' : urlParams.type,
   }
 
   const {
@@ -191,7 +184,7 @@ export default function EventsPage({ mode = 'events' }: Props) {
   }
 
   const title = isConnections ? 'All Coachings' : 'All Events'
-  const newHref = isConnections ? '/coaching/new' : '/events/new'
+  const newHref = isConnections ? '/coachings/new' : '/events/new'
   const newLabel = isConnections ? 'New Coaching' : 'New Event'
 
   return (
@@ -207,100 +200,102 @@ export default function EventsPage({ mode = 'events' }: Props) {
       </div>
 
       <div className="flex flex-col gap-4">
-        <div>
+        <div className="flex items-center gap-3">
           <Button
             variant="outline"
             size="sm"
+            className="md:hidden"
             onClick={() => setShowFilters((v) => !v)}
           >
             <Filter className="h-4 w-4" />
             {showFilters ? 'Hide filters' : 'Show filters'}
           </Button>
+          {isDirty && (
+            <Button variant="ghost" size="sm" onClick={handleReset}>
+              <RotateCcw className="h-4 w-4" />
+              Reset filters
+            </Button>
+          )}
         </div>
 
-        {showFilters && (
-          <div className="flex flex-col gap-4 rounded-md border p-4">
-            <div className="flex flex-col sm:flex-row sm:items-end gap-4">
-              <div className="flex flex-col gap-1.5 sm:flex-1 sm:max-w-xs">
-                <Label htmlFor="filter-name">
-                  {isConnections ? 'Coach' : 'Event Name'}
-                </Label>
-                <Input
-                  id="filter-name"
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleFilter()}
-                />
-              </div>
-
-              <ActivistFilterInput
-                registry={registry}
-                value={formActivist}
-                onChange={setFormActivist}
-                onEnter={handleFilter}
-                label={isConnections ? 'Coachee' : 'Activist'}
-                className="sm:flex-1 sm:max-w-xs"
+        <div
+          className={cn(
+            'flex-col gap-4 rounded-md border p-4',
+            showFilters ? 'flex' : 'hidden md:flex',
+          )}
+        >
+          <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+            <div className="flex flex-col gap-1.5 sm:flex-1 sm:max-w-xs">
+              <Label htmlFor="filter-name">
+                {isConnections ? 'Coach' : 'Event Name'}
+              </Label>
+              <Input
+                id="filter-name"
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
               />
-
-              {!isConnections && (
-                <div className="flex flex-col gap-1.5 sm:w-44">
-                  <Label>Type</Label>
-                  <Select
-                    value={formType}
-                    onValueChange={(v) => setFormType(v as EventType)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {EVENT_TYPES.map(({ value, label }) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
             </div>
 
-            <div className="flex flex-wrap items-end gap-4">
-              <div className="flex flex-col gap-1.5">
-                <Label>From</Label>
-                <DatePicker
-                  value={formStart ? parseISO(formStart) : undefined}
-                  onValueChange={(date) =>
-                    setFormStart(date ? format(date, 'yyyy-MM-dd') : '')
-                  }
-                  placeholder="Start date"
-                  className="w-40"
-                />
-              </div>
+            <ActivistFilterInput
+              registry={registry}
+              value={activistInput}
+              onChange={setActivistInput}
+              label={isConnections ? 'Coachee' : 'Activist'}
+              className="sm:flex-1 sm:max-w-xs"
+            />
 
-              <div className="flex flex-col gap-1.5">
-                <Label>To</Label>
-                <DatePicker
-                  value={formEnd ? parseISO(formEnd) : undefined}
-                  onValueChange={(date) =>
-                    setFormEnd(date ? format(date, 'yyyy-MM-dd') : '')
-                  }
-                  placeholder="End date"
-                  className="w-40"
-                />
+            {!isConnections && (
+              <div className="flex flex-col gap-1.5 sm:w-44">
+                <Label>Type</Label>
+                <Select
+                  value={urlParams.type}
+                  onValueChange={(v) => setUrlParams({ type: v as EventType })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EVENT_TYPES.map(({ value, label }) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+            )}
+          </div>
 
-              <div className="flex gap-2">
-                <Button onClick={handleFilter}>Filter</Button>
-                {isDirty && (
-                  <Button variant="ghost" onClick={handleReset}>
-                    <RotateCcw className="h-4 w-4" />
-                    Reset filters
-                  </Button>
-                )}
-              </div>
+          <div className="flex flex-wrap items-end gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label>From</Label>
+              <DatePicker
+                value={urlParams.start ? parseISO(urlParams.start) : undefined}
+                onValueChange={(date) =>
+                  setUrlParams({
+                    start: date ? format(date, 'yyyy-MM-dd') : null,
+                  })
+                }
+                placeholder="Start date"
+                className="w-40"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label>To</Label>
+              <DatePicker
+                value={urlParams.end ? parseISO(urlParams.end) : undefined}
+                onValueChange={(date) =>
+                  setUrlParams({
+                    end: date ? format(date, 'yyyy-MM-dd') : null,
+                  })
+                }
+                placeholder="End date"
+                className="w-40"
+              />
             </div>
           </div>
-        )}
+        </div>
       </div>
 
       {isLoading && (
