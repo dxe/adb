@@ -7,7 +7,7 @@
 
 import navbarData from '$shared/nav.json'
 import { CircleUser } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import Image from 'next/image'
 import logo1 from '$public/logo.png'
 import Link from 'next/link'
@@ -94,25 +94,42 @@ const DropdownItem = ({
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
+  const accessibleItems = useMemo(
+    () => isExpanded
+      ? item.items.filter((innerItem) => userHasAccess(user, innerItem.roleRequired))
+      : null,
+    [isExpanded, item.items, user],
+  )
+
+  // Suppress prefix-matching if any sibling exactly matches the current path,
+  // so e.g. "All Events" doesn't also highlight when on "New Event".
+  const hasExactPathMatch = useMemo(
+    () => accessibleItems?.some(({ href }) => {
+      const navPath = (href.startsWith('/v2') ? href.substring(3) : href).split('?')[0]
+      return pathname === navPath
+    }) ?? false,
+    [accessibleItems, pathname],
+  )
+
+  const childrenItems = useMemo(
+    () => accessibleItems?.map((innerItem) => {
+      const navHref = innerItem.href.startsWith('/v2')
+        ? innerItem.href.substring(3)
+        : innerItem.href
+      const navPath = navHref.split('?')[0]
+      // Items with query params (e.g. activist presets) require exact path + params.
+      // Plain-path items use exact or prefix match (prefix suppressed if a sibling is more specific).
+      const isActive = navHref.includes('?')
+        ? isExactParamsMatch(navHref, pathname, searchParams)
+        : pathname === navPath || (!hasExactPathMatch && pathname.startsWith(navPath + '/'))
+      return { innerItem, isActive }
+    }) ?? null,
+    [accessibleItems, hasExactPathMatch, pathname, searchParams],
+  )
+
   if (!userHasAccess(user, item.roleRequired)) {
     return null
   }
-  const childrenItems = isExpanded
-    ? item.items
-        .filter((innerItem) => userHasAccess(user, innerItem.roleRequired))
-        .map((innerItem) => {
-          const navPath = innerItem.href.startsWith('/v2')
-            ? innerItem.href.substring(3)
-            : null
-          const siblingExactMatch =
-            navPath === '/activists' || navPath?.startsWith('/activists?')
-          const isActive = siblingExactMatch
-            ? isExactParamsMatch(navPath!, pathname, searchParams)
-            : navPath !== null &&
-              (pathname === navPath || pathname.startsWith(navPath + '/'))
-          return { innerItem, isActive }
-        })
-    : null
 
   return (
     <div

@@ -43,9 +43,9 @@ export const AttendeeInputField = ({
   const activist = registry.getActivist(trimmedName)
   const isNewName = !!trimmedName && !activist
   const isExisting = !!trimmedName && !!activist
-  const isMissingEmail = isExisting && !activist.email
-  const isMissingPhone = isExisting && !activist.phone
-  const hasAllInfo = isExisting && !isMissingEmail && !isMissingPhone
+  const isMissingEmail = activist != null && !activist.email
+  const isMissingPhone = activist != null && !activist.phone
+  const hasAllInfo = activist != null && !isMissingEmail && !isMissingPhone
   const isError = !!field.state.meta.errors[0]
 
   return (

@@ -1,10 +1,10 @@
 import { ContentWrapper } from '@/app/content-wrapper'
-import EventsPage from './events-page'
+import { EventsPageLoader } from './events-page-loader'
 
 export default function EventsListPage() {
   return (
     <ContentWrapper size="xl" className="gap-6">
-      <EventsPage />
+      <EventsPageLoader />
     </ContentWrapper>
   )
 }

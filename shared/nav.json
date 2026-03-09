@@ -194,12 +194,12 @@
         },
         {
           "label": "All Coachings",
-          "href": "/v2/coaching",
+          "href": "/v2/coachings",
           "page": "ConnectionsList_beta"
         },
         {
           "label": "New Coaching",
-          "href": "/v2/coaching/new",
+          "href": "/v2/coachings/new",
           "page": "NewConnection_beta"
         },
         {

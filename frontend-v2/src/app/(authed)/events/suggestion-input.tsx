@@ -12,6 +12,7 @@ import { SuggestionList } from './suggestion-list'
 type SelectMeta = {
   key: 'Enter' | 'Tab' | 'click'
   fromSuggestion: boolean
+  value: string
 }
 
 type Props = {
@@ -78,7 +79,7 @@ export function SuggestionInput({
     setIsOpen(false)
     clearSuggestions()
     onValueChange(suggestion)
-    onCommit?.({ key: 'click', fromSuggestion: true })
+    onCommit?.({ key: 'click', fromSuggestion: true, value: suggestion })
   }
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
@@ -132,6 +133,7 @@ export function SuggestionInput({
     onCommit?.({
       key: event.key as 'Enter' | 'Tab',
       fromSuggestion: !!selectedSuggestion,
+      value: resolvedValue,
     })
     setIsOpen(false)
     clearSuggestions()

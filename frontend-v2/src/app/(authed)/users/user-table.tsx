@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button'
 import { IntentPrefetchLink } from '@/components/intent-prefetch-link'
 import { Pencil } from 'lucide-react'
 import clsx from 'clsx'
+import { SortIndicator } from '@/components/ui/sort-indicator'
 
 type Chapter = {
   ChapterID: number
@@ -43,12 +44,6 @@ export function UserTable({
   )
 
   const columns = useMemo<ColumnDef<User>[]>(() => {
-    const SortIndicator = ({ sorted }: { sorted: false | 'asc' | 'desc' }) => (
-      <span className={`text-xs${sorted ? '' : ' invisible'}`}>
-        {sorted === 'desc' ? '▼' : '▲'}
-      </span>
-    )
-
     return [
       {
         header: ({ column }) => (

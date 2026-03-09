@@ -31,14 +31,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { IntentPrefetchLink } from '@/components/intent-prefetch-link'
 import { EventListMode } from './events-page'
-
-function SortIndicator({ sorted }: { sorted: false | 'asc' | 'desc' }) {
-  return (
-    <span className={`text-xs${sorted ? '' : ' invisible'}`}>
-      {sorted === 'desc' ? '▼' : '▲'}
-    </span>
-  )
-}
+import { SortIndicator } from '@/components/ui/sort-indicator'
 
 export function EventListTable({
   events,

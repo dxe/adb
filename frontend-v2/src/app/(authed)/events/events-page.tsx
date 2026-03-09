@@ -1,13 +1,10 @@
-// no prefetching on this page b/c the way we do the default date filter is a little weird.
-// might need to make changes on backend later to enable this.
-// https://github.com/dxe/adb/pull/314#discussion_r2900328919
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import Link from 'next/link'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { CalendarPlus, Filter, Loader2, RotateCcw } from 'lucide-react'
-import { parseISO, format, subMonths, startOfMonth } from 'date-fns'
+import { format, subMonths, startOfMonth } from 'date-fns'
 import {
   createParser,
   parseAsString,
@@ -37,6 +34,7 @@ import { useActivistRegistry } from './useActivistRegistry'
 import { SuggestionInput } from './suggestion-input'
 import { EventListTable } from './event-list-table'
 import { cn } from '@/lib/utils'
+import toast from 'react-hot-toast'
 import { useDebouncedState } from '@/hooks/use-debounced-state'
 import { ActivistRegistry } from './activist-registry'
 
@@ -61,17 +59,22 @@ const EVENT_TYPES: { value: EventType; label: string }[] = [
   { value: 'mpiCOM', label: 'MPI: Community' },
 ]
 
-// Activist autocomplete input backed by the activist registry
+// Activist autocomplete input: only commits a filter when a suggestion is
+// explicitly selected. Typing alone has no effect on the query.
 function ActivistFilterInput({
   registry,
   value,
   onChange,
+  onSelect,
+  onBlur,
   label,
   className,
 }: {
   registry: ActivistRegistry
   value: string
   onChange: (v: string) => void
+  onSelect: (v: string) => void
+  onBlur: () => void
   label: string
   className?: string
 }) {
@@ -83,6 +86,10 @@ function ActivistFilterInput({
         value={value}
         onValueChange={onChange}
         getSuggestions={(v) => registry.getSuggestions(v)}
+        onCommit={(meta) => {
+          if (meta.fromSuggestion) onSelect(meta.value)
+        }}
+        onBlur={onBlur}
         className="w-full"
         size="sm"
       />
@@ -120,14 +127,29 @@ export default function EventsPage({ mode = 'events' }: Props) {
     ),
   })
 
-  // Text inputs debounce into URL params; all other filters write directly
+  // Name input debounces into URL params
   const [nameInput, setNameInput] = useDebouncedState(urlParams.name, (v) =>
     setUrlParams({ name: v || null }),
   )
-  const [activistInput, setActivistInput] = useDebouncedState(
-    urlParams.activist,
-    (v) => setUrlParams({ activist: v || null }),
-  )
+
+  // Activist input only commits to URL when a suggestion is explicitly selected.
+  // On blur without selection, the input reverts to the committed URL value.
+  const [activistInput, setActivistInput] = useState(urlParams.activist)
+  const [prevActivistUrl, setPrevActivistUrl] = useState(urlParams.activist)
+  if (urlParams.activist !== prevActivistUrl) {
+    setPrevActivistUrl(urlParams.activist)
+    setActivistInput(urlParams.activist)
+  }
+
+  const handleActivistBlur = () => {
+    if (activistInput === '') {
+      // User cleared the field — remove the filter
+      setUrlParams({ activist: null })
+    } else {
+      // User typed but didn't select — revert display to the committed value
+      setActivistInput(urlParams.activist)
+    }
+  }
 
   const [showFilters, setShowFilters] = useState(false)
 
@@ -160,11 +182,13 @@ export default function EventsPage({ mode = 'events' }: Props) {
   const {
     data: events,
     isLoading,
+    isPlaceholderData,
     isError,
     error,
   } = useQuery({
     queryKey: [API_PATH.EVENT_LIST, committedParams],
     queryFn: () => apiClient.getEventList(committedParams),
+    placeholderData: keepPreviousData,
   })
 
   const deleteMutation = useMutation({
@@ -172,16 +196,19 @@ export default function EventsPage({ mode = 'events' }: Props) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [API_PATH.EVENT_LIST] })
     },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to delete event. Please try again.')
+    },
   })
 
-  const handleDelete = (event: EventListItem) => {
+  const handleDelete = useCallback((event: EventListItem) => {
     const confirmed = window.confirm(
       `Are you sure you want to delete "${event.event_name}"?`,
     )
     if (confirmed) {
       deleteMutation.mutate(event.event_id)
     }
-  }
+  }, [deleteMutation])
 
   const title = isConnections ? 'All Coachings' : 'All Events'
   const newHref = isConnections ? '/coachings/new' : '/events/new'
@@ -210,12 +237,6 @@ export default function EventsPage({ mode = 'events' }: Props) {
             <Filter className="h-4 w-4" />
             {showFilters ? 'Hide filters' : 'Show filters'}
           </Button>
-          {isDirty && (
-            <Button variant="ghost" size="sm" onClick={handleReset}>
-              <RotateCcw className="h-4 w-4" />
-              Reset filters
-            </Button>
-          )}
         </div>
 
         <div
@@ -240,6 +261,8 @@ export default function EventsPage({ mode = 'events' }: Props) {
               registry={registry}
               value={activistInput}
               onChange={setActivistInput}
+              onSelect={(v) => setUrlParams({ activist: v || null })}
+              onBlur={handleActivistBlur}
               label={isConnections ? 'Coachee' : 'Activist'}
               className="sm:flex-1 sm:max-w-xs"
             />
@@ -270,7 +293,7 @@ export default function EventsPage({ mode = 'events' }: Props) {
             <div className="flex flex-col gap-1.5">
               <Label>From</Label>
               <DatePicker
-                value={urlParams.start ? parseISO(urlParams.start) : undefined}
+                value={urlParams.start ? new Date(urlParams.start + 'T00:00:00') : undefined}
                 onValueChange={(date) =>
                   setUrlParams({
                     start: date ? format(date, 'yyyy-MM-dd') : null,
@@ -284,7 +307,7 @@ export default function EventsPage({ mode = 'events' }: Props) {
             <div className="flex flex-col gap-1.5">
               <Label>To</Label>
               <DatePicker
-                value={urlParams.end ? parseISO(urlParams.end) : undefined}
+                value={urlParams.end ? new Date(urlParams.end + 'T00:00:00') : undefined}
                 onValueChange={(date) =>
                   setUrlParams({
                     end: date ? format(date, 'yyyy-MM-dd') : null,
@@ -295,6 +318,15 @@ export default function EventsPage({ mode = 'events' }: Props) {
               />
             </div>
           </div>
+
+          {isDirty && (
+            <div>
+              <Button variant="ghost" size="sm" onClick={handleReset}>
+                <RotateCcw className="h-4 w-4" />
+                Reset filters
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -314,13 +346,13 @@ export default function EventsPage({ mode = 'events' }: Props) {
       )}
 
       {!isLoading && !isError && events && (
-        <>
+        <div className={cn('flex flex-col gap-4 transition-opacity', isPlaceholderData && 'opacity-50')}>
           <div className="text-sm text-muted-foreground">
             {events.length} {isConnections ? 'coaching' : 'event'}
             {events.length !== 1 ? 's' : ''} found
           </div>
           <EventListTable events={events} mode={mode} onDelete={handleDelete} />
-        </>
+        </div>
       )}
     </div>
   )
