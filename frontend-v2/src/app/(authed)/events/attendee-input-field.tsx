@@ -42,7 +42,6 @@ export const AttendeeInputField = ({
   const isDuplicate = !!trimmedName && checkForDuplicate(trimmedName, index)
   const activist = registry.getActivist(trimmedName)
   const isNewName = !!trimmedName && !activist
-  const isExisting = !!trimmedName && !!activist
   const isMissingEmail = activist != null && !activist.email
   const isMissingPhone = activist != null && !activist.phone
   const hasAllInfo = activist != null && !isMissingEmail && !isMissingPhone

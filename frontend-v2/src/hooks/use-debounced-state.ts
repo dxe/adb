@@ -1,5 +1,5 @@
-import { useState, useMemo, useCallback, useRef } from 'react'
-import { liteDebounce } from '@tanstack/pacer-lite'
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
+import { LiteDebouncer } from '@tanstack/pacer-lite'
 
 /**
  * Local state that stays in sync with an external value (e.g. a URL param)
@@ -23,24 +23,16 @@ export function useDebouncedState(
   const onChangeRef = useRef(onChange)
   onChangeRef.current = onChange
 
-  // Track the last value we actually sent so we can distinguish our own
-  // debounce-triggered URL updates from genuinely external changes (e.g. reset).
-  const lastSentRef = useRef(externalValue)
+  // One-shot flag: set when we fire the debounced onChange so we skip exactly
+  // the next external sync that echoes our own write back, without accidentally
+  // dropping a genuine external change that happens to equal lastSentRef.
+  const skipNextSyncRef = useRef(false)
 
-  // Sync from external changes (e.g. reset), but not when the URL changed
-  // because of our own debounce firing (which would override in-progress typing).
-  if (externalValue !== prevExternal) {
-    setPrevExternal(externalValue)
-    if (externalValue !== lastSentRef.current) {
-      setLocalValue(externalValue)
-    }
-  }
-
-  const debouncedOnChange = useMemo(
+  const debouncer = useMemo(
     () =>
-      liteDebounce(
+      new LiteDebouncer(
         (v: string) => {
-          lastSentRef.current = v
+          skipNextSyncRef.current = true
           onChangeRef.current(v)
         },
         { wait },
@@ -48,12 +40,30 @@ export function useDebouncedState(
     [wait],
   )
 
+  // Cancel any pending debounce on unmount, and also when wait changes
+  // (useMemo creates a new debouncer, so the effect re-runs and cancels the old one).
+  useEffect(() => () => debouncer.cancel(), [debouncer])
+
+  // Sync from external changes (e.g. reset), but not when the URL changed
+  // because of our own debounce firing (which would override in-progress typing).
+  if (externalValue !== prevExternal) {
+    setPrevExternal(externalValue)
+    if (skipNextSyncRef.current) {
+      skipNextSyncRef.current = false
+    } else {
+      // Genuine external change: cancel any pending local typing work so it
+      // doesn't overwrite the reset after the debounce delay.
+      debouncer.cancel()
+      setLocalValue(externalValue)
+    }
+  }
+
   const handleChange = useCallback(
     (v: string) => {
       setLocalValue(v)
-      debouncedOnChange(v)
+      debouncer.maybeExecute(v)
     },
-    [debouncedOnChange],
+    [debouncer],
   )
 
   return [localValue, handleChange]

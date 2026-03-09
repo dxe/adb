@@ -308,6 +308,9 @@ export function EventListTable({
                 <button
                   type="button"
                   onClick={row.getToggleExpandedHandler()}
+                  aria-label={
+                    row.getIsExpanded() ? 'Hide details' : 'Show details'
+                  }
                   className="text-sm text-primary flex items-center gap-1"
                 >
                   {row.getIsExpanded() ? (
