@@ -57,7 +57,7 @@ deps:
 	. $(NVM_SCRIPT) && cd frontend && nvm i $(VUE_FRONTEND_NODE_VERSION) && npm i --legacy-peer-deps
 	. $(NVM_SCRIPT) && cd frontend-v2 && nvm i $(REACT_FRONTEND_NODE_VERSION) && npm i -g pnpm && pnpm i
 	cd pkg && go mod download
-	cd server/src && go get -t github.com/dxe/adb/...
+	cd server/src && go mod download
 	cd cli && go mod download
 	go install -tags 'mysql' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 
