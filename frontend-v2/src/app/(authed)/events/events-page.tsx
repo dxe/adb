@@ -2,7 +2,12 @@
 
 import { useState, useMemo, useCallback } from 'react'
 import Link from 'next/link'
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+} from '@tanstack/react-query'
 import { CalendarPlus, Filter, Loader2, RotateCcw } from 'lucide-react'
 import { format, subMonths, startOfMonth } from 'date-fns'
 import {
@@ -201,14 +206,17 @@ export default function EventsPage({ mode = 'events' }: Props) {
     },
   })
 
-  const handleDelete = useCallback((event: EventListItem) => {
-    const confirmed = window.confirm(
-      `Are you sure you want to delete "${event.event_name}"?`,
-    )
-    if (confirmed) {
-      deleteMutation.mutate(event.event_id)
-    }
-  }, [deleteMutation])
+  const handleDelete = useCallback(
+    (event: EventListItem) => {
+      const confirmed = window.confirm(
+        `Are you sure you want to delete "${event.event_name}"?`,
+      )
+      if (confirmed) {
+        deleteMutation.mutate(event.event_id)
+      }
+    },
+    [deleteMutation],
+  )
 
   const title = isConnections ? 'All Coachings' : 'All Events'
   const newHref = isConnections ? '/coachings/new' : '/events/new'
@@ -293,7 +301,11 @@ export default function EventsPage({ mode = 'events' }: Props) {
             <div className="flex flex-col gap-1.5">
               <Label>From</Label>
               <DatePicker
-                value={urlParams.start ? new Date(urlParams.start + 'T00:00:00') : undefined}
+                value={
+                  urlParams.start
+                    ? new Date(urlParams.start + 'T00:00:00')
+                    : undefined
+                }
                 onValueChange={(date) =>
                   setUrlParams({
                     start: date ? format(date, 'yyyy-MM-dd') : null,
@@ -307,7 +319,11 @@ export default function EventsPage({ mode = 'events' }: Props) {
             <div className="flex flex-col gap-1.5">
               <Label>To</Label>
               <DatePicker
-                value={urlParams.end ? new Date(urlParams.end + 'T00:00:00') : undefined}
+                value={
+                  urlParams.end
+                    ? new Date(urlParams.end + 'T00:00:00')
+                    : undefined
+                }
                 onValueChange={(date) =>
                   setUrlParams({
                     end: date ? format(date, 'yyyy-MM-dd') : null,
@@ -346,7 +362,12 @@ export default function EventsPage({ mode = 'events' }: Props) {
       )}
 
       {!isLoading && !isError && events && (
-        <div className={cn('flex flex-col gap-4 transition-opacity', isPlaceholderData && 'opacity-50')}>
+        <div
+          className={cn(
+            'flex flex-col gap-4 transition-opacity',
+            isPlaceholderData && 'opacity-50',
+          )}
+        >
           <div className="text-sm text-muted-foreground">
             {events.length} {isConnections ? 'coaching' : 'event'}
             {events.length !== 1 ? 's' : ''} found
