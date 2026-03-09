@@ -28,6 +28,10 @@ export function useDebouncedState(
   // dropping a genuine external change that happens to equal lastSentRef.
   const skipNextSyncRef = useRef(false)
 
+  // Set during render when a genuine external reset is detected; read in a
+  // useEffect so debouncer.cancel() runs after commit, not during render.
+  const needsCancelRef = useRef(false)
+
   const debouncer = useMemo(
     () =>
       new LiteDebouncer(
@@ -51,12 +55,21 @@ export function useDebouncedState(
     if (skipNextSyncRef.current) {
       skipNextSyncRef.current = false
     } else {
-      // Genuine external change: cancel any pending local typing work so it
-      // doesn't overwrite the reset after the debounce delay.
-      debouncer.cancel()
+      // Genuine external change: flag for cancellation (done in the effect
+      // below) and update local state to match.
+      needsCancelRef.current = true
       setLocalValue(externalValue)
     }
   }
+
+  // Defer debouncer.cancel() to after commit so it isn't a side effect during
+  // render. The ref acts as a one-shot signal set above.
+  useEffect(() => {
+    if (needsCancelRef.current) {
+      needsCancelRef.current = false
+      debouncer.cancel()
+    }
+  }, [externalValue, debouncer])
 
   const handleChange = useCallback(
     (v: string) => {
