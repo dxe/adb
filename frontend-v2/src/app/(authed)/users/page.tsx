@@ -15,11 +15,11 @@ export default async function UsersListPage() {
   await Promise.all([
     queryClient.prefetchQuery({
       queryKey: [API_PATH.USERS],
-      queryFn: apiClient.getUsers,
+      queryFn: ({ signal }) => apiClient.getUsers(signal),
     }),
     queryClient.prefetchQuery({
       queryKey: [API_PATH.CHAPTER_LIST],
-      queryFn: apiClient.getChapterList,
+      queryFn: ({ signal }) => apiClient.getChapterList(signal),
     }),
   ])
 

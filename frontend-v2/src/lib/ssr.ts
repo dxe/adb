@@ -19,11 +19,11 @@ export const getDefaultServerSideProps = async (
   await Promise.all([
     queryClient.prefetchQuery({
       queryKey: [API_PATH.STATIC_RESOURCE_HASH],
-      queryFn: ssrApiClient.getStaticResourceHash,
+      queryFn: ({ signal }) => ssrApiClient.getStaticResourceHash(signal),
     }),
     queryClient.prefetchQuery({
       queryKey: [API_PATH.USER_ME],
-      queryFn: ssrApiClient.getAuthedUser,
+      queryFn: ({ signal }) => ssrApiClient.getAuthedUser(signal),
     }),
   ])
   return {

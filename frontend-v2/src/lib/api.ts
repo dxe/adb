@@ -245,9 +245,9 @@ export class ApiClient {
     throw err
   }
 
-  getAuthedUser = async () => {
+  getAuthedUser = async (signal?: AbortSignal) => {
     try {
-      const resp = await this.client.get(API_PATH.USER_ME).json()
+      const resp = await this.client.get(API_PATH.USER_ME, { signal }).json()
       return AuthedUserResp.parse(resp)
     } catch (err) {
       console.error(`Error fetching authed user: ${err}`)
@@ -258,14 +258,16 @@ export class ApiClient {
     }
   }
 
-  getStaticResourceHash = async () => {
-    const resp = await this.client.get(API_PATH.STATIC_RESOURCE_HASH).json()
+  getStaticResourceHash = async (signal?: AbortSignal) => {
+    const resp = await this.client
+      .get(API_PATH.STATIC_RESOURCE_HASH, { signal })
+      .json()
     return StaticResourcesHashResp.parse(resp)
   }
 
-  async fetchCsrfToken() {
+  async fetchCsrfToken(signal?: AbortSignal) {
     try {
-      const resp = await this.client.get(API_PATH.CSRF_TOKEN).json()
+      const resp = await this.client.get(API_PATH.CSRF_TOKEN, { signal }).json()
       return CsrfTokenResp.parse(resp).csrfToken
     } catch (err) {
       return this.handleKyError(err)
@@ -281,15 +283,20 @@ export class ApiClient {
     return metaToken ? metaToken : undefined
   }
 
-  getActivistNames = async () => {
-    const resp = await this.client.get(API_PATH.ACTIVIST_NAMES_GET).json()
+  getActivistNames = async (signal?: AbortSignal) => {
+    const resp = await this.client
+      .get(API_PATH.ACTIVIST_NAMES_GET, { signal })
+      .json()
     return ActivistNamesResp.parse(resp)
   }
 
-  getActivistListBasic = async (modifiedSince?: string) => {
+  getActivistListBasic = async (
+    modifiedSince?: string,
+    signal?: AbortSignal,
+  ) => {
     const options = modifiedSince
-      ? { searchParams: { modified_since: modifiedSince } }
-      : {}
+      ? { searchParams: { modified_since: modifiedSince }, signal }
+      : { signal }
 
     const resp = await this.client
       .get(API_PATH.ACTIVIST_LIST_BASIC, options)
@@ -312,27 +319,31 @@ export class ApiClient {
     }
   }
 
-  getChapterList = async () => {
+  getChapterList = async (signal?: AbortSignal) => {
     try {
-      const resp = await this.client.get(API_PATH.CHAPTER_LIST).json()
+      const resp = await this.client
+        .get(API_PATH.CHAPTER_LIST, { signal })
+        .json()
       return ChapterListResp.parse(resp).chapters
     } catch (err) {
       return this.handleKyError(err)
     }
   }
 
-  getUsers = async () => {
+  getUsers = async (signal?: AbortSignal) => {
     try {
-      const resp = await this.client.get(API_PATH.USERS).json()
+      const resp = await this.client.get(API_PATH.USERS, { signal }).json()
       return UserListResp.parse(resp).users
     } catch (err) {
       return this.handleKyError(err)
     }
   }
 
-  getUser = async (userId: number) => {
+  getUser = async (userId: number, signal?: AbortSignal) => {
     try {
-      const resp = await this.client.get(`${API_PATH.USERS}/${userId}`).json()
+      const resp = await this.client
+        .get(`${API_PATH.USERS}/${userId}`, { signal })
+        .json()
       return UserGetResp.parse(resp).user
     } catch (err) {
       return this.handleKyError(err)
@@ -369,10 +380,10 @@ export class ApiClient {
     }
   }
 
-  getEvent = async (eventId: number) => {
+  getEvent = async (eventId: number, signal?: AbortSignal) => {
     try {
       const resp = await this.client
-        .get(`${API_PATH.EVENT_GET}/${eventId}`)
+        .get(`${API_PATH.EVENT_GET}/${eventId}`, { signal })
         .json()
       return EventGetResp.parse(resp).event
     } catch (err) {
@@ -395,7 +406,7 @@ export class ApiClient {
     }
   }
 
-  getEventList = async (params: EventListParams) => {
+  getEventList = async (params: EventListParams, signal?: AbortSignal) => {
     try {
       const body = new URLSearchParams({
         ...(params.event_name && { event_name: params.event_name }),
@@ -404,7 +415,9 @@ export class ApiClient {
         event_date_end: params.event_date_end,
         event_type: params.event_type,
       })
-      const resp = await this.client.post(API_PATH.EVENT_LIST, { body }).json()
+      const resp = await this.client
+        .post(API_PATH.EVENT_LIST, { body, signal })
+        .json()
       return EventListResp.parse(resp)
     } catch (err) {
       return this.handleKyError(err)

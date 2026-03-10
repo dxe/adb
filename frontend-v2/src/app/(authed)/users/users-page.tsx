@@ -12,12 +12,12 @@ import { UserTable } from './user-table'
 export default function UsersPage() {
   const { data: users, isLoading: isUsersLoading } = useQuery({
     queryKey: [API_PATH.USERS],
-    queryFn: apiClient.getUsers,
+    queryFn: ({ signal }) => apiClient.getUsers(signal),
   })
 
   const { data: chapters, isLoading: isChaptersLoading } = useQuery({
     queryKey: [API_PATH.CHAPTER_LIST],
-    queryFn: apiClient.getChapterList,
+    queryFn: ({ signal }) => apiClient.getChapterList(signal),
   })
 
   const [showDisabled, setShowDisabled] = useState(false)

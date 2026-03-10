@@ -106,7 +106,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
     isError: isEventError,
   } = useQuery({
     queryKey: [API_PATH.EVENT_GET, eventId],
-    queryFn: () => apiClient.getEvent(Number(eventId)),
+    queryFn: ({ signal }) => apiClient.getEvent(Number(eventId), signal),
     enabled: !!eventId,
   })
 

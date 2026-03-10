@@ -197,7 +197,7 @@ const ChapterSwitcher = () => {
 
   const { data, isLoading, isError } = useQuery({
     queryKey: [API_PATH.CHAPTER_LIST],
-    queryFn: apiClient.getChapterList,
+    queryFn: ({ signal }) => apiClient.getChapterList(signal),
   })
 
   if (isLoading) {
