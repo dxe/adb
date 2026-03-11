@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import {
   apiClient,
@@ -10,6 +10,7 @@ import {
   type ActivistJSON,
 } from '@/lib/api'
 import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
+import { InfiniteScrollTrigger } from '@/components/infinite-scroll-trigger'
 import { ActivistTable } from './activists-table'
 import { ActivistFilters } from './filters/activist-filters'
 import { ColumnSelector } from './column-selector'
@@ -18,50 +19,6 @@ import { buildQueryOptions } from './filter-api-query'
 import type { SortColumn } from './query-state'
 import { DEFAULT_SORT } from './query-state'
 import { useActivistQueryState } from './use-activist-query-state'
-
-function LoadMoreTrigger({
-  onLoadMore,
-  isLoading,
-  canLoadMore,
-}: {
-  onLoadMore: () => Promise<unknown> | void
-  isLoading: boolean
-  canLoadMore: boolean
-}) {
-  const ref = useRef<HTMLDivElement>(null)
-  const inFlightRef = useRef(false)
-
-  useEffect(() => {
-    const el = ref.current
-    if (!el || isLoading || !canLoadMore) return
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        // isLoading may not have been updated yet. Observer can fire multiple
-        // times before the next time React renders this effect.
-        if (!entry.isIntersecting || inFlightRef.current) return
-        inFlightRef.current = true
-        void Promise.resolve(onLoadMore()).finally(() => {
-          inFlightRef.current = false
-        })
-      },
-      { rootMargin: '200px' },
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [onLoadMore, isLoading, canLoadMore])
-
-  return (
-    <div
-      ref={ref}
-      className="flex items-center justify-center py-4 text-sm text-muted-foreground"
-    >
-      <span role="status" aria-live="polite">
-        {isLoading ? 'Loading more activists…' : ''}
-      </span>
-    </div>
-  )
-}
 
 export default function ActivistsPage() {
   const { user } = useAuthedPageContext()
@@ -243,10 +200,11 @@ export default function ActivistsPage() {
           />
 
           {hasNextPage && (
-            <LoadMoreTrigger
+            <InfiniteScrollTrigger
               onLoadMore={fetchNextPage}
               isLoading={isFetchingNextPage}
               canLoadMore={hasNextPage}
+              loadingLabel="Loading more activists…"
             />
           )}
         </>
