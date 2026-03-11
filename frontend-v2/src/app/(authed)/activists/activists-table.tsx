@@ -98,6 +98,7 @@ export function ActivistTable({
       const SortIcon = sortEntry?.desc ? ArrowDown : ArrowUp
 
       const handleHeaderClick = () => {
+        if (isStale) return
         if (sort.length === 1 && sort[0].column === colName) {
           // Toggle direction on the sole sort column (id is always ASC for cursor pagination)
           if (colName === 'id') return
@@ -114,6 +115,7 @@ export function ActivistTable({
           <button
             className="flex items-center gap-1 font-medium hover:text-foreground transition-colors"
             onClick={handleHeaderClick}
+            disabled={isStale}
           >
             {label}
             {sortEntry && (
@@ -135,7 +137,7 @@ export function ActivistTable({
         },
       }
     })
-  }, [visibleColumns, sort, onSortChange])
+  }, [visibleColumns, sort, onSortChange, isStale])
 
   const table = useReactTable({
     data: activists,

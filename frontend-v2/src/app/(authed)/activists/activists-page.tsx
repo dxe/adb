@@ -305,17 +305,24 @@ export default function ActivistsPage() {
         signal,
       ),
     placeholderData: (previousData) => {
-      // Show old data while loading new query, unless the last query returned
-      // no results, since doing so would continue showing "No activists found
-      // matching the current filters." which could be more easily mistaken for
-      // the result of the pending query. Instead, this will show the loading
-      // message instead an empty table.
       const previousCount =
         previousData?.pages.reduce(
           (total, page) => total + page.activists.length,
           0,
         ) ?? 0
-      return previousCount > 0 ? previousData : undefined
+
+      // Show the previous query's data, if any, while loading data for the new
+      // query to avoid having the table disappear completely while new query
+      // loads.
+      if (previousCount > 0) {
+        return previousData
+      }
+
+      // If last query returned no results, do not continue showing the message
+      // "No activists found matching the current filters." as this could be
+      // more easily mistaken for the result of the pending query. Instead, this
+      // will show a loading message.
+      return undefined
     },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) =>
