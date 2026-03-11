@@ -22,6 +22,8 @@ export interface ColumnDefinition {
   category: ColumnCategory
   isDate?: boolean // If true, format string values as dates
   hidden?: boolean // If true, hide from user-facing column selectors
+  defaultWidth?: number // Default column width in pixels (default: 150)
+  minWidth?: number // Minimum column width in pixels (default: 60)
 }
 
 export const DEFAULT_COLUMNS: ActivistColumnName[] = [
@@ -33,10 +35,20 @@ export const DEFAULT_COLUMNS: ActivistColumnName[] = [
 
 export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   // Chapter (conditionally shown based on filters)
-  { name: 'chapter_name', label: 'Chapter', category: 'Basic Info' },
+  {
+    name: 'chapter_name',
+    label: 'Chapter',
+    category: 'Basic Info',
+    defaultWidth: 140,
+  },
 
   // Basic Info
-  { name: 'name', label: 'Name', category: 'Basic Info' },
+  {
+    name: 'name',
+    label: 'Name',
+    category: 'Basic Info',
+    defaultWidth: 180,
+  },
   {
     name: 'preferred_name',
     label: 'Preferred Name',
@@ -44,10 +56,20 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     description: 'First name or nickname, may be used for SMS',
   },
   { name: 'pronouns', label: 'Pronouns', category: 'Basic Info' },
-  { name: 'email', label: 'Email', category: 'Basic Info' },
-  { name: 'phone', label: 'Phone', category: 'Basic Info' },
-  { name: 'facebook', label: 'Facebook', category: 'Basic Info' },
-  { name: 'activist_level', label: 'Level', category: 'Basic Info' },
+  { name: 'email', label: 'Email', category: 'Basic Info', defaultWidth: 220 },
+  { name: 'phone', label: 'Phone', category: 'Basic Info', defaultWidth: 130 },
+  {
+    name: 'facebook',
+    label: 'Facebook',
+    category: 'Basic Info',
+    defaultWidth: 180,
+  },
+  {
+    name: 'activist_level',
+    label: 'Level',
+    category: 'Basic Info',
+    defaultWidth: 110,
+  },
   { name: 'dob', label: 'Birthday', category: 'Basic Info', isDate: true },
   { name: 'accessibility', label: 'Accessibility', category: 'Basic Info' },
   { name: 'language', label: 'Language', category: 'Basic Info' },
@@ -61,7 +83,12 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   { name: 'lng', label: 'Longitude', category: 'Location' },
 
   // Event Attendance
-  { name: 'total_events', label: 'Total Events', category: 'Event Attendance' },
+  {
+    name: 'total_events',
+    label: 'Total Events',
+    category: 'Event Attendance',
+    defaultWidth: 100,
+  },
   {
     name: 'first_event',
     label: 'First Event Date',
@@ -251,7 +278,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
 
   // Other
-  { name: 'notes', label: 'Notes', category: 'Other' },
+  { name: 'notes', label: 'Notes', category: 'Other', defaultWidth: 250 },
   { name: 'hiatus', label: 'Hiatus', category: 'Other' },
 
   // Developer
@@ -260,6 +287,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     label: 'ID',
     category: 'Advanced',
     description: 'Database ID of the activist',
+    defaultWidth: 70,
   },
 ]
 

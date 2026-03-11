@@ -6,6 +6,7 @@ import {
   flexRender,
   getCoreRowModel,
   useReactTable,
+  ColumnResizeMode,
 } from '@tanstack/react-table'
 import {
   Table,
@@ -111,18 +112,20 @@ export function ActivistTable({
 
       return {
         id: colName,
+        size: definition?.defaultWidth ?? 150,
+        minSize: definition?.minWidth ?? 60,
         header: () => (
           <button
-            className="flex items-center gap-1 font-medium hover:text-foreground transition-colors"
+            className="flex items-center gap-1 font-medium hover:text-foreground transition-colors truncate"
             onClick={handleHeaderClick}
             disabled={isStale}
           >
             {label}
             {sortEntry && (
               <>
-                <SortIcon className="h-3 w-3 text-muted-foreground" />
+                <SortIcon className="h-3 w-3 shrink-0 text-muted-foreground" />
                 {sort.length > 1 && (
-                  <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-muted px-1 text-[10px] font-semibold text-muted-foreground">
+                  <span className="flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-muted px-1 text-[10px] font-semibold text-muted-foreground">
                     {sortIndex + 1}
                   </span>
                 )}
@@ -133,7 +136,11 @@ export function ActivistTable({
         accessorFn: (row) => row[colName as keyof ActivistJSON],
         cell: ({ row }) => {
           const value = row.original[colName as keyof ActivistJSON]
-          return <div className="text-sm">{formatValue(value, colName)}</div>
+          return (
+            <div className="truncate text-sm">
+              {formatValue(value, colName)}
+            </div>
+          )
         },
       }
     })
@@ -143,6 +150,7 @@ export function ActivistTable({
     data: activists,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    columnResizeMode: 'onChange' as ColumnResizeMode,
   })
 
   if (activists.length === 0) {
@@ -157,22 +165,34 @@ export function ActivistTable({
     <>
       {/* Desktop table */}
       <div
-        className={`mx-auto hidden w-fit max-w-full overflow-x-auto rounded-md border transition-opacity md:block ${
+        className={`mx-auto hidden max-w-full overflow-x-auto rounded-md border transition-opacity md:block ${
           isStale ? 'opacity-60' : ''
         }`}
       >
-        <Table className="w-max [&_th]:whitespace-nowrap [&_td]:whitespace-nowrap">
+        <Table className="table-fixed" style={{ width: table.getTotalSize() }}>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
+                  <TableHead
+                    key={header.id}
+                    className="relative overflow-hidden"
+                    style={{ width: header.getSize() }}
+                  >
                     {header.isPlaceholder
                       ? null
                       : flexRender(
                           header.column.columnDef.header,
                           header.getContext(),
                         )}
+                    <div
+                      onMouseDown={header.getResizeHandler()}
+                      onTouchStart={header.getResizeHandler()}
+                      onDoubleClick={() => header.column.resetSize()}
+                      className={`absolute right-0 top-0 h-full w-1 cursor-col-resize select-none touch-none hover:bg-primary/50 ${
+                        header.column.getIsResizing() ? 'bg-primary' : ''
+                      }`}
+                    />
                   </TableHead>
                 ))}
               </TableRow>
@@ -182,7 +202,11 @@ export function ActivistTable({
             {table.getRowModel().rows.map((row) => (
               <TableRow key={row.id}>
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
+                  <TableCell
+                    key={cell.id}
+                    className="overflow-hidden"
+                    style={{ width: cell.column.getSize() }}
+                  >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}
