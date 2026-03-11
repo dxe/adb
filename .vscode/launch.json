@@ -59,6 +59,8 @@
       // Runs all Go tests across all packages. For debugging individual
       // test files with breakpoints, use the "run test" CodeLens above
       // each test function instead.
+      // Intentionally uses a Node launch config only to expose a Make-based
+      // test command in the Run/Debug UI; no Node debugging occurs here.
       "name": "Tests: Server",
       "type": "node",
       "request": "launch",

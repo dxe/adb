@@ -2,6 +2,7 @@ import { render, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import type { ActivistJSON } from '@/lib/api'
+import { COLUMN_DEFINITIONS } from './column-definitions'
 import { DEFAULT_SORT } from './query-state'
 import { ActivistTable } from './activists-table'
 
@@ -24,11 +25,10 @@ function renderTable(
       onSortChange={onSortChange}
     />,
   )
-  // The desktop table is the last <table> in the container (TanStack may
-  // render an internal measurement table before the visible one).
-  const tables = result.container.querySelectorAll('table')
-  const table = tables[tables.length - 1]!
-  return { ...result, table: within(table as HTMLElement) }
+  return {
+    ...result,
+    table: within(within(result.container).getByTestId('activists-table')),
+  }
 }
 
 describe('ActivistTable default sort', () => {
@@ -47,15 +47,28 @@ describe('ActivistTable default sort', () => {
     }
   })
 
-  it('shows a sort arrow on the Name header when sort is explicitly set', () => {
+  it('shows a sort arrow on the active default sort header when sort is explicitly set', () => {
     const { table } = renderTable(DEFAULT_SORT)
+    const activeColumn = DEFAULT_SORT[0].column
+    const activeLabel = COLUMN_DEFINITIONS.find(
+      (column) => column.name === activeColumn,
+    )?.label
+    expect(activeLabel).toBeDefined()
 
-    // The Name column header should contain an SVG arrow icon
     const headers = table.getAllByRole('columnheader')
-    expect(headers[0].querySelector('svg')).not.toBeNull()
+    const activeHeader = headers.find((header) =>
+      within(header).queryByRole('button', {
+        name: new RegExp(`^${activeLabel}$`, 'i'),
+      }),
+    )
 
-    // The Email column header should NOT have a sort icon
-    expect(headers[1].querySelector('svg')).toBeNull()
+    expect(activeHeader).toBeDefined()
+    expect(activeHeader?.querySelector('svg')).not.toBeNull()
+
+    for (const header of headers) {
+      if (header === activeHeader) continue
+      expect(header.querySelector('svg')).toBeNull()
+    }
   })
 
   it('clicking a column header calls onSortChange with ascending sort', async () => {
