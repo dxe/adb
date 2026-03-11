@@ -162,6 +162,11 @@
           "page": "ActivistListV2"
         },
         {
+          "label": "New Activists Recently Inactive",
+          "href": "/v2/activists?lastEvent=-180..-14&totalEvents=..4&columns=activist_level%2Ctotal_events%2Cfirst_event%2Cfirst_event_name%2Clast_event%2Clast_event_name%2Csource&sort=-last_event",
+          "page": "ActivistListV2"
+        },
+        {
           "label": "Community Prospects",
           "href": "/v2/activists?lastEvent=..-360%7Cnull&totalInteractions=..1&level=supporter&source=form,dxe-signup,arc-signup,petition,eventbrite,-application&columns=pronouns,email,phone,total_events,first_event,first_event_name,last_event,assigned_to_name,followup_date,total_interactions,last_interaction_date,source,interest_date,notes&sort=-interest_date",
           "page": "ActivistListV2"
