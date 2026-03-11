@@ -1,41 +1,34 @@
-import { createParser, parseAsBoolean, parseAsString } from 'nuqs'
-import * as codecs from './filter-url-codecs'
+import { createParser, type UseQueryStatesKeysMap } from 'nuqs'
+import { getFilterSchemaEntry } from './filter-schema'
+import type { FilterState } from './query-state'
 
-export const parseAsSearchAcrossChapters = parseAsBoolean.withDefault(false)
-export const parseAsNameSearch = parseAsString.withDefault('')
-export const parseAsIncludeHidden = parseAsBoolean.withDefault(false)
+function createFilterNuqsParser<K extends keyof FilterState>(key: K) {
+  const entry = getFilterSchemaEntry(key)
+  const parser = createParser<FilterState[K]>({
+    parse: (raw) => entry.parseParam(raw) ?? null,
+    serialize: (value) => entry.serializeParam(value) ?? '',
+  })
 
-export const parseAsDateRange = createParser({
-  parse: (raw) => codecs.parseDateRangeParam(raw) ?? null,
-  serialize: (val) => codecs.serializeDateRangeParam(val) ?? '',
-})
+  if (entry.defaultValue === undefined) {
+    return parser
+  }
 
-export const parseAsIntRange = createParser({
-  parse: (raw) => codecs.parseIntRangeParam(raw) ?? null,
-  serialize: (val) => codecs.serializeIntRangeParam(val) ?? '',
-})
+  return parser.withDefault(entry.defaultValue as NonNullable<FilterState[K]>)
+}
 
-export const parseAsIncludeExclude = createParser({
-  parse: (raw) => codecs.parseIncludeExcludeParam(raw) ?? null,
-  serialize: (val) => codecs.serializeIncludeExcludeParam(val) ?? '',
-})
-
-export const parseAsActivistLevel = createParser({
-  parse: (raw) => codecs.parseActivistLevelParam(raw) ?? null,
-  serialize: (val) => codecs.serializeActivistLevelParam(val) ?? '',
-})
-
-export const parseAsAssignedTo = createParser({
-  parse: (raw) => codecs.parseAssignedToParam(raw) ?? null,
-  serialize: (val) => codecs.serializeAssignedToParam(val) ?? '',
-})
-
-export const parseAsFollowups = createParser({
-  parse: (raw) => codecs.parseFollowupsParam(raw) ?? null,
-  serialize: (val) => codecs.serializeFollowupsParam(val) ?? '',
-})
-
-export const parseAsProspect = createParser({
-  parse: (raw) => codecs.parseProspectParam(raw) ?? null,
-  serialize: (val) => codecs.serializeProspectParam(val) ?? '',
-})
+export const FILTER_NUQS_PARSERS = {
+  searchAcrossChapters: createFilterNuqsParser('searchAcrossChapters'),
+  nameSearch: createFilterNuqsParser('nameSearch'),
+  includeHidden: createFilterNuqsParser('includeHidden'),
+  lastEvent: createFilterNuqsParser('lastEvent'),
+  interestDate: createFilterNuqsParser('interestDate'),
+  firstEvent: createFilterNuqsParser('firstEvent'),
+  totalEvents: createFilterNuqsParser('totalEvents'),
+  totalInteractions: createFilterNuqsParser('totalInteractions'),
+  activistLevel: createFilterNuqsParser('activistLevel'),
+  source: createFilterNuqsParser('source'),
+  training: createFilterNuqsParser('training'),
+  assignedTo: createFilterNuqsParser('assignedTo'),
+  followups: createFilterNuqsParser('followups'),
+  prospect: createFilterNuqsParser('prospect'),
+} satisfies UseQueryStatesKeysMap

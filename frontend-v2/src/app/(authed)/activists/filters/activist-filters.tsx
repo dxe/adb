@@ -7,7 +7,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { Plus, X } from 'lucide-react'
+import { Plus, RotateCcw, X } from 'lucide-react'
 import { ActivistLevelFilter } from './activist-level-filter'
 import { LastEventFilter } from './last-event-filter'
 import { DateRangeFilter } from './date-range-filter'
@@ -22,6 +22,8 @@ interface ActivistFiltersProps {
   filters: FilterState
   onFiltersChange: (filters: FilterState) => void
   isAdmin: boolean
+  isDirty: boolean
+  onReset: () => void
   children?: React.ReactNode
 }
 
@@ -54,6 +56,8 @@ export function ActivistFilters({
   filters,
   onFiltersChange,
   isAdmin,
+  isDirty,
+  onReset,
   children,
 }: ActivistFiltersProps) {
   // Tracks optional filters added from the menu that may not yet have values.
@@ -61,6 +65,7 @@ export function ActivistFilters({
     new Set(),
   )
   const [isAddFilterOpen, setIsAddFilterOpen] = useState(false)
+  const canReset = isDirty || visibleFilters.size > 0
 
   // Prune visibleFilters entries that have no corresponding filter value when
   // filters change (e.g. navigation).
@@ -131,6 +136,20 @@ export function ActivistFilters({
 
       {/* Chip bar */}
       <div className="flex flex-wrap items-center gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-12"
+          onClick={() => {
+            setVisibleFilters(new Set())
+            onReset()
+          }}
+          disabled={!canReset}
+        >
+          <RotateCcw className="h-4 w-4" />
+          Reset
+        </Button>
+
         {/* Non-filter children (columns, sort selectors) */}
         {children}
 
