@@ -132,9 +132,8 @@ export default function EventsPage({ mode = 'events' }: Props) {
     ),
   })
 
-  const [nameInput, setNameInput] = useDebouncedState(
-    urlParams.name,
-    (v) => setUrlParams({ name: v || null }),
+  const [nameInput, setNameInput] = useDebouncedState(urlParams.name, (v) =>
+    setUrlParams({ name: v || null }),
   )
 
   // Activist input only commits to URL when a suggestion is explicitly selected.

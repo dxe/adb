@@ -173,10 +173,7 @@ export function useActivistQueryState() {
         ? sort
         : []
       setParams({
-        columns: columnsToStoreParam(
-          normalized,
-          filters.searchAcrossChapters,
-        ),
+        columns: columnsToStoreParam(normalized, filters.searchAcrossChapters),
         sort: buildSortParam(newSort) !== undefined ? newSort : null,
       })
     },
