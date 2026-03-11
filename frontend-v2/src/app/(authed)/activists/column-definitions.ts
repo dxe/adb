@@ -22,6 +22,8 @@ export interface ColumnDefinition {
   category: ColumnCategory
   isDate?: boolean // If true, format string values as dates
   hidden?: boolean // If true, hide from user-facing column selectors
+  defaultWidth?: number // Default column width in pixels (default: 150)
+  minWidth?: number // Minimum column width in pixels (default: 60)
 }
 
 export const DEFAULT_COLUMNS: ActivistColumnName[] = [
@@ -42,47 +44,98 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     label: 'Preferred Name',
     category: 'Basic Info',
     description: 'First name or nickname, may be used for SMS',
+    defaultWidth: 90,
   },
-  { name: 'pronouns', label: 'Pronouns', category: 'Basic Info' },
+  {
+    name: 'pronouns',
+    label: 'Pronouns',
+    category: 'Basic Info',
+    defaultWidth: 50,
+  },
   { name: 'email', label: 'Email', category: 'Basic Info' },
-  { name: 'phone', label: 'Phone', category: 'Basic Info' },
+  { name: 'phone', label: 'Phone', category: 'Basic Info', defaultWidth: 100 },
   { name: 'facebook', label: 'Facebook', category: 'Basic Info' },
-  { name: 'activist_level', label: 'Level', category: 'Basic Info' },
-  { name: 'dob', label: 'Birthday', category: 'Basic Info', isDate: true },
-  { name: 'accessibility', label: 'Accessibility', category: 'Basic Info' },
-  { name: 'language', label: 'Language', category: 'Basic Info' },
+  {
+    name: 'activist_level',
+    label: 'Level',
+    category: 'Basic Info',
+    defaultWidth: 140,
+  },
+  {
+    name: 'dob',
+    label: 'Birthday',
+    category: 'Basic Info',
+    isDate: true,
+    defaultWidth: 100,
+  },
+  {
+    name: 'accessibility',
+    label: 'Accessibility',
+    category: 'Basic Info',
+    defaultWidth: 50,
+  },
+  {
+    name: 'language',
+    label: 'Language',
+    category: 'Basic Info',
+    defaultWidth: 50,
+  },
 
   // Location
   { name: 'location', label: 'Location', category: 'Location' },
-  { name: 'street_address', label: 'Street Address', category: 'Location' },
-  { name: 'city', label: 'City', category: 'Location' },
-  { name: 'state', label: 'State', category: 'Location' },
+  {
+    name: 'street_address',
+    label: 'Street Address',
+    category: 'Location',
+    defaultWidth: 100,
+  },
+  {
+    name: 'city',
+    label: 'City',
+    category: 'Location',
+    defaultWidth: 100,
+  },
+  {
+    name: 'state',
+    label: 'State',
+    category: 'Location',
+    defaultWidth: 100,
+  },
   { name: 'lat', label: 'Latitude', category: 'Location' },
   { name: 'lng', label: 'Longitude', category: 'Location' },
 
   // Event Attendance
-  { name: 'total_events', label: 'Total Events', category: 'Event Attendance' },
+  {
+    name: 'total_events',
+    label: 'Total Events',
+    category: 'Event Attendance',
+    defaultWidth: 90,
+  },
   {
     name: 'first_event',
     label: 'First Event Date',
     category: 'Event Attendance',
     isDate: true,
+    defaultWidth: 200,
   },
   {
     name: 'first_event_name',
     label: 'First Event Name',
     category: 'Event Attendance',
+    defaultWidth: 200,
   },
   {
     name: 'last_event',
     label: 'Last Event Date',
     category: 'Event Attendance',
     isDate: true,
+    defaultWidth: 200,
   },
   {
     name: 'last_event_name',
     label: 'Last Event Name',
     category: 'Event Attendance',
+    defaultWidth: 200,
   },
   {
     name: 'last_action',
@@ -94,11 +147,13 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     name: 'months_since_last_action',
     label: 'Months Since Last Action',
     category: 'Event Attendance',
+    defaultWidth: 50,
   },
   {
     name: 'total_points',
     label: 'Leadership points',
     category: 'Event Attendance',
+    defaultWidth: 50,
   },
   { name: 'active', label: 'Active', category: 'Event Attendance' },
   { name: 'status', label: 'Status', category: 'Event Attendance' },
@@ -106,6 +161,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     name: 'mpp_requirements',
     label: 'DA&C Current Month',
     category: 'Event Attendance',
+    defaultWidth: 80,
     description:
       'Attended both a Direct Action & a Community event in current month (historical requirement for MPP)',
   },
@@ -113,29 +169,53 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     name: 'mpi',
     label: 'MPI',
     category: 'Event Attendance',
+    defaultWidth: 30,
     description:
       'Whether the activist satisfied the MPP in either the current month or the previous month (see dxe.io/mpp)',
   },
 
   // Trainings
-  { name: 'training0', label: 'Workshop', category: 'Trainings' },
-  { name: 'training1', label: 'Consent & Oppression', category: 'Trainings' },
+  {
+    name: 'training0',
+    label: 'Workshop',
+    category: 'Trainings',
+    defaultWidth: 100,
+  },
+  {
+    name: 'training1',
+    label: 'Consent & Oppression',
+    category: 'Trainings',
+    defaultWidth: 100,
+  },
   {
     name: 'training4',
     label: 'Building Purposeful Communities',
     category: 'Trainings',
+    defaultWidth: 100,
   },
   {
     name: 'training5',
     label: 'Leadership & Management',
     category: 'Trainings',
+    defaultWidth: 100,
   },
-  { name: 'training6', label: 'Vision and Strategy', category: 'Trainings' },
-  { name: 'training_protest', label: 'Tier 2 Protest', category: 'Trainings' },
+  {
+    name: 'training6',
+    label: 'Vision and Strategy',
+    category: 'Trainings',
+    defaultWidth: 100,
+  },
+  {
+    name: 'training_protest',
+    label: 'Tier 2 Protest',
+    category: 'Trainings',
+    defaultWidth: 100,
+  },
   {
     name: 'consent_quiz',
     label: 'Consent Refresher Quiz',
     category: 'Trainings',
+    defaultWidth: 100,
   },
 
   // Application Info
@@ -144,25 +224,34 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     label: 'Applied',
     category: 'Application Info',
     isDate: true,
+    defaultWidth: 100,
   },
   {
     name: 'dev_application_type',
     label: 'Application Type',
     category: 'Application Info',
+    defaultWidth: 80,
   },
   {
     name: 'prospect_chapter_member',
     label: 'Prospective Chapter Member',
     category: 'Application Info',
+    defaultWidth: 60,
   },
   {
     name: 'prospect_organizer',
     label: 'Prospective Organizer',
     category: 'Application Info',
+    defaultWidth: 100,
   },
 
   // Circle Info
-  { name: 'geo_circles', label: 'Geo-Circle', category: 'Circle Info' },
+  {
+    name: 'geo_circles',
+    label: 'Geo-Circle',
+    category: 'Circle Info',
+    defaultWidth: 100,
+  },
 
   // Prospect Info
   {
@@ -175,58 +264,91 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     name: 'assigned_to_name',
     label: 'Assigned To',
     category: 'Prospect Info',
+    defaultWidth: 100,
   },
   {
     name: 'followup_date',
     label: 'Follow-up Date',
     category: 'Prospect Info',
     isDate: true,
+    defaultWidth: 110,
     description: 'Date to follow up',
   },
   {
     name: 'total_interactions',
     label: 'Interactions',
     category: 'Prospect Info',
+    defaultWidth: 80,
   },
   {
     name: 'last_interaction_date',
     label: 'Last Interaction',
     category: 'Prospect Info',
     isDate: true,
+    defaultWidth: 100,
   },
 
   // Referral Info
-  { name: 'source', label: 'Source', category: 'Referral Info' },
+  {
+    name: 'source',
+    label: 'Source',
+    category: 'Referral Info',
+    defaultWidth: 100,
+  },
   {
     name: 'interest_date',
     label: 'Interest Date',
     category: 'Referral Info',
     isDate: true,
+    defaultWidth: 100,
     description: 'Date activist submitted the interest form',
   },
-  { name: 'referral_friends', label: 'Close Ties', category: 'Referral Info' },
+  {
+    name: 'referral_friends',
+    label: 'Close Ties',
+    category: 'Referral Info',
+    defaultWidth: 100,
+  },
   {
     name: 'referral_apply',
     label: 'Referral',
     category: 'Referral Info',
+    defaultWidth: 100,
     description: '"Who encouraged you to sign up?"',
   },
   {
     name: 'referral_outlet',
     label: 'Referral Outlet',
     category: 'Referral Info',
+    defaultWidth: 100,
     description: '"How did you hear about DxE?"',
   },
 
   // Development
-  { name: 'dev_quiz', label: 'Quiz', category: 'Development' },
-  { name: 'dev_interest', label: 'Interests', category: 'Development' },
-  { name: 'connector', label: 'Coach', category: 'Development' },
+  {
+    name: 'dev_quiz',
+    label: 'Quiz',
+    category: 'Development',
+    defaultWidth: 100,
+  },
+  {
+    name: 'dev_interest',
+    label: 'Interests',
+    category: 'Development',
+    defaultWidth: 100,
+  },
+  {
+    name: 'connector',
+    label: 'Coach',
+    category: 'Development',
+    defaultWidth: 125,
+  },
   {
     name: 'last_connection',
     label: 'Last Coaching',
     category: 'Development',
     isDate: true,
+    defaultWidth: 100,
   },
 
   // Chapter Membership
@@ -235,6 +357,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     label: 'First Text',
     category: 'Chapter Membership',
     isDate: true,
+    defaultWidth: 100,
     description: 'Date of first SMS message sent to activist',
   },
   {
@@ -242,17 +365,24 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     label: 'Approval Email',
     category: 'Chapter Membership',
     isDate: true,
+    defaultWidth: 100,
   },
-  { name: 'vision_wall', label: 'Vision Wall', category: 'Chapter Membership' },
+  {
+    name: 'vision_wall',
+    label: 'Vision Wall',
+    category: 'Chapter Membership',
+    defaultWidth: 80,
+  },
   {
     name: 'voting_agreement',
     label: 'Voting Agreement',
     category: 'Chapter Membership',
+    defaultWidth: 50,
   },
 
   // Other
-  { name: 'notes', label: 'Notes', category: 'Other' },
-  { name: 'hiatus', label: 'Hiatus', category: 'Other' },
+  { name: 'notes', label: 'Notes', category: 'Other', defaultWidth: 100 },
+  { name: 'hiatus', label: 'Hiatus', category: 'Other', defaultWidth: 50 },
 
   // Developer
   {
@@ -260,6 +390,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     label: 'ID',
     category: 'Advanced',
     description: 'Database ID of the activist',
+    defaultWidth: 50,
   },
 ]
 
