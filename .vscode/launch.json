@@ -70,9 +70,9 @@
     {
       "name": "Tests: React Frontend",
       "request": "launch",
-      "runtimeArgs": ["run-script", "test", "--", "--run"],
+      "runtimeArgs": ["test", "--run"],
       "cwd": "${workspaceFolder}/frontend-v2",
-      "runtimeExecutable": "npm",
+      "runtimeExecutable": "pnpm",
       "skipFiles": ["<node_internals>/**"],
       "type": "node",
       // Please keep in sync with Makefile

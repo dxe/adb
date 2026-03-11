@@ -10,7 +10,7 @@ const SAMPLE_ACTIVISTS: ActivistJSON[] = [
   { id: 2, name: 'Bob', email: 'bob@example.com' },
 ]
 
-const DEFAULT_COLUMNS: ActivistJSON['name'][] = ['name', 'email']
+const DEFAULT_COLUMNS: (keyof ActivistJSON)[] = ['name', 'email']
 
 function renderTable(
   sort: Parameters<typeof ActivistTable>[0]['sort'],
