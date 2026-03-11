@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useDebouncedCallback } from '@tanstack/react-pacer'
+import { useEffect, useState } from 'react'
+import { useDebouncer } from '@tanstack/react-pacer'
 import { Input } from '@/components/ui/input'
 import type { FilterState } from '../query-state'
 
@@ -10,24 +10,20 @@ interface NameSearchFilterProps {
   onFiltersChange: (filters: FilterState) => void
 }
 
-export function NameSearchFilter({
+function DebouncedNameSearchInput({
   filters,
   onFiltersChange,
 }: NameSearchFilterProps) {
   const [nameInput, setNameInput] = useState(filters.nameSearch)
-  const [prevNameSearch, setPrevNameSearch] = useState(filters.nameSearch)
-
-  // Keep local input in sync when nameSearch changes externally
-  // (e.g. URL navigation between preset views).
-  if (filters.nameSearch !== prevNameSearch) {
-    setPrevNameSearch(filters.nameSearch)
-    setNameInput(filters.nameSearch)
-  }
-
-  const debouncedUpdate = useDebouncedCallback(
-    (v: string) => onFiltersChange({ ...filters, nameSearch: v }),
+  const debouncer = useDebouncer(
+    (nextNameSearch: string) =>
+      onFiltersChange({ ...filters, nameSearch: nextNameSearch }),
     { wait: 300 },
   )
+
+  useEffect(() => {
+    return () => debouncer.cancel()
+  }, [debouncer])
 
   return (
     <Input
@@ -35,9 +31,16 @@ export function NameSearchFilter({
       placeholder="Search activists by name..."
       value={nameInput}
       onChange={(e) => {
-        setNameInput(e.target.value)
-        debouncedUpdate(e.target.value)
+        const nextValue = e.target.value
+        setNameInput(nextValue)
+        debouncer.maybeExecute(nextValue)
       }}
     />
   )
+}
+
+export function NameSearchFilter(props: NameSearchFilterProps) {
+  // Remount on external nameSearch changes so pending debounces are canceled
+  // before they can write stale state back into the URL.
+  return <DebouncedNameSearchInput key={props.filters.nameSearch} {...props} />
 }
