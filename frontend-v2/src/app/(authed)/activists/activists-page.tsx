@@ -16,6 +16,7 @@ import { ColumnSelector } from './column-selector'
 import { SortSelector } from './sort-selector'
 import { buildQueryOptions } from './filter-api-query'
 import type { SortColumn } from './query-state'
+import { DEFAULT_SORT } from './query-state'
 import { useActivistQueryState } from './use-activist-query-state'
 
 function LoadMoreTrigger({
@@ -84,6 +85,7 @@ export default function ActivistsPage() {
   })
 
   const isExplicitSort = sort.length > 0
+  const effectiveSort = isExplicitSort ? sort : DEFAULT_SORT
 
   const queryOptions = useMemo<QueryActivistOptions>(
     () =>
@@ -92,9 +94,9 @@ export default function ActivistsPage() {
         selectedColumns,
         chapterId: user.ChapterID,
         userId: user.ID,
-        sort,
+        sort: effectiveSort,
       }),
-    [filters, selectedColumns, user.ChapterID, user.ID, sort],
+    [filters, selectedColumns, user.ChapterID, user.ID, effectiveSort],
   )
 
   const {
@@ -183,7 +185,7 @@ export default function ActivistsPage() {
         />
         <SortSelector
           label="Sort by"
-          value={sort[0]}
+          value={isExplicitSort ? sort[0] : undefined}
           onChange={(primary) =>
             setSort(
               sort.length > 1 && sort[1].column !== primary.column
