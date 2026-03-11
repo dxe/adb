@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useDebouncer } from '@tanstack/react-pacer'
 
 /**
@@ -16,13 +16,20 @@ export function useDebouncedState(
   const [lastSentValue, setLastSentValue] = useState<string | null>(null)
   const [cancelVersion, setCancelVersion] = useState(0)
   const onChangeRef = useRef(onChange)
+  // Tracks the latest scheduled debounced value so stale callbacks can no-op.
+  const pendingValueRef = useRef<string | null>(null)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     onChangeRef.current = onChange
   }, [onChange])
 
   const debouncer = useDebouncer(
     (value: string) => {
+      if (pendingValueRef.current !== value) {
+        return
+      }
+
+      pendingValueRef.current = null
       setLastSentValue(value)
       onChangeRef.current(value)
     },
@@ -31,8 +38,9 @@ export function useDebouncedState(
 
   useEffect(() => () => debouncer.cancel(), [debouncer])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (cancelVersion > 0) {
+      pendingValueRef.current = null
       debouncer.cancel()
     }
   }, [cancelVersion, debouncer])
@@ -51,6 +59,7 @@ export function useDebouncedState(
     localValue,
     (value: string) => {
       setLocalValue(value)
+      pendingValueRef.current = value
       debouncer.maybeExecute(value)
     },
   ]
