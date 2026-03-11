@@ -56,7 +56,7 @@ export function ActivistFilters({
   filters,
   onFiltersChange,
   isAdmin,
-  isDirty = false,
+  isDirty,
   onReset,
   children,
 }: ActivistFiltersProps) {
