@@ -47,9 +47,8 @@ export function useDebouncedState(
 
   if (externalValue !== prevExternalValue) {
     setPrevExternalValue(externalValue)
-    if (externalValue === lastSentValue) {
-      setLastSentValue(null)
-    } else {
+    setLastSentValue(null)
+    if (externalValue !== lastSentValue) {
       setLocalValue(externalValue)
       setCancelVersion((version) => version + 1)
     }
