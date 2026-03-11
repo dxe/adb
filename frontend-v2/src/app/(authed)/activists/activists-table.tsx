@@ -151,7 +151,7 @@ export function ActivistTable({
     data: activists,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    columnResizeMode: 'onChange' as ColumnResizeMode,
+    columnResizeMode: 'onChange',
   })
 
   if (activists.length === 0) {
