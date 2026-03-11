@@ -116,6 +116,7 @@ export function ActivistTable({
         minSize: definition?.minWidth ?? 60,
         header: () => (
           <button
+            type="button"
             className="flex items-center gap-1 font-medium hover:text-foreground transition-colors truncate"
             onClick={handleHeaderClick}
             disabled={isStale}
