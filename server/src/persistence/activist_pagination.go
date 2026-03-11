@@ -59,10 +59,10 @@ func parsePaginationCursor(str string) (activistPaginationCursor, error) {
 	var cursor activistPaginationCursor
 	decoded, err := base64.StdEncoding.DecodeString(str)
 	if err != nil {
-		return activistPaginationCursor{}, fmt.Errorf("invalid pagination cursor: %w", err)
+		return activistPaginationCursor{}, model.ValidationErrorf("invalid pagination cursor: %v", err)
 	}
 	if err := json.Unmarshal(decoded, &cursor); err != nil {
-		return activistPaginationCursor{}, fmt.Errorf("invalid pagination cursor: %w", err)
+		return activistPaginationCursor{}, model.ValidationErrorf("invalid pagination cursor: %v", err)
 	}
 	return cursor, nil
 }
