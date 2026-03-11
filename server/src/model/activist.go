@@ -2265,7 +2265,7 @@ func QueryActivists(authedUser ADBUser, options QueryActivistOptions, repo Activ
 	}
 
 	if err := options.normalizeAndValidate(); err != nil {
-		return QueryActivistResult{}, fmt.Errorf("invalid query options: %w", err)
+		return QueryActivistResult{}, ValidationErrorf("invalid query options: %v", err)
 	}
 
 	return repo.QueryActivists(options)

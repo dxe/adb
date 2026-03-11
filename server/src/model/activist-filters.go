@@ -252,34 +252,34 @@ func (f *QueryActivistFilters) Validate() error {
 		return ValidationErrorf("invalid chapter_id value: %d", f.ChapterId)
 	}
 	if err := f.LastEvent.Validate(); err != nil {
-		return fmt.Errorf("invalid last event filter: %w", err)
+		return ValidationErrorf("invalid last event filter: %v", err)
 	}
 	if err := f.ActivistLevel.Validate(); err != nil {
-		return fmt.Errorf("invalid activist level filter: %w", err)
+		return ValidationErrorf("invalid activist level filter: %v", err)
 	}
 	if err := f.InterestDate.Validate(); err != nil {
-		return fmt.Errorf("invalid interest date filter: %w", err)
+		return ValidationErrorf("invalid interest date filter: %v", err)
 	}
 	if err := f.FirstEvent.Validate(); err != nil {
-		return fmt.Errorf("invalid first event filter: %w", err)
+		return ValidationErrorf("invalid first event filter: %v", err)
 	}
 	if err := assertNonNegative(f.TotalEvents); err != nil {
-		return fmt.Errorf("invalid total events filter: %w", err)
+		return ValidationErrorf("invalid total events filter: %v", err)
 	}
 	if err := f.TotalEvents.Validate(); err != nil {
-		return fmt.Errorf("invalid total events filter: %w", err)
+		return ValidationErrorf("invalid total events filter: %v", err)
 	}
 	if err := assertNonNegative(f.TotalInteractions); err != nil {
-		return fmt.Errorf("invalid total interactions filter: %w", err)
+		return ValidationErrorf("invalid total interactions filter: %v", err)
 	}
 	if err := f.TotalInteractions.Validate(); err != nil {
-		return fmt.Errorf("invalid total interactions filter: %w", err)
+		return ValidationErrorf("invalid total interactions filter: %v", err)
 	}
 	if err := f.Source.Validate(); err != nil {
-		return fmt.Errorf("invalid source filter: %w", err)
+		return ValidationErrorf("invalid source filter: %v", err)
 	}
 	if err := f.Training.Validate(); err != nil {
-		return fmt.Errorf("invalid training filter: %w", err)
+		return ValidationErrorf("invalid training filter: %v", err)
 	}
 	if f.AssignedTo < -1 {
 		return ValidationErrorf("invalid assigned_to value: %d", f.AssignedTo)
