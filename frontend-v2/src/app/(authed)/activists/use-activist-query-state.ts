@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useMemo, useRef } from 'react'
+import { useCallback, useMemo } from 'react'
 import { createParser, useQueryStates } from 'nuqs'
 import type { ActivistColumnName } from '@/lib/api'
 import {
@@ -121,27 +121,23 @@ export function useActivistQueryState() {
     [params.sort, selectedColumns],
   )
 
-  // Refs so setters are stable — callers can hold them in useCallback([]) safely.
-  const filtersRef = useRef(filters)
-  filtersRef.current = filters
-  const selectedColumnsRef = useRef(selectedColumns)
-  selectedColumnsRef.current = selectedColumns
-  const sortRef = useRef(sort)
-  sortRef.current = sort
-
   const setFilters = useCallback(
     (newFilters: FilterState) => {
-      const currentFilters = filtersRef.current
-      const currentColumns = selectedColumnsRef.current
-      const autoColumns = columnsForNewFilters(currentFilters, newFilters)
+      const autoColumns = columnsForNewFilters(filters, newFilters)
       const withAutoColumns =
         autoColumns.length > 0
-          ? [...currentColumns, ...autoColumns]
-          : currentColumns
+          ? [...selectedColumns, ...autoColumns]
+          : selectedColumns
       const newSelectedColumns = normalizeColumnsForFilters(
         withAutoColumns,
         newFilters.searchAcrossChapters,
       )
+      const newSort = sort.every((entry) =>
+        newSelectedColumns.includes(entry.column),
+      )
+        ? sort
+        : []
+
       setParams({
         searchAcrossChapters: newFilters.searchAcrossChapters,
         nameSearch: newFilters.nameSearch,
@@ -161,31 +157,30 @@ export function useActivistQueryState() {
           newSelectedColumns,
           newFilters.searchAcrossChapters,
         ),
+        sort: buildSortParam(newSort) !== undefined ? newSort : null,
       })
     },
-    [setParams],
+    [filters, selectedColumns, setParams, sort],
   )
 
   const setSelectedColumns = useCallback(
     (columns: ActivistColumnName[]) => {
-      const currentFilters = filtersRef.current
-      const currentSort = sortRef.current
       const normalized = normalizeColumnsForFilters(
         columns,
-        currentFilters.searchAcrossChapters,
+        filters.searchAcrossChapters,
       )
-      const newSort = currentSort.every((s) => normalized.includes(s.column))
-        ? currentSort
+      const newSort = sort.every((s) => normalized.includes(s.column))
+        ? sort
         : []
       setParams({
         columns: columnsToStoreParam(
           normalized,
-          currentFilters.searchAcrossChapters,
+          filters.searchAcrossChapters,
         ),
         sort: buildSortParam(newSort) !== undefined ? newSort : null,
       })
     },
-    [setParams],
+    [filters.searchAcrossChapters, setParams, sort],
   )
 
   const setSort = useCallback(
