@@ -60,6 +60,15 @@ React Server Components. See React Query's documentation for this in their
 
 [rq-ssr]: https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr
 
+## Testing
+
+Tests use [Vitest](https://vitest.dev/) and [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/).
+
+```bash
+pnpm test        # watch mode (re-runs on file changes)
+pnpm test --run  # single run (CI)
+```
+
 # Build
 
 ## Testing in production

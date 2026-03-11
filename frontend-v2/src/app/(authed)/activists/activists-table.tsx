@@ -169,7 +169,11 @@ export function ActivistTable({
           isStale ? 'opacity-60' : ''
         }`}
       >
-        <Table className="table-fixed" style={{ width: table.getTotalSize() }}>
+        <Table
+          data-testid="activists-table"
+          className="table-fixed"
+          style={{ width: table.getTotalSize() }}
+        >
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>

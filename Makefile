@@ -1,4 +1,4 @@
-.PHONY: run_all run watch test clean prod_build deps dev_db fmt
+.PHONY: run_all run watch test test-server test-frontend clean prod_build deps dev_db fmt
 
 # When not using devcontainer, NVM initialization script may be located in home
 # directory. In the devcontainer, it is in /usr/local/share/nvm/.
@@ -62,8 +62,13 @@ deps:
 	go install -tags 'mysql' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 
 # Run all tests
-test:
+test: test-server test-frontend
+
+test-server:
 	cd server/src && go test ./...
+
+test-frontend:
+	cd frontend-v2 && pnpm test --run
 
 # Clean all built outputs
 clean:

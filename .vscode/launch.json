@@ -55,6 +55,32 @@
       "program": "${workspaceFolder}/server/src/main.go",
       "envFile": "${workspaceFolder}/server/debug.env",
     },
+    {
+      // Runs all Go tests across all packages. For debugging individual
+      // test files with breakpoints, use the "run test" CodeLens above
+      // each test function instead.
+      // Intentionally uses a Node launch config only to expose a Make-based
+      // test command in the Run/Debug UI; no Node debugging occurs here.
+      "name": "Tests: Server",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "make",
+      "runtimeArgs": ["test-server"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+    },
+    {
+      "name": "Tests: React Frontend",
+      "request": "launch",
+      "runtimeArgs": ["test", "--run"],
+      "cwd": "${workspaceFolder}/frontend-v2",
+      "runtimeExecutable": "pnpm",
+      "skipFiles": ["<node_internals>/**"],
+      "type": "node",
+      // Please keep in sync with Makefile
+      "runtimeVersion": "25",
+      "console": "integratedTerminal",
+    },
   ],
   "compounds": [
     {
