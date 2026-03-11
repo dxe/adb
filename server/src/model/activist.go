@@ -2256,16 +2256,16 @@ func assignActivistToUser(db *sqlx.DB, activistID, userID int) error {
 func QueryActivists(authedUser ADBUser, options QueryActivistOptions, repo ActivistRepository) (QueryActivistResult, error) {
 	if !UserHasRole("admin", authedUser) {
 		if authedUser.ChapterID != options.Filters.ChapterId || authedUser.ChapterID == 0 {
-			return QueryActivistResult{}, fmt.Errorf("cannot query activists in other chapters without admin access")
+			return QueryActivistResult{}, ValidationErrorf("cannot query activists in other chapters without admin access")
 		}
 	}
 
 	if !UserHasAnyRole([]string{"admin", "organizer", "non-sfbay"}, authedUser) {
-		return QueryActivistResult{}, fmt.Errorf("lacking permission to query activists")
+		return QueryActivistResult{}, ValidationErrorf("lacking permission to query activists")
 	}
 
 	if err := options.normalizeAndValidate(); err != nil {
-		return QueryActivistResult{}, fmt.Errorf("invalid query options: %w", err)
+		return QueryActivistResult{}, ValidationErrorf("invalid query options: %v", err)
 	}
 
 	return repo.QueryActivists(options)
@@ -2291,6 +2291,12 @@ func (e *ValidationError) Is(target error) bool {
 
 func (e *ValidationError) Unwrap() error {
 	return ErrValidation
+}
+
+// ValidationErrorf creates a ValidationError with a formatted message.
+// go vet automatically detects this as a printf wrapper via fmt.Sprintf.
+func ValidationErrorf(format string, args ...any) error {
+	return &ValidationError{msg: fmt.Sprintf(format, args...)}
 }
 
 // Interface for querying and updating activists. This avoids a dependency on the persistence package which could create
@@ -2339,7 +2345,7 @@ func (o *QueryActivistOptions) normalizeAndValidate() error {
 	// TODO: remove invalid characters from o.nameFilter.name
 
 	if o.Filters.ChapterId == 0 && !slices.Contains(o.Columns, "chapter_name") {
-		return fmt.Errorf("must choose 'chapter_name' column when not filtering by chapter ID.")
+		return ValidationErrorf("must choose 'chapter_name' column when not filtering by chapter ID.")
 	}
 
 	if err := o.Filters.Validate(); err != nil {
@@ -2347,16 +2353,16 @@ func (o *QueryActivistOptions) normalizeAndValidate() error {
 	}
 
 	if len(o.Sort.SortColumns) > 2 {
-		return &ValidationError{msg: "cannot sort by more than 2 columns"}
+		return ValidationErrorf("cannot sort by more than 2 columns")
 	}
 
 	for i, sc := range o.Sort.SortColumns {
 		if sc.ColumnName == "id" {
 			if i != len(o.Sort.SortColumns)-1 {
-				return &ValidationError{msg: "'id' must be the last sort column if present"}
+				return ValidationErrorf("'id' must be the last sort column if present")
 			}
 			if sc.Desc {
-				return &ValidationError{msg: "'id' cannot be sorted in descending order"}
+				return ValidationErrorf("'id' cannot be sorted in descending order")
 			}
 		}
 	}

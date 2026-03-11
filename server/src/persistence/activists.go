@@ -37,7 +37,7 @@ func (r DBActivistRepository) QueryActivists(options model.QueryActivistOptions)
 	for _, colName := range columns {
 		colSpec := getColumnSpec(colName)
 		if colSpec == nil {
-			return model.QueryActivistResult{}, fmt.Errorf("invalid column name: '%v'", colName)
+			return model.QueryActivistResult{}, model.ValidationErrorf("invalid column name: '%v'", colName)
 		}
 		columnSpecs = append(columnSpecs, colSpec)
 		query.SelectColumn(colSpec.selectExpr())
@@ -71,7 +71,7 @@ func (r DBActivistRepository) QueryActivists(options model.QueryActivistOptions)
 	for i, sc := range sortColumns {
 		colSpec := getColumnSpec(sc.ColumnName)
 		if colSpec == nil {
-			return model.QueryActivistResult{}, fmt.Errorf("invalid sort column: '%v'", sc.ColumnName)
+			return model.QueryActivistResult{}, model.ValidationErrorf("invalid sort column: '%v'", sc.ColumnName)
 		}
 		for _, joinSpec := range colSpec.joins {
 			registry.registerJoin(joinSpec)
@@ -98,7 +98,7 @@ func (r DBActivistRepository) QueryActivists(options model.QueryActivistOptions)
 
 		numExpectedValues := len(sortColumns) - 1 // all sort columns except the id tiebreaker
 		if len(cursor.SortOffsetValues) != numExpectedValues {
-			return model.QueryActivistResult{}, fmt.Errorf("invalid pagination cursor: expected %d sort values, got %d", numExpectedValues, len(cursor.SortOffsetValues))
+			return model.QueryActivistResult{}, model.ValidationErrorf("invalid pagination cursor: expected %d sort values, got %d", numExpectedValues, len(cursor.SortOffsetValues))
 		}
 		cursorWhere := buildCursorWhere(sortSpecs, cursor)
 		query.Where(cursorWhere.sql, cursorWhere.args...)
