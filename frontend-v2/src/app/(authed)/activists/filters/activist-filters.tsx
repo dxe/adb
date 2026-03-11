@@ -22,8 +22,8 @@ interface ActivistFiltersProps {
   filters: FilterState
   onFiltersChange: (filters: FilterState) => void
   isAdmin: boolean
-  isDirty?: boolean
-  onReset?: () => void
+  isDirty: boolean
+  onReset: () => void
   children?: React.ReactNode
 }
 
@@ -65,6 +65,7 @@ export function ActivistFilters({
     new Set(),
   )
   const [isAddFilterOpen, setIsAddFilterOpen] = useState(false)
+  const canReset = isDirty || visibleFilters.size > 0
 
   // Prune visibleFilters entries that have no corresponding filter value when
   // filters change (e.g. navigation).
@@ -135,18 +136,19 @@ export function ActivistFilters({
 
       {/* Chip bar */}
       <div className="flex flex-wrap items-center gap-2">
-        {onReset && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-12"
-            onClick={onReset}
-            disabled={!isDirty}
-          >
-            <RotateCcw className="h-4 w-4" />
-            Reset
-          </Button>
-        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-12"
+          onClick={() => {
+            setVisibleFilters(new Set())
+            onReset()
+          }}
+          disabled={!canReset}
+        >
+          <RotateCcw className="h-4 w-4" />
+          Reset
+        </Button>
 
         {/* Non-filter children (columns, sort selectors) */}
         {children}
