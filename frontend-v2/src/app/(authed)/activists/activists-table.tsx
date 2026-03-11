@@ -6,7 +6,6 @@ import {
   flexRender,
   getCoreRowModel,
   useReactTable,
-  ColumnResizeMode,
 } from '@tanstack/react-table'
 import {
   Table,
