@@ -20,23 +20,6 @@ type FilterSchemaEntry<K extends keyof FilterState> = {
 
 type AnyFilterSchemaEntry = FilterSchemaEntry<keyof FilterState>
 
-export const FILTER_KEYS = [
-  'searchAcrossChapters',
-  'nameSearch',
-  'includeHidden',
-  'lastEvent',
-  'interestDate',
-  'firstEvent',
-  'totalEvents',
-  'totalInteractions',
-  'activistLevel',
-  'source',
-  'training',
-  'assignedTo',
-  'followups',
-  'prospect',
-] as const satisfies ReadonlyArray<keyof FilterState>
-
 export const FILTER_SCHEMA = {
   searchAcrossChapters: {
     paramKey: 'searchAcrossChapters',
@@ -137,6 +120,10 @@ export const FILTER_SCHEMA = {
     toApi: apiTransform.toApiProspect,
   },
 } satisfies { [K in keyof FilterState]: FilterSchemaEntry<K> }
+
+export const FILTER_KEYS = Object.keys(FILTER_SCHEMA) as Array<
+  keyof FilterState
+>
 
 const FILTER_SCHEMA_ANY = FILTER_SCHEMA as Record<
   keyof FilterState,
