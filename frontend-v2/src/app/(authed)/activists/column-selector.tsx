@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -294,9 +295,9 @@ export function ColumnSelector({
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end border-t pt-4">
+        <DialogFooter className="border-t pt-4">
           <Button onClick={() => handleOpenChange(false)}>Done</Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )
