@@ -44,9 +44,7 @@ export function InfiniteScrollTrigger({
 
   return (
     <div ref={ref} className={className}>
-      <span role="status" aria-live="polite">
-        {isLoading ? loadingLabel : ''}
-      </span>
+      <output aria-live="polite">{isLoading ? loadingLabel : ''}</output>
     </div>
   )
 }
