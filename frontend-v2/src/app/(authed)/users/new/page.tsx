@@ -14,7 +14,7 @@ export default async function NewUserPage() {
 
   await queryClient.prefetchQuery({
     queryKey: [API_PATH.CHAPTER_LIST],
-    queryFn: apiClient.getChapterList,
+    queryFn: ({ signal }) => apiClient.getChapterList(signal),
   })
 
   return (

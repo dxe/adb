@@ -15,7 +15,7 @@ export const fetchSession = async (cookies?: string) => {
 
   const data = await queryClient.fetchQuery({
     queryKey: [API_PATH.USER_ME],
-    queryFn: apiClient.getAuthedUser,
+    queryFn: ({ signal }) => apiClient.getAuthedUser(signal),
   })
 
   return {

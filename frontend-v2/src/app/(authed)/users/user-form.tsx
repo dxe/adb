@@ -49,7 +49,7 @@ export function UserForm({ userId }: { userId?: number }) {
     error: chaptersError,
   } = useQuery({
     queryKey: [API_PATH.CHAPTER_LIST],
-    queryFn: apiClient.getChapterList,
+    queryFn: ({ signal }) => apiClient.getChapterList(signal),
   })
 
   const {
@@ -59,7 +59,9 @@ export function UserForm({ userId }: { userId?: number }) {
     error: userErrorObj,
   } = useQuery<User | undefined>({
     queryKey: [API_PATH.USERS, userId],
-    queryFn: userId ? () => apiClient.getUser(userId) : async () => undefined,
+    queryFn: userId
+      ? ({ signal }) => apiClient.getUser(userId, signal)
+      : async () => undefined,
     enabled: !!userId,
   })
 

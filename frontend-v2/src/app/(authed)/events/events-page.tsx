@@ -191,7 +191,7 @@ export default function EventsPage({ mode = 'events' }: Props) {
     error,
   } = useQuery({
     queryKey: [API_PATH.EVENT_LIST, committedParams],
-    queryFn: () => apiClient.getEventList(committedParams),
+    queryFn: ({ signal }) => apiClient.getEventList(committedParams, signal),
     placeholderData: keepPreviousData,
   })
 

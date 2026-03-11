@@ -60,11 +60,12 @@ export function useActivistRegistry() {
 
   const query = useQuery({
     queryKey: [API_PATH.ACTIVIST_LIST_BASIC],
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       // Get last sync time from registry (returns null if storage is unavailable)
       const lastSyncTime = await registryRef.current.getLastSyncTime()
       const result = await apiClient.getActivistListBasic(
         lastSyncTime ?? undefined,
+        signal,
       )
       return result
     },

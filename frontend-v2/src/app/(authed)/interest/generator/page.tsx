@@ -14,7 +14,7 @@ export default async function InterestGeneratorPage() {
 
   await queryClient.prefetchQuery({
     queryKey: [API_PATH.CHAPTER_LIST],
-    queryFn: apiClient.getChapterList,
+    queryFn: ({ signal }) => apiClient.getChapterList(signal),
   })
 
   return (

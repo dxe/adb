@@ -26,11 +26,11 @@ export default async function EditUserPage({
   await Promise.all([
     queryClient.prefetchQuery({
       queryKey: [API_PATH.USERS, userId],
-      queryFn: () => apiClient.getUser(userId),
+      queryFn: ({ signal }) => apiClient.getUser(userId, signal),
     }),
     queryClient.prefetchQuery({
       queryKey: [API_PATH.CHAPTER_LIST],
-      queryFn: apiClient.getChapterList,
+      queryFn: ({ signal }) => apiClient.getChapterList(signal),
     }),
   ])
 

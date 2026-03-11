@@ -44,7 +44,7 @@ type FormValues = z.infer<typeof formSchema>
 export default function GeneratorForm(props: { adbRootUrl?: string }) {
   const { data: chapterList } = useQuery({
     queryKey: [API_PATH.CHAPTER_LIST],
-    queryFn: apiClient.getChapterList,
+    queryFn: ({ signal }) => apiClient.getChapterList(signal),
   })
 
   const form = useForm<FormValues>({

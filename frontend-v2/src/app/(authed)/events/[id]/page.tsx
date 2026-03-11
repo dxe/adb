@@ -25,7 +25,7 @@ export default async function EditEventPage({
 
   await queryClient.prefetchQuery({
     queryKey: [API_PATH.EVENT_GET, String(eventId)],
-    queryFn: () => apiClient.getEvent(eventId),
+    queryFn: ({ signal }) => apiClient.getEvent(eventId, signal),
   })
 
   return (
