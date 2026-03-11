@@ -28,9 +28,11 @@ export default function ActivistsPage() {
     filters,
     selectedColumns,
     sort,
+    isDirty,
     setFilters,
     setSelectedColumns,
     setSort,
+    resetAll,
   } = useActivistQueryState()
 
   const [settledTableState, setSettledTableState] = useState<{
@@ -134,6 +136,8 @@ export default function ActivistsPage() {
         filters={filters}
         onFiltersChange={setFilters}
         isAdmin={isAdmin}
+        isDirty={isDirty}
+        onReset={resetAll}
       >
         <ColumnSelector
           visibleColumns={selectedColumns}

@@ -4,25 +4,19 @@ import { useCallback, useMemo } from 'react'
 import { createParser, useQueryStates } from 'nuqs'
 import type { ActivistColumnName } from '@/lib/api'
 import {
+  DEFAULT_COLUMNS,
+  columnsForNewFilters,
   normalizeColumns,
   normalizeColumnsForFilters,
-  columnsForNewFilters,
-  DEFAULT_COLUMNS,
 } from './column-definitions'
 import { buildSortParam } from './filter-url-state'
 import type { FilterState, SortColumn } from './query-state'
 import {
-  parseAsSearchAcrossChapters,
-  parseAsNameSearch,
-  parseAsIncludeHidden,
-  parseAsDateRange,
-  parseAsIntRange,
-  parseAsIncludeExclude,
-  parseAsActivistLevel,
-  parseAsAssignedTo,
-  parseAsFollowups,
-  parseAsProspect,
-} from './filter-nuqs-parsers'
+  FILTER_PARAM_KEYS,
+  isFilterStateDirty,
+  normalizeFilterState,
+} from './filter-schema'
+import { FILTER_NUQS_PARSERS } from './filter-nuqs-parsers'
 
 const parseAsColumns = createParser<ActivistColumnName[]>({
   parse: (raw) => {
@@ -48,6 +42,12 @@ const parseAsSort = createParser<SortColumn[]>({
   serialize: (sort) => buildSortParam(sort) ?? '',
 })
 
+const activistQueryStateParsers = {
+  ...FILTER_NUQS_PARSERS,
+  columns: parseAsColumns,
+  sort: parseAsSort,
+}
+
 /** Returns null when columns match the defaults (removes the param). */
 function columnsToStoreParam(
   normalized: ActivistColumnName[],
@@ -64,46 +64,13 @@ function columnsToStoreParam(
 }
 
 export function useActivistQueryState() {
-  const [params, setParams] = useQueryStates(
-    {
-      searchAcrossChapters: parseAsSearchAcrossChapters,
-      nameSearch: parseAsNameSearch,
-      includeHidden: parseAsIncludeHidden,
-      lastEvent: parseAsDateRange,
-      interestDate: parseAsDateRange,
-      firstEvent: parseAsDateRange,
-      totalEvents: parseAsIntRange,
-      totalInteractions: parseAsIntRange,
-      // URL key is "level", mapped to filters.activistLevel below
-      level: parseAsActivistLevel,
-      source: parseAsIncludeExclude,
-      training: parseAsIncludeExclude,
-      assignedTo: parseAsAssignedTo,
-      followups: parseAsFollowups,
-      prospect: parseAsProspect,
-      columns: parseAsColumns,
-      sort: parseAsSort,
-    },
-    { history: 'replace' },
-  )
+  const [params, setParams] = useQueryStates(activistQueryStateParsers, {
+    history: 'replace',
+    urlKeys: FILTER_PARAM_KEYS,
+  })
 
   const filters: FilterState = useMemo(
-    () => ({
-      searchAcrossChapters: params.searchAcrossChapters,
-      nameSearch: params.nameSearch,
-      includeHidden: params.includeHidden,
-      lastEvent: params.lastEvent ?? undefined,
-      interestDate: params.interestDate ?? undefined,
-      firstEvent: params.firstEvent ?? undefined,
-      totalEvents: params.totalEvents ?? undefined,
-      totalInteractions: params.totalInteractions ?? undefined,
-      activistLevel: params.level ?? undefined,
-      source: params.source ?? undefined,
-      training: params.training ?? undefined,
-      assignedTo: params.assignedTo ?? undefined,
-      followups: params.followups ?? undefined,
-      prospect: params.prospect ?? undefined,
-    }),
+    () => normalizeFilterState(params),
     [params],
   )
 
@@ -111,14 +78,22 @@ export function useActivistQueryState() {
     () =>
       normalizeColumnsForFilters(
         params.columns ?? DEFAULT_COLUMNS,
-        params.searchAcrossChapters,
+        filters.searchAcrossChapters,
       ),
-    [params.columns, params.searchAcrossChapters],
+    [filters.searchAcrossChapters, params.columns],
   )
 
   const sort = useMemo(
     () => (params.sort ?? []).filter((s) => selectedColumns.includes(s.column)),
     [params.sort, selectedColumns],
+  )
+
+  const isDirty = useMemo(
+    () =>
+      isFilterStateDirty(filters) ||
+      params.columns !== null ||
+      params.sort !== null,
+    [filters, params.columns, params.sort],
   )
 
   const setFilters = useCallback(
@@ -147,7 +122,7 @@ export function useActivistQueryState() {
         firstEvent: newFilters.firstEvent ?? null,
         totalEvents: newFilters.totalEvents ?? null,
         totalInteractions: newFilters.totalInteractions ?? null,
-        level: newFilters.activistLevel ?? null,
+        activistLevel: newFilters.activistLevel ?? null,
         source: newFilters.source ?? null,
         training: newFilters.training ?? null,
         assignedTo: newFilters.assignedTo ?? null,
@@ -189,12 +164,16 @@ export function useActivistQueryState() {
     [setParams],
   )
 
+  const resetAll = useCallback(() => setParams(null), [setParams])
+
   return {
     filters,
     selectedColumns,
     sort,
+    isDirty,
     setFilters,
     setSelectedColumns,
     setSort,
+    resetAll,
   }
 }
