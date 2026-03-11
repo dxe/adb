@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog'
 import {
   Popover,
@@ -41,7 +42,7 @@ export function ColumnSelector({
   const [isOpen, setIsOpen] = useState(false)
   const [localColumns, setLocalColumns] = useState(visibleColumns)
   const [search, setSearch] = useState('')
-  const groupedColumns = groupColumnsByCategory()
+  const groupedColumns = useMemo(() => groupColumnsByCategory(), [])
 
   const slugifyCategory = (category: ColumnCategory) =>
     category
@@ -141,15 +142,12 @@ export function ColumnSelector({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <Button
-        variant="outline"
-        size="sm"
-        className="h-12"
-        onClick={() => handleOpenChange(true)}
-      >
-        <Columns3 className="mr-2 h-4 w-4" />
-        Columns ({visibleColumns.length})
-      </Button>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className="h-12">
+          <Columns3 className="mr-2 h-4 w-4" />
+          Columns ({visibleColumns.length})
+        </Button>
+      </DialogTrigger>
       <DialogContent className="w-[calc(100vw-2rem)] max-w-5xl h-[calc(100vh-4rem)] max-h-[48rem] flex flex-col">
         <DialogHeader>
           <DialogTitle>Select Columns</DialogTitle>
