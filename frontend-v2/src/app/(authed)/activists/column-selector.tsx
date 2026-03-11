@@ -1,19 +1,27 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { CircleHelp, Columns3 } from 'lucide-react'
+import { CircleHelp, Columns3, Search } from 'lucide-react'
 import { ActivistColumnName } from '@/lib/api'
 import {
   groupColumnsByCategory,
   ColumnCategory,
+  ColumnDefinition,
   normalizeColumns,
 } from './column-definitions'
 
@@ -32,12 +40,38 @@ export function ColumnSelector({
 }: ColumnSelectorProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [localColumns, setLocalColumns] = useState(visibleColumns)
+  const [search, setSearch] = useState('')
   const groupedColumns = groupColumnsByCategory()
+
   const slugifyCategory = (category: ColumnCategory) =>
     category
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '')
+
+  // Filter categories and columns based on search query
+  const isSearching = search.trim().length > 0
+
+  // Filter categories and columns based on search query
+  const filteredGroups = useMemo(() => {
+    const query = search.trim().toLowerCase()
+    if (!query) return groupedColumns
+
+    const filtered = new Map<ColumnCategory, ColumnDefinition[]>()
+    for (const [category, columns] of groupedColumns) {
+      const categoryMatches = category.toLowerCase().includes(query)
+      const matchingColumns = columns.filter(
+        (col) =>
+          categoryMatches ||
+          col.label.toLowerCase().includes(query) ||
+          col.name.toLowerCase().includes(query),
+      )
+      if (matchingColumns.length > 0) {
+        filtered.set(category, matchingColumns)
+      }
+    }
+    return filtered
+  }, [search, groupedColumns])
 
   const handleToggleColumn = (columnName: ActivistColumnName) => {
     const newColumns = localColumns.includes(columnName)
@@ -100,130 +134,172 @@ export function ColumnSelector({
     }
     if (open) {
       setLocalColumns(visibleColumns)
+      setSearch('')
     }
     setIsOpen(open)
   }
 
   return (
-    <Popover open={isOpen} onOpenChange={handleOpenChange}>
-      <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="h-12">
-          <Columns3 className="mr-2 h-4 w-4" />
-          Columns ({visibleColumns.length})
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-80 max-h-[32rem] overflow-y-auto">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h4 className="font-medium">Select Columns</h4>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleOpenChange(false)}
-            >
-              Done
-            </Button>
-          </div>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <Button
+        variant="outline"
+        size="sm"
+        className="h-12"
+        onClick={() => handleOpenChange(true)}
+      >
+        <Columns3 className="mr-2 h-4 w-4" />
+        Columns ({visibleColumns.length})
+      </Button>
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-5xl h-[calc(100vh-4rem)] max-h-[48rem] flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Select Columns</DialogTitle>
+        </DialogHeader>
 
-          {/* Column groups */}
-          {Array.from(groupedColumns.entries()).map(([category, columns]) => {
-            const selectionState = getCategorySelectionState(category)
-            const categorySlug = slugifyCategory(category)
-
-            return (
-              <div key={category} className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id={`category-${categorySlug}`}
-                    checked={
-                      selectionState === 'full'
-                        ? true
-                        : selectionState === 'partial'
-                          ? 'indeterminate'
-                          : false
-                    }
-                    onCheckedChange={() => handleToggleCategory(category)}
-                  />
-                  <Label
-                    htmlFor={`category-${categorySlug}`}
-                    className="cursor-pointer font-medium text-primary"
-                  >
-                    {category}
-                  </Label>
-                </div>
-
-                <div className="ml-6 space-y-1.5">
-                  {columns
-                    .filter(
-                      (col) =>
-                        !col.hidden &&
-                        (col.name !== 'chapter_name' || isChapterColumnShown),
-                    )
-                    .map((col) => {
-                      const isNameColumn = col.name === 'name'
-                      const isChapterColumn = col.name === 'chapter_name'
-                      const isDisabled = isNameColumn || isChapterColumn
-
-                      return (
-                        <div key={col.name} className="flex items-center gap-2">
-                          <Checkbox
-                            id={`column-${col.name}`}
-                            checked={localColumns.includes(col.name)}
-                            onCheckedChange={() => handleToggleColumn(col.name)}
-                            disabled={isDisabled}
-                          />
-                          <div
-                            className={`inline-flex items-center gap-1 text-sm ${isDisabled ? 'opacity-60' : ''}`}
-                          >
-                            <Label
-                              htmlFor={`column-${col.name}`}
-                              className={
-                                isDisabled ? 'cursor-default' : 'cursor-pointer'
-                              }
-                            >
-                              {col.label}
-                            </Label>
-                            {col.description ? (
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <button
-                                    type="button"
-                                    aria-label={`About ${col.label}`}
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="inline-flex items-center"
-                                  >
-                                    <CircleHelp className="h-3.5 w-3.5 text-muted-foreground" />
-                                  </button>
-                                </PopoverTrigger>
-                                <PopoverContent
-                                  className="w-64 p-2 text-xs"
-                                  side="top"
-                                  align="start"
-                                >
-                                  {col.description}
-                                </PopoverContent>
-                              </Popover>
-                            ) : null}
-                            {isNameColumn && (
-                              <span className="ml-1 text-xs text-muted-foreground">
-                                (required)
-                              </span>
-                            )}
-                            {isChapterColumn && isChapterColumnShown && (
-                              <span className="ml-1 text-xs text-muted-foreground">
-                                (auto)
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      )
-                    })}
-                </div>
-              </div>
-            )
-          })}
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search columns..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
         </div>
-      </PopoverContent>
-    </Popover>
+
+        {/* Column groups in multi-column grid */}
+        <div className="flex-1 overflow-y-auto min-h-0">
+          {filteredGroups.size === 0 ? (
+            <div className="flex items-center justify-center py-12 text-muted-foreground">
+              No columns matching &ldquo;{search}&rdquo;
+            </div>
+          ) : (
+            <div className="columns-1 sm:columns-2 lg:columns-3 gap-6 py-1">
+              {Array.from(filteredGroups.entries()).map(
+                ([category, columns]) => {
+                  const selectionState = getCategorySelectionState(category)
+                  const categorySlug = slugifyCategory(category)
+
+                  return (
+                    <div
+                      key={category}
+                      className="break-inside-avoid mb-5 space-y-2"
+                    >
+                      {isSearching ? (
+                        <span className="font-medium text-primary">
+                          {category}
+                        </span>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id={`category-${categorySlug}`}
+                            checked={
+                              selectionState === 'full'
+                                ? true
+                                : selectionState === 'partial'
+                                  ? 'indeterminate'
+                                  : false
+                            }
+                            onCheckedChange={() =>
+                              handleToggleCategory(category)
+                            }
+                          />
+                          <Label
+                            htmlFor={`category-${categorySlug}`}
+                            className="cursor-pointer font-medium text-primary"
+                          >
+                            {category}
+                          </Label>
+                        </div>
+                      )}
+
+                      <div className="ml-6 space-y-1.5">
+                        {columns
+                          .filter(
+                            (col) =>
+                              !col.hidden &&
+                              (col.name !== 'chapter_name' ||
+                                isChapterColumnShown),
+                          )
+                          .map((col) => {
+                            const isNameColumn = col.name === 'name'
+                            const isChapterColumn = col.name === 'chapter_name'
+                            const isDisabled = isNameColumn || isChapterColumn
+
+                            return (
+                              <div
+                                key={col.name}
+                                className="flex items-center gap-2"
+                              >
+                                <Checkbox
+                                  id={`column-${col.name}`}
+                                  checked={localColumns.includes(col.name)}
+                                  onCheckedChange={() =>
+                                    handleToggleColumn(col.name)
+                                  }
+                                  disabled={isDisabled}
+                                />
+                                <div
+                                  className={`inline-flex items-center gap-1 text-sm ${isDisabled ? 'opacity-60' : ''}`}
+                                >
+                                  <Label
+                                    htmlFor={`column-${col.name}`}
+                                    className={
+                                      isDisabled
+                                        ? 'cursor-default'
+                                        : 'cursor-pointer'
+                                    }
+                                  >
+                                    {col.label}
+                                  </Label>
+                                  {col.description ? (
+                                    <Popover>
+                                      <PopoverTrigger asChild>
+                                        <button
+                                          type="button"
+                                          aria-label={`About ${col.label}`}
+                                          onClick={(e) => e.stopPropagation()}
+                                          className="inline-flex items-center"
+                                        >
+                                          <CircleHelp className="h-3.5 w-3.5 text-muted-foreground" />
+                                        </button>
+                                      </PopoverTrigger>
+                                      <PopoverContent
+                                        className="w-64 p-2 text-xs"
+                                        side="top"
+                                        align="start"
+                                      >
+                                        {col.description}
+                                      </PopoverContent>
+                                    </Popover>
+                                  ) : null}
+                                  {isNameColumn && (
+                                    <span className="ml-1 text-xs text-muted-foreground">
+                                      (required)
+                                    </span>
+                                  )}
+                                  {isChapterColumn && isChapterColumnShown && (
+                                    <span className="ml-1 text-xs text-muted-foreground">
+                                      (auto)
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          })}
+                      </div>
+                    </div>
+                  )
+                },
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex justify-end border-t pt-4">
+          <Button onClick={() => handleOpenChange(false)}>Done</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }
