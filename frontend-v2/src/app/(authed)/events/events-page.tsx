@@ -132,7 +132,6 @@ export default function EventsPage({ mode = 'events' }: Props) {
     ),
   })
 
-  // Name input debounces into URL params
   const [nameInput, setNameInput] = useDebouncedState(urlParams.name, (v) =>
     setUrlParams({ name: v || null }),
   )
