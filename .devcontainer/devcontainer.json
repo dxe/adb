@@ -48,7 +48,8 @@
         "GitHub.vscode-github-actions",
         "ms-vscode.vscode-typescript-next",
         "esbenp.prettier-vscode",
-        "GitHub.vscode-pull-request-github"
+        "GitHub.vscode-pull-request-github",
+        "vitest.explorer"
       ]
     }
   },
