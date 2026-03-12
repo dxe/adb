@@ -53,4 +53,15 @@ describe('DateRangeFilter null option', () => {
       screen.getByTitle('Set exactly one bound to enable this option.'),
     ).toBeInTheDocument()
   })
+
+  it('shows checkbox as checked when orNull is true and one bound is set', () => {
+    renderFilter({
+      gte: { mode: 'relative', daysOffset: -30 },
+      orNull: true,
+    })
+
+    expect(
+      screen.getByLabelText('Include activists with no events'),
+    ).toBeChecked()
+  })
 })

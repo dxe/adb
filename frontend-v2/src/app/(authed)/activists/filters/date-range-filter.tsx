@@ -101,7 +101,6 @@ function normalizeDateRange(
   const gte = value.gte
   const lt = value.lt
   const orNull = !!value.orNull && !(gte && lt)
-  getBoundsMode(gte, lt)
 
   if (!gte && !lt && !orNull) return undefined
 
