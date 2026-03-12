@@ -295,7 +295,6 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/event/delete", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.EventDeleteHandler))
 	router.Handle("/activist/list", alice.New(main.apiOrganizerOrNonSFBayAuthMiddleware).ThenFunc(main.ActivistListHandler))
 	router.Handle("/activist/list_basic", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.ActivistListBasicHandler))
-	router.Handle("/activist/list_range", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.ActivistInfiniteScrollHandler))
 	router.Handle("/activist/save", alice.New(main.apiOrganizerOrNonSFBayAuthMiddleware).ThenFunc(main.ActivistSaveHandler))
 	router.Handle("/activist/hide", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.ActivistHideHandler))
 	router.Handle("/activist/merge", alice.New(main.apiOrganizerOrNonSFBayAuthMiddleware).ThenFunc(main.ActivistMergeHandler))
@@ -975,25 +974,6 @@ func (c MainController) AutocompleteChapterMembersHandler(w http.ResponseWriter,
 	names := model.GetAutocompleteChapterMembersNames(c.db, chapter)
 	writeJSON(w, map[string][]string{
 		"activist_names": names,
-	})
-}
-
-// TODO Protect against non POST requests. Perhaps we can do this with the router...
-func (c MainController) ActivistInfiniteScrollHandler(w http.ResponseWriter, r *http.Request) {
-	activistOptions, err := model.GetActivistRangeOptions(r.Body)
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-	activists, err := model.GetActivistRangeJSON(c.db, activistOptions)
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-
-	writeJSON(w, map[string]interface{}{
-		"status":              "success",
-		"activist_range_list": activists,
 	})
 }
 

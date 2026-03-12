@@ -551,13 +551,6 @@ var validOrderFields = map[string]struct{}{
 	"followup_date": {},
 }
 
-type ActivistRangeOptionsJSON struct {
-	Name      string `json:"name"`
-	Limit     int    `json:"limit"`
-	Order     int    `json:"order"`
-	ChapterID int    `json:"chapter_id"`
-}
-
 /** Functions and Methods */
 
 func GetActivistsJSON(db *sqlx.DB, options GetActivistOptions) ([]ActivistJSON, error) {
@@ -585,14 +578,6 @@ func GetActivistJSON(db *sqlx.DB, options GetActivistOptions) (ActivistJSON, err
 
 func getActivistsJSON(db *sqlx.DB, options GetActivistOptions) ([]ActivistJSON, error) {
 	activists, err := GetActivistsExtra(db, options)
-	if err != nil {
-		return nil, err
-	}
-	return BuildActivistJSONArray(activists), nil
-}
-
-func GetActivistRangeJSON(db *sqlx.DB, options ActivistRangeOptionsJSON) ([]ActivistJSON, error) {
-	activists, err := getActivistRange(db, options)
 	if err != nil {
 		return nil, err
 	}
@@ -1010,61 +995,6 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 	var activists []ActivistExtra
 	if err := db.Select(&activists, query, queryArgs...); err != nil {
 		return nil, errors.Wrapf(err, "failed to get activists extra for uid %d", options.ID)
-	}
-
-	for i := 0; i < len(activists); i++ {
-		a := activists[i]
-		activists[i].Status = getStatus(a.FirstEvent, a.LastEvent, a.TotalEvents)
-	}
-
-	return activists, nil
-}
-
-func getActivistRange(db *sqlx.DB, options ActivistRangeOptionsJSON) ([]ActivistExtra, error) {
-	// Redundant options validation
-	var err error
-	options, err = validateActivistRangeOptionsJSON(options)
-	if err != nil {
-		return nil, err
-	}
-
-	query := selectActivistExtraBaseQuery
-	name := options.Name
-	order := options.Order
-	limit := options.Limit
-	var queryArgs []interface{}
-
-	query += " WHERE a.hidden = false "
-
-	if options.ChapterID != 0 {
-		query += " AND a.chapter_id = ? "
-		queryArgs = append(queryArgs, options.ChapterID)
-	}
-
-	if name != "" {
-		if order == DescOrder {
-			query += " AND a.name < ? "
-		} else {
-			query += " AND a.name > ? "
-		}
-		queryArgs = append(queryArgs, name)
-	}
-
-	query += " GROUP BY a.id "
-
-	query += " ORDER BY a.name "
-	if order == DescOrder {
-		query += "desc "
-	}
-
-	if limit > 0 {
-		query += " LIMIT ? "
-		queryArgs = append(queryArgs, limit)
-	}
-
-	var activists []ActivistExtra
-	if err := db.Select(&activists, query, queryArgs...); err != nil {
-		return nil, errors.Wrapf(err, "failed to retrieve %d users before/after %s", limit, name)
 	}
 
 	for i := 0; i < len(activists); i++ {
@@ -2123,32 +2053,6 @@ func validateActivist(a ActivistExtra) error {
 		return errors.New("ActivistLevel is invalid.")
 	}
 	return nil
-}
-
-func validateActivistRangeOptionsJSON(a ActivistRangeOptionsJSON) (ActivistRangeOptionsJSON, error) {
-	// Set defaults
-	if a.Order == 0 {
-		a.Order = AscOrder
-	}
-
-	// Check that order matches one of the defined order constants
-	if a.Order != DescOrder && a.Order != AscOrder {
-		return ActivistRangeOptionsJSON{}, errors.New("User Range order must be ascending or descending")
-	}
-	return a, nil
-}
-
-func GetActivistRangeOptions(body io.Reader) (ActivistRangeOptionsJSON, error) {
-	var options ActivistRangeOptionsJSON
-	err := json.NewDecoder(body).Decode(&options)
-	if err != nil {
-		return ActivistRangeOptionsJSON{}, err
-	}
-	options, err = validateActivistRangeOptionsJSON(options)
-	if err != nil {
-		return ActivistRangeOptionsJSON{}, err
-	}
-	return options, nil
 }
 
 func validateGetActivistOptions(a GetActivistOptions) (GetActivistOptions, error) {
