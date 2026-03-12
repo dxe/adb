@@ -13,7 +13,7 @@
     <template #start>
       <template v-for="dropdown in navbarData.items">
         <b-navbar-dropdown
-          v-if="hasAccess(dropdown.roleRequired)"
+          v-if="hasAccess(dropdown)"
           :label="dropdown.label"
           :key="dropdown.label"
           collapsible
@@ -21,7 +21,7 @@
           <b-navbar-item
             v-for="item in dropdown.items"
             :key="item.href"
-            v-if="hasAccess(item.roleRequired)"
+            v-if="hasAccess(item)"
             :href="item.href"
             :active="page === item.page"
             :class="{ 'mb-2': item.separatorBelow }"
@@ -88,16 +88,9 @@ export default Vue.extend({
     this.fetchChapters();
   },
   methods: {
-    hasAccess(roleRequired: string[] | undefined) {
-      if (this.activeChapterId !== SF_BAY_CHAPTER_ID) {
-        // If non-sfbay chapter is active, we only show non-sfbay items or admin items.
-        return (
-          !roleRequired ||
-          roleRequired.indexOf('non-sfbay') !== -1 ||
-          (roleRequired.indexOf('admin') !== -1 && this.role === 'admin')
-        );
-      }
-      return (
+    hasAccess(item: { roleRequired?: string[]; visibleForNonSFBay?: boolean } | undefined) {
+      const roleRequired = item ? item.roleRequired : undefined;
+      const hasRequiredRole =
         !roleRequired ||
         roleRequired.some((it) =>
           it === 'admin'
@@ -106,11 +99,17 @@ export default Vue.extend({
               ? this.role === 'admin' || this.role === 'organizer'
               : it === 'attendance'
                 ? this.role === 'admin' || this.role === 'organizer' || this.role === 'attendance'
-                : it === 'non-sfbay'
-                  ? this.role === 'non-sfbay'
-                  : false,
-        )
-      );
+                : false,
+        );
+      if (this.activeChapterId !== SF_BAY_CHAPTER_ID) {
+        // Outside SF Bay, keep the limited non-SF Bay view while still honoring the user's stored roles.
+        return (
+          !roleRequired ||
+          (!!item && !!item.visibleForNonSFBay && hasRequiredRole) ||
+          (roleRequired.indexOf('admin') !== -1 && this.role === 'admin')
+        );
+      }
+      return hasRequiredRole;
     },
     async fetchChapters() {
       try {

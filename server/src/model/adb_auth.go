@@ -1,6 +1,7 @@
 package model
 
 import (
+	"github.com/dxe/adb/config"
 	"github.com/dxe/adb/pkg/shared"
 	"github.com/pkg/errors"
 )
@@ -30,7 +31,6 @@ var allowedUserRoles = map[string]struct{}{
 	"admin":      {},
 	"organizer":  {},
 	"attendance": {},
-	"non-sfbay":  {},
 }
 
 func ValidateADBUser(user ADBUser) error {
@@ -53,6 +53,30 @@ func ValidateADBUser(user ADBUser) error {
 	}
 
 	return nil
+}
+
+func IsSFBayChapterID(chapterID int) bool {
+	if !config.IsProd {
+		return chapterID == SFBayChapterIdDevTest
+	}
+
+	return chapterID == SFBayChapterId
+}
+
+func UserHasAttendanceAccess(user ADBUser) bool {
+	return UserHasAnyRole([]string{"admin", "organizer", "attendance"}, user)
+}
+
+func UserHasOrganizerAccess(user ADBUser) bool {
+	return UserHasAnyRole([]string{"admin", "organizer"}, user)
+}
+
+func UserHasSFBayOrganizerAccess(user ADBUser) bool {
+	if UserHasRole("admin", user) {
+		return true
+	}
+
+	return UserHasRole("organizer", user) && IsSFBayChapterID(user.ChapterID)
 }
 
 func UserHasAnyRole(roles []string, user ADBUser) bool {

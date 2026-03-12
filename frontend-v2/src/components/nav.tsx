@@ -19,30 +19,39 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { API_PATH, apiClient } from '@/lib/api'
 import { SF_BAY_CHAPTER_ID } from '@/lib/constants'
 
+type NavAccessItem = {
+  roleRequired?: string[]
+  visibleForNonSFBay?: boolean
+}
+
+function toNavAccessItem(item: object | undefined): NavAccessItem | undefined {
+  if (!item) return undefined
+
+  return {
+    roleRequired:
+      'roleRequired' in item
+        ? (item.roleRequired as string[] | undefined)
+        : undefined,
+    visibleForNonSFBay:
+      'visibleForNonSFBay' in item
+        ? (item.visibleForNonSFBay as boolean | undefined)
+        : undefined,
+  }
+}
+
 function userHasAccess(
   /** Auth'd user. */
   user: {
     role: string
     ChapterID: number
   },
-  /** Array of roles that are permitted to access. A user can access if they
-   * hold **any** of the required roles. If undefined, any role is permitted. */
-  roleRequired: string[] | undefined,
+  item: NavAccessItem | undefined,
 ): boolean {
-  if (!roleRequired) return true
+  if (!item?.roleRequired) return true
 
   if (!user.role) return false
 
-  if (user.ChapterID !== SF_BAY_CHAPTER_ID) {
-    // If non-sfbay chapter is active, we only show non-sfbay items or admin items.
-    return (
-      !roleRequired ||
-      roleRequired.includes('non-sfbay') ||
-      (roleRequired.includes('admin') && user.role === 'admin')
-    )
-  }
-
-  return roleRequired.some((it) => {
+  const hasRequiredRole = item.roleRequired.some((it) => {
     if (it === 'admin') return user.role === 'admin'
     if (it === 'organizer')
       return user.role === 'admin' || user.role === 'organizer'
@@ -52,9 +61,17 @@ function userHasAccess(
         user.role === 'organizer' ||
         user.role === 'attendance'
       )
-    if (it === 'non-sfbay') return user.role === 'non-sfbay'
     return false
   })
+
+  if (user.ChapterID !== SF_BAY_CHAPTER_ID) {
+    // Outside SF Bay, keep the limited non-SF Bay view while still honoring the user's stored roles.
+    return item.roleRequired.includes('admin')
+      ? user.role === 'admin'
+      : Boolean(item.visibleForNonSFBay) && hasRequiredRole
+  }
+
+  return hasRequiredRole
 }
 
 /** For ActivistListV2 pages, check if the nav item's query params match the current URL exactly. */
@@ -98,7 +115,7 @@ const DropdownItem = ({
     () =>
       isExpanded
         ? item.items.filter((innerItem) =>
-            userHasAccess(user, innerItem.roleRequired),
+            userHasAccess(user, toNavAccessItem(innerItem)),
           )
         : null,
     [isExpanded, item.items, user],
@@ -135,7 +152,7 @@ const DropdownItem = ({
     [accessibleItems, hasExactPathMatch, pathname, searchParams],
   )
 
-  if (!userHasAccess(user, item.roleRequired)) {
+  if (!userHasAccess(user, toNavAccessItem(item))) {
     return null
   }
 

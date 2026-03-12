@@ -21,7 +21,7 @@ export const StaticResourcesHashResp = z.object({
   hash: z.string(),
 })
 
-export const Role = z.enum(['admin', 'organizer', 'attendance', 'non-sfbay'])
+export const Role = z.enum(['admin', 'organizer', 'attendance'])
 export type Role = z.infer<typeof Role>
 
 const AuthedUserResp = z.object({

@@ -52,17 +52,8 @@ FROM adb_users
 	}
 
 	usersRoles, err := getUsersRoles(r.db)
-
-	// We don't want non-SF Bay users to have access to any of the other roles, so just replace it.
-	if adbUser.ChapterName != model.SFBayChapterName {
-		usersRoles = []model.UserRole{{
-			UserID: adbUser.ID,
-			Role:   "non-sfbay",
-		}}
-	}
-
-	if err != nil || len(usersRoles) == 0 {
-		return *adbUser, nil
+	if err != nil {
+		return model.ADBUser{}, err
 	}
 
 	for _, r := range usersRoles {

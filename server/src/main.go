@@ -242,24 +242,24 @@ func router() (*mux.Router, *sqlx.DB) {
 	// Authed pages
 	router.Handle("/", alice.New(main.authAttendanceMiddleware).ThenFunc(main.UpdateEventHandler))
 	router.Handle("/update_event/{event_id:[0-9]+}", alice.New(main.authAttendanceMiddleware).ThenFunc(main.UpdateEventHandler))
-	router.Handle("/new_connection", alice.New(main.authOrganizerMiddleware).ThenFunc(main.UpdateConnectionHandler))
-	router.Handle("/update_connection/{event_id:[0-9]+}", alice.New(main.authOrganizerMiddleware).ThenFunc(main.UpdateConnectionHandler))
+	router.Handle("/new_connection", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.UpdateConnectionHandler))
+	router.Handle("/update_connection/{event_id:[0-9]+}", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.UpdateConnectionHandler))
 	router.Handle("/update_event/{event_id:[0-9]+}", alice.New(main.authAttendanceMiddleware).ThenFunc(main.UpdateEventHandler))
 	router.Handle("/list_events", alice.New(main.authAttendanceMiddleware).ThenFunc(main.ListEventsHandler))
-	router.Handle("/list_connections", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListConnectionsHandler))
-	router.Handle("/list_activists", alice.New(main.authOrganizerOrNonSFBayMiddleware).ThenFunc(main.ListActivistsHandler))
-	router.Handle("/new_activists", alice.New(main.authOrganizerOrNonSFBayMiddleware).ThenFunc(main.NewActivistsHandler))
-	router.Handle("/new_activists_pending_workshop", alice.New(main.authOrganizerMiddleware).ThenFunc(main.NewActivistsPendingWorkshopHandler))
-	router.Handle("/community_prospects", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListCommunityProspectsHandler))
-	router.Handle("/community_prospects_followup", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListCommunityProspectsFollowupHandler))
-	router.Handle("/activist_development", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListActivistsDevelopmentHandler))
-	router.Handle("/organizer_prospects", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListOrganizerProspectsHandler))
-	router.Handle("/chapter_member_prospects", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListChapterMemberProspectsHandler))
-	router.Handle("/chapter_member_development", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListChapterMemberDevelopmentHandler))
-	router.Handle("/leaderboard", alice.New(main.authOrganizerMiddleware).ThenFunc(main.LeaderboardHandler))
-	router.Handle("/list_working_groups", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListWorkingGroupsHandler))
-	router.Handle("/list_circles", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListCirclesHandler))
-	router.Handle("/list_geocircles", alice.New(main.authOrganizerMiddleware).ThenFunc(main.ListGeoCirclesHandler))
+	router.Handle("/list_connections", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.ListConnectionsHandler))
+	router.Handle("/list_activists", alice.New(main.authOrganizerAccessMiddleware).ThenFunc(main.ListActivistsHandler))
+	router.Handle("/new_activists", alice.New(main.authOrganizerAccessMiddleware).ThenFunc(main.NewActivistsHandler))
+	router.Handle("/new_activists_pending_workshop", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.NewActivistsPendingWorkshopHandler))
+	router.Handle("/community_prospects", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.ListCommunityProspectsHandler))
+	router.Handle("/community_prospects_followup", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.ListCommunityProspectsFollowupHandler))
+	router.Handle("/activist_development", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.ListActivistsDevelopmentHandler))
+	router.Handle("/organizer_prospects", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.ListOrganizerProspectsHandler))
+	router.Handle("/chapter_member_prospects", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.ListChapterMemberProspectsHandler))
+	router.Handle("/chapter_member_development", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.ListChapterMemberDevelopmentHandler))
+	router.Handle("/leaderboard", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.LeaderboardHandler))
+	router.Handle("/list_working_groups", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.ListWorkingGroupsHandler))
+	router.Handle("/list_circles", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.ListCirclesHandler))
+	router.Handle("/list_geocircles", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.ListGeoCirclesHandler))
 
 	// Authed Admin pages
 	admin.Handle("/list_chapters", alice.New(main.authAdminMiddleware).ThenFunc(main.ListChaptersHandler))
@@ -284,36 +284,36 @@ func router() (*mux.Router, *sqlx.DB) {
 
 	// Authed API
 	router.Handle("/api/csrf-token", csrfMiddleware(alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.CSRFTokenHandler))).Methods(http.MethodGet)
-	router.Handle("/api/activists", alice.New(main.apiOrganizerOrNonSFBayAuthMiddleware).ThenFunc(main.ActivistsSearchHandler)).Methods(http.MethodPost)
+	router.Handle("/api/activists", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistsSearchHandler)).Methods(http.MethodPost)
 	router.Handle("/activist_names/get", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteActivistsHandler))
 	router.Handle("/activist_names/get_organizers", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteOrganizersHandler))
 	router.Handle("/activist_names/get_chaptermembers", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteChapterMembersHandler))
 	router.Handle("/event/get/{event_id:[0-9]+}", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.EventGetHandler))
 	router.Handle("/event/save", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.EventSaveHandler))
-	router.Handle("/connection/save", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.ConnectionSaveHandler))
+	router.Handle("/connection/save", alice.New(main.apiSFBayOrganizerAuthMiddleware).ThenFunc(main.ConnectionSaveHandler))
 	router.Handle("/event/list", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.EventListHandler))
 	router.Handle("/event/delete", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.EventDeleteHandler))
-	router.Handle("/activist/list", alice.New(main.apiOrganizerOrNonSFBayAuthMiddleware).ThenFunc(main.ActivistListHandler))
+	router.Handle("/activist/list", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistListHandler))
 	router.Handle("/activist/list_basic", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.ActivistListBasicHandler))
-	router.Handle("/activist/save", alice.New(main.apiOrganizerOrNonSFBayAuthMiddleware).ThenFunc(main.ActivistSaveHandler))
-	router.Handle("/activist/hide", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.ActivistHideHandler))
-	router.Handle("/activist/merge", alice.New(main.apiOrganizerOrNonSFBayAuthMiddleware).ThenFunc(main.ActivistMergeHandler))
-	router.Handle("/working_group/save", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.WorkingGroupSaveHandler))
+	router.Handle("/activist/save", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistSaveHandler))
+	router.Handle("/activist/hide", alice.New(main.apiSFBayOrganizerAuthMiddleware).ThenFunc(main.ActivistHideHandler))
+	router.Handle("/activist/merge", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistMergeHandler))
+	router.Handle("/working_group/save", alice.New(main.apiSFBayOrganizerAuthMiddleware).ThenFunc(main.WorkingGroupSaveHandler))
 	router.Handle("/working_group/list", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.WorkingGroupListHandler))
-	router.Handle("/working_group/delete", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.WorkingGroupDeleteHandler))
-	router.Handle("/circle/save", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.CircleGroupSaveHandler))
+	router.Handle("/working_group/delete", alice.New(main.apiSFBayOrganizerAuthMiddleware).ThenFunc(main.WorkingGroupDeleteHandler))
+	router.Handle("/circle/save", alice.New(main.apiSFBayOrganizerAuthMiddleware).ThenFunc(main.CircleGroupSaveHandler))
 	router.Handle("/circle/list", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.CircleGroupListHandler))
-	router.Handle("/circle/delete", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.CircleGroupDeleteHandler))
-	router.Handle("/interaction/save", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.InteractionSaveHandler))
+	router.Handle("/circle/delete", alice.New(main.apiSFBayOrganizerAuthMiddleware).ThenFunc(main.CircleGroupDeleteHandler))
+	router.Handle("/interaction/save", alice.New(main.apiSFBayOrganizerAuthMiddleware).ThenFunc(main.InteractionSaveHandler))
 	router.Handle("/interaction/list", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.InteractionListHandler))
-	router.Handle("/interaction/delete", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.InteractionDeleteHandler))
-	router.Handle("/csv/chapter_member_spoke", alice.New(main.apiOrganizerOrNonSFBayAuthMiddleware).ThenFunc(main.ChapterMemberSpokeCSVHandler))
-	router.Handle("/csv/international_organizers", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.InternationalOrganizersCSVHandler))
-	router.Handle("/csv/event_attendance/{event_id:[0-9]+}", alice.New(main.apiOrganizerOrNonSFBayAuthMiddleware).ThenFunc(main.EventAttendanceCSVHandler))
-	router.Handle("/csv/all_activists_spoke", alice.New(main.apiOrganizerOrNonSFBayAuthMiddleware).ThenFunc(main.SupporterSpokeCSVHandler))
-	router.Handle("/csv/new_activists_spoke", alice.New(main.apiOrganizerOrNonSFBayAuthMiddleware).ThenFunc(main.NewActivistsSpokeCSVHandler))
-	router.Handle("/csv/new_activists_pending_workshop_spoke", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.NewActivistsPendingWorkshopSpokeCSVHandler))
-	router.Handle("/user/list", alice.New(main.apiOrganizerAuthMiddleware).ThenFunc(main.UserListHandler))
+	router.Handle("/interaction/delete", alice.New(main.apiSFBayOrganizerAuthMiddleware).ThenFunc(main.InteractionDeleteHandler))
+	router.Handle("/csv/chapter_member_spoke", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ChapterMemberSpokeCSVHandler))
+	router.Handle("/csv/international_organizers", alice.New(main.apiSFBayOrganizerAuthMiddleware).ThenFunc(main.InternationalOrganizersCSVHandler))
+	router.Handle("/csv/event_attendance/{event_id:[0-9]+}", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.EventAttendanceCSVHandler))
+	router.Handle("/csv/all_activists_spoke", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.SupporterSpokeCSVHandler))
+	router.Handle("/csv/new_activists_spoke", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.NewActivistsSpokeCSVHandler))
+	router.Handle("/csv/new_activists_pending_workshop_spoke", alice.New(main.apiSFBayOrganizerAuthMiddleware).ThenFunc(main.NewActivistsPendingWorkshopSpokeCSVHandler))
+	router.Handle("/user/list", alice.New(main.apiSFBayOrganizerAuthMiddleware).ThenFunc(main.UserListHandler))
 	router.Handle("/user/me", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AuthedUserInfoHandler))
 
 	// Authed Admin API
@@ -363,7 +363,7 @@ type MainController struct {
 	activistRepo model.ActivistRepository
 }
 
-func (c MainController) authRoleMiddleware(h http.Handler, allowedRoles []string) http.Handler {
+func (c MainController) authAccessMiddleware(h http.Handler, hasAccess func(model.ADBUser) bool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, authed := c.authADBUser(r, w)
 		if !authed {
@@ -381,7 +381,7 @@ func (c MainController) authRoleMiddleware(h http.Handler, allowedRoles []string
 			return
 		}
 
-		if !model.UserHasAnyRole(allowedRoles, user) {
+		if !hasAccess(user) {
 			http.Redirect(w, r.WithContext(setUserContext(r, user)), "/403", http.StatusFound)
 			return
 		}
@@ -391,16 +391,22 @@ func (c MainController) authRoleMiddleware(h http.Handler, allowedRoles []string
 	})
 }
 
+func (c MainController) authRoleMiddleware(h http.Handler, allowedRoles []string) http.Handler {
+	return c.authAccessMiddleware(h, func(user model.ADBUser) bool {
+		return model.UserHasAnyRole(allowedRoles, user)
+	})
+}
+
 func (c MainController) authAttendanceMiddleware(h http.Handler) http.Handler {
-	return c.authRoleMiddleware(h, []string{"admin", "organizer", "attendance", "non-sfbay"})
+	return c.authAccessMiddleware(h, model.UserHasAttendanceAccess)
 }
 
-func (c MainController) authOrganizerOrNonSFBayMiddleware(h http.Handler) http.Handler {
-	return c.authRoleMiddleware(h, []string{"admin", "organizer", "non-sfbay"})
+func (c MainController) authOrganizerAccessMiddleware(h http.Handler) http.Handler {
+	return c.authAccessMiddleware(h, model.UserHasOrganizerAccess)
 }
 
-func (c MainController) authOrganizerMiddleware(h http.Handler) http.Handler {
-	return c.authRoleMiddleware(h, []string{"admin", "organizer"})
+func (c MainController) authSFBayOrganizerMiddleware(h http.Handler) http.Handler {
+	return c.authAccessMiddleware(h, model.UserHasSFBayOrganizerAccess)
 }
 
 func (c MainController) authAdminMiddleware(h http.Handler) http.Handler {
@@ -414,11 +420,6 @@ func getUserMainRole(user model.ADBUser) string {
 
 	var mainRole string
 	for _, r := range user.Roles {
-		if r == "non-sfbay" {
-			mainRole = "non-sfbay"
-			break
-		}
-
 		if r == "admin" {
 			mainRole = "admin"
 			break
@@ -436,7 +437,7 @@ func getUserMainRole(user model.ADBUser) string {
 	return mainRole
 }
 
-func (c MainController) apiRoleMiddleware(h http.Handler, allowedRoles []string) http.Handler {
+func (c MainController) apiAccessMiddleware(h http.Handler, hasAccess func(model.ADBUser) bool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, authed := c.authADBUser(r, w)
 
@@ -445,7 +446,7 @@ func (c MainController) apiRoleMiddleware(h http.Handler, allowedRoles []string)
 			return
 		}
 
-		if !model.UserHasAnyRole(allowedRoles, user) {
+		if !hasAccess(user) {
 			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 			return
 		}
@@ -455,16 +456,22 @@ func (c MainController) apiRoleMiddleware(h http.Handler, allowedRoles []string)
 	})
 }
 
+func (c MainController) apiRoleMiddleware(h http.Handler, allowedRoles []string) http.Handler {
+	return c.apiAccessMiddleware(h, func(user model.ADBUser) bool {
+		return model.UserHasAnyRole(allowedRoles, user)
+	})
+}
+
 func (c MainController) apiAttendanceAuthMiddleware(h http.Handler) http.Handler {
-	return c.apiRoleMiddleware(h, []string{"admin", "organizer", "attendance", "non-sfbay"})
+	return c.apiAccessMiddleware(h, model.UserHasAttendanceAccess)
 }
 
-func (c MainController) apiOrganizerOrNonSFBayAuthMiddleware(h http.Handler) http.Handler {
-	return c.authRoleMiddleware(h, []string{"admin", "organizer", "non-sfbay"})
+func (c MainController) apiOrganizerAccessAuthMiddleware(h http.Handler) http.Handler {
+	return c.apiAccessMiddleware(h, model.UserHasOrganizerAccess)
 }
 
-func (c MainController) apiOrganizerAuthMiddleware(h http.Handler) http.Handler {
-	return c.apiRoleMiddleware(h, []string{"admin", "organizer"})
+func (c MainController) apiSFBayOrganizerAuthMiddleware(h http.Handler) http.Handler {
+	return c.apiAccessMiddleware(h, model.UserHasSFBayOrganizerAccess)
 }
 
 func (c MainController) apiAdminAuthMiddleware(h http.Handler) http.Handler {
