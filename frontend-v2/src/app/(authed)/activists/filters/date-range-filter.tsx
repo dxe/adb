@@ -231,7 +231,10 @@ export function DateRangeFilter({
   const gte = draft?.gte
   const lt = draft?.lt
   const orNull = !!draft?.orNull
-  const bothBoundsSet = !!gte && !!lt
+  const hasGte = !!gte
+  const hasLt = !!lt
+  const exactlyOneBoundSet = hasGte !== hasLt
+  const nullOptionDisabled = !exactlyOneBoundSet
   const orNullId = useId()
   const hasDraft = !!draft
   const detectedMode = inferModeFromBounds(gte, lt)
@@ -370,20 +373,20 @@ export function DateRangeFilter({
           <div className="flex items-center gap-2">
             <Checkbox
               id={orNullId}
-              checked={orNull && !bothBoundsSet}
-              disabled={bothBoundsSet}
+              checked={orNull && exactlyOneBoundSet}
+              disabled={nullOptionDisabled}
               onCheckedChange={(checked) =>
                 updateDraft({ gte, lt, orNull: checked === true })
               }
             />
             <label
               htmlFor={orNullId}
-              className={`text-sm ${bothBoundsSet ? 'text-muted-foreground' : ''}`}
+              className={`text-sm ${nullOptionDisabled ? 'text-muted-foreground' : ''}`}
             >
               {nullLabel}
             </label>
-            {bothBoundsSet && (
-              <span title="This option is only available for open-ended ranges (leave one bound empty).">
+            {nullOptionDisabled && (
+              <span title="Set exactly one bound to enable this option.">
                 <CircleHelp className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
               </span>
             )}
