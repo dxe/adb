@@ -51,6 +51,65 @@ const ChapterListResp = z.object({
   ),
 })
 
+const ChapterOrganizerSchema = z.object({
+  Name: z.string(),
+  Email: z.string().optional(),
+  Phone: z.string().optional(),
+  Facebook: z.string().optional(),
+  Twitter: z.string().optional(),
+  Instagram: z.string().optional(),
+  Linkedin: z.string().optional(),
+})
+export type ChapterOrganizer = z.infer<typeof ChapterOrganizerSchema>
+
+const ChapterWithOrganizersSchema = z.object({
+  ChapterID: z.number(),
+  Name: z.string(),
+  Organizers: z
+    .array(ChapterOrganizerSchema)
+    .nullable()
+    .transform((v) => v ?? []),
+})
+
+const ChapterListWithOrganizersResp = z.object({
+  chapters: z.array(ChapterWithOrganizersSchema),
+})
+
+export const CHAPTER_ORGANIZERS_QUERY_KEY = [
+  API_PATH.CHAPTER_LIST,
+  'withOrganizers',
+] as const
+
+export interface InternationalOrganizer {
+  chapterName: string
+  chapterId: number
+  name: string
+  email: string
+  phone: string
+  facebook: string
+  twitter: string
+  instagram: string
+  linkedin: string
+}
+
+export function flattenChapterOrganizers(
+  chapters: z.infer<typeof ChapterListWithOrganizersResp>['chapters'],
+): InternationalOrganizer[] {
+  return chapters.flatMap((chapter) =>
+    chapter.Organizers.map((org) => ({
+      chapterName: chapter.Name,
+      chapterId: chapter.ChapterID,
+      name: org.Name,
+      email: org.Email ?? '',
+      phone: org.Phone ?? '',
+      facebook: org.Facebook ?? '',
+      twitter: org.Twitter ?? '',
+      instagram: org.Instagram ?? '',
+      linkedin: org.Linkedin ?? '',
+    })),
+  )
+}
+
 const RolesSchema = z
   .array(Role)
   .nullable()
@@ -325,6 +384,17 @@ export class ApiClient {
         .get(API_PATH.CHAPTER_LIST, { signal })
         .json()
       return ChapterListResp.parse(resp).chapters
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  getChapterListWithOrganizers = async (signal?: AbortSignal) => {
+    try {
+      const resp = await this.client
+        .get(API_PATH.CHAPTER_LIST, { signal })
+        .json()
+      return ChapterListWithOrganizersResp.parse(resp).chapters
     } catch (err) {
       return this.handleKyError(err)
     }

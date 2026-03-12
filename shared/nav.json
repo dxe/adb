@@ -211,6 +211,11 @@
           "label": "Interest Form Generator",
           "href": "/v2/interest/generator",
           "page": "InterestFormGenerator"
+        },
+        {
+          "label": "International Organizers",
+          "href": "/v2/intl/organizers",
+          "page": "IntlOrganizers"
         }
       ]
     }
