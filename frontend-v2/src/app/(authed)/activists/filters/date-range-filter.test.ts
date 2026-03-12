@@ -28,7 +28,7 @@ describe('formatDateRange', () => {
       {
         label: 'gte negative, lt null',
         value: { gte: relative(-45) },
-        expected: 'Last 45 days',
+        expected: 'On or after 45 days ago',
       },
       {
         label: 'gte zero, lt negative',
@@ -107,7 +107,7 @@ describe('formatDateRange', () => {
       const value: DateRangeFilterValue = {
         gte: relative(-30),
       }
-      expect(formatDateRange(value)).toBe('Last 1 month')
+      expect(formatDateRange(value)).toBe('On or after 1 month ago')
     })
 
     it('returns no matches for reversed negative closed ranges', () => {
@@ -174,7 +174,7 @@ describe('formatDateRange', () => {
         gte: { mode: 'relative', daysOffset: -180 },
         orNull: true,
       }
-      expect(formatDateRange(value)).toBe('Last 6 months or none')
+      expect(formatDateRange(value)).toBe('On or after 6 months ago or none')
     })
 
     it('orNull only shows "None"', () => {

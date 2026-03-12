@@ -165,8 +165,6 @@ export function formatDateRange(
     } else if (relGte) {
       if (relGte.daysOffset === 0) {
         rangeText = 'Today onward'
-      } else if (relGte.daysOffset < 0) {
-        rangeText = `Last ${formatDayCount(Math.abs(relGte.daysOffset))}`
       } else {
         rangeText = `On or after ${formatRelativeReferenceLabel(relGte.daysOffset)}`
       }
