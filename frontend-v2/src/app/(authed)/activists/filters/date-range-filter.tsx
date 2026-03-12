@@ -101,7 +101,6 @@ function normalizeDateRange(
   const gte = value.gte
   const lt = value.lt
   const orNull = !!value.orNull && !(gte && lt)
-  getBoundsMode(gte, lt)
 
   if (!gte && !lt && !orNull) return undefined
 
@@ -112,10 +111,10 @@ function normalizeDateRange(
   }
 }
 
-function formatRelativeOffsetLabel(daysOffset: number): string {
+function formatRelativeReferenceLabel(daysOffset: number): string {
   if (daysOffset === 0) return 'today'
   const distance = formatDayCount(Math.abs(daysOffset))
-  return daysOffset < 0 ? `${distance} ago` : `in ${distance}`
+  return daysOffset < 0 ? `${distance} ago` : `${distance} from now`
 }
 
 function formatAbsoluteRange(
@@ -126,6 +125,7 @@ function formatAbsoluteRange(
   if (gte && lt) {
     const gteDate = parseYmdToLocalDate(gte.date)
     const ltDate = parseYmdToLocalDate(lt.date)
+    if (gteDate >= ltDate) return 'No matching dates'
     const bothCurrentYear =
       gteDate.getFullYear() === currentYear &&
       ltDate.getFullYear() === currentYear
@@ -139,7 +139,9 @@ function formatAbsoluteRange(
   return undefined
 }
 
-function formatDateRange(value?: DateRangeFilterValue): string | undefined {
+export function formatDateRange(
+  value?: DateRangeFilterValue,
+): string | undefined {
   const gte = value?.gte
   const lt = value?.lt
   const orNull = value?.orNull
@@ -152,16 +154,18 @@ function formatDateRange(value?: DateRangeFilterValue): string | undefined {
     const relLt = isRelativeBound(lt) ? lt : undefined
 
     if (relGte && relLt) {
-      const gteStr = formatRelativeOffsetLabel(relGte.daysOffset)
-      const ltStr = formatRelativeOffsetLabel(relLt.daysOffset)
-      rangeText = `${gteStr} – ${ltStr}`
+      if (relGte.daysOffset >= relLt.daysOffset) {
+        rangeText = 'No matching dates'
+      } else {
+        const gteStr = formatRelativeReferenceLabel(relGte.daysOffset)
+        const ltStr = formatRelativeReferenceLabel(relLt.daysOffset)
+        rangeText = `${gteStr} – ${ltStr}`
+      }
     } else if (relGte) {
       if (relGte.daysOffset === 0) {
         rangeText = 'Today onward'
-      } else if (relGte.daysOffset < 0) {
-        rangeText = `Last ${formatDayCount(Math.abs(relGte.daysOffset))}`
       } else {
-        rangeText = `From ${formatRelativeOffsetLabel(relGte.daysOffset)}`
+        rangeText = `On or after ${formatRelativeReferenceLabel(relGte.daysOffset)}`
       }
     } else if (relLt) {
       if (relLt.daysOffset === 0) {
@@ -169,7 +173,7 @@ function formatDateRange(value?: DateRangeFilterValue): string | undefined {
       } else if (relLt.daysOffset < 0) {
         rangeText = `Over ${formatDayCount(Math.abs(relLt.daysOffset))} ago`
       } else {
-        rangeText = `Before ${formatRelativeOffsetLabel(relLt.daysOffset)}`
+        rangeText = `Before ${formatRelativeReferenceLabel(relLt.daysOffset)}`
       }
     }
   } else {
@@ -224,7 +228,10 @@ export function DateRangeFilter({
   const gte = draft?.gte
   const lt = draft?.lt
   const orNull = !!draft?.orNull
-  const bothBoundsSet = !!gte && !!lt
+  const hasGte = !!gte
+  const hasLt = !!lt
+  const exactlyOneBoundSet = hasGte !== hasLt
+  const nullOptionDisabled = !exactlyOneBoundSet
   const orNullId = useId()
   const hasDraft = !!draft
   const detectedMode = inferModeFromBounds(gte, lt)
@@ -363,20 +370,20 @@ export function DateRangeFilter({
           <div className="flex items-center gap-2">
             <Checkbox
               id={orNullId}
-              checked={orNull && !bothBoundsSet}
-              disabled={bothBoundsSet}
+              checked={orNull && exactlyOneBoundSet}
+              disabled={nullOptionDisabled}
               onCheckedChange={(checked) =>
                 updateDraft({ gte, lt, orNull: checked === true })
               }
             />
             <label
               htmlFor={orNullId}
-              className={`text-sm ${bothBoundsSet ? 'text-muted-foreground' : ''}`}
+              className={`text-sm ${nullOptionDisabled ? 'text-muted-foreground' : ''}`}
             >
               {nullLabel}
             </label>
-            {bothBoundsSet && (
-              <span title="This option is only available for open-ended ranges (leave one bound empty).">
+            {nullOptionDisabled && (
+              <span title="Set exactly one bound to enable this option.">
                 <CircleHelp className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
               </span>
             )}
