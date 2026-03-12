@@ -40,10 +40,7 @@ function renderPage() {
       queries: { retry: false, staleTime: Infinity },
     },
   })
-  queryClient.setQueryData(
-    [...CHAPTER_ORGANIZERS_QUERY_KEY],
-    SAMPLE_CHAPTERS,
-  )
+  queryClient.setQueryData([...CHAPTER_ORGANIZERS_QUERY_KEY], SAMPLE_CHAPTERS)
   return render(
     <QueryClientProvider client={queryClient}>
       <OrganizersPage />
