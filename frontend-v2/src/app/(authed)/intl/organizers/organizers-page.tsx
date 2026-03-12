@@ -124,8 +124,9 @@ export default function OrganizersPage() {
         <h1 className="text-2xl font-semibold">International Organizers</h1>
       </div>
 
-      <label className="flex items-center gap-2 text-sm">
+      <label htmlFor="show-social" className="flex items-center gap-2 text-sm">
         <Checkbox
+          id="show-social"
           checked={showSocial}
           onCheckedChange={(checked) => setShowSocial(checked === true)}
         />

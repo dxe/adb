@@ -24,7 +24,7 @@ export default function SiteBackgroundController() {
       pathname === '/activists' ||
       pathname.startsWith('/activists/') ||
       pathname === '/intl/organizers' ||
-      pathname.startsWith('/intl/organizers')
+      pathname.startsWith('/intl/organizers/')
 
     const applyBackgroundClass = () => {
       const shouldShowBackground = !isFullScreenPage && !mediaQuery.matches
