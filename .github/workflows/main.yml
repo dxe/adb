@@ -74,7 +74,8 @@ jobs:
             # Defensive guard: on pushes, GitHub can use the all-zero SHA when there is no usable previous commit to diff
             # against. Since this workflow only runs on pushes to main, that should not normally happen here.
             if [ "$since_sha" = "0000000000000000000000000000000000000000" ]; then
-              echo "::warning::Skipping frontend-v2 changed-test run because github.event.before is the all-zero SHA, so there is no valid commit to diff against."
+              echo "::warning::github.event.before is the all-zero SHA, so there is no valid commit to diff against. Running the full frontend-v2 test suite instead."
+              pnpm test --run
               exit 0
             fi
           fi
