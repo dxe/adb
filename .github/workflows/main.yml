@@ -34,7 +34,8 @@ jobs:
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10.6.2
+          # Please keep pnpm version in sync with package.json
+          version: 10.32.1
       - name: Set up Node.js for frontend-v2
         uses: actions/setup-node@v4
         with:

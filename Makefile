@@ -12,10 +12,13 @@ NVM_SCRIPT := $(shell \
       exit 1; \
     fi)
 
-# Please keep in sync with launch.json and Dockerfiles
+# Please keep versions in sync
+# * package.json
+# * all Dockerfiles
+# * .github/workflows/main.yml
 VUE_FRONTEND_NODE_VERSION := 16
-# Please keep in sync with launch.json and Dockerfiles
 REACT_FRONTEND_NODE_VERSION := 25
+PNPM_VERSION := 10.32.1
 
 # Runs the application (builds Vue.js files, starts Next.js dev server, starts Go server).
 # As of January 2025, upgrading past Node 16 breaks old Vue dependencies.
@@ -53,9 +56,9 @@ dev_db:
 # Note: PNPM must be installed separately for each version of NPM used, since it is installed within each NPM installation.
 # Note: `go tool` cannot yet be used to install golang-migrate: https://github.com/golang-migrate/migrate/issues/1232
 deps:
-	. $(NVM_SCRIPT) && nvm i 22 && npm i -g pnpm && pnpm i
+	. $(NVM_SCRIPT) && nvm i 22 && npm i -g pnpm@$(PNPM_VERSION) && pnpm i
 	. $(NVM_SCRIPT) && cd frontend && nvm i $(VUE_FRONTEND_NODE_VERSION) && npm i --legacy-peer-deps
-	. $(NVM_SCRIPT) && cd frontend-v2 && nvm i $(REACT_FRONTEND_NODE_VERSION) && npm i -g pnpm && pnpm i
+	. $(NVM_SCRIPT) && cd frontend-v2 && nvm i $(REACT_FRONTEND_NODE_VERSION) && npm i -g pnpm@$(PNPM_VERSION) && pnpm i
 	cd pkg && go mod download
 	cd server/src && go mod download
 	cd cli && go mod download

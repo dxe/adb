@@ -1,17 +1,19 @@
 # syntax=docker/dockerfile:1.7-labs
 # Based off of Next.js Docker example
 # https://github.com/vercel/next.js/tree/canary/examples/with-docker
-# Please keep Node version in sync with Makefile
+# Please keep Node and pnpm version in sync with Makefile
+ARG PNPM_VERSION=10.32.1
 FROM node:25-alpine AS base
+ARG PNPM_VERSION
+ENV PNPM_HOME=/app/.pnpm
+ENV PATH=$PNPM_HOME:$PATH
+RUN npm install -g pnpm@$PNPM_VERSION
 
 # Install dependencies only when needed
 FROM base AS deps
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
 RUN apk add --no-cache libc6-compat && apk update
 WORKDIR /app
-RUN npm install -g pnpm
-ENV PNPM_HOME=/app/.pnpm
-ENV PATH=$PNPM_HOME:$PATH
 
 # Set up directory structure that matches the repo
 WORKDIR /app/frontend-v2
@@ -30,9 +32,6 @@ COPY shared ./shared/
 WORKDIR /app/frontend-v2
 COPY --exclude=node_modules --exclude=.next frontend-v2 ./
 COPY --from=deps /app/frontend-v2/node_modules ./node_modules
-RUN npm install -g pnpm
-ENV PNPM_HOME=/app/.pnpm
-ENV PATH=$PNPM_HOME:$PATH
 RUN pnpm run build
 
 # Production image, copy all the files and run next
