@@ -58,6 +58,9 @@ jobs:
           ./hooks/pre-commit
           cd ./server/src
           go test github.com/dxe/adb/...
+      - name: Run full frontend-v2 test suite on manual dispatch
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: cd ./frontend-v2 && pnpm test --run
       - name: Run frontend-v2 tests changed in this pull request or push
         if: ${{ github.event_name == 'pull_request' || github.event_name == 'push' }}
         run: |
