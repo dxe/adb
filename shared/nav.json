@@ -2,7 +2,8 @@
   "items": [
     {
       "label": "Attendance",
-      "roleRequired": ["attendance", "non-sfbay"],
+      "roleRequired": ["attendance"],
+      "visibleForNonSFBay": true,
       "items": [
         {
           "label": "New Event",
@@ -78,7 +79,8 @@
     },
     {
       "label": "Activists",
-      "roleRequired": ["organizer", "non-sfbay"],
+      "roleRequired": ["organizer"],
+      "visibleForNonSFBay": true,
       "items": [
         {
           "label": "Chapter Members",

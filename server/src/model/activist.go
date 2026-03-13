@@ -2164,7 +2164,7 @@ func QueryActivists(authedUser ADBUser, options QueryActivistOptions, repo Activ
 		}
 	}
 
-	if !UserHasAnyRole([]string{"admin", "organizer", "non-sfbay"}, authedUser) {
+	if !UserHasOrganizerAccess(authedUser) {
 		return QueryActivistResult{}, ValidationErrorf("lacking permission to query activists")
 	}
 

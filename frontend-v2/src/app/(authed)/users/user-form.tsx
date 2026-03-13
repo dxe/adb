@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { API_PATH, apiClient, Role, User, UserWithoutId } from '@/lib/api'
+import { SF_BAY_CHAPTER_ID } from '@/lib/constants'
 import { Loader2, Save, ArrowLeft } from 'lucide-react'
 
 const userFormSchema = z.object({
@@ -121,20 +122,12 @@ export function UserForm({ userId }: { userId?: number }) {
 
   const isSubmitting = mutation.isPending
 
-  const renderRoleLabel = (role: Role) => {
-    if (role === 'non-sfbay') {
-      return 'Non SF Bay'
-    }
-    return role.charAt(0).toUpperCase() + role.slice(1)
-  }
-
   const isLoading = isChaptersLoading || userLoading
   const loadError = isChaptersError || userError
   const loadErrorMessage =
     (chaptersError as Error | undefined)?.message ||
     (userErrorObj as Error | undefined)?.message ||
     'Failed to load user data.'
-
   if (loadError) {
     return (
       <div className="space-y-3">
@@ -334,7 +327,7 @@ export function UserForm({ userId }: { userId?: number }) {
                             field.handleChange(nextRoles)
                           }}
                         />
-                        <span>{renderRoleLabel(role)}</span>
+                        <span className="capitalize">{role}</span>
                       </label>
                     )
                   })}

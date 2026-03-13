@@ -1,16 +1,21 @@
 package model
 
 import (
+	"github.com/dxe/adb/config"
 	"github.com/dxe/adb/pkg/shared"
 	"github.com/pkg/errors"
 )
 
 type ADBUser struct {
-	ID          int    `db:"id"`
-	Email       string `db:"email"`
-	Name        string `db:"name"`
-	Disabled    bool   `db:"disabled"`
-	Roles       []string
+	ID       int    `db:"id"`
+	Email    string `db:"email"`
+	Name     string `db:"name"`
+	Disabled bool   `db:"disabled"`
+	Roles    []string
+	// Chapter ID of the user. When loaded directly from the database or used in
+	// API payloads, this is the user's assigned chapter. In the context of a live
+	// authenticated ADB session for an admin user, it can be overridden by the
+	// chapter selected in the auth session cookie.
 	ChapterID   int    `db:"chapter_id"`
 	ChapterName string `db:"chapter_name"`
 }
@@ -30,7 +35,6 @@ var allowedUserRoles = map[string]struct{}{
 	"admin":      {},
 	"organizer":  {},
 	"attendance": {},
-	"non-sfbay":  {},
 }
 
 func ValidateADBUser(user ADBUser) error {
@@ -53,6 +57,30 @@ func ValidateADBUser(user ADBUser) error {
 	}
 
 	return nil
+}
+
+func IsSFBayChapterID(chapterID int) bool {
+	if !config.IsProd {
+		return chapterID == SFBayChapterIdDevTest
+	}
+
+	return chapterID == SFBayChapterId
+}
+
+func UserHasAttendanceAccess(user ADBUser) bool {
+	return UserHasAnyRole([]string{"admin", "organizer", "attendance"}, user)
+}
+
+func UserHasOrganizerAccess(user ADBUser) bool {
+	return UserHasAnyRole([]string{"admin", "organizer"}, user)
+}
+
+func UserHasSFBayOrganizerAccess(user ADBUser) bool {
+	if UserHasRole("admin", user) {
+		return true
+	}
+
+	return UserHasRole("organizer", user) && IsSFBayChapterID(user.ChapterID)
 }
 
 func UserHasAnyRole(roles []string, user ADBUser) bool {
