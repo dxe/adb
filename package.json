@@ -4,7 +4,7 @@
   "devDependencies": {
     "prettier": "~3.7.3"
   },
-  "packageManager": "pnpm@10.6.2",
+  "packageManager": "pnpm@10.32.1",
   "engines": {
     "node": ">=22"
   }
