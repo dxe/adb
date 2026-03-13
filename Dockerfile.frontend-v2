@@ -3,14 +3,14 @@
 # https://github.com/vercel/next.js/tree/canary/examples/with-docker
 # Please keep Node and pnpm version in sync with Makefile
 ARG PNPM_VERSION=10.32.1
-FROM node:25-alpine AS base
+FROM node:25-alpine AS build-base
 ARG PNPM_VERSION
 ENV PNPM_HOME=/app/.pnpm
 ENV PATH=$PNPM_HOME:$PATH
 RUN npm install -g pnpm@$PNPM_VERSION
 
 # Install dependencies only when needed
-FROM base AS deps
+FROM build-base AS deps
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
 RUN apk add --no-cache libc6-compat && apk update
 WORKDIR /app
@@ -24,7 +24,7 @@ COPY shared /app/shared/
 RUN pnpm i --frozen-lockfile
 
 # Rebuild the source code only when needed
-FROM base AS builder
+FROM build-base AS builder
 WORKDIR /app
 # Copy the shared directory
 COPY shared ./shared/
@@ -35,7 +35,7 @@ COPY --from=deps /app/frontend-v2/node_modules ./node_modules
 RUN pnpm run build
 
 # Production image, copy all the files and run next
-FROM base AS runner
+FROM node:25-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs
