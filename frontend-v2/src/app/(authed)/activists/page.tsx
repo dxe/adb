@@ -7,6 +7,7 @@ import { ContentWrapper } from '@/app/content-wrapper'
 import { API_PATH, ApiClient } from '@/lib/api'
 import { getCookies } from '@/lib/auth'
 import { getCachedSession } from '@/app/session'
+import { redirectIfForbidden } from '@/lib/server-auth'
 import ActivistsPage from './activists-page'
 import { normalizeColumnsForFilters } from './column-definitions'
 import { buildQueryOptions } from './filter-api-query'
@@ -56,12 +57,14 @@ export default async function ActivistsListPage({ searchParams }: PageProps) {
     sort,
   })
 
-  await queryClient.prefetchInfiniteQuery({
-    queryKey: [API_PATH.ACTIVISTS_SEARCH, initialQueryOptions],
-    queryFn: ({ signal }) =>
-      apiClient.searchActivists(initialQueryOptions, signal),
-    initialPageParam: undefined as string | undefined,
-  })
+  await redirectIfForbidden(() =>
+    queryClient.prefetchInfiniteQuery({
+      queryKey: [API_PATH.ACTIVISTS_SEARCH, initialQueryOptions],
+      queryFn: ({ signal }) =>
+        apiClient.searchActivists(initialQueryOptions, signal),
+      initialPageParam: undefined as string | undefined,
+    }),
+  )
 
   return (
     <ContentWrapper size="full" className="gap-6">

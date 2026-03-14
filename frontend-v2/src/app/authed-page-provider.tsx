@@ -1,10 +1,10 @@
 'use client'
 
 import { createContext, PropsWithChildren } from 'react'
-import { User } from './session'
+import { type AuthedUser } from '@/lib/api'
 
 export type TAuthedPageContext = {
-  user: User
+  user: AuthedUser
 }
 
 export const AuthedPageContext = createContext<TAuthedPageContext | undefined>(

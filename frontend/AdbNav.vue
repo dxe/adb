@@ -40,13 +40,13 @@
             <b-icon icon="account" size="is-small"></b-icon>
             <span>
               <span>{{ user }}</span>
-              <span v-if="role !== 'admin'"> ({{ chapterName }})</span>
+              <span v-if="!userHasRole('admin')"> ({{ chapterName }})</span>
             </span>
           </div>
           <a href="/logout" style="color: LinkText">Log out</a>
         </div>
       </b-navbar-item>
-      <div v-if="role === 'admin'" class="navbar-item">
+      <div v-if="userHasRole('admin')" class="navbar-item">
         <b-select v-model="activeChapterId" @input="switchChapter">
           <option v-for="chapter in chapters" :key="chapter.ChapterID" :value="chapter.ChapterID">
             {{ chapter.Name }}
@@ -70,7 +70,10 @@ export default Vue.extend({
   props: {
     page: String,
     user: String,
-    role: String,
+    roles: {
+      type: Array,
+      default: () => [],
+    },
     chapterName: String,
     chapterId: Number,
   },
@@ -82,31 +85,46 @@ export default Vue.extend({
     };
   },
   mounted() {
-    if (this.role !== 'admin') {
+    if (!this.userHasRole('admin')) {
       return;
     }
     this.fetchChapters();
   },
   methods: {
+    userRoles(): string[] {
+      return (this.roles as string[]) || [];
+    },
+    userHasRole(role: string) {
+      const userRoles = this.userRoles();
+      if (role === 'admin') {
+        return userRoles.includes('admin');
+      }
+      if (role === 'organizer') {
+        return userRoles.includes('admin') || userRoles.includes('organizer');
+      }
+      if (role === 'attendance') {
+        return (
+          userRoles.includes('admin') ||
+          userRoles.includes('organizer') ||
+          userRoles.includes('attendance')
+        );
+      }
+      return userRoles.includes(role);
+    },
     hasAccess(item: { roleRequired?: string[]; visibleForNonSFBay?: boolean } | undefined) {
       const roleRequired = item ? item.roleRequired : undefined;
-      const hasRequiredRole =
-        !roleRequired ||
-        roleRequired.some((it) =>
-          it === 'admin'
-            ? this.role === 'admin'
-            : it === 'organizer'
-              ? this.role === 'admin' || this.role === 'organizer'
-              : it === 'attendance'
-                ? this.role === 'admin' || this.role === 'organizer' || this.role === 'attendance'
-                : false,
-        );
+      const hasRequiredRole = !roleRequired || roleRequired.some((it) => this.userHasRole(it));
       if (this.activeChapterId !== SF_BAY_CHAPTER_ID) {
+        const hasNonSFBayOverride =
+          !!roleRequired &&
+          roleRequired.some(
+            (requiredRole) => requiredRole === 'admin' && this.userHasRole('admin'),
+          );
         // Outside SF Bay, keep the limited non-SF Bay view while still honoring the user's stored roles.
         return (
           !roleRequired ||
           (!!item && !!item.visibleForNonSFBay && hasRequiredRole) ||
-          (roleRequired.indexOf('admin') !== -1 && this.role === 'admin')
+          hasNonSFBayOverride
         );
       }
       return hasRequiredRole;

@@ -31,12 +31,6 @@ type GetUserOptions struct {
 	PopulateRoles bool
 }
 
-var allowedUserRoles = map[string]struct{}{
-	"admin":      {},
-	"organizer":  {},
-	"attendance": {},
-}
-
 func ValidateADBUser(user ADBUser) error {
 	if user.Email == "" {
 		return errors.New("Email cannot be empty")
@@ -51,7 +45,7 @@ func ValidateADBUser(user ADBUser) error {
 	}
 
 	for _, role := range user.Roles {
-		if _, ok := allowedUserRoles[role]; !ok {
+		if !shared.IsAllowedADBUserRole(role) {
 			return errors.Errorf("Invalid role: %s", role)
 		}
 	}
@@ -65,6 +59,15 @@ func IsSFBayChapterID(chapterID int) bool {
 	}
 
 	return chapterID == SFBayChapterId
+}
+
+func UserHasADBAccess(user ADBUser) bool {
+	for _, role := range user.Roles {
+		if shared.IsAllowedADBUserRole(role) {
+			return true
+		}
+	}
+	return false
 }
 
 func UserHasAttendanceAccess(user ADBUser) bool {
@@ -81,6 +84,10 @@ func UserHasSFBayOrganizerAccess(user ADBUser) bool {
 	}
 
 	return UserHasRole("organizer", user) && IsSFBayChapterID(user.ChapterID)
+}
+
+func UserHasIntlCoordinatorAccess(user ADBUser) bool {
+	return UserHasAnyRole([]string{"admin", "intl_coordinator"}, user)
 }
 
 func UserHasAnyRole(roles []string, user ADBUser) bool {

@@ -16,12 +16,24 @@ import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
 import buefyStyles from './nav.module.css'
 import clsx from 'clsx'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { API_PATH, apiClient } from '@/lib/api'
+import { API_PATH, apiClient, type AuthedUser } from '@/lib/api'
 import { SF_BAY_CHAPTER_ID } from '@/lib/constants'
 
 type NavAccessItem = {
   roleRequired?: string[]
   visibleForNonSFBay?: boolean
+}
+
+type NavItem = NavAccessItem & {
+  label: string
+  href: string
+  page: string
+  separatorBelow?: boolean
+}
+
+type NavDropdownItem = NavAccessItem & {
+  label: string
+  items: NavItem[]
 }
 
 function toNavAccessItem(item: object | undefined): NavAccessItem | undefined {
@@ -41,34 +53,41 @@ function toNavAccessItem(item: object | undefined): NavAccessItem | undefined {
 
 function userHasAccess(
   /** Auth'd user. */
-  user: {
-    role: string
-    ChapterID: number
-  },
+  user: AuthedUser,
   item: NavAccessItem | undefined,
 ): boolean {
   if (!item?.roleRequired) return true
 
-  if (!user.role) return false
+  const userRoles = user.Roles
+
+  if (!userRoles.length) return false
+
+  const userHasRole = (role: string) =>
+    userRoles.some((userRole) => userRole === role)
 
   const hasRequiredRole = item.roleRequired.some((it) => {
-    if (it === 'admin') return user.role === 'admin'
+    if (it === 'admin') return userHasRole('admin')
     if (it === 'organizer')
-      return user.role === 'admin' || user.role === 'organizer'
+      return userHasRole('admin') || userHasRole('organizer')
     if (it === 'attendance')
       return (
-        user.role === 'admin' ||
-        user.role === 'organizer' ||
-        user.role === 'attendance'
+        userHasRole('admin') ||
+        userHasRole('organizer') ||
+        userHasRole('attendance')
       )
-    return false
+    return userHasRole(it)
   })
 
   if (user.ChapterID !== SF_BAY_CHAPTER_ID) {
+    const hasNonSFBayOverride = item.roleRequired.some(
+      (it) => it === 'admin' && userHasRole('admin'),
+    )
+
     // Outside SF Bay, keep the limited non-SF Bay view while still honoring the user's stored roles.
-    return item.roleRequired.includes('admin')
-      ? user.role === 'admin'
-      : Boolean(item.visibleForNonSFBay) && hasRequiredRole
+    return (
+      hasNonSFBayOverride ||
+      (Boolean(item.visibleForNonSFBay) && hasRequiredRole)
+    )
   }
 
   return hasRequiredRole
@@ -94,15 +113,13 @@ function isExactParamsMatch(
   return sortEntries(navParams) === sortEntries(currentSearchParams)
 }
 
-type TDropdownItem = (typeof navbarData.items)[number]
-
 const DropdownItem = ({
   item,
   isExpanded,
   onClick,
   onNavigate,
 }: {
-  item: TDropdownItem
+  item: NavDropdownItem
   isExpanded: boolean
   onClick: () => void
   onNavigate: () => void
@@ -331,7 +348,7 @@ export const Navbar = () => {
                 <span>
                   <span className="font-medium">{user.Name}</span>
                   {/* Admins see the ChapterSwitcher instead of the active chapter after the user name. */}
-                  {user.role !== 'admin' && (
+                  {!user.Roles.includes('admin') && (
                     <>
                       {' '}
                       <span className="text-neutral-500 text-sm">
@@ -350,7 +367,7 @@ export const Navbar = () => {
               </a>
             </div>
           </div>
-          {user.role === 'admin' && <ChapterSwitcher />}
+          {user.Roles.includes('admin') && <ChapterSwitcher />}
         </div>
       </div>
     </nav>
