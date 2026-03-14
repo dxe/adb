@@ -240,7 +240,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.HandleFunc("/403", main.ForbiddenHandler)
 
 	// Authed pages
-	router.Handle("/", alice.New(main.authAttendanceMiddleware).ThenFunc(main.UpdateEventHandler))
+	router.Handle("/", alice.New(main.authAnyADBRoleMiddleware).ThenFunc(main.HomeHandler))
 	router.Handle("/update_event/{event_id:[0-9]+}", alice.New(main.authAttendanceMiddleware).ThenFunc(main.UpdateEventHandler))
 	router.Handle("/new_connection", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.UpdateConnectionHandler))
 	router.Handle("/update_connection/{event_id:[0-9]+}", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.UpdateConnectionHandler))
@@ -262,7 +262,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/list_geocircles", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.ListGeoCirclesHandler))
 
 	// Authed Admin pages
-	admin.Handle("/list_chapters", alice.New(main.authAdminMiddleware).ThenFunc(main.ListChaptersHandler))
+	admin.Handle("/list_chapters", alice.New(main.authIntlCoordinatorAccessMiddleware).ThenFunc(main.ListChaptersHandler))
 	admin.Handle("/admin/external_events", alice.New(main.authAdminMiddleware).ThenFunc(main.ListAdminExternalEventsHandler))
 
 	// Unauthed API (internal)
@@ -283,7 +283,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/geocircles", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.CircleGroupGeoListHandler)) // TODO: maybe the public endpoints should return less info
 
 	// Authed API
-	router.Handle("/api/csrf-token", csrfMiddleware(alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.CSRFTokenHandler))).Methods(http.MethodGet)
+	router.Handle("/api/csrf-token", csrfMiddleware(alice.New(main.apiAnyADBRoleAuthMiddleware).ThenFunc(main.CSRFTokenHandler))).Methods(http.MethodGet)
 	router.Handle("/api/activists", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistsSearchHandler)).Methods(http.MethodPost)
 	router.Handle("/activist_names/get", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteActivistsHandler))
 	router.Handle("/activist_names/get_organizers", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteOrganizersHandler))
@@ -308,18 +308,18 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/interaction/list", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.InteractionListHandler))
 	router.Handle("/interaction/delete", alice.New(main.apiSFBayOrganizerAuthMiddleware).ThenFunc(main.InteractionDeleteHandler))
 	router.Handle("/csv/chapter_member_spoke", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ChapterMemberSpokeCSVHandler))
-	router.Handle("/csv/international_organizers", alice.New(main.apiSFBayOrganizerAuthMiddleware).ThenFunc(main.InternationalOrganizersCSVHandler))
+	router.Handle("/csv/international_organizers", alice.New(main.apiIntlCoordinatorAuthMiddleware).ThenFunc(main.InternationalOrganizersCSVHandler))
 	router.Handle("/csv/event_attendance/{event_id:[0-9]+}", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.EventAttendanceCSVHandler))
 	router.Handle("/csv/all_activists_spoke", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.SupporterSpokeCSVHandler))
 	router.Handle("/csv/new_activists_spoke", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.NewActivistsSpokeCSVHandler))
 	router.Handle("/csv/new_activists_pending_workshop_spoke", alice.New(main.apiSFBayOrganizerAuthMiddleware).ThenFunc(main.NewActivistsPendingWorkshopSpokeCSVHandler))
 	router.Handle("/user/list", alice.New(main.apiSFBayOrganizerAuthMiddleware).ThenFunc(main.UserListHandler))
-	router.Handle("/user/me", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AuthedUserInfoHandler))
+	router.Handle("/user/me", alice.New(main.apiAnyADBRoleAuthMiddleware).ThenFunc(main.AuthedUserInfoHandler))
 
 	// Authed Admin API
-	admin.Handle("/chapter/list", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.ChapterListHandler))
-	admin.Handle("/chapter/delete", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.ChapterDeleteHandler))
-	admin.Handle("/chapter/save", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.ChapterSaveHandler))
+	admin.Handle("/chapter/list", alice.New(main.apiIntlCoordinatorAuthMiddleware).ThenFunc(main.ChapterListHandler))
+	admin.Handle("/chapter/delete", alice.New(main.apiIntlCoordinatorAuthMiddleware).ThenFunc(main.ChapterDeleteHandler))
+	admin.Handle("/chapter/save", alice.New(main.apiIntlCoordinatorAuthMiddleware).ThenFunc(main.ChapterSaveHandler))
 	admin.Handle("/admin/external_events/feature", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.AdminFeatureEventHandler))
 	admin.Handle("/admin/external_events/cancel", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.AdminCancelEventHandler))
 	admin.Handle("/auth/switch_chapter", alice.New(main.authAdminMiddleware).ThenFunc(main.SwitchActiveChapterHandler))
@@ -401,6 +401,10 @@ func (c MainController) authAttendanceMiddleware(h http.Handler) http.Handler {
 	return c.authAccessMiddleware(h, model.UserHasAttendanceAccess)
 }
 
+func (c MainController) authAnyADBRoleMiddleware(h http.Handler) http.Handler {
+	return c.authAccessMiddleware(h, model.UserHasADBAccess)
+}
+
 func (c MainController) authOrganizerAccessMiddleware(h http.Handler) http.Handler {
 	return c.authAccessMiddleware(h, model.UserHasOrganizerAccess)
 }
@@ -409,32 +413,12 @@ func (c MainController) authSFBayOrganizerMiddleware(h http.Handler) http.Handle
 	return c.authAccessMiddleware(h, model.UserHasSFBayOrganizerAccess)
 }
 
-func (c MainController) authAdminMiddleware(h http.Handler) http.Handler {
-	return c.authRoleMiddleware(h, []string{"admin"})
+func (c MainController) authIntlCoordinatorAccessMiddleware(h http.Handler) http.Handler {
+	return c.authAccessMiddleware(h, model.UserHasIntlCoordinatorAccess)
 }
 
-func getUserMainRole(user model.ADBUser) string {
-	if len(user.Roles) == 0 {
-		return ""
-	}
-
-	var mainRole string
-	for _, r := range user.Roles {
-		if r == "admin" {
-			mainRole = "admin"
-			break
-		}
-
-		if r == "organizer" {
-			mainRole = "organizer"
-		}
-
-		if r == "attendance" && mainRole != "organizer" {
-			mainRole = "attendance"
-		}
-	}
-
-	return mainRole
+func (c MainController) authAdminMiddleware(h http.Handler) http.Handler {
+	return c.authRoleMiddleware(h, []string{"admin"})
 }
 
 func (c MainController) apiAccessMiddleware(h http.Handler, hasAccess func(model.ADBUser) bool) http.Handler {
@@ -466,12 +450,20 @@ func (c MainController) apiAttendanceAuthMiddleware(h http.Handler) http.Handler
 	return c.apiAccessMiddleware(h, model.UserHasAttendanceAccess)
 }
 
+func (c MainController) apiAnyADBRoleAuthMiddleware(h http.Handler) http.Handler {
+	return c.apiAccessMiddleware(h, model.UserHasADBAccess)
+}
+
 func (c MainController) apiOrganizerAccessAuthMiddleware(h http.Handler) http.Handler {
 	return c.apiAccessMiddleware(h, model.UserHasOrganizerAccess)
 }
 
 func (c MainController) apiSFBayOrganizerAuthMiddleware(h http.Handler) http.Handler {
 	return c.apiAccessMiddleware(h, model.UserHasSFBayOrganizerAccess)
+}
+
+func (c MainController) apiIntlCoordinatorAuthMiddleware(h http.Handler) http.Handler {
+	return c.apiAccessMiddleware(h, model.UserHasIntlCoordinatorAccess)
 }
 
 func (c MainController) apiAdminAuthMiddleware(h http.Handler) http.Handler {
@@ -495,6 +487,14 @@ func getUserFromContext(ctx context.Context) model.ADBUser {
 	}
 
 	return userctx.(model.ADBUser)
+}
+
+func normalizeRoles(roles []string) []string {
+	if roles == nil {
+		return []string{}
+	}
+
+	return roles
 }
 
 var verifier = func() *oidc.IDTokenVerifier {
@@ -590,6 +590,25 @@ func (c MainController) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 
 func (c MainController) ForbiddenHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, r, "403", PageData{PageName: "403 - Forbidden"})
+}
+
+func (c MainController) HomeHandler(w http.ResponseWriter, r *http.Request) {
+	user := getUserFromContext(r.Context())
+
+	// Most roles grant access to take attendance.
+	if model.UserHasAttendanceAccess(user) {
+		c.UpdateEventHandler(w, r)
+		return
+	}
+
+	// If attendance access is missing, redirect to another page the user has
+	// access to.
+	if model.UserHasIntlCoordinatorAccess(user) {
+		http.Redirect(w, r, "/list_chapters", http.StatusFound)
+		return
+	}
+
+	http.Redirect(w, r, "/403", http.StatusFound)
 }
 
 func (c MainController) ListEventsHandler(w http.ResponseWriter, r *http.Request) {
@@ -865,13 +884,13 @@ type UserChapter struct {
 }
 
 type PageData struct {
-	PageName    string
-	Data        interface{}
-	CsrfField   string
-	MainRole    string
-	UserName    string
-	UserEmail   string
-	UserChapter UserChapter
+	PageName      string
+	Data          interface{}
+	CsrfField     string
+	UserRolesJSON template.JS
+	UserName      string
+	UserEmail     string
+	UserChapter   UserChapter
 	// Filled in by renderPage.
 	StaticResourcesHash string
 	// Used on International Form
@@ -883,14 +902,20 @@ type PageData struct {
 // Render a page. All templates that load a header expect a PageData
 // object.
 func renderPage(w io.Writer, r *http.Request, name string, pageData PageData) {
+	user := getUserFromContext(r.Context())
+	userRolesJSON, err := json.Marshal(normalizeRoles(user.Roles))
+	if err != nil {
+		panic(err)
+	}
+
 	pageData.CsrfField = csrf.Token(r)
 	pageData.StaticResourcesHash = config.StaticResourcesHash()
-	pageData.MainRole = getUserMainRole(getUserFromContext(r.Context()))
-	pageData.UserName = getUserFromContext(r.Context()).Name
-	pageData.UserEmail = getUserFromContext(r.Context()).Email
+	pageData.UserRolesJSON = template.JS(string(userRolesJSON))
+	pageData.UserName = user.Name
+	pageData.UserEmail = user.Email
 	pageData.UserChapter = UserChapter{
-		ID:   getUserFromContext(r.Context()).ChapterID,
-		Name: getUserFromContext(r.Context()).ChapterName,
+		ID:   user.ChapterID,
+		Name: user.ChapterName,
 	}
 	renderTemplate(w, name, pageData)
 }
@@ -1651,10 +1676,10 @@ func (c MainController) EventAttendanceCSVHandler(w http.ResponseWriter, r *http
 
 func (c MainController) AuthedUserInfoHandler(w http.ResponseWriter, r *http.Request) {
 	user, _ := c.getAuthedADBUser(r)
+	user.Roles = normalizeRoles(user.Roles)
 
 	writeJSON(w, map[string]interface{}{
-		"user":     user,
-		"mainRole": getUserMainRole(user),
+		"user": user,
 	})
 }
 

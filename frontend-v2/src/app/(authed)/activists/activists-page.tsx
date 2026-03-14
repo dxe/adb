@@ -22,7 +22,7 @@ import { useActivistQueryState } from './use-activist-query-state'
 
 export default function ActivistsPage() {
   const { user } = useAuthedPageContext()
-  const isAdmin = user.role === 'admin'
+  const isAdmin = user.Roles.includes('admin')
 
   const {
     filters,

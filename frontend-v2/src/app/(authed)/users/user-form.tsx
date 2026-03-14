@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/select'
 import { API_PATH, apiClient, Role, User, UserWithoutId } from '@/lib/api'
 import { SF_BAY_CHAPTER_ID } from '@/lib/constants'
+import { formatRoleLabel } from '@/lib/roles'
 import { Loader2, Save, ArrowLeft } from 'lucide-react'
 
 const userFormSchema = z.object({
@@ -327,7 +328,9 @@ export function UserForm({ userId }: { userId?: number }) {
                             field.handleChange(nextRoles)
                           }}
                         />
-                        <span className="capitalize">{role}</span>
+                        <span className="capitalize">
+                          {formatRoleLabel(role)}
+                        </span>
                       </label>
                     )
                   })}

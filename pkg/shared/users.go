@@ -6,9 +6,10 @@ const DevTestUserId = 1
 const DevTestUserEmail = "test@example.org"
 
 var allowedADBUserRolesSet = map[string]struct{}{
-	"admin":      {},
-	"organizer":  {},
-	"attendance": {},
+	"admin":            {},
+	"organizer":        {},
+	"attendance":       {},
+	"intl_coordinator": {},
 }
 
 func AllowedADBUserRoles() []string {

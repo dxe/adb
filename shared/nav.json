@@ -20,19 +20,22 @@
           "label": "New Coaching",
           "href": "/new_connection",
           "page": "NewConnection",
-          "roleRequired": ["organizer"]
+          "roleRequired": ["organizer"],
+          "visibleForNonSFBay": false
         },
         {
           "label": "All Coachings",
           "href": "/list_connections",
           "page": "ConnectionsList",
-          "roleRequired": ["organizer"]
+          "roleRequired": ["organizer"],
+          "visibleForNonSFBay": false
         }
       ]
     },
     {
       "label": "Groups",
       "roleRequired": ["organizer"],
+      "visibleForNonSFBay": false,
       "items": [
         {
           "label": "Geo-Circles",
@@ -54,6 +57,7 @@
     {
       "label": "Prospects",
       "roleRequired": ["organizer"],
+      "visibleForNonSFBay": false,
       "items": [
         {
           "label": "Community Prospects",
@@ -86,138 +90,164 @@
           "label": "Chapter Members",
           "href": "/chapter_member_development",
           "page": "ChapterMemberDevelopment",
-          "roleRequired": ["organizer"]
+          "roleRequired": ["organizer"],
+          "visibleForNonSFBay": false
         },
         {
           "label": "Organizers",
           "href": "/activist_development",
           "page": "OrganizerDevelopment",
-          "roleRequired": ["organizer"]
+          "roleRequired": ["organizer"],
+          "visibleForNonSFBay": false
         },
         {
           "label": "Leaderboard",
           "href": "/leaderboard",
           "page": "Leaderboard",
-          "roleRequired": ["organizer"]
+          "roleRequired": ["organizer"],
+          "visibleForNonSFBay": false
         },
         {
           "label": "All Activists",
           "href": "/list_activists",
-          "page": "ActivistList"
+          "page": "ActivistList",
+          "visibleForNonSFBay": true
         },
         {
           "label": "New Activists",
           "href": "/new_activists",
-          "page": "NewActivistsList"
+          "page": "NewActivistsList",
+          "visibleForNonSFBay": true
         },
         {
           "label": "New Activists Pending Workshop",
           "href": "/new_activists_pending_workshop",
           "page": "NewActivistsPendingWorkshopList",
-          "roleRequired": ["organizer"]
+          "roleRequired": ["organizer"],
+          "visibleForNonSFBay": false
         }
       ]
     },
     {
       "label": "Admin",
-      "roleRequired": ["admin"],
+      "roleRequired": ["admin", "intl_coordinator"],
+      "visibleForNonSFBay": true,
       "items": [
         {
           "label": "Chapters",
           "href": "/list_chapters",
-          "page": "ChaptersList"
+          "page": "ChaptersList",
+          "roleRequired": ["admin", "intl_coordinator"]
+        },
+        {
+          "label": "International Organizers",
+          "href": "/v2/intl/organizers",
+          "page": "IntlOrganizers",
+          "roleRequired": ["admin", "intl_coordinator"]
         },
         {
           "label": "Users",
           "href": "/v2/users",
-          "page": "UserList"
+          "page": "UserList",
+          "roleRequired": ["admin"]
         },
         {
           "label": "Facebook Events",
           "href": "/admin/external_events",
-          "page": "FacebookEvents"
+          "page": "FacebookEvents",
+          "roleRequired": ["admin"]
         }
       ]
     },
     {
       "label": "Beta",
       "roleRequired": ["admin"],
+      "visibleForNonSFBay": true,
       "items": [
         {
           "label": "All Activists",
           "href": "/v2/activists",
-          "page": "ActivistListV2"
+          "page": "ActivistListV2",
+          "visibleForNonSFBay": true
         },
         {
           "label": "Chapter Members",
           "href": "/v2/activists?level=chapter-member,organizer&columns=activist_level,total_events,last_event,training0",
-          "page": "ActivistListV2"
+          "page": "ActivistListV2",
+          "visibleForNonSFBay": false
         },
         {
           "label": "New Activists",
           "href": "/v2/activists?lastEvent=-180..&totalEvents=..4&columns=activist_level,total_events,first_event,last_event,source&sort=-last_event",
-          "page": "ActivistListV2"
+          "page": "ActivistListV2",
+          "visibleForNonSFBay": true
         },
         {
           "label": "New Activists Pending Workshop",
           "href": "/v2/activists?firstEvent=-180..&level=supporter&training=-training0&columns=activist_level,first_event,last_event,training0,source&sort=-last_event",
-          "page": "ActivistListV2"
+          "page": "ActivistListV2",
+          "visibleForNonSFBay": false
         },
         {
           "label": "New Activists Recently Inactive",
           "href": "/v2/activists?lastEvent=-180..-14&totalEvents=..4&columns=activist_level%2Ctotal_events%2Cfirst_event%2Cfirst_event_name%2Clast_event%2Clast_event_name%2Csource&sort=-last_event",
-          "page": "ActivistListV2"
+          "page": "ActivistListV2",
+          "visibleForNonSFBay": true
         },
         {
           "label": "Community Prospects",
           "href": "/v2/activists?lastEvent=..-360%7Cnull&totalInteractions=..1&level=supporter&source=form,dxe-signup,arc-signup,petition,eventbrite,-application&columns=pronouns,email,phone,total_events,first_event,first_event_name,last_event,assigned_to_name,followup_date,total_interactions,last_interaction_date,source,interest_date,notes&sort=-interest_date",
-          "page": "ActivistListV2"
+          "page": "ActivistListV2",
+          "visibleForNonSFBay": true
         },
         {
           "label": "Community Prospects Follow-up",
           "href": "/v2/activists?assignedTo=me&followups=due&columns=pronouns,email,phone,total_events,first_event,first_event_name,last_event,assigned_to_name,followup_date,total_interactions,last_interaction_date,source,interest_date,notes&sort=-interest_date",
-          "page": "ActivistListV2"
+          "page": "ActivistListV2",
+          "visibleForNonSFBay": false
         },
         {
           "label": "Chapter Member Prospects",
           "href": "/v2/activists?level=~chapter-member,organizer&prospect=chapterMember&columns=pronouns,email,phone,activist_level,total_events,last_event,mpi,training0,consent_quiz,dev_application_date,dev_application_type,prospect_chapter_member,cm_first_email,cm_approval_email,notes&sort=-dev_application_date",
-          "page": "ActivistListV2"
+          "page": "ActivistListV2",
+          "visibleForNonSFBay": false
         },
         {
           "label": "Organizer Prospects",
           "href": "/v2/activists?prospect=organizer&level=~organizer&columns=pronouns,activist_level,total_events,last_event,mpi,training0,training1,training4,training5,training6,dev_application_date,dev_application_type,prospect_organizer,dev_quiz,dev_interest,notes&sort=-dev_application_date",
           "page": "ActivistListV2",
+          "visibleForNonSFBay": false,
           "separatorBelow": true
         },
         {
           "label": "All Events",
           "href": "/v2/events",
-          "page": "EventList_beta"
+          "page": "EventList_beta",
+          "visibleForNonSFBay": false
         },
         {
           "label": "New Event",
           "href": "/v2/events/new",
-          "page": "NewEvent_beta"
+          "page": "NewEvent_beta",
+          "visibleForNonSFBay": false
         },
         {
           "label": "All Coachings",
           "href": "/v2/coachings",
-          "page": "ConnectionsList_beta"
+          "page": "ConnectionsList_beta",
+          "visibleForNonSFBay": false
         },
         {
           "label": "New Coaching",
           "href": "/v2/coachings/new",
-          "page": "NewConnection_beta"
+          "page": "NewConnection_beta",
+          "visibleForNonSFBay": false
         },
         {
           "label": "Interest Form Generator",
           "href": "/v2/interest/generator",
-          "page": "InterestFormGenerator"
-        },
-        {
-          "label": "International Organizers",
-          "href": "/v2/intl/organizers",
-          "page": "IntlOrganizers"
+          "page": "InterestFormGenerator",
+          "visibleForNonSFBay": false
         }
       ]
     }
