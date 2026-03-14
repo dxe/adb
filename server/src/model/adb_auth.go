@@ -31,12 +31,6 @@ type GetUserOptions struct {
 	PopulateRoles bool
 }
 
-var allowedUserRoles = map[string]struct{}{
-	"admin":      {},
-	"organizer":  {},
-	"attendance": {},
-}
-
 func ValidateADBUser(user ADBUser) error {
 	if user.Email == "" {
 		return errors.New("Email cannot be empty")
@@ -51,7 +45,7 @@ func ValidateADBUser(user ADBUser) error {
 	}
 
 	for _, role := range user.Roles {
-		if _, ok := allowedUserRoles[role]; !ok {
+		if !shared.IsAllowedADBUserRole(role) {
 			return errors.Errorf("Invalid role: %s", role)
 		}
 	}
