@@ -120,22 +120,31 @@
     },
     {
       "label": "Admin",
-      "roleRequired": ["admin"],
+      "roleRequired": ["admin", "intl_coordinator"],
       "items": [
         {
           "label": "Chapters",
           "href": "/list_chapters",
-          "page": "ChaptersList"
+          "page": "ChaptersList",
+          "roleRequired": ["admin", "intl_coordinator"]
+        },
+        {
+          "label": "International Organizers",
+          "href": "/v2/intl/organizers",
+          "page": "IntlOrganizers",
+          "roleRequired": ["admin", "intl_coordinator"]
         },
         {
           "label": "Users",
           "href": "/v2/users",
-          "page": "UserList"
+          "page": "UserList",
+          "roleRequired": ["admin"]
         },
         {
           "label": "Facebook Events",
           "href": "/admin/external_events",
-          "page": "FacebookEvents"
+          "page": "FacebookEvents",
+          "roleRequired": ["admin"]
         }
       ]
     },
@@ -213,11 +222,6 @@
           "label": "Interest Form Generator",
           "href": "/v2/interest/generator",
           "page": "InterestFormGenerator"
-        },
-        {
-          "label": "International Organizers",
-          "href": "/v2/intl/organizers",
-          "page": "IntlOrganizers"
         }
       ]
     }

@@ -21,20 +21,27 @@ export const StaticResourcesHashResp = z.object({
   hash: z.string(),
 })
 
-export const Role = z.enum(['admin', 'organizer', 'attendance'])
+export const Role = z.enum([
+  'admin',
+  'organizer',
+  'attendance',
+  'intl_coordinator',
+])
 export type Role = z.infer<typeof Role>
 
+export const AuthedUserSchema = z.object({
+  ChapterID: z.number(),
+  ChapterName: z.string(),
+  Disabled: z.boolean(),
+  Email: z.string(),
+  ID: z.number(),
+  Name: z.string(),
+  Roles: z.array(Role),
+})
+export type AuthedUser = z.infer<typeof AuthedUserSchema>
+
 const AuthedUserResp = z.object({
-  user: z.object({
-    ChapterID: z.number(),
-    ChapterName: z.string(),
-    Disabled: z.boolean(),
-    Email: z.string(),
-    ID: z.number(),
-    Name: z.string(),
-    Roles: z.array(Role),
-  }),
-  mainRole: Role,
+  user: AuthedUserSchema,
 })
 
 const CsrfTokenResp = z.object({
@@ -312,7 +319,6 @@ export class ApiClient {
       console.error(`Error fetching authed user: ${err}`)
       return {
         user: null,
-        mainRole: null,
       }
     }
   }
