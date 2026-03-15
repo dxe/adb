@@ -61,31 +61,16 @@
 <script lang="ts">
 import Vue, { PropType } from 'vue';
 import Buefy from 'buefy';
+import {
+  evaluateNavAccess,
+  NavAccessRules,
+  NavbarData,
+  userHasNavRole,
+} from '../shared/nav-access';
 import rawNavbarData from '../shared/nav.json';
 import { SF_BAY_CHAPTER_ID } from './chapters';
 
 Vue.use(Buefy);
-
-type NavAccessRules = {
-  roleRequired?: string[];
-  visibleForNonSFBay?: boolean;
-};
-
-type NavItem = NavAccessRules & {
-  label: string;
-  href: string;
-  page: string;
-  separatorBelow?: boolean;
-};
-
-type NavDropdownItem = NavAccessRules & {
-  label: string;
-  items: NavItem[];
-};
-
-type NavbarData = {
-  items: NavDropdownItem[];
-};
 
 const navbarData = rawNavbarData as NavbarData;
 
@@ -119,36 +104,16 @@ export default Vue.extend({
       return this.roles || [];
     },
     userHasRole(role: string) {
-      const userRoles = this.userRoles();
-      if (role === 'admin') {
-        return userRoles.includes('admin');
-      }
-      if (role === 'organizer') {
-        return userRoles.includes('admin') || userRoles.includes('organizer');
-      }
-      if (role === 'attendance') {
-        return (
-          userRoles.includes('admin') ||
-          userRoles.includes('organizer') ||
-          userRoles.includes('attendance')
-        );
-      }
-      return userRoles.includes(role);
+      return userHasNavRole(this.userRoles(), role);
     },
     hasAccess(item: NavAccessRules, parentItem?: NavAccessRules) {
-      const visibleForNonSFBay =
-        item.visibleForNonSFBay !== undefined
-          ? item.visibleForNonSFBay
-          : parentItem && parentItem.visibleForNonSFBay !== undefined
-            ? parentItem.visibleForNonSFBay
-            : false;
-
-      if (this.activeChapterId !== SF_BAY_CHAPTER_ID && !visibleForNonSFBay) {
-        return false;
-      }
-
-      const roleRequired = item.roleRequired;
-      return !roleRequired || roleRequired.some((it) => this.userHasRole(it));
+      return evaluateNavAccess(
+        this.userRoles(),
+        this.activeChapterId,
+        item,
+        SF_BAY_CHAPTER_ID,
+        parentItem,
+      );
     },
     async fetchChapters() {
       try {

@@ -6,6 +6,11 @@
 'use client'
 
 import navbarData from '$shared/nav.json'
+import {
+  evaluateNavAccess,
+  type NavDropdownItem,
+  type NavItem,
+} from '$shared/nav-access'
 import { CircleUser } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import Image from 'next/image'
@@ -16,63 +21,8 @@ import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
 import buefyStyles from './nav.module.css'
 import clsx from 'clsx'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { API_PATH, apiClient, type AuthedUser } from '@/lib/api'
+import { API_PATH, apiClient } from '@/lib/api'
 import { SF_BAY_CHAPTER_ID } from '@/lib/constants'
-
-type NavAccessRules = {
-  roleRequired?: string[]
-  visibleForNonSFBay?: boolean
-}
-
-type NavItem = NavAccessRules & {
-  label: string
-  href: string
-  page: string
-  separatorBelow?: boolean
-}
-
-type NavDropdownItem = NavAccessRules & {
-  label: string
-  items: NavItem[]
-}
-
-function userHasAccess(
-  /** Auth'd user. */
-  user: AuthedUser,
-  item: NavAccessRules,
-  parentItem?: NavAccessRules,
-): boolean {
-  const visibleForNonSFBay =
-    item.visibleForNonSFBay ?? parentItem?.visibleForNonSFBay ?? false
-
-  if (user.ChapterID !== SF_BAY_CHAPTER_ID && !visibleForNonSFBay) {
-    return false
-  }
-
-  if (!item.roleRequired) return true
-
-  const userRoles = user.Roles
-
-  if (!userRoles.length) return false
-
-  const userHasRole = (role: string) =>
-    userRoles.some((userRole) => userRole === role)
-
-  const hasRequiredRole = item.roleRequired.some((it) => {
-    if (it === 'admin') return userHasRole('admin')
-    if (it === 'organizer')
-      return userHasRole('admin') || userHasRole('organizer')
-    if (it === 'attendance')
-      return (
-        userHasRole('admin') ||
-        userHasRole('organizer') ||
-        userHasRole('attendance')
-      )
-    return userHasRole(it)
-  })
-
-  return hasRequiredRole
-}
 
 /** For ActivistListV2 pages, check if the nav item's query params match the current URL exactly. */
 function isExactParamsMatch(
@@ -112,7 +62,15 @@ const DropdownItem = ({
   const accessibleItems = useMemo(
     () =>
       isExpanded
-        ? item.items.filter((innerItem) => userHasAccess(user, innerItem, item))
+        ? item.items.filter((innerItem) =>
+            evaluateNavAccess(
+              user.Roles,
+              user.ChapterID,
+              innerItem,
+              SF_BAY_CHAPTER_ID,
+              item,
+            ),
+          )
         : null,
     [isExpanded, item.items, user],
   )
@@ -148,7 +106,7 @@ const DropdownItem = ({
     [accessibleItems, hasExactPathMatch, pathname, searchParams],
   )
 
-  if (!userHasAccess(user, item)) {
+  if (!evaluateNavAccess(user.Roles, user.ChapterID, item, SF_BAY_CHAPTER_ID)) {
     return null
   }
 
