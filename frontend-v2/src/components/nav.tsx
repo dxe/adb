@@ -6,6 +6,11 @@
 'use client'
 
 import navbarData from '$shared/nav.json'
+import {
+  evaluateNavAccess,
+  type NavDropdownItem,
+  type NavItem,
+} from '$shared/nav-access'
 import { CircleUser } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import Image from 'next/image'
@@ -18,61 +23,6 @@ import clsx from 'clsx'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { API_PATH, apiClient } from '@/lib/api'
 import { SF_BAY_CHAPTER_ID } from '@/lib/constants'
-
-type NavAccessItem = {
-  roleRequired?: string[]
-  visibleForNonSFBay?: boolean
-}
-
-function toNavAccessItem(item: object | undefined): NavAccessItem | undefined {
-  if (!item) return undefined
-
-  return {
-    roleRequired:
-      'roleRequired' in item
-        ? (item.roleRequired as string[] | undefined)
-        : undefined,
-    visibleForNonSFBay:
-      'visibleForNonSFBay' in item
-        ? (item.visibleForNonSFBay as boolean | undefined)
-        : undefined,
-  }
-}
-
-function userHasAccess(
-  /** Auth'd user. */
-  user: {
-    role: string
-    ChapterID: number
-  },
-  item: NavAccessItem | undefined,
-): boolean {
-  if (!item?.roleRequired) return true
-
-  if (!user.role) return false
-
-  const hasRequiredRole = item.roleRequired.some((it) => {
-    if (it === 'admin') return user.role === 'admin'
-    if (it === 'organizer')
-      return user.role === 'admin' || user.role === 'organizer'
-    if (it === 'attendance')
-      return (
-        user.role === 'admin' ||
-        user.role === 'organizer' ||
-        user.role === 'attendance'
-      )
-    return false
-  })
-
-  if (user.ChapterID !== SF_BAY_CHAPTER_ID) {
-    // Outside SF Bay, keep the limited non-SF Bay view while still honoring the user's stored roles.
-    return item.roleRequired.includes('admin')
-      ? user.role === 'admin'
-      : Boolean(item.visibleForNonSFBay) && hasRequiredRole
-  }
-
-  return hasRequiredRole
-}
 
 /** For ActivistListV2 pages, check if the nav item's query params match the current URL exactly. */
 function isExactParamsMatch(
@@ -94,15 +44,13 @@ function isExactParamsMatch(
   return sortEntries(navParams) === sortEntries(currentSearchParams)
 }
 
-type TDropdownItem = (typeof navbarData.items)[number]
-
 const DropdownItem = ({
   item,
   isExpanded,
   onClick,
   onNavigate,
 }: {
-  item: TDropdownItem
+  item: NavDropdownItem
   isExpanded: boolean
   onClick: () => void
   onNavigate: () => void
@@ -115,7 +63,13 @@ const DropdownItem = ({
     () =>
       isExpanded
         ? item.items.filter((innerItem) =>
-            userHasAccess(user, toNavAccessItem(innerItem)),
+            evaluateNavAccess(
+              user.Roles,
+              user.ChapterID,
+              innerItem,
+              SF_BAY_CHAPTER_ID,
+              item,
+            ),
           )
         : null,
     [isExpanded, item.items, user],
@@ -152,7 +106,7 @@ const DropdownItem = ({
     [accessibleItems, hasExactPathMatch, pathname, searchParams],
   )
 
-  if (!userHasAccess(user, toNavAccessItem(item))) {
+  if (!evaluateNavAccess(user.Roles, user.ChapterID, item, SF_BAY_CHAPTER_ID)) {
     return null
   }
 
@@ -331,7 +285,7 @@ export const Navbar = () => {
                 <span>
                   <span className="font-medium">{user.Name}</span>
                   {/* Admins see the ChapterSwitcher instead of the active chapter after the user name. */}
-                  {user.role !== 'admin' && (
+                  {!user.Roles.includes('admin') && (
                     <>
                       {' '}
                       <span className="text-neutral-500 text-sm">
@@ -350,7 +304,7 @@ export const Navbar = () => {
               </a>
             </div>
           </div>
-          {user.role === 'admin' && <ChapterSwitcher />}
+          {user.Roles.includes('admin') && <ChapterSwitcher />}
         </div>
       </div>
     </nav>

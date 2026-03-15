@@ -18,16 +18,17 @@
           :key="dropdown.label"
           collapsible
         >
-          <b-navbar-item
-            v-for="item in dropdown.items"
-            :key="item.href"
-            v-if="hasAccess(item)"
-            :href="item.href"
-            :active="page === item.page"
-            :class="{ 'mb-2': item.separatorBelow }"
-          >
-            {{ item.label }}
-          </b-navbar-item>
+          <template v-for="item in dropdown.items">
+            <b-navbar-item
+              v-if="hasAccess(item, dropdown)"
+              :key="item.href"
+              :href="item.href"
+              :active="page === item.page"
+              :class="{ 'mb-2': item.separatorBelow }"
+            >
+              {{ item.label }}
+            </b-navbar-item>
+          </template>
         </b-navbar-dropdown>
       </template>
     </template>
@@ -40,13 +41,13 @@
             <b-icon icon="account" size="is-small"></b-icon>
             <span>
               <span>{{ user }}</span>
-              <span v-if="role !== 'admin'"> ({{ chapterName }})</span>
+              <span v-if="!userHasRole('admin')"> ({{ chapterName }})</span>
             </span>
           </div>
           <a href="/logout" style="color: LinkText">Log out</a>
         </div>
       </b-navbar-item>
-      <div v-if="role === 'admin'" class="navbar-item">
+      <div v-if="userHasRole('admin')" class="navbar-item">
         <b-select v-model="activeChapterId" @input="switchChapter">
           <option v-for="chapter in chapters" :key="chapter.ChapterID" :value="chapter.ChapterID">
             {{ chapter.Name }}
@@ -58,19 +59,30 @@
 </template>
 
 <script lang="ts">
-import Vue from 'vue';
+import Vue, { PropType } from 'vue';
 import Buefy from 'buefy';
-import navbarData from '../shared/nav.json';
+import {
+  evaluateNavAccess,
+  NavAccessRules,
+  NavbarData,
+  userHasNavRole,
+} from '../shared/nav-access';
+import rawNavbarData from '../shared/nav.json';
 import { SF_BAY_CHAPTER_ID } from './chapters';
 
 Vue.use(Buefy);
+
+const navbarData = rawNavbarData as NavbarData;
 
 export default Vue.extend({
   name: 'adb-nav',
   props: {
     page: String,
     user: String,
-    role: String,
+    roles: {
+      type: Array as PropType<string[]>,
+      default: () => [],
+    },
     chapterName: String,
     chapterId: Number,
   },
@@ -82,34 +94,26 @@ export default Vue.extend({
     };
   },
   mounted() {
-    if (this.role !== 'admin') {
+    if (!this.userHasRole('admin')) {
       return;
     }
     this.fetchChapters();
   },
   methods: {
-    hasAccess(item: { roleRequired?: string[]; visibleForNonSFBay?: boolean } | undefined) {
-      const roleRequired = item ? item.roleRequired : undefined;
-      const hasRequiredRole =
-        !roleRequired ||
-        roleRequired.some((it) =>
-          it === 'admin'
-            ? this.role === 'admin'
-            : it === 'organizer'
-              ? this.role === 'admin' || this.role === 'organizer'
-              : it === 'attendance'
-                ? this.role === 'admin' || this.role === 'organizer' || this.role === 'attendance'
-                : false,
-        );
-      if (this.activeChapterId !== SF_BAY_CHAPTER_ID) {
-        // Outside SF Bay, keep the limited non-SF Bay view while still honoring the user's stored roles.
-        return (
-          !roleRequired ||
-          (!!item && !!item.visibleForNonSFBay && hasRequiredRole) ||
-          (roleRequired.indexOf('admin') !== -1 && this.role === 'admin')
-        );
-      }
-      return hasRequiredRole;
+    userRoles(): string[] {
+      return this.roles || [];
+    },
+    userHasRole(role: string) {
+      return userHasNavRole(this.userRoles(), role);
+    },
+    hasAccess(item: NavAccessRules, parentItem?: NavAccessRules) {
+      return evaluateNavAccess(
+        this.userRoles(),
+        this.activeChapterId,
+        item,
+        SF_BAY_CHAPTER_ID,
+        parentItem,
+      );
     },
     async fetchChapters() {
       try {

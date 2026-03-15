@@ -23,6 +23,7 @@ import { IntentPrefetchLink } from '@/components/intent-prefetch-link'
 import { Pencil } from 'lucide-react'
 import clsx from 'clsx'
 import { SortIndicator } from '@/components/ui/sort-indicator'
+import { formatRoleLabel } from '@/lib/roles'
 
 type Chapter = {
   ChapterID: number
@@ -37,6 +38,8 @@ export function UserTable({
   chapters: Chapter[]
 }) {
   const [sorting, setSorting] = useState<SortingState>([])
+  const formatRoles = (roles: string[]) =>
+    roles.length ? roles.map(formatRoleLabel).join(', ') : '—'
 
   const chapterMap = useMemo(
     () => new Map(chapters.map((c) => [c.ChapterID, c.Name])),
@@ -100,8 +103,7 @@ export function UserTable({
         accessorKey: 'roles',
         cell: ({ getValue }) => {
           const roles = getValue<string[]>()
-          if (!roles.length) return '—'
-          return roles.join(', ')
+          return <span className="capitalize">{formatRoles(roles)}</span>
         },
       },
       {
@@ -252,10 +254,8 @@ export function UserTable({
                 </div>
                 <div className="flex gap-2 sm:col-span-2">
                   <dt className="text-muted-foreground">Roles:</dt>
-                  <dd>
-                    {row.original.roles.length
-                      ? row.original.roles.join(', ')
-                      : '—'}
+                  <dd className="capitalize">
+                    {formatRoles(row.original.roles)}
                   </dd>
                 </div>
               </dl>
