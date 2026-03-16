@@ -121,7 +121,7 @@ const DropdownItem = ({
             ? pathname === navPath && searchParams.toString() === ''
             : pathname === navPath ||
               (!hasExactPathMatch && pathname.startsWith(navPath + '/'))
-        return { innerItem, isActive }
+        return { innerItem, navHref, isActive }
       }) ?? null,
     [accessibleItems, hasExactPathMatch, pathname, searchParams],
   )
@@ -152,15 +152,12 @@ const DropdownItem = ({
           className={clsx(buefyStyles['navbar-dropdown'], '!block')}
           onClick={onNavigate}
         >
-          {childrenItems.map(({ innerItem, isActive }) => {
+          {childrenItems.map(({ innerItem, navHref, isActive }) => {
             const classNames = clsx(
               buefyStyles['navbar-item'],
               { [buefyStyles['is-active']]: isActive },
               { 'mb-2': innerItem.separatorBelow },
             )
-            const navHref = innerItem.href.startsWith('/v2')
-              ? innerItem.href.substring(3)
-              : innerItem.href
             const isInPlaceActivistPreset =
               innerItem.page === 'ActivistListV2' &&
               pathname === '/activists' &&
