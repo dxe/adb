@@ -1,7 +1,13 @@
-import { ActivistColumnName, QueryActivistOptions } from '@/lib/api'
+import { QueryActivistOptions } from '@/lib/api'
 import { normalizeColumnsForFilters } from './column-definitions'
-import { DEFAULT_SORT, type FilterState, type SortColumn } from './query-state'
+import { DEFAULT_SORT, type ActivistsQueryState } from './query-state'
 import { buildApiFiltersFromState } from './filter-schema'
+
+export type BuildQueryOptionsInput = ActivistsQueryState & {
+  chapterId: number
+  userId: number
+  referenceDate: Date
+}
 
 export const buildQueryOptions = ({
   filters,
@@ -10,14 +16,7 @@ export const buildQueryOptions = ({
   userId,
   referenceDate,
   sort = DEFAULT_SORT,
-}: {
-  filters: FilterState
-  selectedColumns: ActivistColumnName[]
-  chapterId: number
-  userId: number
-  referenceDate: Date
-  sort?: SortColumn[]
-}): QueryActivistOptions => {
+}: BuildQueryOptionsInput): QueryActivistOptions => {
   let columnsToRequest = normalizeColumnsForFilters(
     selectedColumns,
     filters.searchAcrossChapters,

@@ -9,6 +9,7 @@ import {
   type ActivistColumnName,
   type ActivistJSON,
 } from '@/lib/api'
+import { useDetectHydrationMismatch } from '@/hooks/use-detect-hydration-mismatch'
 import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
 import { InfiniteScrollTrigger } from '@/components/infinite-scroll-trigger'
 import { ActivistTable } from './activists-table'
@@ -16,15 +17,17 @@ import { ActivistFilters } from './filters/activist-filters'
 import { ColumnSelector } from './column-selector'
 import { SortSelector } from './sort-selector'
 import { buildQueryOptions } from './filter-api-query'
-import type { SortColumn } from './query-state'
+import type { ActivistsQueryState, SortColumn } from './query-state'
 import { DEFAULT_SORT } from './query-state'
 import { useActivistQueryState } from './use-activist-query-state'
 
 interface ActivistsPageProps {
+  debugInitialServerQueryState?: ActivistsQueryState
   initialReferenceDateIso: string
 }
 
 export default function ActivistsPage({
+  debugInitialServerQueryState,
   initialReferenceDateIso,
 }: ActivistsPageProps) {
   const { user } = useAuthedPageContext()
@@ -40,6 +43,15 @@ export default function ActivistsPage({
     setSort,
     resetAll,
   } = useActivistQueryState()
+  useDetectHydrationMismatch<ActivistsQueryState>({
+    label: 'activists query state',
+    serverValue: debugInitialServerQueryState,
+    clientValue: {
+      filters,
+      selectedColumns,
+      sort,
+    },
+  })
 
   const [settledTableState, setSettledTableState] = useState<{
     columns: ActivistColumnName[]

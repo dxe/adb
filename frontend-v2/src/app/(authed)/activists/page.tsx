@@ -15,6 +15,7 @@ import {
   getActivistQueryStateFromParams,
   loadActivistSearchParams,
 } from './search-params'
+import type { ActivistsQueryState } from './query-state'
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
@@ -31,20 +32,21 @@ export default async function ActivistsListPage({ searchParams }: PageProps) {
   }
 
   const parsedSearchParams = await loadActivistSearchParams(searchParams)
-  const { filters, selectedColumns, sort } =
+  const initialParamQueryState =
     getActivistQueryStateFromParams(parsedSearchParams)
 
   const queryClient = new QueryClient()
   const apiClient = new ApiClient(cookies)
   const initialReferenceDate = new Date()
 
+  const debugInitialServerQueryState: ActivistsQueryState | undefined =
+    process.env.NODE_ENV === 'development' ? initialParamQueryState : undefined
+
   const initialQueryOptions = buildQueryOptions({
-    filters,
-    selectedColumns,
+    ...initialParamQueryState,
     chapterId: session.user.ChapterID,
     userId: session.user.ID,
     referenceDate: initialReferenceDate,
-    sort,
   })
 
   await redirectIfForbidden(() =>
@@ -63,6 +65,7 @@ export default async function ActivistsListPage({ searchParams }: PageProps) {
       <HydrationBoundary state={dehydrate(queryClient)}>
         <Suspense fallback={null}>
           <ActivistsPage
+            debugInitialServerQueryState={debugInitialServerQueryState}
             initialReferenceDateIso={initialReferenceDate.toISOString()}
           />
         </Suspense>
