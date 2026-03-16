@@ -34,6 +34,39 @@ function ymdToZonedDate(dateString: LocalDateYmd, timeZone: string): Date {
   return new Date(instant.epochMilliseconds)
 }
 
+function plainDateTimeToZonedDate(
+  dateTimeString: string,
+  timeZone: string,
+): Date {
+  const normalizedDateTime = dateTimeString.replace(' ', 'T')
+  const instant = Temporal.PlainDateTime.from(normalizedDateTime)
+    .toZonedDateTime(timeZone)
+    .toInstant()
+  return new Date(instant.epochMilliseconds)
+}
+
+function parseDateValueForActivists(dateString: string): Date | undefined {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    return ymdToZonedDate(dateString, ACTIVISTS_TIME_ZONE)
+  }
+
+  if (
+    /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?$/.test(
+      dateString,
+    )
+  ) {
+    return plainDateTimeToZonedDate(dateString, ACTIVISTS_TIME_ZONE)
+  }
+
+  try {
+    const instant = Temporal.Instant.from(dateString)
+    return new Date(instant.epochMilliseconds)
+  } catch {
+    const date = new Date(dateString)
+    return Number.isNaN(date.getTime()) ? undefined : date
+  }
+}
+
 export function getTodayYmdInActivistsTimeZone(
   referenceDate: Date = new Date(),
 ): LocalDateYmd {
@@ -82,9 +115,9 @@ export function formatYmdForActivists(
 }
 
 export function formatDateValueForActivists(dateString: string): string {
-  const date = /^\d{4}-\d{2}-\d{2}$/.test(dateString)
-    ? ymdToZonedDate(dateString, ACTIVISTS_TIME_ZONE)
-    : new Date(dateString)
+  const date = parseDateValueForActivists(dateString)
+
+  if (!date) return dateString
 
   return longDateFormatter.format(date)
 }
