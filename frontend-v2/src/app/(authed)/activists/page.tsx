@@ -36,12 +36,14 @@ export default async function ActivistsListPage({ searchParams }: PageProps) {
 
   const queryClient = new QueryClient()
   const apiClient = new ApiClient(cookies)
+  const initialReferenceDate = new Date()
 
   const initialQueryOptions = buildQueryOptions({
     filters,
     selectedColumns,
     chapterId: session.user.ChapterID,
     userId: session.user.ID,
+    referenceDate: initialReferenceDate,
     sort,
   })
 
@@ -60,7 +62,9 @@ export default async function ActivistsListPage({ searchParams }: PageProps) {
     <ContentWrapper size="full" className="gap-6">
       <HydrationBoundary state={dehydrate(queryClient)}>
         <Suspense fallback={null}>
-          <ActivistsPage />
+          <ActivistsPage
+            initialReferenceDateIso={initialReferenceDate.toISOString()}
+          />
         </Suspense>
       </HydrationBoundary>
     </ContentWrapper>

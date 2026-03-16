@@ -20,7 +20,13 @@ import type { SortColumn } from './query-state'
 import { DEFAULT_SORT } from './query-state'
 import { useActivistQueryState } from './use-activist-query-state'
 
-export default function ActivistsPage() {
+interface ActivistsPageProps {
+  initialReferenceDateIso: string
+}
+
+export default function ActivistsPage({
+  initialReferenceDateIso,
+}: ActivistsPageProps) {
   const { user } = useAuthedPageContext()
   const isAdmin = user.Roles.includes('admin')
 
@@ -45,6 +51,10 @@ export default function ActivistsPage() {
 
   const isExplicitSort = sort.length > 0
   const effectiveSort = isExplicitSort ? sort : DEFAULT_SORT
+  const initialReferenceDate = useMemo(
+    () => new Date(initialReferenceDateIso),
+    [initialReferenceDateIso],
+  )
 
   const queryOptions = useMemo<QueryActivistOptions>(
     () =>
@@ -53,9 +63,17 @@ export default function ActivistsPage() {
         selectedColumns,
         chapterId: user.ChapterID,
         userId: user.ID,
+        referenceDate: initialReferenceDate,
         sort: effectiveSort,
       }),
-    [filters, selectedColumns, user.ChapterID, user.ID, effectiveSort],
+    [
+      filters,
+      selectedColumns,
+      user.ChapterID,
+      user.ID,
+      initialReferenceDate,
+      effectiveSort,
+    ],
   )
 
   const {

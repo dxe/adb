@@ -8,12 +8,14 @@ export const buildQueryOptions = ({
   selectedColumns,
   chapterId,
   userId,
+  referenceDate,
   sort = DEFAULT_SORT,
 }: {
   filters: FilterState
   selectedColumns: ActivistColumnName[]
   chapterId: number
   userId: number
+  referenceDate: Date
   sort?: SortColumn[]
 }): QueryActivistOptions => {
   let columnsToRequest = normalizeColumnsForFilters(
@@ -27,7 +29,11 @@ export const buildQueryOptions = ({
 
   return {
     columns: columnsToRequest,
-    filters: buildApiFiltersFromState(filters, { chapterId, userId }),
+    filters: buildApiFiltersFromState(filters, {
+      chapterId,
+      userId,
+      referenceDate,
+    }),
     sort: {
       sort_columns: (sort.length > 0 ? sort : DEFAULT_SORT).map((s) => ({
         column_name: s.column,
