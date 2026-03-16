@@ -1,6 +1,8 @@
+import type { LocalDateYmd } from './date-time'
+
 export type AbsoluteDateBound = {
   mode: 'absolute'
-  date: string
+  date: LocalDateYmd
 }
 
 export type RelativeDateBound = {

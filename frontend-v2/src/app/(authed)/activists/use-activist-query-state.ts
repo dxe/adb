@@ -1,52 +1,21 @@
 'use client'
 
 import { useCallback, useMemo } from 'react'
-import { createParser, useQueryStates } from 'nuqs'
+import { useQueryStates } from 'nuqs'
 import type { ActivistColumnName } from '@/lib/api'
 import {
   DEFAULT_COLUMNS,
   columnsForNewFilters,
-  normalizeColumns,
   normalizeColumnsForFilters,
 } from './column-definitions'
-import { buildSortParam } from './filter-url-state'
+import { isFilterStateDirty } from './filter-schema'
 import type { FilterState, SortColumn } from './query-state'
 import {
-  FILTER_PARAM_KEYS,
-  isFilterStateDirty,
-  normalizeFilterState,
-} from './filter-schema'
-import { FILTER_NUQS_PARSERS } from './filter-nuqs-parsers'
-
-const parseAsColumns = createParser<ActivistColumnName[]>({
-  parse: (raw) => {
-    const cols = normalizeColumns(raw.split(',') as ActivistColumnName[])
-    return cols.length > 0 ? cols : null
-  },
-  serialize: (cols) =>
-    cols.filter((c) => c !== 'chapter_name' && c !== 'name').join(','),
-})
-
-const parseAsSort = createParser<SortColumn[]>({
-  parse: (raw) => {
-    const parts = raw
-      .split(',')
-      .slice(0, 2)
-      .map((part) => {
-        const desc = part.startsWith('-')
-        const column = (desc ? part.slice(1) : part) as ActivistColumnName
-        return { column, desc }
-      })
-    return parts.length > 0 ? parts : null
-  },
-  serialize: (sort) => buildSortParam(sort) ?? '',
-})
-
-const activistQueryStateParsers = {
-  ...FILTER_NUQS_PARSERS,
-  columns: parseAsColumns,
-  sort: parseAsSort,
-}
+  ACTIVIST_QUERY_STATE_PARSERS,
+  ACTIVIST_QUERY_URL_KEYS,
+  getActivistQueryStateFromParams,
+  type ParsedActivistQueryParams,
+} from './search-params'
 
 /** Returns null when columns match the defaults (removes the param). */
 function columnsToStoreParam(
@@ -63,37 +32,31 @@ function columnsToStoreParam(
   return match ? null : normalized
 }
 
+function sortOrNull(sort: SortColumn[]): SortColumn[] | null {
+  return sort.length > 0 ? sort : null
+}
+
 export function useActivistQueryState() {
-  const [params, setParams] = useQueryStates(activistQueryStateParsers, {
-    history: 'replace',
-    urlKeys: FILTER_PARAM_KEYS,
-  })
-
-  const filters: FilterState = useMemo(
-    () => normalizeFilterState(params),
-    [params],
+  const [currentParams, setParams] = useQueryStates(
+    ACTIVIST_QUERY_STATE_PARSERS,
+    {
+      history: 'replace',
+      urlKeys: ACTIVIST_QUERY_URL_KEYS,
+    },
   )
+  const parsedParams = currentParams as ParsedActivistQueryParams
 
-  const selectedColumns = useMemo(
-    () =>
-      normalizeColumnsForFilters(
-        params.columns ?? DEFAULT_COLUMNS,
-        filters.searchAcrossChapters,
-      ),
-    [filters.searchAcrossChapters, params.columns],
-  )
-
-  const sort = useMemo(
-    () => (params.sort ?? []).filter((s) => selectedColumns.includes(s.column)),
-    [params.sort, selectedColumns],
+  const { filters, selectedColumns, sort } = useMemo(
+    () => getActivistQueryStateFromParams(parsedParams),
+    [parsedParams],
   )
 
   const isDirty = useMemo(
     () =>
       isFilterStateDirty(filters) ||
-      params.columns !== null ||
-      params.sort !== null,
-    [filters, params.columns, params.sort],
+      parsedParams.columns !== null ||
+      parsedParams.sort !== null,
+    [filters, parsedParams.columns, parsedParams.sort],
   )
 
   const setFilters = useCallback(
@@ -132,7 +95,7 @@ export function useActivistQueryState() {
           newSelectedColumns,
           newFilters.searchAcrossChapters,
         ),
-        sort: buildSortParam(newSort) !== undefined ? newSort : null,
+        sort: sortOrNull(newSort),
       })
     },
     [filters, selectedColumns, setParams, sort],
@@ -149,7 +112,7 @@ export function useActivistQueryState() {
         : []
       setParams({
         columns: columnsToStoreParam(normalized, filters.searchAcrossChapters),
-        sort: buildSortParam(newSort) !== undefined ? newSort : null,
+        sort: sortOrNull(newSort),
       })
     },
     [filters.searchAcrossChapters, setParams, sort],
@@ -158,7 +121,7 @@ export function useActivistQueryState() {
   const setSort = useCallback(
     (newSort: SortColumn[]) => {
       setParams({
-        sort: buildSortParam(newSort) !== undefined ? newSort : null,
+        sort: sortOrNull(newSort),
       })
     },
     [setParams],

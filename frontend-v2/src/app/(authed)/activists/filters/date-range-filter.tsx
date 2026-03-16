@@ -16,7 +16,6 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { CircleHelp } from 'lucide-react'
 import { FilterChip } from './filter-chip'
 import { useDraftFilter } from '@/hooks/use-draft-filter'
-import { format } from 'date-fns'
 import type {
   AbsoluteDateBound,
   DateRangeBoundValue,
@@ -24,6 +23,12 @@ import type {
   RelativeDateBound,
 } from '../filter-types'
 import { parseSafeInteger } from '../number-utils'
+import {
+  datePickerValueToYmd,
+  formatYmdForActivists,
+  getCurrentYearInActivistsTimeZone,
+  ymdToDatePickerValue,
+} from '../date-time'
 
 interface DateRangeFilterProps {
   label: string
@@ -42,16 +47,6 @@ const UNIT_MULTIPLIER: Record<DateUnit, number> = {
   days: 1,
   weeks: 7,
   months: 30,
-}
-
-function parseYmdToLocalDate(dateString: string) {
-  return new Date(`${dateString}T00:00:00`)
-}
-
-function formatDateToYmd(date?: Date) {
-  return date
-    ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-    : undefined
 }
 
 function isRelativeBound(
@@ -121,21 +116,18 @@ function formatAbsoluteRange(
   gte?: AbsoluteDateBound,
   lt?: AbsoluteDateBound,
 ): string | undefined {
-  const currentYear = new Date().getFullYear()
+  const currentYear = getCurrentYearInActivistsTimeZone()
   if (gte && lt) {
-    const gteDate = parseYmdToLocalDate(gte.date)
-    const ltDate = parseYmdToLocalDate(lt.date)
-    if (gteDate >= ltDate) return 'No matching dates'
-    const bothCurrentYear =
-      gteDate.getFullYear() === currentYear &&
-      ltDate.getFullYear() === currentYear
+    if (gte.date >= lt.date) return 'No matching dates'
+    const gteYear = Number(gte.date.slice(0, 4))
+    const ltYear = Number(lt.date.slice(0, 4))
+    const bothCurrentYear = gteYear === currentYear && ltYear === currentYear
     return bothCurrentYear
-      ? `${format(gteDate, 'MMM d')} – ${format(ltDate, 'MMM d')}`
-      : `${format(gteDate, 'MMM d, yyyy')} – ${format(ltDate, 'MMM d, yyyy')}`
+      ? `${formatYmdForActivists(gte.date, { includeYear: false })} – ${formatYmdForActivists(lt.date, { includeYear: false })}`
+      : `${formatYmdForActivists(gte.date)} – ${formatYmdForActivists(lt.date)}`
   }
-  if (gte)
-    return `On or after ${format(parseYmdToLocalDate(gte.date), 'MMM d, yyyy')}`
-  if (lt) return `Before ${format(parseYmdToLocalDate(lt.date), 'MMM d, yyyy')}`
+  if (gte) return `On or after ${formatYmdForActivists(gte.date)}`
+  if (lt) return `Before ${formatYmdForActivists(lt.date)}`
   return undefined
 }
 
@@ -197,7 +189,7 @@ function parseRelativeInput(
 }
 
 function toAbsoluteBound(date?: Date): AbsoluteDateBound | undefined {
-  const ymd = formatDateToYmd(date)
+  const ymd = date ? datePickerValueToYmd(date) : undefined
   return ymd ? { mode: 'absolute', date: ymd } : undefined
 }
 
@@ -331,7 +323,7 @@ export function DateRangeFilter({
               <DatePicker
                 value={
                   isAbsoluteBound(gte)
-                    ? parseYmdToLocalDate(gte.date)
+                    ? ymdToDatePickerValue(gte.date)
                     : undefined
                 }
                 onValueChange={handleAbsoluteStartChange}
@@ -342,7 +334,9 @@ export function DateRangeFilter({
               <Label className="text-sm font-medium">Before</Label>
               <DatePicker
                 value={
-                  isAbsoluteBound(lt) ? parseYmdToLocalDate(lt.date) : undefined
+                  isAbsoluteBound(lt)
+                    ? ymdToDatePickerValue(lt.date)
+                    : undefined
                 }
                 onValueChange={handleAbsoluteEndChange}
                 placeholder="Select end date"

@@ -18,6 +18,7 @@ import {
 import { ArrowDown, ArrowUp } from 'lucide-react'
 import { ActivistJSON, ActivistColumnName } from '@/lib/api'
 import { COLUMN_DEFINITIONS } from './column-definitions'
+import { formatDateValueForActivists } from './date-time'
 import type { SortColumn } from './query-state'
 import { z } from 'zod'
 
@@ -67,14 +68,11 @@ const formatValue = (
   if (columnType === 'string') {
     const definition = COLUMN_DEFINITIONS.find((d) => d.name === columnName)
     if (definition?.isDate && typeof value === 'string') {
-      const date = new Date(value)
-      if (!isNaN(date.getTime())) {
-        return new Intl.DateTimeFormat('en-US', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric',
-          timeZone: 'UTC',
-        }).format(date)
+      if (
+        /^\d{4}-\d{2}-\d{2}$/.test(value) ||
+        !isNaN(new Date(value).getTime())
+      ) {
+        return formatDateValueForActivists(value)
       }
     }
   }

@@ -10,24 +10,30 @@ import type {
 } from './filter-types'
 import type { FilterState } from './query-state'
 import { parseSafeInteger } from './number-utils'
+import {
+  addDaysToYmd,
+  getTodayYmdInActivistsTimeZone,
+  type LocalDateYmd,
+} from './date-time'
 
 type ApiFilters = QueryActivistOptions['filters']
 
 export type FilterApiContext = {
   chapterId: number
   userId: number
-}
-
-function formatDateToYmd(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+  referenceDate: Date
 }
 
 /** Resolve a typed date bound to absolute YYYY-MM-DD for API filters. */
-export function resolveDateBound(value: DateRangeBoundValue): string {
+export function resolveDateBound(
+  value: DateRangeBoundValue,
+  referenceDate: Date = new Date(),
+): LocalDateYmd {
   if (value.mode === 'absolute') return value.date
-  const d = new Date()
-  d.setDate(d.getDate() + Math.trunc(value.daysOffset))
-  return formatDateToYmd(d)
+  return addDaysToYmd(
+    getTodayYmdInActivistsTimeZone(referenceDate),
+    value.daysOffset,
+  )
 }
 
 /**
@@ -36,10 +42,11 @@ export function resolveDateBound(value: DateRangeBoundValue): string {
  */
 export function toApiDateRange(
   value?: FilterState['lastEvent'],
+  referenceDate: Date = new Date(),
 ): ApiDateRangeFilter | undefined {
   if (!value) return undefined
-  const gte = value.gte ? resolveDateBound(value.gte) : undefined
-  const lt = value.lt ? resolveDateBound(value.lt) : undefined
+  const gte = value.gte ? resolveDateBound(value.gte, referenceDate) : undefined
+  const lt = value.lt ? resolveDateBound(value.lt, referenceDate) : undefined
   const or_null = value.orNull || undefined
   if (gte === undefined && lt === undefined && or_null === undefined) {
     return undefined
@@ -103,15 +110,24 @@ export const toApiIncludeHidden = (
 
 export const toApiLastEvent = (
   value: FilterState['lastEvent'],
-): Partial<ApiFilters> => ({ last_event: toApiDateRange(value) })
+  context: FilterApiContext,
+): Partial<ApiFilters> => ({
+  last_event: toApiDateRange(value, context.referenceDate),
+})
 
 export const toApiInterestDate = (
   value: FilterState['interestDate'],
-): Partial<ApiFilters> => ({ interest_date: toApiDateRange(value) })
+  context: FilterApiContext,
+): Partial<ApiFilters> => ({
+  interest_date: toApiDateRange(value, context.referenceDate),
+})
 
 export const toApiFirstEvent = (
   value: FilterState['firstEvent'],
-): Partial<ApiFilters> => ({ first_event: toApiDateRange(value) })
+  context: FilterApiContext,
+): Partial<ApiFilters> => ({
+  first_event: toApiDateRange(value, context.referenceDate),
+})
 
 export const toApiTotalEvents = (
   value: FilterState['totalEvents'],
