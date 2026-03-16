@@ -46,19 +46,19 @@ function plainDateTimeToZonedDate(
 }
 
 function parseDateValueForActivists(dateString: string): Date | undefined {
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
-    return ymdToZonedDate(dateString, ACTIVISTS_TIME_ZONE)
-  }
-
-  if (
-    /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?$/.test(
-      dateString,
-    )
-  ) {
-    return plainDateTimeToZonedDate(dateString, ACTIVISTS_TIME_ZONE)
-  }
-
   try {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      return ymdToZonedDate(dateString, ACTIVISTS_TIME_ZONE)
+    }
+
+    if (
+      /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?$/.test(
+        dateString,
+      )
+    ) {
+      return plainDateTimeToZonedDate(dateString, ACTIVISTS_TIME_ZONE)
+    }
+
     const instant = Temporal.Instant.from(dateString)
     return new Date(instant.epochMilliseconds)
   } catch {
