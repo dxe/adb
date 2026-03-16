@@ -95,12 +95,17 @@ const DropdownItem = ({
           ? innerItem.href.substring(3)
           : innerItem.href
         const navPath = navHref.split('?')[0]
+        const isArgSensitivePage = innerItem.page === 'ActivistListV2'
         // Items with query params (e.g. activist presets) require exact path + params.
-        // Plain-path items use exact or prefix match (prefix suppressed if a sibling is more specific).
+        // For `ActivistListV2`, the plain `/activists` nav entry is only active on the bare base URL,
+        // since that page also has multiple preset nav items distinguished by query params.
+        // Other plain-path items use exact or prefix match (prefix suppressed if a sibling is more specific).
         const isActive = navHref.includes('?')
           ? isExactParamsMatch(navHref, pathname, searchParams)
-          : pathname === navPath ||
-            (!hasExactPathMatch && pathname.startsWith(navPath + '/'))
+          : isArgSensitivePage
+            ? pathname === navPath && searchParams.toString() === ''
+            : pathname === navPath ||
+              (!hasExactPathMatch && pathname.startsWith(navPath + '/'))
         return { innerItem, isActive }
       }) ?? null,
     [accessibleItems, hasExactPathMatch, pathname, searchParams],
