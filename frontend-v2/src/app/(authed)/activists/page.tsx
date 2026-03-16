@@ -3,19 +3,18 @@ import {
   HydrationBoundary,
   QueryClient,
 } from '@tanstack/react-query'
+import { Suspense } from 'react'
 import { ContentWrapper } from '@/app/content-wrapper'
 import { API_PATH, ApiClient } from '@/lib/api'
 import { getCookies } from '@/lib/auth'
 import { getCachedSession } from '@/app/session'
 import { redirectIfForbidden } from '@/lib/server-auth'
 import ActivistsPage from './activists-page'
-import { normalizeColumnsForFilters } from './column-definitions'
 import { buildQueryOptions } from './filter-api-query'
 import {
-  parseColumnsFromParams,
-  parseFiltersFromParams,
-  parseSortFromParams,
-} from './filter-url-state'
+  getActivistQueryStateFromParams,
+  loadActivistSearchParams,
+} from './search-params'
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
@@ -31,20 +30,9 @@ export default async function ActivistsListPage({ searchParams }: PageProps) {
     throw new Error('missing user in session')
   }
 
-  const params = await searchParams
-  const getParam = (key: string) => {
-    const value = params[key]
-    if (Array.isArray(value)) return value[0]
-    return value
-  }
-
-  const filters = parseFiltersFromParams(getParam)
-  const selectedColumns = parseColumnsFromParams(getParam)
-  const normalizedColumns = normalizeColumnsForFilters(
-    selectedColumns,
-    filters.searchAcrossChapters,
-  )
-  const sort = parseSortFromParams(getParam, normalizedColumns)
+  const parsedSearchParams = await loadActivistSearchParams(searchParams)
+  const { filters, selectedColumns, sort } =
+    getActivistQueryStateFromParams(parsedSearchParams)
 
   const queryClient = new QueryClient()
   const apiClient = new ApiClient(cookies)
@@ -71,7 +59,9 @@ export default async function ActivistsListPage({ searchParams }: PageProps) {
   return (
     <ContentWrapper size="full" className="gap-6">
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <ActivistsPage />
+        <Suspense fallback={null}>
+          <ActivistsPage />
+        </Suspense>
       </HydrationBoundary>
     </ContentWrapper>
   )

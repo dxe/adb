@@ -1,4 +1,4 @@
-import { createParser, type UseQueryStatesKeysMap } from 'nuqs'
+import { createParser, type ParserMap } from 'nuqs/server'
 import { getFilterSchemaEntry } from './filter-schema'
 import type { FilterState } from './query-state'
 
@@ -31,4 +31,4 @@ export const FILTER_NUQS_PARSERS = {
   assignedTo: createFilterNuqsParser('assignedTo'),
   followups: createFilterNuqsParser('followups'),
   prospect: createFilterNuqsParser('prospect'),
-} satisfies UseQueryStatesKeysMap
+} satisfies ParserMap
