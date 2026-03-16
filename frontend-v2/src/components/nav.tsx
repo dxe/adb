@@ -6,11 +6,7 @@
 'use client'
 
 import navbarData from '$shared/nav.json'
-import {
-  evaluateNavAccess,
-  type NavDropdownItem,
-  type NavItem,
-} from '$shared/nav-access'
+import { evaluateNavAccess, type NavDropdownItem } from '$shared/nav-access'
 import { CircleUser } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import Image from 'next/image'
@@ -21,8 +17,14 @@ import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
 import buefyStyles from './nav.module.css'
 import clsx from 'clsx'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQueryStates } from 'nuqs'
 import { API_PATH, apiClient } from '@/lib/api'
 import { SF_BAY_CHAPTER_ID } from '@/lib/constants'
+import {
+  ACTIVIST_QUERY_STATE_PARSERS,
+  ACTIVIST_QUERY_URL_KEYS,
+  loadActivistSearchParams,
+} from '@/app/(authed)/activists/search-params'
 
 /** For ActivistListV2 pages, check if the nav item's query params match the current URL exactly. */
 function isExactParamsMatch(
@@ -58,6 +60,19 @@ const DropdownItem = ({
   const { user } = useAuthedPageContext()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const [, setActivistParams] = useQueryStates(ACTIVIST_QUERY_STATE_PARSERS, {
+    history: 'replace',
+    urlKeys: ACTIVIST_QUERY_URL_KEYS,
+  })
+
+  const applyActivistPreset = (href: string) => {
+    const queryIndex = href.indexOf('?')
+    const queryString = queryIndex < 0 ? '' : href.substring(queryIndex + 1)
+    const nextParams = loadActivistSearchParams(
+      new URLSearchParams(queryString),
+    )
+    void setActivistParams(nextParams, { history: 'push' })
+  }
 
   const accessibleItems = useMemo(
     () =>
@@ -72,7 +87,7 @@ const DropdownItem = ({
             ),
           )
         : null,
-    [isExpanded, item.items, user],
+    [isExpanded, item, user],
   )
 
   // Suppress prefix-matching if any sibling exactly matches the current path,
@@ -106,7 +121,7 @@ const DropdownItem = ({
             ? pathname === navPath && searchParams.toString() === ''
             : pathname === navPath ||
               (!hasExactPathMatch && pathname.startsWith(navPath + '/'))
-        return { innerItem, isActive }
+        return { innerItem, navHref, isActive }
       }) ?? null,
     [accessibleItems, hasExactPathMatch, pathname, searchParams],
   )
@@ -137,17 +152,34 @@ const DropdownItem = ({
           className={clsx(buefyStyles['navbar-dropdown'], '!block')}
           onClick={onNavigate}
         >
-          {childrenItems.map(({ innerItem, isActive }) => {
+          {childrenItems.map(({ innerItem, navHref, isActive }) => {
             const classNames = clsx(
               buefyStyles['navbar-item'],
               { [buefyStyles['is-active']]: isActive },
               { 'mb-2': innerItem.separatorBelow },
             )
+            const isInPlaceActivistPreset =
+              innerItem.page === 'ActivistListV2' &&
+              pathname === '/activists' &&
+              navHref.split('?')[0] === '/activists'
+
             return innerItem.href.startsWith('/v2') ? (
               <Link
-                href={innerItem.href.substring(3)}
+                href={navHref}
                 className={classNames}
                 key={innerItem.href}
+                onNavigate={(event) => {
+                  if (!isInPlaceActivistPreset) return
+
+                  // When switching between activist presets on the same page,
+                  // update the query state in place so the table keeps its
+                  // stale-data loading behavior instead of doing a route
+                  // navigation which would not show loading indicators.
+                  event.preventDefault()
+                  if (!isActive) {
+                    applyActivistPreset(navHref)
+                  }
+                }}
               >
                 {innerItem.label}
               </Link>
