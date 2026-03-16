@@ -17,9 +17,9 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-// Seeded activists are generated from random names and share a 36-month pool of events (1-2 events per month) to create
-// realistic overlap in attendance. Each activist is assigned a last event, then may attend prior events with
-// probability based on a per-activist activeness value.
+// Seeded activists are generated from random names. The main seed set shares a 36-month pool of events (1-2 events
+// per month) to create realistic overlap in attendance. An additional prospect-only set is inserted with
+// source="form", no event attendance, and interest dates spread across the same 36-month window.
 //
 // Email/phone are generated with independent 10% blank rates, and activist level depends on whether the most recent
 // event is within the last year.
@@ -35,6 +35,7 @@ var seedChapterID int
 
 const (
 	seedActivistCount       = 200
+	seedProspectCount       = 125
 	seedMonthsBack          = 36
 	seedMinEventsPerMonth   = 1
 	seedMaxEventsPerMonth   = 2
@@ -57,7 +58,7 @@ var seedCmd = &cobra.Command{
 
 var seedActivistsCmd = &cobra.Command{
 	Use:   "activists",
-	Short: "Seed 200 activists with event history spread across the past 36 months",
+	Short: "Seed 200 activists with event history plus 125 prospect activists across the past 36 months",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := requireNotProd(); err != nil {
 			return err
@@ -69,46 +70,31 @@ var seedActivistsCmd = &cobra.Command{
 		}
 		defer conn.Close()
 
-		names := randomNames(seedActivistCount)
+		names := randomNames(seedActivistCount + seedProspectCount)
+		eventNames := names[:seedActivistCount]
+		prospectNames := names[seedActivistCount:]
 		now := time.Now()
 		months := seedMonths(now, seedMonthsBack)
 		sharedEvents, err := seedSharedEvents(conn, seedChapterID, months)
 		if err != nil {
 			return err
 		}
-		profiles := buildSeedProfiles(names, sharedEvents.All, seedChapterID, now)
 
-		inserted := 0
-		attendanceInserted := 0
-		for _, profile := range profiles {
-			res, err := conn.Exec(
-				`INSERT IGNORE INTO activists (name, email, phone, chapter_id, activist_level) VALUES (?, ?, ?, ?, ?)`,
-				profile.Name, profile.Email, profile.Phone, seedChapterID, profile.ActivistLevel,
-			)
-			if err != nil {
-				return fmt.Errorf("failed to insert activist %q: %w", profile.Name, err)
-			}
-			if n, _ := res.RowsAffected(); n == 0 {
-				continue // duplicate name in this chapter — skip
-			}
-			activistID, _ := res.LastInsertId()
-			attendance := selectAttendanceEvents(profile, sharedEvents.ByMonth)
+		eventInserted, attendanceInserted, err := seedActivistsWithEvents(
+			conn, eventNames, sharedEvents, seedChapterID, now,
+		)
+		if err != nil {
+			return err
+		}
 
-			for _, event := range attendance {
-				if _, err := conn.Exec(
-					`INSERT INTO event_attendance (activist_id, event_id) VALUES (?, ?)`,
-					activistID, event.ID,
-				); err != nil {
-					return fmt.Errorf("failed to insert attendance for activist %q: %w", profile.Name, err)
-				}
-			}
-			attendanceInserted += len(attendance)
-			inserted++
+		prospectInserted, err := seedProspectActivists(conn, prospectNames, months, seedChapterID)
+		if err != nil {
+			return err
 		}
 
 		fmt.Printf(
-			"Seeded %d activists, %d events, and %d attendance rows in chapter %d\n",
-			inserted, len(sharedEvents.All), attendanceInserted, seedChapterID,
+			"Seeded %d activists with events, %d prospect activists, %d events, and %d attendance rows in chapter %d\n",
+			eventInserted, prospectInserted, len(sharedEvents.All), attendanceInserted, seedChapterID,
 		)
 		return nil
 	},
@@ -134,6 +120,13 @@ type seedProfile struct {
 	LastEvent     seededEvent
 	Activeness    float64
 	ActivistLevel string
+}
+
+type seedProspectProfile struct {
+	Name         string
+	Email        string
+	Phone        string
+	InterestDate time.Time
 }
 
 var seedFirstNames = []string{
@@ -237,6 +230,80 @@ func buildSeedProfiles(names []string, allEvents []seededEvent, chapterID int, n
 	return profiles
 }
 
+func buildSeedProspectProfiles(names []string, months []time.Time, chapterID int) []seedProspectProfile {
+	profiles := make([]seedProspectProfile, 0, len(names))
+	for idx, name := range names {
+		interestDate := randomDateInMonth(months[idx%len(months)])
+		profiles = append(profiles, seedProspectProfile{
+			Name:         name,
+			Email:        maybeBlank(seedEmail(name, chapterID)),
+			Phone:        maybeBlank(seedPhone()),
+			InterestDate: interestDate,
+		})
+	}
+	return profiles
+}
+
+// seedActivistsWithEvents inserts activists and their event attendance using the original shared-event seeding flow.
+func seedActivistsWithEvents(
+	conn *sqlx.DB, names []string, sharedEvents seededEvents, chapterID int, now time.Time,
+) (int, int, error) {
+	profiles := buildSeedProfiles(names, sharedEvents.All, chapterID, now)
+
+	inserted := 0
+	attendanceInserted := 0
+	for _, profile := range profiles {
+		res, err := conn.Exec(
+			`INSERT IGNORE INTO activists (name, email, phone, chapter_id, activist_level) VALUES (?, ?, ?, ?, ?)`,
+			profile.Name, profile.Email, profile.Phone, chapterID, profile.ActivistLevel,
+		)
+		if err != nil {
+			return 0, 0, fmt.Errorf("failed to insert activist %q: %w", profile.Name, err)
+		}
+		if n, _ := res.RowsAffected(); n == 0 {
+			continue // duplicate name in this chapter — skip
+		}
+		activistID, _ := res.LastInsertId()
+		attendance := selectAttendanceEvents(profile, sharedEvents.ByMonth)
+
+		for _, event := range attendance {
+			if _, err := conn.Exec(
+				`INSERT INTO event_attendance (activist_id, event_id) VALUES (?, ?)`,
+				activistID, event.ID,
+			); err != nil {
+				return 0, 0, fmt.Errorf("failed to insert attendance for activist %q: %w", profile.Name, err)
+			}
+		}
+		attendanceInserted += len(attendance)
+		inserted++
+	}
+
+	return inserted, attendanceInserted, nil
+}
+
+// seedProspectActivists inserts source="form" activists with interest_date values spread across `months` and no
+// event attendance.
+func seedProspectActivists(conn *sqlx.DB, names []string, months []time.Time, chapterID int) (int, error) {
+	profiles := buildSeedProspectProfiles(names, months, chapterID)
+
+	inserted := 0
+	for _, profile := range profiles {
+		res, err := conn.Exec(
+			`INSERT IGNORE INTO activists (name, email, phone, chapter_id, activist_level, source, interest_date) VALUES (?, ?, ?, ?, 'Supporter', 'form', ?)`,
+			profile.Name, profile.Email, profile.Phone, chapterID, profile.InterestDate.Format("2006-01-02 15:04:05"),
+		)
+		if err != nil {
+			return 0, fmt.Errorf("failed to insert prospect activist %q: %w", profile.Name, err)
+		}
+		if n, _ := res.RowsAffected(); n == 0 {
+			continue
+		}
+		inserted++
+	}
+
+	return inserted, nil
+}
+
 // selectAttendanceEvents returns attendance rows for a profile. It always includes the profile's last event, then
 // samples prior months using one per-activist activeness value.
 func selectAttendanceEvents(profile seedProfile, eventsByMonth [][]seededEvent) []seededEvent {
@@ -280,6 +347,19 @@ func randomDistinctDays(daysInMonth, count int) []int {
 // daysInMonth returns the number of calendar days in monthStart's month.
 func daysInMonth(monthStart time.Time) int {
 	return monthStart.AddDate(0, 1, -1).Day()
+}
+
+func randomDateInMonth(monthStart time.Time) time.Time {
+	return time.Date(
+		monthStart.Year(),
+		monthStart.Month(),
+		1+rand.Intn(daysInMonth(monthStart)),
+		rand.Intn(24),
+		rand.Intn(60),
+		rand.Intn(60),
+		0,
+		monthStart.Location(),
+	)
 }
 
 // pickLastEventIndex returns an index into `allEvents` and biases toward newer events.

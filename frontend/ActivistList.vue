@@ -561,6 +561,21 @@ interface Column {
   showForAllChapters?: boolean;
 }
 
+function closestAutocompleteDropdownHolder(target: EventTarget | null): HTMLElement | null {
+  if (!(target instanceof Node)) {
+    return null;
+  }
+
+  const element = target instanceof Element ? target : target.parentElement;
+  if (!element) {
+    return null;
+  }
+
+  return element.closest(
+    '.handsontableEditor.autocompleteEditor .wtHolder, .handsontable.listbox .wtHolder',
+  ) as HTMLElement | null;
+}
+
 function emailValidator(value: string, callback: Function) {
   // Create a delay between the validation, and the
   // resulting state of the Column. i.e. When the user
@@ -1513,6 +1528,14 @@ export default Vue.extend({
     chapterName: String,
   },
   methods: {
+    handleAutocompleteDropdownWheel(event: WheelEvent) {
+      if (!closestAutocompleteDropdownHolder(event.target)) {
+        return;
+      }
+
+      // Keep Handsontable's autocomplete wheel events local to the dropdown.
+      event.stopPropagation();
+    },
     groupBy(objectArray: Column[], property: any) {
       // TODO: don't use "any"
       return objectArray.reduce((acc: any, obj: any) => {
@@ -2102,6 +2125,14 @@ export default Vue.extend({
   },
   mounted() {
     this.setHOTHeight();
+    document.addEventListener('wheel', this.handleAutocompleteDropdownWheel as EventListener, true);
+  },
+  beforeDestroy() {
+    document.removeEventListener(
+      'wheel',
+      this.handleAutocompleteDropdownWheel as EventListener,
+      true,
+    );
   },
   updated() {
     this.rowCount = this.hotTable.countRows();
@@ -2140,5 +2171,9 @@ export default Vue.extend({
 }
 .htNoWrap {
   font-size: 0.9em;
+}
+.handsontableEditor.autocompleteEditor .wtHolder,
+.handsontable.listbox .wtHolder {
+  overscroll-behavior: contain;
 }
 </style>
