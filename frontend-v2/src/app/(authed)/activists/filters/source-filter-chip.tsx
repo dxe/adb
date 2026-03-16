@@ -48,6 +48,7 @@ export function SourceFilterChip({
     <FilterChip
       label="Source"
       summary={committedText}
+      summaryClassName="max-w-[15ch]"
       onClear={() => onChange(undefined)}
       defaultOpen={defaultOpen}
       removable={removable}

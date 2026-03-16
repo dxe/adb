@@ -5,11 +5,13 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { ChevronDown, X } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface FilterChipProps {
   label: string
   /** When set, shows two-line layout (label small, summary normal) with × button. */
   summary?: string
+  summaryClassName?: string
   onClear: () => void
   /** Show × even without a summary (for optional/removable filter chips). */
   removable?: boolean
@@ -24,6 +26,7 @@ interface FilterChipProps {
 export function FilterChip({
   label,
   summary,
+  summaryClassName,
   onClear,
   removable,
   children,
@@ -68,7 +71,7 @@ export function FilterChip({
         <PopoverTrigger asChild>
           <button
             type="button"
-            className="flex flex-col items-start justify-center px-3 hover:bg-muted transition-colors h-full"
+            className="flex h-full min-w-0 flex-col items-start justify-center px-3 transition-colors hover:bg-muted"
           >
             {!summary ? (
               <div className="flex items-center gap-1">
@@ -78,8 +81,16 @@ export function FilterChip({
             ) : (
               <>
                 <span className="text-xs text-muted-foreground">{label}</span>
-                <div className="flex items-center gap-1">
-                  <span className="text-sm">{summary}</span>
+                <div className="flex min-w-0 items-center gap-1">
+                  <span
+                    className={cn(
+                      'block max-w-full truncate text-sm',
+                      summaryClassName,
+                    )}
+                    title={summary}
+                  >
+                    {summary}
+                  </span>
                   <ChevronDown className="h-3 w-3 text-muted-foreground" />
                 </div>
               </>
