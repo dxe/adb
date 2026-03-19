@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { FilterChip } from './filter-chip'
 import { useDraftFilter } from '@/hooks/use-draft-filter'
 import type { IntRangeFilterValue } from '../filter-types'
-import { parseOptionalSafeInteger } from '../number-utils'
+import { parseOptionalSafeInteger } from '@/lib/number-utils'
 
 interface IntRangeFilterProps {
   label: string

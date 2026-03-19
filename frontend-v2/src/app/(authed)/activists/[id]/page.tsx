@@ -7,6 +7,7 @@ import { notFound } from 'next/navigation'
 import { ContentWrapper } from '@/app/content-wrapper'
 import { API_PATH, ApiClient } from '@/lib/api'
 import { getCookies } from '@/lib/auth'
+import { parseSafeInteger } from '@/lib/number-utils'
 import { redirectIfForbidden } from '@/lib/server-auth'
 import { ActivistDetail } from './activist-detail'
 
@@ -16,8 +17,8 @@ export default async function ActivistPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const activistId = parseInt(id)
-  if (Number.isNaN(activistId)) {
+  const activistId = parseSafeInteger(id)
+  if (activistId === undefined) {
     notFound()
   }
 
