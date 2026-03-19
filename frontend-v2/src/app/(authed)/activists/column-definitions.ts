@@ -1,5 +1,4 @@
 import { ActivistColumnName } from '@/lib/api'
-import type { FilterState } from './query-state'
 
 export type ColumnCategory =
   | 'Basic Info'
@@ -419,95 +418,29 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
 ]
 
-export const groupColumnsByCategory = () => {
+export const COLUMN_DEFINITION_BY_NAME = Object.fromEntries(
+  COLUMN_DEFINITIONS.map((definition) => [definition.name, definition]),
+) as Record<ActivistColumnName, ColumnDefinition>
+
+export const COLUMN_ORDER_BY_NAME = new Map<ActivistColumnName, number>(
+  COLUMN_DEFINITIONS.map((column, index) => [column.name, index]),
+)
+
+export const GROUPED_COLUMNS_BY_CATEGORY = (() => {
   const grouped = new Map<ColumnCategory, ColumnDefinition[]>()
 
-  COLUMN_DEFINITIONS.forEach((col) => {
-    const existing = grouped.get(col.category) || []
-    grouped.set(col.category, [...existing, col])
+  COLUMN_DEFINITIONS.forEach((column) => {
+    const existing = grouped.get(column.category) || []
+    grouped.set(column.category, [...existing, column])
   })
 
   return grouped
-}
+})()
 
-// Normalizes column selection. Ensures columns:
-//  * include required columns
-//  * are not duplicated
-//  * are sorted according to their order in COLUMN_DEFINITIONS
-export const normalizeColumns = (
-  columns: ActivistColumnName[],
-): ActivistColumnName[] => {
-  // Deduplicate columns
-  const uniqueColumns = Array.from(new Set(columns))
+export const groupColumnsByCategory = () => GROUPED_COLUMNS_BY_CATEGORY
 
-  // Add required columns
-  if (!uniqueColumns.includes('name')) {
-    uniqueColumns.push('name')
-  }
-
-  // Sort according to COLUMN_DEFINITIONS order
-  const orderMap = new Map<ActivistColumnName, number>()
-  COLUMN_DEFINITIONS.forEach((col, index) => {
-    orderMap.set(col.name, index)
-  })
-
-  return uniqueColumns.sort((a, b) => {
-    const orderA = orderMap.get(a) ?? Number.MAX_SAFE_INTEGER
-    const orderB = orderMap.get(b) ?? Number.MAX_SAFE_INTEGER
-    return orderA - orderB
-  })
-}
-
-// Maps filter keys to the column that should be auto-shown when the filter
-// gets a value. Excludes training, searchAcrossChapters (handled separately),
-// includeHidden, and nameSearch which have no single corresponding column.
-const FILTER_COLUMN_MAP: Partial<
-  Record<keyof FilterState, ActivistColumnName>
-> = {
-  lastEvent: 'last_event',
-  firstEvent: 'first_event',
-  totalEvents: 'total_events',
-  interestDate: 'interest_date',
-  totalInteractions: 'total_interactions',
-  activistLevel: 'activist_level',
-  source: 'source',
-  assignedTo: 'assigned_to_name',
-  followups: 'followup_date',
-}
-
-/** Returns columns that should be added based on newly-set filter values. */
-export const columnsForNewFilters = (
-  prev: FilterState,
-  next: FilterState,
-): ActivistColumnName[] => {
-  const newColumns: ActivistColumnName[] = []
-  for (const [filterKey, columnName] of Object.entries(FILTER_COLUMN_MAP)) {
-    const key = filterKey as keyof FilterState
-    if (prev[key] === undefined && next[key] !== undefined) {
-      newColumns.push(columnName)
-    }
-  }
-  return newColumns
-}
-
-// Normalizes columns and ensures chapter_name is present if and only if
-// searching across chapters. This centralizes the filter-dependent column logic.
-export const normalizeColumnsForFilters = (
-  columns: ActivistColumnName[],
-  searchAcrossChapters: boolean,
-): ActivistColumnName[] => {
-  let adjustedColumns = [...columns]
-
-  // Ensure chapter_name is visible if and only if searching across chapters
-  if (searchAcrossChapters) {
-    if (!adjustedColumns.includes('chapter_name')) {
-      adjustedColumns.unshift('chapter_name')
-    }
-  } else {
-    if (adjustedColumns.includes('chapter_name')) {
-      adjustedColumns = adjustedColumns.filter((col) => col !== 'chapter_name')
-    }
-  }
-
-  return normalizeColumns(adjustedColumns)
+export function isActivistColumnName(
+  value: string,
+): value is ActivistColumnName {
+  return Object.hasOwn(COLUMN_DEFINITION_BY_NAME, value)
 }

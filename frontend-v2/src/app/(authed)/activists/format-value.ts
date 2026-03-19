@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { ActivistJSON, ActivistColumnName } from '@/lib/api'
-import { COLUMN_DEFINITIONS } from './column-definitions'
+import { COLUMN_DEFINITION_BY_NAME } from './column-definitions'
 import { formatDateValueForActivists } from './date-time'
 
 type ColumnType = 'string' | 'number' | 'boolean'
@@ -22,10 +22,6 @@ const COLUMN_TYPE_BY_NAME = Object.fromEntries(
     return [columnName, columnType]
   }),
 ) as Record<ActivistColumnName, ColumnType>
-
-const COLUMN_DEFINITION_BY_NAME = Object.fromEntries(
-  COLUMN_DEFINITIONS.map((definition) => [definition.name, definition]),
-) as Record<ActivistColumnName, (typeof COLUMN_DEFINITIONS)[number]>
 
 export const formatValue = (
   value: unknown,

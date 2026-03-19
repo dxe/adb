@@ -1,5 +1,5 @@
 import { QueryActivistOptions } from '@/lib/api'
-import { normalizeColumnsForFilters } from './column-definitions'
+import { normalizeColumnsForFilters } from './column-selection'
 import { DEFAULT_SORT, type ActivistsQueryState } from './query-state'
 import { buildApiFiltersFromState } from './filter-schema'
 
