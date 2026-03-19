@@ -1106,16 +1106,21 @@ func (c MainController) ActivistMergeHandler(w http.ResponseWriter, r *http.Requ
 func (c MainController) EventGetHandler(w http.ResponseWriter, r *http.Request) {
 	chapter := c.getAuthedADBChapter(r)
 
-	eventID, err := strconv.Atoi(mux.Vars(r)["event_id"])
+	rawID := mux.Vars(r)["event_id"]
+	eventID, err := strconv.Atoi(rawID)
 	if err != nil {
-		sendErrorMessage(w, err)
+		transport.SendErrorMessage(w, http.StatusBadRequest, errors.Wrapf(err, "invalid event id %s", rawID))
 		return
 	}
 
 	// We pass in the chapter ID to make sure people don't get events that don't belong to their chapter.
 	event, err := model.GetEvent(c.db, model.GetEventOptions{EventID: eventID, ChapterID: chapter})
 	if err != nil {
-		sendErrorMessage(w, err)
+		if errors.Is(err, model.ErrNotFound) {
+			transport.SendErrorMessage(w, http.StatusNotFound, err)
+		} else {
+			transport.SendErrorMessage(w, http.StatusInternalServerError, err)
+		}
 		return
 	}
 

@@ -6,21 +6,21 @@ import {
 import { ContentWrapper } from '@/app/content-wrapper'
 import { API_PATH, ApiClient } from '@/lib/api'
 import { getCookies } from '@/lib/auth'
-import { redirectIfForbidden } from '@/lib/server-auth'
+import { redirectForHttpError } from '@/lib/server-auth'
 import UsersPage from './users-page'
 
 export default async function UsersListPage() {
   const apiClient = new ApiClient(await getCookies())
   const queryClient = new QueryClient()
 
-  // Use fetchQuery instead of prefetchQuery so a 403 throws during SSR
-  // and redirectIfForbidden can trigger Next's forbidden UI immediately.
-  await redirectIfForbidden(() =>
+  await redirectForHttpError(() =>
     Promise.all([
+      // Intentionally use fetchQuery instead of prefetchQuery; see redirectForHttpError for details.
       queryClient.fetchQuery({
         queryKey: [API_PATH.USERS],
         queryFn: ({ signal }) => apiClient.getUsers(signal),
       }),
+      // Intentionally use fetchQuery instead of prefetchQuery; see redirectForHttpError for details.
       queryClient.fetchQuery({
         queryKey: [API_PATH.CHAPTER_LIST],
         queryFn: ({ signal }) => apiClient.getChapterList(signal),

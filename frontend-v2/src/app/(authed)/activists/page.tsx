@@ -8,7 +8,7 @@ import { ContentWrapper } from '@/app/content-wrapper'
 import { API_PATH, ApiClient } from '@/lib/api'
 import { getCookies } from '@/lib/auth'
 import { getCachedSession } from '@/app/session'
-import { redirectIfForbidden } from '@/lib/server-auth'
+import { redirectForHttpError } from '@/lib/server-auth'
 import ActivistsPage from './activists-page'
 import { buildQueryOptions } from './filter-api-query'
 import {
@@ -49,9 +49,8 @@ export default async function ActivistsListPage({ searchParams }: PageProps) {
     referenceDate: initialReferenceDate,
   })
 
-  await redirectIfForbidden(() =>
-    // Use fetchInfiniteQuery instead of prefetchInfiniteQuery so a 403 throws
-    // during SSR and redirectIfForbidden can trigger Next's forbidden UI immediately.
+  await redirectForHttpError(() =>
+    // Intentionally use fetchInfiniteQuery instead of prefetchInfiniteQuery; see redirectForHttpError for details.
     queryClient.fetchInfiniteQuery({
       queryKey: [API_PATH.ACTIVISTS_SEARCH, initialQueryOptions],
       queryFn: ({ signal }) =>

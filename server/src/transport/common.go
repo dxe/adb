@@ -15,6 +15,12 @@ func WriteJSON(w io.Writer, v interface{}) {
 	writeJSON(w, v)
 }
 
+// Temporarily make public for use by main package until all of its transport logic is
+// migrated to this package.
+func SendErrorMessage(w http.ResponseWriter, status int, err error) {
+	sendErrorMessage(w, status, err)
+}
+
 func writeJSON(w io.Writer, v interface{}) {
 	enc := json.NewEncoder(w)
 	err := enc.Encode(v)
@@ -31,6 +37,7 @@ func sendErrorMessage(w http.ResponseWriter, status int, err error) {
 	}
 	log.Printf("ERROR: %+v\n", err.Error())
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	writeJSON(w, map[string]string{
 		"status":  "error",

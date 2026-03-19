@@ -125,11 +125,11 @@ func GetEvent(db *sqlx.DB, options GetEventOptions) (Event, error) {
 	}
 	events, err := getEvents(db, options)
 	if err != nil {
-		return Event{}, nil
+		return Event{}, err
 	} else if len(events) == 0 {
-		return Event{}, errors.New("Could not find any events")
+		return Event{}, errors.Wrapf(ErrNotFound, "could not find event with id %d", options.EventID)
 	} else if len(events) > 1 {
-		return Event{}, errors.New("Found too many events")
+		return Event{}, errors.Errorf("found too many events with id %d", options.EventID)
 	}
 	return events[0], nil
 }

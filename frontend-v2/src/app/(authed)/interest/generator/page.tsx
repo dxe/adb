@@ -6,16 +6,15 @@ import {
 import { ContentWrapper } from '@/app/content-wrapper'
 import { API_PATH, ApiClient } from '@/lib/api'
 import { getCookies } from '@/lib/auth'
-import { redirectIfForbidden } from '@/lib/server-auth'
+import { redirectForHttpError } from '@/lib/server-auth'
 import GeneratorForm from './generator-form'
 
 export default async function InterestGeneratorPage() {
   const apiClient = new ApiClient(await getCookies())
   const queryClient = new QueryClient()
 
-  // Use fetchQuery instead of prefetchQuery so a 403 throws during SSR
-  // and redirectIfForbidden can trigger Next's forbidden UI immediately.
-  await redirectIfForbidden(() =>
+  await redirectForHttpError(() =>
+    // Intentionally use fetchQuery instead of prefetchQuery; see redirectForHttpError for details.
     queryClient.fetchQuery({
       queryKey: [API_PATH.CHAPTER_LIST],
       queryFn: ({ signal }) => apiClient.getChapterList(signal),
