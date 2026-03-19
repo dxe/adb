@@ -86,7 +86,7 @@ export function ActivistTable({
           const value = row.original[colName as keyof ActivistJSON]
           const formatted = formatValue(value, colName)
 
-          if (colName === 'name' && row.original.id) {
+          if (colName === 'name') {
             return (
               <IntentPrefetchLink
                 href={`/activists/${row.original.id}`}
@@ -182,7 +182,7 @@ export function ActivistTable({
         {activists.map((activist) => (
           <IntentPrefetchLink
             key={activist.id}
-            href={activist.id ? `/activists/${activist.id}` : '#'}
+            href={`/activists/${activist.id}`}
             className={`block rounded-lg border bg-card p-4 transition-opacity hover:border-primary/50 ${
               isStale ? 'opacity-60' : ''
             }`}
