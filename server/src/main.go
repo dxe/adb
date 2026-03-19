@@ -285,6 +285,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	// Authed API
 	router.Handle("/api/csrf-token", csrfMiddleware(alice.New(main.apiAnyADBRoleAuthMiddleware).ThenFunc(main.CSRFTokenHandler))).Methods(http.MethodGet)
 	router.Handle("/api/activists", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistsSearchHandler)).Methods(http.MethodPost)
+	router.Handle("/api/activists/{id:[0-9]+}", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistGetHandler)).Methods(http.MethodGet)
 	router.Handle("/activist_names/get", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteActivistsHandler))
 	router.Handle("/activist_names/get_organizers", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteOrganizersHandler))
 	router.Handle("/activist_names/get_chaptermembers", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteChapterMembersHandler))
@@ -1703,6 +1704,15 @@ func (c MainController) ActivistsSearchHandler(w http.ResponseWriter, r *http.Re
 	}
 
 	transport.ActivistsSearchHandler(w, r, authedUser, c.activistRepo)
+}
+
+func (c MainController) ActivistGetHandler(w http.ResponseWriter, r *http.Request) {
+	authedUser, authed := c.getAuthedADBUser(r)
+	if !authed {
+		panic("ActivistGetHandler requires authed ADB user")
+	}
+
+	transport.ActivistGetHandler(w, r, authedUser, c.db)
 }
 
 func (c MainController) UsersListHandler(w http.ResponseWriter, r *http.Request) {

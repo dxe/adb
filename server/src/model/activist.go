@@ -27,6 +27,8 @@ const Duration90Days = 90 * 24 * time.Hour
 
 const ACTIVIST_LEVEL_CHAPTER_MEMBER = "Chapter Member"
 
+var ErrNotFound = errors.New("not found")
+
 const selectActivistBaseQuery string = `
 SELECT    
   email,
@@ -562,18 +564,35 @@ func GetActivistsJSON(db *sqlx.DB, options GetActivistOptions) ([]ActivistJSON, 
 
 func GetActivistJSON(db *sqlx.DB, options GetActivistOptions) (ActivistJSON, error) {
 	if options.ID == 0 {
-		return ActivistJSON{}, errors.New("GetActivistJSON: Must include ID in options")
+		return ActivistJSON{}, ValidationErrorf("GetActivistJSON: must include ID in options")
 	}
 
 	activists, err := getActivistsJSON(db, options)
 	if err != nil {
 		return ActivistJSON{}, err
 	} else if len(activists) == 0 {
-		return ActivistJSON{}, errors.New("Could not find any activists")
+		return ActivistJSON{}, errors.Wrapf(ErrNotFound, "could not find activist with id %d", options.ID)
 	} else if len(activists) > 1 {
-		return ActivistJSON{}, errors.New("Found too many activists")
+		return ActivistJSON{}, errors.Errorf("found too many activists with id %d", options.ID)
 	}
 	return activists[0], nil
+}
+
+func GetActivistJSONForUser(db *sqlx.DB, authedUser ADBUser, options GetActivistOptions) (ActivistJSON, error) {
+	if !UserHasOrganizerAccess(authedUser) {
+		return ActivistJSON{}, ValidationErrorf("lacking permission to query activists")
+	}
+
+	if !UserHasRole("admin", authedUser) {
+		// options.ChapterID == 0 means "do not filter by chapter", so this
+		// check is important for security.
+		if authedUser.ChapterID == 0 {
+			return ActivistJSON{}, ValidationErrorf("cannot query activists without an active chapter")
+		}
+		options.ChapterID = authedUser.ChapterID
+	}
+
+	return GetActivistJSON(db, options)
 }
 
 func getActivistsJSON(db *sqlx.DB, options GetActivistOptions) ([]ActivistJSON, error) {
@@ -859,9 +878,15 @@ func GetActivistsExtra(db *sqlx.DB, options GetActivistOptions) ([]ActivistExtra
 	var queryArgs []interface{}
 
 	if options.ID != 0 {
+		var whereClause []string
+
 		// retrieve specific activist rather than all activists
-		query += " WHERE a.id = ? "
+		whereClause = append(whereClause, "a.id = ?")
 		queryArgs = append(queryArgs, options.ID)
+		if options.ChapterID != 0 {
+			whereClause = append(whereClause, "a.chapter_id = "+strconv.Itoa(options.ChapterID))
+		}
+		query += " WHERE " + strings.Join(whereClause, " AND ")
 	} else {
 		var whereClause []string
 

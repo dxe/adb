@@ -17,10 +17,10 @@ import {
 } from '@/components/ui/table'
 import { ArrowDown, ArrowUp } from 'lucide-react'
 import { ActivistJSON, ActivistColumnName } from '@/lib/api'
+import { IntentPrefetchLink } from '@/components/intent-prefetch-link'
 import { COLUMN_DEFINITIONS } from './column-definitions'
-import { formatDateValueForActivists } from './date-time'
+import { formatValue } from './format-value'
 import type { SortColumn } from './query-state'
-import { z } from 'zod'
 
 interface ActivistTableProps {
   activists: ActivistJSON[]
@@ -28,56 +28,6 @@ interface ActivistTableProps {
   sort: SortColumn[]
   onSortChange: (sort: SortColumn[]) => void
   isStale?: boolean
-}
-
-// Gets the underlying type of a column from the ActivistJSON schema
-const getColumnType = (
-  columnName: ActivistColumnName,
-): 'string' | 'number' | 'boolean' => {
-  const schema = ActivistJSON.shape[
-    columnName as keyof typeof ActivistJSON.shape
-  ] as z.ZodTypeAny
-  if (!schema) throw new Error('column not in schema: ' + columnName)
-
-  const unwrapped =
-    schema instanceof z.ZodOptional || schema instanceof z.ZodNullable
-      ? schema.unwrap()
-      : schema
-
-  if (unwrapped instanceof z.ZodNumber) return 'number'
-  if (unwrapped instanceof z.ZodBoolean) return 'boolean'
-  return 'string'
-}
-
-const formatValue = (
-  value: unknown,
-  columnName: ActivistColumnName,
-): string => {
-  if (value === null || value === undefined) return ''
-
-  const columnType = getColumnType(columnName)
-
-  if (columnType === 'boolean') {
-    return value ? 'Yes' : 'No'
-  }
-
-  if (columnType === 'number') {
-    return String(value)
-  }
-
-  if (columnType === 'string') {
-    const definition = COLUMN_DEFINITIONS.find((d) => d.name === columnName)
-    if (definition?.isDate && typeof value === 'string') {
-      if (
-        /^\d{4}-\d{2}-\d{2}$/.test(value) ||
-        !isNaN(new Date(value).getTime())
-      ) {
-        return formatDateValueForActivists(value)
-      }
-    }
-  }
-
-  return String(value)
 }
 
 export function ActivistTable({
@@ -134,11 +84,20 @@ export function ActivistTable({
         accessorFn: (row) => row[colName as keyof ActivistJSON],
         cell: ({ row }) => {
           const value = row.original[colName as keyof ActivistJSON]
-          return (
-            <div className="truncate text-sm">
-              {formatValue(value, colName)}
-            </div>
-          )
+          const formatted = formatValue(value, colName)
+
+          if (colName === 'name' && row.original.id) {
+            return (
+              <IntentPrefetchLink
+                href={`/activists/${row.original.id}`}
+                className="truncate text-sm text-primary hover:underline"
+              >
+                {formatted}
+              </IntentPrefetchLink>
+            )
+          }
+
+          return <div className="truncate text-sm">{formatted}</div>
         },
       }
     })
@@ -221,9 +180,10 @@ export function ActivistTable({
       {/* Mobile card layout */}
       <div className="flex flex-col gap-4 md:hidden">
         {activists.map((activist) => (
-          <div
+          <IntentPrefetchLink
             key={activist.id}
-            className={`rounded-lg border bg-card p-4 transition-opacity ${
+            href={activist.id ? `/activists/${activist.id}` : '#'}
+            className={`block rounded-lg border bg-card p-4 transition-opacity hover:border-primary/50 ${
               isStale ? 'opacity-60' : ''
             }`}
           >
@@ -247,7 +207,7 @@ export function ActivistTable({
                 )
               })}
             </div>
-          </div>
+          </IntentPrefetchLink>
         ))}
       </div>
     </>

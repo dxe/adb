@@ -468,6 +468,77 @@ func mustParseTime(t *testing.T, s string) time.Time {
 	return time
 }
 
+func TestGetActivistJSON_ChapterScopedByID(t *testing.T) {
+	db := newTestDB()
+	defer db.Close()
+
+	sfBayActivist, err := GetOrCreateActivist(db, "SF Bay Activist", SFBayChapterIdDevTest)
+	require.NoError(t, err)
+
+	otherChapterID := 9999
+
+	_, err = GetActivistJSON(db, GetActivistOptions{
+		ID:        sfBayActivist.ID,
+		ChapterID: otherChapterID,
+	})
+	require.ErrorIs(t, err, ErrNotFound)
+
+	activistJSON, err := GetActivistJSON(db, GetActivistOptions{
+		ID:        sfBayActivist.ID,
+		ChapterID: SFBayChapterIdDevTest,
+	})
+	require.NoError(t, err)
+	require.Equal(t, sfBayActivist.ID, activistJSON.ID)
+}
+
+func TestGetActivistJSONForUser_RejectsNonAdminWithoutChapter(t *testing.T) {
+	db := newTestDB()
+	defer db.Close()
+
+	activist, err := GetOrCreateActivist(db, "SF Bay Activist", SFBayChapterIdDevTest)
+	require.NoError(t, err)
+
+	_, err = GetActivistJSONForUser(db, ADBUser{
+		ID:        1,
+		Email:     "organizer@example.org",
+		Name:      "Organizer",
+		Roles:     []string{"organizer"},
+		ChapterID: 0,
+	}, GetActivistOptions{ID: activist.ID})
+	require.ErrorIs(t, err, ErrValidation)
+}
+
+func TestGetActivistJSONForUser_ChapterScopedByID(t *testing.T) {
+	db := newTestDB()
+	defer db.Close()
+
+	sfBayActivist, err := GetOrCreateActivist(db, "SF Bay Activist", SFBayChapterIdDevTest)
+	require.NoError(t, err)
+
+	otherChapterID, err := InsertChapter(db, ChapterWithToken{
+		ID:   999,
+		Name: "Other Chapter",
+	})
+	require.NoError(t, err)
+	if otherChapterID == SFBayChapterIdDevTest {
+		otherChapterID, err = InsertChapter(db, ChapterWithToken{
+			ID:   1000,
+			Name: "Another Other Chapter",
+		})
+		require.NoError(t, err)
+	}
+	require.NotEqual(t, SFBayChapterIdDevTest, otherChapterID)
+
+	_, err = GetActivistJSONForUser(db, ADBUser{
+		ID:        1,
+		Email:     "organizer@example.org",
+		Name:      "Organizer",
+		Roles:     []string{"organizer"},
+		ChapterID: otherChapterID,
+	}, GetActivistOptions{ID: sfBayActivist.ID})
+	require.ErrorIs(t, err, ErrNotFound)
+}
+
 func TestMergeActivist(t *testing.T) {
 	t.Run("ContactInfo", func(t *testing.T) {
 		t.Run("MergesNewerValues", func(t *testing.T) {

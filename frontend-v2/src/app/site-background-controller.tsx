@@ -21,10 +21,7 @@ export default function SiteBackgroundController() {
   useEffect(() => {
     const mediaQuery = window.matchMedia(MOBILE_BREAKPOINT)
     const isFullScreenPage =
-      pathname === '/activists' ||
-      pathname.startsWith('/activists/') ||
-      pathname === '/intl/organizers' ||
-      pathname.startsWith('/intl/organizers/')
+      pathname === '/activists' || pathname === '/intl/organizers'
 
     const applyBackgroundClass = () => {
       const shouldShowBackground = !isFullScreenPage && !mediaQuery.matches
