@@ -3,11 +3,11 @@
 import { useCallback, useMemo } from 'react'
 import { useQueryStates } from 'nuqs'
 import type { ActivistColumnName } from '@/lib/api'
+import { DEFAULT_COLUMNS } from './column-definitions'
 import {
-  DEFAULT_COLUMNS,
   columnsForNewFilters,
   normalizeColumnsForFilters,
-} from './column-definitions'
+} from './column-selection'
 import { isFilterStateDirty } from './filter-schema'
 import type { FilterState, SortColumn } from './query-state'
 import {

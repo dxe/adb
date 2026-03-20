@@ -17,7 +17,7 @@ import {
 import { ArrowDownUp, ArrowDown, ArrowUp, ChevronDown, X } from 'lucide-react'
 import { ActivistColumnName } from '@/lib/api'
 import type { SortColumn } from './query-state'
-import { COLUMN_DEFINITIONS } from './column-definitions'
+import { COLUMN_DEFINITION_BY_NAME } from './column-definitions'
 
 interface SortSelectorProps {
   /** Small label text shown above the value when active. */
@@ -34,7 +34,7 @@ interface SortSelectorProps {
 }
 
 function getColumnLabel(name: ActivistColumnName): string {
-  const column = COLUMN_DEFINITIONS.find((d) => d.name === name)
+  const column = COLUMN_DEFINITION_BY_NAME[name]
   if (column === undefined) {
     throw new Error('cannot find column: ' + name)
   }

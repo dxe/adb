@@ -5,6 +5,10 @@ import {
   QueryActivistOptions,
   QueryActivistResult,
 } from './api/activists'
+import {
+  BLANK_TO_FALSE_FIELDS,
+  BLANK_TO_ZERO_FIELDS,
+} from '@/app/(authed)/activists/column-definitions'
 
 export const API_PATH = {
   STATIC_RESOURCE_HASH: 'static_resources_hash',
@@ -383,8 +387,9 @@ export class ApiClient {
       const resp = await this.client
         .post(API_PATH.ACTIVISTS_SEARCH, { json: options, signal })
         .json()
-      const parsed = QueryActivistResult.parse(resp)
-      return fillActivistBlankNumericFieldsWithZero(parsed, options.columns)
+      const result = QueryActivistResult.parse(resp)
+      fillBlankFieldsInQueryActivistResult(result, options.columns)
+      return result
     } catch (err) {
       return this.handleKyError(err)
     }
@@ -395,9 +400,9 @@ export class ApiClient {
       const resp = await this.client
         .get(`${API_PATH.ACTIVIST_GET}/${activistId}`, { signal })
         .json()
-      return fillSingleActivistBlankNumericFieldsWithZero(
-        ActivistGetResp.parse(resp).activist,
-      )
+      const activist = ActivistGetResp.parse(resp).activist
+      fillActivistBlankFields(activist)
+      return activist
     } catch (err) {
       return this.handleKyError(err)
     }
@@ -540,56 +545,56 @@ export class ApiClient {
 // (undefined), this is due to use of "omitempty" in Go JSON serialization.
 // The real value of the field is still 0, so these fields need to have their
 // zero values added back until we implement smarter serialization in Go.
-const BLANK_TO_ZERO_FIELDS = [
-  'total_events',
-  'months_since_last_action',
-  'total_points',
-  'total_interactions',
-] as const
 type BlankToZeroField = (typeof BLANK_TO_ZERO_FIELDS)[number]
+type BlankToFalseField = (typeof BLANK_TO_FALSE_FIELDS)[number]
 
-function fillActivistBlankNumericFieldsWithZeroForFields(
+function fillActivistBlankFields(
   activist: ActivistJSON,
-  fields: ReadonlyArray<BlankToZeroField>,
-): ActivistJSON {
-  if (fields.length === 0) {
-    return activist
-  }
-
-  const normalized = { ...activist }
-  for (const field of fields) {
-    if (normalized[field] === undefined) {
-      normalized[field] = 0
+  fields: {
+    zero: ReadonlyArray<BlankToZeroField>
+    false: ReadonlyArray<BlankToFalseField>
+  } = {
+    zero: BLANK_TO_ZERO_FIELDS,
+    false: BLANK_TO_FALSE_FIELDS,
+  },
+) {
+  const numericFields = activist as ActivistJSON &
+    Record<BlankToZeroField, number | undefined>
+  for (const field of fields.zero) {
+    if (numericFields[field] === undefined) {
+      numericFields[field] = 0
     }
   }
-  return normalized
+  const booleanFields = activist as ActivistJSON &
+    Record<BlankToFalseField, boolean | undefined>
+  for (const field of fields.false) {
+    if (booleanFields[field] === undefined) {
+      booleanFields[field] = false
+    }
+  }
 }
 
-function fillSingleActivistBlankNumericFieldsWithZero(
-  activist: ActivistJSON,
-): ActivistJSON {
-  return fillActivistBlankNumericFieldsWithZeroForFields(
-    activist,
-    BLANK_TO_ZERO_FIELDS,
-  )
-}
-
-function fillActivistBlankNumericFieldsWithZero(
+function fillBlankFieldsInQueryActivistResult(
   result: z.infer<typeof QueryActivistResult>,
   requestedColumns: string[],
-): z.infer<typeof QueryActivistResult> {
+): void {
   const columns = new Set(requestedColumns)
-  const blankFields = BLANK_TO_ZERO_FIELDS.filter((field) => columns.has(field))
-  if (blankFields.length === 0) {
-    return result
+  const blankNumericFields = BLANK_TO_ZERO_FIELDS.filter((field) =>
+    columns.has(field),
+  )
+  const blankBooleanFields = BLANK_TO_FALSE_FIELDS.filter((field) =>
+    columns.has(field),
+  )
+  if (blankNumericFields.length === 0 && blankBooleanFields.length === 0) {
+    return
   }
 
-  return {
-    ...result,
-    activists: result.activists.map((activist) =>
-      fillActivistBlankNumericFieldsWithZeroForFields(activist, blankFields),
-    ),
-  }
+  result.activists.forEach((activist: ActivistJSON) => {
+    fillActivistBlankFields(activist, {
+      zero: blankNumericFields,
+      false: blankBooleanFields,
+    })
+  })
 }
 
 /** Single API client to be used from client-side calls.

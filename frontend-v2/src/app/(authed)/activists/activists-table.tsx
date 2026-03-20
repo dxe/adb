@@ -18,7 +18,7 @@ import {
 import { ArrowDown, ArrowUp } from 'lucide-react'
 import { ActivistJSON, ActivistColumnName } from '@/lib/api'
 import { IntentPrefetchLink } from '@/components/intent-prefetch-link'
-import { COLUMN_DEFINITIONS } from './column-definitions'
+import { COLUMN_DEFINITION_BY_NAME } from './column-definitions'
 import { formatValue } from './format-value'
 import type { SortColumn } from './query-state'
 
@@ -39,7 +39,7 @@ export function ActivistTable({
 }: ActivistTableProps) {
   const columns = useMemo<ColumnDef<ActivistJSON>[]>(() => {
     return visibleColumns.map((colName) => {
-      const definition = COLUMN_DEFINITIONS.find((d) => d.name === colName)
+      const definition = COLUMN_DEFINITION_BY_NAME[colName]
       const label = definition?.label || colName
       const sortIndex = sort.findIndex((s) => s.column === colName)
       const sortEntry = sortIndex !== -1 ? sort[sortIndex] : undefined
@@ -189,9 +189,7 @@ export function ActivistTable({
           >
             <div className="flex flex-col gap-2">
               {visibleColumns.map((colName) => {
-                const definition = COLUMN_DEFINITIONS.find(
-                  (d) => d.name === colName,
-                )
+                const definition = COLUMN_DEFINITION_BY_NAME[colName]
                 const label = definition?.label || colName
                 const value = activist[colName as keyof ActivistJSON]
 

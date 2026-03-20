@@ -2,7 +2,7 @@ import { render, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import type { ActivistJSON } from '@/lib/api'
-import { COLUMN_DEFINITIONS } from './column-definitions'
+import { COLUMN_DEFINITION_BY_NAME } from './column-definitions'
 import { DEFAULT_SORT } from './query-state'
 import { ActivistTable } from './activists-table'
 
@@ -50,9 +50,7 @@ describe('ActivistTable default sort', () => {
   it('shows a sort arrow on the active default sort header when sort is explicitly set', () => {
     const { table } = renderTable(DEFAULT_SORT)
     const activeColumn = DEFAULT_SORT[0].column
-    const activeLabel = COLUMN_DEFINITIONS.find(
-      (column) => column.name === activeColumn,
-    )?.label
+    const activeLabel = COLUMN_DEFINITION_BY_NAME[activeColumn]?.label
     expect(activeLabel).toBeDefined()
 
     const headers = table.getAllByRole('columnheader')

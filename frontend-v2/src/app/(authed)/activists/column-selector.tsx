@@ -21,11 +21,11 @@ import {
 import { CircleHelp, Columns3, Search } from 'lucide-react'
 import { ActivistColumnName } from '@/lib/api'
 import {
-  groupColumnsByCategory,
+  GROUPED_COLUMNS_BY_CATEGORY,
   ColumnCategory,
   ColumnDefinition,
-  normalizeColumns,
 } from './column-definitions'
+import { normalizeColumns } from './column-selection'
 
 interface ColumnSelectorProps {
   visibleColumns: ActivistColumnName[]
@@ -43,7 +43,7 @@ export function ColumnSelector({
   const [isOpen, setIsOpen] = useState(false)
   const [localColumns, setLocalColumns] = useState(visibleColumns)
   const [search, setSearch] = useState('')
-  const groupedColumns = useMemo(() => groupColumnsByCategory(), [])
+  const groupedColumns = GROUPED_COLUMNS_BY_CATEGORY
 
   const slugifyCategory = (category: ColumnCategory) =>
     category

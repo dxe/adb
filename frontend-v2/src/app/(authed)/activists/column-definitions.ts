@@ -1,5 +1,4 @@
-import { ActivistColumnName } from '@/lib/api'
-import type { FilterState } from './query-state'
+import type { ActivistColumnName } from '@/lib/api/activists'
 
 export type ColumnCategory =
   | 'Basic Info'
@@ -20,6 +19,7 @@ export interface ColumnDefinition {
   label: string
   description?: string // Optional help text shown in column selector tooltip
   category: ColumnCategory
+  blankValue?: 0 | false // Restore Go zero values omitted by omitempty
   isDate?: boolean // If true, format string values as dates
   hidden?: boolean // If true, hide from user-facing column selectors
   defaultWidth?: number // Default column width in pixels (default: 150)
@@ -37,6 +37,14 @@ export const DEFAULT_COLUMNS: ActivistColumnName[] = [
 
 export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   // Chapter (conditionally shown based on filters)
+  {
+    name: 'chapter_id',
+    label: 'Chapter ID',
+    category: 'Advanced',
+    hidden: true,
+    hideOnDetailPage: true,
+    defaultWidth: 70,
+  },
   { name: 'chapter_name', label: 'Chapter', category: 'Basic Info' },
 
   // Basic Info
@@ -132,6 +140,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     name: 'total_events',
     label: 'Total Events',
     category: 'Event Attendance',
+    blankValue: 0,
     defaultWidth: 90,
   },
   {
@@ -170,15 +179,22 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     name: 'months_since_last_action',
     label: 'Months Since Last Action',
     category: 'Event Attendance',
+    blankValue: 0,
     defaultWidth: 50,
   },
   {
     name: 'total_points',
     label: 'Leadership points',
     category: 'Event Attendance',
+    blankValue: 0,
     defaultWidth: 50,
   },
-  { name: 'active', label: 'Active', category: 'Event Attendance' },
+  {
+    name: 'active',
+    label: 'Active',
+    category: 'Event Attendance',
+    blankValue: false,
+  },
   { name: 'status', label: 'Status', category: 'Event Attendance' },
   {
     name: 'mpp_requirements',
@@ -192,6 +208,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     name: 'mpi',
     label: 'MPI',
     category: 'Event Attendance',
+    blankValue: false,
     defaultWidth: 30,
     description:
       'Whether the activist satisfied the MPP in either the current month or the previous month (see dxe.io/mpp)',
@@ -259,12 +276,14 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     name: 'prospect_chapter_member',
     label: 'Prospective Chapter Member',
     category: 'Application Info',
+    blankValue: false,
     defaultWidth: 60,
   },
   {
     name: 'prospect_organizer',
     label: 'Prospective Organizer',
     category: 'Application Info',
+    blankValue: false,
     defaultWidth: 100,
   },
 
@@ -302,6 +321,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     name: 'total_interactions',
     label: 'Interactions',
     category: 'Prospect Info',
+    blankValue: 0,
     defaultWidth: 80,
   },
   {
@@ -401,12 +421,19 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     name: 'voting_agreement',
     label: 'Voting Agreement',
     category: 'Chapter Membership',
+    blankValue: false,
     defaultWidth: 50,
   },
 
   // Other
   { name: 'notes', label: 'Notes', category: 'Other', defaultWidth: 100 },
-  { name: 'hiatus', label: 'Hiatus', category: 'Other', defaultWidth: 50 },
+  {
+    name: 'hiatus',
+    label: 'Hiatus',
+    category: 'Other',
+    blankValue: false,
+    defaultWidth: 50,
+  },
 
   // Developer
   {
@@ -419,95 +446,41 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
 ]
 
-export const groupColumnsByCategory = () => {
+export const COLUMN_DEFINITION_BY_NAME = Object.fromEntries(
+  COLUMN_DEFINITIONS.map((definition) => [definition.name, definition]),
+) as Record<ActivistColumnName, ColumnDefinition>
+
+export const BLANK_TO_ZERO_FIELDS = COLUMN_DEFINITIONS.filter(
+  (definition) => definition.blankValue === 0,
+).map((definition) => definition.name) as ReadonlyArray<ActivistColumnName>
+
+export const BLANK_TO_FALSE_FIELDS = COLUMN_DEFINITIONS.filter(
+  (definition) => definition.blankValue === false,
+).map((definition) => definition.name) as ReadonlyArray<ActivistColumnName>
+
+export const COLUMN_ORDER_BY_NAME = new Map<ActivistColumnName, number>(
+  COLUMN_DEFINITIONS.map((column, index) => [column.name, index]),
+)
+
+export const GROUPED_COLUMNS_BY_CATEGORY = (() => {
   const grouped = new Map<ColumnCategory, ColumnDefinition[]>()
 
-  COLUMN_DEFINITIONS.forEach((col) => {
-    const existing = grouped.get(col.category) || []
-    grouped.set(col.category, [...existing, col])
+  COLUMN_DEFINITIONS.forEach((column) => {
+    let columns = grouped.get(column.category)
+    if (columns === undefined) {
+      columns = []
+      grouped.set(column.category, columns)
+    }
+    columns.push(column)
   })
 
   return grouped
-}
+})()
 
-// Normalizes column selection. Ensures columns:
-//  * include required columns
-//  * are not duplicated
-//  * are sorted according to their order in COLUMN_DEFINITIONS
-export const normalizeColumns = (
-  columns: ActivistColumnName[],
-): ActivistColumnName[] => {
-  // Deduplicate columns
-  const uniqueColumns = Array.from(new Set(columns))
+export const groupColumnsByCategory = () => GROUPED_COLUMNS_BY_CATEGORY
 
-  // Add required columns
-  if (!uniqueColumns.includes('name')) {
-    uniqueColumns.push('name')
-  }
-
-  // Sort according to COLUMN_DEFINITIONS order
-  const orderMap = new Map<ActivistColumnName, number>()
-  COLUMN_DEFINITIONS.forEach((col, index) => {
-    orderMap.set(col.name, index)
-  })
-
-  return uniqueColumns.sort((a, b) => {
-    const orderA = orderMap.get(a) ?? Number.MAX_SAFE_INTEGER
-    const orderB = orderMap.get(b) ?? Number.MAX_SAFE_INTEGER
-    return orderA - orderB
-  })
-}
-
-// Maps filter keys to the column that should be auto-shown when the filter
-// gets a value. Excludes training, searchAcrossChapters (handled separately),
-// includeHidden, and nameSearch which have no single corresponding column.
-const FILTER_COLUMN_MAP: Partial<
-  Record<keyof FilterState, ActivistColumnName>
-> = {
-  lastEvent: 'last_event',
-  firstEvent: 'first_event',
-  totalEvents: 'total_events',
-  interestDate: 'interest_date',
-  totalInteractions: 'total_interactions',
-  activistLevel: 'activist_level',
-  source: 'source',
-  assignedTo: 'assigned_to_name',
-  followups: 'followup_date',
-}
-
-/** Returns columns that should be added based on newly-set filter values. */
-export const columnsForNewFilters = (
-  prev: FilterState,
-  next: FilterState,
-): ActivistColumnName[] => {
-  const newColumns: ActivistColumnName[] = []
-  for (const [filterKey, columnName] of Object.entries(FILTER_COLUMN_MAP)) {
-    const key = filterKey as keyof FilterState
-    if (prev[key] === undefined && next[key] !== undefined) {
-      newColumns.push(columnName)
-    }
-  }
-  return newColumns
-}
-
-// Normalizes columns and ensures chapter_name is present if and only if
-// searching across chapters. This centralizes the filter-dependent column logic.
-export const normalizeColumnsForFilters = (
-  columns: ActivistColumnName[],
-  searchAcrossChapters: boolean,
-): ActivistColumnName[] => {
-  let adjustedColumns = [...columns]
-
-  // Ensure chapter_name is visible if and only if searching across chapters
-  if (searchAcrossChapters) {
-    if (!adjustedColumns.includes('chapter_name')) {
-      adjustedColumns.unshift('chapter_name')
-    }
-  } else {
-    if (adjustedColumns.includes('chapter_name')) {
-      adjustedColumns = adjustedColumns.filter((col) => col !== 'chapter_name')
-    }
-  }
-
-  return normalizeColumns(adjustedColumns)
+export function isActivistColumnName(
+  value: string,
+): value is ActivistColumnName {
+  return Object.hasOwn(COLUMN_DEFINITION_BY_NAME, value)
 }

@@ -5,30 +5,19 @@ import {
   type ParserMap,
 } from 'nuqs/server'
 import type { ActivistColumnName } from '@/lib/api'
-import {
-  COLUMN_DEFINITIONS,
-  DEFAULT_COLUMNS,
-  normalizeColumns,
-  normalizeColumnsForFilters,
-} from './column-definitions'
+import { DEFAULT_COLUMNS, isActivistColumnName } from './column-definitions'
 import { buildSortParam } from './filter-url-state'
 import { FILTER_NUQS_PARSERS } from './filter-nuqs-parsers'
 import { FILTER_PARAM_KEYS, normalizeFilterState } from './filter-schema'
+import {
+  normalizeColumns,
+  normalizeColumnsForFilters,
+} from './column-selection'
 import type { ActivistsQueryState, SortColumn } from './query-state'
-
-const VALID_COLUMN_NAMES = new Set<ActivistColumnName>(
-  COLUMN_DEFINITIONS.map((column) => column.name),
-)
 
 const parseAsColumns = createParser<ActivistColumnName[]>({
   parse: (raw) => {
-    const cols = normalizeColumns(
-      raw
-        .split(',')
-        .filter((columnName): columnName is ActivistColumnName =>
-          VALID_COLUMN_NAMES.has(columnName as ActivistColumnName),
-        ),
-    )
+    const cols = normalizeColumns(raw.split(',').filter(isActivistColumnName))
     return cols.length > 0 ? cols : null
   },
   serialize: (cols) =>
@@ -43,10 +32,10 @@ const parseAsSort = createParser<SortColumn[]>({
       .flatMap((part) => {
         const desc = part.startsWith('-')
         const columnName = desc ? part.slice(1) : part
-        if (!VALID_COLUMN_NAMES.has(columnName as ActivistColumnName)) {
+        if (!isActivistColumnName(columnName)) {
           return []
         }
-        return [{ column: columnName as ActivistColumnName, desc }]
+        return [{ column: columnName, desc }]
       })
     return parts.length > 0 ? parts : null
   },
