@@ -56,8 +56,9 @@ var resetDevUserCmd = &cobra.Command{
 		}
 
 		if _, err := tx.Exec(
-			`INSERT INTO users_roles (user_id, role) VALUES (?, 'admin')`,
+			`INSERT INTO users_roles (user_id, role) VALUES (?, ?)`,
 			shared.DevTestUserId,
+			shared.RoleAdmin,
 		); err != nil {
 			return fmt.Errorf("failed to assign admin role: %w", err)
 		}
@@ -66,7 +67,12 @@ var resetDevUserCmd = &cobra.Command{
 			return fmt.Errorf("failed to commit transaction: %w", err)
 		}
 
-		fmt.Printf("Dev test user reset (id=%d, email=%s, role=admin)\n", shared.DevTestUserId, shared.DevTestUserEmail)
+		fmt.Printf(
+			"Dev test user reset (id=%d, email=%s, role=%s)\n",
+			shared.DevTestUserId,
+			shared.DevTestUserEmail,
+			shared.RoleAdmin,
+		)
 		return nil
 	},
 }

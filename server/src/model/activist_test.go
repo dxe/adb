@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dxe/adb/pkg/shared"
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
@@ -502,7 +503,7 @@ func TestGetActivistJSONForUser_RejectsNonAdminWithoutChapter(t *testing.T) {
 		ID:        1,
 		Email:     "organizer@example.org",
 		Name:      "Organizer",
-		Roles:     []string{"organizer"},
+		Roles:     []string{shared.RoleOrganizer},
 		ChapterID: 0,
 	}, GetActivistOptions{ID: activist.ID})
 	require.ErrorIs(t, err, ErrValidation)
@@ -533,7 +534,7 @@ func TestGetActivistJSONForUser_ChapterScopedByID(t *testing.T) {
 		ID:        1,
 		Email:     "organizer@example.org",
 		Name:      "Organizer",
-		Roles:     []string{"organizer"},
+		Roles:     []string{shared.RoleOrganizer},
 		ChapterID: otherChapterID,
 	}, GetActivistOptions{ID: sfBayActivist.ID})
 	require.ErrorIs(t, err, ErrNotFound)

@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/dxe/adb/mailing_list_signup"
+	"github.com/dxe/adb/pkg/shared"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
@@ -583,7 +584,7 @@ func GetActivistJSONForUser(db *sqlx.DB, authedUser ADBUser, options GetActivist
 		return ActivistJSON{}, ValidationErrorf("lacking permission to query activists")
 	}
 
-	if !UserHasRole("admin", authedUser) {
+	if !UserHasRole(shared.RoleAdmin, authedUser) {
 		// options.ChapterID == 0 means "do not filter by chapter", so this
 		// check is important for security.
 		if authedUser.ChapterID == 0 {
@@ -2183,7 +2184,7 @@ func assignActivistToUser(db *sqlx.DB, activistID, userID int) error {
 }
 
 func QueryActivists(authedUser ADBUser, options QueryActivistOptions, repo ActivistRepository) (QueryActivistResult, error) {
-	if !UserHasRole("admin", authedUser) {
+	if !UserHasRole(shared.RoleAdmin, authedUser) {
 		if authedUser.ChapterID != options.Filters.ChapterId || authedUser.ChapterID == 0 {
 			return QueryActivistResult{}, ValidationErrorf("cannot query activists in other chapters without admin access")
 		}
