@@ -3,7 +3,7 @@ import { z } from 'zod'
 // Activist data structure returned by the API.
 export const ActivistJSON = z.object({
   id: z.number(),
-  name: z.string(),
+  name: z.string().optional(),
   preferred_name: z.string().optional(),
   email: z.string().optional(),
   phone: z.string().optional(),
