@@ -7,17 +7,18 @@ import { notFound } from 'next/navigation'
 import { ContentWrapper } from '@/app/content-wrapper'
 import { API_PATH, ApiClient } from '@/lib/api'
 import { getCookies } from '@/lib/auth'
+import { parseSafeInteger } from '@/lib/number-utils'
 import { redirectForHttpError } from '@/lib/server-auth'
-import { UserForm } from '../user-form'
+import { ActivistDetail } from './activist-detail'
 
-export default async function EditUserPage({
+export default async function ActivistPage({
   params,
 }: {
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const userId = parseInt(id)
-  if (Number.isNaN(userId)) {
+  const activistId = parseSafeInteger(id)
+  if (activistId === undefined) {
     notFound()
   }
 
@@ -25,24 +26,17 @@ export default async function EditUserPage({
   const queryClient = new QueryClient()
 
   await redirectForHttpError(() =>
-    Promise.all([
-      // Intentionally use fetchQuery instead of prefetchQuery; see redirectForHttpError for details.
-      queryClient.fetchQuery({
-        queryKey: [API_PATH.USERS, userId],
-        queryFn: ({ signal }) => apiClient.getUser(userId, signal),
-      }),
-      // Intentionally use fetchQuery instead of prefetchQuery; see redirectForHttpError for details.
-      queryClient.fetchQuery({
-        queryKey: [API_PATH.CHAPTER_LIST],
-        queryFn: ({ signal }) => apiClient.getChapterList(signal),
-      }),
-    ]),
+    // Intentionally use fetchQuery instead of prefetchQuery; see redirectForHttpError for details.
+    queryClient.fetchQuery({
+      queryKey: [API_PATH.ACTIVIST_GET, activistId],
+      queryFn: ({ signal }) => apiClient.getActivist(activistId, signal),
+    }),
   )
 
   return (
     <ContentWrapper size="lg" className="gap-6">
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <UserForm userId={userId} />
+        <ActivistDetail activistId={activistId} />
       </HydrationBoundary>
     </ContentWrapper>
   )

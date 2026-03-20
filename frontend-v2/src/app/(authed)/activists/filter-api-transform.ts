@@ -9,7 +9,7 @@ import type {
   ProspectFilterValue,
 } from './filter-types'
 import type { FilterState } from './query-state'
-import { parseSafeInteger } from './number-utils'
+import { parseSafeInteger } from '@/lib/number-utils'
 import {
   addDaysToYmd,
   getTodayYmdInActivistsTimeZone,

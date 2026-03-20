@@ -22,7 +22,7 @@ import type {
   DateRangeFilterValue,
   RelativeDateBound,
 } from '../filter-types'
-import { parseSafeInteger } from '../number-utils'
+import { parseSafeInteger } from '@/lib/number-utils'
 import {
   datePickerValueToYmd,
   formatYmdForActivists,

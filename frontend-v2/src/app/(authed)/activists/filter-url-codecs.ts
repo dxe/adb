@@ -5,7 +5,7 @@ import type {
   DateRangeFilterValue,
 } from './filter-types'
 import type { FilterState } from './query-state'
-import { parseOptionalSafeInteger, parseSafeInteger } from './number-utils'
+import { parseOptionalSafeInteger, parseSafeInteger } from '@/lib/number-utils'
 
 const ACTIVIST_LEVEL_SLUG_BY_VALUE: Record<ActivistLevelValue, string> = {
   Supporter: 'supporter',

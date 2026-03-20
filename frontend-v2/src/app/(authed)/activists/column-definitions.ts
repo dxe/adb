@@ -24,6 +24,8 @@ export interface ColumnDefinition {
   hidden?: boolean // If true, hide from user-facing column selectors
   defaultWidth?: number // Default column width in pixels (default: 150)
   minWidth?: number // Minimum column width in pixels (default: 60)
+  hideOnDetailPage?: boolean // If true, omit from the individual activist detail view
+  linkType?: 'tel' | 'url' | 'mailto' // If set, render as a link on the detail page
 }
 
 export const DEFAULT_COLUMNS: ActivistColumnName[] = [
@@ -52,9 +54,20 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     category: 'Basic Info',
     defaultWidth: 50,
   },
-  { name: 'email', label: 'Email', category: 'Basic Info' },
-  { name: 'phone', label: 'Phone', category: 'Basic Info', defaultWidth: 100 },
-  { name: 'facebook', label: 'Facebook', category: 'Basic Info' },
+  { name: 'email', label: 'Email', category: 'Basic Info', linkType: 'mailto' },
+  {
+    name: 'phone',
+    label: 'Phone',
+    category: 'Basic Info',
+    defaultWidth: 100,
+    linkType: 'tel',
+  },
+  {
+    name: 'facebook',
+    label: 'Facebook',
+    category: 'Basic Info',
+    linkType: 'url',
+  },
   {
     name: 'activist_level',
     label: 'Level',
@@ -101,8 +114,18 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     category: 'Location',
     defaultWidth: 100,
   },
-  { name: 'lat', label: 'Latitude', category: 'Location' },
-  { name: 'lng', label: 'Longitude', category: 'Location' },
+  {
+    name: 'lat',
+    label: 'Latitude',
+    category: 'Location',
+    hideOnDetailPage: true,
+  },
+  {
+    name: 'lng',
+    label: 'Longitude',
+    category: 'Location',
+    hideOnDetailPage: true,
+  },
 
   // Event Attendance
   {
@@ -259,6 +282,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     label: 'Assigned To ID',
     category: 'Prospect Info',
     hidden: true,
+    hideOnDetailPage: true,
   },
   {
     name: 'assigned_to_name',
@@ -391,6 +415,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     category: 'Advanced',
     description: 'Database ID of the activist',
     defaultWidth: 50,
+    hideOnDetailPage: true,
   },
 ]
 

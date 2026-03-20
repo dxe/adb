@@ -2,8 +2,8 @@ import { z } from 'zod'
 
 // Activist data structure returned by the API.
 export const ActivistJSON = z.object({
-  id: z.number().optional(),
-  name: z.string().optional(),
+  id: z.number(),
+  name: z.string(),
   preferred_name: z.string().optional(),
   email: z.string().optional(),
   phone: z.string().optional(),

@@ -1,12 +1,17 @@
 import ky, { HTTPError, KyInstance } from 'ky'
 import { z } from 'zod'
-import { QueryActivistOptions, QueryActivistResult } from './api/activists'
+import {
+  ActivistJSON,
+  QueryActivistOptions,
+  QueryActivistResult,
+} from './api/activists'
 
 export const API_PATH = {
   STATIC_RESOURCE_HASH: 'static_resources_hash',
   ACTIVIST_NAMES_GET: 'activist_names/get',
   ACTIVIST_LIST_BASIC: 'activist/list_basic',
   ACTIVISTS_SEARCH: 'api/activists',
+  ACTIVIST_GET: 'api/activists',
   USER_ME: 'user/me',
   CSRF_TOKEN: 'api/csrf-token',
   CHAPTER_LIST: 'chapter/list',
@@ -190,6 +195,10 @@ export type {
   QueryActivistOptions as QueryActivistOptionsType,
   QueryActivistResult as QueryActivistResultType,
 } from './api/activists'
+
+const ActivistGetResp = z.object({
+  activist: ActivistJSON,
+})
 
 const EventGetResp = z.object({
   event: z.object({
@@ -381,6 +390,19 @@ export class ApiClient {
     }
   }
 
+  getActivist = async (activistId: number, signal?: AbortSignal) => {
+    try {
+      const resp = await this.client
+        .get(`${API_PATH.ACTIVIST_GET}/${activistId}`, { signal })
+        .json()
+      return fillSingleActivistBlankNumericFieldsWithZero(
+        ActivistGetResp.parse(resp).activist,
+      )
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
   getChapterList = async (signal?: AbortSignal) => {
     try {
       const resp = await this.client
@@ -514,38 +536,59 @@ export class ApiClient {
   }
 }
 
+// If a column is requested but the field on the activist is not set
+// (undefined), this is due to use of "omitempty" in Go JSON serialization.
+// The real value of the field is still 0, so these fields need to have their
+// zero values added back until we implement smarter serialization in Go.
 const BLANK_TO_ZERO_FIELDS = [
   'total_events',
   'months_since_last_action',
   'total_points',
   'total_interactions',
 ] as const
+type BlankToZeroField = (typeof BLANK_TO_ZERO_FIELDS)[number]
 
-// If a column is requested but not set, this is due to use of "omitempty" in Go JSON serialization. The real value of
-// the field is still 0, so this fills in those missing values until we implement a more semantic serialization in Go.
+function fillActivistBlankNumericFieldsWithZeroForFields(
+  activist: ActivistJSON,
+  fields: ReadonlyArray<BlankToZeroField>,
+): ActivistJSON {
+  if (fields.length === 0) {
+    return activist
+  }
+
+  const normalized = { ...activist }
+  for (const field of fields) {
+    if (normalized[field] === undefined) {
+      normalized[field] = 0
+    }
+  }
+  return normalized
+}
+
+function fillSingleActivistBlankNumericFieldsWithZero(
+  activist: ActivistJSON,
+): ActivistJSON {
+  return fillActivistBlankNumericFieldsWithZeroForFields(
+    activist,
+    BLANK_TO_ZERO_FIELDS,
+  )
+}
+
 function fillActivistBlankNumericFieldsWithZero(
   result: z.infer<typeof QueryActivistResult>,
-  requestedColumns: QueryActivistOptions['columns'],
+  requestedColumns: string[],
 ): z.infer<typeof QueryActivistResult> {
-  const requested = new Set(requestedColumns)
-  const fillableFields = BLANK_TO_ZERO_FIELDS.filter((field) =>
-    requested.has(field),
-  )
-  if (fillableFields.length === 0) {
+  const columns = new Set(requestedColumns)
+  const blankFields = BLANK_TO_ZERO_FIELDS.filter((field) => columns.has(field))
+  if (blankFields.length === 0) {
     return result
   }
 
   return {
     ...result,
-    activists: result.activists.map((activist) => {
-      const normalized = { ...activist }
-      for (const field of fillableFields) {
-        if (normalized[field] === undefined) {
-          normalized[field] = 0
-        }
-      }
-      return normalized
-    }),
+    activists: result.activists.map((activist) =>
+      fillActivistBlankNumericFieldsWithZeroForFields(activist, blankFields),
+    ),
   }
 }
 
