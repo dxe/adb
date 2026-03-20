@@ -6,6 +6,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+var (
+	attendanceAccessRoles = []string{shared.RoleAdmin, shared.RoleOrganizer, shared.RoleAttendance}
+	organizerAccessRoles  = []string{shared.RoleAdmin, shared.RoleOrganizer}
+	intlCoordinatorRoles  = []string{shared.RoleAdmin, shared.RoleIntlCoordinator}
+)
+
 type ADBUser struct {
 	ID       int    `db:"id"`
 	Email    string `db:"email"`
@@ -71,23 +77,23 @@ func UserHasADBAccess(user ADBUser) bool {
 }
 
 func UserHasAttendanceAccess(user ADBUser) bool {
-	return UserHasAnyRole([]string{"admin", "organizer", "attendance"}, user)
+	return UserHasAnyRole(attendanceAccessRoles, user)
 }
 
 func UserHasOrganizerAccess(user ADBUser) bool {
-	return UserHasAnyRole([]string{"admin", "organizer"}, user)
+	return UserHasAnyRole(organizerAccessRoles, user)
 }
 
 func UserHasSFBayOrganizerAccess(user ADBUser) bool {
-	if UserHasRole("admin", user) {
+	if UserHasRole(shared.RoleAdmin, user) {
 		return true
 	}
 
-	return UserHasRole("organizer", user) && IsSFBayChapterID(user.ChapterID)
+	return UserHasRole(shared.RoleOrganizer, user) && IsSFBayChapterID(user.ChapterID)
 }
 
 func UserHasIntlCoordinatorAccess(user ADBUser) bool {
-	return UserHasAnyRole([]string{"admin", "intl_coordinator"}, user)
+	return UserHasAnyRole(intlCoordinatorRoles, user)
 }
 
 func UserHasAnyRole(roles []string, user ADBUser) bool {

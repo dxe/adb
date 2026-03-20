@@ -419,7 +419,7 @@ func (c MainController) authIntlCoordinatorAccessMiddleware(h http.Handler) http
 }
 
 func (c MainController) authAdminMiddleware(h http.Handler) http.Handler {
-	return c.authRoleMiddleware(h, []string{"admin"})
+	return c.authRoleMiddleware(h, []string{shared.RoleAdmin})
 }
 
 func (c MainController) apiAccessMiddleware(h http.Handler, hasAccess func(model.ADBUser) bool) http.Handler {
@@ -468,7 +468,7 @@ func (c MainController) apiIntlCoordinatorAuthMiddleware(h http.Handler) http.Ha
 }
 
 func (c MainController) apiAdminAuthMiddleware(h http.Handler) http.Handler {
-	return c.apiRoleMiddleware(h, []string{"admin"})
+	return c.apiRoleMiddleware(h, []string{shared.RoleAdmin})
 }
 
 type userContextKeyType struct{}

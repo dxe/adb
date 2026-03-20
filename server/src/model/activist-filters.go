@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/dxe/adb/pkg/shared"
 )
 
 // DateOnly represents a date without time information (YYYY-MM-DD format).
@@ -196,7 +198,7 @@ var ValidTrainingColumns = map[string]bool{
 
 const (
 	ProspectFilterChapterMember = "chapter_member"
-	ProspectFilterOrganizer     = "organizer"
+	ProspectFilterOrganizer     = shared.RoleOrganizer
 )
 
 func (f *TrainingFilter) Validate() error {

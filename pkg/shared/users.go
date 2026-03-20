@@ -5,11 +5,18 @@ import "sort"
 const DevTestUserId = 1
 const DevTestUserEmail = "test@example.org"
 
+const (
+	RoleAdmin           = "admin"
+	RoleOrganizer       = "organizer"
+	RoleAttendance      = "attendance"
+	RoleIntlCoordinator = "intl_coordinator"
+)
+
 var allowedADBUserRolesSet = map[string]struct{}{
-	"admin":            {},
-	"organizer":        {},
-	"attendance":       {},
-	"intl_coordinator": {},
+	RoleAdmin:           {},
+	RoleOrganizer:       {},
+	RoleAttendance:      {},
+	RoleIntlCoordinator: {},
 }
 
 func AllowedADBUserRoles() []string {
