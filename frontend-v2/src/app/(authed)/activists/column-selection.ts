@@ -3,8 +3,9 @@ import type { FilterState } from './query-state'
 import { COLUMN_ORDER_BY_NAME } from './column-definitions'
 
 // Maps filter keys to the column that should be auto-shown when the filter
-// gets a value. Excludes training, searchAcrossChapters (handled separately),
-// includeHidden, and nameSearch which have no single corresponding column.
+// gets a value. Excludes searchAcrossChapters (handled separately) and
+// training, includeHidden, nameSearch and prospect which have no single
+// corresponding column.
 const FILTER_COLUMN_MAP: Partial<
   Record<keyof FilterState, ActivistColumnName>
 > = {

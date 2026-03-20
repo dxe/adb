@@ -1,4 +1,4 @@
-import { ActivistColumnName } from '@/lib/api'
+import type { ActivistColumnName } from '@/lib/api/activists'
 
 export type ColumnCategory =
   | 'Basic Info'
@@ -19,6 +19,7 @@ export interface ColumnDefinition {
   label: string
   description?: string // Optional help text shown in column selector tooltip
   category: ColumnCategory
+  blankValue?: 0 | false // Restore Go zero values omitted by omitempty
   isDate?: boolean // If true, format string values as dates
   hidden?: boolean // If true, hide from user-facing column selectors
   defaultWidth?: number // Default column width in pixels (default: 150)
@@ -36,6 +37,14 @@ export const DEFAULT_COLUMNS: ActivistColumnName[] = [
 
 export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   // Chapter (conditionally shown based on filters)
+  {
+    name: 'chapter_id',
+    label: 'Chapter ID',
+    category: 'Advanced',
+    hidden: true,
+    hideOnDetailPage: true,
+    defaultWidth: 70,
+  },
   { name: 'chapter_name', label: 'Chapter', category: 'Basic Info' },
 
   // Basic Info
@@ -131,6 +140,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     name: 'total_events',
     label: 'Total Events',
     category: 'Event Attendance',
+    blankValue: 0,
     defaultWidth: 90,
   },
   {
@@ -169,15 +179,22 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     name: 'months_since_last_action',
     label: 'Months Since Last Action',
     category: 'Event Attendance',
+    blankValue: 0,
     defaultWidth: 50,
   },
   {
     name: 'total_points',
     label: 'Leadership points',
     category: 'Event Attendance',
+    blankValue: 0,
     defaultWidth: 50,
   },
-  { name: 'active', label: 'Active', category: 'Event Attendance' },
+  {
+    name: 'active',
+    label: 'Active',
+    category: 'Event Attendance',
+    blankValue: false,
+  },
   { name: 'status', label: 'Status', category: 'Event Attendance' },
   {
     name: 'mpp_requirements',
@@ -191,6 +208,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     name: 'mpi',
     label: 'MPI',
     category: 'Event Attendance',
+    blankValue: false,
     defaultWidth: 30,
     description:
       'Whether the activist satisfied the MPP in either the current month or the previous month (see dxe.io/mpp)',
@@ -258,12 +276,14 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     name: 'prospect_chapter_member',
     label: 'Prospective Chapter Member',
     category: 'Application Info',
+    blankValue: false,
     defaultWidth: 60,
   },
   {
     name: 'prospect_organizer',
     label: 'Prospective Organizer',
     category: 'Application Info',
+    blankValue: false,
     defaultWidth: 100,
   },
 
@@ -301,6 +321,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     name: 'total_interactions',
     label: 'Interactions',
     category: 'Prospect Info',
+    blankValue: 0,
     defaultWidth: 80,
   },
   {
@@ -400,12 +421,19 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     name: 'voting_agreement',
     label: 'Voting Agreement',
     category: 'Chapter Membership',
+    blankValue: false,
     defaultWidth: 50,
   },
 
   // Other
   { name: 'notes', label: 'Notes', category: 'Other', defaultWidth: 100 },
-  { name: 'hiatus', label: 'Hiatus', category: 'Other', defaultWidth: 50 },
+  {
+    name: 'hiatus',
+    label: 'Hiatus',
+    category: 'Other',
+    blankValue: false,
+    defaultWidth: 50,
+  },
 
   // Developer
   {
@@ -422,6 +450,14 @@ export const COLUMN_DEFINITION_BY_NAME = Object.fromEntries(
   COLUMN_DEFINITIONS.map((definition) => [definition.name, definition]),
 ) as Record<ActivistColumnName, ColumnDefinition>
 
+export const BLANK_TO_ZERO_FIELDS = COLUMN_DEFINITIONS.filter(
+  (definition) => definition.blankValue === 0,
+).map((definition) => definition.name) as ReadonlyArray<ActivistColumnName>
+
+export const BLANK_TO_FALSE_FIELDS = COLUMN_DEFINITIONS.filter(
+  (definition) => definition.blankValue === false,
+).map((definition) => definition.name) as ReadonlyArray<ActivistColumnName>
+
 export const COLUMN_ORDER_BY_NAME = new Map<ActivistColumnName, number>(
   COLUMN_DEFINITIONS.map((column, index) => [column.name, index]),
 )
@@ -430,8 +466,12 @@ export const GROUPED_COLUMNS_BY_CATEGORY = (() => {
   const grouped = new Map<ColumnCategory, ColumnDefinition[]>()
 
   COLUMN_DEFINITIONS.forEach((column) => {
-    const existing = grouped.get(column.category) || []
-    grouped.set(column.category, [...existing, column])
+    let columns = grouped.get(column.category)
+    if (columns === undefined) {
+      columns = []
+      grouped.set(column.category, columns)
+    }
+    columns.push(column)
   })
 
   return grouped
