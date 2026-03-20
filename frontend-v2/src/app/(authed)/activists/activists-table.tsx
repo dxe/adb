@@ -19,6 +19,7 @@ import { ArrowDown, ArrowUp } from 'lucide-react'
 import { ActivistJSON, ActivistColumnName } from '@/lib/api'
 import { IntentPrefetchLink } from '@/components/intent-prefetch-link'
 import { COLUMN_DEFINITION_BY_NAME } from './column-definitions'
+import { getActivistDisplayName } from './display-name'
 import { formatValue } from './format-value'
 import type { SortColumn } from './query-state'
 
@@ -83,20 +84,24 @@ export function ActivistTable({
         ),
         accessorFn: (row) => row[colName as keyof ActivistJSON],
         cell: ({ row }) => {
-          const value = row.original[colName as keyof ActivistJSON]
-          const formatted = formatValue(value, colName)
-
           if (colName === 'name') {
+            const displayName = getActivistDisplayName(row.original)
             return (
               <IntentPrefetchLink
                 href={`/activists/${row.original.id}`}
-                className="truncate text-sm text-primary hover:underline"
+                className={`truncate text-sm text-primary hover:underline ${
+                  displayName.isPlaceholder
+                    ? 'italic text-muted-foreground'
+                    : ''
+                }`}
               >
-                {formatted}
+                {displayName.text}
               </IntentPrefetchLink>
             )
           }
 
+          const value = row.original[colName as keyof ActivistJSON]
+          const formatted = formatValue(value, colName)
           return <div className="truncate text-sm">{formatted}</div>
         },
       }
@@ -179,34 +184,50 @@ export function ActivistTable({
 
       {/* Mobile card layout */}
       <div className="flex flex-col gap-4 md:hidden">
-        {activists.map((activist) => (
-          <IntentPrefetchLink
-            key={activist.id}
-            href={`/activists/${activist.id}`}
-            className={`block rounded-lg border bg-card p-4 transition-opacity hover:border-primary/50 ${
-              isStale ? 'opacity-60' : ''
-            }`}
-          >
-            <div className="flex flex-col gap-2">
-              {visibleColumns.map((colName) => {
-                const definition = COLUMN_DEFINITION_BY_NAME[colName]
-                const label = definition?.label || colName
-                const value = activist[colName as keyof ActivistJSON]
+        {activists.map((activist) => {
+          const displayName = getActivistDisplayName(activist)
 
-                return (
-                  <div key={colName} className="flex justify-between gap-2">
-                    <span className="text-sm font-medium text-muted-foreground">
-                      {label}:
-                    </span>
-                    <span className="text-sm">
-                      {formatValue(value, colName)}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-          </IntentPrefetchLink>
-        ))}
+          return (
+            <IntentPrefetchLink
+              key={activist.id}
+              href={`/activists/${activist.id}`}
+              className={`block rounded-lg border bg-card p-4 transition-opacity hover:border-primary/50 ${
+                isStale ? 'opacity-60' : ''
+              }`}
+            >
+              <div className="flex flex-col gap-2">
+                {visibleColumns.map((colName) => {
+                  const definition = COLUMN_DEFINITION_BY_NAME[colName]
+                  const label = definition?.label || colName
+                  const formattedValue =
+                    colName === 'name'
+                      ? displayName.text
+                      : formatValue(
+                          activist[colName as keyof ActivistJSON],
+                          colName,
+                        )
+
+                  return (
+                    <div key={colName} className="flex justify-between gap-2">
+                      <span className="text-sm font-medium text-muted-foreground">
+                        {label}:
+                      </span>
+                      <span
+                        className={`text-sm ${
+                          colName === 'name' && displayName.isPlaceholder
+                            ? 'italic text-muted-foreground'
+                            : ''
+                        }`}
+                      >
+                        {formattedValue}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </IntentPrefetchLink>
+          )
+        })}
       </div>
     </>
   )

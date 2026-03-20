@@ -13,6 +13,7 @@ import {
   COLUMN_DEFINITIONS,
   type ColumnDefinition,
 } from '../column-definitions'
+import { getActivistDisplayName } from '../display-name'
 import { formatValue } from '../format-value'
 import { LinkedValue } from '../linked-value'
 
@@ -32,6 +33,8 @@ export function ActivistDetail({ activistId }: { activistId: number }) {
   if (isError || !activist) {
     return <div>Unable to load activist details.</div>
   }
+
+  const displayName = getActivistDisplayName(activist)
 
   // Group fields by category using column definitions
   const groupedFields = new Map<
@@ -75,7 +78,15 @@ export function ActivistDetail({ activistId }: { activistId: number }) {
         </Link>
       </div>
 
-      <h1 className="text-3xl font-bold">{activist.name}</h1>
+      <div className="flex flex-col gap-1">
+        <h1
+          className={`text-3xl font-bold ${
+            displayName.isPlaceholder ? 'italic text-muted-foreground' : ''
+          }`}
+        >
+          {displayName.text}
+        </h1>
+      </div>
 
       <div className="flex flex-col gap-8">
         {Array.from(groupedFields.entries()).map(([category, fields]) => (
