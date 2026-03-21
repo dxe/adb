@@ -7,10 +7,7 @@ source /usr/share/bash-completion/completions/git
 
 ### Useful aliases for development ###
 
-# Run ADB CLI
-alias adb="go run /workspace/cli"
-
-# Load ADB bash completion for the adb alias in interactive shells.
+# Load ADB bash completion for the adb shell helper in interactive shells.
 if [[ $- == *i* ]]; then
   # Store the generated completion script in a persistent cache so new shells
   # can source a file directly instead of running `go run` every time.
