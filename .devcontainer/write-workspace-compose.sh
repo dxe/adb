@@ -7,8 +7,11 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 output_file="${script_dir}/compose.workspace.yaml"
 workspace_name="$(basename "${workspace_path}")"
 sanitized_workspace_name="$(printf '%s' "${workspace_name}" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-')"
+abs_git_dir="$(git -C "${workspace_path}" rev-parse --path-format=absolute --git-dir)"
+abs_git_common_dir="$(git -C "${workspace_path}" rev-parse --path-format=absolute --git-common-dir)"
 project_name="dxe-adb-${sanitized_workspace_name}"
 escaped_workspace_path=${workspace_path//\'/\'\'}
+escaped_abs_git_common_dir=${abs_git_common_dir//\'/\'\'}
 
 cat >"${output_file}" <<EOF
 # Keep the Compose project name unique per worktree so VS Code does not reattach
@@ -20,3 +23,10 @@ services:
     volumes:
       - '${escaped_workspace_path}:/workspace:cached'
 EOF
+
+if [[ "${abs_git_dir}" != "${abs_git_common_dir}" ]]; then
+  cat >>"${output_file}" <<EOF
+      - '${escaped_workspace_path}:${escaped_workspace_path}:cached'
+      - '${escaped_abs_git_common_dir}:${escaped_abs_git_common_dir}:cached'
+EOF
+fi

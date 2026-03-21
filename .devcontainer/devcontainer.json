@@ -13,14 +13,10 @@
   "runServices": ["devcontainer", "mysql"], // defined in dockerComposeFile
   // Linked worktrees break if VS Code remounts the shared Git root at /workspace.
   "mountWorkspaceGitRoot": false,
-  "mounts": [
-    // Expose the parent checkout so linked-worktree gitdir pointers remain valid.
-    "source=${localWorkspaceFolder}/..,target=${localWorkspaceFolder}/..,type=bind,consistency=cached"
-  ],
   "workspaceFolder": "/workspace",
   "shutdownAction": "stopCompose",
   "remoteUser": "vscode",
-  // Generate a per-worktree Compose override for the project name and /workspace bind.
+  // Generate a per-worktree Compose override for the project name and mounts.
   "initializeCommand": "bash .devcontainer/write-workspace-compose.sh '${localWorkspaceFolder}'",
 
   // Features to add to the dev container. More info: https://containers.dev/features.
