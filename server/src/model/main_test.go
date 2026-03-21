@@ -3,9 +3,10 @@ package model
 import (
 	"os"
 	"testing"
+
+	"github.com/dxe/adb/testdb"
 )
 
 func TestMain(m *testing.M) {
-	initializeTestDBSchema()
-	os.Exit(m.Run())
+	os.Exit(testdb.RunWithMySQLContainer(m))
 }

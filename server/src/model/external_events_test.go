@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dxe/adb/testdb"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -15,7 +16,7 @@ var beforeDefaultStartTime = time.Date(1999, time.January, 1, 0, 0, 0, 0, time.U
 const queryTimeLayout string = "2006-01-02T15:04"
 
 func TestInsertFacebookEvent(t *testing.T) {
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	event := makeExternalEvent("1",
@@ -33,7 +34,7 @@ func TestInsertFacebookEvent(t *testing.T) {
 }
 
 func TestGetFacebookEvents(t *testing.T) {
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	const pageOther int = 456456456456
@@ -109,7 +110,7 @@ func TestGetFacebookEvents(t *testing.T) {
 }
 
 func TestGetFacebookEventsWTimeRanges(t *testing.T) {
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	event1 := makeExternalEvent("1",
@@ -161,7 +162,7 @@ func TestGetFacebookEventsWTimeRanges(t *testing.T) {
 }
 
 func TestGetBayAreaFacebookEvents(t *testing.T) {
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	const pageOther int = 456456456456

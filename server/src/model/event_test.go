@@ -4,11 +4,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dxe/adb/testdb"
 	"github.com/stretchr/testify/require"
 )
 
 func TestGetEvents(t *testing.T) {
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	a1 := Activist{Name: "Hello", ChapterID: 1, Email: "test1@example.org", Phone: "123-456-7890"}
@@ -84,7 +85,7 @@ func TestGetEvents(t *testing.T) {
 }
 
 func TestGetEvents_orderBy(t *testing.T) {
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	a1, err := GetOrCreateActivist(db, "Hello", SFBayChapterIdDevTest)
@@ -134,7 +135,7 @@ func TestGetEvents_orderBy(t *testing.T) {
 }
 
 func TestInsertUpdateEvent(t *testing.T) {
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	a1, err := GetOrCreateActivist(db, "Hello", SFBayChapterIdDevTest)
@@ -185,7 +186,7 @@ func TestInsertUpdateEvent(t *testing.T) {
 }
 
 func TestInsertUpdateEvent_noDuplicateAttendees(t *testing.T) {
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	a1, err := GetOrCreateActivist(db, "Hello", SFBayChapterIdDevTest)
@@ -210,7 +211,7 @@ func TestInsertUpdateEvent_noDuplicateAttendees(t *testing.T) {
 }
 
 func TestDeleteEvents(t *testing.T) {
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	// Set up two events
@@ -280,7 +281,7 @@ func TestDeleteEvents(t *testing.T) {
 }
 
 func TestCleanEventAttendanceData(t *testing.T) {
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	testAttendees := []string{"New Person", "Another person", "A third person"}

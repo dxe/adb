@@ -31,25 +31,24 @@ var dbCmd = &cobra.Command{
 
 var dbCreateCmd = &cobra.Command{
 	Use:   "create",
-	Short: "Create and migrate adb_db and adb_test_db (non-production only)",
+	Short: "Create and migrate adb_db (non-production only)",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := requireNotProd(); err != nil {
 			return err
 		}
 
-		for _, name := range []string{"adb_db", "adb_test_db"} {
-			fmt.Printf("Creating %s\n", name)
-			dsn := config.DBDataSourceForDB(name) + "&multiStatements=true"
-			shared.WipeDatabase(dsn, false)
+		const name = "adb_db"
+		fmt.Printf("Creating %s\n", name)
+		dsn := config.DBDataSourceForDB(name) + "&multiStatements=true"
+		shared.WipeDatabase(dsn, false)
 
-			if !dbCreateNoFakeData {
-				conn, err := sqlx.Connect("mysql", config.DBDataSourceForDB(name)+"&multiStatements=true")
-				if err != nil {
-					return fmt.Errorf("failed to connect to %s: %w", name, err)
-				}
-				conn.MustExec(buildFakeDataSQL(dbCreateDevEmail))
-				conn.Close()
+		if !dbCreateNoFakeData {
+			conn, err := sqlx.Connect("mysql", config.DBDataSourceForDB(name)+"&multiStatements=true")
+			if err != nil {
+				return fmt.Errorf("failed to connect to %s: %w", name, err)
 			}
+			conn.MustExec(buildFakeDataSQL(dbCreateDevEmail))
+			conn.Close()
 		}
 
 		return nil

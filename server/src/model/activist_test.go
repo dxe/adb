@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/dxe/adb/pkg/shared"
+	"github.com/dxe/adb/testdb"
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
@@ -22,7 +23,7 @@ func stringListToMap(l []string) map[string]struct{} {
 }
 
 func TestAutocompleteActivistsHandler(t *testing.T) {
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	_, err := GetOrCreateActivist(db, "Activist One", SFBayChapterIdDevTest)
@@ -47,7 +48,7 @@ func TestAutocompleteActivistsHandler(t *testing.T) {
 }
 
 func TestGetActivistEventData(t *testing.T) {
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	a1, err := GetOrCreateActivist(db, "Test Activist", SFBayChapterIdDevTest)
@@ -99,7 +100,7 @@ func TestGetActivistEventData(t *testing.T) {
 }
 
 func TestGetActivistEventData_noEvents(t *testing.T) {
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	a1, err := GetOrCreateActivist(db, "Test Activist", SFBayChapterIdDevTest)
@@ -130,7 +131,7 @@ func mustInsertAllEvents(t *testing.T, db *sqlx.DB, events []Event) {
 }
 
 func TestGetActivistsJSON_RestrictDates(t *testing.T) {
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	a1, err := GetOrCreateActivist(db, "A", SFBayChapterIdDevTest)
@@ -193,7 +194,7 @@ func TestGetActivistsJSON_RestrictDates(t *testing.T) {
 }
 
 func TestGetActivistsJSON_OrderField(t *testing.T) {
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	a1, err := GetOrCreateActivist(db, "A", SFBayChapterIdDevTest)
@@ -249,7 +250,7 @@ func TestGetActivistsJSON_OrderField(t *testing.T) {
 }
 
 func TestGetActivistsJSON_FirstAndLastEvent(t *testing.T) {
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	a1, err := GetOrCreateActivist(db, "A", SFBayChapterIdDevTest)
@@ -302,7 +303,7 @@ func TestGetActivistsJSON_FirstAndLastEvent(t *testing.T) {
 }
 
 func TestGetActivistsExtra(t *testing.T) {
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	insertTestActivists(t, db, []string{"Alex Taylor"})
@@ -315,7 +316,7 @@ func TestGetActivistsExtra(t *testing.T) {
 
 func TestInsertActivist(t *testing.T) {
 	t.Run("Minimum", func(t *testing.T) {
-		db := newTestDB()
+		db := testdb.NewDB()
 		defer db.Close()
 
 		var activist ActivistExtra
@@ -334,7 +335,7 @@ func TestInsertActivist(t *testing.T) {
 	})
 
 	t.Run("Basic", func(t *testing.T) {
-		db := newTestDB()
+		db := testdb.NewDB()
 		defer db.Close()
 
 		activist := NewActivistBuilder().
@@ -365,7 +366,7 @@ func TestInsertActivist(t *testing.T) {
 }
 
 func TestUpdateActivist(t *testing.T) {
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	activist := NewActivistBuilder().
@@ -405,7 +406,7 @@ func TestUpdateActivist(t *testing.T) {
 }
 
 func TestHideActivist(t *testing.T) {
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	// Test that deleting activists works
@@ -470,7 +471,7 @@ func mustParseTime(t *testing.T, s string) time.Time {
 }
 
 func TestGetActivistJSON_ChapterScopedByID(t *testing.T) {
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	sfBayActivist, err := GetOrCreateActivist(db, "SF Bay Activist", SFBayChapterIdDevTest)
@@ -493,7 +494,7 @@ func TestGetActivistJSON_ChapterScopedByID(t *testing.T) {
 }
 
 func TestGetActivistJSONForUser_RejectsNonAdminWithoutChapter(t *testing.T) {
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	activist, err := GetOrCreateActivist(db, "SF Bay Activist", SFBayChapterIdDevTest)
@@ -510,7 +511,7 @@ func TestGetActivistJSONForUser_RejectsNonAdminWithoutChapter(t *testing.T) {
 }
 
 func TestGetActivistJSONForUser_ChapterScopedByID(t *testing.T) {
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	sfBayActivist, err := GetOrCreateActivist(db, "SF Bay Activist", SFBayChapterIdDevTest)
@@ -543,7 +544,7 @@ func TestGetActivistJSONForUser_ChapterScopedByID(t *testing.T) {
 func TestMergeActivist(t *testing.T) {
 	t.Run("ContactInfo", func(t *testing.T) {
 		t.Run("MergesNewerValues", func(t *testing.T) {
-			db := newTestDB()
+			db := testdb.NewDB()
 			defer db.Close()
 
 			a1 := NewActivistBuilder().
@@ -571,7 +572,7 @@ func TestMergeActivist(t *testing.T) {
 		})
 
 		t.Run("DoesNotMergeNewerButEmptyValues", func(t *testing.T) {
-			db := newTestDB()
+			db := testdb.NewDB()
 			defer db.Close()
 
 			a1 := NewActivistBuilder().
@@ -599,7 +600,7 @@ func TestMergeActivist(t *testing.T) {
 		})
 
 		t.Run("DoesNotMergeOlderValues", func(t *testing.T) {
-			db := newTestDB()
+			db := testdb.NewDB()
 			defer db.Close()
 
 			a1 := NewActivistBuilder().
@@ -629,7 +630,7 @@ func TestMergeActivist(t *testing.T) {
 
 	t.Run("Address", func(t *testing.T) {
 		t.Run("MergesNewerValues", func(t *testing.T) {
-			db := newTestDB()
+			db := testdb.NewDB()
 			defer db.Close()
 
 			a1 := NewActivistBuilder().
@@ -655,7 +656,7 @@ func TestMergeActivist(t *testing.T) {
 		})
 
 		t.Run("DoesNotMergeNewerButEmptyValues", func(t *testing.T) {
-			db := newTestDB()
+			db := testdb.NewDB()
 			defer db.Close()
 
 			a1 := NewActivistBuilder().
@@ -680,7 +681,7 @@ func TestMergeActivist(t *testing.T) {
 		})
 
 		t.Run("DoesNotMergeOlderValues", func(t *testing.T) {
-			db := newTestDB()
+			db := testdb.NewDB()
 			defer db.Close()
 
 			a1 := NewActivistBuilder().
@@ -705,7 +706,7 @@ func TestMergeActivist(t *testing.T) {
 		})
 
 		t.Run("MergesAddressWhenCityMatches", func(t *testing.T) {
-			db := newTestDB()
+			db := testdb.NewDB()
 			defer db.Close()
 
 			a1 := NewActivistBuilder().WithAddress("100 Berkeley Way", "Berkeley", "CA").Build()
@@ -723,7 +724,7 @@ func TestMergeActivist(t *testing.T) {
 		})
 
 		t.Run("DoesNotMergeAddressWhenCityNotMatched", func(t *testing.T) {
-			db := newTestDB()
+			db := testdb.NewDB()
 			defer db.Close()
 
 			a1 := NewActivistBuilder().WithAddress("100 Berkeley Way", "Berkeley", "CA").Build()
@@ -742,7 +743,7 @@ func TestMergeActivist(t *testing.T) {
 	})
 
 	t.Run("MergesEvents", func(t *testing.T) {
-		db := newTestDB()
+		db := testdb.NewDB()
 		defer db.Close()
 
 		// Test that deleting activists works

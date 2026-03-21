@@ -8,6 +8,7 @@ import (
 
 	"github.com/dxe/adb/config"
 	"github.com/dxe/adb/mailing_list_signup"
+	"github.com/dxe/adb/testdb"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -37,7 +38,7 @@ func TestSubmitInterestForm_SendsCorrectSignupServiceRequest(t *testing.T) {
 	config.SignupURI = test.server.URL + "/foo"
 	config.SignupAPIKey = "foo"
 
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	form := InterestFormData{

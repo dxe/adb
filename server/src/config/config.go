@@ -12,6 +12,8 @@ import (
 	"github.com/dxe/adb/pkg/shared"
 )
 
+const TestDBName = "adb_test_db"
+
 var (
 	DBUser         = mustGetenv("DB_USER", "adb_user", true)
 	DBPassword     = mustGetenv("DB_PASSWORD", "adbpassword", true)
@@ -140,7 +142,7 @@ func DBDataSource() string {
 }
 
 func DBTestDataSource() string {
-	return DataSourceBase + "/adb_test_db?parseTime=true"
+	return DataSourceBase + "/" + TestDBName + "?parseTime=true"
 }
 
 var staticResourcesHash = strconv.FormatInt(rand.NewSource(time.Now().UnixNano()).Int63(), 10)

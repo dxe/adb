@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/dxe/adb/model"
+	"github.com/dxe/adb/testdb"
 )
 
 const insertActivistForApplicationQuery = `
@@ -57,7 +58,7 @@ INSERT INTO form_application (
 
 func TestProcessFormApplicationForNoMatchingActivist(t *testing.T) {
 	/* Set up */
-	db := useTestDb()
+	db := testdb.NewDB()
 	defer db.Close()
 	_, err := db.Query(insertIntoFormApplicationQuery)
 	if err != nil {
@@ -74,7 +75,7 @@ func TestProcessFormApplicationForNoMatchingActivist(t *testing.T) {
 
 func TestProcessFormApplicationForActivistMatchingOnName(t *testing.T) {
 	/* Set up */
-	db := useTestDb()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	_, err := db.Exec(insertActivistForApplicationQuery, "name1")
@@ -96,7 +97,7 @@ func TestProcessFormApplicationForActivistMatchingOnName(t *testing.T) {
 
 func TestProcessFormApplicationForActivistMatchingOnEmail(t *testing.T) {
 	/* Set up */
-	db := useTestDb()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	_, err := db.Exec(insertActivistForApplicationQuery, "non-matching_name")
@@ -118,7 +119,7 @@ func TestProcessFormApplicationForActivistMatchingOnEmail(t *testing.T) {
 
 func TestProcessFormApplicationForMultipleMatchingActivistsOnEmail(t *testing.T) {
 	/* Set up */
-	db := useTestDb()
+	db := testdb.NewDB()
 	defer db.Close()
 	_, err := db.Exec(insertActivistForApplicationQuery, "non-matching_name1")
 	if err != nil {
