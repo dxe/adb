@@ -35,7 +35,7 @@ If you are using the devcontainer, just run this command in the container:
 make dev_db
 ```
 
-You can log into the database from the devcontainer by just typing `db` in the terminal (an alias in .bashrc).
+You can log into the database from the devcontainer by just typing `db` in the shell.
 
 To seed data into the database for various testing scenarios, check out the [ADB CLI](./cli/README.md) "seed" command.
 
