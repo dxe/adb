@@ -1,7 +1,8 @@
 # syntax=docker/dockerfile:1
 
 # Stage 1: build the CLI binary.
-FROM golang:latest AS builder
+# Keep in sync with /workspace/server/src/go.mod.
+FROM golang:1.25.0 AS builder
 
 WORKDIR /workspace/cli
 
