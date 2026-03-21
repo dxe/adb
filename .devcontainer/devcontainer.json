@@ -66,5 +66,5 @@
   // Configure tool-specific properties.
   // "customizations": {},
 
-  "postCreateCommand": "cat /workspace/.devcontainer/.bashrc >> ~/.bashrc"
+  "postCreateCommand": "bash /workspace/.devcontainer/post-create.sh"
 }

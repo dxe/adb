@@ -1,11 +1,11 @@
+# Load shared shell functions
+[ -f "$HOME/.bash_adb_functions" ] && source "$HOME/.bash_adb_functions"
+
 # Add git support for bash-completion. Assumes bash-completion apt package is
 # installed. devcontainer.json should install it automatically.
 source /usr/share/bash-completion/completions/git
 
 ### Useful aliases for development ###
-
-# Connect to local MySql database
-alias db="mysql -u $DB_USER -h $DB_HOST -D $DB_NAME --password=$DB_PASSWORD"
 
 # Run ADB CLI
 alias adb="go run /workspace/cli"
