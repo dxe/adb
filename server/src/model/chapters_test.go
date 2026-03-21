@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/dxe/adb/testdb"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/require"
 )
 
 func TestGetChapterWithTokenByID(t *testing.T) {
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	id, insErr := InsertChapter(db, ChapterWithToken{
@@ -30,7 +31,7 @@ func TestGetChapterWithTokenByID(t *testing.T) {
 }
 
 func TestGetChapterByID(t *testing.T) {
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	id, insErr := InsertChapter(db, ChapterWithToken{
@@ -85,7 +86,7 @@ func insertChapters(db *sqlx.DB, chapters []ChapterWithToken) []int {
 }
 
 func TestFindNearestChaptersSortedByDistanceDeprecated(t *testing.T) {
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	ids := insertChapters(db, []ChapterWithToken{
@@ -107,7 +108,7 @@ func TestFindNearestChaptersSortedByDistanceDeprecated(t *testing.T) {
 }
 
 func TestFindNearestChaptersSortedByDistance(t *testing.T) {
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	ids := insertChapters(db, []ChapterWithToken{

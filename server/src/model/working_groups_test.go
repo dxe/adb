@@ -3,12 +3,13 @@ package model
 import (
 	"testing"
 
+	"github.com/dxe/adb/testdb"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/require"
 )
 
 func TestCreateWorkingGroup_missingRequiredParameters_returnsError(t *testing.T) {
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	workingGroup := WorkingGroup{
@@ -21,7 +22,7 @@ func TestCreateWorkingGroup_missingRequiredParameters_returnsError(t *testing.T)
 }
 
 func TestCreateWorkingGroup_allRequiredParametersPresent_returnsNoError(t *testing.T) {
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	workingGroup := WorkingGroup{
@@ -33,7 +34,7 @@ func TestCreateWorkingGroup_allRequiredParametersPresent_returnsNoError(t *testi
 }
 
 func TestCreateWorkingGroup_insertAndFetchWorkingGroupNoMembers_returnsNoError(t *testing.T) {
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	workingGroup := WorkingGroup{
@@ -57,7 +58,7 @@ func TestCreateWorkingGroup_insertAndFetchWorkingGroupNoMembers_returnsNoError(t
 }
 
 func TestCreateWorkingGroup_insertAndFetchWorkingGroupWithMembersByID(t *testing.T) {
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	workingGroup := WorkingGroup{
@@ -77,7 +78,7 @@ func TestCreateWorkingGroup_insertAndFetchWorkingGroupWithMembersByID(t *testing
 }
 
 func TestCreateWorkingGroup_insertAndFetchWorkingGroupWithMembersByNameAndID(t *testing.T) {
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	workingGroup := WorkingGroup{
@@ -96,7 +97,7 @@ func TestCreateWorkingGroup_insertAndFetchWorkingGroupWithMembersByNameAndID(t *
 }
 
 func TestUpdateWorkingGroup_updatePointPersonAndGroupEmail(t *testing.T) {
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	workingGroup := WorkingGroup{
@@ -128,7 +129,7 @@ func TestUpdateWorkingGroup_updatePointPersonAndGroupEmail(t *testing.T) {
 }
 
 func TestUpdateWorkingGroup_updateMultipleGroups(t *testing.T) {
-	db := newTestDB()
+	db := testdb.NewDB()
 	defer db.Close()
 
 	workingGroup1 := WorkingGroup{
