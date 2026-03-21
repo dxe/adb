@@ -3,6 +3,7 @@
 .DS_Store
 .env
 .idea
+.devcontainer/compose.workspace.yaml
 .pnpm-store
 adb
 adb-config

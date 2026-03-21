@@ -6,10 +6,6 @@ services:
   # https://code.visualstudio.com/docs/devcontainers/create-dev-container
   devcontainer:
     image: "mcr.microsoft.com/devcontainers/base:1.0.9-bookworm"
-    volumes:
-      # Mounts the project folder to '/workspace', referenced by
-      # 'workspaceFolder' in devcontainer.json.
-      - ..:/workspace:cached
     networks:
       - dev-net
     # Override default command to keep devcontainer alive as default command
@@ -22,6 +18,9 @@ services:
       - DB_PASSWORD=adbpassword
       - DB_NAME=adb_db
   mysql: # extending server/compose.yaml
+    # The devcontainer reaches MySQL over the Compose network, so do not bind
+    # the database to the host where parallel worktrees would fight over 3306.
+    ports: !reset []
     networks: # make accessible to devcontainer via network
       - dev-net
 
