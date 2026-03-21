@@ -11,11 +11,13 @@ require (
 )
 
 require (
+	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect
 	github.com/golang-migrate/migrate/v4 v4.18.3 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
+	go.opentelemetry.io/otel v1.41.0 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 )
 
