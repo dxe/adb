@@ -31,7 +31,7 @@ type activistPaginationCursor struct {
 }
 
 func buildPaginationCursor(sortColumns []model.ActivistSortColumn, lastRow model.ActivistExtra) (string, error) {
-	if len(sortColumns) == 0 || sortColumns[len(sortColumns)-1].ColumnName != "id" {
+	if len(sortColumns) == 0 || sortColumns[len(sortColumns)-1].ColumnName != model.ColID {
 		return "", errors.New("last sort column must be ID")
 	}
 
