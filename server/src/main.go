@@ -73,7 +73,16 @@ func generateToken() string {
 	return fmt.Sprintf("%x", b)
 }
 
-var sessionStore = sessions.NewCookieStore([]byte(config.CookieSecret))
+const authSessionMaxAgeSeconds = 10 * // days
+	24 * // hours
+	60 * // minutes
+	60 // seconds
+
+var sessionStore = func() *sessions.CookieStore {
+	store := sessions.NewCookieStore([]byte(config.CookieSecret))
+	store.MaxAge(authSessionMaxAgeSeconds)
+	return store
+}()
 
 func augmentUserWithChapterFromSession(db *sqlx.DB, r *http.Request, adbUser model.ADBUser) (augmentedAdbUser model.ADBUser, err error) {
 	authSession, err := sessionStore.Get(r, "auth-session")
@@ -159,18 +168,24 @@ func setAuthSession(w http.ResponseWriter, r *http.Request, adbUser model.ADBUse
 		log.Printf("Warning: creating a new session because the existing session could not be decoded: %v", err)
 	}
 	authSession.Options = &sessions.Options{
-		Path: "/",
-		// MaxAge is 30 days in seconds
-		MaxAge: 30 * // days
-			24 * // hours
-			60 * // minutes
-			60, // seconds
+		Path:     "/",
+		MaxAge:   authSessionMaxAgeSeconds,
 		HttpOnly: true,
+		Secure:   config.IsProd,
+		SameSite: http.SameSiteLaxMode,
 	}
 	authSession.Values["authed"] = true
 	authSession.Values["adbuserid"] = adbUser.ID
 	authSession.Values["chapterid"] = adbUser.ChapterID
 	return sessionStore.Save(r, w, authSession)
+}
+
+// renewAuthSession performs rolling renewal of the session expiry.
+func renewAuthSession(w http.ResponseWriter, r *http.Request, user model.ADBUser) error {
+	if err := setAuthSession(w, r, user); err != nil {
+		return fmt.Errorf("renewing auth session: %w", err)
+	}
+	return nil
 }
 
 func (c MainController) getAuthedADBChapter(r *http.Request) int {
@@ -374,6 +389,7 @@ func (c MainController) authAccessMiddleware(h http.Handler, hasAccess func(mode
 				Path:     "/",
 				MaxAge:   -1,
 				HttpOnly: true,
+				Secure:   config.IsProd,
 				SameSite: http.SameSiteLaxMode,
 			}
 			http.SetCookie(w, c)
@@ -385,6 +401,10 @@ func (c MainController) authAccessMiddleware(h http.Handler, hasAccess func(mode
 		if !hasAccess(user) {
 			http.Redirect(w, r.WithContext(setUserContext(r, user)), "/403", http.StatusFound)
 			return
+		}
+
+		if err := renewAuthSession(w, r, user); err != nil {
+			log.Printf("Error: %v", err)
 		}
 
 		// Request is authed at this point.
@@ -434,6 +454,10 @@ func (c MainController) apiAccessMiddleware(h http.Handler, hasAccess func(model
 		if !hasAccess(user) {
 			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 			return
+		}
+
+		if err := renewAuthSession(w, r, user); err != nil {
+			log.Printf("Error: %v", err)
 		}
 
 		// Request is authed at this point.
