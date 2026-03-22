@@ -27,8 +27,8 @@ func (r DBActivistRepository) QueryActivists(options model.QueryActivistOptions)
 
 	// Ensure chapter_id is in columns if not filtering by chapter
 	columns := options.Columns
-	if options.Filters.ChapterId == 0 && !slices.Contains(columns, "chapter_id") {
-		columns = append(columns, "chapter_id")
+	if options.Filters.ChapterId == 0 && !slices.Contains(columns, model.ColChapterID) {
+		columns = append(columns, model.ColChapterID)
 	}
 
 	registry := newJoinRegistry()
@@ -59,10 +59,10 @@ func (r DBActivistRepository) QueryActivists(options model.QueryActivistOptions)
 	// for deterministic ordering (required for cursor pagination).
 	sortColumns := options.Sort.SortColumns
 	if len(sortColumns) == 0 {
-		sortColumns = []model.ActivistSortColumn{{ColumnName: "name"}}
+		sortColumns = []model.ActivistSortColumn{{ColumnName: model.ColName}}
 	}
-	if sortColumns[len(sortColumns)-1].ColumnName != "id" {
-		sortColumns = append(sortColumns, model.ActivistSortColumn{ColumnName: "id"})
+	if sortColumns[len(sortColumns)-1].ColumnName != model.ColID {
+		sortColumns = append(sortColumns, model.ActivistSortColumn{ColumnName: model.ColID})
 	}
 
 	// Register joins needed by sort columns, add to SELECT if missing
@@ -144,6 +144,25 @@ func (r DBActivistRepository) QueryActivists(options model.QueryActivistOptions)
 			NextCursor: nextCursor,
 		},
 	}, nil
+}
+
+func (r DBActivistRepository) PatchActivist(id int, patch model.ActivistPatchData) error {
+	sqlStr, args, err := BuildActivistPatchSQL(id, patch)
+	if err != nil {
+		return fmt.Errorf("building patch SQL: %w", err)
+	}
+	result, err := r.db.Exec(sqlStr, args...)
+	if err != nil {
+		return fmt.Errorf("executing activist patch: %w", err)
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("reading patch affected rows: %w", err)
+	}
+	if rows == 0 {
+		return fmt.Errorf("%w: activist with id %d not found", model.ErrNotFound, id)
+	}
+	return nil
 }
 
 func buildFiltersFromOptions(options model.QueryActivistOptions) []filter {

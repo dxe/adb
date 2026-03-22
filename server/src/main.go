@@ -282,10 +282,15 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/circles", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.CircleGroupNormalListHandler)) // TODO: maybe the public endpoints should return less info
 	router.Handle("/geocircles", alice.New(main.corsAllowGetMiddleware).ThenFunc(main.CircleGroupGeoListHandler)) // TODO: maybe the public endpoints should return less info
 
+	// --- Main API ----
+
+	// Note: New endpoints should start with /api and use transport layer.
+
 	// Authed API
 	router.Handle("/api/csrf-token", csrfMiddleware(alice.New(main.apiAnyADBRoleAuthMiddleware).ThenFunc(main.CSRFTokenHandler))).Methods(http.MethodGet)
 	router.Handle("/api/activists", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistsSearchHandler)).Methods(http.MethodPost)
 	router.Handle("/api/activists/{id:[0-9]+}", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistGetHandler)).Methods(http.MethodGet)
+	router.Handle("/api/activists/{id:[0-9]+}", csrfMiddleware(alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistPatchHandler))).Methods(http.MethodPatch)
 	router.Handle("/activist_names/get", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteActivistsHandler))
 	router.Handle("/activist_names/get_organizers", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteOrganizersHandler))
 	router.Handle("/activist_names/get_chaptermembers", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteChapterMembersHandler))
@@ -1010,6 +1015,7 @@ func (c MainController) AutocompleteChapterMembersHandler(w http.ResponseWriter,
 	})
 }
 
+// TODO: Refactor update path (activistExtra.ID != 0) to wrap PatchActivist so update logic is consolidated.
 func (c MainController) ActivistSaveHandler(w http.ResponseWriter, r *http.Request) {
 	// get requesting user's (for logging)
 	user, _ := c.getAuthedADBUser(r)
@@ -1718,6 +1724,15 @@ func (c MainController) ActivistGetHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	transport.ActivistGetHandler(w, r, authedUser, c.db)
+}
+
+func (c MainController) ActivistPatchHandler(w http.ResponseWriter, r *http.Request) {
+	authedUser, authed := c.getAuthedADBUser(r)
+	if !authed {
+		panic("ActivistPatchHandler requires authed ADB user")
+	}
+
+	transport.ActivistPatchHandler(w, r, authedUser, c.db, c.activistRepo, c.userRepo)
 }
 
 func (c MainController) UsersListHandler(w http.ResponseWriter, r *http.Request) {
