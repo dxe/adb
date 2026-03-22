@@ -146,6 +146,25 @@ func (r DBActivistRepository) QueryActivists(options model.QueryActivistOptions)
 	}, nil
 }
 
+func (r DBActivistRepository) PatchActivist(id int, patch model.ActivistPatchData) error {
+	sqlStr, args, err := BuildActivistPatchSQL(id, patch)
+	if err != nil {
+		return fmt.Errorf("building patch SQL: %w", err)
+	}
+	result, err := r.db.Exec(sqlStr, args...)
+	if err != nil {
+		return fmt.Errorf("executing activist patch: %w", err)
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("reading patch affected rows: %w", err)
+	}
+	if rows == 0 {
+		return fmt.Errorf("%w: activist with id %d not found", model.ErrNotFound, id)
+	}
+	return nil
+}
+
 func buildFiltersFromOptions(options model.QueryActivistOptions) []filter {
 	var result []filter
 	f := options.Filters

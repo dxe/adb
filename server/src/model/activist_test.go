@@ -14,6 +14,50 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type activistPatchRepoSpy struct {
+	patchCalls int
+	lastID     int
+	lastPatch  ActivistPatchData
+	patchErr   error
+}
+
+func (s *activistPatchRepoSpy) QueryActivists(options QueryActivistOptions) (QueryActivistResult, error) {
+	return QueryActivistResult{}, nil
+}
+
+func (s *activistPatchRepoSpy) PatchActivist(id int, patch ActivistPatchData) error {
+	s.patchCalls++
+	s.lastID = id
+	s.lastPatch = patch
+	return s.patchErr
+}
+
+type userRepoStub struct {
+	usersByID map[int]ADBUser
+}
+
+func (s *userRepoStub) GetUser(id int, email string) (ADBUser, error) {
+	return ADBUser{}, nil
+}
+
+func (s *userRepoStub) GetUsers(options GetUserOptions) ([]ADBUser, error) {
+	if options.ID != 0 {
+		if u, ok := s.usersByID[options.ID]; ok {
+			return []ADBUser{u}, nil
+		}
+		return []ADBUser{}, nil
+	}
+	return []ADBUser{}, nil
+}
+
+func (s *userRepoStub) CreateUser(user ADBUser) (ADBUser, error) {
+	return user, nil
+}
+
+func (s *userRepoStub) UpdateUser(user ADBUser) (ADBUser, error) {
+	return user, nil
+}
+
 func stringListToMap(l []string) map[string]struct{} {
 	m := map[string]struct{}{}
 	for _, i := range l {
@@ -539,6 +583,92 @@ func TestGetActivistJSONForUser_ChapterScopedByID(t *testing.T) {
 		ChapterID: otherChapterID,
 	}, GetActivistOptions{ID: sfBayActivist.ID})
 	require.ErrorIs(t, err, ErrNotFound)
+}
+
+func TestPatchActivist_OrganizerCanOnlyPatchOwnChapter(t *testing.T) {
+	db := testdb.NewDB()
+	defer db.Close()
+
+	otherChapterID, err := InsertChapter(db, ChapterWithToken{
+		ID:   901,
+		Name: "Other Chapter",
+	})
+	require.NoError(t, err)
+	if otherChapterID == SFBayChapterIdDevTest {
+		otherChapterID, err = InsertChapter(db, ChapterWithToken{
+			ID:   902,
+			Name: "Another Other Chapter",
+		})
+		require.NoError(t, err)
+	}
+	require.NotEqual(t, SFBayChapterIdDevTest, otherChapterID)
+
+	ownChapterActivist, err := GetOrCreateActivist(db, "Own Chapter Activist", SFBayChapterIdDevTest)
+	require.NoError(t, err)
+	otherChapterActivist, err := GetOrCreateActivist(db, "Other Chapter Activist", otherChapterID)
+	require.NoError(t, err)
+
+	repo := &activistPatchRepoSpy{}
+	userRepo := &userRepoStub{}
+	authedOrganizer := ADBUser{
+		ID:        1,
+		Email:     "organizer@example.org",
+		Name:      "Organizer",
+		Roles:     []string{shared.RoleOrganizer},
+		ChapterID: SFBayChapterIdDevTest,
+	}
+
+	err = PatchActivist(db, repo, userRepo, authedOrganizer, ownChapterActivist.ID, ActivistPatchData{
+		Fields: []ActivistPatchField{
+			{Name: ColPreferredName, Value: "Updated Name"},
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, 1, repo.patchCalls)
+	require.Equal(t, ownChapterActivist.ID, repo.lastID)
+
+	err = PatchActivist(db, repo, userRepo, authedOrganizer, otherChapterActivist.ID, ActivistPatchData{
+		Fields: []ActivistPatchField{
+			{Name: ColPreferredName, Value: "Should Fail"},
+		},
+	})
+	require.ErrorIs(t, err, ErrValidation)
+	require.Contains(t, err.Error(), "does not belong to your chapter")
+	require.Equal(t, 1, repo.patchCalls)
+}
+
+func TestPatchActivist_RejectsChapterPatchField(t *testing.T) {
+	db := testdb.NewDB()
+	defer db.Close()
+
+	activist, err := GetOrCreateActivist(db, "Cannot Change Chapter", SFBayChapterIdDevTest)
+	require.NoError(t, err)
+
+	repo := &activistPatchRepoSpy{}
+	userRepo := &userRepoStub{}
+	authedOrganizer := ADBUser{
+		ID:        1,
+		Email:     "organizer@example.org",
+		Name:      "Organizer",
+		Roles:     []string{shared.RoleOrganizer},
+		ChapterID: SFBayChapterIdDevTest,
+	}
+
+	before, err := GetActivistJSON(db, GetActivistOptions{ID: activist.ID})
+	require.NoError(t, err)
+
+	err = PatchActivist(db, repo, userRepo, authedOrganizer, activist.ID, ActivistPatchData{
+		Fields: []ActivistPatchField{
+			{Name: ColChapterID, Value: before.ChapterID + 1},
+		},
+	})
+	require.ErrorIs(t, err, ErrValidation)
+	require.Contains(t, err.Error(), "chapter_id cannot be patched")
+	require.Equal(t, 0, repo.patchCalls)
+
+	after, err := GetActivistJSON(db, GetActivistOptions{ID: activist.ID})
+	require.NoError(t, err)
+	require.Equal(t, before.ChapterID, after.ChapterID)
 }
 
 func TestMergeActivist(t *testing.T) {

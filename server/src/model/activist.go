@@ -1118,6 +1118,24 @@ func CreateActivistWithTimestamps(db *sqlx.DB, activist ActivistExtra) (int, err
 	return createActivist(db, activist, insertActivistWithTimestampsQuery)
 }
 
+// validateActivistUpdate validates fields that changed between orig and updated.
+func validateActivistUpdate(orig, updated ActivistExtra) error {
+	if updated.Name != orig.Name {
+		if updated.Name == "" {
+			return fmt.Errorf("%w: name cannot be empty", ErrValidation)
+		}
+		if err := checkForDangerousChars(updated.Name); err != nil {
+			return fmt.Errorf("%w: %s", ErrValidation, err.Error())
+		}
+	}
+	if updated.ActivistLevel != orig.ActivistLevel {
+		if !validActivistLevels[updated.ActivistLevel] {
+			return fmt.Errorf("%w: invalid activist level", ErrValidation)
+		}
+	}
+	return nil
+}
+
 // syncMailingListIfNeeded enqueues a mailing list update if any relevant fields changed between orig and updated.
 func syncMailingListIfNeeded(orig, updated ActivistExtra) {
 	changed := updated.Name != orig.Name ||
@@ -1156,6 +1174,9 @@ func geocodeIfAddressChanged(orig ActivistExtra, updated *ActivistExtra) {
 		return
 	}
 	if updated.StreetAddress == "" || updated.City == "" || updated.State == "" {
+		// Leave coordinates as-is: do not clear them as they may not have been
+		// determined based on address in the first place. For example, they may
+		// have been determined based on the user's IP address.
 		return
 	}
 	location := geoCodeAddress(updated.StreetAddress, updated.City, updated.State)
@@ -1170,16 +1191,19 @@ func UserUpdateActivist(db *sqlx.DB, activist ActivistExtra, userEmail string) (
 	if activist.ID == 0 {
 		return 0, errors.New("activist ID cannot be 0")
 	}
-	if activist.Name == "" {
-		return 0, errors.New("Name cannot be empty")
-	}
 
 	orig, err := GetActivistsExtra(db, GetActivistOptions{ID: activist.ID})
 	if err != nil {
-		return 0, fmt.Errorf("error fetching existing activist data: %v", err)
+		return 0, fmt.Errorf("fetching existing activist data: %v", err)
+	}
+	if len(orig) == 0 {
+		return 0, fmt.Errorf("%w: activist with id %d not found", ErrNotFound, activist.ID)
 	}
 	origActivist := orig[0]
 
+	if err := validateActivistUpdate(origActivist, activist); err != nil {
+		return 0, err
+	}
 	syncMailingListIfNeeded(origActivist, activist)
 	geocodeIfAddressChanged(origActivist, &activist)
 
@@ -1213,6 +1237,94 @@ func UserUpdateActivist(db *sqlx.DB, activist ActivistExtra, userEmail string) (
 	}
 
 	return activist.ID, nil
+}
+
+// PatchActivist applies a partial update to an activist.
+func PatchActivist(db *sqlx.DB, repo ActivistRepository, userRepo UserRepository, authedUser ADBUser, activistID int, patch ActivistPatchData) error {
+	if !UserHasOrganizerAccess(authedUser) {
+		return fmt.Errorf("%w: lacking permission to update activists", ErrValidation)
+	}
+
+	if activistID == 0 {
+		return fmt.Errorf("%w: activist ID cannot be 0", ErrValidation)
+	}
+
+	if len(patch.Fields) == 0 {
+		return fmt.Errorf("%w: no fields to update", ErrValidation)
+	}
+	for _, field := range patch.Fields {
+		if field.Name == ColChapterID {
+			return fmt.Errorf("%w: chapter_id cannot be patched", ErrValidation)
+		}
+	}
+
+	// Fetch original activist for side effects (mailing list, geocoding).
+	origActivists, err := GetActivistsExtra(db, GetActivistOptions{ID: activistID})
+	if err != nil {
+		return fmt.Errorf("fetching existing activist data: %w", err)
+	}
+	if len(origActivists) == 0 {
+		return fmt.Errorf("%w: activist with id %d not found", ErrNotFound, activistID)
+	}
+	orig := origActivists[0]
+
+	// Chapter will be required for user authorization check below. If it was 0
+	// and authed user's chapter was also 0, this would be a security issue.
+	if orig.ChapterID == 0 {
+		return fmt.Errorf("%w: activist must have a chapter", ErrValidation)
+	}
+
+	// Non-admin users can only update activists in their own chapter.
+	if !UserHasRole(shared.RoleAdmin, authedUser) {
+		if orig.ChapterID != authedUser.ChapterID {
+			return fmt.Errorf("%w: activist does not belong to your chapter", ErrValidation)
+		}
+	}
+
+	merged, err := patch.ApplyTo(orig)
+	if err != nil {
+		return err
+	}
+	if merged.AssignedTo != orig.AssignedTo {
+		if merged.AssignedTo < 0 {
+			return fmt.Errorf("%w: invalid assigned_to value: %d", ErrValidation, merged.AssignedTo)
+		}
+		if merged.AssignedTo > 0 {
+			users, err := userRepo.GetUsers(GetUserOptions{ID: merged.AssignedTo, PopulateRoles: false})
+			if err != nil {
+				return fmt.Errorf("validating assigned_to user %d: %w", merged.AssignedTo, err)
+			}
+			if len(users) == 0 {
+				return fmt.Errorf("%w: invalid assigned_to value: %d", ErrValidation, merged.AssignedTo)
+			}
+		}
+	}
+
+	if err := validateActivistUpdate(orig, merged); err != nil {
+		return err
+	}
+	geocodeIfAddressChanged(orig, &merged)
+
+	// If geocoding updated lat/lng, include them in the patch.
+	if merged.Lat != orig.Lat || merged.Lng != orig.Lng {
+		patch.Append(ColLat, merged.Lat)
+		patch.Append(ColLng, merged.Lng)
+	}
+
+	if err := repo.PatchActivist(activistID, patch); err != nil {
+		return fmt.Errorf("failed to patch activist: %w", err)
+	}
+	syncMailingListIfNeeded(orig, merged)
+	log.Printf("Patched activist %d", activistID)
+
+	// Logging (same pattern as UserUpdateActivist).
+	_, err = db.Exec(`INSERT INTO activists_history (activist_id, action, user_email)
+		VALUES (?, 'PATCH', ?)`, activistID, authedUser.Email)
+	if err != nil {
+		log.Println("Error logging activist patch: " + err.Error())
+	}
+
+	return nil
 }
 
 func HideActivist(db *sqlx.DB, activistID int) error {
@@ -2238,10 +2350,13 @@ func ValidationErrorf(format string, args ...any) error {
 // a cyclical package reference.
 type ActivistRepository interface {
 	QueryActivists(options QueryActivistOptions) (QueryActivistResult, error)
+	PatchActivist(id int, patch ActivistPatchData) error
 }
 
 type ActivistColumnName string
 
+// Column name constants for activist fields. These are the canonical field names used across
+// transport (ToPatchData), model (ApplyTo), and persistence (simpleColumns, timestampGroups).
 const (
 	ColID                 ActivistColumnName = "id"
 	ColEmail              ActivistColumnName = "email"
@@ -2290,6 +2405,7 @@ const (
 	ColAssignedTo         ActivistColumnName = "assigned_to"
 	ColFollowupDate       ActivistColumnName = "followup_date"
 
+	// Read-only / computed columns (used in SELECT queries but not writable).
 	ColChapterName           ActivistColumnName = "chapter_name"
 	ColFirstEvent            ActivistColumnName = "first_event"
 	ColFirstEventName        ActivistColumnName = "first_event_name"
@@ -2341,6 +2457,120 @@ type QueryActivistResult struct {
 type QueryActivistResultPagination struct {
 	// An opaque string if more results are available; otherwise, the empty string.
 	NextCursor string `json:"next_cursor"`
+}
+
+// ActivistPatchField is a single field name + value pair for a partial activist update.
+type ActivistPatchField struct {
+	Name  ActivistColumnName
+	Value any
+}
+
+// ActivistPatchData is an ordered list of fields to update.
+type ActivistPatchData struct {
+	Fields []ActivistPatchField
+}
+
+// ApplyTo produces a copy of orig with the patched fields overwritten.
+// This centralizes the string->struct-field mapping so the rest of the model layer
+// can work with ActivistExtra fields directly.
+func (d ActivistPatchData) ApplyTo(orig ActivistExtra) (ActivistExtra, error) {
+	merged := orig
+	for _, f := range d.Fields {
+		switch f.Name {
+		case ColEmail:
+			merged.Email = f.Value.(string)
+		case ColFacebook:
+			merged.Facebook = f.Value.(string)
+		case ColName:
+			merged.Name = f.Value.(string)
+		case ColPreferredName:
+			merged.PreferredName = f.Value.(string)
+		case ColPhone:
+			merged.Phone = f.Value.(string)
+		case ColPronouns:
+			merged.Pronouns = f.Value.(string)
+		case ColLanguage:
+			merged.Language = f.Value.(string)
+		case ColAccessibility:
+			merged.Accessibility = f.Value.(string)
+		case ColDOB:
+			merged.Birthday = f.Value.(sql.NullString)
+		case ColLocation:
+			merged.Location = f.Value.(sql.NullString)
+		case ColActivistLevel:
+			merged.ActivistLevel = f.Value.(string)
+		case ColSource:
+			merged.Source = f.Value.(string)
+		case ColHiatus:
+			merged.Hiatus = f.Value.(bool)
+		case ColConnector:
+			merged.Connector = f.Value.(string)
+		case ColTraining0:
+			merged.Training0 = f.Value.(sql.NullString)
+		case ColTraining1:
+			merged.Training1 = f.Value.(sql.NullString)
+		case ColTraining4:
+			merged.Training4 = f.Value.(sql.NullString)
+		case ColTraining5:
+			merged.Training5 = f.Value.(sql.NullString)
+		case ColTraining6:
+			merged.Training6 = f.Value.(sql.NullString)
+		case ColConsentQuiz:
+			merged.ConsentQuiz = f.Value.(sql.NullString)
+		case ColTrainingProtest:
+			merged.TrainingProtest = f.Value.(sql.NullString)
+		case ColDevQuiz:
+			merged.Quiz = f.Value.(sql.NullString)
+		case ColDevInterest:
+			merged.DevInterest = f.Value.(string)
+		case ColCMFirstEmail:
+			merged.CMFirstEmail = f.Value.(sql.NullString)
+		case ColCMApprovalEmail:
+			merged.CMApprovalEmail = f.Value.(sql.NullString)
+		case ColProspectOrganizer:
+			merged.ProspectOrganizer = f.Value.(bool)
+		case ColProspectChapterMbr:
+			merged.ProspectChapterMember = f.Value.(bool)
+		case ColReferralFriends:
+			merged.ReferralFriends = f.Value.(string)
+		case ColReferralApply:
+			merged.ReferralApply = f.Value.(string)
+		case ColReferralOutlet:
+			merged.ReferralOutlet = f.Value.(string)
+		case ColInterestDate:
+			merged.InterestDate = f.Value.(sql.NullString)
+		case ColMPI:
+			merged.MPI = f.Value.(bool)
+		case ColNotes:
+			merged.Notes = f.Value.(sql.NullString)
+		case ColVisionWall:
+			merged.VisionWall = f.Value.(string)
+		case ColVotingAgreement:
+			merged.VotingAgreement = f.Value.(bool)
+		case ColStreetAddress:
+			merged.StreetAddress = f.Value.(string)
+		case ColCity:
+			merged.City = f.Value.(string)
+		case ColState:
+			merged.State = f.Value.(string)
+		case ColAssignedTo:
+			merged.AssignedTo = f.Value.(int)
+		case ColFollowupDate:
+			merged.FollowupDate = f.Value.(sql.NullString)
+		case ColLat:
+			merged.Lat = f.Value.(float64)
+		case ColLng:
+			merged.Lng = f.Value.(float64)
+		default:
+			return ActivistExtra{}, fmt.Errorf("%w: unsupported patch field %q", ErrValidation, f.Name)
+		}
+	}
+	return merged, nil
+}
+
+// Append adds a field to the patch data.
+func (d *ActivistPatchData) Append(name ActivistColumnName, value any) {
+	d.Fields = append(d.Fields, ActivistPatchField{Name: name, Value: value})
 }
 
 func (o *QueryActivistOptions) normalizeAndValidate() error {
