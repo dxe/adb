@@ -1118,6 +1118,53 @@ func CreateActivistWithTimestamps(db *sqlx.DB, activist ActivistExtra) (int, err
 	return createActivist(db, activist, insertActivistWithTimestampsQuery)
 }
 
+// syncMailingListIfNeeded enqueues a mailing list update if any relevant fields changed between orig and updated.
+func syncMailingListIfNeeded(orig, updated ActivistExtra) {
+	changed := updated.Name != orig.Name ||
+		updated.Email != orig.Email ||
+		updated.Phone != orig.Phone ||
+		updated.Location != orig.Location ||
+		updated.City != orig.City ||
+		updated.State != orig.State ||
+		updated.ActivistLevel != orig.ActivistLevel
+	if !changed || updated.Email == "" {
+		return
+	}
+	signup := mailing_list_signup.Signup{
+		Source:          "adb",
+		Name:            updated.Name,
+		Email:           updated.Email,
+		Phone:           updated.Phone,
+		City:            updated.City,
+		State:           updated.State,
+		Zip:             updated.Location.String,
+		SourceChapterId: updated.ChapterID,
+		ActivistLevel:   updated.ActivistLevel,
+	}
+	if err := mailing_list_signup.Enqueue(signup); err != nil {
+		log.Println("ERROR updating activist on mailing list:", err.Error())
+	} else {
+		log.Printf("Pushed updated activist record to sign-up service: name: %v, email: %v, chapter: %v",
+			updated.Name, updated.Email, updated.ChapterID)
+	}
+}
+
+// geocodeIfAddressChanged re-geocodes if street address, city, or state changed between orig and updated.
+// Mutates updated.Lat and updated.Lng if geocoding succeeds.
+func geocodeIfAddressChanged(orig ActivistExtra, updated *ActivistExtra) {
+	if updated.StreetAddress == orig.StreetAddress && updated.City == orig.City && updated.State == orig.State {
+		return
+	}
+	if updated.StreetAddress == "" || updated.City == "" || updated.State == "" {
+		return
+	}
+	location := geoCodeAddress(updated.StreetAddress, updated.City, updated.State)
+	if location != nil {
+		updated.Lat = location.Lat
+		updated.Lng = location.Lng
+	}
+}
+
 // UserUpdateActivist updates user-editable activist fields as requested by an ADB user.
 func UserUpdateActivist(db *sqlx.DB, activist ActivistExtra, userEmail string) (int, error) {
 	if activist.ID == 0 {
@@ -1127,56 +1174,14 @@ func UserUpdateActivist(db *sqlx.DB, activist ActivistExtra, userEmail string) (
 		return 0, errors.New("Name cannot be empty")
 	}
 
-	// get original activist to see if we need to update the mailing list
-	orig, err := GetActivistsExtra(db, GetActivistOptions{
-		ID: activist.ID,
-	})
+	orig, err := GetActivistsExtra(db, GetActivistOptions{ID: activist.ID})
 	if err != nil {
 		return 0, fmt.Errorf("error fetching existing activist data: %v", err)
 	}
 	origActivist := orig[0]
 
-	mailingListInfoChanged := activist.Name != origActivist.Name ||
-		activist.Email != origActivist.Email ||
-		activist.Phone != origActivist.Phone ||
-		activist.Location != origActivist.Location ||
-		activist.City != origActivist.City ||
-		activist.State != origActivist.State ||
-		activist.ActivistLevel != origActivist.ActivistLevel
-	if mailingListInfoChanged && activist.Email != "" {
-		signup := mailing_list_signup.Signup{
-			Source: "adb",
-			Name:   activist.Name,
-			Email:  activist.Email,
-			Phone:  activist.Phone,
-			City:   activist.City,
-			State:  activist.State,
-			// Zip will be used to find a chapter mailing list (often this chapter's mailing list).
-			// Activist may be added to ADB chapter near this zip, if different from this chapter.
-			Zip: activist.Location.String,
-			// Let signup service know this chapter's ID so it doesn't try to sync back here causing an infinite loop.
-			SourceChapterId: activist.ChapterID,
-			ActivistLevel:   activist.ActivistLevel,
-		}
-		err := mailing_list_signup.Enqueue(signup)
-		if err != nil {
-			// Don't return this error because we still want to successfully update the activist in the database.
-			log.Println("ERROR updating activist on mailing list:", err.Error())
-		} else {
-			log.Printf("Pushed updated activist record to sign-up service: name: %v, email: %v, chapter: %v",
-				activist.Name, activist.Email, activist.ChapterID)
-		}
-	}
-	geoInfoChanged := activist.City != origActivist.City ||
-		activist.State != origActivist.State ||
-		activist.StreetAddress != origActivist.StreetAddress
-	if geoInfoChanged && activist.StreetAddress != "" && activist.City != "" && activist.State != "" {
-		location := geoCodeAddress(activist.StreetAddress, activist.City, activist.State)
-		if location != nil {
-			activist.Lng = location.Lng
-			activist.Lat = location.Lat
-		}
-	}
+	syncMailingListIfNeeded(origActivist, activist)
+	geocodeIfAddressChanged(origActivist, &activist)
 
 	_, err = db.NamedExec(userUpdateActivistQuery, activist)
 
@@ -2237,6 +2242,73 @@ type ActivistRepository interface {
 
 type ActivistColumnName string
 
+const (
+	ColID                 ActivistColumnName = "id"
+	ColEmail              ActivistColumnName = "email"
+	ColFacebook           ActivistColumnName = "facebook"
+	ColName               ActivistColumnName = "name"
+	ColPreferredName      ActivistColumnName = "preferred_name"
+	ColPhone              ActivistColumnName = "phone"
+	ColPronouns           ActivistColumnName = "pronouns"
+	ColLanguage           ActivistColumnName = "language"
+	ColAccessibility      ActivistColumnName = "accessibility"
+	ColDOB                ActivistColumnName = "dob"
+	ColLocation           ActivistColumnName = "location"
+	ColStreetAddress      ActivistColumnName = "street_address"
+	ColCity               ActivistColumnName = "city"
+	ColState              ActivistColumnName = "state"
+	ColLat                ActivistColumnName = "lat"
+	ColLng                ActivistColumnName = "lng"
+	ColChapterID          ActivistColumnName = "chapter_id"
+	ColActivistLevel      ActivistColumnName = "activist_level"
+	ColSource             ActivistColumnName = "source"
+	ColHiatus             ActivistColumnName = "hiatus"
+	ColConnector          ActivistColumnName = "connector"
+	ColTraining0          ActivistColumnName = "training0"
+	ColTraining1          ActivistColumnName = "training1"
+	ColTraining4          ActivistColumnName = "training4"
+	ColTraining5          ActivistColumnName = "training5"
+	ColTraining6          ActivistColumnName = "training6"
+	ColConsentQuiz        ActivistColumnName = "consent_quiz"
+	ColTrainingProtest    ActivistColumnName = "training_protest"
+	ColDevAppDate         ActivistColumnName = "dev_application_date"
+	ColDevAppType         ActivistColumnName = "dev_application_type"
+	ColDevQuiz            ActivistColumnName = "dev_quiz"
+	ColDevInterest        ActivistColumnName = "dev_interest"
+	ColCMFirstEmail       ActivistColumnName = "cm_first_email"
+	ColCMApprovalEmail    ActivistColumnName = "cm_approval_email"
+	ColProspectOrganizer  ActivistColumnName = "prospect_organizer"
+	ColProspectChapterMbr ActivistColumnName = "prospect_chapter_member"
+	ColReferralFriends    ActivistColumnName = "referral_friends"
+	ColReferralApply      ActivistColumnName = "referral_apply"
+	ColReferralOutlet     ActivistColumnName = "referral_outlet"
+	ColInterestDate       ActivistColumnName = "interest_date"
+	ColMPI                ActivistColumnName = "mpi"
+	ColNotes              ActivistColumnName = "notes"
+	ColVisionWall         ActivistColumnName = "vision_wall"
+	ColVotingAgreement    ActivistColumnName = "voting_agreement"
+	ColAssignedTo         ActivistColumnName = "assigned_to"
+	ColFollowupDate       ActivistColumnName = "followup_date"
+
+	ColChapterName           ActivistColumnName = "chapter_name"
+	ColFirstEvent            ActivistColumnName = "first_event"
+	ColFirstEventName        ActivistColumnName = "first_event_name"
+	ColLastEvent             ActivistColumnName = "last_event"
+	ColLastEventName         ActivistColumnName = "last_event_name"
+	ColTotalEvents           ActivistColumnName = "total_events"
+	ColLastAction            ActivistColumnName = "last_action"
+	ColMonthsSinceLastAction ActivistColumnName = "months_since_last_action"
+	ColTotalPoints           ActivistColumnName = "total_points"
+	ColActive                ActivistColumnName = "active"
+	ColStatus                ActivistColumnName = "status"
+	ColLastConnection        ActivistColumnName = "last_connection"
+	ColGeoCircles            ActivistColumnName = "geo_circles"
+	ColAssignedToName        ActivistColumnName = "assigned_to_name"
+	ColTotalInteractions     ActivistColumnName = "total_interactions"
+	ColLastInteractionDate   ActivistColumnName = "last_interaction_date"
+	ColMPPRequirements       ActivistColumnName = "mpp_requirements"
+)
+
 type QueryActivistOptions struct {
 	// This model is currently shared with the transport layer and treated as part of the frontend API.
 	// Introduce transport DTOs when the wire format needs to differ from internal semantics.
@@ -2274,7 +2346,7 @@ type QueryActivistResultPagination struct {
 func (o *QueryActivistOptions) normalizeAndValidate() error {
 	// TODO: remove invalid characters from o.nameFilter.name
 
-	if o.Filters.ChapterId == 0 && !slices.Contains(o.Columns, "chapter_name") {
+	if o.Filters.ChapterId == 0 && !slices.Contains(o.Columns, ColChapterName) {
 		return ValidationErrorf("must choose 'chapter_name' column when not filtering by chapter ID.")
 	}
 
@@ -2287,7 +2359,7 @@ func (o *QueryActivistOptions) normalizeAndValidate() error {
 	}
 
 	for i, sc := range o.Sort.SortColumns {
-		if sc.ColumnName == "id" {
+		if sc.ColumnName == ColID {
 			if i != len(o.Sort.SortColumns)-1 {
 				return ValidationErrorf("'id' must be the last sort column if present")
 			}
