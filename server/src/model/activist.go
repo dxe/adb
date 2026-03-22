@@ -107,6 +107,9 @@ SELECT
   referral_outlet,
   interest_date,
 
+  a.assigned_to,
+  DATE_FORMAT(a.followup_date, "%Y-%m-%d") as followup_date,
+
   @first_event := (
       SELECT min(e.date) AS min_date
       FROM event_attendance ea
@@ -186,8 +189,6 @@ SELECT
 		FROM adb_users
 		WHERE adb_users.id = a.assigned_to
 	), "") AS assigned_to_name,
-
-	DATE_FORMAT(followup_date, "%Y-%m-%d") as followup_date,
 
 	@total_interactions := (
 		SELECT count(id)
@@ -754,6 +755,7 @@ func BuildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 			Lat:                   a.Lat,
 			Lng:                   a.Lng,
 			GeoCircles:            a.GeoCircles,
+			AssignedTo:            a.AssignedTo,
 			AssignedToName:        a.AssignedToName,
 			FollowupDate:          followup_date,
 			TotalInteractions:     a.TotalInteractions,
@@ -1118,6 +1120,38 @@ func CreateActivistWithTimestamps(db *sqlx.DB, activist ActivistExtra) (int, err
 	return createActivist(db, activist, insertActivistWithTimestampsQuery)
 }
 
+// validateActivistUpdate validates fields that changed between orig and updated.
+func validateActivistUpdate(orig, updated ActivistExtra, userRepo UserRepository) error {
+	if updated.Name != orig.Name {
+		if updated.Name == "" {
+			return ValidationErrorf("name cannot be empty")
+		}
+		if err := checkForDangerousChars(updated.Name); err != nil {
+			return ValidationErrorf("%s", err.Error())
+		}
+	}
+	if updated.ActivistLevel != orig.ActivistLevel {
+		if !validActivistLevels[updated.ActivistLevel] {
+			return ValidationErrorf("invalid activist level")
+		}
+	}
+	if updated.AssignedTo != orig.AssignedTo {
+		if updated.AssignedTo < 0 {
+			return ValidationErrorf("invalid assigned_to value: %d", updated.AssignedTo)
+		}
+		if updated.AssignedTo > 0 {
+			users, err := userRepo.GetUsers(GetUserOptions{ID: updated.AssignedTo, PopulateRoles: false})
+			if err != nil {
+				return fmt.Errorf("validating assigned_to user %d: %w", updated.AssignedTo, err)
+			}
+			if len(users) == 0 {
+				return ValidationErrorf("invalid assigned_to value: %d", updated.AssignedTo)
+			}
+		}
+	}
+	return nil
+}
+
 // syncMailingListIfNeeded enqueues a mailing list update if any relevant fields changed between orig and updated.
 func syncMailingListIfNeeded(orig, updated ActivistExtra) {
 	changed := updated.Name != orig.Name ||
@@ -1156,30 +1190,41 @@ func geocodeIfAddressChanged(orig ActivistExtra, updated *ActivistExtra) {
 		return
 	}
 	if updated.StreetAddress == "" || updated.City == "" || updated.State == "" {
+		// Leave coordinates as-is: do not clear them as they may not have been
+		// determined based on address in the first place. For example, they may
+		// have been determined based on the user's IP address.
+		// This tradeoff retains more location data at the cost of consistency.
 		return
 	}
 	location := geoCodeAddress(updated.StreetAddress, updated.City, updated.State)
-	if location != nil {
-		updated.Lat = location.Lat
-		updated.Lng = location.Lng
+	if location == nil {
+		// Leave coordinates as-is: do not clear them as the old coordinates
+		// still serve as a guess of their approximate location, which is
+		// preferable to storing no location at all.
+		return
 	}
+	updated.Lat = location.Lat
+	updated.Lng = location.Lng
 }
 
 // UserUpdateActivist updates user-editable activist fields as requested by an ADB user.
-func UserUpdateActivist(db *sqlx.DB, activist ActivistExtra, userEmail string) (int, error) {
+func UserUpdateActivist(db *sqlx.DB, activist ActivistExtra, userEmail string, userRepo UserRepository) (int, error) {
 	if activist.ID == 0 {
 		return 0, errors.New("activist ID cannot be 0")
-	}
-	if activist.Name == "" {
-		return 0, errors.New("Name cannot be empty")
 	}
 
 	orig, err := GetActivistsExtra(db, GetActivistOptions{ID: activist.ID})
 	if err != nil {
-		return 0, fmt.Errorf("error fetching existing activist data: %v", err)
+		return 0, fmt.Errorf("fetching existing activist data: %w", err)
+	}
+	if len(orig) == 0 {
+		return 0, fmt.Errorf("%w: activist with id %d not found", ErrNotFound, activist.ID)
 	}
 	origActivist := orig[0]
 
+	if err := validateActivistUpdate(origActivist, activist, userRepo); err != nil {
+		return 0, err
+	}
 	syncMailingListIfNeeded(origActivist, activist)
 	geocodeIfAddressChanged(origActivist, &activist)
 
@@ -1213,6 +1258,78 @@ func UserUpdateActivist(db *sqlx.DB, activist ActivistExtra, userEmail string) (
 	}
 
 	return activist.ID, nil
+}
+
+// PatchActivist applies a partial update to an activist.
+func PatchActivist(db *sqlx.DB, repo ActivistRepository, userRepo UserRepository, authedUser ADBUser, activistID int, patch ActivistPatchData) error {
+	if !UserHasOrganizerAccess(authedUser) {
+		return ValidationErrorf("lacking permission to update activists")
+	}
+
+	if activistID == 0 {
+		return ValidationErrorf("activist ID cannot be 0")
+	}
+
+	if len(patch.Fields) == 0 {
+		return ValidationErrorf("no fields to update")
+	}
+
+	for _, field := range patch.Fields {
+		info, ok := ActivistColumns[field.Name]
+		if !ok || !info.UserPatchable {
+			return ValidationErrorf("patching %v is not implemented", field.Name)
+		}
+	}
+
+	// Fetch original activist for side effects (mailing list, geocoding).
+	origActivists, err := GetActivistsExtra(db, GetActivistOptions{ID: activistID})
+	if err != nil {
+		return fmt.Errorf("fetching existing activist data: %w", err)
+	}
+	if len(origActivists) == 0 {
+		return fmt.Errorf("%w: activist with id %d not found", ErrNotFound, activistID)
+	}
+	orig := origActivists[0]
+
+	// Non-admin users can only update activists in their own chapter.
+	if !UserHasRole(shared.RoleAdmin, authedUser) {
+		if orig.ChapterID == 0 || authedUser.ChapterID == 0 {
+			return ValidationErrorf("activist chapter check failed")
+		}
+		if orig.ChapterID != authedUser.ChapterID {
+			return ValidationErrorf("activist does not belong to your chapter")
+		}
+	}
+
+	merged, err := patch.ApplyTo(orig)
+	if err != nil {
+		return err
+	}
+
+	if err := validateActivistUpdate(orig, merged, userRepo); err != nil {
+		return err
+	}
+
+	geocodeIfAddressChanged(orig, &merged)
+	if merged.Lat != orig.Lat || merged.Lng != orig.Lng {
+		patch.Append(ColLat, merged.Lat)
+		patch.Append(ColLng, merged.Lng)
+	}
+
+	if err := repo.PatchActivist(activistID, patch); err != nil {
+		return fmt.Errorf("failed to patch activist: %w", err)
+	}
+	syncMailingListIfNeeded(orig, merged)
+	log.Printf("Patched activist %d", activistID)
+
+	// Logging (same pattern as UserUpdateActivist).
+	_, err = db.Exec(`INSERT INTO activists_history (activist_id, action, user_email)
+		VALUES (?, 'PATCH', ?)`, activistID, authedUser.Email)
+	if err != nil {
+		log.Println("Error logging activist patch: " + err.Error())
+	}
+
+	return nil
 }
 
 func HideActivist(db *sqlx.DB, activistID int) error {
@@ -2238,43 +2355,55 @@ func ValidationErrorf(format string, args ...any) error {
 // a cyclical package reference.
 type ActivistRepository interface {
 	QueryActivists(options QueryActivistOptions) (QueryActivistResult, error)
+	PatchActivist(id int, patch ActivistPatchData) error
 }
 
+// ActivistColumnName is a column name in the API layer, not in the database
+// (see DbCol in model.ActivistColumns for those).
 type ActivistColumnName string
 
+// Column name constants for activist fields. These are used in the API.
+// Not to be confused with database column names.
 const (
-	ColID                 ActivistColumnName = "id"
-	ColEmail              ActivistColumnName = "email"
-	ColFacebook           ActivistColumnName = "facebook"
-	ColName               ActivistColumnName = "name"
-	ColPreferredName      ActivistColumnName = "preferred_name"
-	ColPhone              ActivistColumnName = "phone"
-	ColPronouns           ActivistColumnName = "pronouns"
-	ColLanguage           ActivistColumnName = "language"
-	ColAccessibility      ActivistColumnName = "accessibility"
-	ColDOB                ActivistColumnName = "dob"
-	ColLocation           ActivistColumnName = "location"
-	ColStreetAddress      ActivistColumnName = "street_address"
-	ColCity               ActivistColumnName = "city"
-	ColState              ActivistColumnName = "state"
-	ColLat                ActivistColumnName = "lat"
-	ColLng                ActivistColumnName = "lng"
-	ColChapterID          ActivistColumnName = "chapter_id"
-	ColActivistLevel      ActivistColumnName = "activist_level"
-	ColSource             ActivistColumnName = "source"
-	ColHiatus             ActivistColumnName = "hiatus"
-	ColConnector          ActivistColumnName = "connector"
-	ColTraining0          ActivistColumnName = "training0"
-	ColTraining1          ActivistColumnName = "training1"
-	ColTraining4          ActivistColumnName = "training4"
-	ColTraining5          ActivistColumnName = "training5"
-	ColTraining6          ActivistColumnName = "training6"
-	ColConsentQuiz        ActivistColumnName = "consent_quiz"
-	ColTrainingProtest    ActivistColumnName = "training_protest"
-	ColDevAppDate         ActivistColumnName = "dev_application_date"
-	ColDevAppType         ActivistColumnName = "dev_application_type"
-	ColDevQuiz            ActivistColumnName = "dev_quiz"
-	ColDevInterest        ActivistColumnName = "dev_interest"
+	ColChapterID ActivistColumnName = "chapter_id"
+	ColID        ActivistColumnName = "id"
+
+	ColName          ActivistColumnName = "name"
+	ColPreferredName ActivistColumnName = "preferred_name"
+	ColPronouns      ActivistColumnName = "pronouns"
+	ColDOB           ActivistColumnName = "dob"
+
+	ColEmail    ActivistColumnName = "email"
+	ColPhone    ActivistColumnName = "phone"
+	ColFacebook ActivistColumnName = "facebook"
+
+	ColLanguage      ActivistColumnName = "language"
+	ColAccessibility ActivistColumnName = "accessibility"
+
+	ColLocation      ActivistColumnName = "location"
+	ColStreetAddress ActivistColumnName = "street_address"
+	ColCity          ActivistColumnName = "city"
+	ColState         ActivistColumnName = "state"
+	ColLat           ActivistColumnName = "lat"
+	ColLng           ActivistColumnName = "lng"
+
+	ColActivistLevel   ActivistColumnName = "activist_level"
+	ColSource          ActivistColumnName = "source"
+	ColHiatus          ActivistColumnName = "hiatus"
+	ColConnector       ActivistColumnName = "connector"
+	ColTraining0       ActivistColumnName = "training0"
+	ColTraining1       ActivistColumnName = "training1"
+	ColTraining4       ActivistColumnName = "training4"
+	ColTraining5       ActivistColumnName = "training5"
+	ColTraining6       ActivistColumnName = "training6"
+	ColConsentQuiz     ActivistColumnName = "consent_quiz"
+	ColTrainingProtest ActivistColumnName = "training_protest"
+
+	ColDevAppDate  ActivistColumnName = "dev_application_date"
+	ColDevAppType  ActivistColumnName = "dev_application_type"
+	ColDevQuiz     ActivistColumnName = "dev_quiz"
+	ColDevInterest ActivistColumnName = "dev_interest"
+
 	ColCMFirstEmail       ActivistColumnName = "cm_first_email"
 	ColCMApprovalEmail    ActivistColumnName = "cm_approval_email"
 	ColProspectOrganizer  ActivistColumnName = "prospect_organizer"
@@ -2283,13 +2412,16 @@ const (
 	ColReferralApply      ActivistColumnName = "referral_apply"
 	ColReferralOutlet     ActivistColumnName = "referral_outlet"
 	ColInterestDate       ActivistColumnName = "interest_date"
-	ColMPI                ActivistColumnName = "mpi"
-	ColNotes              ActivistColumnName = "notes"
-	ColVisionWall         ActivistColumnName = "vision_wall"
-	ColVotingAgreement    ActivistColumnName = "voting_agreement"
 	ColAssignedTo         ActivistColumnName = "assigned_to"
 	ColFollowupDate       ActivistColumnName = "followup_date"
 
+	ColMPI   ActivistColumnName = "mpi"
+	ColNotes ActivistColumnName = "notes"
+
+	ColVisionWall      ActivistColumnName = "vision_wall"
+	ColVotingAgreement ActivistColumnName = "voting_agreement"
+
+	// Read-only / computed columns (used in SELECT queries but not writable).
 	ColChapterName           ActivistColumnName = "chapter_name"
 	ColFirstEvent            ActivistColumnName = "first_event"
 	ColFirstEventName        ActivistColumnName = "first_event_name"
@@ -2341,6 +2473,39 @@ type QueryActivistResult struct {
 type QueryActivistResultPagination struct {
 	// An opaque string if more results are available; otherwise, the empty string.
 	NextCursor string `json:"next_cursor"`
+}
+
+// ActivistPatchField is a single field name + value pair for a partial activist update.
+type ActivistPatchField struct {
+	Name  ActivistColumnName
+	Value any
+}
+
+// ActivistPatchData is an ordered list of fields to update.
+type ActivistPatchData struct {
+	Fields []ActivistPatchField
+}
+
+// ApplyTo produces a copy of orig with the patched fields overwritten.
+// Callers must have already validated UserPatchable; this only checks that
+// the field exists in ActivistColumns with a non-nil Setter.
+func (d ActivistPatchData) ApplyTo(orig ActivistExtra) (ActivistExtra, error) {
+	merged := orig
+	for _, f := range d.Fields {
+		info, ok := ActivistColumns[f.Name]
+		if !ok || info.Setter == nil {
+			return ActivistExtra{}, ValidationErrorf("field %q is not patchable", f.Name)
+		}
+		if err := info.Setter(&merged, f.Value); err != nil {
+			return ActivistExtra{}, ValidationErrorf("field %q: %s", f.Name, err.Error())
+		}
+	}
+	return merged, nil
+}
+
+// Append adds a field to the patch data.
+func (d *ActivistPatchData) Append(name ActivistColumnName, value any) {
+	d.Fields = append(d.Fields, ActivistPatchField{Name: name, Value: value})
 }
 
 func (o *QueryActivistOptions) normalizeAndValidate() error {

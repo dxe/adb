@@ -107,3 +107,67 @@ func MustGetActivist(t *testing.T, db *sqlx.DB, id int) *ActivistExtra {
 	}
 	return activist
 }
+
+// Activist APIs may require UserRepo to look up activist.AssignedTo user.
+type UserRepoStub struct {
+	t     *testing.T
+	users []ADBUser
+}
+
+func MakeUserRepoStub(t *testing.T, users []ADBUser) *UserRepoStub {
+	return &UserRepoStub{t: t, users: users}
+}
+
+func (s *UserRepoStub) GetUser(id int, email string) (ADBUser, error) {
+	s.t.Helper()
+	s.t.Fatalf("unexpected call to GetUser")
+	return ADBUser{}, nil
+}
+
+func (s *UserRepoStub) GetUsers(options GetUserOptions) ([]ADBUser, error) {
+	var matches []ADBUser
+	for _, u := range s.users {
+		if options.ID != 0 && u.ID != options.ID {
+			continue
+		}
+		if options.Name != "" && u.Name != options.Name {
+			continue
+		}
+		matches = append(matches, u)
+	}
+	return matches, nil
+}
+
+func (s *UserRepoStub) CreateUser(user ADBUser) (ADBUser, error) {
+	s.t.Helper()
+	s.t.Fatalf("unexpected call to CreateUser")
+	return ADBUser{}, nil
+}
+
+func (s *UserRepoStub) UpdateUser(user ADBUser) (ADBUser, error) {
+	s.t.Helper()
+	s.t.Fatalf("unexpected call to UpdateUser")
+	return ADBUser{}, nil
+}
+
+// activistRepoStub is a minimal in-memory ActivistRepository for tests.
+type activistRepoStub struct {
+	t          *testing.T
+	patchCalls int
+	lastID     int
+	lastPatch  ActivistPatchData
+	patchErr   error
+}
+
+func (s *activistRepoStub) QueryActivists(options QueryActivistOptions) (QueryActivistResult, error) {
+	s.t.Helper()
+	s.t.Fatalf("unexpected call to QueryActivists")
+	return QueryActivistResult{}, nil
+}
+
+func (s *activistRepoStub) PatchActivist(id int, patch ActivistPatchData) error {
+	s.patchCalls++
+	s.lastID = id
+	s.lastPatch = patch
+	return s.patchErr
+}

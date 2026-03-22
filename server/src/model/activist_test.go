@@ -14,6 +14,26 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type activistPatchRepoSpy struct {
+	t          *testing.T
+	patchCalls int
+	lastID     int
+	lastPatch  ActivistPatchData
+	patchErr   error
+}
+
+func (s *activistPatchRepoSpy) QueryActivists(options QueryActivistOptions) (QueryActivistResult, error) {
+	s.t.Fatalf("unexpected call to QueryActivists")
+	return QueryActivistResult{}, nil
+}
+
+func (s *activistPatchRepoSpy) PatchActivist(id int, patch ActivistPatchData) error {
+	s.patchCalls++
+	s.lastID = id
+	s.lastPatch = patch
+	return s.patchErr
+}
+
 func stringListToMap(l []string) map[string]struct{} {
 	m := map[string]struct{}{}
 	for _, i := range l {
@@ -391,7 +411,10 @@ func TestUpdateActivist(t *testing.T) {
 	activist.Location = sql.NullString{String: "90001", Valid: true}
 	activist.Coords = Coords{1, 2}
 
-	UserUpdateActivist(db, *activist, DevTestUserEmail)
+	u := MakeUserRepoStub(t, nil)
+	updatedID, err := UserUpdateActivist(db, *activist, DevTestUserEmail, u)
+	require.NoError(t, err)
+	require.Equal(t, id, updatedID)
 
 	updatedActivist, err := GetActivistExtra(db, id)
 	require.NoError(t, err)
@@ -539,6 +562,159 @@ func TestGetActivistJSONForUser_ChapterScopedByID(t *testing.T) {
 		ChapterID: otherChapterID,
 	}, GetActivistOptions{ID: sfBayActivist.ID})
 	require.ErrorIs(t, err, ErrNotFound)
+}
+
+func TestPatchActivist_OrganizerCanOnlyPatchOwnChapter(t *testing.T) {
+	db := testdb.NewDB()
+	defer db.Close()
+
+	otherChapterID, err := InsertChapter(db, ChapterWithToken{
+		ID:   901,
+		Name: "Other Chapter",
+	})
+	require.NoError(t, err)
+	if otherChapterID == SFBayChapterIdDevTest {
+		otherChapterID, err = InsertChapter(db, ChapterWithToken{
+			ID:   902,
+			Name: "Another Other Chapter",
+		})
+		require.NoError(t, err)
+	}
+	require.NotEqual(t, SFBayChapterIdDevTest, otherChapterID)
+
+	ownChapterActivist, err := GetOrCreateActivist(db, "Own Chapter Activist", SFBayChapterIdDevTest)
+	require.NoError(t, err)
+	otherChapterActivist, err := GetOrCreateActivist(db, "Other Chapter Activist", otherChapterID)
+	require.NoError(t, err)
+
+	repo := &activistPatchRepoSpy{t: t}
+	userRepo := &UserRepoStub{t: t}
+	authedOrganizer := ADBUser{
+		ID:        1,
+		Email:     "organizer@example.org",
+		Name:      "Organizer",
+		Roles:     []string{shared.RoleOrganizer},
+		ChapterID: SFBayChapterIdDevTest,
+	}
+
+	err = PatchActivist(db, repo, userRepo, authedOrganizer, ownChapterActivist.ID, ActivistPatchData{
+		Fields: []ActivistPatchField{
+			{Name: ColPreferredName, Value: "Updated Name"},
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, 1, repo.patchCalls)
+	require.Equal(t, ownChapterActivist.ID, repo.lastID)
+
+	err = PatchActivist(db, repo, userRepo, authedOrganizer, otherChapterActivist.ID, ActivistPatchData{
+		Fields: []ActivistPatchField{
+			{Name: ColPreferredName, Value: "Should Fail"},
+		},
+	})
+	require.ErrorIs(t, err, ErrValidation)
+	require.Contains(t, err.Error(), "does not belong to your chapter")
+	require.Equal(t, 1, repo.patchCalls)
+}
+
+func TestPatchActivist_RejectsChapterPatchField(t *testing.T) {
+	db := testdb.NewDB()
+	defer db.Close()
+
+	activist, err := GetOrCreateActivist(db, "Cannot Change Chapter", SFBayChapterIdDevTest)
+	require.NoError(t, err)
+
+	repo := &activistPatchRepoSpy{t: t}
+	userRepo := &UserRepoStub{t: t}
+	authedOrganizer := ADBUser{
+		ID:        1,
+		Email:     "organizer@example.org",
+		Name:      "Organizer",
+		Roles:     []string{shared.RoleOrganizer},
+		ChapterID: SFBayChapterIdDevTest,
+	}
+
+	before, err := GetActivistJSON(db, GetActivistOptions{ID: activist.ID})
+	require.NoError(t, err)
+
+	err = PatchActivist(db, repo, userRepo, authedOrganizer, activist.ID, ActivistPatchData{
+		Fields: []ActivistPatchField{
+			{Name: ColChapterID, Value: before.ChapterID + 1},
+		},
+	})
+	require.ErrorIs(t, err, ErrValidation)
+	require.Contains(t, err.Error(), "patching chapter_id is not implemented")
+	require.Equal(t, 0, repo.patchCalls)
+
+	after, err := GetActivistJSON(db, GetActivistOptions{ID: activist.ID})
+	require.NoError(t, err)
+	require.Equal(t, before.ChapterID, after.ChapterID)
+}
+
+func TestPatchActivist_ValidatesAssignedTo(t *testing.T) {
+	// Use real database to read activist and write activist history during
+	// migration to ActivistRepo interface.
+	// Actual patch uses activistRepoStub for better performance.
+	db := testdb.NewDB()
+	defer db.Close()
+
+	activist := NewActivistBuilder().Build()
+	MustInsertActivist(t, db, activist)
+
+	const validUserID = 42
+	knownUsers := []ADBUser{{
+		ID:        validUserID,
+		Email:     "assignee@example.org",
+		Name:      "Assignee",
+		ChapterID: SFBayChapterIdDevTest,
+	}}
+
+	authedOrganizer := ADBUser{
+		ID:        1,
+		Email:     "organizer@example.org",
+		Name:      "Organizer",
+		Roles:     []string{shared.RoleOrganizer},
+		ChapterID: SFBayChapterIdDevTest,
+	}
+
+	tests := []struct {
+		name           string
+		assignedTo     int
+		wantErr        bool
+		wantPatchCalls int
+	}{
+		{
+			name:           "ValidAssignedTo",
+			assignedTo:     validUserID,
+			wantErr:        false,
+			wantPatchCalls: 1,
+		},
+		{
+			name:           "InvalidAssignedTo",
+			assignedTo:     999,
+			wantErr:        true,
+			wantPatchCalls: 0,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			repo := &activistRepoStub{t: t}
+			userRepo := MakeUserRepoStub(t, knownUsers)
+
+			err := PatchActivist(db, repo, userRepo, authedOrganizer, activist.ID, ActivistPatchData{
+				Fields: []ActivistPatchField{
+					{Name: ColAssignedTo, Value: tc.assignedTo},
+				},
+			})
+			if tc.wantErr {
+				require.ErrorIs(t, err, ErrValidation)
+				require.Contains(t, err.Error(), "invalid assigned_to value")
+			} else {
+				require.NoError(t, err)
+			}
+			require.Equal(t, tc.wantPatchCalls, repo.patchCalls)
+		})
+	}
 }
 
 func TestMergeActivist(t *testing.T) {
@@ -849,10 +1025,4 @@ func insertTestActivists(t *testing.T, db *sqlx.DB, names []string) []Activist {
 		activists[idx] = activist
 	}
 	return activists
-}
-
-func reverseStringSlice(s []string) {
-	for left, right := 0, len(s)-1; left < right; left, right = left+1, right-1 {
-		s[left], s[right] = s[right], s[left]
-	}
 }

@@ -61,9 +61,8 @@ func (r DBActivistRepository) QueryActivists(options model.QueryActivistOptions)
 	if len(sortColumns) == 0 {
 		sortColumns = []model.ActivistSortColumn{{ColumnName: model.ColName}}
 	}
-	if sortColumns[len(sortColumns)-1].ColumnName != model.ColID {
-		sortColumns = append(sortColumns, model.ActivistSortColumn{ColumnName: model.ColID})
-	}
+	// buildPaginationCursor requires ID to be the trailing sort column.
+	sortColumns = ensureTrailingIdTiebreaker(sortColumns)
 
 	// Register joins needed by sort columns, add to SELECT if missing
 	// (sorted columns must be selected for cursor pagination), and build sortSpecs.
@@ -144,6 +143,37 @@ func (r DBActivistRepository) QueryActivists(options model.QueryActivistOptions)
 			NextCursor: nextCursor,
 		},
 	}, nil
+}
+
+// ensureTrailingIdTiebreaker ensures sort columns end with model.ColID,
+// removing any columns after it if found (which has no actual effect on
+// sorting since ID is unique), or adding it to the end otherwise.
+func ensureTrailingIdTiebreaker(sortColumns []model.ActivistSortColumn) []model.ActivistSortColumn {
+	for i, sc := range sortColumns {
+		if sc.ColumnName == model.ColID {
+			return sortColumns[:i+1]
+		}
+	}
+	return append(sortColumns, model.ActivistSortColumn{ColumnName: model.ColID})
+}
+
+func (r DBActivistRepository) PatchActivist(id int, patch model.ActivistPatchData) error {
+	sqlStr, args, err := BuildActivistPatchSQL(id, patch)
+	if err != nil {
+		return fmt.Errorf("building patch SQL: %w", err)
+	}
+	result, err := r.db.Exec(sqlStr, args...)
+	if err != nil {
+		return fmt.Errorf("executing activist patch: %w", err)
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("reading patch affected rows: %w", err)
+	}
+	if rows == 0 {
+		return fmt.Errorf("%w: activist with id %d not found", model.ErrNotFound, id)
+	}
+	return nil
 }
 
 func buildFiltersFromOptions(options model.QueryActivistOptions) []filter {
