@@ -144,6 +144,9 @@ export class ActivistRegistry {
   }
 
   getActivist(name: string): ActivistRecord | null {
+    if (!name.trim()) {
+      return null
+    }
     return this.activistsByName.get(name) ?? null
   }
 
