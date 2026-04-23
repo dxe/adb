@@ -1225,7 +1225,6 @@ func UserUpdateActivist(db *sqlx.DB, activist ActivistExtra, userEmail string, u
 	if err := validateActivistUpdate(origActivist, activist, userRepo); err != nil {
 		return 0, err
 	}
-	syncMailingListIfNeeded(origActivist, activist)
 	geocodeIfAddressChanged(origActivist, &activist)
 
 	_, err = db.NamedExec(userUpdateActivistQuery, activist)
@@ -1233,10 +1232,19 @@ func UserUpdateActivist(db *sqlx.DB, activist ActivistExtra, userEmail string, u
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to update activist data")
 	}
+
+	syncMailingListIfNeeded(origActivist, activist)
+
 	log.Printf("Updated data for activist %v", activist.Name)
 
-	// LOGGING (work in progress)
-	_, err = db.NamedExec(`INSERT INTO activists_history (activist_id, action, user_email, name, email, facebook, activist_level)
+	addActivistHistory(db, userEmail, activist)
+
+	return activist.ID, nil
+}
+
+func addActivistHistory(db *sqlx.DB, userEmail string, activist ActivistExtra) {
+	// Activist history logging is a work in progress
+	_, err := db.NamedExec(`INSERT INTO activists_history (activist_id, action, user_email, name, email, facebook, activist_level)
 	VALUES (
 		:id,
 		'UPDATE',
@@ -1256,8 +1264,6 @@ func UserUpdateActivist(db *sqlx.DB, activist ActivistExtra, userEmail string, u
 	if err != nil {
 		log.Println("Error logging activist update: " + err.Error())
 	}
-
-	return activist.ID, nil
 }
 
 // PatchActivist applies a partial update to an activist.
@@ -1319,15 +1325,10 @@ func PatchActivist(db *sqlx.DB, repo ActivistRepository, userRepo UserRepository
 	if err := repo.PatchActivist(activistID, patch); err != nil {
 		return fmt.Errorf("failed to patch activist: %w", err)
 	}
-	syncMailingListIfNeeded(orig, merged)
 	log.Printf("Patched activist %d", activistID)
+	syncMailingListIfNeeded(orig, merged)
 
-	// Logging (same pattern as UserUpdateActivist).
-	_, err = db.Exec(`INSERT INTO activists_history (activist_id, action, user_email)
-		VALUES (?, 'PATCH', ?)`, activistID, authedUser.Email)
-	if err != nil {
-		log.Println("Error logging activist patch: " + err.Error())
-	}
+	addActivistHistory(db, authedUser.Email, merged)
 
 	return nil
 }
