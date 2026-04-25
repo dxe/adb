@@ -3,7 +3,7 @@
 #  * .bash_profile for login shells, including non-interactive, for use by coding agents / LLMs
 
 db() {
-  mysql -u "$DB_USER" -h "$DB_HOST" -D "$DB_NAME" --password="$DB_PASSWORD" "$@"
+  mysql -u "$DB_USER" -h "$DB_HOST" -D "$DB_NAME" --password="$DB_PASSWORD" --default-character-set=utf8mb4 "$@"
 }
 
 adb() {

@@ -142,7 +142,7 @@ func DBDataSource() string {
 }
 
 func DBTestDataSource() string {
-	return DataSourceBase + "/" + TestDBName + "?parseTime=true"
+	return DataSourceBase + "/" + TestDBName + "?" + shared.DBConnParams
 }
 
 var staticResourcesHash = strconv.FormatInt(rand.NewSource(time.Now().UnixNano()).Int63(), 10)
