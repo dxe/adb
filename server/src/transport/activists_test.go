@@ -10,7 +10,6 @@ import (
 
 	"github.com/dxe/adb/model"
 	"github.com/dxe/adb/persistence"
-	"github.com/dxe/adb/pkg/shared"
 	"github.com/dxe/adb/testdb"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
@@ -37,6 +36,9 @@ func TestActivistPatchHandler_PatchesAndReturnsActivist(t *testing.T) {
 	repo := persistence.NewActivistRepository(db)
 	userRepo := persistence.NewUserRepository(db)
 
+	devUser, err := userRepo.GetUser(model.DevTestUserId, "")
+	require.NoError(t, err)
+
 	activistID, err := model.CreateActivist(db, model.ActivistExtra{
 		Activist: model.Activist{
 			Name:      "Initial Name",
@@ -44,12 +46,6 @@ func TestActivistPatchHandler_PatchesAndReturnsActivist(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
-
-	organizer := model.ADBUser{
-		Email:     "organizer@example.org",
-		Roles:     []string{shared.RoleOrganizer},
-		ChapterID: model.SFBayChapterIdDevTest,
-	}
 
 	body := `{
 		"name": "Patched Name",
@@ -64,7 +60,7 @@ func TestActivistPatchHandler_PatchesAndReturnsActivist(t *testing.T) {
 	req = mux.SetURLVars(req, map[string]string{"id": idStr})
 	rec := httptest.NewRecorder()
 
-	ActivistPatchHandler(rec, req, organizer, db, repo, userRepo)
+	ActivistPatchHandler(rec, req, devUser, db, repo, userRepo)
 
 	require.Equal(t, http.StatusOK, rec.Code)
 
@@ -86,17 +82,14 @@ func TestActivistPatchHandler_NotFound(t *testing.T) {
 	repo := persistence.NewActivistRepository(db)
 	userRepo := persistence.NewUserRepository(db)
 
-	organizer := model.ADBUser{
-		Email:     "organizer@example.org",
-		Roles:     []string{shared.RoleOrganizer},
-		ChapterID: model.SFBayChapterIdDevTest,
-	}
+	devUser, err := userRepo.GetUser(model.DevTestUserId, "")
+	require.NoError(t, err)
 
 	req := httptest.NewRequest(http.MethodPatch, "/api/activists/9999", strings.NewReader(`{"phone": "555-0100"}`))
 	req = mux.SetURLVars(req, map[string]string{"id": "9999"})
 	rec := httptest.NewRecorder()
 
-	ActivistPatchHandler(rec, req, organizer, db, repo, userRepo)
+	ActivistPatchHandler(rec, req, devUser, db, repo, userRepo)
 
 	require.Equal(t, http.StatusNotFound, rec.Code)
 }

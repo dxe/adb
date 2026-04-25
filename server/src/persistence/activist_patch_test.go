@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/dxe/adb/model"
-	"github.com/dxe/adb/pkg/shared"
 	"github.com/dxe/adb/testdb"
 	"github.com/stretchr/testify/require"
 )
@@ -19,6 +18,9 @@ func TestPatchActivist_UpdatesAllPatchableFields(t *testing.T) {
 
 	repo := NewActivistRepository(db)
 	userRepo := NewUserRepository(db)
+
+	devUser, err := userRepo.GetUser(model.DevTestUserId, "")
+	require.NoError(t, err)
 
 	// Create a user to assign the activist to (needed for ColAssignedTo validation).
 	assignee, err := userRepo.CreateUser(model.ADBUser{
@@ -78,15 +80,7 @@ func TestPatchActivist_UpdatesAllPatchableFields(t *testing.T) {
 		{Name: model.ColFollowupDate, Value: sql.NullString{String: "2026-05-01", Valid: true}},
 	}}
 
-	organizer := model.ADBUser{
-		ID:        assignee.ID + 1,
-		Email:     "organizer@example.org",
-		Name:      "Organizer",
-		Roles:     []string{shared.RoleOrganizer},
-		ChapterID: model.SFBayChapterIdDevTest,
-	}
-
-	err = model.PatchActivist(db, repo, userRepo, organizer, activistID, patch)
+	err = model.PatchActivist(db, repo, userRepo, devUser, activistID, patch)
 	require.NoError(t, err)
 
 	updated, err := model.GetActivistsExtra(db, model.GetActivistOptions{ID: activistID})

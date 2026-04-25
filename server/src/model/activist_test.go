@@ -541,17 +541,9 @@ func TestGetActivistJSONForUser_ChapterScopedByID(t *testing.T) {
 	require.NoError(t, err)
 
 	otherChapterID, err := InsertChapter(db, ChapterWithToken{
-		ID:   999,
 		Name: "Other Chapter",
 	})
 	require.NoError(t, err)
-	if otherChapterID == SFBayChapterIdDevTest {
-		otherChapterID, err = InsertChapter(db, ChapterWithToken{
-			ID:   1000,
-			Name: "Another Other Chapter",
-		})
-		require.NoError(t, err)
-	}
 	require.NotEqual(t, SFBayChapterIdDevTest, otherChapterID)
 
 	_, err = GetActivistJSONForUser(db, ADBUser{
@@ -569,17 +561,9 @@ func TestPatchActivist_OrganizerCanOnlyPatchOwnChapter(t *testing.T) {
 	defer db.Close()
 
 	otherChapterID, err := InsertChapter(db, ChapterWithToken{
-		ID:   901,
 		Name: "Other Chapter",
 	})
 	require.NoError(t, err)
-	if otherChapterID == SFBayChapterIdDevTest {
-		otherChapterID, err = InsertChapter(db, ChapterWithToken{
-			ID:   902,
-			Name: "Another Other Chapter",
-		})
-		require.NoError(t, err)
-	}
 	require.NotEqual(t, SFBayChapterIdDevTest, otherChapterID)
 
 	ownChapterActivist, err := GetOrCreateActivist(db, "Own Chapter Activist", SFBayChapterIdDevTest)
