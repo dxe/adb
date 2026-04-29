@@ -73,6 +73,58 @@ export const ActivistColumnName = z.enum(
 )
 export type ActivistColumnName = z.infer<typeof ActivistColumnName>
 
+// Fields accepted by PATCH /api/activists/{id}.
+// Mirrors ActivistPatchInput in server/src/transport/activists.go — keep in sync.
+export const ActivistPatchInput = z.object({
+  email: z.string().optional(),
+  facebook: z.string().optional(),
+  name: z.string().optional(),
+  preferred_name: z.string().optional(),
+  phone: z.string().optional(),
+  pronouns: z.string().optional(),
+  language: z.string().optional(),
+  accessibility: z.string().optional(),
+  dob: z.string().optional(),
+  location: z.string().optional(),
+  activist_level: z.string().optional(),
+  source: z.string().optional(),
+  hiatus: z.boolean().optional(),
+  connector: z.string().optional(),
+  training0: z.string().optional(),
+  training1: z.string().optional(),
+  training4: z.string().optional(),
+  training5: z.string().optional(),
+  training6: z.string().optional(),
+  consent_quiz: z.string().optional(),
+  training_protest: z.string().optional(),
+  dev_quiz: z.string().optional(),
+  dev_interest: z.string().optional(),
+  cm_first_email: z.string().optional(),
+  cm_approval_email: z.string().optional(),
+  prospect_organizer: z.boolean().optional(),
+  prospect_chapter_member: z.boolean().optional(),
+  referral_friends: z.string().optional(),
+  referral_apply: z.string().optional(),
+  referral_outlet: z.string().optional(),
+  interest_date: z.string().optional(),
+  notes: z.string().optional(),
+  vision_wall: z.string().optional(),
+  voting_agreement: z.boolean().optional(),
+  street_address: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  assigned_to: z.number().optional(),
+  followup_date: z.string().optional(),
+})
+export type ActivistPatchInput = z.infer<typeof ActivistPatchInput>
+
+export type ActivistEditableField = keyof ActivistPatchInput
+type _ActivistEditableFieldAssertSubset =
+  ActivistEditableField extends ActivistColumnName ? true : never
+// Assert all ActivistPatchInput fields exist in ActivistJSON
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _assertSubset: _ActivistEditableFieldAssertSubset = true
+
 const ActivistNameFilter = z.object({
   name_contains: z.string().optional(),
 })

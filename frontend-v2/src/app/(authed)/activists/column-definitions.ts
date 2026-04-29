@@ -1,4 +1,9 @@
-import type { ActivistColumnName } from '@/lib/api/activists'
+import {
+  ActivistPatchInput,
+  type ActivistColumnName,
+  type ActivistEditableField,
+} from '@/lib/api/activists'
+import { ACTIVIST_LEVELS } from './filter-types'
 
 export type ColumnCategory =
   | 'Basic Info'
@@ -14,6 +19,15 @@ export type ColumnCategory =
   | 'Other'
   | 'Advanced'
 
+// How an editable field renders in the activist edit form. Default is 'text'.
+export type ActivistEditInputType =
+  | 'text'
+  | 'textarea'
+  | 'date'
+  | 'checkbox'
+  | 'user-select'
+  | 'enum-select'
+
 export interface ColumnDefinition {
   name: ActivistColumnName
   label: string
@@ -26,7 +40,23 @@ export interface ColumnDefinition {
   minWidth?: number // Minimum column width in pixels (default: 60)
   hideOnDetailPage?: boolean // If true, omit from the individual activist detail view
   linkType?: 'tel' | 'url' | 'mailto' // If set, render as a link on the detail page
+  // Override the default input type when this field is edited. Editability
+  // itself is derived from ActivistPatchInput — see EDITABLE_FIELDS.
+  editInputType?: ActivistEditInputType
+  // Allowed values for an 'enum-select' input. Required when editInputType is
+  // 'enum-select'; ignored otherwise.
+  editOptions?: readonly string[]
 }
+
+// Source of truth: a field is editable iff the backend PATCH endpoint accepts it.
+const EDITABLE_FIELDS = new Set(
+  Object.keys(ActivistPatchInput.shape) as ActivistEditableField[],
+)
+
+export const isEditableActivistField = (
+  name: ActivistColumnName,
+): name is ActivistEditableField =>
+  EDITABLE_FIELDS.has(name as ActivistEditableField)
 
 export const DEFAULT_COLUMNS: ActivistColumnName[] = [
   'name',
@@ -81,6 +111,8 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     label: 'Level',
     category: 'Basic Info',
     defaultWidth: 140,
+    editInputType: 'enum-select',
+    editOptions: ACTIVIST_LEVELS,
   },
   {
     name: 'dob',
@@ -88,6 +120,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     category: 'Basic Info',
     isDate: true,
     defaultWidth: 100,
+    editInputType: 'date',
   },
   {
     name: 'accessibility',
@@ -214,48 +247,63 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
       'Whether the activist satisfied the MPP in either the current month or the previous month (see dxe.io/mpp)',
   },
 
-  // Trainings
+  // Trainings — stored as the date the training was completed
+  // (YYYY-MM-DD); a non-null value means "completed".
   {
     name: 'training0',
     label: 'Workshop',
     category: 'Trainings',
+    isDate: true,
     defaultWidth: 100,
+    editInputType: 'date',
   },
   {
     name: 'training1',
     label: 'Consent & Oppression',
     category: 'Trainings',
+    isDate: true,
     defaultWidth: 100,
+    editInputType: 'date',
   },
   {
     name: 'training4',
     label: 'Building Purposeful Communities',
     category: 'Trainings',
+    isDate: true,
     defaultWidth: 100,
+    editInputType: 'date',
   },
   {
     name: 'training5',
     label: 'Leadership & Management',
     category: 'Trainings',
+    isDate: true,
     defaultWidth: 100,
+    editInputType: 'date',
   },
   {
     name: 'training6',
     label: 'Vision and Strategy',
     category: 'Trainings',
+    isDate: true,
     defaultWidth: 100,
+    editInputType: 'date',
   },
   {
     name: 'training_protest',
     label: 'Tier 2 Protest',
     category: 'Trainings',
+    isDate: true,
     defaultWidth: 100,
+    editInputType: 'date',
   },
   {
     name: 'consent_quiz',
     label: 'Consent Refresher Quiz',
     category: 'Trainings',
+    isDate: true,
     defaultWidth: 100,
+    editInputType: 'date',
   },
 
   // Application Info
@@ -278,6 +326,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     category: 'Application Info',
     blankValue: false,
     defaultWidth: 60,
+    editInputType: 'checkbox',
   },
   {
     name: 'prospect_organizer',
@@ -285,6 +334,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     category: 'Application Info',
     blankValue: false,
     defaultWidth: 100,
+    editInputType: 'checkbox',
   },
 
   // Circle Info
@@ -298,10 +348,11 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   // Prospect Info
   {
     name: 'assigned_to',
-    label: 'Assigned To ID',
+    label: 'Assigned To',
     category: 'Prospect Info',
     hidden: true,
     hideOnDetailPage: true,
+    editInputType: 'user-select',
   },
   {
     name: 'assigned_to_name',
@@ -316,6 +367,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     isDate: true,
     defaultWidth: 110,
     description: 'Date to follow up',
+    editInputType: 'date',
   },
   {
     name: 'total_interactions',
@@ -346,6 +398,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     isDate: true,
     defaultWidth: 100,
     description: 'Date activist submitted the interest form',
+    editInputType: 'date',
   },
   {
     name: 'referral_friends',
@@ -373,7 +426,9 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     name: 'dev_quiz',
     label: 'Quiz',
     category: 'Development',
+    isDate: true,
     defaultWidth: 100,
+    editInputType: 'date',
   },
   {
     name: 'dev_interest',
@@ -403,6 +458,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     isDate: true,
     defaultWidth: 100,
     description: 'Date of first SMS message sent to activist',
+    editInputType: 'date',
   },
   {
     name: 'cm_approval_email',
@@ -410,12 +466,15 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     category: 'Chapter Membership',
     isDate: true,
     defaultWidth: 100,
+    editInputType: 'date',
   },
   {
     name: 'vision_wall',
     label: 'Vision Wall',
     category: 'Chapter Membership',
     defaultWidth: 80,
+    editInputType: 'enum-select',
+    editOptions: ['', 'Yes', 'Declined'],
   },
   {
     name: 'voting_agreement',
@@ -423,16 +482,24 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     category: 'Chapter Membership',
     blankValue: false,
     defaultWidth: 50,
+    editInputType: 'checkbox',
   },
 
   // Other
-  { name: 'notes', label: 'Notes', category: 'Other', defaultWidth: 100 },
+  {
+    name: 'notes',
+    label: 'Notes',
+    category: 'Other',
+    defaultWidth: 100,
+    editInputType: 'textarea',
+  },
   {
     name: 'hiatus',
     label: 'Hiatus',
     category: 'Other',
     blankValue: false,
     defaultWidth: 50,
+    editInputType: 'checkbox',
   },
 
   // Developer
