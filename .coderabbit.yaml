@@ -1,0 +1,7 @@
+reviews:
+  tools:
+    golangci-lint:
+      # golangci-lint must run per-module (cd cli && golangci-lint run ./..., etc.)
+      # because the repo root is not itself a Go module. CodeRabbit always runs
+      # from the repo root, so it cannot be used here. Use `make lint` instead.
+      enabled: false
