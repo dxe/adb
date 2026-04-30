@@ -43,3 +43,12 @@ Rules regarding the MySql database.
 - Scope: database schema questions and live database manipulation
 - Rule: query the live MySQL schema via the `db` shell function which wraps the `mysql` with the correct database and dev credentials. It is already sourced for you from `~/.bash_profile`. Fall back to migration files only as needed.
 - Example: `db -e "SHOW COLUMNS FROM activists"`.
+
+## CLI
+
+Context for using the CLI, located in ./cli
+
+### cli-usage
+
+- The CLI is available to you as a shell function called `adb`. It is already sourced for you from `~/.bash_profile` and environment variables are already configured to connect to the dev database.
+- You can run `adb -h` for usage instructions.
