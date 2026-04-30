@@ -1,4 +1,4 @@
-.PHONY: run_all run watch test test-server test-frontend clean prod_build deps dev_db fmt go_mod_sync
+.PHONY: run_all run watch test test-server test-frontend lint clean prod_build deps dev_db fmt go_mod_sync
 
 # When not using devcontainer, NVM initialization script may be located in home
 # directory. In the devcontainer, it is in /usr/local/share/nvm/.
@@ -80,6 +80,13 @@ test-server:
 
 test-frontend:
 	cd frontend-v2 && pnpm test --run
+
+# Run golangci-lint on all Go modules.
+# TODO: Run linter automatically once existing lint errors are fixed.
+lint:
+	for mod in pkg cli server/src; do \
+		(cd $$mod && golangci-lint run ./...) || exit $$?; \
+	done
 
 # Clean all built outputs
 clean:

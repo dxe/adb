@@ -1,0 +1,4 @@
+version: "2"
+run:
+  # Keep in sync with server/src/go.mod
+  go: "1.25"

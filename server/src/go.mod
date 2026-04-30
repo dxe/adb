@@ -1,7 +1,14 @@
 module github.com/dxe/adb
 
-// Keep in sync with /workspace/go.work, /workspace/cli/go.mod, /workspace/pkg/go.mod,
-// /workspace/Dockerfile, and /workspace/Dockerfile.cli.
+// Keep in sync with:
+// * go.work
+// * cli/go.mod
+// * go.mod
+// * Dockerfile
+// * Dockerfile.cli.
+// * cli/.golangci.yml
+// * pkg/.golangci.yml
+// * server/src/.golangci.yml
 go 1.25.0
 
 require github.com/dxe/adb/pkg v0.0.0-20260225225627-b212e5a48a8e
