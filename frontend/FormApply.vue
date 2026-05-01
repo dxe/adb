@@ -31,13 +31,15 @@
     <div v-if="local">
       <div v-if="!showForm" class="content">
         <p>
-          Decades of research into historic movements – like the Civil Rights Movement or Gay Rights
-          Movement – tells us that the most important factor in creating social and political change
-          is sustained participation in nonviolent direct action. We also know that sustained
-          participation is more likely when activists are embedded in a strong, supportive
-          community. When you become a chapter member, you're committing to being an integral part
-          of this activist community and to attending direct action events (like a protest, outreach
-          event, or animal care event) consistently.
+          Are you ready to change the world for animals alongside an incredible community of
+          like-minded individuals? Then you're in the right place! Decades of research into historic
+          movements – like the Civil Rights Movement or Gay Rights Movement – tells us that the most
+          important factor in creating social and political change is sustained participation in
+          nonviolent direct action. We also know that sustained participation is more likely when
+          activists are embedded in a strong, supportive community. When you become a chapter
+          member, you're committing to being an integral part of this activist community and to
+          attending direct action events (like a protest, outreach event, or animal care event)
+          consistently.
         </p>
 
         <h2>How to become a Chapter Member</h2>
