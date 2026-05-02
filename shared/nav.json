@@ -232,24 +232,24 @@
       "visibleForNonSFBay": true,
       "items": [
         {
-          "label": "New Event (Legacy)",
-          "href": "/",
+          "label": "New Event",
+          "href": "/new_event",
           "page": "NewEvent"
         },
         {
-          "label": "All Events (Legacy)",
+          "label": "All Events",
           "href": "/list_events",
           "page": "EventList"
         },
         {
-          "label": "New Coaching (Legacy)",
+          "label": "New Coaching",
           "href": "/new_connection",
           "page": "NewConnection",
           "roleRequired": ["organizer"],
           "visibleForNonSFBay": false
         },
         {
-          "label": "All Coachings (Legacy)",
+          "label": "All Coachings",
           "href": "/list_connections",
           "page": "ConnectionsList",
           "roleRequired": ["organizer"],

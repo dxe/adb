@@ -76,34 +76,36 @@ const DropdownItem = ({
 
   const accessibleItems = useMemo(
     () =>
-      item.items.filter((innerItem) =>
-        evaluateNavAccess(
-          user.Roles,
-          user.ChapterID,
-          innerItem,
-          SF_BAY_CHAPTER_ID,
-          item,
-        ),
-      ),
-    [item, user],
+      isExpanded
+        ? item.items.filter((innerItem) =>
+            evaluateNavAccess(
+              user.Roles,
+              user.ChapterID,
+              innerItem,
+              SF_BAY_CHAPTER_ID,
+              item,
+            ),
+          )
+        : null,
+    [isExpanded, item, user],
   )
 
   // Suppress prefix-matching if any sibling exactly matches the current path,
   // so e.g. "All Events" doesn't also highlight when on "New Event".
   const hasExactPathMatch = useMemo(
     () =>
-      accessibleItems.some(({ href }) => {
+      accessibleItems?.some(({ href }) => {
         const navPath = (
           href.startsWith('/v2') ? href.substring(3) : href
         ).split('?')[0]
         return pathname === navPath
-      }),
+      }) ?? false,
     [accessibleItems, pathname],
   )
 
   const childrenItems = useMemo(
     () =>
-      accessibleItems.map((innerItem) => {
+      accessibleItems?.map((innerItem) => {
         const navHref = innerItem.href.startsWith('/v2')
           ? innerItem.href.substring(3)
           : innerItem.href
@@ -120,11 +122,9 @@ const DropdownItem = ({
             : pathname === navPath ||
               (!hasExactPathMatch && pathname.startsWith(navPath + '/'))
         return { innerItem, navHref, isActive }
-      }),
+      }) ?? null,
     [accessibleItems, hasExactPathMatch, pathname, searchParams],
   )
-
-  const isParentActive = childrenItems.some(({ isActive }) => isActive)
 
   if (!evaluateNavAccess(user.Roles, user.ChapterID, item, SF_BAY_CHAPTER_ID)) {
     return null
@@ -138,9 +138,7 @@ const DropdownItem = ({
       <a
         role="menuitem"
         aria-haspopup
-        className={clsx(buefyStyles['navbar-link'], {
-          [buefyStyles['is-active']]: isParentActive,
-        })}
+        className={buefyStyles['navbar-link']}
         onClick={(e) => {
           e.preventDefault()
           onClick()
@@ -149,7 +147,7 @@ const DropdownItem = ({
         {item.label}
         <span className="border-[#7957d5] mt-[-0.375rem] right-[1.125rem] border-[3px] border-solid rounded-[2px] border-r-0 border-t-0 block h-[.625rem] absolute pointer-events-none top-[50%] -rotate-45 origin-center w-[.625rem]" />
       </a>
-      {isExpanded && childrenItems.length > 0 && (
+      {childrenItems && (
         <div
           className={clsx(buefyStyles['navbar-dropdown'], '!block')}
           onClick={onNavigate}

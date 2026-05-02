@@ -256,6 +256,7 @@ func router() (*mux.Router, *sqlx.DB) {
 
 	// Authed pages
 	router.Handle("/", alice.New(main.authAnyADBRoleMiddleware).ThenFunc(main.HomeHandler))
+	router.Handle("/new_event", alice.New(main.authAttendanceMiddleware).ThenFunc(main.UpdateEventHandler))
 	router.Handle("/update_event/{event_id:[0-9]+}", alice.New(main.authAttendanceMiddleware).ThenFunc(main.UpdateEventHandler))
 	router.Handle("/new_connection", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.UpdateConnectionHandler))
 	router.Handle("/update_connection/{event_id:[0-9]+}", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.UpdateConnectionHandler))
