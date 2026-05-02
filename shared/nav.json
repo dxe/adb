@@ -228,7 +228,7 @@
     },
     {
       "label": "Legacy",
-      "roleRequired": ["admin"],
+      "roleRequired": ["attendance"],
       "visibleForNonSFBay": true,
       "items": [
         {

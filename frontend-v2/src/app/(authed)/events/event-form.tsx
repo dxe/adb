@@ -114,12 +114,11 @@ export const EventForm = ({ mode }: EventFormProps) => {
     mutationFn: apiClient.saveEvent,
     onSuccess: (result, variables) => {
       toast.success(`${isConnection ? 'Connection' : 'Event'} saved!`)
-
-      if (result.event_id && !eventId) {
-        const newPath = isConnection
+      if (!eventId) {
+        const target = isConnection
           ? `/coachings/${result.event_id}`
           : `/events/${result.event_id}`
-        router.push(newPath)
+        router.push(target)
       }
 
       // Reset the form's dirty state after successful save.
