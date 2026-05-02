@@ -115,26 +115,11 @@ export const EventForm = ({ mode }: EventFormProps) => {
     onSuccess: (result, variables) => {
       toast.success(`${isConnection ? 'Connection' : 'Event'} saved!`)
 
-      // TODO(jh): once the vue page is removed, update the api to just
-      // return a json payload w/ the event id instead of a redirect.
-      // for now, we'll extract the id from the redirect url to stay
-      // in the react app for testing.
-      if (result.redirect) {
-        // Parse redirect like "/update_event/8" or "/update_connection/5"
-        const match = result.redirect.match(
-          /\/(update_event|update_connection)\/(\d+)/,
-        )
-        if (match) {
-          const newEventId = match[2]
-          const newPath = isConnection
-            ? `/coachings/${newEventId}`
-            : `/events/${newEventId}`
-          router.push(newPath)
-        } else {
-          // Fallback: redirect to legacy route if we can't parse it.
-          window.location.href = result.redirect
-          return
-        }
+      if (result.event_id && !eventId) {
+        const newPath = isConnection
+          ? `/coachings/${result.event_id}`
+          : `/events/${result.event_id}`
+        router.push(newPath)
       }
 
       // Reset the form's dirty state after successful save.

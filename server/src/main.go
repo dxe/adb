@@ -622,7 +622,7 @@ func (c MainController) HomeHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Most roles grant access to take attendance.
 	if model.UserHasAttendanceAccess(user) {
-		c.UpdateEventHandler(w, r)
+		http.Redirect(w, r, "/v2/events/new", http.StatusFound)
 		return
 	}
 
@@ -1181,10 +1181,10 @@ func (c MainController) EventSaveHandler(w http.ResponseWriter, r *http.Request)
 
 	out := map[string]interface{}{
 		"status":    "success",
-		"redirect":  "",
+		"event_id":  eventID,
 		"attendees": attendees,
 	}
-	if isNewEvent {
+	if r.URL.Query().Get("legacy_redirect") == "1" && isNewEvent {
 		out["redirect"] = fmt.Sprintf("/update_event/%d", eventID)
 	}
 	writeJSON(w, out)
@@ -1216,10 +1216,10 @@ func (c MainController) ConnectionSaveHandler(w http.ResponseWriter, r *http.Req
 
 	out := map[string]interface{}{
 		"status":    "success",
-		"redirect":  "",
+		"event_id":  eventID,
 		"attendees": attendees,
 	}
-	if isNewEvent {
+	if r.URL.Query().Get("legacy_redirect") == "1" && isNewEvent {
 		out["redirect"] = fmt.Sprintf("/update_connection/%d", eventID)
 	}
 	writeJSON(w, out)

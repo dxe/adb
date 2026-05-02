@@ -228,7 +228,7 @@ interface SaveEventParams {
 
 const EventSaveResp = z.object({
   status: z.literal('success'),
-  redirect: z.string().optional(),
+  event_id: z.number(),
   attendees: z.array(z.string()).nullish(),
 })
 
