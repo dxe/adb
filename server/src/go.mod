@@ -9,6 +9,7 @@ module github.com/dxe/adb
 // * cli/.golangci.yml
 // * pkg/.golangci.yml
 // * server/src/.golangci.yml
+// * devcontainer.json
 go 1.25.0
 
 require github.com/dxe/adb/pkg v0.0.0-20260225225627-b212e5a48a8e

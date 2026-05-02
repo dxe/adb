@@ -29,7 +29,8 @@
       "dockerDashComposeVersion": "v2"
     },
     "ghcr.io/devcontainers/features/go:1": {
-      "version": "latest"
+      // Please keep in sync with server/src/go.mod
+      "version": "1.25"
     },
     "ghcr.io/devcontainers/features/node:1": {
       "nodeGypDependencies": true,
