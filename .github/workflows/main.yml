@@ -3,8 +3,16 @@ name: Build
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'CODEOWNERS'
+      - '.vscode/**'
   pull_request:
     branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'CODEOWNERS'
+      - '.vscode/**'
   workflow_dispatch:
 
 jobs:
