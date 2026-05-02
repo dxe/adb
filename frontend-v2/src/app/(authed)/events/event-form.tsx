@@ -111,7 +111,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
   })
 
   const saveEventMutation = useMutation({
-    mutationFn: apiClient.saveEvent,
+    mutationFn: isConnection ? apiClient.saveCoaching : apiClient.saveEvent,
     onSuccess: (result, variables) => {
       toast.success(`${isConnection ? 'Connection' : 'Event'} saved!`)
       if (!eventId) {

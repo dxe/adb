@@ -24,6 +24,7 @@ export const API_PATH = {
   EVENT_SAVE: 'event/save',
   EVENT_LIST: 'event/list',
   EVENT_DELETE: 'event/delete',
+  COACHING_SAVE: 'connection/save',
 }
 
 export const StaticResourcesHashResp = z.object({
@@ -496,6 +497,21 @@ export class ApiClient {
       const csrfToken = this.getCsrfToken()
       const resp = await this.client
         .post(API_PATH.EVENT_SAVE, {
+          json: payload,
+          headers: { 'X-CSRF-Token': csrfToken },
+        })
+        .json()
+      return EventSaveResp.parse(resp)
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  saveCoaching = async (payload: SaveEventParams) => {
+    try {
+      const csrfToken = this.getCsrfToken()
+      const resp = await this.client
+        .post(API_PATH.COACHING_SAVE, {
           json: payload,
           headers: { 'X-CSRF-Token': csrfToken },
         })
