@@ -407,7 +407,7 @@ export default Vue.extend({
 
       this.saving = true;
       $.ajax({
-        url: `${this.connections ? '/connection/save' : '/event/save'}?legacy_redirect=`,
+        url: `${this.connections ? '/connection/save' : '/event/save'}?legacy_redirect=1`,
         method: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({
