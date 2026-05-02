@@ -30,7 +30,10 @@
     },
     "ghcr.io/devcontainers/features/go:1": {
       // Please keep in sync with server/src/go.mod
-      "version": "1.25"
+      "version": "1.25.0",
+      // Pin to avoid broken upstream "latest" releases (e.g. v2.12.1 had a
+      // checksum mismatch on 2026-05-02).
+      "golangciLintVersion": "2.11.4"
     },
     "ghcr.io/devcontainers/features/node:1": {
       "nodeGypDependencies": true,
