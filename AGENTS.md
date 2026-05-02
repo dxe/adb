@@ -20,6 +20,13 @@ Rules regarding the Next.js app in ./frontend-v2 and legacy Vue app in ./fronten
 - Scope: ./frontend and ./frontend-v2
 - Rule: After modifying files, run `pnpx prettier <filename> --write`
 
+### frontend-v2-typecheck-and-lint
+
+- Scope: ./frontend-v2
+- Rule: `tsc` and `eslint` must be run from inside `./frontend-v2` (not `/workspace`) — that's where `tsconfig.json` and `eslint.config.mjs` live.
+- Typecheck: `cd frontend-v2 && pnpm exec tsc --noEmit` (do not use `pnpx tsc` — it hits a shim that refuses to run)
+- Lint: `cd frontend-v2 && pnpm lint` (equivalent to `eslint .`)
+
 ## backend
 
 Rules regarding Go server in ./server
