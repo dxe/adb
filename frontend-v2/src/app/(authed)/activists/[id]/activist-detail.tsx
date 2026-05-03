@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
-import { ArrowLeft, Pencil } from 'lucide-react'
+import { ArrowLeft, EyeOff, GitMerge, Pencil } from 'lucide-react'
 import {
   API_PATH,
   apiClient,
@@ -22,6 +22,8 @@ import { FieldDescriptionPopover } from '../field-description-popover'
 import { formatValue } from '../format-value'
 import { LinkedValue } from '../linked-value'
 import { ActivistSectionForm } from './section-form'
+import { HideActivistDialog } from './hide-activist-dialog'
+import { MergeActivistDialog } from './merge-activist-dialog'
 
 const NOTES_SECTION_KEY = '__notes__'
 type SectionKey = ColumnCategory | typeof NOTES_SECTION_KEY
@@ -67,6 +69,8 @@ export function ActivistDetail({ activistId }: { activistId: number }) {
   const { data: activist, isError, isLoading } = useActivist(activistId)
   const [editingSection, setEditingSection] = useState<SectionKey | null>(null)
   const [isFormDirty, setIsFormDirty] = useState(false)
+  const [isHideDialogOpen, setIsHideDialogOpen] = useState(false)
+  const [isMergeDialogOpen, setIsMergeDialogOpen] = useState(false)
 
   const confirmDiscard = useCallback(() => {
     if (!isFormDirty) return true
@@ -145,7 +149,7 @@ export function ActivistDetail({ activistId }: { activistId: number }) {
         </Link>
       </div>
 
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1
           className={`text-3xl font-bold ${
             displayName.isPlaceholder ? 'italic text-muted-foreground' : ''
@@ -153,7 +157,40 @@ export function ActivistDetail({ activistId }: { activistId: number }) {
         >
           {displayName.text}
         </h1>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setIsMergeDialogOpen(true)}
+          >
+            <GitMerge className="h-4 w-4" />
+            Merge
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setIsHideDialogOpen(true)}
+          >
+            <EyeOff className="h-4 w-4" />
+            Hide
+          </Button>
+        </div>
       </div>
+
+      <HideActivistDialog
+        open={isHideDialogOpen}
+        onOpenChange={setIsHideDialogOpen}
+        activistId={activistId}
+        activistName={displayName.text ?? ''}
+      />
+      <MergeActivistDialog
+        open={isMergeDialogOpen}
+        onOpenChange={setIsMergeDialogOpen}
+        activistId={activistId}
+        activistName={displayName.text ?? ''}
+      />
 
       <div className="flex flex-col gap-8">
         {SECTION_ORDER.map((category) => {
