@@ -318,7 +318,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/activist/list", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistListHandler))
 	router.Handle("/activist/list_basic", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.ActivistListBasicHandler))
 	router.Handle("/activist/save", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistSaveHandler))
-	router.Handle("/activist/hide", alice.New(main.apiSFBayOrganizerAuthMiddleware).ThenFunc(main.ActivistHideHandler))
+	router.Handle("/activist/hide", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistHideHandler))
 	router.Handle("/activist/merge", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistMergeHandler))
 	router.Handle("/working_group/save", alice.New(main.apiSFBayOrganizerAuthMiddleware).ThenFunc(main.WorkingGroupSaveHandler))
 	router.Handle("/working_group/list", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.WorkingGroupListHandler))
