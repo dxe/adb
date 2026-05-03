@@ -328,6 +328,16 @@ export class ApiClient {
     throw err
   }
 
+  // Some legacy Go handlers report errors via a 200 response with body
+  // {status: "error", message: "..."}, so the ky `HTTPError` path never fires.
+  // Call this on the parsed JSON before validating it as a success response.
+  private throwIfApiError(resp: unknown): void {
+    const apiError = ApiErrorResp.safeParse(resp)
+    if (apiError.success) {
+      throw new HTTPStatusError(200, apiError.data.message)
+    }
+  }
+
   getAuthedUser = async (signal?: AbortSignal) => {
     try {
       const resp = await this.client.get(API_PATH.USER_ME, { signal }).json()
@@ -439,6 +449,7 @@ export class ApiClient {
       const resp = await this.client
         .get(API_PATH.CHAPTER_LIST, { signal })
         .json()
+      this.throwIfApiError(resp)
       return ChapterListResp.parse(resp).chapters
     } catch (err) {
       return this.handleKyError(err)
@@ -450,6 +461,7 @@ export class ApiClient {
       const resp = await this.client
         .get(API_PATH.CHAPTER_LIST, { signal })
         .json()
+      this.throwIfApiError(resp)
       return ChapterListWithOrganizersResp.parse(resp).chapters
     } catch (err) {
       return this.handleKyError(err)
@@ -526,6 +538,7 @@ export class ApiClient {
           headers: { 'X-CSRF-Token': csrfToken },
         })
         .json()
+      this.throwIfApiError(resp)
       return EventSaveResp.parse(resp)
     } catch (err) {
       return this.handleKyError(err)
@@ -541,6 +554,7 @@ export class ApiClient {
           headers: { 'X-CSRF-Token': csrfToken },
         })
         .json()
+      this.throwIfApiError(resp)
       return EventSaveResp.parse(resp)
     } catch (err) {
       return this.handleKyError(err)
@@ -559,6 +573,7 @@ export class ApiClient {
       const resp = await this.client
         .post(API_PATH.EVENT_LIST, { body, signal })
         .json()
+      this.throwIfApiError(resp)
       return EventListResp.parse(resp)
     } catch (err) {
       return this.handleKyError(err)
@@ -575,6 +590,7 @@ export class ApiClient {
           headers: { 'X-CSRF-Token': csrfToken },
         })
         .json()
+      this.throwIfApiError(resp)
       return EventDeleteResp.parse(resp)
     } catch (err) {
       return this.handleKyError(err)
