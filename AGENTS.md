@@ -31,6 +31,11 @@ Rules regarding the Next.js app in ./frontend-v2 and legacy Vue app in ./fronten
 
 Rules regarding Go server in ./server
 
+### go-backend-build
+
+- Scope: `server/**/*.go`
+- Rule: Build the Go server with `cd server/src && go build ./...`
+
 ### go-backend-error-wrapping
 
 - Scope: `server/**/*.go`
