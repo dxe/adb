@@ -16,7 +16,7 @@ import { usePathname, useSearchParams } from 'next/navigation'
 import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
 import buefyStyles from './nav.module.css'
 import clsx from 'clsx'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useQueryStates } from 'nuqs'
 import { API_PATH, apiClient } from '@/lib/api'
 import { SF_BAY_CHAPTER_ID } from '@/lib/constants'
@@ -201,7 +201,6 @@ const DropdownItem = ({
 
 const ChapterSwitcher = () => {
   const { user } = useAuthedPageContext()
-  const queryClient = useQueryClient()
 
   const { data, isLoading, isError } = useQuery({
     queryKey: [API_PATH.CHAPTER_LIST],
@@ -229,7 +228,6 @@ const ChapterSwitcher = () => {
   }
 
   const switchChapter = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    queryClient.invalidateQueries() // invalidate existing cache for previous chapter
     window.location.href = `/auth/switch_chapter?chapter_id=${e.target.value}`
   }
 
