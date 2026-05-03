@@ -30,7 +30,7 @@ export class ActivistStorage {
   private readonly dbName: string
 
   constructor(chapterId: number) {
-    this.dbName = `activist-registry-${chapterId}`
+    this.dbName = `adb-chapter-${chapterId}`
   }
 
   /**
@@ -102,7 +102,7 @@ export class ActivistStorage {
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([METADATA_STORE], 'readonly')
       const store = transaction.objectStore(METADATA_STORE)
-      const request = store.get('lastSync')
+      const request = store.get('lastActivistSync')
 
       request.onsuccess = () => {
         const metadata = request.result as SyncMetadata | undefined
@@ -124,10 +124,10 @@ export class ActivistStorage {
 
       const request =
         timestamp === null
-          ? store.delete('lastSync')
+          ? store.delete('lastActivistSync')
           : store.put(
               { lastSyncTime: timestamp } satisfies SyncMetadata,
-              'lastSync',
+              'lastActivistSync',
             )
 
       request.onsuccess = () => resolve()
