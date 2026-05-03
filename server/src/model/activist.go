@@ -1394,6 +1394,14 @@ func MergeActivist(db *sqlx.DB, originalActivistID, targetActivistID int, mergeN
 		return fmt.Errorf("failed to get target activist with id %d: %w", targetActivistID, err)
 	}
 
+	// Don't allow merging across chapters. Among potential other issues, this
+	// would merge attendance data from one chapter into an activist in
+	// another chapter which is not supported.
+	if originalActivist.ChapterID != targetActivist.ChapterID {
+		tx.Rollback()
+		return ValidationErrorf("cannot merge activists from different chapters")
+	}
+
 	_, err = tx.Exec(hideActivistQuery, originalActivistID)
 	if err != nil {
 		tx.Rollback()
