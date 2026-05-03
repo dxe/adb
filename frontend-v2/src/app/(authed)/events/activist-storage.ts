@@ -21,13 +21,17 @@ interface SyncMetadata {
   lastSyncTime: string // ISO 8601 timestamp
 }
 
-const DB_NAME = 'activist-registry'
 const DB_VERSION = 2
 const STORE_NAME = 'activists'
 const METADATA_STORE = 'metadata'
 
 export class ActivistStorage {
   private dbPromise: Promise<IDBDatabase> | null = null
+  private readonly dbName: string
+
+  constructor(chapterId: number) {
+    this.dbName = `adb-chapter-${chapterId}`
+  }
 
   /**
    * Initialize the IndexedDB database with required object stores.
@@ -35,7 +39,7 @@ export class ActivistStorage {
   private openDB(): Promise<IDBDatabase> {
     if (!this.dbPromise) {
       this.dbPromise = new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, DB_VERSION)
+        const request = indexedDB.open(this.dbName, DB_VERSION)
 
         request.onerror = () => reject(request.error)
         request.onsuccess = () => {
@@ -98,7 +102,7 @@ export class ActivistStorage {
     return new Promise((resolve, reject) => {
       const transaction = db.transaction([METADATA_STORE], 'readonly')
       const store = transaction.objectStore(METADATA_STORE)
-      const request = store.get('lastSync')
+      const request = store.get('lastActivistSync')
 
       request.onsuccess = () => {
         const metadata = request.result as SyncMetadata | undefined
@@ -120,10 +124,10 @@ export class ActivistStorage {
 
       const request =
         timestamp === null
-          ? store.delete('lastSync')
+          ? store.delete('lastActivistSync')
           : store.put(
               { lastSyncTime: timestamp } satisfies SyncMetadata,
-              'lastSync',
+              'lastActivistSync',
             )
 
       request.onsuccess = () => resolve()
@@ -219,6 +223,15 @@ function isIndexedDBAvailable(): boolean {
   }
 }
 
-// Singleton instance - only create if IndexedDB is available
-export const activistStorage: ActivistStorage | undefined =
-  isIndexedDBAvailable() ? new ActivistStorage() : undefined
+const storageByChapter = new Map<number, ActivistStorage>()
+
+export function getActivistStorage(
+  chapterId: number,
+): ActivistStorage | undefined {
+  if (!isIndexedDBAvailable()) return undefined
+  const existing = storageByChapter.get(chapterId)
+  if (existing) return existing
+  const storage = new ActivistStorage(chapterId)
+  storageByChapter.set(chapterId, storage)
+  return storage
+}

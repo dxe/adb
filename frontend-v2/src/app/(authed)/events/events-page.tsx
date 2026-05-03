@@ -36,6 +36,7 @@ import {
 } from '@/components/ui/select'
 import { DatePicker } from '@/components/ui/date-picker'
 import { useActivistRegistry } from './useActivistRegistry'
+import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
 import { SuggestionInput } from './suggestion-input'
 import { EventListTable } from './event-list-table'
 import { cn } from '@/lib/utils'
@@ -119,7 +120,8 @@ export default function EventsPage({ mode = 'events' }: Props) {
   const defaultParams = useMemo(() => buildDefaultParams(mode), [mode])
   const isConnections = mode === 'connections'
   const queryClient = useQueryClient()
-  const { registry } = useActivistRegistry()
+  const { user } = useAuthedPageContext()
+  const { registry } = useActivistRegistry(user.ChapterID)
 
   // URL params drive the query and are the source of truth for committed filters
   const [urlParams, setUrlParams] = useQueryStates({

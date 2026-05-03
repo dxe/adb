@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { apiClient, API_PATH } from '@/lib/api'
 import { ActivistRegistry, type ActivistRecord } from './activist-registry'
-import { activistStorage } from './activist-storage'
+import { getActivistStorage } from './activist-storage'
 import toast from 'react-hot-toast'
 
 /**
@@ -13,7 +13,7 @@ import toast from 'react-hot-toast'
  *
  * @returns Object containing the registry instance and query state
  */
-export function useActivistRegistry() {
+export function useActivistRegistry(chapterId: number) {
   const registryRef = useRef(new ActivistRegistry())
   const [isStorageLoaded, setIsStorageLoaded] = useState(false)
   const [isServerLoaded, setIsServerLoaded] = useState(false)
@@ -22,8 +22,10 @@ export function useActivistRegistry() {
   useEffect(() => {
     let mounted = true
 
+    const storage = getActivistStorage(chapterId)
+
     // If IndexedDB is not available (e.g., iOS lockdown mode), skip loading from storage
-    if (!activistStorage) {
+    if (!storage) {
       console.info(
         '[Registry] IndexedDB not available - running without local caching',
       )
@@ -32,7 +34,7 @@ export function useActivistRegistry() {
     }
 
     registryRef.current
-      .loadFromStorage(activistStorage)
+      .loadFromStorage(storage)
       .then(() => {
         if (mounted) setIsStorageLoaded(true)
       })
@@ -56,7 +58,7 @@ export function useActivistRegistry() {
     return () => {
       mounted = false
     }
-  }, [])
+  }, [chapterId])
 
   const query = useQuery({
     queryKey: [API_PATH.ACTIVIST_LIST_BASIC],
