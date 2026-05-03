@@ -13,12 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
-import { CircleHelp, Columns3, Search } from 'lucide-react'
+import { Columns3, Search } from 'lucide-react'
 import { ActivistColumnName } from '@/lib/api'
 import {
   GROUPED_COLUMNS_BY_CATEGORY,
@@ -26,6 +21,7 @@ import {
   ColumnDefinition,
 } from './column-definitions'
 import { normalizeColumns } from './column-selection'
+import { FieldDescriptionPopover } from './field-description-popover'
 
 interface ColumnSelectorProps {
   visibleColumns: ActivistColumnName[]
@@ -251,25 +247,10 @@ export function ColumnSelector({
                                     {col.label}
                                   </Label>
                                   {col.description ? (
-                                    <Popover>
-                                      <PopoverTrigger asChild>
-                                        <button
-                                          type="button"
-                                          aria-label={`About ${col.label}`}
-                                          onClick={(e) => e.stopPropagation()}
-                                          className="inline-flex items-center"
-                                        >
-                                          <CircleHelp className="h-3.5 w-3.5 text-muted-foreground" />
-                                        </button>
-                                      </PopoverTrigger>
-                                      <PopoverContent
-                                        className="w-64 p-2 text-xs"
-                                        side="top"
-                                        align="start"
-                                      >
-                                        {col.description}
-                                      </PopoverContent>
-                                    </Popover>
+                                    <FieldDescriptionPopover
+                                      label={col.label}
+                                      description={col.description}
+                                    />
                                   ) : null}
                                   {isNameColumn && (
                                     <span className="ml-1 text-xs text-muted-foreground">

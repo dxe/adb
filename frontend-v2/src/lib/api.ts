@@ -2,6 +2,7 @@ import ky, { HTTPError, KyInstance } from 'ky'
 import { z } from 'zod'
 import {
   ActivistJSON,
+  ActivistPatchInput,
   QueryActivistOptions,
   QueryActivistResult,
 } from './api/activists'
@@ -189,6 +190,7 @@ export type ActivistListBasic = z.infer<typeof ActivistListBasicResp>
 export {
   ActivistJSON,
   ActivistColumnName,
+  ActivistPatchInput,
   QueryActivistOptions,
   QueryActivistResult,
 } from './api/activists'
@@ -197,6 +199,7 @@ export type {
   ApiIntRangeFilter,
   ActivistJSON as ActivistJSONType,
   ActivistColumnName as ActivistColumnNameType,
+  ActivistPatchInput as ActivistPatchInputType,
   QueryActivistOptions as QueryActivistOptionsType,
   QueryActivistResult as QueryActivistResultType,
 } from './api/activists'
@@ -400,6 +403,28 @@ export class ApiClient {
     try {
       const resp = await this.client
         .get(`${API_PATH.ACTIVIST_GET}/${activistId}`, { signal })
+        .json()
+      const activist = ActivistGetResp.parse(resp).activist
+      fillActivistBlankFields(activist)
+      return activist
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  patchActivist = async (
+    activistId: number,
+    patch: ActivistPatchInput,
+    signal?: AbortSignal,
+  ) => {
+    try {
+      const csrfToken = this.getCsrfToken()
+      const resp = await this.client
+        .patch(`${API_PATH.ACTIVIST_GET}/${activistId}`, {
+          json: patch,
+          headers: { 'X-CSRF-Token': csrfToken },
+          signal,
+        })
         .json()
       const activist = ActivistGetResp.parse(resp).activist
       fillActivistBlankFields(activist)
