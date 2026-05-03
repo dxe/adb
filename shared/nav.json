@@ -78,6 +78,12 @@
           "label": "Organizer Prospects",
           "href": "/organizer_prospects",
           "page": "OrganizerProspects"
+        },
+        {
+          "label": "Interest Form Generator",
+          "href": "/v2/interest/generator",
+          "page": "InterestFormGenerator",
+          "visibleForNonSFBay": false
         }
       ]
     },
@@ -216,12 +222,6 @@
           "label": "Organizer Prospects",
           "href": "/v2/activists?prospect=organizer&level=~organizer&columns=pronouns,activist_level,total_events,last_event,mpi,training0,training1,training4,training5,training6,dev_application_date,dev_application_type,prospect_organizer,dev_quiz,dev_interest,notes&sort=-dev_application_date",
           "page": "ActivistListV2",
-          "visibleForNonSFBay": false
-        },
-        {
-          "label": "Interest Form Generator",
-          "href": "/v2/interest/generator",
-          "page": "InterestFormGenerator",
           "visibleForNonSFBay": false
         }
       ]
