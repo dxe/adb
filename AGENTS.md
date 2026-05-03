@@ -64,3 +64,8 @@ Context for using the CLI, located in ./cli
 
 - The CLI is available to you as a shell function called `adb`. It is already sourced for you from `~/.bash_profile` and environment variables are already configured to connect to the dev database.
 - You can run `adb -h` for usage instructions.
+
+## preferences
+
+- After making and verifying changes, do not needlessly start summaries with
+  "Clean." or "Clean build." as this gets repetitive.
