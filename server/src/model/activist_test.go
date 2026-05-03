@@ -702,10 +702,11 @@ func TestPatchActivist_ValidatesAssignedTo(t *testing.T) {
 }
 
 func TestMergeActivist(t *testing.T) {
+	db := testdb.NewDB()
+	defer db.Close()
+
 	t.Run("ContactInfo", func(t *testing.T) {
 		t.Run("MergesNewerValues", func(t *testing.T) {
-			db := testdb.NewDB()
-			defer db.Close()
 
 			a1 := NewActivistBuilder().
 				WithEmail("berkeley@example.org").
@@ -723,7 +724,7 @@ func TestMergeActivist(t *testing.T) {
 			a2.PhoneUpdated = mustParseTime(t, "2025-01-01")
 			MustInsertActivistWithTimestamps(t, db, a2)
 
-			require.NoError(t, MergeActivist(db, a1.ID, a2.ID))
+			require.NoError(t, MergeActivist(db, a1.ID, a2.ID, false))
 			a2 = MustGetActivist(t, db, a2.ID)
 			assert.Equal(t, "berkeley@example.org", a2.Email)
 			assert.Equal(t, mustParseTime(t, "2025-01-02"), a2.EmailUpdated)
@@ -732,9 +733,6 @@ func TestMergeActivist(t *testing.T) {
 		})
 
 		t.Run("DoesNotMergeNewerButEmptyValues", func(t *testing.T) {
-			db := testdb.NewDB()
-			defer db.Close()
-
 			a1 := NewActivistBuilder().
 				WithEmail("").
 				WithPhone("").
@@ -751,7 +749,7 @@ func TestMergeActivist(t *testing.T) {
 			a2.PhoneUpdated = mustParseTime(t, "2025-01-01")
 			MustInsertActivistWithTimestamps(t, db, a2)
 
-			require.NoError(t, MergeActivist(db, a1.ID, a2.ID))
+			require.NoError(t, MergeActivist(db, a1.ID, a2.ID, false))
 			a2 = MustGetActivist(t, db, a2.ID)
 			assert.Equal(t, "old@example.org", a2.Email)
 			assert.Equal(t, mustParseTime(t, "2025-01-01"), a2.EmailUpdated)
@@ -760,9 +758,6 @@ func TestMergeActivist(t *testing.T) {
 		})
 
 		t.Run("DoesNotMergeOlderValues", func(t *testing.T) {
-			db := testdb.NewDB()
-			defer db.Close()
-
 			a1 := NewActivistBuilder().
 				WithEmail("old@example.org").
 				WithPhone("510-555-0000").
@@ -779,7 +774,7 @@ func TestMergeActivist(t *testing.T) {
 			a2.PhoneUpdated = mustParseTime(t, "2025-01-02")
 			MustInsertActivistWithTimestamps(t, db, a2)
 
-			require.NoError(t, MergeActivist(db, a1.ID, a2.ID))
+			require.NoError(t, MergeActivist(db, a1.ID, a2.ID, false))
 			a2 = MustGetActivist(t, db, a2.ID)
 			assert.Equal(t, "berkeley@example.org", a2.Email)
 			assert.Equal(t, mustParseTime(t, "2025-01-02"), a2.EmailUpdated)
@@ -788,11 +783,82 @@ func TestMergeActivist(t *testing.T) {
 		})
 	})
 
+	t.Run("Name", func(t *testing.T) {
+		t.Run("MergeNameTrueMergesNewerNameOntoTarget", func(t *testing.T) {
+			a1 := NewActivistBuilder().WithName("Alex Barnes").Build()
+			a1.NameUpdated = mustParseTime(t, "2025-01-02")
+			MustInsertActivistWithTimestamps(t, db, a1)
+
+			a2 := NewActivistBuilder().WithName("Alex Davis").Build()
+			a2.NameUpdated = mustParseTime(t, "2025-01-01")
+			MustInsertActivistWithTimestamps(t, db, a2)
+
+			require.NoError(t, MergeActivist(db, a1.ID, a2.ID, true))
+
+			merged := MustGetActivist(t, db, a2.ID)
+			assert.Equal(t, "Alex Barnes", merged.Name)
+			assert.Equal(t, mustParseTime(t, "2025-01-02"), merged.NameUpdated)
+
+			var hidden struct {
+				Name   string `db:"name"`
+				Hidden bool   `db:"hidden"`
+			}
+			require.NoError(t, db.Get(&hidden, "SELECT name, hidden FROM activists WHERE id = ?", a1.ID))
+			assert.True(t, hidden.Hidden)
+			assert.Equal(t, "Alex Barnes "+strconv.Itoa(a1.ID), hidden.Name)
+		})
+
+		t.Run("MergeNameTrueSourceIsOlderPreservesTargetName", func(t *testing.T) {
+			a1 := NewActivistBuilder().WithName("Alex Older").Build()
+			a1.NameUpdated = mustParseTime(t, "2025-01-01")
+			MustInsertActivistWithTimestamps(t, db, a1)
+
+			a2 := NewActivistBuilder().WithName("Alex Newer").Build()
+			a2.NameUpdated = mustParseTime(t, "2025-01-02")
+			MustInsertActivistWithTimestamps(t, db, a2)
+
+			require.NoError(t, MergeActivist(db, a1.ID, a2.ID, true))
+
+			merged := MustGetActivist(t, db, a2.ID)
+			assert.Equal(t, "Alex Newer", merged.Name)
+			assert.Equal(t, mustParseTime(t, "2025-01-02"), merged.NameUpdated)
+
+			var hidden struct {
+				Name   string `db:"name"`
+				Hidden bool   `db:"hidden"`
+			}
+			require.NoError(t, db.Get(&hidden, "SELECT name, hidden FROM activists WHERE id = ?", a1.ID))
+			assert.True(t, hidden.Hidden)
+			assert.Equal(t, "Alex Older "+strconv.Itoa(a1.ID), hidden.Name)
+		})
+
+		t.Run("MergeNameFalsePreservesTargetName", func(t *testing.T) {
+			a1 := NewActivistBuilder().WithName("Alex Duplicate").Build()
+			a1.NameUpdated = mustParseTime(t, "2025-01-02")
+			MustInsertActivistWithTimestamps(t, db, a1)
+
+			a2 := NewActivistBuilder().WithName("Alex Target").Build()
+			a2.NameUpdated = mustParseTime(t, "2025-01-01")
+			MustInsertActivistWithTimestamps(t, db, a2)
+
+			require.NoError(t, MergeActivist(db, a1.ID, a2.ID, false))
+
+			merged := MustGetActivist(t, db, a2.ID)
+			assert.Equal(t, "Alex Target", merged.Name)
+			assert.Equal(t, mustParseTime(t, "2025-01-01"), merged.NameUpdated)
+
+			var hidden struct {
+				Name   string `db:"name"`
+				Hidden bool   `db:"hidden"`
+			}
+			require.NoError(t, db.Get(&hidden, "SELECT name, hidden FROM activists WHERE id = ?", a1.ID))
+			assert.True(t, hidden.Hidden)
+			assert.Equal(t, "Alex Duplicate "+strconv.Itoa(a1.ID), hidden.Name)
+		})
+	})
+
 	t.Run("Address", func(t *testing.T) {
 		t.Run("MergesNewerValues", func(t *testing.T) {
-			db := testdb.NewDB()
-			defer db.Close()
-
 			a1 := NewActivistBuilder().
 				WithAddress("100 Berkeley Way", "Berkeley", "CA").
 				WithCoords(1, 2).
@@ -807,7 +873,7 @@ func TestMergeActivist(t *testing.T) {
 			a2.AddressUpdated = mustParseTime(t, "2025-01-01")
 			MustInsertActivistWithTimestamps(t, db, a2)
 
-			require.NoError(t, MergeActivist(db, a1.ID, a2.ID))
+			require.NoError(t, MergeActivist(db, a1.ID, a2.ID, false))
 			a2 = MustGetActivist(t, db, a2.ID)
 			assert.Equal(t, mustParseTime(t, "2025-01-02"), a2.AddressUpdated)
 			assert.Equal(t, mustParseTime(t, "2025-01-02"), a2.LocationUpdated)
@@ -816,9 +882,6 @@ func TestMergeActivist(t *testing.T) {
 		})
 
 		t.Run("DoesNotMergeNewerButEmptyValues", func(t *testing.T) {
-			db := testdb.NewDB()
-			defer db.Close()
-
 			a1 := NewActivistBuilder().
 				WithAddress("", "", "").
 				WithCoords(0, 0).
@@ -833,7 +896,7 @@ func TestMergeActivist(t *testing.T) {
 			a2.AddressUpdated = mustParseTime(t, "2025-01-01")
 			MustInsertActivistWithTimestamps(t, db, a2)
 
-			require.NoError(t, MergeActivist(db, a1.ID, a2.ID))
+			require.NoError(t, MergeActivist(db, a1.ID, a2.ID, false))
 			a2 = MustGetActivist(t, db, a2.ID)
 			assert.Equal(t, mustParseTime(t, "2025-01-01"), a2.AddressUpdated)
 			assert.Equal(t, "200 Berkeley Way", a2.StreetAddress)
@@ -841,9 +904,6 @@ func TestMergeActivist(t *testing.T) {
 		})
 
 		t.Run("DoesNotMergeOlderValues", func(t *testing.T) {
-			db := testdb.NewDB()
-			defer db.Close()
-
 			a1 := NewActivistBuilder().
 				WithAddress("100 Berkeley Way", "Berkeley", "CA").
 				WithCoords(1, 2).
@@ -858,7 +918,7 @@ func TestMergeActivist(t *testing.T) {
 			a2.AddressUpdated = mustParseTime(t, "2025-01-02")
 			MustInsertActivistWithTimestamps(t, db, a2)
 
-			require.NoError(t, MergeActivist(db, a1.ID, a2.ID))
+			require.NoError(t, MergeActivist(db, a1.ID, a2.ID, false))
 			a2 = MustGetActivist(t, db, a2.ID)
 			assert.Equal(t, mustParseTime(t, "2025-01-02"), a2.AddressUpdated)
 			assert.Equal(t, "200 Berkeley Way", a2.StreetAddress)
@@ -866,9 +926,6 @@ func TestMergeActivist(t *testing.T) {
 		})
 
 		t.Run("MergesAddressWhenCityMatches", func(t *testing.T) {
-			db := testdb.NewDB()
-			defer db.Close()
-
 			a1 := NewActivistBuilder().WithAddress("100 Berkeley Way", "Berkeley", "CA").Build()
 			a1.AddressUpdated = mustParseTime(t, "2025-01-01")
 			MustInsertActivistWithTimestamps(t, db, a1)
@@ -877,16 +934,13 @@ func TestMergeActivist(t *testing.T) {
 			a2.AddressUpdated = mustParseTime(t, "2025-01-02")
 			MustInsertActivistWithTimestamps(t, db, a2)
 
-			require.NoError(t, MergeActivist(db, a1.ID, a2.ID))
+			require.NoError(t, MergeActivist(db, a1.ID, a2.ID, false))
 			a2 = MustGetActivist(t, db, a2.ID)
 			assert.Equal(t, mustParseTime(t, "2025-01-02"), a2.AddressUpdated)
 			assert.Equal(t, "100 Berkeley Way", a2.StreetAddress)
 		})
 
 		t.Run("DoesNotMergeAddressWhenCityNotMatched", func(t *testing.T) {
-			db := testdb.NewDB()
-			defer db.Close()
-
 			a1 := NewActivistBuilder().WithAddress("100 Berkeley Way", "Berkeley", "CA").Build()
 			a1.AddressUpdated = mustParseTime(t, "2025-01-01")
 			MustInsertActivistWithTimestamps(t, db, a1)
@@ -895,7 +949,7 @@ func TestMergeActivist(t *testing.T) {
 			a2.AddressUpdated = mustParseTime(t, "2025-01-02")
 			MustInsertActivistWithTimestamps(t, db, a2)
 
-			require.NoError(t, MergeActivist(db, a1.ID, a2.ID))
+			require.NoError(t, MergeActivist(db, a1.ID, a2.ID, false))
 			a2 = MustGetActivist(t, db, a2.ID)
 			assert.Equal(t, mustParseTime(t, "2025-01-02"), a2.AddressUpdated)
 			assert.Equal(t, "", a2.StreetAddress)
@@ -903,9 +957,6 @@ func TestMergeActivist(t *testing.T) {
 	})
 
 	t.Run("MergesEvents", func(t *testing.T) {
-		db := testdb.NewDB()
-		defer db.Close()
-
 		// Test that deleting activists works
 		a1, err := GetOrCreateActivist(db, "Test Activist", SFBayChapterIdDevTest)
 		require.NoError(t, err)
@@ -941,7 +992,7 @@ func TestMergeActivist(t *testing.T) {
 		}}
 		mustInsertAllEvents(t, db, insertEvents)
 
-		require.NoError(t, MergeActivist(db, a1.ID, a2.ID))
+		require.NoError(t, MergeActivist(db, a1.ID, a2.ID, false))
 
 		e1, err := GetEvent(db, GetEventOptions{EventID: 1})
 		require.NoError(t, err)

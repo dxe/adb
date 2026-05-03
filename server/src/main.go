@@ -1110,6 +1110,7 @@ func (c MainController) ActivistMergeHandler(w http.ResponseWriter, r *http.Requ
 	var activistMergeData struct {
 		CurrentActivistID  int    `json:"current_activist_id"`
 		TargetActivistName string `json:"target_activist_name"`
+		MergeName          bool   `json:"merge_name"`
 	}
 	err := json.NewDecoder(r.Body).Decode(&activistMergeData)
 	if err != nil {
@@ -1125,7 +1126,7 @@ func (c MainController) ActivistMergeHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	err = model.MergeActivist(c.db, activistMergeData.CurrentActivistID, mergedActivist.ID)
+	err = model.MergeActivist(c.db, activistMergeData.CurrentActivistID, mergedActivist.ID, activistMergeData.MergeName)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return

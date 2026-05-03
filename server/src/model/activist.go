@@ -1359,7 +1359,7 @@ func HideActivist(db *sqlx.DB, activistID int) error {
 // Merge activistID into targetActivistID.
 //   - The original activist is hidden
 //   - All of the original activist's event attendance is updated to be the target activist.
-func MergeActivist(db *sqlx.DB, originalActivistID, targetActivistID int) error {
+func MergeActivist(db *sqlx.DB, originalActivistID, targetActivistID int, mergeName bool) error {
 	if originalActivistID == 0 {
 		return errors.New("originalActivistID cannot be 0")
 	}
@@ -1373,6 +1373,23 @@ func MergeActivist(db *sqlx.DB, originalActivistID, targetActivistID int) error 
 	tx, err := db.Beginx()
 	if err != nil {
 		return errors.Wrap(err, "could not create transaction")
+	}
+
+	// Read both activists before hideActivistQuery rewrites the original's name to "<name> <id>". Otherwise, when
+	// mergeName is true, the field merge would see the synthesized hidden name and try to write it onto the target,
+	// colliding with the original row that still owns it under the (name, chapter_id) unique key.
+	//
+	// Updates are rare so don't bother locking these reads with FOR UPDATE.
+	query := selectActivistExtraBaseQuery + " WHERE a.id = ?"
+	originalActivist := new(ActivistExtra)
+	if err := tx.Get(originalActivist, query, originalActivistID); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to get original activist with id %d: %w", originalActivistID, err)
+	}
+	targetActivist := new(ActivistExtra)
+	if err := tx.Get(targetActivist, query, targetActivistID); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to get target activist with id %d: %w", targetActivistID, err)
 	}
 
 	_, err = tx.Exec(hideActivistQuery, originalActivistID)
@@ -1395,7 +1412,7 @@ func MergeActivist(db *sqlx.DB, originalActivistID, targetActivistID int) error 
 		return err
 	}
 
-	_, err = updateMergedActivistDataDetails(tx, originalActivistID, targetActivistID)
+	_, err = updateMergedActivistDataDetails(tx, originalActivist, targetActivist, mergeName)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -1500,7 +1517,7 @@ func insertMergedActivistAttendance(tx *sqlx.Tx, originalActivistID int, targetA
 		originalActivistID, targetActivistID)
 }
 
-func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) ActivistExtra {
+func getMergeActivistWinner(original ActivistExtra, target ActivistExtra, mergeName bool) ActivistExtra {
 	levels := map[string]int{
 		"Supporter":             0,
 		"Non-Local":             1,
@@ -1521,7 +1538,9 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra) Activi
 
 	target.Email, target.EmailUpdated = stringMergeWithTimestamps(original.Email, original.EmailUpdated, target.Email, target.EmailUpdated)
 	target.Phone, target.PhoneUpdated = stringMergeWithTimestamps(original.Phone, original.PhoneUpdated, target.Phone, target.PhoneUpdated)
-	target.Name, target.NameUpdated = stringMergeWithTimestamps(original.Name, original.NameUpdated, target.Name, target.NameUpdated)
+	if mergeName {
+		target.Name, target.NameUpdated = stringMergeWithTimestamps(original.Name, original.NameUpdated, target.Name, target.NameUpdated)
+	}
 	target.PreferredName = stringMerge(original.PreferredName, target.PreferredName)
 	target.Pronouns = stringMerge(original.Pronouns, target.Pronouns)
 	target.Language = stringMerge(original.Language, target.Language)
@@ -1646,31 +1665,17 @@ func mergeAddress(originalAddr ActivistAddress, originalCoords Coords, originalU
 	return addr, newerCoords, newerUpdated
 }
 
-func updateMergedActivistDataDetails(tx *sqlx.Tx, originalActivistID int, targetActivistID int) (*ActivistExtra, error) {
+func updateMergedActivistDataDetails(tx *sqlx.Tx, originalActivist, targetActivist *ActivistExtra, mergeName bool) (*ActivistExtra, error) {
 	// Merge details of original activist into target activist
 	// Favor booleans that are set to TRUE, and pull in missing data from original activist to target; when both
 	// activists have data for the same field, we should use the target activist's data.
 
-	query := selectActivistExtraBaseQuery + " WHERE a.id = ?"
+	mergedActivist := getMergeActivistWinner(*originalActivist, *targetActivist, mergeName)
 
-	var originalActivist = new(ActivistExtra)
-	err := tx.Get(originalActivist, query, originalActivistID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get original activist with id %d", originalActivistID)
-	}
-
-	var targetActivist = new(ActivistExtra)
-	err = tx.Get(targetActivist, query, targetActivistID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get target activist with id %d", targetActivistID)
-	}
-
-	mergedActivist := getMergeActivistWinner(*originalActivist, *targetActivist)
-
-	_, err = tx.NamedExec(updateActivistWithTimestampsQuery, mergedActivist)
+	_, err := tx.NamedExec(updateActivistWithTimestampsQuery, mergedActivist)
 
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to update activist with id %d", targetActivistID)
+		return nil, errors.Wrapf(err, "failed to update activist with id %d", targetActivist.ID)
 	}
 
 	return &mergedActivist, nil
