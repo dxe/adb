@@ -374,6 +374,9 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.PathPrefix("/dist").Handler(distHandler)
 	router.PathPrefix("/v2").Handler(jsV2Handler)
 	router.PathPrefix("/_next").Handler(jsV2Handler)
+	// Workaround for Nextjs bug which ignores our /v2 basePath
+	// https://github.com/vercel/next.js/issues/85428
+	router.PathPrefix("/__nextjs_font").Handler(jsV2Handler)
 
 	return router, db
 }
