@@ -97,7 +97,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
   // The registry loads cached data from IndexedDB first, then syncs any
   // new/updated activists from the server in the background.
   const { registry: activistRegistry, isLoading: isLoadingActivists } =
-    useActivistRegistry()
+    useActivistRegistry(user.ChapterID)
 
   // Fetch existing event/connection, if editing.
   const {
