@@ -1061,7 +1061,7 @@ func (c MainController) ActivistSaveHandler(w http.ResponseWriter, r *http.Reque
 		activistExtra.ChapterID = user.ChapterID
 		activistID, err = model.CreateActivist(c.db, activistExtra)
 	} else {
-		activistID, err = model.UserUpdateActivist(c.db, activistExtra, user.Email, c.userRepo)
+		activistID, err = model.UserUpdateActivist(c.db, activistExtra, user, c.userRepo)
 	}
 	if err != nil {
 		sendErrorMessage(w, err)
@@ -1083,6 +1083,8 @@ func (c MainController) ActivistSaveHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (c MainController) ActivistHideHandler(w http.ResponseWriter, r *http.Request) {
+	user, _ := c.getAuthedADBUser(r)
+
 	var activistID struct {
 		ID int `json:"id"`
 	}
@@ -1092,7 +1094,7 @@ func (c MainController) ActivistHideHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	err = model.HideActivist(c.db, activistID.ID)
+	err = model.HideActivist(c.db, user, activistID.ID)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
@@ -1105,7 +1107,7 @@ func (c MainController) ActivistHideHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (c MainController) ActivistMergeHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := c.getAuthedADBChapter(r)
+	user, _ := c.getAuthedADBUser(r)
 
 	var activistMergeData struct {
 		CurrentActivistID  int    `json:"current_activist_id"`
@@ -1118,9 +1120,19 @@ func (c MainController) ActivistMergeHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	orig, err := model.GetActivistsExtra(c.db, model.GetActivistOptions{ID: activistMergeData.CurrentActivistID})
+	if err != nil || len(orig) == 0 {
+		sendErrorMessage(w, fmt.Errorf("activist with id %d not found", activistMergeData.CurrentActivistID))
+		return
+	}
+	if err := model.CheckChapterAccess(user, orig[0].ChapterID); err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
 	// First, we need to get the activist ID for the target
 	// activist.
-	mergedActivist, err := model.GetActivist(c.db, activistMergeData.TargetActivistName, chapter)
+	mergedActivist, err := model.GetActivist(c.db, activistMergeData.TargetActivistName, user.ChapterID)
 	if err != nil {
 		sendErrorMessage(w, errors.Wrapf(err, "Could not fetch data for: %s", activistMergeData.TargetActivistName))
 		return

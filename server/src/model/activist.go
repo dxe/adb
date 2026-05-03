@@ -1211,7 +1211,7 @@ func geocodeIfAddressChanged(orig ActivistExtra, updated *ActivistExtra) {
 }
 
 // UserUpdateActivist updates user-editable activist fields as requested by an ADB user.
-func UserUpdateActivist(db *sqlx.DB, activist ActivistExtra, userEmail string, userRepo UserRepository) (int, error) {
+func UserUpdateActivist(db *sqlx.DB, activist ActivistExtra, authedUser ADBUser, userRepo UserRepository) (int, error) {
 	if activist.ID == 0 {
 		return 0, errors.New("activist ID cannot be 0")
 	}
@@ -1224,6 +1224,10 @@ func UserUpdateActivist(db *sqlx.DB, activist ActivistExtra, userEmail string, u
 		return 0, fmt.Errorf("%w: activist with id %d not found", ErrNotFound, activist.ID)
 	}
 	origActivist := orig[0]
+
+	if err := CheckChapterAccess(authedUser, origActivist.ChapterID); err != nil {
+		return 0, err
+	}
 
 	if err := validateActivistUpdate(origActivist, activist, userRepo); err != nil {
 		return 0, err
@@ -1240,7 +1244,7 @@ func UserUpdateActivist(db *sqlx.DB, activist ActivistExtra, userEmail string, u
 
 	log.Printf("Updated data for activist %v", activist.Name)
 
-	addActivistHistory(db, userEmail, activist)
+	addActivistHistory(db, authedUser.Email, activist)
 
 	return activist.ID, nil
 }
@@ -1301,13 +1305,8 @@ func PatchActivist(db *sqlx.DB, repo ActivistRepository, userRepo UserRepository
 	orig := origActivists[0]
 
 	// Non-admin users can only update activists in their own chapter.
-	if !UserHasRole(shared.RoleAdmin, authedUser) {
-		if orig.ChapterID == 0 || authedUser.ChapterID == 0 {
-			return ValidationErrorf("activist chapter check failed")
-		}
-		if orig.ChapterID != authedUser.ChapterID {
-			return ValidationErrorf("activist does not belong to your chapter")
-		}
+	if err := CheckChapterAccess(authedUser, orig.ChapterID); err != nil {
+		return err
 	}
 
 	merged, err := patch.ApplyTo(orig)
@@ -1336,17 +1335,20 @@ func PatchActivist(db *sqlx.DB, repo ActivistRepository, userRepo UserRepository
 	return nil
 }
 
-func HideActivist(db *sqlx.DB, activistID int) error {
+func HideActivist(db *sqlx.DB, authedUser ADBUser, activistID int) error {
 	if activistID == 0 {
 		return errors.New("HideActivist: activistID cannot be 0")
 	}
-	var activistCount int
-	err := db.Get(&activistCount, `SELECT count(*) FROM activists WHERE id = ?`, activistID)
-	if err != nil {
-		return errors.Wrap(err, "failed to get activist count")
+	var existing struct {
+		ChapterID int `db:"chapter_id"`
 	}
-	if activistCount == 0 {
-		return errors.Errorf("Activist with id %d does not exist", activistID)
+	err := db.Get(&existing, `SELECT chapter_id FROM activists WHERE id = ?`, activistID)
+	if err != nil {
+		return errors.Wrapf(err, "activist with id %d does not exist", activistID)
+	}
+
+	if err := CheckChapterAccess(authedUser, existing.ChapterID); err != nil {
+		return err
 	}
 
 	_, err = db.Exec(hideActivistQuery, activistID)

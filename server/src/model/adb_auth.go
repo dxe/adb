@@ -116,6 +116,21 @@ func UserHasRole(role string, user ADBUser) bool {
 	return false
 }
 
+// CheckChapterAccess returns nil if the user is an admin or if chapterID matches
+// the user's chapter. Returns a ValidationError otherwise.
+func CheckChapterAccess(user ADBUser, chapterID int) error {
+	if UserHasRole(shared.RoleAdmin, user) {
+		return nil
+	}
+	if chapterID == 0 || user.ChapterID == 0 {
+		return ValidationErrorf("activist chapter check failed")
+	}
+	if chapterID != user.ChapterID {
+		return ValidationErrorf("activist does not belong to your chapter")
+	}
+	return nil
+}
+
 // Interface for querying and updating users. This avoids a dependency on the persistence package which could create a
 // cyclical package reference.
 type UserRepository interface {

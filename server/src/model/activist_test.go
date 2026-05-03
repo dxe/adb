@@ -412,7 +412,8 @@ func TestUpdateActivist(t *testing.T) {
 	activist.Coords = Coords{1, 2}
 
 	u := MakeUserRepoStub(t, nil)
-	updatedID, err := UserUpdateActivist(db, *activist, DevTestUserEmail, u)
+	authedUser := ADBUser{ID: DevTestUserId, Email: DevTestUserEmail, Roles: []string{shared.RoleAdmin}}
+	updatedID, err := UserUpdateActivist(db, *activist, authedUser, u)
 	require.NoError(t, err)
 	require.Equal(t, id, updatedID)
 
@@ -450,7 +451,8 @@ func TestHideActivist(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	require.NoError(t, HideActivist(db, a1.ID))
+	authedAdmin := ADBUser{ID: DevTestUserId, Email: DevTestUserEmail, Roles: []string{shared.RoleAdmin}}
+	require.NoError(t, HideActivist(db, authedAdmin, a1.ID))
 
 	// Hidden activists should not show up in the autocompleted names
 	names := GetAutocompleteNames(db, SFBayChapterIdDevTest)
