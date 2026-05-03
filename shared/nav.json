@@ -7,26 +7,26 @@
       "items": [
         {
           "label": "New Event",
-          "href": "/",
-          "page": "NewEvent"
+          "href": "/v2/events/new",
+          "page": "NewEvent_beta"
         },
         {
           "label": "All Events",
-          "href": "/list_events",
-          "page": "EventList",
+          "href": "/v2/events",
+          "page": "EventList_beta",
           "separatorBelow": true
         },
         {
           "label": "New Coaching",
-          "href": "/new_connection",
-          "page": "NewConnection",
+          "href": "/v2/coachings/new",
+          "page": "NewConnection_beta",
           "roleRequired": ["organizer"],
           "visibleForNonSFBay": false
         },
         {
           "label": "All Coachings",
-          "href": "/list_connections",
-          "page": "ConnectionsList",
+          "href": "/v2/coachings",
+          "page": "ConnectionsList_beta",
           "roleRequired": ["organizer"],
           "visibleForNonSFBay": false
         }
@@ -216,37 +216,43 @@
           "label": "Organizer Prospects",
           "href": "/v2/activists?prospect=organizer&level=~organizer&columns=pronouns,activist_level,total_events,last_event,mpi,training0,training1,training4,training5,training6,dev_application_date,dev_application_type,prospect_organizer,dev_quiz,dev_interest,notes&sort=-dev_application_date",
           "page": "ActivistListV2",
-          "visibleForNonSFBay": false,
-          "separatorBelow": true
-        },
-        {
-          "label": "All Events",
-          "href": "/v2/events",
-          "page": "EventList_beta",
-          "visibleForNonSFBay": false
-        },
-        {
-          "label": "New Event",
-          "href": "/v2/events/new",
-          "page": "NewEvent_beta",
-          "visibleForNonSFBay": false
-        },
-        {
-          "label": "All Coachings",
-          "href": "/v2/coachings",
-          "page": "ConnectionsList_beta",
-          "visibleForNonSFBay": false
-        },
-        {
-          "label": "New Coaching",
-          "href": "/v2/coachings/new",
-          "page": "NewConnection_beta",
           "visibleForNonSFBay": false
         },
         {
           "label": "Interest Form Generator",
           "href": "/v2/interest/generator",
           "page": "InterestFormGenerator",
+          "visibleForNonSFBay": false
+        }
+      ]
+    },
+    {
+      "label": "Legacy",
+      "roleRequired": ["attendance"],
+      "visibleForNonSFBay": true,
+      "items": [
+        {
+          "label": "New Event",
+          "href": "/new_event",
+          "page": "NewEvent"
+        },
+        {
+          "label": "All Events",
+          "href": "/list_events",
+          "page": "EventList"
+        },
+        {
+          "label": "New Coaching",
+          "href": "/new_connection",
+          "page": "NewConnection",
+          "roleRequired": ["organizer"],
+          "visibleForNonSFBay": false
+        },
+        {
+          "label": "All Coachings",
+          "href": "/list_connections",
+          "page": "ConnectionsList",
+          "roleRequired": ["organizer"],
           "visibleForNonSFBay": false
         }
       ]

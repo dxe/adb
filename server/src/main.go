@@ -256,6 +256,7 @@ func router() (*mux.Router, *sqlx.DB) {
 
 	// Authed pages
 	router.Handle("/", alice.New(main.authAnyADBRoleMiddleware).ThenFunc(main.HomeHandler))
+	router.Handle("/new_event", alice.New(main.authAttendanceMiddleware).ThenFunc(main.UpdateEventHandler))
 	router.Handle("/update_event/{event_id:[0-9]+}", alice.New(main.authAttendanceMiddleware).ThenFunc(main.UpdateEventHandler))
 	router.Handle("/new_connection", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.UpdateConnectionHandler))
 	router.Handle("/update_connection/{event_id:[0-9]+}", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.UpdateConnectionHandler))
@@ -630,7 +631,7 @@ func (c MainController) HomeHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Most roles grant access to take attendance.
 	if model.UserHasAttendanceAccess(user) {
-		c.UpdateEventHandler(w, r)
+		http.Redirect(w, r, "/v2/events/new", http.StatusFound)
 		return
 	}
 
@@ -1190,10 +1191,10 @@ func (c MainController) EventSaveHandler(w http.ResponseWriter, r *http.Request)
 
 	out := map[string]interface{}{
 		"status":    "success",
-		"redirect":  "",
+		"event_id":  eventID,
 		"attendees": attendees,
 	}
-	if isNewEvent {
+	if r.URL.Query().Get("legacy_redirect") == "1" && isNewEvent {
 		out["redirect"] = fmt.Sprintf("/update_event/%d", eventID)
 	}
 	writeJSON(w, out)
@@ -1225,10 +1226,10 @@ func (c MainController) ConnectionSaveHandler(w http.ResponseWriter, r *http.Req
 
 	out := map[string]interface{}{
 		"status":    "success",
-		"redirect":  "",
+		"event_id":  eventID,
 		"attendees": attendees,
 	}
-	if isNewEvent {
+	if r.URL.Query().Get("legacy_redirect") == "1" && isNewEvent {
 		out["redirect"] = fmt.Sprintf("/update_connection/%d", eventID)
 	}
 	writeJSON(w, out)
