@@ -4,16 +4,16 @@ on:
   push:
     branches: [main]
     paths-ignore:
-      - '**/*.md'
-      - 'CODEOWNERS'
-      - '.devcontainer/**'
-      - '.vscode/**'
+      - "**/*.md"
+      - "CODEOWNERS"
+      - ".devcontainer/**"
+      - ".vscode/**"
   pull_request:
     branches: [main]
     paths-ignore:
-      - '**/*.md'
-      - 'CODEOWNERS'
-      - '.vscode/**'
+      - "**/*.md"
+      - "CODEOWNERS"
+      - ".vscode/**"
   workflow_dispatch:
 
 jobs:

@@ -1,3 +1,4 @@
+.devcontainer/devcontainer-lock.json
 frontend/external/**
 frontend/dist/**
 frontend/static/external/**
