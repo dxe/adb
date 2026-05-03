@@ -17,6 +17,8 @@ export const API_PATH = {
   ACTIVIST_LIST_BASIC: 'activist/list_basic',
   ACTIVISTS_SEARCH: 'api/activists',
   ACTIVIST_GET: 'api/activists',
+  ACTIVIST_HIDE: 'activist/hide',
+  ACTIVIST_MERGE: 'activist/merge',
   USER_ME: 'user/me',
   CSRF_TOKEN: 'api/csrf-token',
   CHAPTER_LIST: 'chapter/list',
@@ -283,6 +285,10 @@ const EventDeleteResp = z.object({
   status: z.literal('success'),
 })
 
+const SuccessResp = z.object({
+  status: z.literal('success'),
+})
+
 const ApiErrorResp = z.object({
   status: z.literal('error'),
   message: z.string(),
@@ -439,6 +445,45 @@ export class ApiClient {
       const activist = ActivistGetResp.parse(resp).activist
       fillActivistBlankFields(activist)
       return activist
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  hideActivist = async (activistId: number, signal?: AbortSignal) => {
+    try {
+      // TODO: pass X-CSRF-Token header once the backend requires it for this endpoint.
+      const resp = await this.client
+        .post(API_PATH.ACTIVIST_HIDE, {
+          json: { id: activistId },
+          signal,
+        })
+        .json()
+      this.throwIfApiError(resp)
+      return SuccessResp.parse(resp)
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  mergeActivist = async (
+    currentActivistId: number,
+    targetActivistName: string,
+    signal?: AbortSignal,
+  ) => {
+    try {
+      // TODO: pass X-CSRF-Token header once the backend requires it for this endpoint.
+      const resp = await this.client
+        .post(API_PATH.ACTIVIST_MERGE, {
+          json: {
+            current_activist_id: currentActivistId,
+            target_activist_name: targetActivistName,
+          },
+          signal,
+        })
+        .json()
+      this.throwIfApiError(resp)
+      return SuccessResp.parse(resp)
     } catch (err) {
       return this.handleKyError(err)
     }
