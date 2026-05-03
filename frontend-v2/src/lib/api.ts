@@ -281,10 +281,6 @@ export interface EventListParams {
   event_type: EventType
 }
 
-const EventDeleteResp = z.object({
-  status: z.literal('success'),
-})
-
 const SuccessResp = z.object({
   status: z.literal('success'),
 })
@@ -636,7 +632,7 @@ export class ApiClient {
         })
         .json()
       this.throwIfApiError(resp)
-      return EventDeleteResp.parse(resp)
+      return SuccessResp.parse(resp)
     } catch (err) {
       return this.handleKyError(err)
     }
