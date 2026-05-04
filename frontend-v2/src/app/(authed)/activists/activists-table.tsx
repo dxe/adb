@@ -15,12 +15,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { ArrowDown, ArrowUp } from 'lucide-react'
+import { ArrowDown, ArrowUp, Check, Minus } from 'lucide-react'
 import { ActivistJSON, ActivistColumnName } from '@/lib/api'
 import { IntentPrefetchLink } from '@/components/intent-prefetch-link'
 import { COLUMN_DEFINITION_BY_NAME } from './column-definitions'
 import { getActivistDisplayName } from './display-name'
-import { formatValue } from './format-value'
+import { formatValue, COLUMN_TYPE_BY_NAME } from './format-value'
 import type { SortColumn } from './query-state'
 
 interface ActivistTableProps {
@@ -101,6 +101,17 @@ export function ActivistTable({
           }
 
           const value = row.original[colName as keyof ActivistJSON]
+          if (COLUMN_TYPE_BY_NAME[colName] === 'boolean') {
+            return (
+              <div className="flex items-center text-sm">
+                {value ? (
+                  <Check className="h-4 w-4 text-foreground" />
+                ) : (
+                  <Minus className="h-4 w-4 text-muted-foreground" />
+                )}
+              </div>
+            )
+          }
           const formatted = formatValue(value, colName)
           return <div className="truncate text-sm">{formatted}</div>
         },
@@ -199,28 +210,36 @@ export function ActivistTable({
                 {visibleColumns.map((colName) => {
                   const definition = COLUMN_DEFINITION_BY_NAME[colName]
                   const label = definition?.label || colName
-                  const formattedValue =
-                    colName === 'name'
+                  const isBool = COLUMN_TYPE_BY_NAME[colName] === 'boolean'
+                  const rawValue = activist[colName as keyof ActivistJSON]
+                  const formattedValue = isBool
+                    ? null
+                    : colName === 'name'
                       ? displayName.text
-                      : formatValue(
-                          activist[colName as keyof ActivistJSON],
-                          colName,
-                        )
+                      : formatValue(rawValue, colName)
 
                   return (
                     <div key={colName} className="flex justify-between gap-2">
                       <span className="text-sm font-medium text-muted-foreground">
                         {label}:
                       </span>
-                      <span
-                        className={`text-sm ${
-                          colName === 'name' && displayName.isPlaceholder
-                            ? 'italic text-muted-foreground'
-                            : ''
-                        }`}
-                      >
-                        {formattedValue}
-                      </span>
+                      {isBool ? (
+                        rawValue ? (
+                          <Check className="h-4 w-4 text-foreground" />
+                        ) : (
+                          <Minus className="h-4 w-4 text-muted-foreground" />
+                        )
+                      ) : (
+                        <span
+                          className={`text-sm ${
+                            colName === 'name' && displayName.isPlaceholder
+                              ? 'italic text-muted-foreground'
+                              : ''
+                          }`}
+                        >
+                          {formattedValue}
+                        </span>
+                      )}
                     </div>
                   )
                 })}
