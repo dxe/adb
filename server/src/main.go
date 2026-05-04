@@ -12,7 +12,6 @@ import (
 	"log"
 	"net/http"
 	"net/http/httputil"
-	"net/http/pprof"
 	"net/url"
 	"strconv"
 	"strings"
@@ -356,13 +355,6 @@ func router() (*mux.Router, *sqlx.DB) {
 		admin.Handle("/dev-testing/process-intl-app-forms", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.DevTestingProcessIntlAppForms))
 		admin.Handle("/dev-testing/sync-fb-events", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.DevTestingSyncFbEvents))
 	}
-
-	// Pprof debug routes
-	router.HandleFunc("/debug/pprof/", pprof.Index)
-	router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-	router.HandleFunc("/debug/pprof/profile", pprof.Profile)
-	router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-	router.HandleFunc("/debug/pprof/trace", pprof.Trace)
 
 	var staticHandler = http.StripPrefix("/static/", http.FileServer(http.Dir(config.StaticDirectory)))
 	var distHandler = http.StripPrefix("/dist/", http.FileServer(http.Dir(config.DistDirectory)))
