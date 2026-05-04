@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { useInfiniteQuery } from '@tanstack/react-query'
+import { useQueryState, parseAsInteger } from 'nuqs'
 import {
   apiClient,
   API_PATH,
@@ -16,6 +17,7 @@ import { ActivistTable } from './activists-table'
 import { ActivistFilters } from './filters/activist-filters'
 import { ColumnSelector } from './column-selector'
 import { SortSelector } from './sort-selector'
+import { ActivistSheet } from './activist-sheet'
 import { buildQueryOptions } from './filter-api-query'
 import type { ActivistsQueryState, SortColumn } from './query-state'
 import { DEFAULT_SORT } from './query-state'
@@ -32,6 +34,11 @@ export default function ActivistsPage({
 }: ActivistsPageProps) {
   const { user } = useAuthedPageContext()
   const isAdmin = user.Roles.includes('admin')
+
+  const [selectedActivistId, setSelectedActivistId] = useQueryState(
+    'activist',
+    parseAsInteger.withOptions({ history: 'push', scroll: false }),
+  )
 
   const {
     filters,
@@ -157,92 +164,100 @@ export default function ActivistsPage({
   const tableSort = isPlaceholderData ? settledTableState.sort : sort
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold">Activists</h1>
-      </div>
+    <>
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-semibold">Activists</h1>
+        </div>
 
-      <ActivistFilters
-        filters={filters}
-        onFiltersChange={setFilters}
-        isAdmin={isAdmin}
-        isDirty={isDirty}
-        onReset={resetAll}
-      >
-        <ColumnSelector
-          visibleColumns={selectedColumns}
-          onColumnsChange={setSelectedColumns}
-          isChapterColumnShown={filters.searchAcrossChapters}
-        />
-        <SortSelector
-          label="Sort by"
-          value={isExplicitSort ? sort[0] : undefined}
-          onChange={(primary) =>
-            setSort(
-              sort.length > 1 && sort[1].column !== primary.column
-                ? [primary, sort[1]]
-                : [primary],
-            )
-          }
-          onClear={() => setSort([])}
-          canClear={isExplicitSort}
-          availableColumns={selectedColumns}
-        />
-        {isExplicitSort && (
+        <ActivistFilters
+          filters={filters}
+          onFiltersChange={setFilters}
+          isAdmin={isAdmin}
+          isDirty={isDirty}
+          onReset={resetAll}
+        >
+          <ColumnSelector
+            visibleColumns={selectedColumns}
+            onColumnsChange={setSelectedColumns}
+            isChapterColumnShown={filters.searchAcrossChapters}
+          />
           <SortSelector
-            label="Then by"
-            inactiveLabel="Then sort by"
-            value={sort[1]}
-            onChange={(secondary) => setSort([sort[0], secondary])}
-            onClear={() => setSort([sort[0]])}
-            availableColumns={selectedColumns.filter(
-              (col) => col !== sort[0].column,
-            )}
+            label="Sort by"
+            value={isExplicitSort ? sort[0] : undefined}
+            onChange={(primary) =>
+              setSort(
+                sort.length > 1 && sort[1].column !== primary.column
+                  ? [primary, sort[1]]
+                  : [primary],
+              )
+            }
+            onClear={() => setSort([])}
+            canClear={isExplicitSort}
+            availableColumns={selectedColumns}
           />
-        )}
-      </ActivistFilters>
-
-      {isLoading && (
-        <div className="flex items-center justify-center py-12 text-muted-foreground">
-          Loading activists...
-        </div>
-      )}
-
-      {isError && (
-        <div className="flex items-center justify-center py-12 text-destructive">
-          {error instanceof Error
-            ? error.message.replace(/^invalid query options:\s*/i, '')
-            : 'Failed to load activists. Please try again.'}
-        </div>
-      )}
-
-      {!isLoading && !isError && (
-        <>
-          {activists.length > 0 && (
-            <div className="text-sm text-muted-foreground">
-              {activists.length} activist
-              {activists.length !== 1 ? 's' : ''} shown
-            </div>
-          )}
-
-          <ActivistTable
-            activists={activists}
-            visibleColumns={tableColumns}
-            sort={tableSort}
-            onSortChange={setSort}
-            isStale={isPlaceholderData}
-          />
-
-          {hasNextPage && (
-            <InfiniteScrollTrigger
-              onLoadMore={fetchNextPage}
-              isLoading={isFetchingNextPage}
-              canLoadMore={hasNextPage}
-              loadingLabel="Loading more activists…"
+          {isExplicitSort && (
+            <SortSelector
+              label="Then by"
+              inactiveLabel="Then sort by"
+              value={sort[1]}
+              onChange={(secondary) => setSort([sort[0], secondary])}
+              onClear={() => setSort([sort[0]])}
+              availableColumns={selectedColumns.filter(
+                (col) => col !== sort[0].column,
+              )}
             />
           )}
-        </>
-      )}
-    </div>
+        </ActivistFilters>
+
+        {isLoading && (
+          <div className="flex items-center justify-center py-12 text-muted-foreground">
+            Loading activists...
+          </div>
+        )}
+
+        {isError && (
+          <div className="flex items-center justify-center py-12 text-destructive">
+            {error instanceof Error
+              ? error.message.replace(/^invalid query options:\s*/i, '')
+              : 'Failed to load activists. Please try again.'}
+          </div>
+        )}
+
+        {!isLoading && !isError && (
+          <>
+            {activists.length > 0 && (
+              <div className="text-sm text-muted-foreground">
+                {activists.length} activist
+                {activists.length !== 1 ? 's' : ''} shown
+              </div>
+            )}
+
+            <ActivistTable
+              activists={activists}
+              visibleColumns={tableColumns}
+              sort={tableSort}
+              onSortChange={setSort}
+              onActivistClick={setSelectedActivistId}
+              isStale={isPlaceholderData}
+            />
+
+            {hasNextPage && (
+              <InfiniteScrollTrigger
+                onLoadMore={fetchNextPage}
+                isLoading={isFetchingNextPage}
+                canLoadMore={hasNextPage}
+                loadingLabel="Loading more activists…"
+              />
+            )}
+          </>
+        )}
+      </div>
+
+      <ActivistSheet
+        activistId={selectedActivistId}
+        onClose={() => setSelectedActivistId(null)}
+      />
+    </>
   )
 }
