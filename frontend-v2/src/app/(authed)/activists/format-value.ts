@@ -5,7 +5,7 @@ import { formatDateValueForActivists } from './date-time'
 
 type ColumnType = 'string' | 'number' | 'boolean'
 
-const COLUMN_TYPE_BY_NAME = Object.fromEntries(
+export const COLUMN_TYPE_BY_NAME = Object.fromEntries(
   Object.entries(ActivistJSON.shape).map(([columnName, schema]) => {
     const unwrapped =
       schema instanceof z.ZodOptional || schema instanceof z.ZodNullable
