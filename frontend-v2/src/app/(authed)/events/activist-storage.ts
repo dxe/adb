@@ -211,6 +211,8 @@ export class ActivistStorage {
   }
 }
 
+const ENABLE_ACTIVIST_REGISTRY = false
+
 /**
  * Check if IndexedDB is available and accessible.
  * Returns false in environments where IndexedDB is blocked (e.g., iOS lockdown mode).
@@ -228,6 +230,7 @@ const storageByChapter = new Map<number, ActivistStorage>()
 export function getActivistStorage(
   chapterId: number,
 ): ActivistStorage | undefined {
+  if (!ENABLE_ACTIVIST_REGISTRY) return undefined
   if (!isIndexedDBAvailable()) return undefined
   const existing = storageByChapter.get(chapterId)
   if (existing) return existing

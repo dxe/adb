@@ -181,6 +181,9 @@ export function SuggestionInput({
             onFocus={handleFocus}
             onBlur={handleBlur}
             autoComplete={autoComplete}
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
             {...inputProps}
           />
           {endAdornment}
