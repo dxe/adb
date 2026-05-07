@@ -54,7 +54,7 @@ jobs:
           cd ../server/src
           go mod download
       - name: Set up pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           # Please keep pnpm version in sync with package.json
           version: 10.32.1
