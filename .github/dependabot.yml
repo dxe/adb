@@ -1,0 +1,24 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+    ignore:
+      # legacy frontend app is static so security issues are irrelevant
+      - dependency-name: "*"
+
+  - package-ecosystem: npm
+    directory: /frontend-v2
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: gomod
+    directory: /server/src
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
