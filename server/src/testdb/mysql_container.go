@@ -18,6 +18,7 @@ const (
 func StartMySQLContainer(ctx context.Context) (func(), error) {
 	container, err := tcmysql.Run(
 		ctx,
+		// Keep version in sync with server/compose.yaml
 		"mysql:8.4",
 		tcmysql.WithDatabase(config.TestDBName),
 		tcmysql.WithUsername(testContainerDBUser),

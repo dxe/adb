@@ -19,6 +19,19 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        # Keep version in sync with server/compose.yaml
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -53,11 +66,10 @@ jobs:
           cache-dependency-path: frontend-v2/pnpm-lock.yaml
       - name: Install frontend-v2 deps
         run: cd ./frontend-v2 && pnpm install --frozen-lockfile
-      - name: Start database
+      - name: Set up database user
         run: |
-          sudo /etc/init.d/mysql start
-          mysql -h127.0.0.1 -P3306 -uroot -proot -e "CREATE USER adb_user@localhost IDENTIFIED BY 'adbpassword';"
-          mysql -h127.0.0.1 -P3306 -uroot -proot -e "GRANT ALL PRIVILEGES ON *.* to adb_user@localhost;"
+          mysql -h127.0.0.1 -P3306 -uroot -proot -e "CREATE USER 'adb_user'@'%' IDENTIFIED BY 'adbpassword';"
+          mysql -h127.0.0.1 -P3306 -uroot -proot -e "GRANT ALL PRIVILEGES ON *.* TO 'adb_user'@'%';"
           mysql -h127.0.0.1 -P3306 -uroot -proot -e "CREATE DATABASE adb_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
       - name: Set environment variables for tests
         run: echo "DB_PROTOCOL=tcp(127.0.0.1:3306)" >> $GITHUB_ENV

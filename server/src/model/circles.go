@@ -391,10 +391,10 @@ func GetCircleGroup(db *sqlx.DB, options CircleGroupQueryOptions) (CircleGroup, 
 		return CircleGroup{}, errors.Wrapf(err, "Error fetching circle with ID %d", options.GroupID)
 	}
 	if len(circleGroups) == 0 {
-		return CircleGroup{}, errors.Wrapf(err, "No circle with ID %d found", options.GroupID)
+		return CircleGroup{}, fmt.Errorf("No circle with ID %d found", options.GroupID)
 	}
 	if len(circleGroups) > 1 {
-		return CircleGroup{}, errors.Wrapf(err, "Duplicate circle with ID %d", options.GroupID)
+		return CircleGroup{}, fmt.Errorf("Duplicate circle with ID %d", options.GroupID)
 	}
 	return circleGroups[0], nil
 }
