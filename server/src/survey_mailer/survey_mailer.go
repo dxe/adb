@@ -112,7 +112,8 @@ func survey(db *sqlx.DB, surveyOptions SurveyOptions) {
 		SurveySent:     "0",
 		SuppressSurvey: "0",
 		// TODO: consider not hard-coding this
-		ChapterID: model.SFBayChapterId,
+		ChapterID:             model.SFBayChapterId,
+		IncludeAttendeeEmails: true,
 	})
 	if err != nil {
 		log.Printf("Failed to get events: %v", err)

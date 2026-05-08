@@ -12,7 +12,6 @@ import (
 	"log"
 	"net/http"
 	"net/http/httputil"
-	"net/http/pprof"
 	"net/url"
 	"strconv"
 	"strings"
@@ -321,13 +320,13 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/activist/hide", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistHideHandler))
 	router.Handle("/activist/merge", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistMergeHandler))
 	router.Handle("/working_group/save", alice.New(main.apiSFBayOrganizerAuthMiddleware).ThenFunc(main.WorkingGroupSaveHandler))
-	router.Handle("/working_group/list", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.WorkingGroupListHandler))
+	router.Handle("/working_group/list", alice.New(main.apiSFBayOrganizerAuthMiddleware).ThenFunc(main.WorkingGroupListHandler))
 	router.Handle("/working_group/delete", alice.New(main.apiSFBayOrganizerAuthMiddleware).ThenFunc(main.WorkingGroupDeleteHandler))
 	router.Handle("/circle/save", alice.New(main.apiSFBayOrganizerAuthMiddleware).ThenFunc(main.CircleGroupSaveHandler))
-	router.Handle("/circle/list", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.CircleGroupListHandler))
+	router.Handle("/circle/list", alice.New(main.apiSFBayOrganizerAuthMiddleware).ThenFunc(main.CircleGroupListHandler))
 	router.Handle("/circle/delete", alice.New(main.apiSFBayOrganizerAuthMiddleware).ThenFunc(main.CircleGroupDeleteHandler))
 	router.Handle("/interaction/save", alice.New(main.apiSFBayOrganizerAuthMiddleware).ThenFunc(main.InteractionSaveHandler))
-	router.Handle("/interaction/list", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.InteractionListHandler))
+	router.Handle("/interaction/list", alice.New(main.apiSFBayOrganizerAuthMiddleware).ThenFunc(main.InteractionListHandler))
 	router.Handle("/interaction/delete", alice.New(main.apiSFBayOrganizerAuthMiddleware).ThenFunc(main.InteractionDeleteHandler))
 	router.Handle("/csv/chapter_member_spoke", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ChapterMemberSpokeCSVHandler))
 	router.Handle("/csv/international_organizers", alice.New(main.apiIntlCoordinatorAuthMiddleware).ThenFunc(main.InternationalOrganizersCSVHandler))
@@ -356,13 +355,6 @@ func router() (*mux.Router, *sqlx.DB) {
 		admin.Handle("/dev-testing/process-intl-app-forms", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.DevTestingProcessIntlAppForms))
 		admin.Handle("/dev-testing/sync-fb-events", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.DevTestingSyncFbEvents))
 	}
-
-	// Pprof debug routes
-	router.HandleFunc("/debug/pprof/", pprof.Index)
-	router.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-	router.HandleFunc("/debug/pprof/profile", pprof.Profile)
-	router.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-	router.HandleFunc("/debug/pprof/trace", pprof.Trace)
 
 	var staticHandler = http.StripPrefix("/static/", http.FileServer(http.Dir(config.StaticDirectory)))
 	var distHandler = http.StripPrefix("/dist/", http.FileServer(http.Dir(config.DistDirectory)))
@@ -1151,7 +1143,7 @@ func (c MainController) ActivistMergeHandler(w http.ResponseWriter, r *http.Requ
 }
 
 func (c MainController) EventGetHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := c.getAuthedADBChapter(r)
+	user, _ := c.getAuthedADBUser(r)
 
 	rawID := mux.Vars(r)["event_id"]
 	eventID, err := strconv.Atoi(rawID)
@@ -1161,7 +1153,11 @@ func (c MainController) EventGetHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// We pass in the chapter ID to make sure people don't get events that don't belong to their chapter.
-	event, err := model.GetEvent(c.db, model.GetEventOptions{EventID: eventID, ChapterID: chapter})
+	event, err := model.GetEvent(c.db, model.GetEventOptions{
+		EventID:               eventID,
+		ChapterID:             user.ChapterID,
+		IncludeAttendeeEmails: model.UserHasOrganizerAccess(user),
+	})
 	if err != nil {
 		if errors.Is(err, model.ErrNotFound) {
 			transport.SendErrorMessage(w, http.StatusNotFound, err)
@@ -1249,7 +1245,7 @@ func (c MainController) ConnectionSaveHandler(w http.ResponseWriter, r *http.Req
 }
 
 func (c MainController) EventListHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := c.getAuthedADBChapter(r)
+	user, _ := c.getAuthedADBUser(r)
 
 	err := r.ParseForm()
 	if err != nil {
@@ -1264,13 +1260,14 @@ func (c MainController) EventListHandler(w http.ResponseWriter, r *http.Request)
 	eventType := r.PostFormValue("event_type")
 
 	events, err := model.GetEventsJSON(c.db, model.GetEventOptions{
-		OrderBy:        "e.date DESC, e.id DESC",
-		DateFrom:       dateStart,
-		DateTo:         dateEnd,
-		EventType:      eventType,
-		EventNameQuery: eventName,
-		EventActivist:  eventActivist,
-		ChapterID:      chapter,
+		OrderBy:               "e.date DESC, e.id DESC",
+		DateFrom:              dateStart,
+		DateTo:                dateEnd,
+		EventType:             eventType,
+		EventNameQuery:        eventName,
+		EventActivist:         eventActivist,
+		ChapterID:             user.ChapterID,
+		IncludeAttendeeEmails: model.UserHasOrganizerAccess(user),
 	})
 
 	if err != nil {
@@ -1699,8 +1696,9 @@ func (c MainController) EventAttendanceCSVHandler(w http.ResponseWriter, r *http
 
 	chapter := c.getAuthedADBChapter(r)
 	event, err := model.GetEvent(c.db, model.GetEventOptions{
-		EventID:   eventID,
-		ChapterID: chapter,
+		EventID:               eventID,
+		ChapterID:             chapter,
+		IncludeAttendeeEmails: true,
 	})
 	if err != nil {
 		sendErrorMessage(w, err)

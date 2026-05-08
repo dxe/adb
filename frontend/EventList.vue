@@ -157,6 +157,7 @@
           <div class="media-content">
             <div class="content">
               <b-button
+                v-if="props.row.emailLink"
                 label="Email all attendees"
                 type="is-info"
                 icon-left="email"
@@ -165,7 +166,7 @@
                 target="_blank"
                 class="mb-3"
               ></b-button>
-              <br />
+              <br v-if="props.row.emailLink" />
               <b-button
                 label="Export attendee CSV"
                 type="is-info"
@@ -205,10 +206,10 @@ interface Event {
   event_date: string;
   event_type: string;
   attendees: string[];
-  attendee_emails: string[];
+  attendee_emails: string[] | null;
 
   // Populated locally.
-  emailLink: string;
+  emailLink: string | null;
   csvLink: string;
   showAttendees: boolean;
 }
@@ -299,8 +300,10 @@ export default Vue.extend({
           for (let event of events) {
             event.showAttendees = this.connections; // Show by default on connections list.
             event.emailLink =
-              'https://mail.google.com/mail/?view=cm&fs=1&bcc=' +
-              (event.attendee_emails || []).join(',');
+              event.attendee_emails && event.attendee_emails.length
+                ? 'https://mail.google.com/mail/?view=cm&fs=1&bcc=' +
+                  event.attendee_emails.map(encodeURIComponent).join(',')
+                : null;
             event.csvLink = '/csv/event_attendance/' + event.event_id;
           }
 
