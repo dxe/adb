@@ -86,5 +86,13 @@
   // Configure tool-specific properties.
   // "customizations": {},
 
-  "postCreateCommand": "bash /workspace/.devcontainer/post-create.sh"
+  "postCreateCommand": "bash /workspace/.devcontainer/post-create.sh",
+
+  // Persist Claude Code config (settings, credentials) across container rebuilds.
+  // Using ${devcontainerId} in the volume name scopes it to this project — each
+  // project gets its own isolated volume rather than sharing one across all devcontainers
+  // on the same Docker host.
+  "mounts": [
+    "source=claude-code-config-${devcontainerId},target=/home/vscode/.claude,type=volume"
+  ]
 }
