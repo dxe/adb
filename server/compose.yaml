@@ -2,7 +2,10 @@ name: dxe-adb
 
 services:
   mysql:
-    image: mysql:8
+    # Keep version in sync with:
+    # * server/src/testdb/mysql_container.go
+    # * .github/workflows/main.yml
+    image: mysql:8.4
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: localdev
