@@ -53,6 +53,14 @@
   },
   "customizations": {
     "vscode": {
+      "settings": {
+        // Bake the worktree folder name into the window title so two devcontainer
+        // windows are distinguishable. ${localWorkspaceFolderBasename} is a
+        // devcontainer variable substituted at container-create time with the
+        // literal folder name; the rest are VS Code window.title variables
+        // evaluated at runtime.
+        "window.title": "${localWorkspaceFolderBasename} — ${activeEditorShort}${separator}${appName}"
+      },
       "extensions": [
         "ms-vscode.makefile-tools",
         "golang.go",
