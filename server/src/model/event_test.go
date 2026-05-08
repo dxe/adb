@@ -67,7 +67,7 @@ func TestGetEvents(t *testing.T) {
 		}
 	}
 
-	gotEvents, err := GetEvents(db, GetEventOptions{})
+	gotEvents, err := GetEvents(db, GetEventOptions{IncludeAttendeeEmails: true})
 	require.NoError(t, err)
 
 	require.Len(t, wantEvents, 2)
@@ -82,6 +82,43 @@ func TestGetEvents(t *testing.T) {
 		gotEvents[i].EventDate = time.Time{}
 		require.EqualValues(t, wantEvents[i], gotEvents[i])
 	}
+}
+
+func TestGetEvents_includeAttendeeEmails(t *testing.T) {
+	db := testdb.NewDB()
+	defer db.Close()
+
+	a1, err := CreateActivist(db, ActivistExtra{Activist: Activist{
+		Name: "Hello", ChapterID: 1, Email: "test1@example.org", Phone: "123-456-7890",
+	}})
+	require.NoError(t, err)
+
+	d1, err := time.Parse("2006-01-02", "2017-01-15")
+	require.NoError(t, err)
+	_, err = InsertUpdateEvent(db, Event{
+		EventName:      "event one",
+		EventDate:      d1,
+		EventType:      "Working Group",
+		AddedAttendees: []Activist{{ID: a1, Name: "Hello", ChapterID: 1}},
+		ChapterID:      1,
+	})
+	require.NoError(t, err)
+
+	withEmails, err := GetEvents(db, GetEventOptions{IncludeAttendeeEmails: true})
+	require.NoError(t, err)
+	require.Len(t, withEmails, 1)
+	require.Equal(t, []string{"Hello"}, withEmails[0].Attendees)
+	require.Equal(t, []string{"test1@example.org"}, withEmails[0].AttendeeEmails)
+	require.Equal(t, []string{"123-456-7890"}, withEmails[0].AttendeePhones)
+
+	withoutEmails, err := GetEvents(db, GetEventOptions{})
+	require.NoError(t, err)
+	require.Len(t, withoutEmails, 1)
+	// By default the email column is dropped from the SQL query, so
+	// AttendeeEmails stays nil. Other attendee fields are still populated.
+	require.Equal(t, []string{"Hello"}, withoutEmails[0].Attendees)
+	require.Nil(t, withoutEmails[0].AttendeeEmails)
+	require.Equal(t, []string{"123-456-7890"}, withoutEmails[0].AttendeePhones)
 }
 
 func TestGetEvents_orderBy(t *testing.T) {

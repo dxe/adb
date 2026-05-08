@@ -97,6 +97,11 @@ type GetEventOptions struct {
 	EventActivist  string
 	SurveySent     string
 	SuppressSurvey string
+	// IncludeAttendeeEmails fetches the email column in the attendance
+	// query and populates Event.AttendeeEmails. By default emails are
+	// dropped at the SQL layer so they never leave the database — opt in
+	// only when the caller is authorized to see attendee PII.
+	IncludeAttendeeEmails bool
 }
 
 /** Functions and Methods */
@@ -218,11 +223,15 @@ ON (e.id = ea.event_id AND ea.activist_id = a.id)
 		eventIDToIndex[e.ID] = i
 	}
 
+	emailCol := "''"
+	if options.IncludeAttendeeEmails {
+		emailCol = "a.email"
+	}
 	attendanceQuery, attendanceArgs, err := sqlx.In(`
 SELECT
   ea.event_id,
   a.name as activist_name,
-  a.email as activist_email,
+  `+emailCol+` as activist_email,
   a.phone as activist_phone,
   a.id as activist_id
 FROM activists a
@@ -251,7 +260,9 @@ WHERE
 	for _, a := range allAttendance {
 		i := eventIDToIndex[a.EventID]
 		events[i].Attendees = append(events[i].Attendees, a.ActivistName)
-		events[i].AttendeeEmails = append(events[i].AttendeeEmails, a.ActivistEmail)
+		if options.IncludeAttendeeEmails {
+			events[i].AttendeeEmails = append(events[i].AttendeeEmails, a.ActivistEmail)
+		}
 		events[i].AttendeePhones = append(events[i].AttendeePhones, a.ActivistPhone)
 		events[i].AttendeeIDs = append(events[i].AttendeeIDs, a.ActivistID)
 	}

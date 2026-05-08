@@ -1143,7 +1143,7 @@ func (c MainController) ActivistMergeHandler(w http.ResponseWriter, r *http.Requ
 }
 
 func (c MainController) EventGetHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := c.getAuthedADBChapter(r)
+	user, _ := c.getAuthedADBUser(r)
 
 	rawID := mux.Vars(r)["event_id"]
 	eventID, err := strconv.Atoi(rawID)
@@ -1153,7 +1153,11 @@ func (c MainController) EventGetHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// We pass in the chapter ID to make sure people don't get events that don't belong to their chapter.
-	event, err := model.GetEvent(c.db, model.GetEventOptions{EventID: eventID, ChapterID: chapter})
+	event, err := model.GetEvent(c.db, model.GetEventOptions{
+		EventID:               eventID,
+		ChapterID:             user.ChapterID,
+		IncludeAttendeeEmails: model.UserHasOrganizerAccess(user),
+	})
 	if err != nil {
 		if errors.Is(err, model.ErrNotFound) {
 			transport.SendErrorMessage(w, http.StatusNotFound, err)
@@ -1241,7 +1245,7 @@ func (c MainController) ConnectionSaveHandler(w http.ResponseWriter, r *http.Req
 }
 
 func (c MainController) EventListHandler(w http.ResponseWriter, r *http.Request) {
-	chapter := c.getAuthedADBChapter(r)
+	user, _ := c.getAuthedADBUser(r)
 
 	err := r.ParseForm()
 	if err != nil {
@@ -1256,13 +1260,14 @@ func (c MainController) EventListHandler(w http.ResponseWriter, r *http.Request)
 	eventType := r.PostFormValue("event_type")
 
 	events, err := model.GetEventsJSON(c.db, model.GetEventOptions{
-		OrderBy:        "e.date DESC, e.id DESC",
-		DateFrom:       dateStart,
-		DateTo:         dateEnd,
-		EventType:      eventType,
-		EventNameQuery: eventName,
-		EventActivist:  eventActivist,
-		ChapterID:      chapter,
+		OrderBy:               "e.date DESC, e.id DESC",
+		DateFrom:              dateStart,
+		DateTo:                dateEnd,
+		EventType:             eventType,
+		EventNameQuery:        eventName,
+		EventActivist:         eventActivist,
+		ChapterID:             user.ChapterID,
+		IncludeAttendeeEmails: model.UserHasOrganizerAccess(user),
 	})
 
 	if err != nil {
@@ -1691,8 +1696,9 @@ func (c MainController) EventAttendanceCSVHandler(w http.ResponseWriter, r *http
 
 	chapter := c.getAuthedADBChapter(r)
 	event, err := model.GetEvent(c.db, model.GetEventOptions{
-		EventID:   eventID,
-		ChapterID: chapter,
+		EventID:               eventID,
+		ChapterID:             chapter,
+		IncludeAttendeeEmails: true,
 	})
 	if err != nil {
 		sendErrorMessage(w, err)
