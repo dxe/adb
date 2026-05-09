@@ -79,7 +79,7 @@ test-server:
 	cd server/src && go test ./...
 
 test-frontend:
-	cd frontend-v2 && pnpm test --run
+	. $(NVM_SCRIPT) && cd frontend-v2 && nvm use $(REACT_FRONTEND_NODE_VERSION) && pnpm test --run
 
 # Run golangci-lint on all Go modules.
 # TODO: Run linter automatically once existing lint errors are fixed.
