@@ -94,7 +94,7 @@ func augmentUserWithChapterFromSession(db *sqlx.DB, r *http.Request, adbUser mod
 		return adbUser, fmt.Errorf("failed to get chapter ID from session")
 	}
 
-	chapter, err := model.GetChapterWithTokenById(db, chapterID)
+	chapter, err := model.GetAdminChapterById(db, chapterID)
 	if err != nil {
 		return adbUser, fmt.Errorf("failed to get chapter by ID %d: %w", chapterID, err)
 	}
@@ -813,7 +813,7 @@ func (c MainController) ChapterSaveHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	chapJSON, err := model.GetChapterWithTokenById(c.db, chapID)
+	chapJSON, err := model.GetAdminChapterById(c.db, chapID)
 	if err != nil {
 		sendErrorMessage(w, err)
 		return
