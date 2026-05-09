@@ -4,6 +4,8 @@ import {
   QueryClient,
 } from '@tanstack/react-query'
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
+import { ArrowLeft } from 'lucide-react'
 import { ContentWrapper } from '@/app/content-wrapper'
 import { API_PATH, ApiClient } from '@/lib/api'
 import { getCookies } from '@/lib/auth'
@@ -35,6 +37,15 @@ export default async function ActivistPage({
 
   return (
     <ContentWrapper size="lg" className="gap-6">
+      <div className="flex items-center gap-3">
+        <Link
+          href="/activists"
+          className="flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          View all Activists
+        </Link>
+      </div>
       <HydrationBoundary state={dehydrate(queryClient)}>
         <ActivistDetail activistId={activistId} />
       </HydrationBoundary>

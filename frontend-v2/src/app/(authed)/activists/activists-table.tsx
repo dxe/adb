@@ -28,6 +28,7 @@ interface ActivistTableProps {
   visibleColumns: ActivistColumnName[]
   sort: SortColumn[]
   onSortChange: (sort: SortColumn[]) => void
+  onActivistClick?: (id: number) => void
   isStale?: boolean
 }
 
@@ -36,6 +37,7 @@ export function ActivistTable({
   visibleColumns,
   sort,
   onSortChange,
+  onActivistClick,
   isStale = false,
 }: ActivistTableProps) {
   const columns = useMemo<ColumnDef<ActivistJSON>[]>(() => {
@@ -86,17 +88,25 @@ export function ActivistTable({
         cell: ({ row }) => {
           if (colName === 'name') {
             const displayName = getActivistDisplayName(row.original)
+            const nameClass = `truncate text-sm text-primary hover:underline ${
+              displayName.isPlaceholder ? 'italic text-muted-foreground' : ''
+            }`
             return (
-              <IntentPrefetchLink
-                href={`/activists/${row.original.id}`}
-                className={`truncate text-sm text-primary hover:underline ${
-                  displayName.isPlaceholder
-                    ? 'italic text-muted-foreground'
-                    : ''
-                }`}
+              <a
+                href={`/v2/activists/${row.original.id}`}
+                className={nameClass}
+                onClick={
+                  onActivistClick
+                    ? (e) => {
+                        if (e.ctrlKey || e.metaKey || e.shiftKey) return
+                        e.preventDefault()
+                        onActivistClick(row.original.id)
+                      }
+                    : undefined
+                }
               >
                 {displayName.text}
-              </IntentPrefetchLink>
+              </a>
             )
           }
 
@@ -117,7 +127,7 @@ export function ActivistTable({
         },
       }
     })
-  }, [visibleColumns, sort, onSortChange, isStale])
+  }, [visibleColumns, sort, onSortChange, onActivistClick, isStale])
 
   const table = useReactTable({
     data: activists,
@@ -197,53 +207,70 @@ export function ActivistTable({
       <div className="flex flex-col gap-4 md:hidden">
         {activists.map((activist) => {
           const displayName = getActivistDisplayName(activist)
+          const cardClass = `block rounded-lg border bg-card p-4 transition-opacity hover:border-primary/50 text-left w-full ${
+            isStale ? 'opacity-60' : ''
+          }`
+          const cardContent = (
+            <div className="flex flex-col gap-2">
+              {visibleColumns.map((colName) => {
+                const definition = COLUMN_DEFINITION_BY_NAME[colName]
+                const label = definition?.label || colName
+                const isBool = COLUMN_TYPE_BY_NAME[colName] === 'boolean'
+                const rawValue = activist[colName as keyof ActivistJSON]
+                const formattedValue = isBool
+                  ? null
+                  : colName === 'name'
+                    ? displayName.text
+                    : formatValue(rawValue, colName)
 
-          return (
+                return (
+                  <div key={colName} className="flex justify-between gap-2">
+                    <span className="text-sm font-medium text-muted-foreground">
+                      {label}:
+                    </span>
+                    {isBool ? (
+                      rawValue ? (
+                        <Check className="h-4 w-4 text-foreground" />
+                      ) : (
+                        <Minus className="h-4 w-4 text-muted-foreground" />
+                      )
+                    ) : (
+                      <span
+                        className={`text-sm ${
+                          colName === 'name' && displayName.isPlaceholder
+                            ? 'italic text-muted-foreground'
+                            : ''
+                        }`}
+                      >
+                        {formattedValue}
+                      </span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )
+
+          return onActivistClick ? (
+            <a
+              key={activist.id}
+              href={`/v2/activists/${activist.id}`}
+              className={cardClass}
+              onClick={(e) => {
+                if (e.ctrlKey || e.metaKey || e.shiftKey) return
+                e.preventDefault()
+                onActivistClick(activist.id)
+              }}
+            >
+              {cardContent}
+            </a>
+          ) : (
             <IntentPrefetchLink
               key={activist.id}
               href={`/activists/${activist.id}`}
-              className={`block rounded-lg border bg-card p-4 transition-opacity hover:border-primary/50 ${
-                isStale ? 'opacity-60' : ''
-              }`}
+              className={cardClass}
             >
-              <div className="flex flex-col gap-2">
-                {visibleColumns.map((colName) => {
-                  const definition = COLUMN_DEFINITION_BY_NAME[colName]
-                  const label = definition?.label || colName
-                  const isBool = COLUMN_TYPE_BY_NAME[colName] === 'boolean'
-                  const rawValue = activist[colName as keyof ActivistJSON]
-                  const formattedValue = isBool
-                    ? null
-                    : colName === 'name'
-                      ? displayName.text
-                      : formatValue(rawValue, colName)
-
-                  return (
-                    <div key={colName} className="flex justify-between gap-2">
-                      <span className="text-sm font-medium text-muted-foreground">
-                        {label}:
-                      </span>
-                      {isBool ? (
-                        rawValue ? (
-                          <Check className="h-4 w-4 text-foreground" />
-                        ) : (
-                          <Minus className="h-4 w-4 text-muted-foreground" />
-                        )
-                      ) : (
-                        <span
-                          className={`text-sm ${
-                            colName === 'name' && displayName.isPlaceholder
-                              ? 'italic text-muted-foreground'
-                              : ''
-                          }`}
-                        >
-                          {formattedValue}
-                        </span>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
+              {cardContent}
             </IntentPrefetchLink>
           )
         })}

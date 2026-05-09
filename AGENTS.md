@@ -8,7 +8,7 @@ Background context on how the stack fits together.
 
 ### frontend/backend routing
 
-- The Go server reverse-proxies `/v2/*` to the Next.js app in `./frontend-v2` (see `proxyHandler` in `server/src/main.go`). Next.js itself is unaware of this prefix — its routes start at `/`, so internal links and route definitions should never include `/v2`. For example, link to `/activists/123`, not `/v2/activists/123`.
+- The Go server reverse-proxies `/v2/*` to the Next.js app in `./frontend-v2` (see `proxyHandler` in `server/src/main.go`). Next.js has `basePath: '/v2'` configured (`next.config.ts`), so it automatically prepends `/v2` to all routes. Next.js navigation (`<Link href>`, `router.push()`, `redirect()`, and route definitions) must therefore omit the `/v2` prefix — Next.js adds it. For example, `<Link href="/activists/123">`, not `<Link href="/v2/activists/123">`.
 - The Go API lives at the same origin. The `ApiClient` in `frontend-v2/src/lib/api.ts` calls paths like `api/activists`, `event/get`, etc. directly without a `/v2` prefix.
 
 ## frontend
