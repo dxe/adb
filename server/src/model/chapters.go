@@ -134,14 +134,14 @@ func GetChaptersWithEventbriteTokens(db *sqlx.DB) ([]ChapterWithToken, error) {
 
 // for the chapter management admin page on the ADB itself – NOTE THAT THIS RETURNS TOKENS, SO IT SHOULD NOT BE MADE PUBLIC
 func GetAllChapters(db *sqlx.DB) ([]ChapterWithToken, error) {
-	query := `SELECT fb_pages.id, chapter_id, fb_pages.name, flag, fb_url, twitter_url, insta_url, email, region, fb_pages.lat, fb_pages.lng, token, fb_pages.eventbrite_id, eventbrite_token, ml_type, ml_radius, ml_id,
-	
+	query := `SELECT chapter_id, fb_pages.name, flag, fb_url, twitter_url, insta_url, email, region, fb_pages.lat, fb_pages.lng,
+
 		@last_update := IFNULL((
 		  SELECT MAX(last_update) AS last_update
 		  FROM fb_events
-		  WHERE fb_pages.id = fb_events.page_id    
+		  WHERE fb_pages.id = fb_events.page_id
 		), "") AS last_update,
-		
+
 		@last_fb_event := IFNULL((
 		  SELECT DATE(MAX(fb_events.start_time)) AS start_time
 		  FROM fb_events
@@ -150,7 +150,7 @@ func GetAllChapters(db *sqlx.DB) ([]ChapterWithToken, error) {
 		), "") AS last_fb_event,
 
 		mentor, country, notes, last_contact, last_action, organizers, last_checkin_email_sent, IFNULL(email_token,"") as email_token
-		
+
 		FROM fb_pages
 		ORDER BY name`
 	var pages []ChapterWithToken
@@ -164,15 +164,15 @@ func GetAllChapters(db *sqlx.DB) ([]ChapterWithToken, error) {
 }
 
 // for the chapter management admin page on the ADB itself
-func GetChapterWithTokenById(db *sqlx.DB, id int) (ChapterWithToken, error) {
-	query := `SELECT fb_pages.id, chapter_id, fb_pages.name, flag, fb_url, twitter_url, insta_url, email, region, fb_pages.lat, fb_pages.lng, token, fb_pages.eventbrite_id, eventbrite_token, ml_type, ml_radius, ml_id,
-	
+func GetAdminChapterById(db *sqlx.DB, id int) (ChapterWithToken, error) {
+	query := `SELECT chapter_id, fb_pages.name, flag, fb_url, twitter_url, insta_url, email, region, fb_pages.lat, fb_pages.lng,
+
 		@last_update := IFNULL((
 		  SELECT MAX(last_update) AS last_update
 		  FROM fb_events
-		  WHERE fb_pages.id = fb_events.page_id    
+		  WHERE fb_pages.id = fb_events.page_id
 		), "") AS last_update,
-		
+
 		@last_fb_event := IFNULL((
 		  SELECT DATE(MAX(fb_events.start_time)) AS start_time
 		  FROM fb_events
@@ -181,7 +181,7 @@ func GetChapterWithTokenById(db *sqlx.DB, id int) (ChapterWithToken, error) {
 		), "") AS last_fb_event,
 
 		mentor, country, notes, last_contact, last_action, organizers, last_checkin_email_sent, IFNULL(email_token,"") as email_token
-		
+
 		FROM fb_pages
 		WHERE chapter_id = ?`
 	var pages []ChapterWithToken
@@ -201,8 +201,7 @@ func GetChapterWithTokenById(db *sqlx.DB, id int) (ChapterWithToken, error) {
 // for the chapter management admin page on the ADB itself
 func UpdateChapter(db *sqlx.DB, page ChapterWithToken) (int, error) {
 	_, err := db.NamedExec(`UPDATE fb_pages
-		SET id = :id,
-		name = :name,
+		SET name = :name,
 		flag = :flag,
 		fb_url = :fb_url,
 		insta_url = :insta_url,
@@ -211,12 +210,6 @@ func UpdateChapter(db *sqlx.DB, page ChapterWithToken) (int, error) {
 		region = :region,
 		lat = :lat,
 		lng = :lng,
-		token = :token,
-		eventbrite_id = :eventbrite_id,
-		eventbrite_token = :eventbrite_token,
-		ml_type = :ml_type,
-		ml_radius = :ml_radius,
-		ml_id = :ml_id,
 		mentor = :mentor,
 		country = :country,
 		notes = :notes,
@@ -255,8 +248,8 @@ func DeleteChapter(db *sqlx.DB, chapter int) error {
 
 // for the chapter management admin page on the ADB itself
 func InsertChapter(db *sqlx.DB, page ChapterWithToken) (int, error) {
-	res, err := db.NamedExec(`INSERT INTO fb_pages ( id, name, flag, fb_url, insta_url, twitter_url, email, region, lat, lng, mentor, country, notes, last_contact, last_action, organizers, email_token, ml_type, ml_radius, ml_id )
-		VALUES ( :id, :name, :flag, :fb_url, :insta_url, :twitter_url, :email, :region, :lat, :lng, :mentor, :country, :notes, :last_contact, :last_action, :organizers, :email_token, :ml_type, :ml_radius, :ml_id )`, page)
+	res, err := db.NamedExec(`INSERT INTO fb_pages ( name, flag, fb_url, insta_url, twitter_url, email, region, lat, lng, mentor, country, notes, last_contact, last_action, organizers, email_token )
+		VALUES ( :name, :flag, :fb_url, :insta_url, :twitter_url, :email, :region, :lat, :lng, :mentor, :country, :notes, :last_contact, :last_action, :organizers, :email_token )`, page)
 	if err != nil {
 		return 0, errors.Wrapf(err, "failed to insert chapter %d", page.ID)
 	}

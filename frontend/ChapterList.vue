@@ -341,69 +341,6 @@
             </div>
           </div>
 
-          <div class="columns is-multiline" v-if="showMoreOptions">
-            <div class="column is-full">
-              <b-field label="Advanced Options" custom-class="has-text-primary"></b-field>
-            </div>
-            <div class="column is-one-quarter">
-              <b-field label="Facebook ID" label-position="on-border">
-                <b-input type="number" maxlength="16" v-model.number="currentChapter.ID" />
-              </b-field>
-            </div>
-            <div class="column is-one-quarter">
-              <b-field label="Facebook Token" label-position="on-border">
-                <b-input type="text" maxlength="500" v-model.trim="currentChapter.Token" />
-              </b-field>
-            </div>
-            <div class="column is-one-quarter">
-              <b-field label="Eventbrite ID" label-position="on-border">
-                <b-input type="number" maxlength="16" v-model.trim="currentChapter.EventbriteID" />
-              </b-field>
-            </div>
-            <div class="column is-one-quarter">
-              <b-field label="Eventbrite Token" label-position="on-border">
-                <b-input
-                  type="text"
-                  maxlength="200"
-                  v-model.trim="currentChapter.EventbriteToken"
-                />
-              </b-field>
-            </div>
-            <div class="column is-one-third">
-              <b-field label="Mailing List Type" label-position="on-border">
-                <b-select v-model="currentChapter.MailingListType" expanded>
-                  <option
-                    v-for="t in [
-                      { value: '', text: 'None' },
-                      { value: 'Sendy', text: 'Sendy' },
-                      { value: 'SendGrid', text: 'SendGrid' },
-                      { value: 'Google Groups', text: 'Google Groups' },
-                    ]"
-                    :value="t.value"
-                    :key="t.value"
-                  >
-                    {{ t.text }}
-                  </option>
-                </b-select>
-              </b-field>
-            </div>
-            <div class="column is-one-third">
-              <b-field label="Mailing List ID" label-position="on-border">
-                <b-input type="text" maxlength="100" v-model.trim="currentChapter.MailingListID" />
-              </b-field>
-            </div>
-            <div class="column is-one-third">
-              <b-field label="Mailing List Radius" label-position="on-border">
-                <b-input
-                  type="number"
-                  min="0"
-                  max="300"
-                  v-model.number="currentChapter.MailingListRadius"
-                />
-              </b-field>
-            </div>
-          </div>
-
           <b-field label="Organizers" custom-class="has-text-primary">
             <p v-if="!currentChapter.ChapterID">
               Please save the new chapter before adding organizers.
@@ -495,27 +432,16 @@
             v-if="currentChapter.ChapterID"
           ></b-button>
         </section>
-        <footer class="modal-card-foot is-flex is-justify-content-space-between">
-          <div>
-            <b-button label="Cancel" @click="hideModal" icon-left="cancel" class="mb-2" />
-            <b-button
-              label="Save"
-              type="is-primary"
-              native-type="submit"
-              :disabled="disableConfirmButton"
-              @click="confirmEditChapterModal"
-              icon-left="floppy"
-            />
-          </div>
-          <div>
-            <b-button
-              label="Advanced options"
-              type="is-warning"
-              @click="toggleShowMoreOptions"
-              class="right"
-              icon-left="wrench"
-            />
-          </div>
+        <footer class="modal-card-foot">
+          <b-button label="Cancel" @click="hideModal" icon-left="cancel" class="mb-2" />
+          <b-button
+            label="Save"
+            type="is-primary"
+            native-type="submit"
+            :disabled="disableConfirmButton"
+            @click="confirmEditChapterModal"
+            icon-left="floppy"
+          />
         </footer>
       </div>
     </b-modal>
@@ -616,15 +542,8 @@ interface Chapter {
   Region: string;
   Lat: number;
   Lng: number;
-  MailingListType: string;
-  MailingListRadius: number;
-  MailingListID: string;
-  ID: number; // Facebook ID
-  Token: string;
   LastFBSync: string;
   LastFBEvent: string;
-  EventbriteID: string;
-  EventbriteToken: string;
   Mentor: string;
   Country: string;
   Notes: string;
@@ -752,7 +671,6 @@ export default Vue.extend({
       this.currentModalName = '';
       this.currentChapter = {} as Chapter;
       this.currentChapterIndex = -1;
-      this.showMoreOptions = false;
     },
     confirmEditChapterModal() {
       if (!this.currentChapter.Name) {
@@ -900,9 +818,6 @@ export default Vue.extend({
       const index = this.currentChapter.Organizers.indexOf(o);
       this.currentChapter.Organizers.splice(index, 1);
     },
-    toggleShowMoreOptions() {
-      this.showMoreOptions = !this.showMoreOptions;
-    },
     setDateToToday(field: string) {
       if (field === 'LastContact') {
         this.currentChapter.LastContactParsed = dayjs().toDate();
@@ -980,7 +895,6 @@ export default Vue.extend({
       showFacebookColumns: false,
       disableConfirmButton: false,
       currentModalName: '',
-      showMoreOptions: false,
       mentorFilter: 'All',
       filterName: '',
       loading: true,

@@ -9,25 +9,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetChapterWithTokenByID(t *testing.T) {
+func TestGetAdminChapterByID(t *testing.T) {
 	db := testdb.NewDB()
 	defer db.Close()
 
 	id, insErr := InsertChapter(db, ChapterWithToken{
 		Name: "FooChapter",
-		ID:   999, // Facebook page ID
 	})
 	if insErr != nil {
 		t.Fatalf("error inserting chapter: %v", insErr)
 	}
 
-	chapter, getErr := GetChapterWithTokenById(db, id)
+	chapter, getErr := GetAdminChapterById(db, id)
 	if getErr != nil {
 		t.Fatalf("error getting chapter: %v", getErr)
 	}
 
 	require.Equal(t, "FooChapter", chapter.Name)
-	require.Equal(t, 999, chapter.ID) // Facebook page ID
 }
 
 func TestGetChapterByID(t *testing.T) {
@@ -35,22 +33,28 @@ func TestGetChapterByID(t *testing.T) {
 	defer db.Close()
 
 	id, insErr := InsertChapter(db, ChapterWithToken{
-		ID:                999,
-		Name:              "FooChapter",
-		Flag:              "x",
-		FbURL:             "fb-foo",
-		TwitterURL:        "tw-foo",
-		InstaURL:          "ig-foo",
-		Email:             "foo@example.org",
-		Region:            "North America",
-		Lat:               0.01,
-		Lng:               0.02,
-		MailingListType:   "mailfoo",
-		MailingListRadius: 10,
-		MailingListID:     "12348",
+		Name:       "FooChapter",
+		Flag:       "x",
+		FbURL:      "fb-foo",
+		TwitterURL: "tw-foo",
+		InstaURL:   "ig-foo",
+		Email:      "foo@example.org",
+		Region:     "North America",
+		Lat:        0.01,
+		Lng:        0.02,
 	})
 	if insErr != nil {
 		t.Fatalf("error inserting chapter: %v", insErr)
+	}
+
+	// InsertChapter does not set Facebook page ID and mailing list fields as it
+	// is designed for the UI.
+	_, err := db.Exec(
+		`UPDATE fb_pages SET id = 999, ml_type = 'mailfoo', ml_radius = 10, ml_id = '12348' WHERE chapter_id = ?`,
+		id,
+	)
+	if err != nil {
+		t.Fatalf("error setting chapter fields: %v", err)
 	}
 
 	chapter, getErr := GetChapterById(db, id)

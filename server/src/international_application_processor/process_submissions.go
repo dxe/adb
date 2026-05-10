@@ -73,7 +73,7 @@ func getNearestChapterOrNil(db *sqlx.DB, formData model.InternationalFormData) (
 
 	if nearestChapter != nil {
 		// `GetChapterByID` returns more details about the chapter than `FindNearestChapters`.
-		*nearestChapter, err = model.GetChapterWithTokenById(db, nearestChapter.ChapterID)
+		*nearestChapter, err = model.GetAdminChapterById(db, nearestChapter.ChapterID)
 		if err != nil {
 			return nil, errors.Wrap(err, "error fetching chapter: %w")
 		}
