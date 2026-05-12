@@ -1,4 +1,4 @@
-.PHONY: run_all run watch test test-server test-frontend lint clean prod_build deps dev_db fmt go_mod_sync
+.PHONY: run_all run watch test test-server test-frontend lint clean prod_build deps dev_db fmt go_mod_sync _go_mod_sync
 
 # When not using devcontainer, NVM initialization script may be located in home
 # directory. In the devcontainer, it is in /usr/local/share/nvm/.
@@ -63,10 +63,16 @@ deps:
 	cd server/src && go mod download
 	cd cli && go mod download
 	go install -tags 'mysql' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+	$(MAKE) go_mod_sync
 
-# Normalize module/workspace metadata across all Go modules. If go.mod/go.sum
-# files are still changing after one run, run this target a second time.
+# Normalize module/workspace metadata across all Go modules. Runs twice
+# because workspace-level resolution can surface new transitive deps that
+# require a second pass to stabilize go.mod/go.sum.
 go_mod_sync:
+	$(MAKE) _go_mod_sync
+	$(MAKE) _go_mod_sync
+
+_go_mod_sync:
 	cd pkg && GOWORK=off go mod tidy
 	cd cli && GOWORK=off go mod tidy
 	cd server/src && GOWORK=off go mod tidy

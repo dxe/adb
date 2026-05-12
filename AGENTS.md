@@ -37,6 +37,11 @@ Rules regarding Go server in ./server
 - Scope: `server/**/*.go`
 - Rule: Build the Go server with `cd server/src && go build ./...`
 
+### go-deps-sync
+
+- Scope: `**/go.mod`, `**/go.sum`, `go.work`, `go.work.sum`
+- Rule: After adding or updating Go dependencies in any module (`pkg`, `cli`, `server/src`), run `make go_mod_sync`. This ensures all transitive dependency hashes are fully resolved at both the individual module and workspace levels.
+
 ### go-backend-error-wrapping
 
 - Scope: `server/**/*.go`
