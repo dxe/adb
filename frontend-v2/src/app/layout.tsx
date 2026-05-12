@@ -32,7 +32,7 @@ export default async function RootLayout({
         <meta name="csrf-token" content={await fetchCsrfToken()} />
       </head>
       {/* Top padding is to make room for the fixed navbar. */}
-      <body className="antialiased">
+      <body className="antialiased h-dvh flex flex-col">
         <SiteBackgroundController />
         {/*
           Bottom padding uses inline style because Safari doesn't respect
@@ -40,7 +40,7 @@ export default async function RootLayout({
           Inline styles work reliably across all browsers.
         */}
         <div
-          className="pt-[3.25rem] min-h-screen"
+          className="pt-[3.25rem] flex-1 min-h-0 flex flex-col overflow-y-auto"
           style={{ paddingBottom: '3rem' }}
         >
           <Providers>{children}</Providers>

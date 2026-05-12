@@ -7,7 +7,7 @@ const contentWrapperClass = {
   lg: 'lg:max-w-screen-lg',
   xl: 'lg:max-w-screen-xl',
   '2xl': 'lg:max-w-screen-2xl',
-  full: 'lg:max-w-none lg:mt-0 lg:mx-0 lg:rounded-none shadow-none bg-opacity-100',
+  full: 'lg:max-w-none lg:mt-0 lg:mx-0 lg:rounded-none shadow-none bg-opacity-100 md:flex-1 md:min-h-0',
 }
 
 /**

@@ -165,7 +165,7 @@ export default function ActivistsPage({
 
   return (
     <>
-      <div className="flex flex-col gap-6">
+      <div className="flex-1 min-h-0 flex flex-col gap-6">
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-semibold">Activists</h1>
         </div>
