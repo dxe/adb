@@ -172,19 +172,31 @@
       "items": [
         {
           "label": "All Activists",
-          "href": "/v2/activists",
+          "href": "/v2/activists?columns=pronouns,email,phone,activist_level,location,city",
           "page": "ActivistListV2",
           "visibleForNonSFBay": true
         },
         {
           "label": "Chapter Members",
-          "href": "/v2/activists?level=chapter-member,organizer&columns=activist_level,total_events,last_event,training0",
+          "href": "/v2/activists?columns=preferred_name,pronouns,email,phone,activist_level,total_events,months_since_last_action,mpp_requirements,mpi,geo_circles,cm_approval_email,vision_wall,voting_agreement,notes,hiatus&level=chapter-member,organizer",
+          "page": "ActivistListV2",
+          "visibleForNonSFBay": false
+        },
+        {
+          "label": "Organizers",
+          "href": "/v2/activists?columns=/v2/activists?columns=pronouns,mpi,training1,training4,training5,training6,dev_quiz,connector,last_connection,notes&level=organizer",
+          "page": "ActivistListV2",
+          "visibleForNonSFBay": false
+        },
+        {
+          "label": "Leaderboard",
+          "href": "/v2/activists?lastEvent=-30..&columns=pronouns,activist_level,total_events,first_event,first_event_name,last_event,last_event_name,total_points,mpi&sort=-total_events",
           "page": "ActivistListV2",
           "visibleForNonSFBay": false
         },
         {
           "label": "New Activists",
-          "href": "/v2/activists?lastEvent=-180..&totalEvents=..4&columns=activist_level,total_events,first_event,last_event,source&sort=-last_event",
+          "href": "/v2/activists?columns=pronouns,email,phone,facebook,activist_level,total_events,first_event,last_event,mpi,source&lastEvent=-180..&totalEvents=..4&sort=-last_event",
           "page": "ActivistListV2",
           "visibleForNonSFBay": true
         },
