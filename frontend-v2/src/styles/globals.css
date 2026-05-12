@@ -4,10 +4,6 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  scrollbar-gutter: stable;
-}
-
 body.with-site-bg {
   background:
     linear-gradient(rgba(80, 90, 170, 0.85), rgba(80, 90, 170, 0.85)),
@@ -16,21 +12,6 @@ body.with-site-bg {
   -moz-background-size: cover;
   -o-background-size: cover;
   background-size: cover;
-}
-
-html {
-  /* Reduce jitter when Shadcn <Select> component displays a modal that hides the scrollbar.
-     See below `html body[data-scroll-locked]` for details. */
-  scrollbar-gutter: stable;
-}
-
-/* Reduce jitter when Shadcn <Select> component displays a modal that hides the scrollbar.
-   Requires `scrollbar-gutter: stable;` on `html`.
-   This prevents the entire page from widening when the scrollbar disappears. Other jitter issues may remain.
-   https://github.com/radix-ui/primitives/issues/1496#issuecomment-1962839229 */
-html body[data-scroll-locked] {
-  --removed-body-scroll-bar-size: 0 !important;
-  margin-right: 0 !important;
 }
 
 @layer base {
