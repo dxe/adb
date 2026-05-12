@@ -19,6 +19,7 @@ Rules regarding the Next.js app in ./frontend-v2 and legacy Vue app in ./fronten
 
 - Scope: ./frontend and ./frontend-v2
 - Rule: After modifying files, run `pnpx prettier <filename> --write`
+- Example: `pnpx prettier 'frontend-v2/src/app/login/page.tsx' --write`
 
 ### frontend-v2-typecheck-and-lint
 
