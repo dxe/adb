@@ -165,6 +165,7 @@ export default function ActivistsPage({
 
   return (
     <>
+      {/* Bounded-height flex chain link (md+) — see frontend-v2/docs/patterns/bounded-height-flex-chain.md */}
       <div className="md:flex-1 md:min-h-0 flex flex-col gap-6">
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-semibold">Activists</h1>

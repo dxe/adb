@@ -10,6 +10,9 @@ const contentWrapperClass = {
   // On full size pages, there is no background to show, so don't add any
   // margin (mb-0). ContentWrapper already provides padding so content is not
   // flush against the bottom of the viewport.
+  //
+  // `md:flex-1 md:min-h-0` is a bounded-height flex chain link (md+).
+  // See frontend-v2/docs/patterns/bounded-height-flex-chain.md
   full: 'lg:max-w-none lg:mt-0 lg:mx-0 lg:rounded-none shadow-none bg-opacity-100 md:flex-1 md:min-h-0 mb-0',
 }
 

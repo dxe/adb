@@ -18,10 +18,11 @@ interface StickyHeaderTableProps extends React.ComponentProps<typeof Table> {
  * Short tables size to their content; tall tables cap at the parent's
  * height and scroll internally, so they don't push the page.
  *
- * Usage requirement: must be rendered inside a flex column with a bounded
- * height, e.g. `<div className="flex flex-col flex-1 min-h-0">`. Without
- * that, the viewport has no definite height to cap against and the sticky
- * header has no scroll range to pin to.
+ * Usage requirement: must be rendered as the consumer of a bounded-height
+ * flex chain — i.e. inside a `<div className="flex flex-col flex-1 min-h-0">`
+ * whose ancestors all opt in. Without that, the viewport has no definite
+ * height to cap against and the sticky header has no scroll range to pin to.
+ * See frontend-v2/docs/patterns/bounded-height-flex-chain.md
  */
 export function StickyHeaderTable({
   footer,

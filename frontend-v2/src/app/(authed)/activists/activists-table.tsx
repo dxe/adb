@@ -149,6 +149,11 @@ export function ActivistTable({
   return (
     <>
       {/* Desktop table */}
+      {/*
+        Bounded-height flex chain link (md+) — see frontend-v2/docs/patterns/bounded-height-flex-chain.md
+        `self-start` keeps the table at its natural width (set inline from
+        `table.getTotalSize()`) instead of stretching to fill the column.
+      */}
       <div
         className={`hidden max-w-full flex-1 min-h-0 flex-col self-start transition-opacity md:flex ${
           isStale ? 'opacity-60' : ''
