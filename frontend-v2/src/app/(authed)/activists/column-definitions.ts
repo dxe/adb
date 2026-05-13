@@ -78,26 +78,32 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   { name: 'chapter_name', label: 'Chapter', category: 'Basic Info' },
 
   // Basic Info
-  { name: 'name', label: 'Name', category: 'Basic Info' },
+  { name: 'name', label: 'Name', category: 'Basic Info', defaultWidth: 200 },
   {
     name: 'preferred_name',
     label: 'Preferred Name',
     category: 'Basic Info',
     description: 'First name or nickname, may be used for SMS',
-    defaultWidth: 90,
+    defaultWidth: 150,
   },
   {
     name: 'pronouns',
     label: 'Pronouns',
     category: 'Basic Info',
-    defaultWidth: 50,
+    defaultWidth: 75,
   },
-  { name: 'email', label: 'Email', category: 'Basic Info', linkType: 'mailto' },
+  {
+    name: 'email',
+    label: 'Email',
+    category: 'Basic Info',
+    linkType: 'mailto',
+    defaultWidth: 300,
+  },
   {
     name: 'phone',
     label: 'Phone',
     category: 'Basic Info',
-    defaultWidth: 100,
+    defaultWidth: 150,
     linkType: 'tel',
   },
   {
@@ -126,7 +132,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     name: 'accessibility',
     label: 'Accessibility',
     category: 'Basic Info',
-    defaultWidth: 50,
+    defaultWidth: 100,
   },
   {
     name: 'language',
@@ -141,13 +147,13 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     name: 'street_address',
     label: 'Street Address',
     category: 'Location',
-    defaultWidth: 100,
+    defaultWidth: 200,
   },
   {
     name: 'city',
     label: 'City',
     category: 'Location',
-    defaultWidth: 100,
+    defaultWidth: 150,
   },
   {
     name: 'state',
@@ -227,13 +233,14 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     label: 'Active',
     category: 'Event Attendance',
     blankValue: false,
+    defaultWidth: 75,
   },
   { name: 'status', label: 'Status', category: 'Event Attendance' },
   {
     name: 'mpp_requirements',
     label: 'DA&C Current Month',
     category: 'Event Attendance',
-    defaultWidth: 80,
+    defaultWidth: 230,
     description:
       'Attended both a Direct Action & a Community event in current month (historical requirement for MPP)',
   },
@@ -358,7 +365,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     name: 'assigned_to_name',
     label: 'Assigned To',
     category: 'Prospect Info',
-    defaultWidth: 100,
+    defaultWidth: 200,
   },
   {
     name: 'followup_date',
@@ -404,20 +411,20 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     name: 'referral_friends',
     label: 'Close Ties',
     category: 'Referral Info',
-    defaultWidth: 100,
+    defaultWidth: 200,
   },
   {
     name: 'referral_apply',
     label: 'Referral',
     category: 'Referral Info',
-    defaultWidth: 100,
+    defaultWidth: 200,
     description: '"Who encouraged you to sign up?"',
   },
   {
     name: 'referral_outlet',
     label: 'Referral Outlet',
     category: 'Referral Info',
-    defaultWidth: 100,
+    defaultWidth: 200,
     description: '"How did you hear about DxE?"',
   },
 
@@ -490,7 +497,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     name: 'notes',
     label: 'Notes',
     category: 'Other',
-    defaultWidth: 100,
+    defaultWidth: 300,
     editInputType: 'textarea',
   },
   {
