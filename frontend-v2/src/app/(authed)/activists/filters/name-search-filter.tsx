@@ -25,6 +25,7 @@ export function NameSearchFilter({
       placeholder="Search activists by name..."
       value={nameInput}
       onChange={(e) => setNameInput(e.target.value)}
+      className="max-w-[400px]"
     />
   )
 }
