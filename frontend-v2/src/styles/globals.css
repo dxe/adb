@@ -4,6 +4,34 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Dev-only: amber tint distinguishes dev from production across all surfaces */
+html[data-env='development']:not([data-dev-colors-off]) {
+  --background: 48 100% 96%; /* amber-50 page body background */
+}
+html[data-env='development']:not([data-dev-colors-off]) .content-wrapper {
+  background-color: #fffbeb; /* amber-50 content panels */
+}
+html[data-env='development']:not([data-dev-colors-off]) #mainNav {
+  background-color: #fcd34d; /* amber-300 navbar */
+  box-shadow: 0 2px 0 0 #f59e0b; /* amber-500 shadow */
+}
+html[data-env='development']:not([data-dev-colors-off])
+  #mainNav
+  [class*='navbar-dropdown'] {
+  background-color: #fef9c3; /* yellow-100 dropdown panels */
+}
+html[data-env='development']:not([data-dev-colors-off])
+  #mainNav
+  [class*='navbar-menu'] {
+  background-color: #fcd34d; /* amber-300 mobile expanded menu */
+}
+html[data-env='development']:not([data-dev-colors-off]) body.with-site-bg {
+  background:
+    linear-gradient(rgba(160, 90, 20, 0.85), rgba(160, 90, 20, 0.85)),
+    url('/v2/bg.jpg') no-repeat center center fixed;
+  background-size: cover;
+}
+
 body.with-site-bg {
   background:
     linear-gradient(rgba(80, 90, 170, 0.85), rgba(80, 90, 170, 0.85)),

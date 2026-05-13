@@ -33,7 +33,7 @@ export const ContentWrapper = (props: {
   return (
     <div
       className={cn(
-        'bg-white w-full py-6 px-4 md:px-10 mb-12 flex flex-col',
+        'content-wrapper bg-white w-full py-6 px-4 md:px-10 mb-12 flex flex-col',
         props.size === 'full'
           ? contentWrapperClass.full
           : 'lg:rounded-md shadow-2xl backdrop-blur-md bg-opacity-95 lg:mt-6 lg:mx-auto',

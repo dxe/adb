@@ -272,6 +272,14 @@ export const Navbar = () => {
         buefyStyles['has-shadow'],
       )}
       id="mainNav"
+      // Double clicking navbar toggles dev color scheme, allowing user to take
+      // prod-like screenshots.
+      onDoubleClick={
+        process.env.NODE_ENV === 'development'
+          ? () =>
+              document.documentElement.toggleAttribute('data-dev-colors-off')
+          : undefined
+      }
     >
       <div className={buefyStyles['navbar-brand']}>
         <div className={buefyStyles['navbar-item']}>

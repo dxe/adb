@@ -25,7 +25,7 @@ export default async function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" data-env={process.env.NODE_ENV}>
       <head>
         <meta charSet="utf-8" />
         {/* See README for notes on CSRF implementation. */}

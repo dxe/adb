@@ -940,6 +940,7 @@ type PageData struct {
 	GooglePlacesAPIKey string
 	// Used on Int'l Actions form page
 	Chapter model.ChapterWithToken
+	IsDev  bool
 }
 
 // Render a page. All templates that load a header expect a PageData
@@ -960,6 +961,7 @@ func renderPage(w io.Writer, r *http.Request, name string, pageData PageData) {
 		ID:   user.ChapterID,
 		Name: user.ChapterName,
 	}
+	pageData.IsDev = !config.IsProd
 	renderTemplate(w, name, pageData)
 }
 

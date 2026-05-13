@@ -1,3 +1,24 @@
+/* dev-only: amber tint distinguishes dev from production */
+html[data-env='development']:not([data-dev-colors-off]),
+html[data-env='development']:not([data-dev-colors-off]) body {
+  background:
+    linear-gradient(rgba(160, 90, 20, 0.85), rgba(160, 90, 20, 0.85)),
+    url('/static/img/bg1.jpg') no-repeat center center fixed;
+  background-size: cover;
+}
+html[data-env='development']:not([data-dev-colors-off]) #mainNav {
+  background-color: #fcd34d;
+  box-shadow: 0 2px 0 0 #f59e0b;
+}
+html[data-env='development']:not([data-dev-colors-off]) .navbar-dropdown {
+  background-color: #fef9c3;
+}
+html[data-env='development']:not([data-dev-colors-off]) .body-wrapper,
+html[data-env='development']:not([data-dev-colors-off]) .body-wrapper-wide,
+html[data-env='development']:not([data-dev-colors-off]) .body-wrapper-extra-wide {
+  background-color: #fffbeb;
+}
+
 /* global styles */
 html,
 body {

@@ -4,7 +4,7 @@
 -->
 
 <template>
-  <b-navbar fixed-top shadow id="mainNav">
+  <b-navbar fixed-top shadow id="mainNav" @dblclick.native="toggleDevColors">
     <template #brand>
       <b-navbar-item tag="div">
         <img src="/static/img/logo1.png" alt="DxE" />
@@ -126,6 +126,11 @@ export default Vue.extend({
       } catch (error) {
         console.error('Error fetching chapters:', error);
       }
+    },
+    toggleDevColors() {
+      // Double clicking navbar toggles dev color scheme, allowing user to take
+      // prod-like screenshots.
+      document.documentElement.toggleAttribute('data-dev-colors-off');
     },
     switchChapter(chapterId: number) {
       // TODO: Switching chapter & then using the browser's back button
