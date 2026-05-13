@@ -232,11 +232,28 @@ func router() (*mux.Router, *sqlx.DB) {
 	userRepo := persistence.NewUserRepository(db)
 	activistRepo := persistence.NewActivistRepository(db)
 	main := MainController{db: db, userRepo: userRepo, activistRepo: activistRepo}
-	csrfMiddleware := csrf.Protect(
+	csrfProtect := csrf.Protect(
 		[]byte(config.CsrfAuthKey),
 		csrf.Secure(config.IsProd), // disable secure flag in dev
 		csrf.Path("/"),
 	)
+	// Workaround for https://github.com/gorilla/csrf/issues/190
+	// gorilla/csrf v1.7.x compares the request's Origin header
+	// against a request URL whose scheme it defaults to https. Over plaintext
+	// HTTP the browser sends `Origin: http://...`, so the scheme mismatches
+	// and the middleware rejects with "origin invalid". PlaintextHTTPRequest
+	// flags the request so the check uses http. csrf.Secure(false) only
+	// controls the cookie flag, not this check.
+	// https://github.com/gorilla/csrf/issues/190
+	csrfMiddleware := func(h http.Handler) http.Handler {
+		if config.IsProd {
+			return csrfProtect(h)
+		}
+		protected := csrfProtect(h)
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			protected.ServeHTTP(w, csrf.PlaintextHTTPRequest(r))
+		})
+	}
 
 	router := mux.NewRouter()
 
