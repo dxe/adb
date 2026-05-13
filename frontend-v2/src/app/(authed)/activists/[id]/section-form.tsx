@@ -24,10 +24,13 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import {
+  isEditableActivistField,
   type ActivistEditInputType,
   type ColumnDefinition,
 } from '../column-definitions'
 import { FieldDescriptionPopover } from '../field-description-popover'
+import { formatValue } from '../format-value'
+import { LinkedValue } from '../linked-value'
 
 type FieldValue = string | boolean | number
 type FormValues = Record<string, FieldValue>
@@ -99,7 +102,14 @@ export function ActivistSectionForm({
 }: ActivistSectionFormProps) {
   const queryClient = useQueryClient()
 
-  const hasUserSelect = fields.some((f) => inputTypeFor(f) === 'user-select')
+  const editableFields = useMemo(
+    () => fields.filter((f) => isEditableActivistField(f.name)),
+    [fields],
+  )
+
+  const hasUserSelect = editableFields.some(
+    (f) => inputTypeFor(f) === 'user-select',
+  )
   const usersQuery = useQuery({
     queryKey: [API_PATH.USERS],
     queryFn: ({ signal }) => apiClient.getUsers(signal),
@@ -108,9 +118,9 @@ export function ActivistSectionForm({
 
   const initialValues = useMemo<FormValues>(() => {
     const obj: FormValues = {}
-    for (const f of fields) obj[f.name] = initialValueFor(activist, f)
+    for (const f of editableFields) obj[f.name] = initialValueFor(activist, f)
     return obj
-  }, [activist, fields])
+  }, [activist, editableFields])
 
   const mutation = useMutation({
     mutationFn: (patch: ActivistPatchInput) =>
@@ -131,7 +141,7 @@ export function ActivistSectionForm({
     defaultValues: initialValues,
     onSubmit: async ({ value }) => {
       const patch: Record<string, unknown> = {}
-      for (const f of fields) {
+      for (const f of editableFields) {
         if (
           form.state.fieldMeta[f.name]?.isDirty &&
           !Object.is(initialValues[f.name], value[f.name])
@@ -167,6 +177,11 @@ export function ActivistSectionForm({
         {fields.map((def) => {
           const inputId = `activist-field-${def.name}`
           const inputType = inputTypeFor(def)
+          if (!isEditableActivistField(def.name)) {
+            return (
+              <ReadOnlyField key={def.name} def={def} activist={activist} />
+            )
+          }
           return (
             <form.Field key={def.name} name={def.name}>
               {(field) => {
@@ -399,5 +414,43 @@ export function ActivistSectionForm({
         </Button>
       </div>
     </form>
+  )
+}
+
+function ReadOnlyField({
+  def,
+  activist,
+}: {
+  def: ColumnDefinition
+  activist: ActivistJSON
+}) {
+  const raw = (activist as Record<string, unknown>)[def.name]
+  const formatted = formatValue(raw, def.name)
+  const isEmpty = !raw
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center gap-1">
+        <span className="text-sm font-medium leading-none">{def.label}</span>
+        {def.description && (
+          <FieldDescriptionPopover
+            label={def.label}
+            description={def.description}
+          />
+        )}
+      </div>
+      <div
+        className={`flex h-9 items-center text-sm ${
+          isEmpty ? 'text-muted-foreground opacity-50' : 'text-muted-foreground'
+        }`}
+      >
+        {isEmpty ? (
+          '—'
+        ) : def.linkType ? (
+          <LinkedValue value={formatted} linkType={def.linkType} />
+        ) : (
+          formatted
+        )}
+      </div>
+    </div>
   )
 }

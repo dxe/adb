@@ -34,11 +34,14 @@ function useActivist(activistId: number) {
   })
 }
 
-const EDITABLE_FIELDS_BY_CATEGORY: Map<ColumnCategory, ColumnDefinition[]> =
+// All fields displayed for each category. Includes both editable and
+// non-editable fields so the edit-mode grid keeps the same shape as the
+// read-only grid and fields don't jump around when Edit is clicked.
+const SECTION_FIELDS_BY_CATEGORY: Map<ColumnCategory, ColumnDefinition[]> =
   (() => {
     const map = new Map<ColumnCategory, ColumnDefinition[]>()
     for (const def of COLUMN_DEFINITIONS) {
-      if (!isEditableActivistField(def.name)) continue
+      if (def.hideOnDetailPage) continue
       // Notes is rendered as its own section, not as part of "Other".
       if (def.name === 'notes') continue
       const list = map.get(def.category) ?? []
@@ -47,6 +50,12 @@ const EDITABLE_FIELDS_BY_CATEGORY: Map<ColumnCategory, ColumnDefinition[]> =
     }
     return map
   })()
+
+const EDITABLE_CATEGORIES: Set<ColumnCategory> = new Set(
+  Array.from(SECTION_FIELDS_BY_CATEGORY.entries())
+    .filter(([, defs]) => defs.some((d) => isEditableActivistField(d.name)))
+    .map(([cat]) => cat),
+)
 
 const NOTES_DEFINITION = COLUMN_DEFINITIONS.find((d) => d.name === 'notes')!
 if (!NOTES_DEFINITION) {
@@ -178,21 +187,22 @@ export function ActivistDetail({ activistId }: { activistId: number }) {
       <div className="flex flex-col gap-8">
         {SECTION_ORDER.map((category) => {
           const fields = groupedFields.get(category) ?? []
-          const editableFields = EDITABLE_FIELDS_BY_CATEGORY.get(category)
-          if (fields.length === 0 && !editableFields) return null
+          const sectionFields = SECTION_FIELDS_BY_CATEGORY.get(category)
+          const canEdit = EDITABLE_CATEGORIES.has(category)
+          if (fields.length === 0 && !sectionFields) return null
           const isEditing = editingSection === category
           return (
             <section key={category}>
               <SectionHeader
                 title={category}
-                showEdit={!!editableFields && editingSection === null}
+                showEdit={canEdit && editingSection === null}
                 onEdit={() => handleEdit(category)}
               />
-              {isEditing && editableFields ? (
+              {isEditing && sectionFields ? (
                 <ActivistSectionForm
                   activistId={activistId}
                   activist={activist}
-                  fields={editableFields}
+                  fields={sectionFields}
                   onSaved={handleSaved}
                   onCancel={handleCancel}
                   onDirtyChange={setIsFormDirty}
