@@ -1,6 +1,9 @@
 import { z } from 'zod'
 import { ActivistJSON, ActivistColumnName } from '@/lib/api'
-import { COLUMN_DEFINITION_BY_NAME } from './column-definitions'
+import {
+  COLUMN_DEFINITION_BY_NAME,
+  type ColumnDefinition,
+} from './column-definitions'
 import { formatDateValueForActivists } from './date-time'
 
 type ColumnType = 'string' | 'number' | 'boolean'
@@ -52,4 +55,30 @@ export const formatValue = (
   }
 
   return String(value)
+}
+
+export interface ReadOnlyFieldDisplay {
+  label: string
+  description?: string
+  linkType?: ColumnDefinition['linkType']
+  // '—' when formatValue returned blank (raw was null/undefined).
+  value: string
+  // Raw value was falsy — for gray-out styling. Note: false and 0 still
+  // produce a non-blank `value` ("No"/"0") but are flagged isEmpty.
+  isEmpty: boolean
+}
+
+export function getReadOnlyFieldDisplay(
+  activist: ActivistJSON,
+  def: ColumnDefinition,
+): ReadOnlyFieldDisplay {
+  const raw = activist[def.name as keyof ActivistJSON]
+  const formatted = formatValue(raw, def.name)
+  return {
+    label: def.label,
+    description: def.description,
+    linkType: def.linkType,
+    value: formatted || '—',
+    isEmpty: !raw,
+  }
 }

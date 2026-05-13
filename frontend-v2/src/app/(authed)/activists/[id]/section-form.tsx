@@ -37,7 +37,7 @@ import {
 } from '../column-definitions'
 import { datePickerValueToYmd, ymdToDatePickerValue } from '../date-time'
 import { FieldDescriptionPopover } from '../field-description-popover'
-import { formatValue } from '../format-value'
+import { getReadOnlyFieldDisplay } from '../format-value'
 import { LinkedValue } from '../linked-value'
 
 type FieldValue = string | boolean | number
@@ -482,18 +482,14 @@ function ReadOnlyField({
   def: ColumnDefinition
   activist: ActivistJSON
 }) {
-  const raw = (activist as Record<string, unknown>)[def.name]
-  const formatted = formatValue(raw, def.name)
-  const isEmpty = !raw
+  const { label, description, linkType, value, isEmpty } =
+    getReadOnlyFieldDisplay(activist, def)
   return (
     <div className="space-y-1">
       <div className="flex items-center gap-1">
-        <span className="text-sm font-medium leading-none">{def.label}</span>
-        {def.description && (
-          <FieldDescriptionPopover
-            label={def.label}
-            description={def.description}
-          />
+        <span className="text-sm font-medium leading-none">{label}</span>
+        {description && (
+          <FieldDescriptionPopover label={label} description={description} />
         )}
       </div>
       <div
@@ -501,12 +497,10 @@ function ReadOnlyField({
           isEmpty ? 'text-muted-foreground opacity-50' : 'text-muted-foreground'
         }`}
       >
-        {isEmpty ? (
-          '—'
-        ) : def.linkType ? (
-          <LinkedValue value={formatted} linkType={def.linkType} />
+        {!isEmpty && linkType ? (
+          <LinkedValue value={value} linkType={linkType} />
         ) : (
-          formatted
+          value
         )}
       </div>
     </div>

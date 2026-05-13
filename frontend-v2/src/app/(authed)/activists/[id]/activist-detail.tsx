@@ -3,12 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { EyeOff, GitMerge, Pencil } from 'lucide-react'
-import {
-  API_PATH,
-  apiClient,
-  ActivistJSON,
-  ActivistColumnName,
-} from '@/lib/api'
+import { API_PATH, apiClient, ActivistJSON } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import {
   COLUMN_DEFINITIONS,
@@ -18,7 +13,11 @@ import {
 } from '../column-definitions'
 import { getActivistDisplayName } from '../display-name'
 import { FieldDescriptionPopover } from '../field-description-popover'
-import { formatValue } from '../format-value'
+import {
+  formatValue,
+  getReadOnlyFieldDisplay,
+  type ReadOnlyFieldDisplay,
+} from '../format-value'
 import { LinkedValue } from '../linked-value'
 import { ActivistSectionForm } from './section-form'
 import { HideActivistDialog } from './hide-activist-dialog'
@@ -121,7 +120,7 @@ export function ActivistDetail({ activistId }: { activistId: number }) {
   }, [isFormDirty])
 
   const groupedFields = useMemo(() => {
-    if (!activist) return new Map<ColumnCategory, DisplayField[]>()
+    if (!activist) return new Map<ColumnCategory, ReadOnlyFieldDisplay[]>()
     return buildReadOnlyFields(activist)
   }, [activist])
 
@@ -276,36 +275,15 @@ export function ActivistDetail({ activistId }: { activistId: number }) {
   )
 }
 
-interface DisplayField {
-  label: string
-  value: string
-  description?: string
-  linkType?: ColumnDefinition['linkType']
-  isEmpty: boolean
-}
-
 function buildReadOnlyFields(
   activist: ActivistJSON,
-): Map<ColumnCategory, DisplayField[]> {
-  const grouped = new Map<ColumnCategory, DisplayField[]>()
+): Map<ColumnCategory, ReadOnlyFieldDisplay[]> {
+  const grouped = new Map<ColumnCategory, ReadOnlyFieldDisplay[]>()
   for (const def of COLUMN_DEFINITIONS) {
     if (def.hideOnDetailPage) continue
     if (def.name === 'notes') continue
-
-    const rawValue = activist[def.name as keyof ActivistJSON]
-    // Empty string, 0, false
-    const isEmpty = !rawValue
-    const formatted = formatValue(rawValue, def.name as ActivistColumnName)
-    const isFormattedBlank = !formatted
-
     const group = grouped.get(def.category) ?? []
-    group.push({
-      label: def.label,
-      value: isFormattedBlank ? '—' : formatted,
-      description: def.description,
-      linkType: def.linkType,
-      isEmpty,
-    })
+    group.push(getReadOnlyFieldDisplay(activist, def))
     grouped.set(def.category, group)
   }
   return grouped
