@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
+import { DatePicker } from '@/components/ui/date-picker'
 import {
   Select,
   SelectContent,
@@ -28,6 +29,7 @@ import {
   type ActivistEditInputType,
   type ColumnDefinition,
 } from '../column-definitions'
+import { datePickerValueToYmd, ymdToDatePickerValue } from '../date-time'
 import { FieldDescriptionPopover } from '../field-description-popover'
 import { formatValue } from '../format-value'
 import { LinkedValue } from '../linked-value'
@@ -327,6 +329,40 @@ export function ActivistSectionForm({
                   )
                 }
 
+                if (inputType === 'date') {
+                  const stringValue =
+                    typeof field.state.value === 'string'
+                      ? field.state.value
+                      : ''
+                  return (
+                    <div className="space-y-1">
+                      <LabelRow
+                        htmlFor={inputId}
+                        label={def.label}
+                        description={def.description}
+                      />
+                      <DatePicker
+                        value={
+                          stringValue
+                            ? ymdToDatePickerValue(stringValue)
+                            : undefined
+                        }
+                        onValueChange={(date) =>
+                          field.handleChange(
+                            date ? (datePickerValueToYmd(date) ?? '') : '',
+                          )
+                        }
+                        disabled={isSaving}
+                      />
+                      {errorMessage && (
+                        <p className="text-sm text-destructive">
+                          {errorMessage}
+                        </p>
+                      )}
+                    </div>
+                  )
+                }
+
                 if (inputType === 'textarea') {
                   return (
                     <div className="space-y-1 sm:col-span-2">
@@ -353,15 +389,13 @@ export function ActivistSectionForm({
                 }
 
                 const htmlInputType =
-                  inputType === 'date'
-                    ? 'date'
-                    : def.linkType === 'mailto'
-                      ? 'email'
-                      : def.linkType === 'tel'
-                        ? 'tel'
-                        : def.linkType === 'url'
-                          ? 'url'
-                          : 'text'
+                  def.linkType === 'mailto'
+                    ? 'email'
+                    : def.linkType === 'tel'
+                      ? 'tel'
+                      : def.linkType === 'url'
+                        ? 'url'
+                        : 'text'
 
                 return (
                   <div className="space-y-1">
