@@ -8,13 +8,13 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import {
-  Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { StickyHeaderTable } from '@/components/sticky-header-table'
 import { ArrowDown, ArrowUp, Check, Minus } from 'lucide-react'
 import { ActivistJSON, ActivistColumnName } from '@/lib/api'
 import { IntentPrefetchLink } from '@/components/intent-prefetch-link'
@@ -30,6 +30,7 @@ interface ActivistTableProps {
   onSortChange: (sort: SortColumn[]) => void
   onActivistClick?: (id: number) => void
   isStale?: boolean
+  footer?: React.ReactNode
 }
 
 export function ActivistTable({
@@ -39,6 +40,7 @@ export function ActivistTable({
   onSortChange,
   onActivistClick,
   isStale = false,
+  footer,
 }: ActivistTableProps) {
   const columns = useMemo<ColumnDef<ActivistJSON>[]>(() => {
     return visibleColumns.map((colName) => {
@@ -148,16 +150,17 @@ export function ActivistTable({
     <>
       {/* Desktop table */}
       <div
-        className={`mx-auto hidden max-w-full overflow-x-auto rounded-md border transition-opacity md:block ${
+        className={`hidden max-w-full flex-1 min-h-0 flex-col self-start transition-opacity md:flex ${
           isStale ? 'opacity-60' : ''
         }`}
       >
-        <Table
+        <StickyHeaderTable
           data-testid="activists-table"
           className="table-fixed"
           style={{ width: table.getTotalSize() }}
+          footer={footer}
         >
-          <TableHeader>
+          <TableHeader className="sticky top-0 z-10 bg-background">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
@@ -200,7 +203,7 @@ export function ActivistTable({
               </TableRow>
             ))}
           </TableBody>
-        </Table>
+        </StickyHeaderTable>
       </div>
 
       {/* Mobile card layout */}
@@ -275,6 +278,7 @@ export function ActivistTable({
           )
         })}
       </div>
+      {footer && <div className="md:hidden">{footer}</div>}
     </>
   )
 }

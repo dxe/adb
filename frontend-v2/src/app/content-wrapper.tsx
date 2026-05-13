@@ -7,7 +7,10 @@ const contentWrapperClass = {
   lg: 'lg:max-w-screen-lg',
   xl: 'lg:max-w-screen-xl',
   '2xl': 'lg:max-w-screen-2xl',
-  full: 'lg:max-w-none lg:mt-0 lg:mx-0 lg:rounded-none shadow-none bg-opacity-100',
+  // On full size pages, there is no background to show, so don't add any
+  // margin (mb-0). ContentWrapper already provides padding so content is not
+  // flush against the bottom of the viewport.
+  full: 'lg:max-w-none lg:mt-0 lg:mx-0 lg:rounded-none shadow-none bg-opacity-100 md:flex-1 md:min-h-0 mb-0',
 }
 
 /**
@@ -27,7 +30,7 @@ export const ContentWrapper = (props: {
   return (
     <div
       className={cn(
-        'bg-white w-full py-6 px-4 md:px-10 flex flex-col',
+        'bg-white w-full py-6 px-4 md:px-10 mb-12 flex flex-col',
         props.size === 'full'
           ? contentWrapperClass.full
           : 'lg:rounded-md shadow-2xl backdrop-blur-md bg-opacity-95 lg:mt-6 lg:mx-auto',

@@ -165,7 +165,7 @@ export default function ActivistsPage({
 
   return (
     <>
-      <div className="flex flex-col gap-6">
+      <div className="md:flex-1 md:min-h-0 flex flex-col gap-6">
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-semibold">Activists</h1>
         </div>
@@ -240,16 +240,17 @@ export default function ActivistsPage({
               onSortChange={setSort}
               onActivistClick={setSelectedActivistId}
               isStale={isPlaceholderData}
+              footer={
+                hasNextPage ? (
+                  <InfiniteScrollTrigger
+                    onLoadMore={fetchNextPage}
+                    isLoading={isFetchingNextPage}
+                    canLoadMore={hasNextPage}
+                    loadingLabel="Loading more activists…"
+                  />
+                ) : undefined
+              }
             />
-
-            {hasNextPage && (
-              <InfiniteScrollTrigger
-                onLoadMore={fetchNextPage}
-                isLoading={isFetchingNextPage}
-                canLoadMore={hasNextPage}
-                loadingLabel="Loading more activists…"
-              />
-            )}
           </>
         )}
       </div>
