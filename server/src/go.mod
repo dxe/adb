@@ -30,7 +30,7 @@ require (
 	github.com/testcontainers/testcontainers-go/modules/mysql v0.41.0
 	github.com/urfave/negroni v1.0.0
 	golang.org/x/oauth2 v0.36.0
-	golang.org/x/text v0.36.0
+	golang.org/x/text v0.37.0
 	google.golang.org/api v0.279.0
 )
 
