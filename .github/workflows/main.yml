@@ -103,7 +103,7 @@ jobs:
           pnpm exec vitest --run --changed "$since_sha" --passWithNoTests
       - name: Configure AWS credentials
         if: ${{ github.event_name == 'push' }} # don't deploy branches
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
