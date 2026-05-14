@@ -19,7 +19,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { API_PATH, apiClient, Role, User, UserWithoutId } from '@/lib/api'
-import { SF_BAY_CHAPTER_ID } from '@/lib/constants'
 import { formatRoleLabel } from '@/lib/roles'
 import { Loader2, Save, ArrowLeft } from 'lucide-react'
 

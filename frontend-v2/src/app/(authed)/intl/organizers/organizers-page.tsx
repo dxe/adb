@@ -108,6 +108,7 @@ export default function OrganizersPage() {
     [],
   )
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- Remove once TanStack Table supports React Compiler.
   const table = useReactTable({
     data: organizers,
     columns,

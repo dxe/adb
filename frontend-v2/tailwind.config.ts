@@ -2,6 +2,7 @@
 
 import type { Config } from 'tailwindcss'
 import twAnimate from 'tailwindcss-animate'
+import forms from '@tailwindcss/forms'
 
 export default {
   darkMode: ['class'],
@@ -60,9 +61,5 @@ export default {
       },
     },
   },
-  plugins: [
-    require('@tailwindcss/forms'),
-    twAnimate,
-    require('tailwindcss-animate'),
-  ],
+  plugins: [forms, twAnimate],
 } satisfies Config

@@ -25,7 +25,7 @@ import { AttendeeInputField } from './attendee-input-field'
 import { useActivistRegistry } from './useActivistRegistry'
 import { DatePicker } from '@/components/ui/date-picker'
 import { format, parseISO } from 'date-fns'
-import { Save, Calendar } from 'lucide-react'
+import { Save } from 'lucide-react'
 
 const EVENT_TYPES = [
   'Action',
@@ -187,7 +187,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
               .fill(null)
               .map(() => ({ name: '' })),
     }
-  }, [eventData, eventId, isConnection, user.ChapterID])
+  }, [eventData, isConnection, user.ChapterID])
 
   const form = useForm({
     defaultValues: initialValues,

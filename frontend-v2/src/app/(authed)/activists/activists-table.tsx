@@ -131,6 +131,7 @@ export function ActivistTable({
     })
   }, [visibleColumns, sort, onSortChange, onActivistClick, isStale])
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- Remove once TanStack Table supports React Compiler.
   const table = useReactTable({
     data: activists,
     columns,

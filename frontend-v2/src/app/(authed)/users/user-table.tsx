@@ -149,6 +149,7 @@ export function UserTable({
     ]
   }, [chapterMap])
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- Remove once TanStack Table supports React Compiler.
   const table = useReactTable({
     data: users,
     columns,
