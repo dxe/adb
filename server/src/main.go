@@ -113,7 +113,9 @@ func (c MainController) authADBUser(r *http.Request, w http.ResponseWriter) (adb
 			panic(fmt.Errorf("error getting test user: %v", testUserErr))
 		}
 
-		setAuthSession(w, r, testUser)
+		if err := setAuthSession(w, r, testUser); err != nil {
+			panic(fmt.Errorf("error saving dev auth session: %v", err))
+		}
 		adbUser, authed = c.getAuthedADBUser(r)
 	}
 
@@ -609,7 +611,11 @@ func (c MainController) TokenSignInHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	// Email is valid
-	setAuthSession(w, r, adbUser)
+	if err := setAuthSession(w, r, adbUser); err != nil {
+		log.Printf("Error saving auth session: %v", err)
+		http.Error(w, "Failed to save session", http.StatusInternalServerError)
+		return
+	}
 	writeJSON(w, map[string]interface{}{
 		"redirect": true,
 	})
@@ -880,6 +886,7 @@ func (c MainController) SwitchActiveChapterHandler(w http.ResponseWriter, r *htt
 	authSession.Values["chapterid"] = chapterID
 	err = sessionStore.Save(r, w, authSession)
 	if err != nil {
+		log.Printf("Error saving auth session: %v", err)
 		http.Error(w, "Failed to save session", http.StatusInternalServerError)
 		return
 	}
