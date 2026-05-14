@@ -19,73 +19,9 @@ func NewActivistRepository(db *sqlx.DB) *DBActivistRepository {
 const activistTableAlias = "a"
 
 func (r DBActivistRepository) QueryActivists(options model.QueryActivistOptions) (model.QueryActivistResult, error) {
-	query := NewSqlQueryBuilder()
-	query.From(fmt.Sprintf("FROM activists %s", activistTableAlias))
-
-	shape := options.Shape
-	filters := buildFiltersFromShape(shape)
-
-	// Ensure chapter_id is in columns if not filtering by chapter
-	columns := shape.Columns
-	if shape.Filters.ChapterId == 0 && !slices.Contains(columns, model.ColChapterID) {
-		columns = append(columns, model.ColChapterID)
-	}
-
-	registry := newJoinRegistry()
-
-	columnSpecs := []*activistColumn{}
-	for _, colName := range columns {
-		colSpec := getColumnSpec(colName)
-		if colSpec == nil {
-			return model.QueryActivistResult{}, model.ValidationErrorf("invalid column name: '%v'", colName)
-		}
-		columnSpecs = append(columnSpecs, colSpec)
-		query.SelectColumn(colSpec.selectExpr())
-		for _, joinSpec := range colSpec.joins {
-			registry.registerJoin(joinSpec)
-		}
-	}
-
-	for _, filter := range filters {
-		for _, whereClause := range filter.buildWhere() {
-			query.Where(whereClause.sql, whereClause.args...)
-		}
-		for _, joinSpec := range filter.getJoins() {
-			registry.registerJoin(joinSpec)
-		}
-	}
-
-	// Normalize sort columns: default to name ASC, and append ID as tiebreaker
-	// for deterministic ordering (required for cursor pagination).
-	sortColumns := shape.Sort.SortColumns
-	if len(sortColumns) == 0 {
-		sortColumns = []model.ActivistSortColumn{{ColumnName: model.ColName}}
-	}
-	// buildPaginationCursor requires ID to be the trailing sort column.
-	sortColumns = ensureTrailingIdTiebreaker(sortColumns)
-
-	// Register joins needed by sort columns, add to SELECT if missing
-	// (sorted columns must be selected for cursor pagination), and build sortSpecs.
-	sortSpecs := make([]sortSpec, len(sortColumns))
-	for i, sc := range sortColumns {
-		colSpec := getColumnSpec(sc.ColumnName)
-		if colSpec == nil {
-			return model.QueryActivistResult{}, model.ValidationErrorf("invalid sort column: '%v'", sc.ColumnName)
-		}
-		for _, joinSpec := range colSpec.joins {
-			registry.registerJoin(joinSpec)
-		}
-		if !slices.Contains(columns, sc.ColumnName) {
-			query.SelectColumn(colSpec.selectExpr())
-		}
-		sortSpecs[i] = sortSpec{
-			expr: colSpec.expr,
-			desc: sc.Desc,
-		}
-	}
-
-	for _, joinSQL := range registry.getJoins() {
-		query.Join(joinSQL)
+	query, sortColumns, sortSpecs, err := buildActivistsQueryFromShape(options.Shape)
+	if err != nil {
+		return model.QueryActivistResult{}, err
 	}
 
 	// Apply cursor seek condition if paginating.
@@ -103,16 +39,8 @@ func (r DBActivistRepository) QueryActivists(options model.QueryActivistOptions)
 		query.Where(cursorWhere.sql, cursorWhere.args...)
 	}
 
-	for _, si := range sortSpecs {
-		dir := "ASC"
-		if si.desc {
-			dir = "DESC"
-		}
-		query.OrderBy(fmt.Sprintf("%s %s", si.expr, dir))
-	}
-
-	// Fetch one extra row to detect if there are more results.
 	limit := 50
+	// Fetch one extra row to detect if there are more results.
 	query.Limit(limit + 1)
 
 	sqlStr, args := query.ToSQL()
@@ -143,6 +71,119 @@ func (r DBActivistRepository) QueryActivists(options model.QueryActivistOptions)
 			NextCursor: nextCursor,
 		},
 	}, nil
+}
+
+// StreamActivists executes a query for the given options and invokes fn for
+// each matching row. Unlike QueryActivists, results are not paginated — all
+// matching rows are streamed via the callback. If fn returns an error,
+// iteration stops and that error is returned.
+func (r DBActivistRepository) StreamActivists(options model.QueryActivistOptions, fn func(model.ActivistExtra) error) error {
+	query, _, _, err := buildActivistsQueryFromShape(options.Shape)
+	if err != nil {
+		return err
+	}
+
+	sqlStr, args := query.ToSQL()
+
+	rows, err := r.db.Queryx(sqlStr, args...)
+	if err != nil {
+		return fmt.Errorf("querying activists: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var activist model.ActivistExtra
+		if err := rows.StructScan(&activist); err != nil {
+			return fmt.Errorf("scanning activist row: %w", err)
+		}
+		if err := fn(activist); err != nil {
+			return err
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("iterating activist rows: %w", err)
+	}
+	return nil
+}
+
+// buildActivistsQueryFromShape applies the columns, filters, joins, and
+// ORDER BY (with id tiebreaker) for an activist query.
+func buildActivistsQueryFromShape(shape model.QueryActivistShape) (*sqlQueryBuilder, []model.ActivistSortColumn, []sortSpec, error) {
+	query := NewSqlQueryBuilder()
+	query.From(fmt.Sprintf("FROM activists %s", activistTableAlias))
+
+	filters := buildFiltersFromShape(shape)
+
+	// Ensure chapter_id is in columns if not filtering by chapter.
+	columns := shape.Columns
+	if shape.Filters.ChapterId == 0 && !slices.Contains(columns, model.ColChapterID) {
+		columns = append(columns, model.ColChapterID)
+	}
+
+	registry := newJoinRegistry()
+
+	for _, colName := range columns {
+		colSpec := getColumnSpec(colName)
+		if colSpec == nil {
+			return nil, nil, nil, model.ValidationErrorf("invalid column name: '%v'", colName)
+		}
+		query.SelectColumn(colSpec.selectExpr())
+		for _, joinSpec := range colSpec.joins {
+			registry.registerJoin(joinSpec)
+		}
+	}
+
+	for _, filter := range filters {
+		for _, whereClause := range filter.buildWhere() {
+			query.Where(whereClause.sql, whereClause.args...)
+		}
+		for _, joinSpec := range filter.getJoins() {
+			registry.registerJoin(joinSpec)
+		}
+	}
+
+	// Normalize sort columns: default to name ASC, and append ID as tiebreaker
+	// for deterministic ordering (required for cursor pagination).
+	sortColumns := shape.Sort.SortColumns
+	if len(sortColumns) == 0 {
+		sortColumns = []model.ActivistSortColumn{{ColumnName: model.ColName}}
+	}
+	// buildPaginationCursor requires ID to be the trailing sort column.
+	sortColumns = ensureTrailingIdTiebreaker(sortColumns)
+
+	// Register joins needed by sort columns, add to SELECT if missing
+	// (sorted columns must be selected for cursor pagination), and build sortSpecs.
+	sortSpecs := make([]sortSpec, len(sortColumns))
+	for i, sc := range sortColumns {
+		colSpec := getColumnSpec(sc.ColumnName)
+		if colSpec == nil {
+			return nil, nil, nil, model.ValidationErrorf("invalid sort column: '%v'", sc.ColumnName)
+		}
+		for _, joinSpec := range colSpec.joins {
+			registry.registerJoin(joinSpec)
+		}
+		if !slices.Contains(columns, sc.ColumnName) {
+			query.SelectColumn(colSpec.selectExpr())
+		}
+		sortSpecs[i] = sortSpec{
+			expr: colSpec.expr,
+			desc: sc.Desc,
+		}
+	}
+
+	for _, joinSQL := range registry.getJoins() {
+		query.Join(joinSQL)
+	}
+
+	for _, si := range sortSpecs {
+		dir := "ASC"
+		if si.desc {
+			dir = "DESC"
+		}
+		query.OrderBy(fmt.Sprintf("%s %s", si.expr, dir))
+	}
+
+	return query, sortColumns, sortSpecs, nil
 }
 
 // ensureTrailingIdTiebreaker ensures sort columns end with model.ColID,

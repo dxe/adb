@@ -2,11 +2,14 @@ package transport
 
 import (
 	"database/sql"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -170,6 +173,116 @@ func ActivistsSearchHandler(w http.ResponseWriter, r *http.Request, authedUser m
 			NextCursor: result.Pagination.NextCursor,
 		},
 	})
+}
+
+// ActivistsExportHandler streams the full result set for the given query options
+// as a CSV file. The CSV columns are the requested API columns in the same
+// order. Rows are streamed directly from the database; response headers are
+// not written until the first row arrives, so validation/auth errors still
+// surface as JSON.
+func ActivistsExportHandler(w http.ResponseWriter, r *http.Request, authedUser model.ADBUser, repo model.ActivistRepository) {
+	var options model.QueryActivistOptions
+	if err := json.NewDecoder(r.Body).Decode(&options); err != nil && err != io.EOF {
+		sendErrorMessage(w, http.StatusBadRequest, err)
+		return
+	}
+
+	exportColumns := append([]model.ActivistColumnName{}, options.Shape.Columns...)
+
+	var cw *csv.Writer
+	startCSV := func() error {
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition", `attachment; filename="activists.csv"`)
+		cw = csv.NewWriter(w)
+		header := make([]string, len(exportColumns))
+		for i, c := range exportColumns {
+			header[i] = string(c)
+		}
+		return cw.Write(header)
+	}
+
+	err := model.StreamActivists(authedUser, options, repo, func(a model.ActivistExtra) error {
+		if cw == nil {
+			if err := startCSV(); err != nil {
+				return fmt.Errorf("writing CSV header: %w", err)
+			}
+		}
+		return cw.Write(activistCSVRow(model.BuildActivistJSON(a), exportColumns))
+	})
+	if err != nil {
+		if cw == nil {
+			// No bytes written yet — surface the error as a JSON response.
+			if errors.Is(err, model.ErrValidation) {
+				sendErrorMessage(w, http.StatusBadRequest, err)
+			} else {
+				sendErrorMessage(w, http.StatusInternalServerError, err)
+			}
+			return
+		}
+		log.Printf("activists CSV export: %v", err)
+		return
+	}
+
+	if cw == nil {
+		// Query matched zero rows — still return a valid (header-only) CSV.
+		if err := startCSV(); err != nil {
+			log.Printf("activists CSV export: write header: %v", err)
+			return
+		}
+	}
+	cw.Flush()
+	if err := cw.Error(); err != nil {
+		log.Printf("activists CSV export: flush: %v", err)
+	}
+}
+
+// activistJSONFieldByJSONTag maps a json tag name to the corresponding
+// reflect.StructField index on model.ActivistJSON. Built once at startup so
+// each export row is a map lookup, not a struct walk.
+var activistJSONFieldByJSONTag = func() map[string]int {
+	m := map[string]int{}
+	t := reflect.TypeOf(model.ActivistJSON{})
+	for i := 0; i < t.NumField(); i++ {
+		tag := t.Field(i).Tag.Get("json")
+		name, _, _ := strings.Cut(tag, ",")
+		if name != "" && name != "-" {
+			m[name] = i
+		}
+	}
+	return m
+}()
+
+func activistCSVRow(a model.ActivistJSON, columns []model.ActivistColumnName) []string {
+	v := reflect.ValueOf(a)
+	out := make([]string, len(columns))
+	for i, col := range columns {
+		idx, ok := activistJSONFieldByJSONTag[string(col)]
+		if !ok {
+			continue
+		}
+		out[i] = formatCSVValue(v.Field(idx))
+	}
+	return out
+}
+
+func formatCSVValue(v reflect.Value) string {
+	switch v.Kind() {
+	case reflect.String:
+		return v.String()
+	case reflect.Bool:
+		if v.Bool() {
+			return "true"
+		}
+		return "false"
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return strconv.FormatInt(v.Int(), 10)
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return strconv.FormatUint(v.Uint(), 10)
+	case reflect.Float32, reflect.Float64:
+		return strconv.FormatFloat(v.Float(), 'f', -1, 64)
+	default:
+		return fmt.Sprint(v.Interface())
+	}
 }
 
 func ActivistPatchHandler(w http.ResponseWriter, r *http.Request, authedUser model.ADBUser, db *sqlx.DB, repo model.ActivistRepository, userRepo model.UserRepository) {

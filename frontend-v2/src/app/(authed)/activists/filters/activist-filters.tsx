@@ -7,7 +7,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { Plus, RotateCcw, X } from 'lucide-react'
+import { Download, Plus, RotateCcw, X } from 'lucide-react'
 import { ActivistLevelFilter } from './activist-level-filter'
 import { LastEventFilter } from './last-event-filter'
 import { DateRangeFilter } from './date-range-filter'
@@ -24,6 +24,8 @@ interface ActivistFiltersProps {
   isAdmin: boolean
   isDirty: boolean
   onReset: () => void
+  onExport?: () => void
+  isExporting?: boolean
   children?: React.ReactNode
 }
 
@@ -58,6 +60,8 @@ export function ActivistFilters({
   isAdmin,
   isDirty,
   onReset,
+  onExport,
+  isExporting,
   children,
 }: ActivistFiltersProps) {
   // Tracks optional filters added from the menu that may not yet have values.
@@ -136,6 +140,18 @@ export function ActivistFilters({
 
       {/* Chip bar */}
       <div className="flex flex-wrap items-center gap-2">
+        {onExport && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-12"
+            onClick={onExport}
+            disabled={isExporting}
+          >
+            <Download className="h-4 w-4" />
+            {isExporting ? 'Exporting…' : 'Export'}
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="sm"

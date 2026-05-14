@@ -16,6 +16,7 @@ export const API_PATH = {
   ACTIVIST_NAMES_GET: 'activist_names/get',
   ACTIVIST_LIST_BASIC: 'activist/list_basic',
   ACTIVISTS_SEARCH: 'api/activists',
+  ACTIVISTS_EXPORT: 'api/activists/export',
   ACTIVIST_GET: 'api/activists',
   ACTIVIST_HIDE: 'activist/hide',
   ACTIVIST_MERGE: 'activist/merge',
@@ -408,6 +409,22 @@ export class ApiClient {
       const result = QueryActivistResult.parse(resp)
       fillBlankFieldsInQueryActivistResult(result, options.shape.columns)
       return result
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  exportActivistsCsv = async (
+    options: QueryActivistOptions,
+    signal?: AbortSignal,
+  ) => {
+    try {
+      const resp = await this.client.post(API_PATH.ACTIVISTS_EXPORT, {
+        json: options,
+        signal,
+        timeout: false,
+      })
+      return await resp.blob()
     } catch (err) {
       return this.handleKyError(err)
     }

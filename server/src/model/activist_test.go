@@ -27,6 +27,11 @@ func (s *activistPatchRepoSpy) QueryActivists(options QueryActivistOptions) (Que
 	return QueryActivistResult{}, nil
 }
 
+func (s *activistPatchRepoSpy) StreamActivists(options QueryActivistOptions, fn func(ActivistExtra) error) error {
+	s.t.Fatalf("unexpected call to StreamActivists")
+	return nil
+}
+
 func (s *activistPatchRepoSpy) PatchActivist(id int, patch ActivistPatchData) error {
 	s.patchCalls++
 	s.lastID = id
