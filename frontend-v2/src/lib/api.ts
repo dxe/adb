@@ -16,6 +16,8 @@ export const API_PATH = {
   ACTIVIST_NAMES_GET: 'activist_names/get',
   ACTIVIST_LIST_BASIC: 'activist/list_basic',
   ACTIVISTS_SEARCH: 'api/activists',
+  ACTIVISTS_EXPORT: 'api/activists/export',
+  ACTIVISTS_EXPORT_SPOKE: 'api/activists/export/spoke',
   ACTIVIST_GET: 'api/activists',
   ACTIVIST_HIDE: 'activist/hide',
   ACTIVIST_MERGE: 'activist/merge',
@@ -194,6 +196,7 @@ export {
   ActivistColumnName,
   ActivistPatchInput,
   QueryActivistOptions,
+  QueryActivistShape,
   QueryActivistResult,
 } from './api/activists'
 export type {
@@ -203,6 +206,7 @@ export type {
   ActivistColumnName as ActivistColumnNameType,
   ActivistPatchInput as ActivistPatchInputType,
   QueryActivistOptions as QueryActivistOptionsType,
+  QueryActivistShape as QueryActivistShapeType,
   QueryActivistResult as QueryActivistResultType,
 } from './api/activists'
 
@@ -404,8 +408,42 @@ export class ApiClient {
         .post(API_PATH.ACTIVISTS_SEARCH, { json: options, signal })
         .json()
       const result = QueryActivistResult.parse(resp)
-      fillBlankFieldsInQueryActivistResult(result, options.columns)
+      fillBlankFieldsInQueryActivistResult(result, options.shape.columns)
       return result
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  exportActivistsCsv = async (
+    options: QueryActivistOptions,
+    signal?: AbortSignal,
+  ) => {
+    try {
+      const resp = await this.client.post(API_PATH.ACTIVISTS_EXPORT, {
+        json: options,
+        signal,
+        timeout: false,
+      })
+      return await resp.blob()
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  // Exports activists in the Spoke dialer layout. The server hard-codes the
+  // CSV columns; options.shape.columns must be empty.
+  exportActivistsSpokeCsv = async (
+    options: QueryActivistOptions,
+    signal?: AbortSignal,
+  ) => {
+    try {
+      const resp = await this.client.post(API_PATH.ACTIVISTS_EXPORT_SPOKE, {
+        json: options,
+        signal,
+        timeout: false,
+      })
+      return await resp.blob()
     } catch (err) {
       return this.handleKyError(err)
     }

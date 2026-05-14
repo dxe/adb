@@ -2,11 +2,14 @@ package transport
 
 import (
 	"database/sql"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -170,6 +173,187 @@ func ActivistsSearchHandler(w http.ResponseWriter, r *http.Request, authedUser m
 			NextCursor: result.Pagination.NextCursor,
 		},
 	})
+}
+
+// ActivistsExportHandler streams the full result set for the given query options
+// as a CSV file. The CSV columns are the requested API columns in the same
+// order. Rows are streamed directly from the database; response headers are
+// not written until the first row arrives, so validation/auth errors still
+// surface as JSON.
+func ActivistsExportHandler(w http.ResponseWriter, r *http.Request, authedUser model.ADBUser, repo model.ActivistRepository) {
+	var options model.QueryActivistOptions
+	if err := json.NewDecoder(r.Body).Decode(&options); err != nil && err != io.EOF {
+		sendErrorMessage(w, http.StatusBadRequest, err)
+		return
+	}
+
+	cols := append([]model.ActivistColumnName{}, options.Shape.Columns...)
+	header := make([]string, len(cols))
+	for i, c := range cols {
+		header[i] = string(c)
+	}
+	buildRow := func(a model.ActivistJSON) []string {
+		return activistCSVRow(a, cols)
+	}
+
+	streamActivistsCSV(w, authedUser, options, repo, header, buildRow)
+}
+
+// ActivistsExportSpokeHandler streams a CSV in the Spoke dialer layout
+// (first_name, last_name, cell) derived from name, preferred_name, and phone.
+// The columns are server-controlled: clients must send an empty columns list,
+// and the filters/sort in the request body are applied as usual.
+func ActivistsExportSpokeHandler(w http.ResponseWriter, r *http.Request, authedUser model.ADBUser, repo model.ActivistRepository) {
+	var options model.QueryActivistOptions
+	if err := json.NewDecoder(r.Body).Decode(&options); err != nil && err != io.EOF {
+		sendErrorMessage(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if len(options.Shape.Columns) != 0 {
+		sendErrorMessage(w, http.StatusBadRequest, fmt.Errorf("spoke export must be requested with an empty columns list"))
+		return
+	}
+	options.Shape.Columns = []model.ActivistColumnName{
+		model.ColName,
+		model.ColPreferredName,
+		model.ColPhone,
+	}
+	// chapter_name is required by QueryActivistShape validation when no chapter
+	// filter is set, even though it doesn't appear in the spoke CSV.
+	if options.Shape.Filters.ChapterId == 0 {
+		options.Shape.Columns = append(options.Shape.Columns, model.ColChapterName)
+	}
+
+	streamActivistsCSV(w, authedUser, options, repo,
+		[]string{"first_name", "last_name", "cell"},
+		activistCSVRowSpoke,
+	)
+}
+
+// streamActivistsCSV runs the query and writes header + rows as CSV. Response
+// headers are deferred until the first row arrives so validation/auth errors
+// can still surface as JSON.
+func streamActivistsCSV(
+	w http.ResponseWriter,
+	authedUser model.ADBUser,
+	options model.QueryActivistOptions,
+	repo model.ActivistRepository,
+	header []string,
+	buildRow func(model.ActivistJSON) []string,
+) {
+	var cw *csv.Writer
+	startCSV := func() error {
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition", `attachment; filename="activists.csv"`)
+		cw = csv.NewWriter(w)
+		return cw.Write(header)
+	}
+
+	err := model.StreamActivists(authedUser, options, repo, func(a model.ActivistExtra) error {
+		if cw == nil {
+			if err := startCSV(); err != nil {
+				return fmt.Errorf("writing CSV header: %w", err)
+			}
+		}
+		return cw.Write(buildRow(model.BuildActivistJSON(a)))
+	})
+	if err != nil {
+		if cw == nil {
+			// No bytes written yet — surface the error as a JSON response.
+			if errors.Is(err, model.ErrValidation) {
+				sendErrorMessage(w, http.StatusBadRequest, err)
+			} else {
+				sendErrorMessage(w, http.StatusInternalServerError, err)
+			}
+			return
+		}
+		cw.Flush()
+		if flushErr := cw.Error(); flushErr != nil {
+			log.Printf("activists CSV export: flush after stream error: %v", flushErr)
+		}
+		log.Printf("activists CSV export: %v", err)
+		return
+	}
+
+	if cw == nil {
+		// Query matched zero rows — still return a valid (header-only) CSV.
+		if err := startCSV(); err != nil {
+			log.Printf("activists CSV export: write header: %v", err)
+			return
+		}
+	}
+	cw.Flush()
+	if err := cw.Error(); err != nil {
+		log.Printf("activists CSV export: flush: %v", err)
+	}
+}
+
+// activistCSVRowSpoke renders a row in the Spoke dialer layout. first_name
+// prefers preferred_name; otherwise it's the first whitespace-separated token
+// of name. last_name is the remainder after the first space (empty if name has
+// no space).
+func activistCSVRowSpoke(a model.ActivistJSON) []string {
+	firstName := a.PreferredName
+	lastName := ""
+	if i := strings.Index(a.Name, " "); i >= 0 {
+		if firstName == "" {
+			firstName = a.Name[:i]
+		}
+		lastName = a.Name[i+1:]
+	} else if firstName == "" {
+		firstName = a.Name
+	}
+	return []string{firstName, lastName, a.Phone}
+}
+
+// activistJSONFieldByJSONTag maps a json tag name to the corresponding
+// reflect.StructField index on model.ActivistJSON. Built once at startup so
+// each export row is a map lookup, not a struct walk.
+var activistJSONFieldByJSONTag = func() map[string]int {
+	m := map[string]int{}
+	t := reflect.TypeOf(model.ActivistJSON{})
+	for i := 0; i < t.NumField(); i++ {
+		tag := t.Field(i).Tag.Get("json")
+		name, _, _ := strings.Cut(tag, ",")
+		if name != "" && name != "-" {
+			m[name] = i
+		}
+	}
+	return m
+}()
+
+func activistCSVRow(a model.ActivistJSON, columns []model.ActivistColumnName) []string {
+	v := reflect.ValueOf(a)
+	out := make([]string, len(columns))
+	for i, col := range columns {
+		idx, ok := activistJSONFieldByJSONTag[string(col)]
+		if !ok {
+			continue
+		}
+		out[i] = formatCSVValue(v.Field(idx))
+	}
+	return out
+}
+
+func formatCSVValue(v reflect.Value) string {
+	switch v.Kind() {
+	case reflect.String:
+		return v.String()
+	case reflect.Bool:
+		if v.Bool() {
+			return "true"
+		}
+		return "false"
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return strconv.FormatInt(v.Int(), 10)
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return strconv.FormatUint(v.Uint(), 10)
+	case reflect.Float32, reflect.Float64:
+		return strconv.FormatFloat(v.Float(), 'f', -1, 64)
+	default:
+		return fmt.Sprint(v.Interface())
+	}
 }
 
 func ActivistPatchHandler(w http.ResponseWriter, r *http.Request, authedUser model.ADBUser, db *sqlx.DB, repo model.ActivistRepository, userRepo model.UserRepository) {

@@ -1,10 +1,10 @@
-import type { QueryActivistOptions } from '@/lib/api'
+import type { QueryActivistShape } from '@/lib/api'
 import type { FilterApiContext } from './filter-api-transform'
 import * as apiTransform from './filter-api-transform'
 import * as urlCodecs from './filter-url-codecs'
 import type { FilterState } from './query-state'
 
-type ApiFilters = QueryActivistOptions['filters']
+type ApiFilters = QueryActivistShape['filters']
 
 type FilterSchemaEntry<K extends keyof FilterState> = {
   paramKey: string
@@ -214,8 +214,8 @@ export const mapFilterToApi = (
 export const buildApiFiltersFromState = (
   filters: FilterState,
   context: FilterApiContext,
-): QueryActivistOptions['filters'] => {
-  const apiFilters = {} as QueryActivistOptions['filters']
+): QueryActivistShape['filters'] => {
+  const apiFilters = {} as QueryActivistShape['filters']
 
   for (const key of FILTER_KEYS) {
     Object.assign(apiFilters, mapFilterToApi(key, filters[key], context))

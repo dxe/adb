@@ -183,10 +183,15 @@ const ActivistSortOptions = z.object({
   sort_columns: z.array(ActivistSortColumn),
 })
 
-export const QueryActivistOptions = z.object({
+export const QueryActivistShape = z.object({
   columns: z.array(ActivistColumnName),
   filters: QueryActivistFilters,
   sort: ActivistSortOptions.optional(),
+})
+export type QueryActivistShape = z.infer<typeof QueryActivistShape>
+
+export const QueryActivistOptions = z.object({
+  shape: QueryActivistShape,
   after: z.string().optional(),
 })
 export type QueryActivistOptions = z.infer<typeof QueryActivistOptions>

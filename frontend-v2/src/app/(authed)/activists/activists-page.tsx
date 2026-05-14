@@ -1,8 +1,9 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { useQueryState, parseAsInteger } from 'nuqs'
+import toast from 'react-hot-toast'
 import {
   apiClient,
   API_PATH,
@@ -67,6 +68,18 @@ export default function ActivistsPage({
     columns: selectedColumns,
     sort,
   })
+
+  const [isExporting, setIsExporting] = useState(false)
+  const exportAbortControllerRef = useRef<AbortController | null>(null)
+
+  useEffect(() => {
+    const controller = new AbortController()
+    exportAbortControllerRef.current = controller
+    return () => {
+      controller.abort()
+      exportAbortControllerRef.current = null
+    }
+  }, [])
 
   const isExplicitSort = sort.length > 0
   const effectiveSort = isExplicitSort ? sort : DEFAULT_SORT
@@ -139,6 +152,72 @@ export default function ActivistsPage({
       lastPage.pagination.next_cursor || undefined,
   })
 
+  // The spoke export uses the current filters but a server-selected column
+  // set, so we send an empty columns array. The server hard-codes the spoke
+  // columns and rejects a non-empty list.
+  const spokeQueryOptions = useMemo<QueryActivistOptions>(
+    () => ({
+      ...queryOptions,
+      shape: { ...queryOptions.shape, columns: [] },
+    }),
+    [queryOptions],
+  )
+
+  const runExport = useCallback(
+    async (
+      fetchBlob: (signal: AbortSignal) => Promise<Blob>,
+      filenamePrefix: string,
+    ) => {
+      if (isExporting) return
+      const controller = exportAbortControllerRef.current
+      if (!controller) return
+      const { signal } = controller
+      setIsExporting(true)
+      let url: string | undefined
+      try {
+        const blob = await fetchBlob(signal)
+        if (signal.aborted) return
+        url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${filenamePrefix}-${new Date().toISOString().slice(0, 10)}.csv`
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
+      } catch (err) {
+        if (signal.aborted) return
+        console.error('Failed to export activists CSV', err)
+        toast.error(
+          err instanceof Error && err.message
+            ? `Failed to export activists: ${err.message}`
+            : 'Failed to export activists. Please try again.',
+        )
+      } finally {
+        if (url) URL.revokeObjectURL(url)
+        if (!signal.aborted) setIsExporting(false)
+      }
+    },
+    [isExporting],
+  )
+
+  const handleExport = useCallback(
+    () =>
+      runExport(
+        (signal) => apiClient.exportActivistsCsv(queryOptions, signal),
+        'activists',
+      ),
+    [runExport, queryOptions],
+  )
+  const handleExportSpoke = useCallback(
+    () =>
+      runExport(
+        (signal) =>
+          apiClient.exportActivistsSpokeCsv(spokeQueryOptions, signal),
+        'activists-spoke',
+      ),
+    [runExport, spokeQueryOptions],
+  )
+
   const activists: ActivistJSON[] = useMemo(
     () => data?.pages.flatMap((page) => page.activists) ?? [],
     [data],
@@ -177,6 +256,9 @@ export default function ActivistsPage({
           isAdmin={isAdmin}
           isDirty={isDirty}
           onReset={resetAll}
+          onExport={handleExport}
+          onExportSpoke={handleExportSpoke}
+          isExporting={isExporting}
         >
           <ColumnSelector
             visibleColumns={selectedColumns}

@@ -610,163 +610,167 @@ func getActivistsJSON(db *sqlx.DB, options GetActivistOptions) ([]ActivistJSON, 
 
 // TODO: move to transport layer and make private once obsolete activist query options are removed.
 func BuildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
-	activistsJSON := []ActivistJSON{}
-
+	activistsJSON := make([]ActivistJSON, 0, len(activists))
 	for _, a := range activists {
-		firstEvent := ""
-		if a.ActivistEventData.FirstEvent.Valid {
-			firstEvent = a.ActivistEventData.FirstEvent.Time.Format(EventDateLayout)
-		}
-		lastEvent := ""
-		if a.ActivistEventData.LastEvent.Valid {
-			lastEvent = a.ActivistEventData.LastEvent.Time.Format(EventDateLayout)
-		}
-		lastAction := ""
-		if a.ActivistEventData.LastAction.Valid {
-			lastAction = a.ActivistEventData.LastAction.Time.Format(EventDateLayout)
-		}
-		applicationDate := ""
-		if a.ActivistConnectionData.ApplicationDate.Valid {
-			applicationDate = a.ActivistConnectionData.ApplicationDate.Time.Format(EventDateLayout)
-		}
+		activistsJSON = append(activistsJSON, BuildActivistJSON(a))
+	}
+	return activistsJSON
+}
 
-		location := ""
-		if a.Activist.Location.Valid {
-			location = a.Activist.Location.String
-		}
-		dob := ""
-		if a.Activist.Birthday.Valid {
-			dob = a.Activist.Birthday.String
-		}
-		training0 := ""
-		if a.ActivistConnectionData.Training0.Valid {
-			training0 = a.ActivistConnectionData.Training0.String
-		}
-		training1 := ""
-		if a.ActivistConnectionData.Training1.Valid {
-			training1 = a.ActivistConnectionData.Training1.String
-		}
-		training4 := ""
-		if a.ActivistConnectionData.Training4.Valid {
-			training4 = a.ActivistConnectionData.Training4.String
-		}
-		training5 := ""
-		if a.ActivistConnectionData.Training5.Valid {
-			training5 = a.ActivistConnectionData.Training5.String
-		}
-		training6 := ""
-		if a.ActivistConnectionData.Training6.Valid {
-			training6 = a.ActivistConnectionData.Training6.String
-		}
-		consent_quiz := ""
-		if a.ActivistConnectionData.ConsentQuiz.Valid {
-			consent_quiz = a.ActivistConnectionData.ConsentQuiz.String
-		}
-		training_protest := ""
-		if a.ActivistConnectionData.TrainingProtest.Valid {
-			training_protest = a.ActivistConnectionData.TrainingProtest.String
-		}
-		quiz := ""
-		if a.ActivistConnectionData.Quiz.Valid {
-			quiz = a.ActivistConnectionData.Quiz.String
-		}
-		last_connection := ""
-		if a.ActivistConnectionData.LastConnection.Valid {
-			last_connection = a.ActivistConnectionData.LastConnection.String
-		}
-		cm_first_email := ""
-		if a.ActivistConnectionData.CMFirstEmail.Valid {
-			cm_first_email = a.ActivistConnectionData.CMFirstEmail.String
-		}
-		cm_approval_email := ""
-		if a.ActivistConnectionData.CMApprovalEmail.Valid {
-			cm_approval_email = a.ActivistConnectionData.CMApprovalEmail.String
-		}
-		interest_date := ""
-		if a.ActivistConnectionData.InterestDate.Valid {
-			interest_date = a.ActivistConnectionData.InterestDate.String
-		}
-		notes := ""
-		if a.ActivistConnectionData.Notes.Valid {
-			notes = a.ActivistConnectionData.Notes.String
-		}
-		followup_date := ""
-		if a.ActivistConnectionData.FollowupDate.Valid {
-			followup_date = a.ActivistConnectionData.FollowupDate.String
-		}
-
-		activistsJSON = append(activistsJSON, ActivistJSON{
-			Email:         a.Email,
-			Facebook:      a.Facebook,
-			ID:            a.ID,
-			ChapterID:     a.ChapterID,
-			ChapterName:   a.ChapterName,
-			Location:      location,
-			Name:          a.Name,
-			PreferredName: a.PreferredName,
-			Phone:         a.Phone,
-			Pronouns:      a.Pronouns,
-			Language:      a.Language,
-			Accessibility: a.Accessibility,
-			Birthday:      dob,
-
-			FirstEvent:            firstEvent,
-			LastEvent:             lastEvent,
-			FirstEventName:        a.FirstEventName,
-			LastEventName:         a.LastEventName,
-			LastAction:            lastAction,
-			MonthsSinceLastAction: a.MonthsSinceLastAction,
-			Status:                a.Status,
-			TotalEvents:           a.TotalEvents,
-			TotalPoints:           a.TotalPoints,
-			Active:                a.Active,
-
-			ActivistLevel: a.ActivistLevel,
-			Source:        a.Source,
-			Hiatus:        a.Hiatus,
-
-			Connector:       a.Connector,
-			Training0:       training0,
-			Training1:       training1,
-			Training4:       training4,
-			Training5:       training5,
-			Training6:       training6,
-			ConsentQuiz:     consent_quiz,
-			TrainingProtest: training_protest,
-			ApplicationDate: applicationDate,
-			ApplicationType: a.ApplicationType,
-			Quiz:            quiz,
-			DevInterest:     a.DevInterest,
-
-			CMFirstEmail:          cm_first_email,
-			CMApprovalEmail:       cm_approval_email,
-			ProspectOrganizer:     a.ProspectOrganizer,
-			ProspectChapterMember: a.ProspectChapterMember,
-			LastConnection:        last_connection,
-			ReferralFriends:       a.ReferralFriends,
-			ReferralApply:         a.ReferralApply,
-			ReferralOutlet:        a.ReferralOutlet,
-			InterestDate:          interest_date,
-			MPI:                   a.MPI,
-			Notes:                 notes,
-			VisionWall:            a.VisionWall,
-			MPPRequirements:       a.MPPRequirements,
-			VotingAgreement:       a.VotingAgreement,
-			StreetAddress:         a.StreetAddress,
-			City:                  a.City,
-			State:                 a.State,
-			Lat:                   a.Lat,
-			Lng:                   a.Lng,
-			GeoCircles:            a.GeoCircles,
-			AssignedTo:            a.AssignedTo,
-			AssignedToName:        a.AssignedToName,
-			FollowupDate:          followup_date,
-			TotalInteractions:     a.TotalInteractions,
-			LastInteractionDate:   a.LastInteractionDate,
-		})
+// BuildActivistJSON converts a single ActivistExtra row into its API JSON
+// representation.
+func BuildActivistJSON(a ActivistExtra) ActivistJSON {
+	firstEvent := ""
+	if a.ActivistEventData.FirstEvent.Valid {
+		firstEvent = a.ActivistEventData.FirstEvent.Time.Format(EventDateLayout)
+	}
+	lastEvent := ""
+	if a.ActivistEventData.LastEvent.Valid {
+		lastEvent = a.ActivistEventData.LastEvent.Time.Format(EventDateLayout)
+	}
+	lastAction := ""
+	if a.ActivistEventData.LastAction.Valid {
+		lastAction = a.ActivistEventData.LastAction.Time.Format(EventDateLayout)
+	}
+	applicationDate := ""
+	if a.ActivistConnectionData.ApplicationDate.Valid {
+		applicationDate = a.ActivistConnectionData.ApplicationDate.Time.Format(EventDateLayout)
 	}
 
-	return activistsJSON
+	location := ""
+	if a.Activist.Location.Valid {
+		location = a.Activist.Location.String
+	}
+	dob := ""
+	if a.Activist.Birthday.Valid {
+		dob = a.Activist.Birthday.String
+	}
+	training0 := ""
+	if a.ActivistConnectionData.Training0.Valid {
+		training0 = a.ActivistConnectionData.Training0.String
+	}
+	training1 := ""
+	if a.ActivistConnectionData.Training1.Valid {
+		training1 = a.ActivistConnectionData.Training1.String
+	}
+	training4 := ""
+	if a.ActivistConnectionData.Training4.Valid {
+		training4 = a.ActivistConnectionData.Training4.String
+	}
+	training5 := ""
+	if a.ActivistConnectionData.Training5.Valid {
+		training5 = a.ActivistConnectionData.Training5.String
+	}
+	training6 := ""
+	if a.ActivistConnectionData.Training6.Valid {
+		training6 = a.ActivistConnectionData.Training6.String
+	}
+	consent_quiz := ""
+	if a.ActivistConnectionData.ConsentQuiz.Valid {
+		consent_quiz = a.ActivistConnectionData.ConsentQuiz.String
+	}
+	training_protest := ""
+	if a.ActivistConnectionData.TrainingProtest.Valid {
+		training_protest = a.ActivistConnectionData.TrainingProtest.String
+	}
+	quiz := ""
+	if a.ActivistConnectionData.Quiz.Valid {
+		quiz = a.ActivistConnectionData.Quiz.String
+	}
+	last_connection := ""
+	if a.ActivistConnectionData.LastConnection.Valid {
+		last_connection = a.ActivistConnectionData.LastConnection.String
+	}
+	cm_first_email := ""
+	if a.ActivistConnectionData.CMFirstEmail.Valid {
+		cm_first_email = a.ActivistConnectionData.CMFirstEmail.String
+	}
+	cm_approval_email := ""
+	if a.ActivistConnectionData.CMApprovalEmail.Valid {
+		cm_approval_email = a.ActivistConnectionData.CMApprovalEmail.String
+	}
+	interest_date := ""
+	if a.ActivistConnectionData.InterestDate.Valid {
+		interest_date = a.ActivistConnectionData.InterestDate.String
+	}
+	notes := ""
+	if a.ActivistConnectionData.Notes.Valid {
+		notes = a.ActivistConnectionData.Notes.String
+	}
+	followup_date := ""
+	if a.ActivistConnectionData.FollowupDate.Valid {
+		followup_date = a.ActivistConnectionData.FollowupDate.String
+	}
+
+	return ActivistJSON{
+		Email:         a.Email,
+		Facebook:      a.Facebook,
+		ID:            a.ID,
+		ChapterID:     a.ChapterID,
+		ChapterName:   a.ChapterName,
+		Location:      location,
+		Name:          a.Name,
+		PreferredName: a.PreferredName,
+		Phone:         a.Phone,
+		Pronouns:      a.Pronouns,
+		Language:      a.Language,
+		Accessibility: a.Accessibility,
+		Birthday:      dob,
+
+		FirstEvent:            firstEvent,
+		LastEvent:             lastEvent,
+		FirstEventName:        a.FirstEventName,
+		LastEventName:         a.LastEventName,
+		LastAction:            lastAction,
+		MonthsSinceLastAction: a.MonthsSinceLastAction,
+		Status:                a.Status,
+		TotalEvents:           a.TotalEvents,
+		TotalPoints:           a.TotalPoints,
+		Active:                a.Active,
+
+		ActivistLevel: a.ActivistLevel,
+		Source:        a.Source,
+		Hiatus:        a.Hiatus,
+
+		Connector:       a.Connector,
+		Training0:       training0,
+		Training1:       training1,
+		Training4:       training4,
+		Training5:       training5,
+		Training6:       training6,
+		ConsentQuiz:     consent_quiz,
+		TrainingProtest: training_protest,
+		ApplicationDate: applicationDate,
+		ApplicationType: a.ApplicationType,
+		Quiz:            quiz,
+		DevInterest:     a.DevInterest,
+
+		CMFirstEmail:          cm_first_email,
+		CMApprovalEmail:       cm_approval_email,
+		ProspectOrganizer:     a.ProspectOrganizer,
+		ProspectChapterMember: a.ProspectChapterMember,
+		LastConnection:        last_connection,
+		ReferralFriends:       a.ReferralFriends,
+		ReferralApply:         a.ReferralApply,
+		ReferralOutlet:        a.ReferralOutlet,
+		InterestDate:          interest_date,
+		MPI:                   a.MPI,
+		Notes:                 notes,
+		VisionWall:            a.VisionWall,
+		MPPRequirements:       a.MPPRequirements,
+		VotingAgreement:       a.VotingAgreement,
+		StreetAddress:         a.StreetAddress,
+		City:                  a.City,
+		State:                 a.State,
+		Lat:                   a.Lat,
+		Lng:                   a.Lng,
+		GeoCircles:            a.GeoCircles,
+		AssignedTo:            a.AssignedTo,
+		AssignedToName:        a.AssignedToName,
+		FollowupDate:          followup_date,
+		TotalInteractions:     a.TotalInteractions,
+		LastInteractionDate:   a.LastInteractionDate,
+	}
 }
 
 func GetActivist(db *sqlx.DB, name string, chapterID int) (Activist, error) {
@@ -2325,21 +2329,41 @@ func assignActivistToUser(db *sqlx.DB, activistID, userID int) error {
 }
 
 func QueryActivists(authedUser ADBUser, options QueryActivistOptions, repo ActivistRepository) (QueryActivistResult, error) {
-	if !UserHasRole(shared.RoleAdmin, authedUser) {
-		if authedUser.ChapterID != options.Filters.ChapterId || authedUser.ChapterID == 0 {
-			return QueryActivistResult{}, ValidationErrorf("cannot query activists in other chapters without admin access")
-		}
-	}
-
-	if !UserHasOrganizerAccess(authedUser) {
-		return QueryActivistResult{}, ValidationErrorf("lacking permission to query activists")
-	}
-
-	if err := options.normalizeAndValidate(); err != nil {
-		return QueryActivistResult{}, ValidationErrorf("invalid query options: %v", err)
+	if err := authorizeActivistQuery(authedUser, options); err != nil {
+		return QueryActivistResult{}, err
 	}
 
 	return repo.QueryActivists(options)
+}
+
+// StreamActivists runs an activist query and invokes fn for each result row.
+// Unlike QueryActivists, results are not paginated. Validation is performed
+// before any rows are fetched, so callers can rely on errors returned before
+// the first fn call being safe to surface to the user.
+func StreamActivists(authedUser ADBUser, options QueryActivistOptions, repo ActivistRepository, fn func(ActivistExtra) error) error {
+	if err := authorizeActivistQuery(authedUser, options); err != nil {
+		return err
+	}
+
+	return repo.StreamActivists(options, fn)
+}
+
+func authorizeActivistQuery(authedUser ADBUser, options QueryActivistOptions) error {
+	if !UserHasOrganizerAccess(authedUser) {
+		return ValidationErrorf("lacking permission to query activists")
+	}
+
+	if !UserHasRole(shared.RoleAdmin, authedUser) {
+		if authedUser.ChapterID != options.Shape.Filters.ChapterId || authedUser.ChapterID == 0 {
+			return ValidationErrorf("cannot query activists in other chapters without admin access")
+		}
+	}
+
+	if err := options.Shape.normalizeAndValidate(); err != nil {
+		return ValidationErrorf("invalid query options: %v", err)
+	}
+
+	return nil
 }
 
 // ErrValidation is a sentinel error for query validation failures
@@ -2374,6 +2398,7 @@ func ValidationErrorf(format string, args ...any) error {
 // a cyclical package reference.
 type ActivistRepository interface {
 	QueryActivists(options QueryActivistOptions) (QueryActivistResult, error)
+	StreamActivists(options QueryActivistOptions, fn func(ActivistExtra) error) error
 	PatchActivist(id int, patch ActivistPatchData) error
 }
 
@@ -2464,15 +2489,21 @@ type QueryActivistOptions struct {
 	// This model is currently shared with the transport layer and treated as part of the frontend API.
 	// Introduce transport DTOs when the wire format needs to differ from internal semantics.
 
-	Columns []ActivistColumnName `json:"columns"`
-	Filters QueryActivistFilters `json:"filters"`
-	Sort    ActivistSortOptions  `json:"sort"`
+	Shape QueryActivistShape `json:"shape"`
 
 	// Cursor pointing to last item in previous page (base 64 encoding of values of sort columns and ID).
 	// Must be a value returned by QueryActivistResultPagination.NextCursor.
 	// If empty, the first page of results will be returned.
 	// If invalid, an error is returned.
 	After string `json:"after"`
+}
+
+// QueryActivistShape is the query-shape portion of an activist query: which
+// columns to return, which rows to include, and what order.
+type QueryActivistShape struct {
+	Columns []ActivistColumnName `json:"columns"`
+	Filters QueryActivistFilters `json:"filters"`
+	Sort    ActivistSortOptions  `json:"sort"`
 }
 
 type ActivistSortOptions struct {
@@ -2527,24 +2558,28 @@ func (d *ActivistPatchData) Append(name ActivistColumnName, value any) {
 	d.Fields = append(d.Fields, ActivistPatchField{Name: name, Value: value})
 }
 
-func (o *QueryActivistOptions) normalizeAndValidate() error {
-	// TODO: remove invalid characters from o.nameFilter.name
+func (s *QueryActivistShape) normalizeAndValidate() error {
+	// TODO: remove invalid characters from s.Filters.Name.NameContains
 
-	if o.Filters.ChapterId == 0 && !slices.Contains(o.Columns, ColChapterName) {
+	if len(s.Columns) == 0 {
+		return ValidationErrorf("must request at least one column")
+	}
+
+	if s.Filters.ChapterId == 0 && !slices.Contains(s.Columns, ColChapterName) {
 		return ValidationErrorf("must choose 'chapter_name' column when not filtering by chapter ID.")
 	}
 
-	if err := o.Filters.Validate(); err != nil {
+	if err := s.Filters.Validate(); err != nil {
 		return err
 	}
 
-	if len(o.Sort.SortColumns) > 2 {
+	if len(s.Sort.SortColumns) > 2 {
 		return ValidationErrorf("cannot sort by more than 2 columns")
 	}
 
-	for i, sc := range o.Sort.SortColumns {
+	for i, sc := range s.Sort.SortColumns {
 		if sc.ColumnName == ColID {
-			if i != len(o.Sort.SortColumns)-1 {
+			if i != len(s.Sort.SortColumns)-1 {
 				return ValidationErrorf("'id' must be the last sort column if present")
 			}
 			if sc.Desc {
