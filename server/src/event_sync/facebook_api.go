@@ -2,7 +2,7 @@ package event_sync
 
 import (
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"path"
 	"strconv"
@@ -89,13 +89,13 @@ func downloadImageFromFacebook(imageUrl string) (Image, error) {
 		return image, err
 	}
 
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return image, errors.New("failed to get image from Facebook. Status: " + strconv.Itoa(resp.StatusCode))
 	}
 
-	image.Buffer, err = ioutil.ReadAll(resp.Body)
+	image.Buffer, err = io.ReadAll(resp.Body)
 	if err != nil {
 		return image, err
 	}

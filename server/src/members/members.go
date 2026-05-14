@@ -46,7 +46,7 @@ func (s *server) queryJSON(data interface{}, query string, args ...interface{}) 
 
 func (s *server) error(err error) {
 	s.w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	fmt.Fprintln(s.w, err)
+	_, _ = fmt.Fprintln(s.w, err)
 }
 
 func (s *server) render(tmpl *template.Template, data interface{}) {
@@ -56,7 +56,7 @@ func (s *server) render(tmpl *template.Template, data interface{}) {
 		return
 	}
 	s.w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	s.w.Write(buf.Bytes())
+	_, _ = s.w.Write(buf.Bytes())
 }
 
 func (s *server) redirect(dest string) {
@@ -72,5 +72,5 @@ func absURL(path string) string {
 
 func (s *server) health() {
 	s.w.WriteHeader(http.StatusOK)
-	s.w.Write([]byte("OK"))
+	_, _ = s.w.Write([]byte("OK"))
 }

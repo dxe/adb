@@ -31,7 +31,7 @@ func TestActivistPatchHandler_RejectsChapterIDField(t *testing.T) {
 
 func TestActivistPatchHandler_PatchesAndReturnsActivist(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	repo := persistence.NewActivistRepository(db)
 	userRepo := persistence.NewUserRepository(db)
@@ -77,7 +77,7 @@ func TestActivistPatchHandler_PatchesAndReturnsActivist(t *testing.T) {
 
 func TestActivistPatchHandler_NotFound(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	repo := persistence.NewActivistRepository(db)
 	userRepo := persistence.NewUserRepository(db)

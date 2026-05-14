@@ -11,7 +11,7 @@ import (
 
 func TestGetUser_ByID(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	repo := NewUserRepository(db)
 
 	user, err := repo.GetUser(model.DevTestUserId, "")
@@ -23,7 +23,7 @@ func TestGetUser_ByID(t *testing.T) {
 
 func TestGetUser_ByEmail(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	repo := NewUserRepository(db)
 
 	user, err := repo.GetUser(0, model.DevTestUserEmail)
@@ -34,7 +34,7 @@ func TestGetUser_ByEmail(t *testing.T) {
 
 func TestGetUser_NotFound(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	repo := NewUserRepository(db)
 
 	_, err := repo.GetUser(0, "nobody@example.org")
@@ -43,7 +43,7 @@ func TestGetUser_NotFound(t *testing.T) {
 
 func TestGetUser_NoArgs(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	repo := NewUserRepository(db)
 
 	_, err := repo.GetUser(0, "")
@@ -52,7 +52,7 @@ func TestGetUser_NoArgs(t *testing.T) {
 
 func TestGetUsers_All(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	repo := NewUserRepository(db)
 
 	users, err := repo.GetUsers(model.GetUserOptions{})
@@ -69,7 +69,7 @@ func TestGetUsers_All(t *testing.T) {
 
 func TestGetUsers_ByID(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	repo := NewUserRepository(db)
 
 	users, err := repo.GetUsers(model.GetUserOptions{ID: model.DevTestUserId})
@@ -80,7 +80,7 @@ func TestGetUsers_ByID(t *testing.T) {
 
 func TestGetUsers_PopulatesRoles(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	repo := NewUserRepository(db)
 
 	users, err := repo.GetUsers(model.GetUserOptions{ID: model.DevTestUserId, PopulateRoles: true})
@@ -91,7 +91,7 @@ func TestGetUsers_PopulatesRoles(t *testing.T) {
 
 func TestCreateUser(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	repo := NewUserRepository(db)
 
 	created, err := repo.CreateUser(model.ADBUser{
@@ -109,7 +109,7 @@ func TestCreateUser(t *testing.T) {
 
 func TestCreateUser_DuplicateEmail(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	repo := NewUserRepository(db)
 
 	_, err := repo.CreateUser(model.ADBUser{
@@ -122,7 +122,7 @@ func TestCreateUser_DuplicateEmail(t *testing.T) {
 
 func TestCreateUser_NonzeroIDReturnsError(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	repo := NewUserRepository(db)
 
 	_, err := repo.CreateUser(model.ADBUser{
@@ -136,7 +136,7 @@ func TestCreateUser_NonzeroIDReturnsError(t *testing.T) {
 
 func TestUpdateUser(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	repo := NewUserRepository(db)
 
 	created, err := repo.CreateUser(model.ADBUser{
@@ -161,7 +161,7 @@ func TestUpdateUser(t *testing.T) {
 
 func TestUpdateUser_EmailConflict(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	repo := NewUserRepository(db)
 
 	created, err := repo.CreateUser(model.ADBUser{
@@ -182,7 +182,7 @@ func TestUpdateUser_EmailConflict(t *testing.T) {
 
 func TestUpdateUser_ZeroIDReturnsError(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	repo := NewUserRepository(db)
 
 	_, err := repo.UpdateUser(model.ADBUser{

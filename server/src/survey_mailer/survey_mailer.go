@@ -124,11 +124,11 @@ func survey(db *sqlx.DB, surveyOptions SurveyOptions) {
 	// Iterate through events
 	for _, event := range events {
 		subject := "Survey: " + event.EventName
-		linkParamName := strings.Replace(event.EventName, " ", "+", -1)
+		linkParamName := strings.ReplaceAll(event.EventName, " ", "+")
 		linkParamDate := event.EventDate.Format("2006-01-02")
 		// TODO: Look into better ways for escaping this to prevent XSS attacks
-		bodyHtml := strings.Replace(surveyOptions.BodyHtml, "LINK_PARAM_NAME", html.EscapeString(linkParamName), -1)
-		bodyHtml = strings.Replace(bodyHtml, "LINK_PARAM_DATE", html.EscapeString(linkParamDate), -1)
+		bodyHtml := strings.ReplaceAll(surveyOptions.BodyHtml, "LINK_PARAM_NAME", html.EscapeString(linkParamName))
+		bodyHtml = strings.ReplaceAll(bodyHtml, "LINK_PARAM_DATE", html.EscapeString(linkParamDate))
 
 		log.Println("Sending", surveyOptions.SurveyType, "survey for event:", event.EventName)
 

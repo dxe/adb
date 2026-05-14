@@ -10,7 +10,7 @@ import (
 
 func TestCreateWorkingGroup_missingRequiredParameters_returnsError(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	workingGroup := WorkingGroup{
 		Name: "foo",
@@ -23,7 +23,7 @@ func TestCreateWorkingGroup_missingRequiredParameters_returnsError(t *testing.T)
 
 func TestCreateWorkingGroup_allRequiredParametersPresent_returnsNoError(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	workingGroup := WorkingGroup{
 		Name: "Tech (Best by a longshot)",
@@ -35,7 +35,7 @@ func TestCreateWorkingGroup_allRequiredParametersPresent_returnsNoError(t *testi
 
 func TestCreateWorkingGroup_insertAndFetchWorkingGroupNoMembers_returnsNoError(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	workingGroup := WorkingGroup{
 		Name: "Tech FTW",
@@ -59,7 +59,7 @@ func TestCreateWorkingGroup_insertAndFetchWorkingGroupNoMembers_returnsNoError(t
 
 func TestCreateWorkingGroup_insertAndFetchWorkingGroupWithMembersByID(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	workingGroup := WorkingGroup{
 		Name: "Emacs or Vim?",
@@ -79,7 +79,7 @@ func TestCreateWorkingGroup_insertAndFetchWorkingGroupWithMembersByID(t *testing
 
 func TestCreateWorkingGroup_insertAndFetchWorkingGroupWithMembersByNameAndID(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	workingGroup := WorkingGroup{
 		Name: "The Citadel",
@@ -98,7 +98,7 @@ func TestCreateWorkingGroup_insertAndFetchWorkingGroupWithMembersByNameAndID(t *
 
 func TestUpdateWorkingGroup_updatePointPersonAndGroupEmail(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	workingGroup := WorkingGroup{
 		Name: "Sanguine Salesman",
@@ -130,7 +130,7 @@ func TestUpdateWorkingGroup_updatePointPersonAndGroupEmail(t *testing.T) {
 
 func TestUpdateWorkingGroup_updateMultipleGroups(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	workingGroup1 := WorkingGroup{
 		Name: "WG 1",

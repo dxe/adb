@@ -9,7 +9,7 @@ import (
 
 func TestListActivistInteractions_ZeroIDReturnsError(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	_, err := ListActivistInteractions(db, 0)
 	require.Error(t, err)
@@ -17,7 +17,7 @@ func TestListActivistInteractions_ZeroIDReturnsError(t *testing.T) {
 
 func TestListActivistInteractions_EmptyForNewActivist(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	activist, err := GetOrCreateActivist(db, "New Activist", SFBayChapterIdDevTest)
 	require.NoError(t, err)
@@ -29,7 +29,7 @@ func TestListActivistInteractions_EmptyForNewActivist(t *testing.T) {
 
 func TestSaveInteraction_Insert(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	activist, err := GetOrCreateActivist(db, "Interacted Activist", SFBayChapterIdDevTest)
 	require.NoError(t, err)
@@ -53,7 +53,7 @@ func TestSaveInteraction_Insert(t *testing.T) {
 
 func TestSaveInteraction_Update(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	activist, err := GetOrCreateActivist(db, "Update Target", SFBayChapterIdDevTest)
 	require.NoError(t, err)
@@ -82,14 +82,14 @@ func TestSaveInteraction_Update(t *testing.T) {
 
 func TestDeleteInteraction_ZeroIDReturnsError(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	require.Error(t, DeleteInteraction(db, 0))
 }
 
 func TestDeleteInteraction_HappyPath(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	activist, err := GetOrCreateActivist(db, "Delete Target", SFBayChapterIdDevTest)
 	require.NoError(t, err)

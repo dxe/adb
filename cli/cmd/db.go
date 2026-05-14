@@ -47,8 +47,8 @@ var dbCreateCmd = &cobra.Command{
 			if err != nil {
 				return fmt.Errorf("failed to connect to %s: %w", name, err)
 			}
+			defer func() { _ = conn.Close() }()
 			conn.MustExec(buildFakeDataSQL(dbCreateDevEmail))
-			conn.Close()
 		}
 
 		return nil

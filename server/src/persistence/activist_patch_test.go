@@ -14,7 +14,7 @@ import (
 // confirm each value is persisted.
 func TestPatchActivist_UpdatesAllPatchableFields(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	repo := NewActivistRepository(db)
 	userRepo := NewUserRepository(db)

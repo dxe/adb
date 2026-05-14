@@ -303,7 +303,7 @@ func insertActivistFromApplicationForm(db *sqlx.DB, id int) error {
 	if txErr != nil {
 		return fmt.Errorf("failed to start transaction; %s", txErr)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	insertResult, processErr := tx.ExecContext(ctx, processApplicationByInsertQuery, id)
 	if processErr != nil {

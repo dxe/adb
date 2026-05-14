@@ -621,85 +621,85 @@ func BuildActivistJSONArray(activists []ActivistExtra) []ActivistJSON {
 // representation.
 func BuildActivistJSON(a ActivistExtra) ActivistJSON {
 	firstEvent := ""
-	if a.ActivistEventData.FirstEvent.Valid {
-		firstEvent = a.ActivistEventData.FirstEvent.Time.Format(EventDateLayout)
+	if a.FirstEvent.Valid {
+		firstEvent = a.FirstEvent.Time.Format(EventDateLayout)
 	}
 	lastEvent := ""
-	if a.ActivistEventData.LastEvent.Valid {
-		lastEvent = a.ActivistEventData.LastEvent.Time.Format(EventDateLayout)
+	if a.LastEvent.Valid {
+		lastEvent = a.LastEvent.Time.Format(EventDateLayout)
 	}
 	lastAction := ""
-	if a.ActivistEventData.LastAction.Valid {
-		lastAction = a.ActivistEventData.LastAction.Time.Format(EventDateLayout)
+	if a.LastAction.Valid {
+		lastAction = a.LastAction.Time.Format(EventDateLayout)
 	}
 	applicationDate := ""
-	if a.ActivistConnectionData.ApplicationDate.Valid {
-		applicationDate = a.ActivistConnectionData.ApplicationDate.Time.Format(EventDateLayout)
+	if a.ApplicationDate.Valid {
+		applicationDate = a.ApplicationDate.Time.Format(EventDateLayout)
 	}
 
 	location := ""
-	if a.Activist.Location.Valid {
-		location = a.Activist.Location.String
+	if a.Location.Valid {
+		location = a.Location.String
 	}
 	dob := ""
-	if a.Activist.Birthday.Valid {
-		dob = a.Activist.Birthday.String
+	if a.Birthday.Valid {
+		dob = a.Birthday.String
 	}
 	training0 := ""
-	if a.ActivistConnectionData.Training0.Valid {
-		training0 = a.ActivistConnectionData.Training0.String
+	if a.Training0.Valid {
+		training0 = a.Training0.String
 	}
 	training1 := ""
-	if a.ActivistConnectionData.Training1.Valid {
-		training1 = a.ActivistConnectionData.Training1.String
+	if a.Training1.Valid {
+		training1 = a.Training1.String
 	}
 	training4 := ""
-	if a.ActivistConnectionData.Training4.Valid {
-		training4 = a.ActivistConnectionData.Training4.String
+	if a.Training4.Valid {
+		training4 = a.Training4.String
 	}
 	training5 := ""
-	if a.ActivistConnectionData.Training5.Valid {
-		training5 = a.ActivistConnectionData.Training5.String
+	if a.Training5.Valid {
+		training5 = a.Training5.String
 	}
 	training6 := ""
-	if a.ActivistConnectionData.Training6.Valid {
-		training6 = a.ActivistConnectionData.Training6.String
+	if a.Training6.Valid {
+		training6 = a.Training6.String
 	}
 	consent_quiz := ""
-	if a.ActivistConnectionData.ConsentQuiz.Valid {
-		consent_quiz = a.ActivistConnectionData.ConsentQuiz.String
+	if a.ConsentQuiz.Valid {
+		consent_quiz = a.ConsentQuiz.String
 	}
 	training_protest := ""
-	if a.ActivistConnectionData.TrainingProtest.Valid {
-		training_protest = a.ActivistConnectionData.TrainingProtest.String
+	if a.TrainingProtest.Valid {
+		training_protest = a.TrainingProtest.String
 	}
 	quiz := ""
-	if a.ActivistConnectionData.Quiz.Valid {
-		quiz = a.ActivistConnectionData.Quiz.String
+	if a.Quiz.Valid {
+		quiz = a.Quiz.String
 	}
 	last_connection := ""
-	if a.ActivistConnectionData.LastConnection.Valid {
-		last_connection = a.ActivistConnectionData.LastConnection.String
+	if a.LastConnection.Valid {
+		last_connection = a.LastConnection.String
 	}
 	cm_first_email := ""
-	if a.ActivistConnectionData.CMFirstEmail.Valid {
-		cm_first_email = a.ActivistConnectionData.CMFirstEmail.String
+	if a.CMFirstEmail.Valid {
+		cm_first_email = a.CMFirstEmail.String
 	}
 	cm_approval_email := ""
-	if a.ActivistConnectionData.CMApprovalEmail.Valid {
-		cm_approval_email = a.ActivistConnectionData.CMApprovalEmail.String
+	if a.CMApprovalEmail.Valid {
+		cm_approval_email = a.CMApprovalEmail.String
 	}
 	interest_date := ""
-	if a.ActivistConnectionData.InterestDate.Valid {
-		interest_date = a.ActivistConnectionData.InterestDate.String
+	if a.InterestDate.Valid {
+		interest_date = a.InterestDate.String
 	}
 	notes := ""
-	if a.ActivistConnectionData.Notes.Valid {
-		notes = a.ActivistConnectionData.Notes.String
+	if a.Notes.Valid {
+		notes = a.Notes.String
 	}
 	followup_date := ""
-	if a.ActivistConnectionData.FollowupDate.Valid {
-		followup_date = a.ActivistConnectionData.FollowupDate.String
+	if a.FollowupDate.Valid {
+		followup_date = a.FollowupDate.String
 	}
 
 	return ActivistJSON{
@@ -1078,7 +1078,7 @@ func GetOrCreateActivist(db *sqlx.DB, name string, chapterID int) (Activist, err
 
 	_, err = tx.Exec("INSERT INTO activists (name, chapter_id) VALUES (?, ?)", name, chapterID)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return Activist{}, errors.Wrapf(err, "failed to insert activist %s", name)
 	}
 
@@ -1088,12 +1088,12 @@ func GetOrCreateActivist(db *sqlx.DB, name string, chapterID int) (Activist, err
 	err = tx.Get(&newActivist, query, name, chapterID)
 
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return Activist{}, errors.Wrapf(err, "failed to get new activist %s", name)
 	}
 
 	if err := tx.Commit(); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return Activist{}, errors.Wrapf(err, "failed to commit activist %s", name)
 	}
 
@@ -1389,12 +1389,12 @@ func MergeActivist(db *sqlx.DB, originalActivistID, targetActivistID int, mergeN
 	query := selectActivistExtraBaseQuery + " WHERE a.id = ?"
 	originalActivist := new(ActivistExtra)
 	if err := tx.Get(originalActivist, query, originalActivistID); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return fmt.Errorf("failed to get original activist with id %d: %w", originalActivistID, err)
 	}
 	targetActivist := new(ActivistExtra)
 	if err := tx.Get(targetActivist, query, targetActivistID); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return fmt.Errorf("failed to get target activist with id %d: %w", targetActivistID, err)
 	}
 
@@ -1402,13 +1402,13 @@ func MergeActivist(db *sqlx.DB, originalActivistID, targetActivistID int, mergeN
 	// would merge attendance data from one chapter into an activist in
 	// another chapter which is not supported.
 	if originalActivist.ChapterID != targetActivist.ChapterID {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return ValidationErrorf("cannot merge activists from different chapters")
 	}
 
 	_, err = tx.Exec(hideActivistQuery, originalActivistID)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return errors.Wrapf(err, "failed to hide original activist %d", originalActivistID)
 	}
 
@@ -1417,23 +1417,23 @@ func MergeActivist(db *sqlx.DB, originalActivistID, targetActivistID int, mergeN
 	// (replacing the original with the target).
 	err = updateMergedActivistData(tx, originalActivistID, targetActivistID, true)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return err
 	}
 	err = updateMergedActivistData(tx, originalActivistID, targetActivistID, false)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return err
 	}
 
 	_, err = updateMergedActivistDataDetails(tx, originalActivist, targetActivist, mergeName)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return err
 	}
 
 	if err := tx.Commit(); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return errors.Wrapf(err,
 			"failed to commit merge activist transaction. original activist id: %d, target activist id: %d",
 			originalActivistID, targetActivistID)
@@ -2042,80 +2042,25 @@ func CleanActivistData(body io.Reader, db *sqlx.DB, userRepo UserRepository) (Ac
 		return ActivistExtra{}, err
 	}
 
-	validLoc := true
-	if activistJSON.Location == "" {
-		// No location specified so insert null value into database
-		validLoc = false
-	}
-	validBirthday := true
-	if activistJSON.Birthday == "" {
-		// No location specified so insert null value into database
-		validBirthday = false
-	}
-	validTraining0 := true
-	if activistJSON.Training0 == "" {
-		// Not specified so insert null value into database
-		validTraining0 = false
-	}
-	validTraining1 := true
-	if activistJSON.Training1 == "" {
-		// Not specified so insert null value into database
-		validTraining1 = false
-	}
-	validTraining4 := true
-	if activistJSON.Training4 == "" {
-		// Not specified so insert null value into database
-		validTraining4 = false
-	}
-	validTraining5 := true
-	if activistJSON.Training5 == "" {
-		// Not specified so insert null value into database
-		validTraining5 = false
-	}
-	validTraining6 := true
-	if activistJSON.Training6 == "" {
-		// Not specified so insert null value into database
-		validTraining6 = false
-	}
-	validConsentQuiz := true
-	if activistJSON.ConsentQuiz == "" {
-		// Not specified so insert null value into database
-		validConsentQuiz = false
-	}
-	validTrainingProtest := true
-	if activistJSON.TrainingProtest == "" {
-		// Not specified so insert null value into database
-		validTrainingProtest = false
-	}
-	validCMFirstEmail := true
-	if activistJSON.CMFirstEmail == "" {
-		// Not specified so insert null value into database
-		validCMFirstEmail = false
-	}
-	validCMApprovalEmail := true
-	if activistJSON.CMApprovalEmail == "" {
-		// Not specified so insert null value into database
-		validCMApprovalEmail = false
-	}
-	validQuiz := true
-	if activistJSON.Quiz == "" {
-		// Not specified so insert null value into database
-		validQuiz = false
-	}
-	validInterestDate := true
-	if activistJSON.InterestDate == "" {
-		// Not specified so insert null value into database
-		validInterestDate = false
-	}
-	validNotes := true
-	if activistJSON.Notes == "" {
-		// Not specified so insert null value into database
-		validNotes = false
-	}
-	validFollowupDate := true
-	if activistJSON.FollowupDate == "" {
-		validFollowupDate = false
-	}
+	// No location specified so insert null value into database
+	validLoc := activistJSON.Location != ""
+	// No location specified so insert null value into database
+	validBirthday := activistJSON.Birthday != ""
+	// Not specified so insert null value into database
+	validTraining0 := activistJSON.Training0 != ""
+	// Not specified so insert null value into database
+	validTraining1 := activistJSON.Training1 != ""
+	validTraining4 := activistJSON.Training4 != ""
+	validTraining5 := activistJSON.Training5 != ""
+	validTraining6 := activistJSON.Training6 != ""
+	validConsentQuiz := activistJSON.ConsentQuiz != ""
+	validTrainingProtest := activistJSON.TrainingProtest != ""
+	validCMFirstEmail := activistJSON.CMFirstEmail != ""
+	validCMApprovalEmail := activistJSON.CMApprovalEmail != ""
+	validQuiz := activistJSON.Quiz != ""
+	validInterestDate := activistJSON.InterestDate != ""
+	validNotes := activistJSON.Notes != ""
+	validFollowupDate := activistJSON.FollowupDate != ""
 
 	var applicationDate time.Time
 	applicationDateValid := false

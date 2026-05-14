@@ -291,19 +291,19 @@ func DeleteEvent(db *sqlx.DB, eventID int, chapterID int) error {
 	_, err = tx.Exec(`DELETE FROM event_attendance
 WHERE event_id = ?`, eventID)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return errors.Wrapf(err, "failed to delete event attendance for event %d", eventID)
 	}
 
 	_, err = tx.Exec(`DELETE FROM events
 WHERE id = ? AND chapter_id = ?`, eventID, chapterID)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return errors.Wrapf(err, "failed to delete event %d", eventID)
 	}
 
 	if err := tx.Commit(); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return errors.Wrapf(err, "failed to commit event %d", eventID)
 	}
 
@@ -345,22 +345,22 @@ func insertEvent(db *sqlx.DB, event Event) (eventID int, err error) {
 	res, err := tx.NamedExec(`INSERT INTO events (name, date, event_type, suppress_survey, circle_id, chapter_id)
 VALUES (:name, :date, :event_type, :suppress_survey, :circle_id, :chapter_id)`, event)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return 0, errors.Wrap(err, "failed to insert event")
 	}
 	id, err := res.LastInsertId()
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return 0, errors.Wrap(err, "failed to get inserted event id")
 	}
 	event.ID = int(id)
 
 	if err := insertEventAttendance(tx, event); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return 0, errors.Wrap(err, "failed to insert event attendance")
 	}
 	if err := tx.Commit(); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return 0, errors.Wrap(err, "failed insert event transaction")
 	}
 	return int(id), nil
@@ -375,11 +375,11 @@ func updateEvent(db *sqlx.DB, event Event) (eventID int, err error) {
 	var eventCount int
 	err = tx.Get(&eventCount, `SELECT count(*) FROM events WHERE id = ? AND chapter_id = ?`, event.ID, event.ChapterID)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return 0, errors.Wrap(err, "failed to get event count")
 	}
 	if eventCount == 0 {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return 0, errors.Errorf("Event with id %d does not exist", event.ID)
 	}
 
@@ -394,16 +394,16 @@ SET
 WHERE
   id = :id`, event)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return 0, errors.Wrap(err, "failed to update event")
 	}
 
 	if err := insertEventAttendance(tx, event); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return 0, errors.Wrap(err, "failed to insert event attendance")
 	}
 	if err := tx.Commit(); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return 0, errors.Wrap(err, "failed to commit update event")
 	}
 	return event.ID, nil
@@ -422,12 +422,12 @@ SET
 WHERE
   id = :id`, event)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return 0, errors.Wrap(err, "failed to update event")
 	}
 
 	if err := tx.Commit(); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return 0, errors.Wrap(err, "failed to commit update event")
 	}
 	return event.ID, nil

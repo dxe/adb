@@ -273,7 +273,7 @@ func updateEventDescription(eventID string, description string, token string) er
 	path := eventbriteAPIBaseURL + "/events/" + eventID + "/structured_content/" + versionID +
 		"/?token=" + token
 
-	eventDescriptionHtml := "<p>" + strings.Replace(description, "\n", "</p><p>", -1) + "</p>"
+	eventDescriptionHtml := "<p>" + strings.ReplaceAll(description, "\n", "</p><p>") + "</p>"
 
 	req := reqBody{
 		Publish: true,
@@ -367,7 +367,7 @@ func uploadImageToEventbrite(image Image, data EventbriteUploadData) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusNoContent {
 		return errors.New("failed to upload image to S3 bucket. Status: " + strconv.Itoa(resp.StatusCode))

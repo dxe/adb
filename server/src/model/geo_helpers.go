@@ -39,9 +39,12 @@ func geoCodeAddress(streetAddress string, city string, state string) *Location {
 		log.Println("Error geocoding activist location", err)
 		return nil
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	var geocode_response GeocodeResponse
-	json.NewDecoder(resp.Body).Decode(&geocode_response)
+	if err := json.NewDecoder(resp.Body).Decode(&geocode_response); err != nil {
+		log.Println("Error decoding geocoding response", err)
+		return nil
+	}
 	if len(geocode_response.Results) == 0 {
 		log.Printf("No geocoding results found for address %v. Not updating Lat and Lng\n", full_address)
 		return nil

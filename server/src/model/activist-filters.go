@@ -47,10 +47,10 @@ func (d *DateOnly) UnmarshalJSON(data []byte) error {
 
 // MarshalJSON formats the date as YYYY-MM-DD
 func (d DateOnly) MarshalJSON() ([]byte, error) {
-	if d.Time.IsZero() {
+	if d.IsZero() {
 		return []byte("null"), nil
 	}
-	return []byte(`"` + d.Time.Format("2006-01-02") + `"`), nil
+	return []byte(`"` + d.Format("2006-01-02") + `"`), nil
 }
 
 // DateRangeFilter filters by a date column with optional NULL inclusion.
@@ -66,7 +66,7 @@ func (f *DateRangeFilter) IsEmpty() bool {
 
 func (f *DateRangeFilter) Validate() error {
 	if !f.Gte.IsZero() && !f.Lt.IsZero() {
-		if !f.Gte.Time.Before(f.Lt.Time) {
+		if !f.Gte.Before(f.Lt.Time) {
 			return ValidationErrorf("invalid date range")
 		}
 		if f.OrNull {

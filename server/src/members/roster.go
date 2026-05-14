@@ -293,7 +293,7 @@ func (s *server) sendCsvResponse(queryMonth int, members []member) {
 	}
 
 	w := csv.NewWriter(s.w)
-	w.Write([]string{
+	_ = w.Write([]string{
 		"ID",
 		"Name",
 		"Email",
@@ -311,7 +311,7 @@ func (s *server) sendCsvResponse(queryMonth int, members []member) {
 		"PotentialOfficerWithPriorMonthMpi",
 	})
 	for _, member := range members {
-		w.Write([]string{
+		_ = w.Write([]string{
 			fmt.Sprint(member.ID),
 			member.Name,
 			member.Email,
@@ -342,13 +342,13 @@ func (s *server) sendCsvResponse(queryMonth int, members []member) {
 func (s *server) sendNamesOnlyResponse(queryMonth int, members []member) {
 	var responseText strings.Builder
 	year, month, day := time.Now().Date()
-	responseText.WriteString(fmt.Sprintf(
+	fmt.Fprintf(&responseText,
 		"%s %04d Roster (as of %04d-%02d-%02d) - Eligible voters only\n\n",
 		time.Month(queryMonth%100),
 		queryMonth/100,
 		year,
 		month,
-		day))
+		day)
 
 	for _, member := range members {
 		if member.EligibleToVote == 0 {

@@ -10,7 +10,7 @@ import (
 
 func TestGetEvents(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	a1 := Activist{Name: "Hello", ChapterID: 1, Email: "test1@example.org", Phone: "123-456-7890"}
 	a2 := Activist{Name: "Hi", ChapterID: 1, Email: "test2@example.org", Phone: "888-888-8888"}
@@ -86,7 +86,7 @@ func TestGetEvents(t *testing.T) {
 
 func TestGetEvents_includeAttendeeEmails(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	a1, err := CreateActivist(db, ActivistExtra{Activist: Activist{
 		Name: "Hello", ChapterID: 1, Email: "test1@example.org", Phone: "123-456-7890",
@@ -123,7 +123,7 @@ func TestGetEvents_includeAttendeeEmails(t *testing.T) {
 
 func TestGetEvents_orderBy(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	a1, err := GetOrCreateActivist(db, "Hello", SFBayChapterIdDevTest)
 	require.NoError(t, err)
@@ -173,7 +173,7 @@ func TestGetEvents_orderBy(t *testing.T) {
 
 func TestInsertUpdateEvent(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	a1, err := GetOrCreateActivist(db, "Hello", SFBayChapterIdDevTest)
 	require.NoError(t, err)
@@ -224,7 +224,7 @@ func TestInsertUpdateEvent(t *testing.T) {
 
 func TestInsertUpdateEvent_noDuplicateAttendees(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	a1, err := GetOrCreateActivist(db, "Hello", SFBayChapterIdDevTest)
 	require.NoError(t, err)
@@ -249,7 +249,7 @@ func TestInsertUpdateEvent_noDuplicateAttendees(t *testing.T) {
 
 func TestDeleteEvents(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Set up two events
 	a1, err := GetOrCreateActivist(db, "Hello", SFBayChapterIdDevTest)
@@ -319,7 +319,7 @@ func TestDeleteEvents(t *testing.T) {
 
 func TestCleanEventAttendanceData(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	testAttendees := []string{"New Person", "Another person", "A third person"}
 

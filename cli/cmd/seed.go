@@ -68,7 +68,7 @@ var seedActivistsCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("failed to connect to database: %w", err)
 		}
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 
 		names := randomNames(seedActivistCount + seedProspectCount)
 		eventNames := names[:seedActivistCount]

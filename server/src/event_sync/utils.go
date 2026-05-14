@@ -19,11 +19,11 @@ func postAPI(path string, req, resp interface{}) error {
 	if err != nil {
 		return fmt.Errorf("error making POST request: %v", err)
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 
 	if response.StatusCode != http.StatusOK {
 		body := new(bytes.Buffer)
-		body.ReadFrom(response.Body)
+		_, _ = body.ReadFrom(response.Body)
 		return fmt.Errorf("request failed with status %v, body: %v", strconv.Itoa(response.StatusCode), body.String())
 	}
 	return json.NewDecoder(response.Body).Decode(&resp)
@@ -34,10 +34,10 @@ func getAPI(path string, resp interface{}) error {
 	if err != nil {
 		return err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	if response.StatusCode != http.StatusOK {
 		body := new(bytes.Buffer)
-		body.ReadFrom(response.Body)
+		_, _ = body.ReadFrom(response.Body)
 		return fmt.Errorf("request failed with status %v, body: %v", strconv.Itoa(response.StatusCode), body.String())
 	}
 	return json.NewDecoder(response.Body).Decode(&resp)
