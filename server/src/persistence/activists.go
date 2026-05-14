@@ -22,12 +22,12 @@ func (r DBActivistRepository) QueryActivists(options model.QueryActivistOptions)
 	query := NewSqlQueryBuilder()
 	query.From(fmt.Sprintf("FROM activists %s", activistTableAlias))
 
-	// Convert options to filters and columns
-	filters := buildFiltersFromOptions(options)
+	shape := options.Shape
+	filters := buildFiltersFromShape(shape)
 
 	// Ensure chapter_id is in columns if not filtering by chapter
-	columns := options.Columns
-	if options.Filters.ChapterId == 0 && !slices.Contains(columns, model.ColChapterID) {
+	columns := shape.Columns
+	if shape.Filters.ChapterId == 0 && !slices.Contains(columns, model.ColChapterID) {
 		columns = append(columns, model.ColChapterID)
 	}
 
@@ -57,7 +57,7 @@ func (r DBActivistRepository) QueryActivists(options model.QueryActivistOptions)
 
 	// Normalize sort columns: default to name ASC, and append ID as tiebreaker
 	// for deterministic ordering (required for cursor pagination).
-	sortColumns := options.Sort.SortColumns
+	sortColumns := shape.Sort.SortColumns
 	if len(sortColumns) == 0 {
 		sortColumns = []model.ActivistSortColumn{{ColumnName: model.ColName}}
 	}
@@ -176,9 +176,9 @@ func (r DBActivistRepository) PatchActivist(id int, patch model.ActivistPatchDat
 	return nil
 }
 
-func buildFiltersFromOptions(options model.QueryActivistOptions) []filter {
+func buildFiltersFromShape(shape model.QueryActivistShape) []filter {
 	var result []filter
-	f := options.Filters
+	f := shape.Filters
 
 	if f.ChapterId != 0 {
 		result = append(result, &chapterFilter{ChapterId: f.ChapterId})

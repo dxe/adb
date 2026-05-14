@@ -1,7 +1,7 @@
 import type {
   ApiDateRangeFilter,
   ApiIntRangeFilter,
-  QueryActivistOptions,
+  QueryActivistShape,
 } from '@/lib/api'
 import type {
   DateRangeBoundValue,
@@ -16,7 +16,7 @@ import {
   type LocalDateYmd,
 } from './date-time'
 
-type ApiFilters = QueryActivistOptions['filters']
+type ApiFilters = QueryActivistShape['filters']
 
 export type FilterApiContext = {
   chapterId: number
@@ -85,7 +85,7 @@ const toApiSourceOrTraining = (value?: IncludeExcludeFilterValue) =>
 
 const toApiProspectValue = (
   value?: ProspectFilterValue,
-): QueryActivistOptions['filters']['prospect'] =>
+): QueryActivistShape['filters']['prospect'] =>
   value === 'chapterMember'
     ? 'chapter_member'
     : value === 'organizer'

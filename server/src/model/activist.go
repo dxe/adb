@@ -2326,7 +2326,7 @@ func assignActivistToUser(db *sqlx.DB, activistID, userID int) error {
 
 func QueryActivists(authedUser ADBUser, options QueryActivistOptions, repo ActivistRepository) (QueryActivistResult, error) {
 	if !UserHasRole(shared.RoleAdmin, authedUser) {
-		if authedUser.ChapterID != options.Filters.ChapterId || authedUser.ChapterID == 0 {
+		if authedUser.ChapterID != options.Shape.Filters.ChapterId || authedUser.ChapterID == 0 {
 			return QueryActivistResult{}, ValidationErrorf("cannot query activists in other chapters without admin access")
 		}
 	}
@@ -2335,7 +2335,7 @@ func QueryActivists(authedUser ADBUser, options QueryActivistOptions, repo Activ
 		return QueryActivistResult{}, ValidationErrorf("lacking permission to query activists")
 	}
 
-	if err := options.normalizeAndValidate(); err != nil {
+	if err := options.Shape.normalizeAndValidate(); err != nil {
 		return QueryActivistResult{}, ValidationErrorf("invalid query options: %v", err)
 	}
 
@@ -2464,15 +2464,21 @@ type QueryActivistOptions struct {
 	// This model is currently shared with the transport layer and treated as part of the frontend API.
 	// Introduce transport DTOs when the wire format needs to differ from internal semantics.
 
-	Columns []ActivistColumnName `json:"columns"`
-	Filters QueryActivistFilters `json:"filters"`
-	Sort    ActivistSortOptions  `json:"sort"`
+	Shape QueryActivistShape `json:"shape"`
 
 	// Cursor pointing to last item in previous page (base 64 encoding of values of sort columns and ID).
 	// Must be a value returned by QueryActivistResultPagination.NextCursor.
 	// If empty, the first page of results will be returned.
 	// If invalid, an error is returned.
 	After string `json:"after"`
+}
+
+// QueryActivistShape is the query-shape portion of an activist query: which
+// columns to return, which rows to include, and what order.
+type QueryActivistShape struct {
+	Columns []ActivistColumnName `json:"columns"`
+	Filters QueryActivistFilters `json:"filters"`
+	Sort    ActivistSortOptions  `json:"sort"`
 }
 
 type ActivistSortOptions struct {
@@ -2527,24 +2533,24 @@ func (d *ActivistPatchData) Append(name ActivistColumnName, value any) {
 	d.Fields = append(d.Fields, ActivistPatchField{Name: name, Value: value})
 }
 
-func (o *QueryActivistOptions) normalizeAndValidate() error {
-	// TODO: remove invalid characters from o.nameFilter.name
+func (s *QueryActivistShape) normalizeAndValidate() error {
+	// TODO: remove invalid characters from s.Filters.Name.NameContains
 
-	if o.Filters.ChapterId == 0 && !slices.Contains(o.Columns, ColChapterName) {
+	if s.Filters.ChapterId == 0 && !slices.Contains(s.Columns, ColChapterName) {
 		return ValidationErrorf("must choose 'chapter_name' column when not filtering by chapter ID.")
 	}
 
-	if err := o.Filters.Validate(); err != nil {
+	if err := s.Filters.Validate(); err != nil {
 		return err
 	}
 
-	if len(o.Sort.SortColumns) > 2 {
+	if len(s.Sort.SortColumns) > 2 {
 		return ValidationErrorf("cannot sort by more than 2 columns")
 	}
 
-	for i, sc := range o.Sort.SortColumns {
+	for i, sc := range s.Sort.SortColumns {
 		if sc.ColumnName == ColID {
-			if i != len(o.Sort.SortColumns)-1 {
+			if i != len(s.Sort.SortColumns)-1 {
 				return ValidationErrorf("'id' must be the last sort column if present")
 			}
 			if sc.Desc {

@@ -194,6 +194,7 @@ export {
   ActivistColumnName,
   ActivistPatchInput,
   QueryActivistOptions,
+  QueryActivistShape,
   QueryActivistResult,
 } from './api/activists'
 export type {
@@ -203,6 +204,7 @@ export type {
   ActivistColumnName as ActivistColumnNameType,
   ActivistPatchInput as ActivistPatchInputType,
   QueryActivistOptions as QueryActivistOptionsType,
+  QueryActivistShape as QueryActivistShapeType,
   QueryActivistResult as QueryActivistResultType,
 } from './api/activists'
 
@@ -404,7 +406,7 @@ export class ApiClient {
         .post(API_PATH.ACTIVISTS_SEARCH, { json: options, signal })
         .json()
       const result = QueryActivistResult.parse(resp)
-      fillBlankFieldsInQueryActivistResult(result, options.columns)
+      fillBlankFieldsInQueryActivistResult(result, options.shape.columns)
       return result
     } catch (err) {
       return this.handleKyError(err)

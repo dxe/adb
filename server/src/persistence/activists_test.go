@@ -14,7 +14,9 @@ func TestQueryActivists_Empty(t *testing.T) {
 	repo := NewActivistRepository(db)
 
 	result, err := repo.QueryActivists(model.QueryActivistOptions{
-		Columns: []model.ActivistColumnName{model.ColName, model.ColID},
+		Shape: model.QueryActivistShape{
+			Columns: []model.ActivistColumnName{model.ColName, model.ColID},
+		},
 	})
 	require.NoError(t, err)
 	require.Empty(t, result.Activists)
@@ -32,7 +34,9 @@ func TestQueryActivists_ReturnsActivists(t *testing.T) {
 	require.NoError(t, err)
 
 	result, err := repo.QueryActivists(model.QueryActivistOptions{
-		Columns: []model.ActivistColumnName{model.ColName, model.ColID},
+		Shape: model.QueryActivistShape{
+			Columns: []model.ActivistColumnName{model.ColName, model.ColID},
+		},
 	})
 	require.NoError(t, err)
 	require.Len(t, result.Activists, 2)
@@ -49,9 +53,11 @@ func TestQueryActivists_NameFilter(t *testing.T) {
 	require.NoError(t, err)
 
 	result, err := repo.QueryActivists(model.QueryActivistOptions{
-		Columns: []model.ActivistColumnName{model.ColName, model.ColID},
-		Filters: model.QueryActivistFilters{
-			Name: model.NameFilter{NameContains: "Ali"},
+		Shape: model.QueryActivistShape{
+			Columns: []model.ActivistColumnName{model.ColName, model.ColID},
+			Filters: model.QueryActivistFilters{
+				Name: model.NameFilter{NameContains: "Ali"},
+			},
 		},
 	})
 	require.NoError(t, err)
@@ -65,7 +71,9 @@ func TestQueryActivists_InvalidColumn(t *testing.T) {
 	repo := NewActivistRepository(db)
 
 	_, err := repo.QueryActivists(model.QueryActivistOptions{
-		Columns: []model.ActivistColumnName{"not_a_real_column"},
+		Shape: model.QueryActivistShape{
+			Columns: []model.ActivistColumnName{"not_a_real_column"},
+		},
 	})
 	require.Error(t, err)
 }

@@ -27,17 +27,19 @@ export const buildQueryOptions = ({
   }
 
   return {
-    columns: columnsToRequest,
-    filters: buildApiFiltersFromState(filters, {
-      chapterId,
-      userId,
-      referenceDate,
-    }),
-    sort: {
-      sort_columns: (sort.length > 0 ? sort : DEFAULT_SORT).map((s) => ({
-        column_name: s.column,
-        desc: s.desc,
-      })),
+    shape: {
+      columns: columnsToRequest,
+      filters: buildApiFiltersFromState(filters, {
+        chapterId,
+        userId,
+        referenceDate,
+      }),
+      sort: {
+        sort_columns: (sort.length > 0 ? sort : DEFAULT_SORT).map((s) => ({
+          column_name: s.column,
+          desc: s.desc,
+        })),
+      },
     },
   }
 }
