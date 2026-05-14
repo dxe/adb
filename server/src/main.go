@@ -927,20 +927,25 @@ type UserChapter struct {
 }
 
 type PageData struct {
-	PageName      string
-	Data          interface{}
-	CsrfField     string
+	PageName  string
+	Data      interface{}
+	CsrfField string
+
 	UserRolesJSON template.JS
 	UserName      string
 	UserEmail     string
 	UserChapter   UserChapter
+
 	// Filled in by renderPage.
 	StaticResourcesHash string
+
 	// Used on International Form
 	GooglePlacesAPIKey string
+
 	// Used on Int'l Actions form page
 	Chapter model.ChapterWithToken
-	IsDev  bool
+
+	IsDev bool
 }
 
 // Render a page. All templates that load a header expect a PageData
