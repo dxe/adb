@@ -2349,14 +2349,14 @@ func StreamActivists(authedUser ADBUser, options QueryActivistOptions, repo Acti
 }
 
 func authorizeActivistQuery(authedUser ADBUser, options QueryActivistOptions) error {
+	if !UserHasOrganizerAccess(authedUser) {
+		return ValidationErrorf("lacking permission to query activists")
+	}
+
 	if !UserHasRole(shared.RoleAdmin, authedUser) {
 		if authedUser.ChapterID != options.Shape.Filters.ChapterId || authedUser.ChapterID == 0 {
 			return ValidationErrorf("cannot query activists in other chapters without admin access")
 		}
-	}
-
-	if !UserHasOrganizerAccess(authedUser) {
-		return ValidationErrorf("lacking permission to query activists")
 	}
 
 	if err := options.Shape.normalizeAndValidate(); err != nil {
