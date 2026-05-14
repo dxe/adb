@@ -72,11 +72,24 @@ go_mod_sync:
 	$(MAKE) _go_mod_sync
 	$(MAKE) _go_mod_sync
 
+# Normalize Go module metadata across the workspace.
+#
+# Tidies each module with GOWORK=off so each go.mod/go.sum reflects only
+# its own dependency graph (independent of the workspace), then `go work
+# sync` reconciles selected versions across the workspace.
+#
+# The trailing `go list -m all` resolves the workspace module graph so
+# go.work.sum picks up the /go.mod hashes Go's lazy loader records for
+# transitive deps it had to consider but didn't select. Without it, the
+# first workspace-mode invocation afterward (another `go list -m all`,
+# gopls in the IDE, etc.) writes those entries and leaves go.work.sum
+# dirty.
 _go_mod_sync:
 	cd pkg && GOWORK=off go mod tidy
 	cd cli && GOWORK=off go mod tidy
 	cd server/src && GOWORK=off go mod tidy
 	go work sync
+	cd server/src && go list -m all >/dev/null
 
 # Run all tests
 test: test-server test-frontend
