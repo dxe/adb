@@ -115,7 +115,7 @@ func (r *DBUserRepository) CreateUser(user model.ADBUser) (model.ADBUser, error)
 	if err != nil {
 		return model.ADBUser{}, errors.Wrap(err, "failed to start create user transaction")
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	var existing struct {
 		ID       int  `db:"id"`
@@ -187,7 +187,7 @@ func (r *DBUserRepository) UpdateUser(user model.ADBUser) (model.ADBUser, error)
 	if err != nil {
 		return model.ADBUser{}, errors.Wrap(err, "failed to start update user transaction")
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	var existing struct {
 		ID       int  `db:"id"`

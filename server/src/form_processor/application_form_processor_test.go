@@ -59,7 +59,7 @@ INSERT INTO form_application (
 func TestProcessFormApplicationForNoMatchingActivist(t *testing.T) {
 	/* Set up */
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	_, err := db.Query(insertIntoFormApplicationQuery)
 	if err != nil {
 		t.Fatalf("insertIntoFormApplicationQuery failed: %s", err)
@@ -76,7 +76,7 @@ func TestProcessFormApplicationForNoMatchingActivist(t *testing.T) {
 func TestProcessFormApplicationForActivistMatchingOnName(t *testing.T) {
 	/* Set up */
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	_, err := db.Exec(insertActivistForApplicationQuery, "name1")
 	if err != nil {
@@ -98,7 +98,7 @@ func TestProcessFormApplicationForActivistMatchingOnName(t *testing.T) {
 func TestProcessFormApplicationForActivistMatchingOnEmail(t *testing.T) {
 	/* Set up */
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	_, err := db.Exec(insertActivistForApplicationQuery, "non-matching_name")
 	if err != nil {
@@ -120,7 +120,7 @@ func TestProcessFormApplicationForActivistMatchingOnEmail(t *testing.T) {
 func TestProcessFormApplicationForMultipleMatchingActivistsOnEmail(t *testing.T) {
 	/* Set up */
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	_, err := db.Exec(insertActivistForApplicationQuery, "non-matching_name1")
 	if err != nil {
 		t.Fatalf("insertActivistForApplicationQuery failed: %s", err)

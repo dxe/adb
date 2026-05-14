@@ -79,7 +79,7 @@ INSERT INTO form_interest (
 func TestProcessFormInterestForNoMatchingActivist(t *testing.T) {
 	/* Set up */
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	insertInterestFormResponse(t, db, newInterestResponseBuilder())
 
 	/* Call functionality under test */
@@ -93,7 +93,7 @@ func TestProcessFormInterestForNoMatchingActivist(t *testing.T) {
 func TestProcessFormInterestForActivistMatchingOnName(t *testing.T) {
 	/* Set up */
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	model.MustInsertActivist(t, db, model.NewActivistBuilder().
 		WithName("Bob").
 		WithEmail("foo@example.org").
@@ -113,7 +113,7 @@ func TestProcessFormInterestForActivistMatchingOnName(t *testing.T) {
 func TestProcessFormInterestForActivistMatchingOnEmail(t *testing.T) {
 	/* Set up */
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	model.MustInsertActivist(t, db, model.NewActivistBuilder().
 		WithName("Bob").
 		WithEmail("match@example.org").
@@ -133,7 +133,7 @@ func TestProcessFormInterestForActivistMatchingOnEmail(t *testing.T) {
 func TestProcessFormInterestForMultipleMatchingActivistsOnEmail(t *testing.T) {
 	/* Set up */
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	model.MustInsertActivist(t, db, model.NewActivistBuilder().
 		WithName("Bob").
 		WithEmail("match@example.org").
@@ -156,7 +156,7 @@ func TestProcessFormInterestForMultipleMatchingActivistsOnEmail(t *testing.T) {
 func TestProcessFormInterestForMatchingChapterIdAndName(t *testing.T) {
 	/* Set up */
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	model.MustInsertActivist(t, db, model.NewActivistBuilder().
 		WithName("Sam").
@@ -185,7 +185,7 @@ func TestProcessFormInterestForMatchingChapterIdAndName(t *testing.T) {
 func TestProcessFormInterestForMatchingChapterIdAndEmail(t *testing.T) {
 	/* Set up */
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	model.MustInsertActivist(t, db, model.NewActivistBuilder().
 		WithName("Alice").
@@ -214,7 +214,7 @@ func TestProcessFormInterestForMatchingChapterIdAndEmail(t *testing.T) {
 func TestProcessFormInterestForNonMatchingChapter(t *testing.T) {
 	/* Set up */
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	model.MustInsertActivist(t, db, model.NewActivistBuilder().
 		WithName("Alice").

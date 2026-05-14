@@ -10,7 +10,7 @@ import (
 
 func TestQueryActivists_Empty(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	repo := NewActivistRepository(db)
 
 	result, err := repo.QueryActivists(model.QueryActivistOptions{
@@ -25,7 +25,7 @@ func TestQueryActivists_Empty(t *testing.T) {
 
 func TestQueryActivists_ReturnsActivists(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	repo := NewActivistRepository(db)
 
 	_, err := model.GetOrCreateActivist(db, "Alice", model.SFBayChapterIdDevTest)
@@ -44,7 +44,7 @@ func TestQueryActivists_ReturnsActivists(t *testing.T) {
 
 func TestQueryActivists_NameFilter(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	repo := NewActivistRepository(db)
 
 	_, err := model.GetOrCreateActivist(db, "Alice", model.SFBayChapterIdDevTest)
@@ -67,7 +67,7 @@ func TestQueryActivists_NameFilter(t *testing.T) {
 
 func TestQueryActivists_InvalidColumn(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	repo := NewActivistRepository(db)
 
 	_, err := repo.QueryActivists(model.QueryActivistOptions{

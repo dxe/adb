@@ -86,7 +86,7 @@ var chapterListCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("failed to connect to database: %w", err)
 		}
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 
 		var chapters []struct {
 			ChapterID int    `db:"chapter_id"`
@@ -115,7 +115,7 @@ var chapterGetFacebookCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("failed to connect to database: %w", err)
 		}
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 
 		var result struct {
 			ID    int64  `db:"id"`
@@ -156,7 +156,7 @@ var chapterSetFacebookCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("failed to connect to database: %w", err)
 		}
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 
 		name, err := chapterName(conn, chapterID)
 		if err != nil {
@@ -198,7 +198,7 @@ var chapterGetEventbriteCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("failed to connect to database: %w", err)
 		}
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 
 		var result struct {
 			EventbriteID    string `db:"eventbrite_id"`
@@ -235,7 +235,7 @@ var chapterSetEventbriteCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("failed to connect to database: %w", err)
 		}
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 
 		name, err := chapterName(conn, chapterID)
 		if err != nil {
@@ -277,7 +277,7 @@ var chapterGetMailingListCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("failed to connect to database: %w", err)
 		}
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 
 		var result struct {
 			MLType string `db:"ml_type"`
@@ -317,7 +317,7 @@ var chapterSetMailingListCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("failed to connect to database: %w", err)
 		}
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 
 		name, err := chapterName(conn, chapterID)
 		if err != nil {
@@ -359,7 +359,7 @@ var chapterGetMailingListRadiusCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("failed to connect to database: %w", err)
 		}
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 
 		var radius int
 		if err := conn.Get(&radius, `SELECT ml_radius FROM fb_pages WHERE chapter_id = ?`, chapterID); err != nil {
@@ -393,7 +393,7 @@ var chapterSetMailingListRadiusCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("failed to connect to database: %w", err)
 		}
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 
 		name, err := chapterName(conn, chapterID)
 		if err != nil {

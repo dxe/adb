@@ -13,7 +13,7 @@ func newCircle(name string) CircleGroup {
 
 func TestCreateCircleGroup_NonzeroIDReturnsError(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	cg := newCircle("Test Circle")
 	cg.ID = 5
@@ -23,7 +23,7 @@ func TestCreateCircleGroup_NonzeroIDReturnsError(t *testing.T) {
 
 func TestCreateCircleGroup_EmptyNameReturnsError(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	_, err := CreateCircleGroup(db, CircleGroup{Type: circle_group_db_value})
 	require.Error(t, err)
@@ -31,7 +31,7 @@ func TestCreateCircleGroup_EmptyNameReturnsError(t *testing.T) {
 
 func TestCreateCircleGroup_InvalidTypeReturnsError(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	_, err := CreateCircleGroup(db, CircleGroup{Name: "Test", Type: 99})
 	require.Error(t, err)
@@ -39,7 +39,7 @@ func TestCreateCircleGroup_InvalidTypeReturnsError(t *testing.T) {
 
 func TestCreateCircleGroup_HappyPath(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	id, err := CreateCircleGroup(db, newCircle("Outreach Circle"))
 	require.NoError(t, err)
@@ -53,7 +53,7 @@ func TestCreateCircleGroup_HappyPath(t *testing.T) {
 
 func TestUpdateCircleGroup_ZeroIDReturnsError(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	_, err := UpdateCircleGroup(db, newCircle("No ID"))
 	require.Error(t, err)
@@ -61,7 +61,7 @@ func TestUpdateCircleGroup_ZeroIDReturnsError(t *testing.T) {
 
 func TestUpdateCircleGroup_HappyPath(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	id, err := CreateCircleGroup(db, newCircle("Before"))
 	require.NoError(t, err)
@@ -76,7 +76,7 @@ func TestUpdateCircleGroup_HappyPath(t *testing.T) {
 
 func TestGetCircleGroups_ReturnsList(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	_, err := CreateCircleGroup(db, newCircle("Alpha"))
 	require.NoError(t, err)
@@ -90,7 +90,7 @@ func TestGetCircleGroups_ReturnsList(t *testing.T) {
 
 func TestGetCircleGroups_RejectsGroupIDInOptions(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	_, err := GetCircleGroups(db, CircleGroupQueryOptions{GroupID: 1})
 	require.Error(t, err)
@@ -98,14 +98,14 @@ func TestGetCircleGroups_RejectsGroupIDInOptions(t *testing.T) {
 
 func TestDeleteCircleGroup_ZeroIDReturnsError(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	require.Error(t, DeleteCircleGroup(db, 0))
 }
 
 func TestDeleteCircleGroup_HappyPath(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	id, err := CreateCircleGroup(db, newCircle("Temporary"))
 	require.NoError(t, err)
@@ -113,12 +113,12 @@ func TestDeleteCircleGroup_HappyPath(t *testing.T) {
 	require.NoError(t, DeleteCircleGroup(db, id))
 
 	_, err = GetCircleGroup(db, CircleGroupQueryOptions{GroupID: id})
-	require.ErrorContains(t, err, "No circle with ID")
+	require.ErrorContains(t, err, "no circle with ID")
 }
 
 func TestDeleteCircleGroup_WithMembersReturnsError(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	activist, err := GetOrCreateActivist(db, "Circle Member", SFBayChapterIdDevTest)
 	require.NoError(t, err)

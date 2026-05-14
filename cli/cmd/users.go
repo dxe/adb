@@ -32,13 +32,13 @@ var resetDevUserCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("failed to connect to database: %w", err)
 		}
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 
 		tx, err := conn.Begin()
 		if err != nil {
 			return fmt.Errorf("failed to begin transaction: %w", err)
 		}
-		defer tx.Rollback()
+		defer func() { _ = tx.Rollback() }()
 
 		if _, err := tx.Exec(`DELETE FROM users_roles WHERE user_id = ?`, shared.DevTestUserId); err != nil {
 			return fmt.Errorf("failed to delete user roles: %w", err)
@@ -98,13 +98,13 @@ Roles may be provided as separate arguments, a comma-separated list, or a mix of
 		if err != nil {
 			return fmt.Errorf("failed to connect to database: %w", err)
 		}
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 
 		tx, err := conn.Beginx()
 		if err != nil {
 			return fmt.Errorf("failed to begin transaction: %w", err)
 		}
-		defer tx.Rollback()
+		defer func() { _ = tx.Rollback() }()
 
 		var userCount int
 		if err := tx.Get(&userCount, `SELECT COUNT(*) FROM adb_users WHERE id = ?`, shared.DevTestUserId); err != nil {

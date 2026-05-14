@@ -55,11 +55,11 @@ func makeEvent() *model.ExternalEvent {
 func writeEmailMsgToFile(msg *mailer.Message, t *testing.T) error {
 	var sb strings.Builder
 	sb.WriteString("<table border='1'><tr><th>Header</th><th>Value</th></tr>")
-	sb.WriteString(fmt.Sprintf("<tr><td>From</td><td>%s (%s)</td></tr>", msg.FromAddress, msg.FromName))
-	sb.WriteString(fmt.Sprintf("<tr><td>To</td><td>%s (%s)</td></tr>", msg.ToAddress, msg.ToName))
-	sb.WriteString(fmt.Sprintf("<tr><td>CC</td><td>%s</td></tr>", strings.Join(msg.CC, ", ")))
-	sb.WriteString(fmt.Sprintf("<tr><td>BCC</td><td>%s</td></tr>", strings.Join(msg.BCC, ", ")))
-	sb.WriteString(fmt.Sprintf("<tr><td>Subject</td><td>%s</td></tr>", msg.Subject))
+	fmt.Fprintf(&sb, "<tr><td>From</td><td>%s (%s)</td></tr>", msg.FromAddress, msg.FromName)
+	fmt.Fprintf(&sb, "<tr><td>To</td><td>%s (%s)</td></tr>", msg.ToAddress, msg.ToName)
+	fmt.Fprintf(&sb, "<tr><td>CC</td><td>%s</td></tr>", strings.Join(msg.CC, ", "))
+	fmt.Fprintf(&sb, "<tr><td>BCC</td><td>%s</td></tr>", strings.Join(msg.BCC, ", "))
+	fmt.Fprintf(&sb, "<tr><td>Subject</td><td>%s</td></tr>", msg.Subject)
 	sb.WriteString("</table><hr>")
 	sb.WriteString(msg.BodyHTML)
 

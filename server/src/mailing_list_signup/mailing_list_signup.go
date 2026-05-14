@@ -50,7 +50,7 @@ func Enqueue(signup Signup) error {
 		return errors.New("failed to post to mailing list signup service")
 	}
 
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return errors.New("mailing list signup service returned status " + strconv.Itoa(resp.StatusCode))

@@ -39,7 +39,7 @@ func TestSubmitInterestForm_SendsCorrectSignupServiceRequest(t *testing.T) {
 	config.SignupAPIKey = "foo"
 
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	form := InterestFormData{
 		ChapterId: 42,

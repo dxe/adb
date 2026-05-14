@@ -32,7 +32,7 @@ ORDER BY table_name
 	if err != nil {
 		return nil, fmt.Errorf("query resettable tables: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var tables []string
 	for rows.Next() {
@@ -56,7 +56,7 @@ func Reset(db *sqlx.DB) error {
 	if err != nil {
 		return fmt.Errorf("get test database connection: %w", err)
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	if _, err := conn.ExecContext(ctx, "SET FOREIGN_KEY_CHECKS = 0"); err != nil {
 		return fmt.Errorf("disable foreign key checks: %w", err)
@@ -145,7 +145,7 @@ func NewDB() *sqlx.DB {
 		panic(err)
 	}
 	if err := Reset(db); err != nil {
-		db.Close()
+		_ = db.Close()
 		panic(fmt.Errorf("reset test database: %w", err))
 	}
 

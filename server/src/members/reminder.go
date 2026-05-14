@@ -52,12 +52,6 @@ type nameAndEmail struct {
 }
 
 func (s *server) members(queryMonth int) ([]nameAndEmail, error) {
-	// MySQL doesn't have a proper boolean data type, and it's
-	// json_object seems to have some arbitrary heuristics for
-	// deciding when to encode a boolean expression as 0/1 vs
-	// true/false.
-	type mysqlBool = int
-
 	// Same query as in roster.go, except for the final clause:
 	const q = `
 with target as (select ?),

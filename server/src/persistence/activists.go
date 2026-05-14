@@ -89,7 +89,7 @@ func (r DBActivistRepository) StreamActivists(options model.QueryActivistOptions
 	if err != nil {
 		return fmt.Errorf("querying activists: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	for rows.Next() {
 		var activist model.ActivistExtra

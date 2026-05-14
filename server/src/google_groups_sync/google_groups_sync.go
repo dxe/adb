@@ -2,8 +2,8 @@ package google_groups_sync
 
 import (
 	"context"
-	"io/ioutil"
 	"log"
+	"os"
 	"strings"
 	"time"
 
@@ -17,7 +17,7 @@ import (
 )
 
 func getAdminService() (*admin.Service, error) {
-	key, err := ioutil.ReadFile(config.SyncMailingListsConfigFile)
+	key, err := os.ReadFile(config.SyncMailingListsConfigFile)
 	if err != nil {
 		return nil, errors.Wrap(err, "Could not read google auth key")
 	}

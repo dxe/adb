@@ -286,7 +286,7 @@ func insertActivistFromInterestForm(db *sqlx.DB, id int) error {
 	if txErr != nil {
 		return fmt.Errorf("failed to start transaction; %s", txErr)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	insertResult, processErr := db.ExecContext(ctx, processInterestByInsertQuery, id)
 	if processErr != nil {

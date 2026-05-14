@@ -49,7 +49,7 @@ func stringListToMap(l []string) map[string]struct{} {
 
 func TestAutocompleteActivistsHandler(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	_, err := GetOrCreateActivist(db, "Activist One", SFBayChapterIdDevTest)
 	if err != nil {
@@ -74,7 +74,7 @@ func TestAutocompleteActivistsHandler(t *testing.T) {
 
 func TestGetActivistEventData(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	a1, err := GetOrCreateActivist(db, "Test Activist", SFBayChapterIdDevTest)
 	require.NoError(t, err)
@@ -126,7 +126,7 @@ func TestGetActivistEventData(t *testing.T) {
 
 func TestGetActivistEventData_noEvents(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	a1, err := GetOrCreateActivist(db, "Test Activist", SFBayChapterIdDevTest)
 	require.NoError(t, err)
@@ -157,7 +157,7 @@ func mustInsertAllEvents(t *testing.T, db *sqlx.DB, events []Event) {
 
 func TestGetActivistsJSON_RestrictDates(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	a1, err := GetOrCreateActivist(db, "A", SFBayChapterIdDevTest)
 	require.NoError(t, err)
@@ -220,7 +220,7 @@ func TestGetActivistsJSON_RestrictDates(t *testing.T) {
 
 func TestGetActivistsJSON_OrderField(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	a1, err := GetOrCreateActivist(db, "A", SFBayChapterIdDevTest)
 	require.NoError(t, err)
@@ -276,7 +276,7 @@ func TestGetActivistsJSON_OrderField(t *testing.T) {
 
 func TestGetActivistsJSON_FirstAndLastEvent(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	a1, err := GetOrCreateActivist(db, "A", SFBayChapterIdDevTest)
 	require.NoError(t, err)
@@ -329,7 +329,7 @@ func TestGetActivistsJSON_FirstAndLastEvent(t *testing.T) {
 
 func TestGetActivistsExtra(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	insertTestActivists(t, db, []string{"Alex Taylor"})
 
@@ -342,7 +342,7 @@ func TestGetActivistsExtra(t *testing.T) {
 func TestInsertActivist(t *testing.T) {
 	t.Run("Minimum", func(t *testing.T) {
 		db := testdb.NewDB()
-		defer db.Close()
+		defer func() { _ = db.Close() }()
 
 		var activist ActivistExtra
 		// Only Chapter and Name are set.
@@ -361,7 +361,7 @@ func TestInsertActivist(t *testing.T) {
 
 	t.Run("Basic", func(t *testing.T) {
 		db := testdb.NewDB()
-		defer db.Close()
+		defer func() { _ = db.Close() }()
 
 		activist := NewActivistBuilder().
 			WithChapterID(SFBayChapterId).
@@ -392,7 +392,7 @@ func TestInsertActivist(t *testing.T) {
 
 func TestUpdateActivist(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	activist := NewActivistBuilder().
 		WithChapterID(SFBayChapterId).
@@ -436,7 +436,7 @@ func TestUpdateActivist(t *testing.T) {
 
 func TestHideActivist(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Test that deleting activists works
 	a1, err := GetOrCreateActivist(db, "Test Activist", SFBayChapterIdDevTest)
@@ -502,7 +502,7 @@ func mustParseTime(t *testing.T, s string) time.Time {
 
 func TestGetActivistJSON_ChapterScopedByID(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	sfBayActivist, err := GetOrCreateActivist(db, "SF Bay Activist", SFBayChapterIdDevTest)
 	require.NoError(t, err)
@@ -525,7 +525,7 @@ func TestGetActivistJSON_ChapterScopedByID(t *testing.T) {
 
 func TestGetActivistJSONForUser_RejectsNonAdminWithoutChapter(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	activist, err := GetOrCreateActivist(db, "SF Bay Activist", SFBayChapterIdDevTest)
 	require.NoError(t, err)
@@ -542,7 +542,7 @@ func TestGetActivistJSONForUser_RejectsNonAdminWithoutChapter(t *testing.T) {
 
 func TestGetActivistJSONForUser_ChapterScopedByID(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	sfBayActivist, err := GetOrCreateActivist(db, "SF Bay Activist", SFBayChapterIdDevTest)
 	require.NoError(t, err)
@@ -565,7 +565,7 @@ func TestGetActivistJSONForUser_ChapterScopedByID(t *testing.T) {
 
 func TestPatchActivist_OrganizerCanOnlyPatchOwnChapter(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	otherChapterID, err := InsertChapter(db, ChapterWithToken{
 		Name: "Other Chapter",
@@ -609,7 +609,7 @@ func TestPatchActivist_OrganizerCanOnlyPatchOwnChapter(t *testing.T) {
 
 func TestPatchActivist_RejectsChapterPatchField(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	activist, err := GetOrCreateActivist(db, "Cannot Change Chapter", SFBayChapterIdDevTest)
 	require.NoError(t, err)
@@ -646,7 +646,7 @@ func TestPatchActivist_ValidatesAssignedTo(t *testing.T) {
 	// migration to ActivistRepo interface.
 	// Actual patch uses activistRepoStub for better performance.
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	activist := NewActivistBuilder().Build()
 	MustInsertActivist(t, db, activist)
@@ -710,7 +710,7 @@ func TestPatchActivist_ValidatesAssignedTo(t *testing.T) {
 
 func TestMergeActivist(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	t.Run("ContactInfo", func(t *testing.T) {
 		t.Run("MergesNewerValues", func(t *testing.T) {
@@ -1060,7 +1060,7 @@ func assertActivistJSONSliceContainsOrderedNames(t *testing.T, activists []Activ
 }
 
 func insertTestActivists(t *testing.T, db *sqlx.DB, names []string) []Activist {
-	var activists []Activist = make([]Activist, len(names))
+	activists := make([]Activist, len(names))
 	for idx, name := range names {
 		activist, err := GetOrCreateActivist(db, name, SFBayChapterIdDevTest)
 		require.NoError(t, err)

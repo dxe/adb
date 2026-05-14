@@ -11,7 +11,7 @@ import (
 
 func TestGetAdminChapterByID(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	id, insErr := InsertChapter(db, ChapterWithToken{
 		Name: "FooChapter",
@@ -30,7 +30,7 @@ func TestGetAdminChapterByID(t *testing.T) {
 
 func TestGetChapterByID(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	id, insErr := InsertChapter(db, ChapterWithToken{
 		Name:       "FooChapter",
@@ -91,7 +91,7 @@ func insertChapters(db *sqlx.DB, chapters []ChapterWithToken) []int {
 
 func TestFindNearestChaptersSortedByDistanceDeprecated(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	ids := insertChapters(db, []ChapterWithToken{
 		{
@@ -113,7 +113,7 @@ func TestFindNearestChaptersSortedByDistanceDeprecated(t *testing.T) {
 
 func TestFindNearestChaptersSortedByDistance(t *testing.T) {
 	db := testdb.NewDB()
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	ids := insertChapters(db, []ChapterWithToken{
 		{

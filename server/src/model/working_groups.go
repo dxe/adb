@@ -105,25 +105,25 @@ id = :id
 	}
 	res, err := tx.NamedExec(query, workingGroup)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return 0, errors.Wrap(err, "Failed to insert new working group")
 	}
 
 	if workingGroup.ID == 0 {
 		id, err := res.LastInsertId()
 		if err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			return 0, errors.Wrap(err, "Failed to get last inserted WorkingGroup ID")
 		}
 		workingGroup.ID = int(id)
 	}
 
 	if err := insertWorkingGroupMembers(tx, workingGroup); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return 0, errors.Wrapf(err, "Failed to insert members for working group %s", workingGroup.Name)
 	}
 	if err := tx.Commit(); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return 0, errors.Wrapf(err, "Failed to commit working group %s", workingGroup.Name)
 	}
 	return workingGroup.ID, nil
@@ -235,11 +235,11 @@ WHERE id = ?`, workingGroupID)
 	}
 
 	if err = txFn(); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return err
 	}
 	if err = tx.Commit(); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return errors.Wrap(err, "Error during commit")
 	}
 	return nil

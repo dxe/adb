@@ -136,21 +136,21 @@ id = :id
 	}
 	res, err := tx.NamedExec(query, circleGroup)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return 0, errors.Wrap(err, "Failed to insert or update circle")
 	}
 
 	if circleGroup.ID == 0 {
 		id, err := res.LastInsertId()
 		if err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			return 0, errors.Wrap(err, "Failed to get last inserted Circle ID.")
 		}
 		circleGroup.ID = int(id)
 	}
 
 	if err := insertCircleGroupMembers(tx, circleGroup); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return 0, errors.Wrapf(err, "Please check for duplicate members. Failed to insert members for Circle %s.", circleGroup.Name)
 	}
 
@@ -172,13 +172,13 @@ id = :id
 		circleGroup.Coords = fmt.Sprintf("%.6f, %.6f", avgLat, avgLng)
 		_, err := tx.NamedExec(`UPDATE circles SET coords = :coords WHERE id = :id`, circleGroup)
 		if err != nil {
-			tx.Rollback()
+			_ = tx.Rollback()
 			return 0, errors.Wrap(err, "Failed to update geo-circle coords")
 		}
 	}
 
 	if err := tx.Commit(); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return 0, errors.Wrapf(err, "Failed to commit Circle %s", circleGroup.Name)
 	}
 
@@ -298,11 +298,11 @@ WHERE id = ?`, circleGroupID)
 	}
 
 	if err = txFn(); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return err
 	}
 	if err = tx.Commit(); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return errors.Wrap(err, "Error during commit")
 	}
 	return nil
@@ -391,10 +391,10 @@ func GetCircleGroup(db *sqlx.DB, options CircleGroupQueryOptions) (CircleGroup, 
 		return CircleGroup{}, errors.Wrapf(err, "Error fetching circle with ID %d", options.GroupID)
 	}
 	if len(circleGroups) == 0 {
-		return CircleGroup{}, fmt.Errorf("No circle with ID %d found", options.GroupID)
+		return CircleGroup{}, fmt.Errorf("no circle with ID %d found", options.GroupID)
 	}
 	if len(circleGroups) > 1 {
-		return CircleGroup{}, fmt.Errorf("Duplicate circle with ID %d", options.GroupID)
+		return CircleGroup{}, fmt.Errorf("duplicate circle with ID %d", options.GroupID)
 	}
 	return circleGroups[0], nil
 }

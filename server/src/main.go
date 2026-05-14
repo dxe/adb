@@ -524,8 +524,7 @@ func setUserContext(r *http.Request, user model.ADBUser) context.Context {
 }
 
 func getUserFromContext(ctx context.Context) model.ADBUser {
-	var userctx interface{}
-	userctx = ctx.Value(userContextKey)
+	userctx := ctx.Value(userContextKey)
 
 	if userctx == nil {
 		return model.ADBUser{}
@@ -1980,7 +1979,7 @@ func GetLatLng(w http.ResponseWriter, r *http.Request) (float64, float64, error)
 		if err != nil {
 			return 0, 0, fmt.Errorf("error connecting to Geolocation API: %v", err)
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 		if resp.StatusCode != http.StatusOK {
 			return 0, 0, fmt.Errorf("error from Geolocation API: %v, %v", resp.Status, resp.StatusCode)
 		}

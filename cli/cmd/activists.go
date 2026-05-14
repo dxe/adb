@@ -25,7 +25,7 @@ var activistsCountCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("failed to connect to database: %w", err)
 		}
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 
 		var count int
 		if err := conn.Get(&count, "SELECT COUNT(*) FROM activists"); err != nil {

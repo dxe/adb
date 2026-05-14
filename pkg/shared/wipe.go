@@ -11,7 +11,7 @@ import (
 // The DSN must include multiStatements=true. isProd must be false.
 func WipeDatabase(dsn string, isProd bool) {
 	db := sqlx.MustConnect("mysql", dsn)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 	WipeDatabaseWithDb(db, isProd)
 }
 
