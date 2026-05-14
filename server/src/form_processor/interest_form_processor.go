@@ -288,7 +288,7 @@ func insertActivistFromInterestForm(db *sqlx.DB, id int) error {
 	}
 	defer func() { _ = tx.Rollback() }()
 
-	insertResult, processErr := db.ExecContext(ctx, processInterestByInsertQuery, id)
+	insertResult, processErr := tx.ExecContext(ctx, processInterestByInsertQuery, id)
 	if processErr != nil {
 		return fmt.Errorf("failed to processInterestByInsertQuery; %s", processErr)
 	}
@@ -301,7 +301,7 @@ func insertActivistFromInterestForm(db *sqlx.DB, id int) error {
 		return fmt.Errorf("no rows updated on processInterestByInsertQuery")
 	}
 
-	markResult, updateErr := db.ExecContext(ctx, markInterestProcessedQuery, id)
+	markResult, updateErr := tx.ExecContext(ctx, markInterestProcessedQuery, id)
 	if updateErr != nil {
 		return fmt.Errorf("failed to markInterestProcessedQuery; %s", updateErr)
 	}
