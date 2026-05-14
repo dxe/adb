@@ -63,6 +63,12 @@ http://localhost:8080/v2/test.
 React pages auto-update in the frontend development server when you save
 changes.
 
+Note: The frontend has a different color scheme in development. This helps
+developers with prod access maintain awareness of which environment they are
+working in to avoid making changes in the wrong environment. Double-clicking
+the navigation bar will toggle back to the prod color scheme e.g., for testing
+purposes or taking screenshots.
+
 Note: The react app can technically be accessed directly on port 3000 locally,
 but it won't have access to the cookies from :8080 which could cause issues.
 
