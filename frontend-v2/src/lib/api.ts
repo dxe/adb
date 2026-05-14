@@ -17,6 +17,7 @@ export const API_PATH = {
   ACTIVIST_LIST_BASIC: 'activist/list_basic',
   ACTIVISTS_SEARCH: 'api/activists',
   ACTIVISTS_EXPORT: 'api/activists/export',
+  ACTIVISTS_EXPORT_SPOKE: 'api/activists/export/spoke',
   ACTIVIST_GET: 'api/activists',
   ACTIVIST_HIDE: 'activist/hide',
   ACTIVIST_MERGE: 'activist/merge',
@@ -420,6 +421,24 @@ export class ApiClient {
   ) => {
     try {
       const resp = await this.client.post(API_PATH.ACTIVISTS_EXPORT, {
+        json: options,
+        signal,
+        timeout: false,
+      })
+      return await resp.blob()
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  // Exports activists in the Spoke dialer layout. The server hard-codes the
+  // CSV columns; options.shape.columns must be empty.
+  exportActivistsSpokeCsv = async (
+    options: QueryActivistOptions,
+    signal?: AbortSignal,
+  ) => {
+    try {
+      const resp = await this.client.post(API_PATH.ACTIVISTS_EXPORT_SPOKE, {
         json: options,
         signal,
         timeout: false,

@@ -152,35 +152,71 @@ export default function ActivistsPage({
       lastPage.pagination.next_cursor || undefined,
   })
 
-  const handleExport = useCallback(async () => {
-    const controller = exportAbortControllerRef.current
-    if (!controller) return
-    const { signal } = controller
-    setIsExporting(true)
-    let url: string | undefined
-    try {
-      const blob = await apiClient.exportActivistsCsv(queryOptions, signal)
-      if (signal.aborted) return
-      url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `activists-${new Date().toISOString().slice(0, 10)}.csv`
-      document.body.appendChild(a)
-      a.click()
-      a.remove()
-    } catch (err) {
-      if (signal.aborted) return
-      console.error('Failed to export activists CSV', err)
-      toast.error(
-        err instanceof Error && err.message
-          ? `Failed to export activists: ${err.message}`
-          : 'Failed to export activists. Please try again.',
-      )
-    } finally {
-      if (url) URL.revokeObjectURL(url)
-      if (!signal.aborted) setIsExporting(false)
-    }
-  }, [queryOptions])
+  // The spoke export uses the current filters but a server-selected column
+  // set, so we send an empty columns array. The server hard-codes the spoke
+  // columns and rejects a non-empty list.
+  const spokeQueryOptions = useMemo<QueryActivistOptions>(
+    () => ({
+      ...queryOptions,
+      shape: { ...queryOptions.shape, columns: [] },
+    }),
+    [queryOptions],
+  )
+
+  const runExport = useCallback(
+    async (
+      fetchBlob: (signal: AbortSignal) => Promise<Blob>,
+      filenamePrefix: string,
+    ) => {
+      if (isExporting) return
+      const controller = exportAbortControllerRef.current
+      if (!controller) return
+      const { signal } = controller
+      setIsExporting(true)
+      let url: string | undefined
+      try {
+        const blob = await fetchBlob(signal)
+        if (signal.aborted) return
+        url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${filenamePrefix}-${new Date().toISOString().slice(0, 10)}.csv`
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
+      } catch (err) {
+        if (signal.aborted) return
+        console.error('Failed to export activists CSV', err)
+        toast.error(
+          err instanceof Error && err.message
+            ? `Failed to export activists: ${err.message}`
+            : 'Failed to export activists. Please try again.',
+        )
+      } finally {
+        if (url) URL.revokeObjectURL(url)
+        if (!signal.aborted) setIsExporting(false)
+      }
+    },
+    [isExporting],
+  )
+
+  const handleExport = useCallback(
+    () =>
+      runExport(
+        (signal) => apiClient.exportActivistsCsv(queryOptions, signal),
+        'activists',
+      ),
+    [runExport, queryOptions],
+  )
+  const handleExportSpoke = useCallback(
+    () =>
+      runExport(
+        (signal) =>
+          apiClient.exportActivistsSpokeCsv(spokeQueryOptions, signal),
+        'activists-spoke',
+      ),
+    [runExport, spokeQueryOptions],
+  )
 
   const activists: ActivistJSON[] = useMemo(
     () => data?.pages.flatMap((page) => page.activists) ?? [],
@@ -221,6 +257,7 @@ export default function ActivistsPage({
           isDirty={isDirty}
           onReset={resetAll}
           onExport={handleExport}
+          onExportSpoke={handleExportSpoke}
           isExporting={isExporting}
         >
           <ColumnSelector

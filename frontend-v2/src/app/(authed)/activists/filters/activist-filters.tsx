@@ -7,7 +7,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { Download, Plus, RotateCcw, X } from 'lucide-react'
+import { ChevronDown, Download, Plus, RotateCcw, X } from 'lucide-react'
 import { ActivistLevelFilter } from './activist-level-filter'
 import { LastEventFilter } from './last-event-filter'
 import { DateRangeFilter } from './date-range-filter'
@@ -25,6 +25,7 @@ interface ActivistFiltersProps {
   isDirty: boolean
   onReset: () => void
   onExport?: () => void
+  onExportSpoke?: () => void
   isExporting?: boolean
   children?: React.ReactNode
 }
@@ -61,6 +62,7 @@ export function ActivistFilters({
   isDirty,
   onReset,
   onExport,
+  onExportSpoke,
   isExporting,
   children,
 }: ActivistFiltersProps) {
@@ -69,6 +71,7 @@ export function ActivistFilters({
     new Set(),
   )
   const [isAddFilterOpen, setIsAddFilterOpen] = useState(false)
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false)
   const canReset = isDirty || visibleFilters.size > 0
 
   // Prune visibleFilters entries that have no corresponding filter value when
@@ -141,16 +144,46 @@ export function ActivistFilters({
       {/* Chip bar */}
       <div className="flex flex-wrap items-center gap-2">
         {onExport && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-12"
-            onClick={onExport}
-            disabled={isExporting}
-          >
-            <Download className="h-4 w-4" />
-            {isExporting ? 'Exporting…' : 'Export'}
-          </Button>
+          <Popover open={isExportMenuOpen} onOpenChange={setIsExportMenuOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-12 gap-1"
+                disabled={isExporting}
+              >
+                <Download className="h-4 w-4" />
+                {isExporting ? 'Exporting…' : 'Export'}
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-44 p-2" align="start">
+              <div className="flex flex-col">
+                <button
+                  type="button"
+                  className="flex w-full items-center rounded px-2 py-1.5 text-sm hover:bg-muted transition-colors text-left"
+                  onClick={() => {
+                    setIsExportMenuOpen(false)
+                    onExport()
+                  }}
+                >
+                  Current columns
+                </button>
+                {onExportSpoke && (
+                  <button
+                    type="button"
+                    className="flex w-full items-center rounded px-2 py-1.5 text-sm hover:bg-muted transition-colors text-left"
+                    onClick={() => {
+                      setIsExportMenuOpen(false)
+                      onExportSpoke()
+                    }}
+                  >
+                    Spoke columns
+                  </button>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
         )}
         <Button
           variant="ghost"

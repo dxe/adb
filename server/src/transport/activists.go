@@ -187,17 +187,66 @@ func ActivistsExportHandler(w http.ResponseWriter, r *http.Request, authedUser m
 		return
 	}
 
-	exportColumns := append([]model.ActivistColumnName{}, options.Shape.Columns...)
+	cols := append([]model.ActivistColumnName{}, options.Shape.Columns...)
+	header := make([]string, len(cols))
+	for i, c := range cols {
+		header[i] = string(c)
+	}
+	buildRow := func(a model.ActivistJSON) []string {
+		return activistCSVRow(a, cols)
+	}
 
+	streamActivistsCSV(w, authedUser, options, repo, header, buildRow)
+}
+
+// ActivistsExportSpokeHandler streams a CSV in the Spoke dialer layout
+// (first_name, last_name, cell) derived from name, preferred_name, and phone.
+// The columns are server-controlled: clients must send an empty columns list,
+// and the filters/sort in the request body are applied as usual.
+func ActivistsExportSpokeHandler(w http.ResponseWriter, r *http.Request, authedUser model.ADBUser, repo model.ActivistRepository) {
+	var options model.QueryActivistOptions
+	if err := json.NewDecoder(r.Body).Decode(&options); err != nil && err != io.EOF {
+		sendErrorMessage(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if len(options.Shape.Columns) != 0 {
+		sendErrorMessage(w, http.StatusBadRequest, fmt.Errorf("spoke export must be requested with an empty columns list"))
+		return
+	}
+	options.Shape.Columns = []model.ActivistColumnName{
+		model.ColName,
+		model.ColPreferredName,
+		model.ColPhone,
+	}
+	// chapter_name is required by QueryActivistShape validation when no chapter
+	// filter is set, even though it doesn't appear in the spoke CSV.
+	if options.Shape.Filters.ChapterId == 0 {
+		options.Shape.Columns = append(options.Shape.Columns, model.ColChapterName)
+	}
+
+	streamActivistsCSV(w, authedUser, options, repo,
+		[]string{"first_name", "last_name", "cell"},
+		activistCSVRowSpoke,
+	)
+}
+
+// streamActivistsCSV runs the query and writes header + rows as CSV. Response
+// headers are deferred until the first row arrives so validation/auth errors
+// can still surface as JSON.
+func streamActivistsCSV(
+	w http.ResponseWriter,
+	authedUser model.ADBUser,
+	options model.QueryActivistOptions,
+	repo model.ActivistRepository,
+	header []string,
+	buildRow func(model.ActivistJSON) []string,
+) {
 	var cw *csv.Writer
 	startCSV := func() error {
 		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
 		w.Header().Set("Content-Disposition", `attachment; filename="activists.csv"`)
 		cw = csv.NewWriter(w)
-		header := make([]string, len(exportColumns))
-		for i, c := range exportColumns {
-			header[i] = string(c)
-		}
 		return cw.Write(header)
 	}
 
@@ -207,7 +256,7 @@ func ActivistsExportHandler(w http.ResponseWriter, r *http.Request, authedUser m
 				return fmt.Errorf("writing CSV header: %w", err)
 			}
 		}
-		return cw.Write(activistCSVRow(model.BuildActivistJSON(a), exportColumns))
+		return cw.Write(buildRow(model.BuildActivistJSON(a)))
 	})
 	if err != nil {
 		if cw == nil {
@@ -218,6 +267,10 @@ func ActivistsExportHandler(w http.ResponseWriter, r *http.Request, authedUser m
 				sendErrorMessage(w, http.StatusInternalServerError, err)
 			}
 			return
+		}
+		cw.Flush()
+		if flushErr := cw.Error(); flushErr != nil {
+			log.Printf("activists CSV export: flush after stream error: %v", flushErr)
 		}
 		log.Printf("activists CSV export: %v", err)
 		return
@@ -234,6 +287,24 @@ func ActivistsExportHandler(w http.ResponseWriter, r *http.Request, authedUser m
 	if err := cw.Error(); err != nil {
 		log.Printf("activists CSV export: flush: %v", err)
 	}
+}
+
+// activistCSVRowSpoke renders a row in the Spoke dialer layout. first_name
+// prefers preferred_name; otherwise it's the first whitespace-separated token
+// of name. last_name is the remainder after the first space (empty if name has
+// no space).
+func activistCSVRowSpoke(a model.ActivistJSON) []string {
+	firstName := a.PreferredName
+	lastName := ""
+	if i := strings.Index(a.Name, " "); i >= 0 {
+		if firstName == "" {
+			firstName = a.Name[:i]
+		}
+		lastName = a.Name[i+1:]
+	} else if firstName == "" {
+		firstName = a.Name
+	}
+	return []string{firstName, lastName, a.Phone}
 }
 
 // activistJSONFieldByJSONTag maps a json tag name to the corresponding
