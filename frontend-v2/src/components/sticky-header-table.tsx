@@ -37,8 +37,27 @@ export function StickyHeaderTable({
         when the table is taller. Flex items default to `min-height:
         min-content`, which would block that shrink and leave the Viewport's
         `h-full` with no smaller-than-content parent to resolve against.
+
+        At small browser heights, internal scroll is cramped and the better UX
+        is to defer to the page-level scroller. The `max-height:700px` overrides
+        flip the Root and Radix Viewport to `overflow:visible` so they stop
+        being scrolling ancestors — the sticky header then resolves against
+        whatever scroll container is next up the tree. `min-h-[auto]` reverts
+        the flex-shrink cap so the Root grows vertically to content size.
+        `w-max max-w-none` does the same horizontally — without it, the Root
+        stays at consumer width while the inner table keeps its explicit wider
+        width, leaving rows visibly past the right border. Overflow then
+        propagates up to horizontal page scroll.
+        The `!` on the Viewport rule overrides Radix's inline `overflow` style.
       */}
-      <ScrollArea className="min-h-0 max-w-full rounded-md border">
+      <ScrollArea
+        className={cn(
+          'min-h-0 max-w-full rounded-md border',
+          '[@media(max-height:700px)]:min-h-[auto] [@media(max-height:700px)]:overflow-visible',
+          '[@media(max-height:700px)]:w-max [@media(max-height:700px)]:max-w-none',
+          '[@media(max-height:700px)]:[&_[data-radix-scroll-area-viewport]]:!overflow-visible',
+        )}
+      >
         {/*
         shadcn's <Table> wraps its <table> in a `<div className="overflow-auto">`.
         That wrapper would otherwise be the sticky header's scroll container;
