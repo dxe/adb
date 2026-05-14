@@ -36,9 +36,6 @@ body.with-site-bg {
   background:
     linear-gradient(rgba(80, 90, 170, 0.85), rgba(80, 90, 170, 0.85)),
     url('/v2/bg.jpg') no-repeat center center fixed;
-  -webkit-background-size: cover;
-  -moz-background-size: cover;
-  -o-background-size: cover;
   background-size: cover;
 }
 
