@@ -1,3 +1,8 @@
+// Defines the ActivistSheet component which allows editing an activist without
+// leaving whatever page the user is already on. "Sheet" here refers to a
+// UX/UI concept (shadcn/ui Sheet, built on Radix Dialog), not to be confused
+// with any spreadsheet-like table.
+
 'use client'
 
 import * as DialogPrimitive from '@radix-ui/react-dialog'
