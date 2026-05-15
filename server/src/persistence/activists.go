@@ -106,6 +106,33 @@ func (r DBActivistRepository) StreamActivists(options model.QueryActivistOptions
 	return nil
 }
 
+func (r DBActivistRepository) CountActivists(filters model.QueryActivistFilters) (int, error) {
+	query := NewSqlQueryBuilder()
+	query.From(fmt.Sprintf("FROM activists %s", activistTableAlias))
+	query.SelectColumn("COUNT(*)")
+
+	filterList := buildFiltersFromShape(model.QueryActivistShape{Filters: filters})
+	registry := newJoinRegistry()
+	for _, f := range filterList {
+		for _, clause := range f.buildWhere() {
+			query.Where(clause.sql, clause.args...)
+		}
+		for _, joinSpec := range f.getJoins() {
+			registry.registerJoin(joinSpec)
+		}
+	}
+	for _, joinSQL := range registry.getJoins() {
+		query.Join(joinSQL)
+	}
+
+	sqlStr, args := query.ToSQL()
+	var count int
+	if err := r.db.Get(&count, sqlStr, args...); err != nil {
+		return 0, fmt.Errorf("counting activists: %w", err)
+	}
+	return count, nil
+}
+
 // buildActivistsQueryFromShape applies the columns, filters, joins, and
 // ORDER BY (with id tiebreaker) for an activist query.
 func buildActivistsQueryFromShape(shape model.QueryActivistShape) (*sqlQueryBuilder, []model.ActivistSortColumn, []sortSpec, error) {

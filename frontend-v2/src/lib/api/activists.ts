@@ -205,3 +205,17 @@ export const QueryActivistResult = z.object({
   pagination: QueryActivistPagination,
 })
 export type QueryActivistResult = z.infer<typeof QueryActivistResult>
+
+// QueryActivistCountOptions is the request body for POST /api/activists/count.
+// Unlike QueryActivistOptions it contains only filters — no columns or sort.
+export const QueryActivistCountOptions = z.object({
+  filters: QueryActivistFilters,
+})
+export type QueryActivistCountOptions = z.infer<
+  typeof QueryActivistCountOptions
+>
+
+export const QueryActivistCountResult = z.object({
+  count: z.number().int().nonnegative(),
+})
+export type QueryActivistCountResult = z.infer<typeof QueryActivistCountResult>

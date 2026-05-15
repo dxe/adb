@@ -2283,6 +2283,21 @@ func QueryActivists(authedUser ADBUser, options QueryActivistOptions, repo Activ
 	return repo.QueryActivists(options)
 }
 
+// QueryActivistCountOptions is the request body for the count endpoint.
+type QueryActivistCountOptions struct {
+	Filters QueryActivistFilters `json:"filters"`
+}
+
+func CountActivists(authedUser ADBUser, options QueryActivistCountOptions, repo ActivistRepository) (int, error) {
+	if err := authorizeActivistAccess(authedUser, options.Filters.ChapterId); err != nil {
+		return 0, err
+	}
+	if err := options.Filters.Validate(); err != nil {
+		return 0, err
+	}
+	return repo.CountActivists(options.Filters)
+}
+
 // StreamActivists runs an activist query and invokes fn for each result row.
 // Unlike QueryActivists, results are not paginated. Validation is performed
 // before any rows are fetched, so callers can rely on errors returned before
@@ -2295,21 +2310,25 @@ func StreamActivists(authedUser ADBUser, options QueryActivistOptions, repo Acti
 	return repo.StreamActivists(options, fn)
 }
 
-func authorizeActivistQuery(authedUser ADBUser, options QueryActivistOptions) error {
+func authorizeActivistAccess(authedUser ADBUser, chapterId int) error {
 	if !UserHasOrganizerAccess(authedUser) {
 		return ValidationErrorf("lacking permission to query activists")
 	}
-
 	if !UserHasRole(shared.RoleAdmin, authedUser) {
-		if authedUser.ChapterID != options.Shape.Filters.ChapterId || authedUser.ChapterID == 0 {
+		if authedUser.ChapterID != chapterId || authedUser.ChapterID == 0 {
 			return ValidationErrorf("cannot query activists in other chapters without admin access")
 		}
 	}
+	return nil
+}
 
+func authorizeActivistQuery(authedUser ADBUser, options QueryActivistOptions) error {
+	if err := authorizeActivistAccess(authedUser, options.Shape.Filters.ChapterId); err != nil {
+		return err
+	}
 	if err := options.Shape.normalizeAndValidate(); err != nil {
 		return ValidationErrorf("invalid query options: %v", err)
 	}
-
 	return nil
 }
 
@@ -2346,6 +2365,7 @@ func ValidationErrorf(format string, args ...any) error {
 type ActivistRepository interface {
 	QueryActivists(options QueryActivistOptions) (QueryActivistResult, error)
 	StreamActivists(options QueryActivistOptions, fn func(ActivistExtra) error) error
+	CountActivists(filters QueryActivistFilters) (int, error)
 	PatchActivist(id int, patch ActivistPatchData) error
 }
 

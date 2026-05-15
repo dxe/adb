@@ -171,6 +171,12 @@ func (s *activistRepoStub) StreamActivists(options QueryActivistOptions, fn func
 	return nil
 }
 
+func (s *activistRepoStub) CountActivists(filters QueryActivistFilters) (int, error) {
+	s.t.Helper()
+	s.t.Fatalf("unexpected call to CountActivists")
+	return 0, nil
+}
+
 func (s *activistRepoStub) PatchActivist(id int, patch ActivistPatchData) error {
 	s.patchCalls++
 	s.lastID = id
