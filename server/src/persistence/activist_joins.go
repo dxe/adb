@@ -60,48 +60,37 @@ var (
 	firstEventSubqueryJoin = joinSpec{
 		Key: firstEventSubqueryKey,
 		SQL: fmt.Sprintf(`
-LEFT JOIN (
-	SELECT activist_id, first_event_date, event_name
-	FROM (
-		SELECT
-			ea.activist_id,
-			e.date as first_event_date,
-			e.name as event_name,
-			ROW_NUMBER() OVER (PARTITION BY ea.activist_id ORDER BY e.date ASC) as rn
-		FROM event_attendance ea
-		JOIN events e ON e.id = ea.event_id
-	) ranked
-	WHERE rn = 1
-) %s ON %s.activist_id = %s.id`, firstEventSubqueryKey, firstEventSubqueryKey, activistTableAlias),
+LEFT JOIN LATERAL (
+	SELECT e.date as first_event_date, e.name as event_name
+	FROM event_attendance ea
+	JOIN events e ON e.id = ea.event_id
+	WHERE ea.activist_id = %s.id
+	ORDER BY e.date ASC
+	LIMIT 1
+) %s ON TRUE`, activistTableAlias, firstEventSubqueryKey),
 	}
 
 	lastEventSubqueryJoin = joinSpec{
 		Key: lastEventSubqueryKey,
-		// Note: a more efficient query could be used when only last_event_date is needed.
 		SQL: fmt.Sprintf(`
-LEFT JOIN (
-	SELECT activist_id, last_event_date, event_name
-	FROM (
-		SELECT
-			ea.activist_id,
-			e.date as last_event_date,
-			e.name as event_name,
-			ROW_NUMBER() OVER (PARTITION BY ea.activist_id ORDER BY e.date DESC) as rn
-		FROM event_attendance ea
-		JOIN events e ON e.id = ea.event_id
-	) ranked
-	WHERE rn = 1
-) %s ON %s.activist_id = %s.id`, lastEventSubqueryKey, lastEventSubqueryKey, activistTableAlias),
+LEFT JOIN LATERAL (
+	SELECT e.date as last_event_date, e.name as event_name
+	FROM event_attendance ea
+	JOIN events e ON e.id = ea.event_id
+	WHERE ea.activist_id = %s.id
+	ORDER BY e.date DESC
+	LIMIT 1
+) %s ON TRUE`, activistTableAlias, lastEventSubqueryKey),
 	}
 
 	totalEventsSubqueryJoin = joinSpec{
 		Key: totalEventsSubqueryKey,
 		SQL: fmt.Sprintf(`
-LEFT JOIN (
-	SELECT ea.activist_id, COUNT(DISTINCT ea.event_id) as event_count
+LEFT JOIN LATERAL (
+	SELECT COUNT(DISTINCT ea.event_id) as event_count
 	FROM event_attendance ea
-	GROUP BY ea.activist_id
-) %s ON %s.activist_id = %s.id`, totalEventsSubqueryKey, totalEventsSubqueryKey, activistTableAlias),
+	WHERE ea.activist_id = %s.id
+) %s ON TRUE`, activistTableAlias, totalEventsSubqueryKey),
 	}
 
 	chapterJoin = joinSpec{
