@@ -2,6 +2,7 @@ package transport
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -120,6 +121,8 @@ func UserCreateHandler(w http.ResponseWriter, r *http.Request, repo model.UserRe
 		return
 	}
 
+	log.Printf("Created user %d (%s)", createdUser.ID, createdUser.Email)
+
 	writeJSON(w, map[string]interface{}{
 		"status": "success",
 		"user":   userToJson(createdUser),
@@ -159,6 +162,8 @@ func UserUpdateHandler(w http.ResponseWriter, r *http.Request, repo model.UserRe
 		sendErrorMessage(w, http.StatusInternalServerError, err)
 		return
 	}
+
+	log.Printf("Updated user %d", updatedUser.ID)
 
 	writeJSON(w, map[string]interface{}{
 		"status": "success",

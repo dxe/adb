@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"slices"
 	"strings"
 
@@ -222,6 +223,7 @@ func UpdateChapter(db *sqlx.DB, page ChapterWithToken) (int, error) {
 	if err != nil {
 		return 0, errors.Wrapf(err, "failed to update chapter %d", page.ID)
 	}
+	log.Printf("Updated chapter %d", page.ChapterID)
 	return page.ChapterID, nil
 }
 
@@ -243,6 +245,7 @@ func DeleteChapter(db *sqlx.DB, chapter int) error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to delete chapter %d", chapter)
 	}
+	log.Printf("Deleted chapter %d", chapter)
 	return nil
 }
 
@@ -257,6 +260,7 @@ func InsertChapter(db *sqlx.DB, page ChapterWithToken) (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("error getting ID after insert: %w", err)
 	}
+	log.Printf("Inserted chapter %d (%s)", insertedID, page.Name)
 	return int(insertedID), nil
 }
 

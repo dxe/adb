@@ -143,6 +143,7 @@ func (c MainController) getAuthedADBUser(r *http.Request) (adbUser model.ADBUser
 	// Then, check that the user is still authed.
 	adbUser, err = c.userRepo.GetUser(adbUserID, "")
 	if err != nil {
+		log.Printf("Error fetching authed user %d: %v", adbUserID, err)
 		return model.ADBUser{}, false
 	}
 	if adbUser.Disabled {
@@ -151,6 +152,7 @@ func (c MainController) getAuthedADBUser(r *http.Request) (adbUser model.ADBUser
 
 	augmentedUser, err := augmentUserWithChapterFromSession(c.db, r, adbUser)
 	if err != nil {
+		log.Printf("Error augmenting user %d with chapter from session: %v", adbUser.ID, err)
 		return model.ADBUser{}, false
 	}
 
@@ -879,6 +881,7 @@ func (c MainController) SwitchActiveChapterHandler(w http.ResponseWriter, r *htt
 
 	authSession, err := sessionStore.Get(r, "auth-session")
 	if err != nil {
+		log.Printf("Error getting auth session: %v", err)
 		http.Error(w, "Failed to get session", http.StatusInternalServerError)
 		return
 	}
@@ -1540,6 +1543,7 @@ func (c MainController) ActivistListBasicHandler(w http.ResponseWriter, r *http.
 	// Get IDs of activists that were hidden since the last sync
 	hiddenIDs, err := model.GetHiddenActivistIDs(c.db, chapter, modifiedSince)
 	if err != nil {
+		log.Printf("Error getting hidden activist IDs for chapter %d: %v", chapter, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

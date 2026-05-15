@@ -1246,7 +1246,7 @@ func UserUpdateActivist(db *sqlx.DB, activist ActivistExtra, authedUser ADBUser,
 
 	syncMailingListIfNeeded(origActivist, activist)
 
-	log.Printf("Updated data for activist %v", activist.Name)
+	log.Printf("Updated data for activist %v: %v", activist.ID, activist.Name)
 
 	addActivistHistory(db, authedUser.Email, activist)
 
@@ -1359,6 +1359,7 @@ func HideActivist(db *sqlx.DB, authedUser ADBUser, activistID int) error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to update activist %d", activistID)
 	}
+	log.Printf("Hid activist %d", activistID)
 	return nil
 }
 
@@ -1439,6 +1440,7 @@ func MergeActivist(db *sqlx.DB, originalActivistID, targetActivistID int, mergeN
 			originalActivistID, targetActivistID)
 	}
 
+	log.Printf("Merged activist %d into %d", originalActivistID, targetActivistID)
 	return nil
 }
 
