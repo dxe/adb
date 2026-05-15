@@ -95,12 +95,14 @@ func TestFindNearestChaptersSortedByDistanceDeprecated(t *testing.T) {
 
 	ids := insertChapters(db, []ChapterWithToken{
 		{
-			Lat: -50,
-			Lng: -25,
+			Name: "ChapterA",
+			Lat:  -50,
+			Lng:  -25,
 		},
 		{
-			Lat: -50,
-			Lng: -50,
+			Name: "ChapterB",
+			Lat:  -50,
+			Lng:  -50,
 		},
 	})
 
@@ -117,12 +119,14 @@ func TestFindNearestChaptersSortedByDistance(t *testing.T) {
 
 	ids := insertChapters(db, []ChapterWithToken{
 		{
-			Lat: -50,
-			Lng: -25,
+			Name: "ChapterA",
+			Lat:  -50,
+			Lng:  -25,
 		},
 		{
-			Lat: -50,
-			Lng: -50,
+			Name: "ChapterB",
+			Lat:  -50,
+			Lng:  -50,
 		},
 	})
 

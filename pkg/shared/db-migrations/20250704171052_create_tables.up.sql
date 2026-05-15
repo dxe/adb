@@ -65,7 +65,12 @@ CREATE TABLE IF NOT EXISTS activists(
   followup_date date DEFAULT NULL,
   language varchar(40) NOT NULL DEFAULT '',
   accessibility varchar(300) NOT NULL DEFAULT '',
-  UNIQUE (name, chapter_id)
+  UNIQUE name_ukey (name, chapter_id),
+  INDEX activist_level (activist_level),
+  INDEX activists_email (email),
+  INDEX hidden (hidden),
+  INDEX mpi (mpi),
+  INDEX source (source)
 );
 
 CREATE TABLE IF NOT EXISTS activists_history(
@@ -79,14 +84,14 @@ CREATE TABLE IF NOT EXISTS activists_history(
   facebook VARCHAR(200) NOT NULL,
   activist_level VARCHAR(40) NOT NULL,
   PRIMARY KEY (revision),
-  INDEX (activist_id, revision)
+  INDEX revision (activist_id, revision)
 );
 
 CREATE TABLE IF NOT EXISTS event_attendance(
   activist_id INTEGER NOT NULL,
   event_id INTEGER NOT NULL,
-  UNIQUE (activist_id, event_id),
-  UNIQUE (event_id, activist_id)
+  UNIQUE activist_event (activist_id, event_id),
+  UNIQUE event_activist (event_id, activist_id)
 );
 
 CREATE TABLE IF NOT EXISTS events(
@@ -98,7 +103,7 @@ CREATE TABLE IF NOT EXISTS events(
   suppress_survey TINYINT(1) NOT NULL DEFAULT '0',
   circle_id INTEGER NOT NULL DEFAULT '0',
   chapter_id INT(11) DEFAULT '0',
-  INDEX (date, name),
+  INDEX date_name (date, name),
   FULLTEXT (name)
 );
 
@@ -108,7 +113,10 @@ CREATE TABLE IF NOT EXISTS adb_users(
   name VARCHAR(150) NOT NULL DEFAULT '',
   admin TINYINT(1) NOT NULL DEFAULT '0',
   chapter_id int(11) DEFAULT '0',
-  disabled TINYINT(1) NOT NULL DEFAULT '0'
+  disabled TINYINT(1) NOT NULL DEFAULT '0',
+  UNIQUE email (email),
+  UNIQUE name (name),
+  UNIQUE name_2 (name)
 );
 
 CREATE TABLE IF NOT EXISTS merged_activist_attendance(
@@ -116,7 +124,7 @@ CREATE TABLE IF NOT EXISTS merged_activist_attendance(
   target_activist_id INTEGER NOT NULL,
   event_id INTEGER NOT NULL,
   replaced_with_target_activist TINYINT(1) NOT NULL,
-  UNIQUE (original_activist_id, target_activist_id, event_id)
+  UNIQUE merged_activist_attendance_ukey (original_activist_id, target_activist_id, event_id)
 );
 
 CREATE TABLE IF NOT EXISTS working_groups(
@@ -128,7 +136,7 @@ CREATE TABLE IF NOT EXISTS working_groups(
   meeting_time TEXT NOT NULL,
   meeting_location TEXT NOT NULL,
   coords TEXT NOT NULL,
-  UNIQUE (name)
+  UNIQUE working_groups_name_ukey (name)
 );
 
 CREATE TABLE IF NOT EXISTS working_group_members(
@@ -141,7 +149,7 @@ CREATE TABLE IF NOT EXISTS working_group_members(
   -- Some activists need to be on the mailing list even though they
   -- aren't in the workin group.
   non_member_on_mailing_list TINYINT NOT NULL DEFAULT '0',
-  UNIQUE (working_group_id, activist_id),
+  UNIQUE working_group_member_ukey (working_group_id, activist_id),
   INDEX (activist_id)
 );
 
@@ -155,7 +163,7 @@ CREATE TABLE IF NOT EXISTS circles(
   meeting_time TEXT NOT NULL,
   meeting_location TEXT NOT NULL,
   coords TEXT NOT NULL,
-  UNIQUE (name)
+  UNIQUE working_groups_name_ukey (name)
 );
 
 CREATE TABLE IF NOT EXISTS circle_members(
@@ -163,7 +171,7 @@ CREATE TABLE IF NOT EXISTS circle_members(
   activist_id INTEGER NOT NULL,
   point_person TINYINT NOT NULL DEFAULT '0',
   non_member_on_mailing_list TINYINT NOT NULL DEFAULT '0',
-  UNIQUE (circle_id, activist_id),
+  UNIQUE working_group_member_ukey (circle_id, activist_id),
   INDEX (activist_id)
 );
 
@@ -180,8 +188,8 @@ CREATE TABLE IF NOT EXISTS users_roles(
 
 CREATE TABLE IF NOT EXISTS fb_pages(
   id BIGINT(16) NOT NULL DEFAULT '0',
-  chapter_id INTEGER PRIMARY KEY AUTO_INCREMENT,
-  name VARCHAR(75) NOT NULL,
+  chapter_id INTEGER NOT NULL AUTO_INCREMENT,
+  name VARCHAR(75) NOT NULL PRIMARY KEY,
   region ENUM('','North America','Central & South America','Europe','Middle East & Africa','Asia-Pacific','Online') NOT NULL DEFAULT '',
   flag VARCHAR(2) NOT NULL DEFAULT '',
   lat FLOAT(10,6) NOT NULL DEFAULT '0.000000',
@@ -203,7 +211,8 @@ CREATE TABLE IF NOT EXISTS fb_pages(
   last_action VARCHAR(10) DEFAULT '',
   organizers JSON,
   email_token VARCHAR(64) DEFAULT NULL,
-  last_checkin_email_sent TIMESTAMP DEFAULT NULL
+  last_checkin_email_sent TIMESTAMP DEFAULT NULL,
+  INDEX chapterID (chapter_id)
 );
 
 CREATE TABLE IF NOT EXISTS fb_events(
@@ -289,7 +298,9 @@ CREATE TABLE IF NOT EXISTS form_interest(
   discord_id varchar(18) NOT NULL DEFAULT '',
   timestamp datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   processed tinyint(1) NOT NULL DEFAULT '0',
-  PRIMARY KEY (id)
+  PRIMARY KEY (id),
+  INDEX email (email),
+  INDEX `timestamp` (`timestamp`)
 );
 
 CREATE TABLE IF NOT EXISTS form_international(
