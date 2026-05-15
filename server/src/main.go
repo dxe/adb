@@ -325,6 +325,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	// Authed API
 	router.Handle("/api/csrf-token", csrfMiddleware(alice.New(main.apiAnyADBRoleAuthMiddleware).ThenFunc(main.CSRFTokenHandler))).Methods(http.MethodGet)
 	router.Handle("/api/activists", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistsSearchHandler)).Methods(http.MethodPost)
+	router.Handle("/api/activists/count", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistsCountHandler)).Methods(http.MethodPost)
 	router.Handle("/api/activists/export", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistsExportHandler)).Methods(http.MethodPost)
 	router.Handle("/api/activists/export/spoke", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistsExportSpokeHandler)).Methods(http.MethodPost)
 	router.Handle("/api/activists/{id:[0-9]+}", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistGetHandler)).Methods(http.MethodGet)
@@ -1790,6 +1791,20 @@ func (c MainController) ActivistsSearchHandler(w http.ResponseWriter, r *http.Re
 	}
 
 	transport.ActivistsSearchHandler(w, r, authedUser, c.activistRepo)
+}
+
+// ActivistsCountHandler returns the total number of activists matching a set of
+// filters, without returning the activists themselves. It exists as a separate
+// endpoint from the search so callers can fetch the count independently —
+// specifically, the frontend may fetch it client-side after the page has
+// already rendered, in order to keep the server-side prefetch lean.
+func (c MainController) ActivistsCountHandler(w http.ResponseWriter, r *http.Request) {
+	authedUser, authed := c.getAuthedADBUser(r)
+	if !authed {
+		panic("ActivistsCountHandler requires authed ADB user")
+	}
+
+	transport.ActivistsCountHandler(w, r, authedUser, c.activistRepo)
 }
 
 func (c MainController) ActivistsExportHandler(w http.ResponseWriter, r *http.Request) {

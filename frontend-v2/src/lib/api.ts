@@ -3,6 +3,8 @@ import { z } from 'zod'
 import {
   ActivistJSON,
   ActivistPatchInput,
+  QueryActivistCountOptions,
+  QueryActivistCountResult,
   QueryActivistOptions,
   QueryActivistResult,
 } from './api/activists'
@@ -16,6 +18,7 @@ export const API_PATH = {
   ACTIVIST_NAMES_GET: 'activist_names/get',
   ACTIVIST_LIST_BASIC: 'activist/list_basic',
   ACTIVISTS_SEARCH: 'api/activists',
+  ACTIVISTS_COUNT: 'api/activists/count',
   ACTIVISTS_EXPORT: 'api/activists/export',
   ACTIVISTS_EXPORT_SPOKE: 'api/activists/export/spoke',
   ACTIVIST_GET: 'api/activists',
@@ -198,6 +201,7 @@ export {
   QueryActivistOptions,
   QueryActivistShape,
   QueryActivistResult,
+  QueryActivistCountOptions,
 } from './api/activists'
 export type {
   ApiDateRangeFilter,
@@ -208,6 +212,7 @@ export type {
   QueryActivistOptions as QueryActivistOptionsType,
   QueryActivistShape as QueryActivistShapeType,
   QueryActivistResult as QueryActivistResultType,
+  QueryActivistCountOptions as QueryActivistCountOptionsType,
 } from './api/activists'
 
 const ActivistGetResp = z.object({
@@ -410,6 +415,20 @@ export class ApiClient {
       const result = QueryActivistResult.parse(resp)
       fillBlankFieldsInQueryActivistResult(result, options.shape.columns)
       return result
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  countActivists = async (
+    options: QueryActivistCountOptions,
+    signal?: AbortSignal,
+  ): Promise<QueryActivistCountResult> => {
+    try {
+      const resp = await this.client
+        .post(API_PATH.ACTIVISTS_COUNT, { json: options, signal })
+        .json()
+      return QueryActivistCountResult.parse(resp)
     } catch (err) {
       return this.handleKyError(err)
     }

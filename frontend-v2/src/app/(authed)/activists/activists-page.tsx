@@ -1,13 +1,14 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
-import { useInfiniteQuery } from '@tanstack/react-query'
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { useQueryState, parseAsInteger } from 'nuqs'
 import toast from 'react-hot-toast'
 import {
   apiClient,
   API_PATH,
   QueryActivistOptions,
+  QueryActivistCountOptions,
   type ActivistColumnName,
   type ActivistJSON,
 } from '@/lib/api'
@@ -150,6 +151,18 @@ export default function ActivistsPage({
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) =>
       lastPage.pagination.next_cursor || undefined,
+  })
+
+  const countQueryOptions = useMemo<QueryActivistCountOptions>(
+    () => ({ filters: queryOptions.shape.filters }),
+    [queryOptions],
+  )
+
+  // Not prefetched because it won't cause layout shift and keeps SSR lean.
+  const { data: countData, isError: isCountError } = useQuery({
+    queryKey: [API_PATH.ACTIVISTS_COUNT, countQueryOptions],
+    queryFn: ({ signal }) =>
+      apiClient.countActivists(countQueryOptions, signal),
   })
 
   // The spoke export uses the current filters but a server-selected column
@@ -311,8 +324,9 @@ export default function ActivistsPage({
           <>
             {activists.length > 0 && (
               <div className="text-sm text-muted-foreground">
-                {activists.length} activist
-                {activists.length !== 1 ? 's' : ''} shown
+                {activists.length} of{' '}
+                {isCountError ? '?' : (countData?.count ?? '…')} activist
+                {(countData?.count ?? 2) !== 1 ? 's' : ''} shown
               </div>
             )}
 

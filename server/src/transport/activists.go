@@ -175,6 +175,28 @@ func ActivistsSearchHandler(w http.ResponseWriter, r *http.Request, authedUser m
 	})
 }
 
+func ActivistsCountHandler(w http.ResponseWriter, r *http.Request, authedUser model.ADBUser, repo model.ActivistRepository) {
+	var options model.QueryActivistCountOptions
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&options); err != nil && err != io.EOF {
+		sendErrorMessage(w, http.StatusBadRequest, err)
+		return
+	}
+
+	count, err := model.CountActivists(authedUser, options, repo)
+	if err != nil {
+		if errors.Is(err, model.ErrValidation) {
+			sendErrorMessage(w, http.StatusBadRequest, err)
+		} else {
+			sendErrorMessage(w, http.StatusInternalServerError, err)
+		}
+		return
+	}
+
+	writeJSON(w, map[string]int{"count": count})
+}
+
 // ActivistsExportHandler streams the full result set for the given query options
 // as a CSV file. The CSV columns are the requested API columns in the same
 // order. Rows are streamed directly from the database; response headers are
