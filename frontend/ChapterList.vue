@@ -850,38 +850,48 @@ export default Vue.extend({
       }
       return c;
     },
+    // Quadrimesters: Feb–May, Jun–Sep, Oct–Jan. Returns the first day of the
+    // quadrimester containing today.
+    currentQuadrimesterStart() {
+      const now = dayjs();
+      const month = now.month();
+      const year = now.year();
+      if (month >= 1 && month <= 4) return dayjs(new Date(year, 1, 1));
+      if (month >= 5 && month <= 8) return dayjs(new Date(year, 5, 1));
+      if (month >= 9) return dayjs(new Date(year, 9, 1));
+      return dayjs(new Date(year - 1, 9, 1)); // January → previous Oct
+    },
     colorLastAction(text: string) {
-      const time = dayjs(text);
+      const now = dayjs();
+      const quadStart = this.currentQuadrimesterStart();
+      const quadEnd = quadStart.add(4, 'month'); // first day of next quadrimester
+      const redThreshold = quadStart.add(1, 'month').add(2, 'week');
+      const blackThreshold = quadEnd.subtract(1, 'week');
 
-      if (!time.isValid()) {
-        return Colors.GRAY;
-      }
+      const lastAction = dayjs(text);
+      const hasActionThisQuadrimester = lastAction.isValid() && !lastAction.isBefore(quadStart);
 
-      if (time.isAfter(dayjs().subtract(30 * 2, 'day'))) {
-        return Colors.GREEN;
-      } else if (time.isAfter(dayjs().subtract(30 * 3.5, 'day'))) {
-        return Colors.YELLOW;
-      } else if (time.isAfter(dayjs().subtract(30 * 4 + 1, 'day'))) {
-        // + 1 because "black" means the chapter should be offboarded, but
-        // when there are "0" days remaining according to date subtraction,
-        // there still may be a fraction of a day remaining in reality because
-        // protests don't start at the 0th hour of the day.
-        return Colors.RED;
-      } else {
-        return Colors.BLACK;
-      }
+      if (hasActionThisQuadrimester) return Colors.GREEN;
+      if (now.isBefore(redThreshold)) return Colors.GREEN;
+      if (now.isBefore(blackThreshold)) return Colors.RED;
+      return Colors.BLACK;
     },
     lastActionTooltip(text: string) {
-      const time = dayjs(text);
+      const now = dayjs();
+      const quadStart = this.currentQuadrimesterStart();
+      const quadEnd = quadStart.add(4, 'month').subtract(1, 'day');
+      const quadrimesterText =
+        'Current quadrimester: ' +
+        quadStart.format('YYYY-MM-DD') +
+        ' to ' +
+        quadEnd.format('YYYY-MM-DD');
 
-      if (!time.isValid()) {
-        return undefined;
+      const lastAction = dayjs(text);
+      if (!lastAction.isValid()) {
+        return 'No action recorded\n' + quadrimesterText;
       }
-
-      const daysSinceLastActionText = dayjs().diff(time, 'day') + ' days since last action';
-      const daysRemainingToHostActionText =
-        time.add(30 * 4, 'day').diff(dayjs(), 'day') + ' days remaining to host an action';
-      return daysSinceLastActionText + '\n' + daysRemainingToHostActionText;
+      const daysSinceLastActionText = now.diff(lastAction, 'day') + ' days since last action';
+      return daysSinceLastActionText + '\n' + quadrimesterText;
     },
     dateInLastThreeMonths(text: string): boolean {
       return dayjs(text).isAfter(dayjs().add(-3, 'month'));
