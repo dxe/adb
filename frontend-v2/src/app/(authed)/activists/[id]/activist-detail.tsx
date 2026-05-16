@@ -140,35 +140,13 @@ export function ActivistDetail({ activistId }: { activistId: number }) {
 
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1
-          className={`text-3xl font-bold ${
-            displayName.isPlaceholder ? 'italic text-muted-foreground' : ''
-          }`}
-        >
-          {displayName.text}
-        </h1>
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setIsMergeDialogOpen(true)}
-          >
-            <GitMerge className="h-4 w-4" />
-            Merge
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setIsHideDialogOpen(true)}
-          >
-            <EyeOff className="h-4 w-4" />
-            Hide
-          </Button>
-        </div>
-      </div>
+      <h1
+        className={`text-3xl font-bold ${
+          displayName.isPlaceholder ? 'italic text-muted-foreground' : ''
+        }`}
+      >
+        {displayName.text}
+      </h1>
 
       <HideActivistDialog
         open={isHideDialogOpen}
@@ -270,6 +248,25 @@ export function ActivistDetail({ activistId }: { activistId: number }) {
             <p className="text-sm text-muted-foreground italic">No notes</p>
           )}
         </section>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsMergeDialogOpen(true)}
+          >
+            <GitMerge className="h-4 w-4" />
+            Merge
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsHideDialogOpen(true)}
+          >
+            <EyeOff className="h-4 w-4" />
+            Hide
+          </Button>
+        </div>
       </div>
     </>
   )
