@@ -864,12 +864,17 @@ export default Vue.extend({
     colorLastAction(text: string) {
       const now = dayjs();
       const quadStart = this.currentQuadrimesterStart();
+      const prevQuadStart = quadStart.subtract(4, 'month');
       const quadEnd = quadStart.add(4, 'month'); // first day of next quadrimester
       const redThreshold = quadStart.add(1, 'month').add(2, 'week');
       const blackThreshold = quadEnd.subtract(1, 'week');
 
       const lastAction = dayjs(text);
-      const hasActionThisQuadrimester = lastAction.isValid() && !lastAction.isBefore(quadStart);
+
+      // Anything older than the previous quadrimester is always black
+      if (!lastAction.isValid() || lastAction.isBefore(prevQuadStart)) return Colors.BLACK;
+
+      const hasActionThisQuadrimester = !lastAction.isBefore(quadStart);
 
       if (hasActionThisQuadrimester) return Colors.GREEN;
       if (now.isBefore(redThreshold)) return Colors.GREEN;
