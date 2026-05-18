@@ -314,7 +314,7 @@ export class ApiClient {
 
   constructor(cookies?: string) {
     this.client = ky.extend({
-      prefixUrl:
+      prefix:
         typeof window === 'undefined'
           ? process.env.NEXT_PUBLIC_API_BASE_URL
           : '/',
