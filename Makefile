@@ -141,4 +141,4 @@ prod_build:
 # Keep in sync with hooks/pre-commit.
 fmt:
 	cd server && gofmt -w .
-	. $(NVM_SCRIPT) && nvm use 22 && pnpm exec prettier --write --cache --cache-strategy metadata .
+	. $(NVM_SCRIPT) && nvm use 22 && pnpx prettier --write --cache --cache-strategy metadata .
