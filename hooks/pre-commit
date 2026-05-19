@@ -3,8 +3,8 @@
 # Adapted from https://golang.org/misc/git/pre-commit
 # Keep in sync with "make fmt".
 
-gofiles=$(cd server && gofmt -l $(find . -name "*.go"))
-webfiles=$(npx prettier -l .)
+gofiles=$(cd server && gofmt -l .)
+webfiles=$(pnpm exec prettier -l --cache --cache-strategy metadata .)
 [ -z "$gofiles" -a -z "$webfiles" ] && exit 0
 
 echo >&2 "Misformatted files:"

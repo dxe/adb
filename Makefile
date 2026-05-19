@@ -140,5 +140,5 @@ prod_build:
 # Reformat source files.
 # Keep in sync with hooks/pre-commit.
 fmt:
-	cd server && gofmt -w `find . -name '*.go'`
-	. $(NVM_SCRIPT) && nvm use 22 && pnpx prettier --write .
+	cd server && gofmt -w .
+	. $(NVM_SCRIPT) && nvm use 22 && pnpm exec prettier --write --cache --cache-strategy metadata .
