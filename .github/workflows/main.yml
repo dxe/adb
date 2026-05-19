@@ -53,12 +53,19 @@ jobs:
           npm ci --legacy-peer-deps
           cd ../server/src
           go mod download
+      - name: Set up Node.js for frontend-v2
+        # pnpm/action-setup@v6 runs `node setup.js`, which uses `import.meta.resolve`
+        # (Node 20.6+). Must override the Node 16 from the legacy-frontend step above
+        # before pnpm setup runs.
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
       - name: Set up pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           # Please keep pnpm version in sync with package.json
           version: 10.32.1
-      - name: Set up Node.js for frontend-v2
+      - name: Configure pnpm cache
         uses: actions/setup-node@v6
         with:
           node-version: 22
