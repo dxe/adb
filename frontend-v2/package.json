@@ -40,7 +40,7 @@
     "react-hot-toast": "^2.6.0",
     "tailwind-merge": "^2.6.1",
     "tailwindcss-animate": "^1.0.7",
-    "zod": "^4.3.6"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@next/eslint-plugin-next": "^16.2.6",
