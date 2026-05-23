@@ -18,10 +18,10 @@ import {
 } from 'react-aria-components'
 import { CalendarDate } from '@internationalized/date'
 import {
+  CalendarIcon,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  CalendarIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -48,6 +48,7 @@ function toJSDate(date: CalendarDate): Date {
 export function DatePicker({
   value,
   onValueChange,
+  placeholder = 'Date',
   className,
   disabled,
 }: DatePickerProps) {
@@ -56,16 +57,13 @@ export function DatePicker({
       value={value ? toCalendarDate(value) : null}
       onChange={(d) => onValueChange?.(d ? toJSDate(d) : undefined)}
       isDisabled={disabled}
-      aria-label="Date"
+      aria-label={placeholder}
       className={cn('w-full', className)}
     >
       <Group className="flex h-9 w-full items-center rounded-md border border-input bg-transparent pl-2.5 pr-3 text-sm transition-colors hover:border-gray-400 focus-within:border-primary focus-within:ring-1 focus-within:ring-ring data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50">
-        <Button
-          aria-label="Open calendar"
-          className="mr-2 shrink-0 cursor-pointer text-muted-foreground outline-none hover:text-foreground"
-        >
+        <span aria-hidden className="mr-2 shrink-0 text-muted-foreground">
           <CalendarIcon className="h-4 w-4" />
-        </Button>
+        </span>
         <DateInput className="flex flex-1 items-center tabular-nums">
           {(segment) => (
             <DateSegment
@@ -83,10 +81,12 @@ export function DatePicker({
             />
           )}
         </DateInput>
-        <ChevronDown
-          aria-hidden
-          className="ml-1 h-4 w-4 shrink-0 text-muted-foreground"
-        />
+        <Button
+          aria-label="Open calendar"
+          className="-mr-1 ml-1 shrink-0 cursor-pointer text-muted-foreground outline-none hover:text-foreground"
+        >
+          <ChevronDown aria-hidden className="h-4 w-4" />
+        </Button>
       </Group>
 
       <Popover
