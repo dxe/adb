@@ -20,6 +20,7 @@ toJSDate(date: CalendarDate): Date        // new Date(y, m-1, d)
 ```
 
 **Styling:** all components are unstyled by default and take a `className` prop (or render-prop function). Styles mirror our existing `Input` tokens:
+
 - `Group` container: `border-input`, `hover:border-gray-400`, `focus-within:border-primary focus-within:ring-1 focus-within:ring-ring`
 - `DateSegment`: `data-[focused]` → `bg-primary text-primary-foreground`; placeholder slots → `text-muted-foreground`
 - `CalendarCell`: `bg-primary` when selected, `bg-accent` for today/hover
