@@ -8,9 +8,24 @@ When upgrading shadcn components, preserve the following customizations:
 
 ### date-picker.tsx
 
-Changed the date display format from `PPP` (e.g. "January 1st, 2025") to `PP` (e.g. "Jan 1, 2025") so the selected date fits in narrow inputs without overflow. Also added `truncate` to the label span and `shrink-0` to the calendar icon to handle any remaining overflow gracefully.
+Not a shadcn component — built from scratch using [`react-aria-components`](https://react-aria.adobe.com/react-aria/DatePicker.html) and [`@internationalized/date`](https://react-spectrum.adobe.com/internationalized/date/index.html).
 
-The popover is controlled (`open` state) so it closes automatically when a date is selected.
+React Aria's `DateInput` / `DateSegment` give us native segment editing (month, day, year each independently focusable; arrow keys increment; typing digits auto-advances) without any custom input-mask logic.
+
+The component accepts/returns plain JS `Date` values. Two small helpers convert to/from React Aria's `CalendarDate` type internally:
+
+```ts
+toCalendarDate(date: Date): CalendarDate  // new CalendarDate(y, m+1, d)
+toJSDate(date: CalendarDate): Date        // new Date(y, m-1, d)
+```
+
+**Styling:** all components are unstyled by default and take a `className` prop (or render-prop function). Styles mirror our existing `Input` tokens:
+
+- `Group` container: `border-input`, `hover:border-gray-400`, `focus-within:border-primary focus-within:ring-1 focus-within:ring-ring`
+- `DateSegment`: `data-[focused]` → `bg-primary text-primary-foreground`; placeholder slots → `text-muted-foreground`
+- `CalendarCell`: `bg-primary` when selected, `bg-accent` for today/hover
+
+**Accessibility:** `aria-label` props are required on `AriaDatePicker`, `Calendar`, and the icon-only buttons because React Aria enforces accessible names and will warn in the console without them.
 
 ### select.tsx
 
