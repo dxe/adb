@@ -51,10 +51,14 @@ export function DatePicker({
       value={value ? toCalendarDate(value) : null}
       onChange={(d) => onValueChange?.(d ? toJSDate(d) : undefined)}
       isDisabled={disabled}
+      aria-label="Date"
       className={cn('w-full', className)}
     >
       <Group className="flex h-9 w-full items-center rounded-md border border-input bg-transparent pl-2.5 pr-3 text-sm transition-colors hover:border-gray-400 focus-within:border-primary focus-within:ring-1 focus-within:ring-ring data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50">
-        <Button className="mr-2 shrink-0 cursor-pointer text-muted-foreground outline-none hover:text-foreground">
+        <Button
+          aria-label="Open calendar"
+          className="mr-2 shrink-0 cursor-pointer text-muted-foreground outline-none hover:text-foreground"
+        >
           <CalendarIcon className="h-4 w-4" />
         </Button>
         <DateInput className="flex flex-1 items-center tabular-nums">
@@ -81,10 +85,11 @@ export function DatePicker({
         className="z-50 rounded-md border bg-popover text-popover-foreground shadow-md outline-none data-[entering]:animate-in data-[exiting]:animate-out data-[entering]:fade-in-0 data-[exiting]:fade-out-0 data-[entering]:zoom-in-95 data-[exiting]:zoom-out-95"
       >
         <Dialog className="outline-none">
-          <Calendar className="p-3">
+          <Calendar aria-label="Calendar" className="p-3">
             <header className="relative mb-2 flex items-center justify-center">
               <Button
                 slot="previous"
+                aria-label="Go to previous month"
                 className="absolute left-0 inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-accent disabled:opacity-50"
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -92,6 +97,7 @@ export function DatePicker({
               <Heading className="text-sm font-medium" />
               <Button
                 slot="next"
+                aria-label="Go to next month"
                 className="absolute right-0 inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-accent disabled:opacity-50"
               >
                 <ChevronRight className="h-4 w-4" />
