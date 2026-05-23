@@ -97,7 +97,12 @@ export function FilterChip({
             )}
           </button>
         </PopoverTrigger>
-        <PopoverContent className={popoverClassName ?? 'w-64'}>
+        <PopoverContent
+          className={popoverClassName ?? 'w-64'}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleOpenChange(false)
+          }}
+        >
           {children}
         </PopoverContent>
       </Popover>
