@@ -17,7 +17,12 @@ import {
   Popover,
 } from 'react-aria-components'
 import { CalendarDate } from '@internationalized/date'
-import { ChevronLeft, ChevronRight, CalendarIcon } from 'lucide-react'
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  CalendarIcon,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export interface DatePickerProps {
@@ -78,6 +83,10 @@ export function DatePicker({
             />
           )}
         </DateInput>
+        <ChevronDown
+          aria-hidden
+          className="ml-1 h-4 w-4 shrink-0 text-muted-foreground"
+        />
       </Group>
 
       <Popover
