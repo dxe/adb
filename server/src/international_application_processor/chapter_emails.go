@@ -24,7 +24,7 @@ var (
 		Pronouns: "she/her",
 	}
 	globalCoordinator = coordinator{
-		Name:    "Michelle Del Cueto",
+		Name:    "Zoe Rosenberg",
 		Role:    "International Coordinator",
 		Address: "internationalcoordination@directactioneverywhere.com",
 	}
