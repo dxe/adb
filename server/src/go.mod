@@ -15,7 +15,7 @@ go 1.25.0
 require github.com/dxe/adb/pkg v0.0.0-20260225225627-b212e5a48a8e
 
 require (
-	github.com/coreos/go-oidc v2.1.0+incompatible
+	github.com/coreos/go-oidc v2.5.0+incompatible
 	github.com/go-sql-driver/mysql v1.10.0
 	github.com/gorilla/csrf v1.7.3
 	github.com/gorilla/mux v1.8.1
@@ -102,7 +102,7 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260427160629-7cedc36a6bc4 // indirect
 	google.golang.org/grpc v1.80.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
-	gopkg.in/square/go-jose.v2 v2.4.0 // indirect
+	gopkg.in/go-jose/go-jose.v2 v2.6.3 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
