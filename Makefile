@@ -117,8 +117,8 @@ clean:
 
 # Set git hooks
 set_git_hooks:
-	if [ ! -h .git/hooks/pre-commit ] ; then ln -s ../../hooks/pre-commit .git/hooks/pre-commit ; fi
-	if [ ! -h .git/hooks/pre-push ] ; then ln -s ../../hooks/pre-push .git/hooks/pre-push ; fi
+	if [ ! -h .git/hooks/pre-commit ] ; then ln -s ../../.githooks/pre-commit .git/hooks/pre-commit ; fi
+	if [ ! -h .git/hooks/pre-push ] ; then ln -s ../../.githooks/pre-push .git/hooks/pre-push ; fi
 
 
 # Test docker image
@@ -138,7 +138,7 @@ prod_build:
 	docker build . -f Dockerfile.cli -t dxe/adb-cli
 
 # Reformat source files.
-# Keep in sync with hooks/pre-commit.
+# Keep in sync with .githooks/pre-commit.
 fmt:
 	cd server && gofmt -w .
 	. $(NVM_SCRIPT) && nvm use 22 && pnpm exec prettier --write --cache --cache-strategy metadata .

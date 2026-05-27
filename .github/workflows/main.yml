@@ -72,7 +72,7 @@ jobs:
         run: echo "DB_PROTOCOL=tcp(127.0.0.1:3306)" >> $GITHUB_ENV
       - name: Run tests
         run: |
-          ./hooks/pre-commit
+          ./.githooks/pre-commit
           cd ./server/src
           go test github.com/dxe/adb/...
       - name: Run full frontend-v2 test suite on manual dispatch
