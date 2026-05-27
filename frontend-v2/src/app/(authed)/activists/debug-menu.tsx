@@ -14,6 +14,15 @@ interface DebugMenuProps {
   queryOptions: QueryActivistOptions
 }
 
+/**
+ * Render a "Debug" dropdown that can trigger logging of the current page SQL query.
+ *
+ * Displays a small "Debug" button which opens a popover containing a "Log page SQL query" action.
+ * When the action is invoked, the component calls the API to create a debug query and alerts the returned debug id or an error message.
+ *
+ * @param queryOptions - Options used to construct the debug query sent to the API
+ * @returns A React element containing the Debug popover and its actions
+ */
 export function DebugMenu({ queryOptions }: DebugMenuProps) {
   const [isOpen, setIsOpen] = useState(false)
 

@@ -57,6 +57,21 @@ function without(
   return next
 }
 
+/**
+ * Render a filter bar for activists with a name search, always-visible pinned filters,
+ * optional removable filter chips, boolean chips, an "+ Add filter" popover, and reset/export/debug controls.
+ *
+ * @param filters - Current filter state for activists
+ * @param onFiltersChange - Callback invoked with updated filter state
+ * @param isAdmin - Whether the current user has admin privileges (enables admin-only options)
+ * @param isDirty - Whether the current filter state differs from the saved/default state (affects reset availability)
+ * @param onReset - Callback invoked when the Reset button is pressed
+ * @param exportButton - Optional externally provided export UI element
+ * @param isDebug - Whether to render the debug menu (when `debugQueryOptions` is provided)
+ * @param debugQueryOptions - Query options passed to the debug menu when enabled
+ * @param children - Non-filter UI elements rendered in the chip bar (e.g., columns/sort selectors)
+ * @returns A React element representing the activists filter bar
+ */
 export function ActivistFilters({
   filters,
   onFiltersChange,

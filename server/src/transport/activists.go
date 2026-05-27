@@ -358,6 +358,9 @@ func activistCSVRow(a model.ActivistJSON, columns []model.ActivistColumnName) []
 	return out
 }
 
+// formatCSVValue converts v into its string representation suitable for CSV output.
+// It handles string, bool, signed and unsigned integers, and floats; other kinds are
+// rendered using fmt.Sprint of the underlying value.
 func formatCSVValue(v reflect.Value) string {
 	switch v.Kind() {
 	case reflect.String:
@@ -381,7 +384,9 @@ func formatCSVValue(v reflect.Value) string {
 // ActivistsDebugQueryHandler accepts the same body as ActivistsSearchHandler,
 // runs EXPLAIN ANALYZE on the underlying SQL, persists the resolved query and
 // EXPLAIN ANALYZE output to the debug_sql_queries table, and returns the id
-// of the inserted row.
+// ActivistsDebugQueryHandler decodes query options from the request body, executes a debug query that records the resolved SQL and EXPLAIN ANALYZE output, and responds with the inserted debug row id as JSON.
+//
+// It accepts the same request shape as the activists search endpoint and returns a JSON object `{"id": <row id>}` on success.
 func ActivistsDebugQueryHandler(w http.ResponseWriter, r *http.Request, authedUser model.ADBUser, repo model.ActivistRepository) {
 	var options model.QueryActivistOptions
 	if err := json.NewDecoder(r.Body).Decode(&options); err != nil && err != io.EOF {
@@ -402,6 +407,16 @@ func ActivistsDebugQueryHandler(w http.ResponseWriter, r *http.Request, authedUs
 	writeJSON(w, map[string]int64{"id": id})
 }
 
+// ActivistPatchHandler applies a partial update to the activist identified by the `{id}` URL
+// parameter and returns the updated activist as JSON.
+//
+// It validates the numeric activist id and the request body, applies the patch, then fetches
+// and writes the updated activist as `{"activist": ...}`.
+//
+// Error responses:
+//   - 400 Bad Request for an invalid id or malformed/invalid request body,
+//   - 404 Not Found if no activist exists with the given id,
+//   - 500 Internal Server Error for other failures.
 func ActivistPatchHandler(w http.ResponseWriter, r *http.Request, authedUser model.ADBUser, db *sqlx.DB, repo model.ActivistRepository, userRepo model.UserRepository) {
 	vars := mux.Vars(r)
 	rawID := vars["id"]

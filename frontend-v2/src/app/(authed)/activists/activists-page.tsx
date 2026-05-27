@@ -31,6 +31,15 @@ interface ActivistsPageProps {
   initialReferenceDateIso: string
 }
 
+/**
+ * Render the Activists page including filters, column/sort controls, results table with infinite loading, and an activist detail sheet.
+ *
+ * The component coordinates query state, stabilizes table column/sort UI while new query data loads, and provides an export/debug affordance.
+ *
+ * @param debugInitialServerQueryState - Optional server-side query state used to detect hydration mismatches when debugging.
+ * @param initialReferenceDateIso - ISO 8601 date string used as the reference date for query construction.
+ * @returns The React element for the Activists page.
+ */
 export default function ActivistsPage({
   debugInitialServerQueryState,
   initialReferenceDateIso,

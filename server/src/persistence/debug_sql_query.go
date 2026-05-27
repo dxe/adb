@@ -41,7 +41,9 @@ func (r DBActivistRepository) DebugActivistQuery(options model.QueryActivistOpti
 
 // runExplainAnalyze runs EXPLAIN ANALYZE for the given query and returns the
 // concatenated text output. MySQL 8.0+ returns the analyzed plan as one or
-// more rows of a single TEXT column.
+// runExplainAnalyze executes "EXPLAIN ANALYZE" for the provided SQL and returns the planner output as a single string.
+// It runs EXPLAIN ANALYZE with the given arguments and concatenates each returned row's first TEXT column separated by newlines.
+// Returns an error if the query fails or if scanning/iterating the result rows encounters an error.
 func runExplainAnalyze(db *sqlx.DB, sqlStr string, args []any) (string, error) {
 	rows, err := db.Query("EXPLAIN ANALYZE "+sqlStr, args...)
 	if err != nil {
@@ -68,7 +70,13 @@ func runExplainAnalyze(db *sqlx.DB, sqlStr string, args []any) (string, error) {
 // result is intended for human inspection only and must not be re-executed.
 // Placeholders inside single- or double-quoted strings are left as-is, which
 // matches how the query builder produces parameterized SQL (it never embeds
-// `?` inside quoted literals).
+// resolveSQLPlaceholders replaces unquoted `?` placeholders in sqlStr with formatted
+// SQL-literal representations of the values in args.
+//
+// It skips `?` characters that appear inside single-quoted or double-quoted string
+// literals and leaves any excess `?` placeholders unchanged when there are fewer
+// args than placeholders. The returned string is intended for human-readable
+// inspection rather than guaranteed executable SQL.
 func resolveSQLPlaceholders(sqlStr string, args []any) string {
 	var b strings.Builder
 	b.Grow(len(sqlStr))
@@ -103,6 +111,8 @@ func resolveSQLPlaceholders(sqlStr string, args []any) string {
 	return b.String()
 }
 
+// formatSQLLiteral converts a Go value into a SQL-literal-like string suitable for embedding into human-readable SQL.
+// It represents nil as `NULL`, wraps strings and byte slices in single-quoted, escaped form, formats booleans as `1`/`0`, renders numeric types as decimal literals, formats time values as `YYYY-MM-DD HH:MM:SS` quoted strings, and maps sql.Null* types to either `NULL` or their corresponding literal; all other values are converted with fmt.Sprintf and quoted.
 func formatSQLLiteral(v any) string {
 	if v == nil {
 		return "NULL"
@@ -181,6 +191,8 @@ func formatSQLLiteral(v any) string {
 	}
 }
 
+// quoteString returns the input as a single-quoted SQL-style string literal with characters escaped for safe inspection.
+// It escapes single quotes, backslashes, NUL (0), newline, carriage return and ASCII 0x1a using SQL-style backslash sequences.
 func quoteString(s string) string {
 	var b strings.Builder
 	b.Grow(len(s) + 2)

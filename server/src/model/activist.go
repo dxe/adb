@@ -2301,7 +2301,8 @@ func CountActivists(authedUser ADBUser, options QueryActivistCountOptions, repo 
 // StreamActivists runs an activist query and invokes fn for each result row.
 // Unlike QueryActivists, results are not paginated. Validation is performed
 // before any rows are fetched, so callers can rely on errors returned before
-// the first fn call being safe to surface to the user.
+// StreamActivists streams activists that match the provided QueryActivistOptions to the given callback after authorizing the caller.
+// If authorization fails the authorization error is returned; otherwise any error from the repository's stream operation is returned.
 func StreamActivists(authedUser ADBUser, options QueryActivistOptions, repo ActivistRepository, fn func(ActivistExtra) error) error {
 	if err := authorizeActivistQuery(authedUser, options); err != nil {
 		return err
@@ -2313,7 +2314,8 @@ func StreamActivists(authedUser ADBUser, options QueryActivistOptions, repo Acti
 // DebugActivistQuery builds the SQL that QueryActivists would run for the
 // given options, runs EXPLAIN ANALYZE on it, and stores the resolved SQL plus
 // the EXPLAIN ANALYZE output in the debug_sql_queries table. It returns the
-// id of the inserted row.
+// DebugActivistQuery executes a debug/explain of an activist query for the caller and returns the repository's debug result.
+// It verifies the caller is authorized to run the provided query options and forwards the caller's email as the username to the repository.
 func DebugActivistQuery(authedUser ADBUser, options QueryActivistOptions, repo ActivistRepository) (int64, error) {
 	if err := authorizeActivistQuery(authedUser, options); err != nil {
 		return 0, err
@@ -2321,6 +2323,8 @@ func DebugActivistQuery(authedUser ADBUser, options QueryActivistOptions, repo A
 	return repo.DebugActivistQuery(options, authedUser.Email)
 }
 
+// authorizeActivistAccess verifies that the authenticated user has permission to access activists for the specified chapter.
+// It returns a validation error when the user lacks organizer permissions, or when the user is not an admin and their ChapterID is zero or does not match the requested chapter.
 func authorizeActivistAccess(authedUser ADBUser, chapterId int) error {
 	if !UserHasOrganizerAccess(authedUser) {
 		return ValidationErrorf("lacking permission to query activists")

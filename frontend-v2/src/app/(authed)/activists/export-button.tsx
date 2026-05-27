@@ -15,6 +15,14 @@ interface ExportButtonProps {
   queryOptions: QueryActivistOptions
 }
 
+/**
+ * Renders a popover "Export" button that lets the user download activists CSVs for the current filters.
+ *
+ * Renders a menu with two export actions ("Current columns" and "Spoke columns"), manages export state and cancellation, and triggers client-side CSV downloads with date-stamped filenames.
+ *
+ * @param queryOptions - Filters and shape used to request CSV exports; the component uses `queryOptions` for the "Current columns" export and a variant with `shape.columns` forced to an empty array for the "Spoke columns" export.
+ * @returns The export button and popover menu as JSX.
+ */
 export function ExportButton({ queryOptions }: ExportButtonProps) {
   const [isExporting, setIsExporting] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)

@@ -231,6 +231,11 @@ func (c MainController) corsAllowGetMiddleware(h http.Handler) http.Handler {
 	})
 }
 
+// router creates and configures the HTTP router and supporting services for the application.
+// It initializes the database and repositories, builds the MainController, configures CSRF protection
+// (with a development workaround), registers all page and API routes (including admin subrouter and
+// role/access middleware), and mounts static and proxy handlers. It returns the configured *mux.Router
+// and the initialized *sqlx.DB.
 func router() (*mux.Router, *sqlx.DB) {
 	db := model.NewDB(config.DBDataSource())
 	userRepo := persistence.NewUserRepository(db)
