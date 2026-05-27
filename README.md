@@ -39,6 +39,10 @@ You can log into the database from the devcontainer by just typing `db` in the s
 
 To seed data into the database for various testing scenarios, check out the [ADB CLI](./cli/README.md) "seed" command.
 
+Note that for the activists pages, you can see the generated SQL queries and
+their EXPLAIN ANALYZE results by adding "debug=true" to the page URL and
+clicking the "Debug" button.
+
 ### Run
 
 After downloading the dependencies, start the development servers. There are two

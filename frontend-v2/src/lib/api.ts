@@ -21,6 +21,7 @@ export const API_PATH = {
   ACTIVISTS_COUNT: 'api/activists/count',
   ACTIVISTS_EXPORT: 'api/activists/export',
   ACTIVISTS_EXPORT_SPOKE: 'api/activists/export/spoke',
+  ACTIVISTS_DEBUG_QUERY: 'api/activists/debug-query',
   ACTIVIST_GET: 'api/activists',
   ACTIVIST_HIDE: 'activist/hide',
   ACTIVIST_MERGE: 'activist/merge',
@@ -463,6 +464,20 @@ export class ApiClient {
         timeout: false,
       })
       return await resp.blob()
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  debugQueryActivists = async (
+    options: QueryActivistOptions,
+    signal?: AbortSignal,
+  ): Promise<{ id: number }> => {
+    try {
+      const resp = await this.client
+        .post(API_PATH.ACTIVISTS_DEBUG_QUERY, { json: options, signal })
+        .json()
+      return z.object({ id: z.number() }).parse(resp)
     } catch (err) {
       return this.handleKyError(err)
     }
