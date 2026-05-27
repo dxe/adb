@@ -326,6 +326,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/api/csrf-token", csrfMiddleware(alice.New(main.apiAnyADBRoleAuthMiddleware).ThenFunc(main.CSRFTokenHandler))).Methods(http.MethodGet)
 	router.Handle("/api/activists", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistsSearchHandler)).Methods(http.MethodPost)
 	router.Handle("/api/activists/count", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistsCountHandler)).Methods(http.MethodPost)
+	router.Handle("/api/activists/debug-query", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistsDebugQueryHandler)).Methods(http.MethodPost)
 	router.Handle("/api/activists/export", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistsExportHandler)).Methods(http.MethodPost)
 	router.Handle("/api/activists/export/spoke", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistsExportSpokeHandler)).Methods(http.MethodPost)
 	router.Handle("/api/activists/{id:[0-9]+}", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistGetHandler)).Methods(http.MethodGet)
@@ -1823,6 +1824,15 @@ func (c MainController) ActivistsExportSpokeHandler(w http.ResponseWriter, r *ht
 	}
 
 	transport.ActivistsExportSpokeHandler(w, r, authedUser, c.activistRepo)
+}
+
+func (c MainController) ActivistsDebugQueryHandler(w http.ResponseWriter, r *http.Request) {
+	authedUser, authed := c.getAuthedADBUser(r)
+	if !authed {
+		panic("ActivistsDebugQueryHandler requires authed ADB user")
+	}
+
+	transport.ActivistsDebugQueryHandler(w, r, authedUser, c.activistRepo)
 }
 
 func (c MainController) ActivistGetHandler(w http.ResponseWriter, r *http.Request) {

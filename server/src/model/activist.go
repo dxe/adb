@@ -2310,6 +2310,17 @@ func StreamActivists(authedUser ADBUser, options QueryActivistOptions, repo Acti
 	return repo.StreamActivists(options, fn)
 }
 
+// DebugActivistQuery builds the SQL that QueryActivists would run for the
+// given options, runs EXPLAIN ANALYZE on it, and stores the resolved SQL plus
+// the EXPLAIN ANALYZE output in the debug_sql_queries table. It returns the
+// id of the inserted row.
+func DebugActivistQuery(authedUser ADBUser, options QueryActivistOptions, repo ActivistRepository) (int64, error) {
+	if err := authorizeActivistQuery(authedUser, options); err != nil {
+		return 0, err
+	}
+	return repo.DebugActivistQuery(options, authedUser.Email)
+}
+
 func authorizeActivistAccess(authedUser ADBUser, chapterId int) error {
 	if !UserHasOrganizerAccess(authedUser) {
 		return ValidationErrorf("lacking permission to query activists")
@@ -2367,6 +2378,7 @@ type ActivistRepository interface {
 	StreamActivists(options QueryActivistOptions, fn func(ActivistExtra) error) error
 	CountActivists(filters QueryActivistFilters) (int, error)
 	PatchActivist(id int, patch ActivistPatchData) error
+	DebugActivistQuery(options QueryActivistOptions, username string) (int64, error)
 }
 
 // ActivistColumnName is a column name in the API layer, not in the database
