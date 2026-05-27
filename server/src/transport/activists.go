@@ -378,6 +378,32 @@ func formatCSVValue(v reflect.Value) string {
 	}
 }
 
+// ActivistsDebugQueryHandler accepts the same body as ActivistsSearchHandler,
+// runs EXPLAIN ANALYZE on the underlying SQL, persists the resolved query and
+// EXPLAIN ANALYZE output to the debug_sql_queries table, and returns the id
+// of the inserted row.
+func ActivistsDebugQueryHandler(w http.ResponseWriter, r *http.Request, authedUser model.ADBUser, repo model.ActivistRepository) {
+	var options model.QueryActivistOptions
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&options); err != nil && err != io.EOF {
+		sendErrorMessage(w, http.StatusBadRequest, err)
+		return
+	}
+
+	id, err := model.DebugActivistQuery(authedUser, options, repo)
+	if err != nil {
+		if errors.Is(err, model.ErrValidation) {
+			sendErrorMessage(w, http.StatusBadRequest, err)
+		} else {
+			sendErrorMessage(w, http.StatusInternalServerError, err)
+		}
+		return
+	}
+
+	writeJSON(w, map[string]int64{"id": id})
+}
+
 func ActivistPatchHandler(w http.ResponseWriter, r *http.Request, authedUser model.ADBUser, db *sqlx.DB, repo model.ActivistRepository, userRepo model.UserRepository) {
 	vars := mux.Vars(r)
 	rawID := vars["id"]

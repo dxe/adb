@@ -62,6 +62,11 @@ Rules regarding the MySql database.
 - Rule: query the live MySQL schema via the `db` shell function which wraps the `mysql` with the correct database and dev credentials. It is already sourced for you from `~/.bash_profile`. Fall back to migration files only as needed.
 - Example: `db -e "SHOW COLUMNS FROM activists"`.
 
+### db-migrations
+
+- Scope: creating, running, or modifying database migrations
+- Rule: follow the conventions in [pkg/shared/db-migrations/README.md](pkg/shared/db-migrations/README.md).
+
 ## CLI
 
 Context for using the CLI, located in ./cli

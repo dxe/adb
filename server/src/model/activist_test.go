@@ -44,6 +44,11 @@ func (s *activistPatchRepoSpy) PatchActivist(id int, patch ActivistPatchData) er
 	return s.patchErr
 }
 
+func (s *activistPatchRepoSpy) DebugActivistQuery(options QueryActivistOptions, username string) (int64, error) {
+	s.t.Fatalf("unexpected call to DebugActivistQuery")
+	return 0, nil
+}
+
 func stringListToMap(l []string) map[string]struct{} {
 	m := map[string]struct{}{}
 	for _, i := range l {
