@@ -16,6 +16,7 @@ NVM_SCRIPT := $(shell \
 # * package.json
 # * all Dockerfiles
 # * .github/workflows/main.yml
+# * devcontainer.json `ghcr.io/devcontainers/features/node` feature
 VUE_FRONTEND_NODE_VERSION := 16
 REACT_FRONTEND_NODE_VERSION := 25
 PNPM_VERSION := 10.32.1
