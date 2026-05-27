@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
+import { useSearchParams } from 'next/navigation'
 import { useQueryState, parseAsInteger } from 'nuqs'
 import {
   apiClient,
@@ -36,6 +37,8 @@ export default function ActivistsPage({
 }: ActivistsPageProps) {
   const { user } = useAuthedPageContext()
   const isAdmin = user.Roles.includes('admin')
+  const searchParams = useSearchParams()
+  const isDebug = searchParams.get('debug') !== 'true'
 
   const [selectedActivistId, setSelectedActivistId] = useQueryState(
     'activist',
@@ -192,6 +195,7 @@ export default function ActivistsPage({
           isDirty={isDirty}
           onReset={resetAll}
           exportButton={<ExportButton queryOptions={queryOptions} />}
+          isDebug={isDebug}
         >
           <ColumnSelector
             visibleColumns={selectedColumns}

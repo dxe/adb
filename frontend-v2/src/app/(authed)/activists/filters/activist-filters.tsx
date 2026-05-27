@@ -16,6 +16,7 @@ import { TrainingFilter } from './training-filter'
 import { SelectFilterChip } from './select-filter-chip'
 import { SourceFilterChip } from './source-filter-chip'
 import { NameSearchFilter } from './name-search-filter'
+import { DebugMenu } from '../debug-menu'
 import type { FilterState } from '../query-state'
 
 interface ActivistFiltersProps {
@@ -25,6 +26,7 @@ interface ActivistFiltersProps {
   isDirty: boolean
   onReset: () => void
   exportButton?: React.ReactNode
+  isDebug?: boolean
   children?: React.ReactNode
 }
 
@@ -60,6 +62,7 @@ export function ActivistFilters({
   isDirty,
   onReset,
   exportButton,
+  isDebug,
   children,
 }: ActivistFiltersProps) {
   // Tracks optional filters added from the menu that may not yet have values.
@@ -138,6 +141,7 @@ export function ActivistFilters({
 
       {/* Chip bar */}
       <div className="flex flex-wrap items-center gap-2">
+        {isDebug && <DebugMenu />}
         {exportButton}
         <Button
           variant="ghost"
