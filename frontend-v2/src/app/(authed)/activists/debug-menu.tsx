@@ -8,8 +8,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import { apiClient, QueryActivistOptions } from '@/lib/api'
 
-export function DebugMenu() {
+interface DebugMenuProps {
+  queryOptions: QueryActivistOptions
+}
+
+export function DebugMenu({ queryOptions }: DebugMenuProps) {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
@@ -26,9 +31,18 @@ export function DebugMenu() {
           <button
             type="button"
             className="flex w-full items-center rounded px-2 py-1.5 text-sm hover:bg-muted transition-colors text-left"
-            onClick={() => {
+            onClick={async () => {
               setIsOpen(false)
-              console.log('not implemented')
+              try {
+                const { id } = await apiClient.debugQueryActivists(queryOptions)
+                window.alert(`Debug query id: ${id}`)
+              } catch (err) {
+                window.alert(
+                  err instanceof Error
+                    ? `Failed to log debug query: ${err.message}`
+                    : 'Failed to log debug query.',
+                )
+              }
             }}
           >
             Log page SQL query

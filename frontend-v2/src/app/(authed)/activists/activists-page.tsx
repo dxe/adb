@@ -196,6 +196,7 @@ export default function ActivistsPage({
           onReset={resetAll}
           exportButton={<ExportButton queryOptions={queryOptions} />}
           isDebug={isDebug}
+          debugQueryOptions={queryOptions}
         >
           <ColumnSelector
             visibleColumns={selectedColumns}

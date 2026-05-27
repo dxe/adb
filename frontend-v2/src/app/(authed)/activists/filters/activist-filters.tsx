@@ -18,6 +18,7 @@ import { SourceFilterChip } from './source-filter-chip'
 import { NameSearchFilter } from './name-search-filter'
 import { DebugMenu } from '../debug-menu'
 import type { FilterState } from '../query-state'
+import type { QueryActivistOptions } from '@/lib/api'
 
 interface ActivistFiltersProps {
   filters: FilterState
@@ -27,6 +28,7 @@ interface ActivistFiltersProps {
   onReset: () => void
   exportButton?: React.ReactNode
   isDebug?: boolean
+  debugQueryOptions?: QueryActivistOptions
   children?: React.ReactNode
 }
 
@@ -63,6 +65,7 @@ export function ActivistFilters({
   onReset,
   exportButton,
   isDebug,
+  debugQueryOptions,
   children,
 }: ActivistFiltersProps) {
   // Tracks optional filters added from the menu that may not yet have values.
@@ -141,7 +144,9 @@ export function ActivistFilters({
 
       {/* Chip bar */}
       <div className="flex flex-wrap items-center gap-2">
-        {isDebug && <DebugMenu />}
+        {isDebug && debugQueryOptions && (
+          <DebugMenu queryOptions={debugQueryOptions} />
+        )}
         {exportButton}
         <Button
           variant="ghost"
