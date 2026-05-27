@@ -1,6 +1,6 @@
 module github.com/dxe/adb/cli
 
-// Keep in sync with /workspace/server/src/go.mod.
+// Keep in sync with server/src/go.mod.
 go 1.25.8
 
 require (

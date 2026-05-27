@@ -2,13 +2,13 @@ module github.com/dxe/adb
 
 // Keep in sync with:
 // * go.work
+// * server/src/.golangci.yml
+// * pkg/go.mod
+// * pkg/.golangci.yml
 // * cli/go.mod
-// * go.mod
+// * cli/.golangci.yml
 // * Dockerfile
 // * Dockerfile.cli.
-// * cli/.golangci.yml
-// * pkg/.golangci.yml
-// * server/src/.golangci.yml
 // * devcontainer.json
 go 1.25.8
 
