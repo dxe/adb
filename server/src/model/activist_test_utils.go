@@ -183,3 +183,9 @@ func (s *activistRepoStub) PatchActivist(id int, patch ActivistPatchData) error 
 	s.lastPatch = patch
 	return s.patchErr
 }
+
+func (s *activistRepoStub) DebugActivistQuery(options QueryActivistOptions, username string) (int64, error) {
+	s.t.Helper()
+	s.t.Fatalf("unexpected call to DebugActivistQuery")
+	return 0, nil
+}
