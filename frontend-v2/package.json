@@ -37,7 +37,7 @@
     "quick-lru": "^7.3.0",
     "react": "~19.2.4",
     "react-aria-components": "^1.17.0",
-    "react-day-picker": "^9.13.2",
+    "react-day-picker": "^10.0.1",
     "react-dom": "~19.2.4",
     "react-hot-toast": "^2.6.0",
     "tailwind-merge": "^2.6.1",
