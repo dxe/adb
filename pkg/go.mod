@@ -1,12 +1,12 @@
 module github.com/dxe/adb/pkg
 
 // Keep in sync with /workspace/server/src/go.mod.
-go 1.25.0
+go 1.25.8
 
 require (
 	github.com/go-sql-driver/mysql v1.10.0
 	github.com/golang-migrate/migrate/v4 v4.18.3
-	github.com/jmoiron/sqlx v1.3.5
+	github.com/jmoiron/sqlx v1.4.0
 )
 
 require (
@@ -24,5 +24,5 @@ require (
 	go.opentelemetry.io/otel/metric v1.43.0 // indirect
 	go.opentelemetry.io/otel/trace v1.43.0 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
-	golang.org/x/sys v0.44.0 // indirect
+	golang.org/x/sys v0.45.0 // indirect
 )

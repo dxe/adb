@@ -2,7 +2,7 @@
 
 # Stage 1: build the CLI binary.
 # Keep in sync with /workspace/server/src/go.mod.
-FROM golang:1.25.0 AS builder
+FROM golang:1.25.8 AS builder
 
 WORKDIR /workspace/cli
 

@@ -1,6 +1,6 @@
 ## Build API backend.
 # Keep in sync with /workspace/server/src/go.mod.
-FROM golang:1.25.0 AS build-api
+FROM golang:1.25.8 AS build-api
 WORKDIR /workspace/server/src
 COPY go.work /workspace/
 COPY go.work.sum /workspace/
