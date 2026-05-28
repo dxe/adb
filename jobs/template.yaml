@@ -1,0 +1,46 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: DxE jobs — AWS Lambda jobs
+
+Parameters:
+  SmtpUser:
+    Type: String
+    NoEcho: true
+    Description: SMTP user, passed in from SSM at deploy time.
+  SmtpPass:
+    Type: String
+    NoEcho: true
+    Description: SMTP password, passed in from SSM at deploy time.
+  ParamSecurityGroupIds:
+    Type: List<AWS::EC2::SecurityGroup::Id>
+    Description: Security group IDs for the Lambda VPC config.
+    Default: sg-063e8c0d777d1e786
+  ParamSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Subnet IDs for the Lambda VPC config.
+    Default: subnet-06d83dbfc7471e938,subnet-01b09b1d04eb4057b
+
+Globals:
+  Function:
+    Runtime: provided.al2023
+    Architectures:
+      - arm64
+    VpcConfig:
+      SecurityGroupIds: !Ref ParamSecurityGroupIds
+      SubnetIds: !Ref ParamSubnetIds
+    Environment:
+      Variables:
+        SMTP_USER: !Ref SmtpUser
+        SMTP_PASS: !Ref SmtpPass
+
+Resources:
+  HelloWorldFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: jobs-hello-world
+      Handler: bootstrap
+      CodeUri: bin/hello-world.zip
+      Policies:
+        - AWSLambdaVPCAccessExecutionRole
+
+# TODO: add CloudWatch alarms

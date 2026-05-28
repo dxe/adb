@@ -7,6 +7,7 @@ module github.com/dxe/adb
 // * pkg/.golangci.yml
 // * cli/go.mod
 // * cli/.golangci.yml
+// * jobs/go.mod
 // * Dockerfile
 // * Dockerfile.cli.
 // * devcontainer.json
