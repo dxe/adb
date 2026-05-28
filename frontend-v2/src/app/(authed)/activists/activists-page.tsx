@@ -38,7 +38,7 @@ export default function ActivistsPage({
   const { user } = useAuthedPageContext()
   const isAdmin = user.Roles.includes('admin')
   const searchParams = useSearchParams()
-  const isDebug = searchParams.get('debug') !== 'true'
+  const isDebug = searchParams.get('debug') === 'true'
 
   const [selectedActivistId, setSelectedActivistId] = useQueryState(
     'activist',
