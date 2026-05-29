@@ -13,7 +13,7 @@ const contentWrapperClass = {
   //
   // `md:flex-1 md:min-h-0` is a bounded-height flex chain link (md+).
   // See frontend-v2/docs/patterns/bounded-height-flex-chain.md
-  full: 'lg:max-w-none lg:mt-0 lg:mx-0 lg:rounded-none shadow-none bg-white md:flex-1 md:min-h-0 mb-0',
+  full: 'lg:max-w-none lg:mt-0 lg:mx-0 lg:rounded-none shadow-none bg-opacity-100 md:flex-1 md:min-h-0 mb-0',
 }
 
 /**
@@ -33,10 +33,10 @@ export const ContentWrapper = (props: {
   return (
     <div
       className={cn(
-        'content-wrapper w-full py-6 px-4 md:px-10 mb-12 flex flex-col',
+        'content-wrapper bg-white w-full py-6 px-4 md:px-10 mb-12 flex flex-col',
         props.size === 'full'
           ? contentWrapperClass.full
-          : 'lg:rounded-md shadow-2xl backdrop-blur-md bg-white/95 lg:mt-6 lg:mx-auto',
+          : 'lg:rounded-md shadow-2xl backdrop-blur-md bg-opacity-95 lg:mt-6 lg:mx-auto',
         props.size !== 'full' && contentWrapperClass[props.size],
         props.className,
       )}
