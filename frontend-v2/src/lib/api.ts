@@ -87,6 +87,7 @@ const ChapterOrganizerSchema = z.object({
   Linkedin: z.string().optional(),
 })
 export type ChapterOrganizer = z.infer<typeof ChapterOrganizerSchema>
+export type Chapter = z.infer<typeof ChapterListResp>['chapters'][number]
 
 const ChapterWithOrganizersSchema = z.object({
   ChapterID: z.number(),

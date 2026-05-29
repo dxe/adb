@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import {
   dehydrate,
   HydrationBoundary,
@@ -7,6 +8,7 @@ import { ContentWrapper } from '@/app/content-wrapper'
 import { API_PATH, ApiClient } from '@/lib/api'
 import { getCookies } from '@/lib/auth'
 import { redirectForHttpError } from '@/lib/server-auth'
+import { FormLoadingFallback } from '../form-loading-fallback'
 import { UserForm } from '../user-form'
 
 export default async function NewUserPage() {
@@ -24,7 +26,9 @@ export default async function NewUserPage() {
   return (
     <ContentWrapper size="lg" className="gap-6">
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <UserForm />
+        <Suspense fallback={<FormLoadingFallback />}>
+          <UserForm />
+        </Suspense>
       </HydrationBoundary>
     </ContentWrapper>
   )
