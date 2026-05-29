@@ -9,7 +9,7 @@ import {
   SortingState,
   useReactTable,
 } from '@tanstack/react-table'
-import { User } from '@/lib/api'
+import { Chapter, User } from '@/lib/api'
 import {
   Table,
   TableBody,
@@ -24,11 +24,6 @@ import { Pencil } from 'lucide-react'
 import clsx from 'clsx'
 import { SortIndicator } from '@/components/ui/sort-indicator'
 import { formatRoleLabel } from '@/lib/roles'
-
-type Chapter = {
-  ChapterID: number
-  Name: string
-}
 
 export function UserTable({
   users,

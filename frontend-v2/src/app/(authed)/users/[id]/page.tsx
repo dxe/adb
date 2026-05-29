@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import {
   dehydrate,
   HydrationBoundary,
@@ -8,6 +9,7 @@ import { ContentWrapper } from '@/app/content-wrapper'
 import { API_PATH, ApiClient } from '@/lib/api'
 import { getCookies } from '@/lib/auth'
 import { redirectForHttpError } from '@/lib/server-auth'
+import { FormLoadingFallback } from '../form-loading-fallback'
 import { UserForm } from '../user-form'
 
 export default async function EditUserPage({
@@ -42,7 +44,9 @@ export default async function EditUserPage({
   return (
     <ContentWrapper size="lg" className="gap-6">
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <UserForm userId={userId} />
+        <Suspense fallback={<FormLoadingFallback />}>
+          <UserForm userId={userId} />
+        </Suspense>
       </HydrationBoundary>
     </ContentWrapper>
   )
