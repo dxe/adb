@@ -35,13 +35,10 @@
       // checksum mismatch on 2026-05-02).
       "golangciLintVersion": "2.11.4"
     },
-    "ghcr.io/devcontainers/features/node:1": {
+    "ghcr.io/devcontainers/features/node:2": {
       "nodeGypDependencies": true,
-      "version": "18" // Match version from Dockerfile
+      "version": "25" // Match version from Makefile REACT_FRONTEND_NODE_VERSION
     },
-    // Shares a pnpm store between devcontainers.
-    // https://github.com/joshuanianji/devcontainer-features/tree/main/src/mount-pnpm-store
-    "ghcr.io/joshuanianji/devcontainer-features/mount-pnpm-store:1": {},
     "ghcr.io/jungaretti/features/make:1": {},
     "ghcr.io/rocker-org/devcontainer-features/apt-packages:1": {
       // mariadb-client package provides the `mysql` command for
@@ -49,6 +46,11 @@
       // bash-completion is useful for entering git commands in the devcontainer
       //     and our .bashrc requires this.
       "packages": "mariadb-client,bash-completion"
+    },
+    "ghcr.io/devcontainers/features/aws-cli:1": {},
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.12",
+      "installTools": false
     }
   },
   "customizations": {

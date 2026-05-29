@@ -1,0 +1,56 @@
+# jobs
+
+AWS Lambda jobs for ADB, deployed with [AWS SAM](https://docs.aws.amazon.com/serverless-application-model/).
+
+## Prerequisites
+
+- Go (preinstalled in the devcontainer)
+- Python + pip (preinstalled in the devcontainer)
+- AWS credentials with deploy permissions for `us-west-2`
+- SSM parameters `smtp_user` and `smtp_pass` set in `us-west-2`
+
+Install Python dependencies (currently just `aws-sam-cli`):
+
+```bash
+make deps
+```
+
+Log in with the AWS CLI:
+
+```bash
+aws login
+```
+
+Note: the above command works for IAM users, not SSO / Identity Center users,
+and uses your console credentials rather than storing a long-term IAM access
+key. You must re-run it every time your console session expires.
+
+## Functions
+
+- `hello-world` — sends a "Hello World" email to `ataylor@directactioneverywhere.com`.
+
+## Build
+
+Cross-compiles each function to a `bootstrap` binary and zips it into `bin/`:
+
+```bash
+make build
+```
+
+## Deploy
+
+```bash
+make deploy
+```
+
+## Invoke (smoke test)
+
+```bash
+aws lambda invoke --function-name jobs-hello-world --region us-west-2 /dev/stdout
+```
+
+## Clean
+
+```bash
+make clean
+```
