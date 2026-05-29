@@ -311,6 +311,34 @@ export class HTTPStatusError extends Error {
   }
 }
 
+// Module-level cache for the CSRF token. Safe to cache indefinitely because
+// the _gorilla_csrf cookie (and thus the token value) doesn't rotate mid-session.
+let _csrfTokenCache: string | undefined
+let _csrfTokenPending: Promise<string | undefined> | null = null
+
+async function getCsrfToken(client: ApiClient): Promise<string | undefined> {
+  if (typeof window === 'undefined') return undefined
+  if (_csrfTokenCache !== undefined) return _csrfTokenCache
+  if (!_csrfTokenPending) {
+    _csrfTokenPending = client.fetchCsrfToken().then(
+      (token) => {
+        _csrfTokenCache = token
+        _csrfTokenPending = null
+        return token
+      },
+      () => {
+        _csrfTokenPending = null
+        return undefined
+      },
+    )
+  }
+  return _csrfTokenPending
+}
+
+export function preloadCsrfToken() {
+  void getCsrfToken(new ApiClient())
+}
+
 export class ApiClient {
   private client: KyInstance
 
@@ -376,13 +404,8 @@ export class ApiClient {
     }
   }
 
-  private getCsrfToken(): string | undefined {
-    if (typeof document === 'undefined') return undefined
-
-    const metaToken = document
-      .querySelector('meta[name="csrf-token"]')
-      ?.getAttribute('content')
-    return metaToken ? metaToken : undefined
+  private getCsrfToken(): Promise<string | undefined> {
+    return getCsrfToken(this)
   }
 
   getActivistNames = async (signal?: AbortSignal) => {
@@ -503,7 +526,7 @@ export class ApiClient {
     signal?: AbortSignal,
   ) => {
     try {
-      const csrfToken = this.getCsrfToken()
+      const csrfToken = await this.getCsrfToken()
       const resp = await this.client
         .patch(`${API_PATH.ACTIVIST_GET}/${activistId}`, {
           json: patch,
@@ -604,7 +627,7 @@ export class ApiClient {
 
   createUser = async (payload: UserWithoutId) => {
     try {
-      const csrfToken = this.getCsrfToken()
+      const csrfToken = await this.getCsrfToken()
       const resp = await this.client
         .post(API_PATH.USERS, {
           json: payload,
@@ -619,7 +642,7 @@ export class ApiClient {
 
   updateUser = async (payload: User) => {
     try {
-      const csrfToken = this.getCsrfToken()
+      const csrfToken = await this.getCsrfToken()
       const resp = await this.client
         .put(`${API_PATH.USERS}/${payload.id}`, {
           json: payload,
@@ -645,7 +668,7 @@ export class ApiClient {
 
   saveEvent = async (payload: SaveEventParams) => {
     try {
-      const csrfToken = this.getCsrfToken()
+      const csrfToken = await this.getCsrfToken()
       const resp = await this.client
         .post(API_PATH.EVENT_SAVE, {
           json: payload,
@@ -661,7 +684,7 @@ export class ApiClient {
 
   saveCoaching = async (payload: SaveEventParams) => {
     try {
-      const csrfToken = this.getCsrfToken()
+      const csrfToken = await this.getCsrfToken()
       const resp = await this.client
         .post(API_PATH.COACHING_SAVE, {
           json: payload,
@@ -696,7 +719,7 @@ export class ApiClient {
 
   deleteEvent = async (eventId: number) => {
     try {
-      const csrfToken = this.getCsrfToken()
+      const csrfToken = await this.getCsrfToken()
       const body = new URLSearchParams({ event_id: String(eventId) })
       const resp = await this.client
         .post(API_PATH.EVENT_DELETE, {

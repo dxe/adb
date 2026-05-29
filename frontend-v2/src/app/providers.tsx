@@ -12,7 +12,8 @@ import {
 } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
-import { HTTPStatusError } from '@/lib/api'
+import { useEffect } from 'react'
+import { HTTPStatusError, preloadCsrfToken } from '@/lib/api'
 
 function makeQueryClient() {
   return new QueryClient({
@@ -56,6 +57,10 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   //       suspend because React will throw away the client on the initial
   //       render if it suspends and there is no boundary
   const queryClient = getQueryClient()
+
+  useEffect(() => {
+    preloadCsrfToken()
+  }, [])
 
   return (
     <NuqsAdapter>
