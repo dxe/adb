@@ -240,6 +240,10 @@ func router() (*mux.Router, *sqlx.DB) {
 		[]byte(config.CsrfAuthKey),
 		csrf.Secure(config.IsProd), // disable secure flag in dev
 		csrf.Path("/"),
+		csrf.ErrorHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			log.Printf("csrfMiddleware: validation failed for %s %s: %v", r.Method, r.URL.Path, csrf.FailureReason(r))
+			http.Error(w, fmt.Sprintf("%s - %s", http.StatusText(http.StatusForbidden), csrf.FailureReason(r)), http.StatusForbidden)
+		})),
 	)
 	// Workaround for https://github.com/gorilla/csrf/issues/190
 	// gorilla/csrf v1.7.x compares the request's Origin header
@@ -473,11 +477,13 @@ func (c MainController) apiAccessMiddleware(h http.Handler, hasAccess func(model
 		user, authed := c.authADBUser(r, w)
 
 		if !authed {
+			log.Printf("apiAccessMiddleware: auth failed for %s %s", r.Method, r.URL.Path)
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 			return
 		}
 
 		if !hasAccess(user) {
+			log.Printf("apiAccessMiddleware: access denied for user %d (%s) roles=%v on %s %s", user.ID, user.Email, user.Roles, r.Method, r.URL.Path)
 			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 			return
 		}
