@@ -1,7 +1,8 @@
 {
   "scripts": {
     "setup": "ADB_HOST_PORT=$CONDUCTOR_PORT devcontainer up --workspace-folder . && devcontainer exec --workspace-folder . make deps && devcontainer exec --workspace-folder . make dev_db && devcontainer exec --workspace-folder . bash -lc 'adb seed activists'",
-    "run": "ADB_HOST_PORT=$CONDUCTOR_PORT devcontainer up --workspace-folder . && devcontainer exec --workspace-folder . --remote-env PORT=$CONDUCTOR_PORT bash -lc 'fuser -k ${PORT}/tcp 3000/tcp 2>/dev/null; sleep 1; make run_all'"
+    "run": "ADB_HOST_PORT=$CONDUCTOR_PORT devcontainer up --workspace-folder . && devcontainer exec --workspace-folder . --remote-env PORT=$CONDUCTOR_PORT bash -lc 'fuser -k ${PORT}/tcp 3000/tcp 2>/dev/null; sleep 1; make run_all'",
+    "archive": "./.devcontainer/workspace-archive.sh"
   },
   "runScriptMode": "concurrent"
 }
