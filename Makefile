@@ -21,11 +21,18 @@ VUE_FRONTEND_NODE_VERSION := 16
 REACT_FRONTEND_NODE_VERSION := 25
 PNPM_VERSION := 10.32.1
 
+# Port the Go server listens on. Defaults to 8080; override with `make run_all
+# PORT=NNNN` or a PORT environment variable so parallel checkouts can use
+# distinct ports. The frontend's browser code uses relative URLs, so only
+# server-side rendering reads NEXT_PUBLIC_API_BASE_URL.
+PORT ?= 8080
+export PORT
+
 # Runs the application (builds Vue.js files, starts Next.js dev server, starts Go server).
 # As of January 2025, upgrading past Node 16 breaks old Vue dependencies.
 run_all:
 	. $(NVM_SCRIPT) && \
-	export NEXT_PUBLIC_API_BASE_URL=http://localhost:8080; \
+	export NEXT_PUBLIC_API_BASE_URL=http://localhost:$(PORT); \
     (cd frontend && nvm use $(VUE_FRONTEND_NODE_VERSION) && npm run dev-build); \
 	(cd frontend-v2 && nvm use $(REACT_FRONTEND_NODE_VERSION) && pnpm dev) &
 	$(MAKE) run
