@@ -5,20 +5,20 @@ import {
 } from '@tanstack/react-query'
 import { notFound } from 'next/navigation'
 import { ContentWrapper } from '@/app/content-wrapper'
-import { EventForm } from '../event-form'
+import { EventConfirmation } from './event-confirmation'
 import { API_PATH, ApiClient } from '@/lib/api'
 import { getCookies } from '@/lib/auth'
 import { redirectForHttpError } from '@/lib/server-auth'
 
-export default async function EditEventPage({
+// Shown right after a scheduled (public) event is created. Attendance happens
+// later, at the event, so we confirm the event is on the schedule and offer the
+// natural next steps instead of dropping the user on the attendance page.
+export default async function EventConfirmationPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ edit?: string }>
 }) {
   const { id } = await params
-  const { edit } = await searchParams
   const eventId = parseInt(id)
   if (Number.isNaN(eventId)) {
     notFound()
@@ -38,8 +38,7 @@ export default async function EditEventPage({
   return (
     <ContentWrapper size="sm" className="gap-8">
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <h1 className="text-3xl font-bold">Event</h1>
-        <EventForm mode="event" startExpanded={edit === '1'} />
+        <EventConfirmation eventId={eventId} />
       </HydrationBoundary>
     </ContentWrapper>
   )

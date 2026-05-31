@@ -19,6 +19,7 @@ export const fetchSession = async (cookies?: string) => {
 
     return {
       user: data.user,
+      googlePlacesApiKey: data.googlePlacesApiKey,
     }
   } catch (err) {
     if (
@@ -29,6 +30,7 @@ export const fetchSession = async (cookies?: string) => {
     ) {
       return {
         user: null,
+        googlePlacesApiKey: '',
       }
     }
     throw err

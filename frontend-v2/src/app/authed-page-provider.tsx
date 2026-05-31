@@ -5,6 +5,8 @@ import { type AuthedUser } from '@/lib/api'
 
 export type TAuthedPageContext = {
   user: AuthedUser
+  // Referrer-restricted Google Places key, served from the backend config.
+  googlePlacesApiKey: string
 }
 
 export const AuthedPageContext = createContext<TAuthedPageContext | undefined>(

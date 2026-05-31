@@ -657,7 +657,7 @@ func (c MainController) HomeHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Most roles grant access to take attendance.
 	if model.UserHasAttendanceAccess(user) {
-		http.Redirect(w, r, "/v2/events/new", http.StatusFound)
+		http.Redirect(w, r, "/v2/home", http.StatusFound)
 		return
 	}
 
@@ -1775,6 +1775,10 @@ func (c MainController) AuthedUserInfoHandler(w http.ResponseWriter, r *http.Req
 
 	writeJSON(w, map[string]interface{}{
 		"user": user,
+		// Referrer-restricted, client-side Google Places key. Served from the
+		// backend config (same source the Vue app uses) so it works in all
+		// environments without baking it into the Next.js build.
+		"googlePlacesApiKey": config.GooglePlacesAPIKey,
 	})
 }
 

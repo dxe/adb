@@ -1,8 +1,10 @@
 package model
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
+	"fmt"
 	"io"
 	"strings"
 	"time"
@@ -12,6 +14,10 @@ import (
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
+
+// timeLayout is the wall-clock layout (HH:MM) accepted from the form's
+// time inputs for start_time / end_time.
+const timeLayout string = "15:04"
 
 /** Constant and Global Variable Definitions */
 
@@ -48,6 +54,30 @@ type EventJSON struct {
 	SuppressSurvey   bool     `json:"suppress_survey"`
 	CircleID         int      `json:"circle_id"`
 	ChapterID        int      `json:"chapter_id"`
+
+	// Advance-event fields. All optional; empty/zero values keep the
+	// existing attendance flow unchanged.
+	IsOnline    bool   `json:"is_online"`
+	Description string `json:"description,omitempty"`
+	StartTime   string `json:"start_time,omitempty"` // local wall-clock "HH:MM"
+	EndTime     string `json:"end_time,omitempty"`   // local wall-clock "HH:MM"
+	Timezone    string `json:"timezone,omitempty"`   // IANA zone, e.g. "America/Los_Angeles"
+	IsPublic    bool   `json:"is_public"`
+
+	// Location. Submitted as a Google Place (no free-text); resolved place
+	// fields are echoed back for display when reading an event. Null/omitted
+	// for attendance and online events.
+	Location *LocationJSON `json:"location,omitempty"`
+}
+
+// LocationJSON is the deduped Google Place attached to an event.
+type LocationJSON struct {
+	LocationID       int      `json:"id,omitempty"`
+	GooglePlaceID    string   `json:"google_place_id,omitempty"`
+	Name             string   `json:"name,omitempty"`
+	FormattedAddress string   `json:"formatted_address,omitempty"`
+	Lat              *float64 `json:"lat,omitempty"`
+	Lng              *float64 `json:"lng,omitempty"`
 }
 
 /* TODO Restructure this Struct */
@@ -67,10 +97,27 @@ type Event struct {
 	DeletedAttendees      []Activist // Used for Updating Events
 	CircleID              int        `db:"circle_id"`
 	ChapterID             int        `db:"chapter_id"`
+
+	// Advance-event columns.
+	LocationID  *int           `db:"location_id"`
+	IsOnline    bool           `db:"is_online"`
+	Description sql.NullString `db:"description"`
+	StartTime   sql.NullString `db:"start_time"`
+	EndTime     sql.NullString `db:"end_time"`
+	Timezone    string         `db:"timezone"`
+	IsPublic    bool           `db:"is_public"`
+
+	// Resolved location fields from LEFT JOIN locations (null when the event
+	// has no location). Read-only — not written back to the events table.
+	LocationPlaceID          sql.NullString  `db:"location_google_place_id"`
+	LocationName             sql.NullString  `db:"location_name"`
+	LocationFormattedAddress sql.NullString  `db:"location_formatted_address"`
+	LocationLat              sql.NullFloat64 `db:"location_lat"`
+	LocationLng              sql.NullFloat64 `db:"location_lng"`
 }
 
 func (event *Event) ToJSON() EventJSON {
-	return EventJSON{
+	j := EventJSON{
 		EventID:        event.ID,
 		EventName:      event.EventName,
 		EventDate:      event.EventDate.Format(EventDateLayout),
@@ -81,7 +128,34 @@ func (event *Event) ToJSON() EventJSON {
 		SuppressSurvey: event.SuppressSurvey,
 		CircleID:       event.CircleID,
 		ChapterID:      event.ChapterID,
+
+		IsOnline:    event.IsOnline,
+		Description: event.Description.String,
+		StartTime:   event.StartTime.String,
+		EndTime:     event.EndTime.String,
+		Timezone:    event.Timezone,
+		IsPublic:    event.IsPublic,
 	}
+	// Only attach a location when the event resolves to one (LEFT JOIN match).
+	if event.LocationID != nil {
+		j.Location = &LocationJSON{
+			LocationID:       *event.LocationID,
+			GooglePlaceID:    event.LocationPlaceID.String,
+			Name:             event.LocationName.String,
+			FormattedAddress: event.LocationFormattedAddress.String,
+			Lat:              nullFloatToPtr(event.LocationLat),
+			Lng:              nullFloatToPtr(event.LocationLng),
+		}
+	}
+	return j
+}
+
+func nullFloatToPtr(n sql.NullFloat64) *float64 {
+	if !n.Valid {
+		return nil
+	}
+	v := n.Float64
+	return &v
 }
 
 type GetEventOptions struct {
@@ -140,7 +214,15 @@ func GetEvent(db *sqlx.DB, options GetEventOptions) (Event, error) {
 }
 
 func getEvents(db *sqlx.DB, options GetEventOptions) ([]Event, error) {
-	query := `SELECT e.id, e.name, e.date, e.event_type, e.survey_sent, e.suppress_survey, e.circle_id, e.chapter_id FROM events e `
+	query := `SELECT e.id, e.name, e.date, e.event_type, e.survey_sent, e.suppress_survey, e.circle_id, e.chapter_id,
+e.location_id, e.is_online, e.description, e.start_time, e.end_time, e.timezone, e.is_public,
+l.google_place_id AS location_google_place_id,
+l.name AS location_name,
+l.formatted_address AS location_formatted_address,
+l.lat AS location_lat,
+l.lng AS location_lng
+FROM events e
+LEFT JOIN locations l ON e.location_id = l.id `
 
 	// Items in whereClause are added to the query in order, separated by ' AND '.
 	var whereClause []string
@@ -342,8 +424,11 @@ func insertEvent(db *sqlx.DB, event Event) (eventID int, err error) {
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to create transaction")
 	}
-	res, err := tx.NamedExec(`INSERT INTO events (name, date, event_type, suppress_survey, circle_id, chapter_id)
-VALUES (:name, :date, :event_type, :suppress_survey, :circle_id, :chapter_id)`, event)
+	res, err := tx.NamedExec(`INSERT INTO events
+(name, date, event_type, suppress_survey, circle_id, chapter_id,
+ location_id, is_online, description, start_time, end_time, timezone, is_public)
+VALUES (:name, :date, :event_type, :suppress_survey, :circle_id, :chapter_id,
+ :location_id, :is_online, :description, :start_time, :end_time, :timezone, :is_public)`, event)
 	if err != nil {
 		_ = tx.Rollback()
 		return 0, errors.Wrap(err, "failed to insert event")
@@ -390,7 +475,14 @@ SET
   date = :date,
   event_type = :event_type,
   suppress_survey = :suppress_survey,
-  circle_id = :circle_id
+  circle_id = :circle_id,
+  location_id = :location_id,
+  is_online = :is_online,
+  description = :description,
+  start_time = :start_time,
+  end_time = :end_time,
+  timezone = :timezone,
+  is_public = :is_public
 WHERE
   id = :id`, event)
 	if err != nil {
@@ -512,7 +604,113 @@ func CleanEventData(db *sqlx.DB, body io.Reader, chapterID int) (Event, error) {
 
 	e.ChapterID = chapterID
 
+	e.IsPublic = eventJSON.IsPublic
+	e.IsOnline = eventJSON.IsOnline
+
+	// Description: trim and reject dangerous characters; empty -> NULL.
+	if err := checkForDangerousChars(eventJSON.Description); err != nil {
+		return Event{}, err
+	}
+	e.Description = nullStringFromValue(eventJSON.Description)
+
+	// Start/end times are local wall-clock "HH:MM"; validate when present.
+	startTime, err := cleanEventTime(eventJSON.StartTime)
+	if err != nil {
+		return Event{}, fmt.Errorf("invalid start_time: %w", err)
+	}
+	e.StartTime = startTime
+	endTime, err := cleanEventTime(eventJSON.EndTime)
+	if err != nil {
+		return Event{}, fmt.Errorf("invalid end_time: %w", err)
+	}
+	e.EndTime = endTime
+
+	// Timezone: IANA zone name; validate when present.
+	e.Timezone = strings.TrimSpace(eventJSON.Timezone)
+	if e.Timezone != "" {
+		if _, err := time.LoadLocation(e.Timezone); err != nil {
+			return Event{}, fmt.Errorf("invalid timezone %q: %w", e.Timezone, err)
+		}
+	}
+
+	// Location: a Google Place (no free-text). Only resolve a location when a
+	// place is supplied and the event is not online; otherwise location_id is
+	// NULL. This keeps attendance/online events location-less.
+	if !e.IsOnline && eventJSON.Location != nil {
+		placeID := strings.TrimSpace(eventJSON.Location.GooglePlaceID)
+		if placeID != "" {
+			locationID, err := GetOrCreateLocation(
+				db,
+				chapterID,
+				placeID,
+				strings.TrimSpace(eventJSON.Location.Name),
+				strings.TrimSpace(eventJSON.Location.FormattedAddress),
+				eventJSON.Location.Lat,
+				eventJSON.Location.Lng,
+			)
+			if err != nil {
+				return Event{}, err
+			}
+			e.LocationID = &locationID
+		}
+	}
+
 	return e, nil
+}
+
+// cleanEventTime validates an optional local wall-clock "HH:MM" string,
+// returning a NULL value when empty.
+func cleanEventTime(raw string) (sql.NullString, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return sql.NullString{}, nil
+	}
+	if _, err := time.Parse(timeLayout, raw); err != nil {
+		return sql.NullString{}, err
+	}
+	return sql.NullString{String: raw, Valid: true}, nil
+}
+
+// nullStringFromValue trims a string and returns a NULL value when empty.
+func nullStringFromValue(raw string) sql.NullString {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return sql.NullString{}
+	}
+	return sql.NullString{String: raw, Valid: true}
+}
+
+// GetOrCreateLocation upserts a location keyed by (chapter_id, google_place_id)
+// and returns its id. Mirrors GetOrCreateActivist. Place metadata (name,
+// address, coordinates) is refreshed on conflict.
+func GetOrCreateLocation(db *sqlx.DB, chapterID int, placeID, name, formattedAddress string, lat, lng *float64) (int, error) {
+	tx, err := db.Beginx()
+	if err != nil {
+		return 0, fmt.Errorf("failed to create transaction: %w", err)
+	}
+
+	_, err = tx.Exec(`INSERT INTO locations (chapter_id, google_place_id, name, formatted_address, lat, lng)
+VALUES (?, ?, ?, ?, ?, ?)
+ON DUPLICATE KEY UPDATE name = VALUES(name), formatted_address = VALUES(formatted_address), lat = VALUES(lat), lng = VALUES(lng)`,
+		chapterID, placeID, name, formattedAddress, lat, lng)
+	if err != nil {
+		_ = tx.Rollback()
+		return 0, fmt.Errorf("failed to upsert location %s: %w", placeID, err)
+	}
+
+	var locationID int
+	err = tx.Get(&locationID, `SELECT id FROM locations WHERE chapter_id = ? AND google_place_id = ?`, chapterID, placeID)
+	if err != nil {
+		_ = tx.Rollback()
+		return 0, fmt.Errorf("failed to get location %s: %w", placeID, err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		_ = tx.Rollback()
+		return 0, fmt.Errorf("failed to commit location %s: %w", placeID, err)
+	}
+
+	return locationID, nil
 }
 
 func cleanEventAttendanceData(db *sqlx.DB, attendees []string, chapterID int) ([]Activist, error) {

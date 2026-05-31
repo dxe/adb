@@ -40,7 +40,10 @@ run_all:
 run:
 	cd server/src && go install # Install first so that we keep cached build objects around.
 
-	set -a && . server/debug.env && set +a && \
+	set -a && \
+	. server/debug.env && \
+	{ [ -f .env ] && . ./.env || true; } && \
+	set +a && \
 	cd server/src && \
 	PORT=$(PORT) go run main.go
 

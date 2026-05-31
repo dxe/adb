@@ -4,6 +4,7 @@ import { useRef, useState, useEffect, useMemo } from 'react'
 import { useForm, useStore } from '@tanstack/react-form'
 import { z } from 'zod'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -23,9 +24,16 @@ import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
 import { SF_BAY_CHAPTER_ID } from '@/lib/constants'
 import { AttendeeInputField } from './attendee-input-field'
 import { useActivistRegistry } from './useActivistRegistry'
+import { PlacesAutocomplete } from './places-autocomplete'
 import { DatePicker } from '@/components/ui/date-picker'
 import { format, parseISO } from 'date-fns'
-import { Save } from 'lucide-react'
+import { Save, ChevronDown, ChevronUp } from 'lucide-react'
+import { TimeField } from '@/components/ui/time-field'
+import {
+  getBrowserTimezone,
+  getCommonTimezones,
+  getZoneAbbreviation,
+} from '@/lib/timezone'
 
 const EVENT_TYPES = [
   'Action',
@@ -66,27 +74,66 @@ const attendeeSchema = z.object({
   ),
 })
 
-const formSchema = z.object({
-  eventName: z.string().min(1, 'Event name is required'),
-  eventType: z.string().min(1, 'Event type is required'),
-  eventDate: z.string().min(1, 'Event date is required'),
-  suppressSurvey: z.boolean(),
-  attendees: z.array(attendeeSchema),
-})
+const formSchema = z
+  .object({
+    eventName: z.string().min(1, 'Event name is required'),
+    eventType: z.string().min(1, 'Event type is required'),
+    eventDate: z.string().min(1, 'Event date is required'),
+    suppressSurvey: z.boolean(),
+    attendees: z.array(attendeeSchema),
+    // Upcoming-event fields. Optional at the schema level; mode-specific
+    // requirements (e.g. attendance) are enforced in onSubmit.
+    isPublic: z.boolean(),
+    isOnline: z.boolean(),
+    description: z.string(),
+    startTime: z.string(),
+    endTime: z.string(),
+    timezone: z.string(),
+    googlePlaceId: z.string(),
+    locationName: z.string(),
+    formattedAddress: z.string(),
+    lat: z.number().optional(),
+    lng: z.number().optional(),
+  })
+  .refine((v) => !(v.startTime && v.endTime) || v.endTime >= v.startTime, {
+    message: 'End time must be after start time',
+    path: ['endTime'],
+  })
+  // Publicly listed events are scheduled in advance, so a start time is required.
+  .refine((v) => !v.isPublic || Boolean(v.startTime), {
+    message: 'Start time is required for public events',
+    path: ['startTime'],
+  })
+  // In-person public events need a location; online ones don't.
+  .refine((v) => !v.isPublic || v.isOnline || Boolean(v.googlePlaceId), {
+    message: 'Location is required for in-person public events',
+    path: ['formattedAddress'],
+  })
 
 type FormValues = z.infer<typeof formSchema>
 
+// 'event' is the unified create/edit flow — a quick attendance log by default,
+// expanding into a scheduled public event when "Public event" is checked.
+// 'connection' is coaching, which is genuinely different.
+export type EventFormMode = 'event' | 'connection'
+
 type EventFormProps = {
-  mode: 'event' | 'connection'
+  mode: EventFormMode
+  // When editing a saved event, start with the detail fields expanded rather
+  // than collapsed behind the summary bar. Used by the post-create confirmation
+  // page's "Edit event" link (?edit=1) so the user lands ready to fix details.
+  startExpanded?: boolean
 }
 
-export const EventForm = ({ mode }: EventFormProps) => {
+export const EventForm = ({ mode, startExpanded }: EventFormProps) => {
   const router = useRouter()
   const params = useParams()
   const queryClient = useQueryClient()
-  const { user } = useAuthedPageContext()
+  const { user, googlePlacesApiKey } = useAuthedPageContext()
   const eventId = params.id ? String(params.id) : undefined
   const isConnection = mode === 'connection'
+  const browserTz = useMemo(() => getBrowserTimezone(), [])
+  const timezones = useMemo(() => getCommonTimezones(), [])
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>(
     Array(DEFAULT_FIELD_COUNT).fill(null),
@@ -110,16 +157,54 @@ export const EventForm = ({ mode }: EventFormProps) => {
     enabled: !!eventId,
   })
 
+  // The scheduled-event fields (time, location, description) are revealed by the
+  // "Public event" checkbox — see showUpcomingFields below. We also surface them
+  // when editing an event that already carries this data, so any pre-existing
+  // event stays fully editable even if its Public box is unchecked.
+  const editingHasUpcomingData = Boolean(
+    eventData &&
+    (eventData.is_public ||
+      eventData.is_online ||
+      eventData.start_time ||
+      eventData.location?.google_place_id ||
+      eventData.description),
+  )
+
+  // When editing a saved event the detail fields (name, type, date, schedule,
+  // location, description) are usually already set, so they collapse behind a
+  // summary header to keep the attendee list near the top for taking
+  // attendance. New events start expanded since you're filling them out.
+  const [detailsExpanded, setDetailsExpanded] = useState(
+    startExpanded ?? !eventId,
+  )
+
   const saveEventMutation = useMutation({
     mutationFn: isConnection ? apiClient.saveCoaching : apiClient.saveEvent,
     onSuccess: (result, variables) => {
       toast.success(`${isConnection ? 'Connection' : 'Event'} saved!`)
+
+      // A brand-new scheduled (public) event is created in advance, so jumping
+      // straight to attendance is awkward. Route to a confirmation page with
+      // next-step choices instead, and skip the form-reset/routing below.
+      if (!eventId && variables.is_public) {
+        // Surface the new event in every list (home's "today", the events page)
+        // without a manual refresh.
+        queryClient.invalidateQueries({ queryKey: [API_PATH.EVENT_LIST] })
+        router.push(`/events/${result.event_id}/confirmation`)
+        return
+      }
+
       if (!eventId) {
         const target = isConnection
           ? `/coachings/${result.event_id}`
           : `/events/${result.event_id}`
         router.push(target)
       }
+
+      // Collapse the detail fields once saved, returning focus to the attendee
+      // list. (New events collapse anyway via the remount above, but this also
+      // covers editing a saved event with the details expanded.)
+      setDetailsExpanded(false)
 
       // Reset the form's dirty state after successful save.
       // This prevents "unsaved changes" warning after successful save.
@@ -132,6 +217,7 @@ export const EventForm = ({ mode }: EventFormProps) => {
         .map((a) => (a.name || '').trim())
         .filter((n) => n !== '')
 
+      const current = form.state.values
       const newValues = {
         eventName: variables.event_name,
         eventType: variables.event_type,
@@ -144,6 +230,17 @@ export const EventForm = ({ mode }: EventFormProps) => {
               .fill(null)
               .map(() => ({ name: '' })),
           ),
+        isPublic: current.isPublic,
+        isOnline: current.isOnline,
+        description: current.description,
+        startTime: current.startTime,
+        endTime: current.endTime,
+        timezone: current.timezone,
+        googlePlaceId: current.googlePlaceId,
+        locationName: current.locationName,
+        formattedAddress: current.formattedAddress,
+        lat: current.lat,
+        lng: current.lng,
       }
 
       // Use keepDefaultValues to work around TanStack Form bug:
@@ -160,6 +257,12 @@ export const EventForm = ({ mode }: EventFormProps) => {
       })
       queryClient.invalidateQueries({
         queryKey: [API_PATH.EVENT_GET, eventId],
+      })
+      // Invalidate every event list (home's "today" list, the full events
+      // page) so a newly created/edited event shows without a manual refresh.
+      // The global 60s staleTime would otherwise serve cached data on return.
+      queryClient.invalidateQueries({
+        queryKey: [API_PATH.EVENT_LIST],
       })
     },
     onError: (error: Error) => {
@@ -186,8 +289,22 @@ export const EventForm = ({ mode }: EventFormProps) => {
           : Array(DEFAULT_FIELD_COUNT)
               .fill(null)
               .map(() => ({ name: '' })),
+      // Scheduled-event fields. Public defaults off, so a new event starts as the
+      // quick attendance form; checking "Public event" reveals the rest. Times
+      // come back from MySQL as "HH:MM:SS"; trim to the "HH:MM" the input expects.
+      isPublic: eventData?.is_public ?? false,
+      isOnline: eventData?.is_online ?? false,
+      description: eventData?.description ?? '',
+      startTime: (eventData?.start_time ?? '').slice(0, 5),
+      endTime: (eventData?.end_time ?? '').slice(0, 5),
+      timezone: eventData?.timezone || browserTz,
+      googlePlaceId: eventData?.location?.google_place_id ?? '',
+      locationName: eventData?.location?.name ?? '',
+      formattedAddress: eventData?.location?.formatted_address ?? '',
+      lat: eventData?.location?.lat ?? undefined,
+      lng: eventData?.location?.lng ?? undefined,
     }
-  }, [eventData, isConnection, user.ChapterID])
+  }, [eventData, isConnection, user.ChapterID, mode, browserTz])
 
   const form = useForm({
     defaultValues: initialValues,
@@ -203,7 +320,15 @@ export const EventForm = ({ mode }: EventFormProps) => {
         .map((a) => (a.name || '').trim())
         .filter((n) => n !== '')
 
-      if (attendeeNames.length === 0) {
+      // Public events carry the richer scheduled-event payload (time, location,
+      // description); quick attendance entry and coaching stay the plain payload.
+      // Pre-existing events with this data keep it editable either way.
+      const includeUpcoming =
+        !isConnection && (value.isPublic || editingHasUpcomingData)
+
+      // Attendees are required for quick attendance entry and coaching, but not
+      // for public events (those are usually filled in later).
+      if (!includeUpcoming && attendeeNames.length === 0) {
         toast.error('At least one attendee is required')
         return
       }
@@ -237,6 +362,28 @@ export const EventForm = ({ mode }: EventFormProps) => {
         added_attendees: addedAttendees,
         deleted_attendees: deletedAttendees,
         suppress_survey: value.suppressSurvey,
+        // Only send scheduled-event fields when they're in play, keeping the
+        // plain attendance/connection save payload unchanged.
+        ...(includeUpcoming && {
+          is_public: value.isPublic,
+          is_online: value.isOnline,
+          description: value.description.trim(),
+          start_time: value.startTime,
+          end_time: value.endTime,
+          timezone: value.timezone,
+          // Online events (or no place picked) have no physical location.
+          ...(value.isOnline || !value.googlePlaceId
+            ? {}
+            : {
+                location: {
+                  google_place_id: value.googlePlaceId,
+                  name: value.locationName,
+                  formatted_address: value.formattedAddress,
+                  lat: value.lat,
+                  lng: value.lng,
+                },
+              }),
+        }),
       })
     },
   })
@@ -253,6 +400,25 @@ export const EventForm = ({ mode }: EventFormProps) => {
   const eventType = useStore(form.store, (state) => state.values.eventType)
   const eventName = useStore(form.store, (state) => state.values.eventName)
   const isDirty = useStore(form.store, (state) => state.isDirty)
+  const isOnline = useStore(form.store, (state) => state.values.isOnline)
+  const isPublic = useStore(form.store, (state) => state.values.isPublic)
+  const eventDate = useStore(form.store, (state) => state.values.eventDate)
+  const timezone = useStore(form.store, (state) => state.values.timezone)
+  const locationName = useStore(
+    form.store,
+    (state) => state.values.locationName,
+  )
+
+  // The "Public event" checkbox reveals the scheduled-event fields (time,
+  // timezone, location, description). Editing an event that already carries
+  // that data keeps it visible regardless. Never shown for coaching.
+  const showUpcomingFields =
+    !isConnection && (isPublic || editingHasUpcomingData)
+  // A brand-new public event must be saved before attendance can be recorded —
+  // attendance happens later, at the event. Everywhere else (quick attendance
+  // entry, coaching, and any saved event) the attendee fields show right away.
+  const isNewPublicEvent = !eventId && showUpcomingFields
+  const showAttendeeSection = !isNewPublicEvent
 
   // Predicts whether the server will send a survey by default.
   const shouldShowSuppressSurveyCheckbox = useMemo(() => {
@@ -349,161 +515,422 @@ export const EventForm = ({ mode }: EventFormProps) => {
       }}
       className="flex flex-col gap-4"
     >
-      {/* Event/Connection Name Field */}
-      <form.Field name="eventName">
-        {(field) => (
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="eventName">
-              {isConnection ? 'Coach name' : 'Event name'}
-            </Label>
-            <Input
-              id="eventName"
-              value={field.state.value ?? ''}
-              onChange={(e) => field.handleChange(e.target.value)}
-              onBlur={field.handleBlur}
-              placeholder={`Enter ${isConnection ? 'connection' : 'event'} name`}
-              className={cn(field.state.meta.errors[0] && 'border-red-500')}
-            />
-            {field.state.meta.errors[0] && (
-              <p className="text-sm text-red-500">
-                {field.state.meta.errors[0]?.message}
-              </p>
-            )}
+      {/* Summary toggle. Only when editing a saved event: the detail fields
+          collapse behind this bar so attendees sit near the top. The bar itself
+          is the toggle in both states (chevron flips), so there's no separate
+          collapse button. */}
+      {eventId && (
+        <button
+          type="button"
+          onClick={() => setDetailsExpanded((v) => !v)}
+          aria-expanded={detailsExpanded}
+          className="flex w-full items-center justify-between gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-left shadow-sm transition-colors hover:bg-blue-100"
+        >
+          <div className="min-w-0">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              {isConnection ? 'Connection' : 'Event'} details
+            </p>
+            <p className="truncate text-base font-semibold text-foreground">
+              {eventName || (isConnection ? 'Connection' : 'Event')}
+            </p>
+            <p className="truncate text-sm text-muted-foreground">
+              {[
+                !isConnection && eventType,
+                eventDate && format(parseISO(eventDate), 'PPP'),
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            </p>
           </div>
-        )}
-      </form.Field>
-
-      {/* Event Type Field - Only show for events, not connections */}
-      {!isConnection && (
-        <form.Field name="eventType">
-          {(field) => (
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="eventType">Type</Label>
-              <Select
-                value={field.state.value}
-                onValueChange={(value) => field.handleChange(value)}
-              >
-                <SelectTrigger
-                  id="eventType"
-                  className={cn(field.state.meta.errors[0] && 'border-red-500')}
-                >
-                  <SelectValue placeholder="Select event type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {EVENT_TYPES.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {field.state.meta.errors[0] && (
-                <p className="text-sm text-red-500">
-                  {field.state.meta.errors[0]?.message}
-                </p>
-              )}
-            </div>
+          {detailsExpanded ? (
+            <ChevronUp className="h-5 w-5 shrink-0 text-muted-foreground" />
+          ) : (
+            <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground" />
           )}
-        </form.Field>
+        </button>
       )}
 
-      {/* Event Date Field */}
-      <form.Field name="eventDate">
-        {(field) => (
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="eventDate">Date</Label>
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <DatePicker
-                  value={
-                    field.state.value ? parseISO(field.state.value) : undefined
-                  }
-                  onValueChange={(date) => {
-                    field.handleChange(date ? format(date, 'yyyy-MM-dd') : '')
-                  }}
-                  placeholder="Pick a date"
+      {/* Detail fields. Always shown for new events; collapsible when editing. */}
+      {(!eventId || detailsExpanded) && (
+        <>
+          {/* Event/Connection Name Field */}
+          <form.Field name="eventName">
+            {(field) => (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="eventName">
+                  {isConnection ? 'Coach name' : 'Event name'}
+                </Label>
+                <Input
+                  id="eventName"
+                  value={field.state.value ?? ''}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  onBlur={field.handleBlur}
+                  placeholder={`Enter ${
+                    isConnection ? 'connection' : 'event'
+                  } name`}
                   className={cn(field.state.meta.errors[0] && 'border-red-500')}
                 />
                 {field.state.meta.errors[0] && (
-                  <p className="text-sm text-red-500 mt-1">
+                  <p className="text-sm text-red-500">
                     {field.state.meta.errors[0]?.message}
                   </p>
                 )}
               </div>
-              <Button type="button" variant="outline" onClick={setDateToToday}>
-                Today
-              </Button>
-            </div>
-          </div>
-        )}
-      </form.Field>
+            )}
+          </form.Field>
 
-      {/* Suppress Survey Checkbox */}
-      {shouldShowSuppressSurveyCheckbox && (
-        <form.Field name="suppressSurvey">
-          {(field) => (
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="suppressSurvey"
-                checked={field.state.value}
-                onCheckedChange={(checked) =>
-                  field.handleChange(Boolean(checked))
-                }
-              />
-              {/* TODO: Consider renaming to "Send survey" with box checked by default. */}
-              <Label htmlFor="suppressSurvey" className="cursor-pointer">
-                Don&apos;t send survey
-              </Label>
+          {/* Event Type Field - Only show for events, not connections */}
+          {!isConnection && (
+            <form.Field name="eventType">
+              {(field) => (
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="eventType">Type</Label>
+                  <Select
+                    value={field.state.value}
+                    onValueChange={(value) => field.handleChange(value)}
+                  >
+                    <SelectTrigger
+                      id="eventType"
+                      className={cn(
+                        field.state.meta.errors[0] && 'border-red-500',
+                      )}
+                    >
+                      <SelectValue placeholder="Select event type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {EVENT_TYPES.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {field.state.meta.errors[0] && (
+                    <p className="text-sm text-red-500">
+                      {field.state.meta.errors[0]?.message}
+                    </p>
+                  )}
+                </div>
+              )}
+            </form.Field>
+          )}
+
+          {/* Event Date Field */}
+          <form.Field name="eventDate">
+            {(field) => (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="eventDate">Date</Label>
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <DatePicker
+                      value={
+                        field.state.value
+                          ? parseISO(field.state.value)
+                          : undefined
+                      }
+                      onValueChange={(date) => {
+                        field.handleChange(
+                          date ? format(date, 'yyyy-MM-dd') : '',
+                        )
+                      }}
+                      placeholder="Pick a date"
+                      className={cn(
+                        field.state.meta.errors[0] && 'border-red-500',
+                      )}
+                    />
+                    {field.state.meta.errors[0] && (
+                      <p className="text-sm text-red-500 mt-1">
+                        {field.state.meta.errors[0]?.message}
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={setDateToToday}
+                  >
+                    Today
+                  </Button>
+                </div>
+              </div>
+            )}
+          </form.Field>
+
+          {/* Public event toggle. Checking it reveals the scheduled-event fields
+          below. Hidden for coaching. */}
+          {!isConnection && (
+            <form.Field name="isPublic">
+              {(field) => (
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="isPublic"
+                    checked={field.state.value}
+                    onCheckedChange={(checked) =>
+                      field.handleChange(Boolean(checked))
+                    }
+                  />
+                  <Label htmlFor="isPublic" className="cursor-pointer">
+                    Publicly listed event
+                  </Label>
+                </div>
+              )}
+            </form.Field>
+          )}
+
+          {/* Scheduled-event fields: time, timezone, location, description */}
+          {showUpcomingFields && (
+            <>
+              {/* Start / End Time */}
+              <div className="flex gap-4">
+                <form.Field name="startTime">
+                  {(field) => (
+                    <div className="flex flex-1 flex-col gap-2">
+                      <Label htmlFor="startTime">
+                        Start time{isPublic ? '' : ' (optional)'}
+                      </Label>
+                      <TimeField
+                        aria-label="Start time"
+                        value={field.state.value ?? ''}
+                        onChange={(v) => field.handleChange(v)}
+                        onClear={() => field.handleChange('')}
+                        hasError={Boolean(field.state.meta.errors[0])}
+                      />
+                      {field.state.meta.errors[0] && (
+                        <p className="text-sm text-red-500">
+                          {field.state.meta.errors[0]?.message}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </form.Field>
+                <form.Field name="endTime">
+                  {(field) => (
+                    <div className="flex flex-1 flex-col gap-2">
+                      <Label htmlFor="endTime">End time (optional)</Label>
+                      <TimeField
+                        aria-label="End time"
+                        value={field.state.value ?? ''}
+                        onChange={(v) => field.handleChange(v)}
+                        onClear={() => field.handleChange('')}
+                        hasError={Boolean(field.state.meta.errors[0])}
+                      />
+                      {field.state.meta.errors[0] && (
+                        <p className="text-sm text-red-500">
+                          {field.state.meta.errors[0]?.message}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </form.Field>
+              </div>
+
+              {/* Timezone */}
+              <form.Field name="timezone">
+                {(field) => (
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="timezone">Timezone</Label>
+                    <Select
+                      value={field.state.value}
+                      onValueChange={(value) => field.handleChange(value)}
+                    >
+                      <SelectTrigger id="timezone">
+                        <SelectValue placeholder="Select timezone" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-72">
+                        {timezones.map((tz) => (
+                          <SelectItem key={tz} value={tz}>
+                            {tz.replace(/_/g, ' ')}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Times are in {timezone.replace(/_/g, ' ')}
+                      {getZoneAbbreviation(eventDate, timezone)
+                        ? ` (${getZoneAbbreviation(eventDate, timezone)})`
+                        : ''}
+                      .
+                    </p>
+                  </div>
+                )}
+              </form.Field>
+
+              {/* Online checkbox */}
+              <form.Field name="isOnline">
+                {(field) => (
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="isOnline"
+                      checked={field.state.value}
+                      onCheckedChange={(checked) => {
+                        const online = Boolean(checked)
+                        field.handleChange(online)
+                        // Online events have no physical location: clear it.
+                        if (online) {
+                          form.setFieldValue('googlePlaceId', '')
+                          form.setFieldValue('locationName', '')
+                          form.setFieldValue('formattedAddress', '')
+                          form.setFieldValue('lat', undefined)
+                          form.setFieldValue('lng', undefined)
+                        }
+                      }}
+                    />
+                    <Label htmlFor="isOnline" className="cursor-pointer">
+                      Online event (no physical location)
+                    </Label>
+                  </div>
+                )}
+              </form.Field>
+
+              {/* Location (Google Places autocomplete; no free-text) */}
+              {!isOnline && (
+                <form.Field name="formattedAddress">
+                  {(field) => (
+                    <div className="flex flex-col gap-2">
+                      <Label htmlFor="location">
+                        Location{isPublic ? '' : ' (optional)'}
+                      </Label>
+                      <PlacesAutocomplete
+                        id="location"
+                        apiKey={googlePlacesApiKey}
+                        value={field.state.value ?? ''}
+                        locationName={locationName}
+                        onSelect={(place) => {
+                          form.setFieldValue(
+                            'googlePlaceId',
+                            place.google_place_id,
+                          )
+                          form.setFieldValue(
+                            'locationName',
+                            place.location_name,
+                          )
+                          form.setFieldValue(
+                            'formattedAddress',
+                            place.formatted_address,
+                          )
+                          form.setFieldValue('lat', place.lat)
+                          form.setFieldValue('lng', place.lng)
+                        }}
+                        onClear={() => {
+                          form.setFieldValue('googlePlaceId', '')
+                          form.setFieldValue('locationName', '')
+                          form.setFieldValue('formattedAddress', '')
+                          form.setFieldValue('lat', undefined)
+                          form.setFieldValue('lng', undefined)
+                        }}
+                      />
+                      {field.state.meta.errors[0] && (
+                        <p className="text-sm text-red-500">
+                          {field.state.meta.errors[0]?.message}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </form.Field>
+              )}
+
+              {/* Description */}
+              <form.Field name="description">
+                {(field) => (
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      value={field.state.value ?? ''}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                      placeholder="Optional event description"
+                      rows={6}
+                    />
+                  </div>
+                )}
+              </form.Field>
+            </>
+          )}
+
+          {/* Suppress Survey Checkbox */}
+          {shouldShowSuppressSurveyCheckbox && (
+            <form.Field name="suppressSurvey">
+              {(field) => (
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="suppressSurvey"
+                    checked={field.state.value}
+                    onCheckedChange={(checked) =>
+                      field.handleChange(Boolean(checked))
+                    }
+                  />
+                  {/* TODO: Consider renaming to "Send survey" with box checked by default. */}
+                  <Label htmlFor="suppressSurvey" className="cursor-pointer">
+                    Don&apos;t send survey
+                  </Label>
+                </div>
+              )}
+            </form.Field>
+          )}
+        </>
+      )}
+
+      {/* Divider between the event detail fields and the attendee section, so
+          the two read as distinct sections when the details are expanded. */}
+      {(!eventId || detailsExpanded) && <hr className="border-border" />}
+
+      {/* Attendees/Coachees Section. For a brand-new public event this is
+          replaced by a prompt to save first; attendance is recorded afterward. */}
+      {showAttendeeSection ? (
+        <form.Field name="attendees" mode="array">
+          {(arrayField) => (
+            <div className="flex flex-col gap-2">
+              <Label>{isConnection ? 'Coachees' : 'Attendees'}</Label>
+              <div className="flex flex-col gap-1">
+                {arrayField.state.value.map((_, index) => {
+                  const isFocused = index === activeInputIndex
+                  return (
+                    <form.Field key={index} name={`attendees[${index}].name`}>
+                      {(field) => (
+                        <AttendeeInputField
+                          field={field}
+                          index={index}
+                          isFocused={isFocused}
+                          registry={activistRegistry}
+                          checkForDuplicate={checkForDuplicate}
+                          inputRef={(el) => {
+                            inputRefs.current[index] = el
+                          }}
+                          onFocus={setActiveInputIndex}
+                          onAdvanceFocus={() => {
+                            if (index < arrayField.state.value.length - 1) {
+                              inputRefs.current[index + 1]?.focus()
+                            }
+                          }}
+                          onChange={ensureMinimumEmptyFields}
+                        />
+                      )}
+                    </form.Field>
+                  )
+                })}
+              </div>
             </div>
           )}
         </form.Field>
+      ) : (
+        <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+          Save the event first — you can record attendance afterward.
+        </div>
       )}
-
-      {/* Attendees/Coachees Section */}
-      <form.Field name="attendees" mode="array">
-        {(arrayField) => (
-          <div className="flex flex-col gap-2">
-            <Label>{isConnection ? 'Coachees' : 'Attendees'}</Label>
-            <div className="flex flex-col gap-1">
-              {arrayField.state.value.map((_, index) => {
-                const isFocused = index === activeInputIndex
-                return (
-                  <form.Field key={index} name={`attendees[${index}].name`}>
-                    {(field) => (
-                      <AttendeeInputField
-                        field={field}
-                        index={index}
-                        isFocused={isFocused}
-                        registry={activistRegistry}
-                        checkForDuplicate={checkForDuplicate}
-                        inputRef={(el) => {
-                          inputRefs.current[index] = el
-                        }}
-                        onFocus={setActiveInputIndex}
-                        onAdvanceFocus={() => {
-                          if (index < arrayField.state.value.length - 1) {
-                            inputRefs.current[index + 1]?.focus()
-                          }
-                        }}
-                        onChange={ensureMinimumEmptyFields}
-                      />
-                    )}
-                  </form.Field>
-                )
-              })}
-            </div>
-          </div>
-        )}
-      </form.Field>
 
       {/* Save Button with Attendee/Coachee Count */}
       <div className="flex justify-between items-center">
-        <div className="text-center">
-          <p className="text-sm text-gray-500">
-            Total {isConnection ? 'coachees' : 'attendees'}
-          </p>
-          <p className="text-2xl font-bold">{attendeeCount}</p>
-        </div>
+        {showAttendeeSection ? (
+          <div className="text-center">
+            <p className="text-sm text-gray-500">
+              Total {isConnection ? 'coachees' : 'attendees'}
+            </p>
+            <p className="text-2xl font-bold">{attendeeCount}</p>
+          </div>
+        ) : (
+          <div />
+        )}
         <div className="flex items-center gap-4">
           <div className="text-sm">
             {isDirty && (

@@ -103,7 +103,9 @@ INSERT INTO activists
   VALUES
   (`+ch+`, 1000, 'nnn', 'test2@gmail.com', '', 'United States', 'Supporter', 'Petition: no-more-bad-things', '`+currentDateString(1)+`');
 
-INSERT INTO events VALUES
+INSERT INTO events
+  (id, name, date, event_type, survey_sent, suppress_survey, circle_id, chapter_id)
+  VALUES
   %s
 
 INSERT INTO event_attendance (activist_id, event_id) VALUES
