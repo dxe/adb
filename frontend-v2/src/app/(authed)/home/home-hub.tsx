@@ -33,6 +33,14 @@ export function HomeHub() {
     return () => clearInterval(id)
   }, [])
 
+  // Date/time output depends on the viewer's clock and timezone, which differ
+  // between the server (SSR) and the browser — near midnight or across zones
+  // they can land on different calendar days, causing a hydration mismatch.
+  // Gate the date-dependent label on a mount flag so the server and first
+  // client render agree; the real label fills in after hydration.
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+
   // "Today" is computed in the viewer's timezone (a defined zone) rather than
   // the DB/browser raw date, to avoid off-by-one-day errors. Chapters have no
   // timezone of their own, so the creator's zone is the best available default.
@@ -103,7 +111,8 @@ export function HomeHub() {
           Welcome{user.Name ? `, ${user.Name.split(' ')[0]}` : ''}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {user.ChapterName} · {todayLabel}
+          {user.ChapterName}
+          {mounted && ` · ${todayLabel}`}
         </p>
       </header>
 
