@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useId, useState } from 'react'
+import { useId, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
@@ -412,9 +412,13 @@ function RelativeInput({
 }) {
   const [localUnit, setLocalUnit] = useState<DateUnit>(unit)
 
-  useEffect(() => {
+  // Re-sync local unit when the `unit` prop changes, adjusting state during
+  // render rather than in an effect to avoid a cascading re-render.
+  const [prevUnit, setPrevUnit] = useState<DateUnit>(unit)
+  if (unit !== prevUnit) {
+    setPrevUnit(unit)
     setLocalUnit(unit)
-  }, [unit])
+  }
 
   const handleAmountChange = (newAmount: string) => {
     if (newAmount === '') {
