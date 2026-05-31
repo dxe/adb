@@ -216,7 +216,7 @@ export function HomeHub() {
 
         <div className="border-t p-5">
           <Link
-            href={upcomingHref}
+            href={mounted ? upcomingHref : '/events'}
             className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
           >
             View today&apos;s &amp; upcoming events
