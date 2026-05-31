@@ -62,7 +62,9 @@ export type AuthedUser = z.infer<typeof AuthedUserSchema>
 const AuthedUserResp = z.object({
   user: AuthedUserSchema,
   // Referrer-restricted Google Places key, served from the backend config so
-  // it works in all environments without a build-time env var.
+  // it works in all environments without a build-time env var. Defaults to ''
+  // (not null/undefined) so consumers keep a plain `string` and treat the
+  // not-configured case as a simple falsy check rather than a null guard.
   googlePlacesApiKey: z.string().optional().default(''),
 })
 

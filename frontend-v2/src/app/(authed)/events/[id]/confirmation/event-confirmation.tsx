@@ -1,6 +1,6 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
 import { format, parseISO } from 'date-fns'
 import {
@@ -18,8 +18,6 @@ import { Button } from '@/components/ui/button'
 import { formatEventTimeRange } from '@/lib/timezone'
 
 export function EventConfirmation({ eventId }: { eventId: number }) {
-  const router = useRouter()
-
   // Hydrated by the server page (same query key as the event form), so this
   // resolves immediately on first render.
   const { data: event } = useQuery({
@@ -27,41 +25,30 @@ export function EventConfirmation({ eventId }: { eventId: number }) {
     queryFn: ({ signal }) => apiClient.getEvent(eventId, signal),
   })
 
-  const timeRange = event
-    ? formatEventTimeRange(
-        event.event_date,
-        event.start_time ?? '',
-        event.end_time ?? '',
-        event.timezone ?? '',
-      )
-    : ''
-  const locationLabel =
-    event?.location?.name || event?.location?.formatted_address
-
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col items-center gap-3 text-center">
         <CheckCircle2 className="h-12 w-12 text-green-600" />
-        <div>
+        <div className="flex flex-col gap-1">
           <h2 className="text-xl font-semibold">Event created</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             Your event is scheduled. Take attendance when the event happens.
           </p>
         </div>
       </div>
 
       {event && (
-        <div className="rounded-xl border bg-card p-5 shadow-sm">
+        <div className="flex flex-col gap-2 rounded-xl border bg-card p-5 shadow-sm">
           <p className="text-base font-semibold">{event.event_name}</p>
-          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted-foreground">
             <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
               {event.event_type}
             </span>
             <span>{format(parseISO(event.event_date), 'PPP')}</span>
-            {timeRange && (
+            {formatEventTimeRange(event) && (
               <span className="inline-flex items-center gap-1">
                 <Clock className="h-3.5 w-3.5" />
-                {timeRange}
+                {formatEventTimeRange(event)}
               </span>
             )}
             {event.is_online ? (
@@ -70,10 +57,10 @@ export function EventConfirmation({ eventId }: { eventId: number }) {
                 Online
               </span>
             ) : (
-              locationLabel && (
+              (event.location?.name || event.location?.formatted_address) && (
                 <span className="inline-flex items-center gap-1">
                   <MapPin className="h-3.5 w-3.5" />
-                  {locationLabel}
+                  {event.location?.name || event.location?.formatted_address}
                 </span>
               )
             )}
@@ -82,33 +69,29 @@ export function EventConfirmation({ eventId }: { eventId: number }) {
       )}
 
       <div className="flex flex-col gap-2">
-        <Button type="button" onClick={() => router.push(`/events/${eventId}`)}>
-          <Users className="h-4 w-4" />
-          Take attendance now
+        <Button asChild>
+          <Link href={`/events/${eventId}`}>
+            <Users className="h-4 w-4" />
+            Take attendance now
+          </Link>
         </Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => router.push(`/events/${eventId}?edit=1`)}
-        >
-          <Pencil className="h-4 w-4" />
-          Edit event
+        <Button asChild variant="outline">
+          <Link href={`/events/${eventId}?expanded=1`}>
+            <Pencil className="h-4 w-4" />
+            Edit event
+          </Link>
         </Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => router.push('/events/new')}
-        >
-          <CalendarPlus className="h-4 w-4" />
-          Create another event
+        <Button asChild variant="outline">
+          <Link href="/events/new">
+            <CalendarPlus className="h-4 w-4" />
+            Create another event
+          </Link>
         </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={() => router.push('/home')}
-        >
-          <Home className="h-4 w-4" />
-          Done
+        <Button asChild variant="ghost">
+          <Link href="/home">
+            <Home className="h-4 w-4" />
+            Done
+          </Link>
         </Button>
       </div>
     </div>

@@ -1,13 +1,22 @@
-// Timezone helpers for advance events.
+// Timezone helpers for upcoming events.
 //
-// Future-dated events store a local calendar date, local wall-clock times, and
-// an IANA timezone name (e.g. "America/Los_Angeles"). Display always formats in
-// the event's own timezone with a label, correct for any viewer. We rely on the
-// built-in Intl APIs rather than an extra date library.
+// An upcoming event is stored as a local calendar date, local wall-clock times,
+// and an IANA timezone name (e.g. "America/Los_Angeles") — deliberately not a
+// single UTC instant. The intent is "7:00 PM in Los Angeles on this date", and
+// anchoring to wall-clock + zone keeps that fixed for every viewer and survives
+// revisions to a zone's UTC offset (DST rules change more often than people
+// expect). A UTC instant precomputed at creation time would silently drift if
+// those rules later changed, and would lose the originally intended local time.
+// Display always formats back in the event's own timezone with a label.
 
-// A small, ordered curated list of common zones. Used for manual selection
-// (the full ~400-zone IANA set is overwhelming and we don't need it here) and
-// as a fallback when the runtime can't enumerate zones.
+import type { EventListItem } from './api'
+
+/**
+ * A small, ordered curated list of common zones offered for manual timezone
+ * selection. The full ~400-zone IANA set is overwhelming and unnecessary —
+ * these cover where the org operates. `getCommonTimezones` prepends the viewer's
+ * own zone when it isn't already listed, so an unlisted zone stays selectable.
+ */
 const COMMON_TIMEZONES = [
   'America/Los_Angeles',
   'America/Denver',
@@ -25,7 +34,7 @@ const COMMON_TIMEZONES = [
   'UTC',
 ]
 
-// The creator's browser timezone, used as the default on create.
+/** The creator's browser timezone, used as the default on create. */
 export function getBrowserTimezone(): string {
   try {
     return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
@@ -34,9 +43,10 @@ export function getBrowserTimezone(): string {
   }
 }
 
-// The curated short list for manual timezone selection, always including the
-// browser zone so it is selectable. The full IANA enumeration is intentionally
-// not offered — these common zones cover where the org operates.
+/**
+ * The curated list for manual timezone selection, always including the viewer's
+ * browser zone so it is selectable even when it isn't one of the common zones.
+ */
 export function getCommonTimezones(): string[] {
   const browser = getBrowserTimezone()
   return COMMON_TIMEZONES.includes(browser)
@@ -44,22 +54,24 @@ export function getCommonTimezones(): string[] {
     : [browser, ...COMMON_TIMEZONES]
 }
 
-// Today's calendar date (YYYY-MM-DD) in the given timezone. Used to compute
-// "today's events" in a defined zone rather than the DB/browser raw date.
-// `now` is injectable so callers can recompute on a timer (e.g. roll over at
-// local midnight). Falls back to the local-zone date if `timezone` is invalid,
-// so a bad stored zone can't throw during render.
+/**
+ * Today's calendar date (YYYY-MM-DD) in the given timezone. Used to compute
+ * "today's events" in a defined zone rather than the DB/browser raw date.
+ * `now` is injectable so callers can recompute on a timer (e.g. roll over at
+ * local midnight). Falls back to the local-zone date if `timezone` is invalid,
+ * so a bad stored zone can't throw during render.
+ */
 export function todayInTimezone(
   timezone: string,
   now: Date = new Date(),
 ): string {
-  // en-CA formats as YYYY-MM-DD.
   const opts: Intl.DateTimeFormatOptions = {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
   }
   try {
+    // en-CA formats as YYYY-MM-DD.
     return new Intl.DateTimeFormat('en-CA', {
       timeZone: timezone,
       ...opts,
@@ -69,9 +81,11 @@ export function todayInTimezone(
   }
 }
 
-// Short timezone abbreviation (e.g. "PDT") for the given date in the given zone.
-// We pick noon UTC on the event's date so the abbreviation lands on the correct
-// side of any DST transition for essentially all real-world cases.
+/**
+ * Short timezone abbreviation (e.g. "PDT") for the given date in the given zone.
+ * We pick noon UTC on the event's date so the abbreviation lands on the correct
+ * side of any DST transition for essentially all real-world cases.
+ */
 export function getZoneAbbreviation(dateStr: string, timezone: string): string {
   if (!timezone) return ''
   const instant = dateStr ? new Date(`${dateStr}T12:00:00Z`) : new Date()
@@ -86,8 +100,10 @@ export function getZoneAbbreviation(dateStr: string, timezone: string): string {
   }
 }
 
-// Formats a 24h "HH:MM" wall-clock string as a 12h label (e.g. "3:00 PM").
-// Returns '' for empty/invalid input.
+/**
+ * Formats a 24h "HH:MM" wall-clock string as a 12h label (e.g. "3:00 PM").
+ * Returns '' for empty/invalid input.
+ */
 export function formatWallClock(time: string): string {
   const match = /^(\d{1,2}):(\d{2})/.exec(time.trim())
   if (!match) return ''
@@ -98,31 +114,38 @@ export function formatWallClock(time: string): string {
   return `${hour12}:${minutes} ${period}`
 }
 
-// Human-readable time range with a zone label, e.g. "3:00 PM – 5:00 PM PDT".
-// Falls back gracefully when end time or timezone is missing.
-export function formatEventTimeRange(
-  dateStr: string,
-  startTime: string,
-  endTime: string,
-  timezone: string,
-): string {
-  const start = formatWallClock(startTime)
+// The subset of an event's fields needed to render its time range. Taken as a
+// single object (rather than four positional strings that are easy to transpose)
+// and keyed to match the API shape, so callers can pass an event directly.
+type EventTimeFields = Pick<
+  EventListItem,
+  'event_date' | 'start_time' | 'end_time' | 'timezone'
+>
+
+/**
+ * Human-readable time range with a zone label, e.g. "3:00 PM – 5:00 PM PDT".
+ * Falls back gracefully when end time or timezone is missing.
+ */
+export function formatEventTimeRange(event: EventTimeFields): string {
+  const start = formatWallClock(event.start_time ?? '')
   if (!start) return ''
-  const end = formatWallClock(endTime)
-  const abbr = getZoneAbbreviation(dateStr, timezone)
+  const end = formatWallClock(event.end_time ?? '')
+  const abbr = getZoneAbbreviation(event.event_date, event.timezone ?? '')
   const range = end ? `${start} – ${end}` : start
   return abbr ? `${range} ${abbr}` : range
 }
 
-// Parses "HH:MM" or "HH:MM:SS" into minutes since midnight; null if invalid.
+/** Parses "HH:MM" or "HH:MM:SS" into minutes since midnight; null if invalid. */
 function toMinutesSinceMidnight(time: string): number | null {
   const match = /^(\d{1,2}):(\d{2})/.exec(time.trim())
   if (!match) return null
   return Number(match[1]) * 60 + Number(match[2])
 }
 
-// Current wall-clock minutes-since-midnight in the given timezone. Falls back
-// to the local zone if `timezone` is invalid, so it can't throw during render.
+/**
+ * Current wall-clock minutes-since-midnight in the given timezone. Falls back
+ * to the local zone if `timezone` is invalid, so it can't throw during render.
+ */
 function nowMinutesInTimezone(timezone: string, now: Date): number {
   try {
     const parts = new Intl.DateTimeFormat('en-GB', {
@@ -139,10 +162,12 @@ function nowMinutesInTimezone(timezone: string, now: Date): number {
   }
 }
 
-// Whether `now` falls within an event's [start, end) window, evaluated in the
-// event's own timezone. Events without an end time use a 1-hour default
-// duration. Requires a start time and the event being on its own local "today";
-// returns false otherwise.
+/**
+ * Whether `now` falls within an event's [start, end) window, evaluated in the
+ * event's own timezone. Events without an end time use a 1-hour default
+ * duration. Requires a start time and the event being on its own local "today";
+ * returns false otherwise.
+ */
 export function isEventHappeningNow(
   dateStr: string,
   startTime: string | null | undefined,

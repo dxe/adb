@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import toast from 'react-hot-toast'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 
@@ -135,12 +136,25 @@ export function PlacesAutocomplete({
       return
     }
     let cancelled = false
+    // The field silently disables itself on failure, so also surface a toast —
+    // otherwise the user is left wondering why location search isn't working.
+    // A stable id dedupes it across re-runs (e.g. React strict-mode double mount).
+    const reportLoadError = () => {
+      if (cancelled) return
+      setStatus('error')
+      toast.error(
+        'Location search failed to load. You can still save without a location.',
+        {
+          id: 'places-load-error',
+        },
+      )
+    }
     loadPlacesLibrary(apiKey)
       .then(() => {
         if (cancelled) return
         const places = window.google?.maps?.places
         if (!places || !inputRef.current) {
-          setStatus('error')
+          reportLoadError()
           return
         }
         const autocomplete = new places.Autocomplete(inputRef.current, {
@@ -169,7 +183,7 @@ export function PlacesAutocomplete({
         setStatus('ready')
       })
       .catch(() => {
-        if (!cancelled) setStatus('error')
+        reportLoadError()
       })
     return () => {
       cancelled = true

@@ -56,7 +56,7 @@ type EventJSON struct {
 	ChapterID        int      `json:"chapter_id"`
 
 	// Advance-event fields. All optional; empty/zero values keep the
-	// existing attendance flow unchanged.
+	// older basic attendance flow unchanged.
 	IsOnline    bool   `json:"is_online"`
 	Description string `json:"description,omitempty"`
 	StartTime   string `json:"start_time,omitempty"` // local wall-clock "HH:MM"

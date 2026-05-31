@@ -11,7 +11,7 @@ import {
   Loader2,
   Users,
 } from 'lucide-react'
-import { API_PATH, apiClient, EventListParams } from '@/lib/api'
+import { API_PATH, apiClient, EventListItem, EventListParams } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
 import {
@@ -105,7 +105,6 @@ export function HomeHub() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Greeting orients the user and sets the page apart from a bare list. */}
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">
           Welcome{user.Name ? `, ${user.Name.split(' ')[0]}` : ''}
@@ -157,61 +156,9 @@ export function HomeHub() {
 
           {!isLoading &&
             !isError &&
-            sortedEvents &&
-            sortedEvents.map((event) => {
-              const timeRange = event.start_time
-                ? formatEventTimeRange(
-                    event.event_date,
-                    event.start_time,
-                    event.end_time ?? '',
-                    event.timezone ?? '',
-                  )
-                : ''
-              const happeningNow = isEventHappeningNow(
-                event.event_date,
-                event.start_time,
-                event.end_time,
-                event.timezone,
-                now,
-              )
-              return (
-                <Link
-                  key={event.event_id}
-                  href={`/events/${event.event_id}`}
-                  className="group flex items-center justify-between gap-3 rounded-lg border px-4 py-3 transition-colors hover:border-primary/40 hover:bg-accent"
-                >
-                  <div className="flex min-w-0 flex-col">
-                    <span className="flex items-center gap-2">
-                      <span className="truncate font-medium">
-                        {event.event_name}
-                      </span>
-                      {happeningNow && (
-                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
-                          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-500" />
-                          Happening now
-                        </span>
-                      )}
-                    </span>
-                    <span className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                      <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 font-medium">
-                        {event.event_type}
-                      </span>
-                      {timeRange && (
-                        <span className="inline-flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {timeRange}
-                        </span>
-                      )}
-                      <span className="inline-flex items-center gap-1">
-                        <Users className="h-3 w-3" />
-                        {event.attendees.length}
-                      </span>
-                    </span>
-                  </div>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />
-                </Link>
-              )
-            })}
+            sortedEvents?.map((event) => (
+              <TodayEventRow key={event.event_id} event={event} now={now} />
+            ))}
         </div>
 
         <div className="border-t p-5">
@@ -225,5 +172,53 @@ export function HomeHub() {
         </div>
       </section>
     </div>
+  )
+}
+
+// A single event in the "Today's events" list, linking to its attendance page.
+// `now` is passed in (not read here) so the whole list shares one clock and the
+// "Happening now" badges update together on the parent's minute tick.
+function TodayEventRow({ event, now }: { event: EventListItem; now: Date }) {
+  const timeRange = event.start_time ? formatEventTimeRange(event) : ''
+  const happeningNow = isEventHappeningNow(
+    event.event_date,
+    event.start_time,
+    event.end_time,
+    event.timezone,
+    now,
+  )
+  return (
+    <Link
+      href={`/events/${event.event_id}`}
+      className="group flex items-center justify-between gap-3 rounded-lg border px-4 py-3 transition-colors hover:border-primary/40 hover:bg-accent"
+    >
+      <div className="flex min-w-0 flex-col">
+        <span className="flex items-center gap-2">
+          <span className="truncate font-medium">{event.event_name}</span>
+          {happeningNow && (
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-500" />
+              Happening now
+            </span>
+          )}
+        </span>
+        <span className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 font-medium">
+            {event.event_type}
+          </span>
+          {timeRange && (
+            <span className="inline-flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              {timeRange}
+            </span>
+          )}
+          <span className="inline-flex items-center gap-1">
+            <Users className="h-3 w-3" />
+            {event.attendees.length}
+          </span>
+        </span>
+      </div>
+      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground" />
+    </Link>
   )
 }

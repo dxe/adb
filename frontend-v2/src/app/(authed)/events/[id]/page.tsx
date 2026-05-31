@@ -15,10 +15,9 @@ export default async function EditEventPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ edit?: string }>
+  searchParams: Promise<{ expanded?: string }>
 }) {
-  const { id } = await params
-  const { edit } = await searchParams
+  const [{ id }, { expanded }] = await Promise.all([params, searchParams])
   const eventId = parseInt(id)
   if (Number.isNaN(eventId)) {
     notFound()
@@ -39,7 +38,7 @@ export default async function EditEventPage({
     <ContentWrapper size="sm" className="gap-8">
       <HydrationBoundary state={dehydrate(queryClient)}>
         <h1 className="text-3xl font-bold">Event</h1>
-        <EventForm mode="event" startExpanded={edit === '1'} />
+        <EventForm mode="event" startExpanded={expanded === '1'} />
       </HydrationBoundary>
     </ContentWrapper>
   )

@@ -73,8 +73,10 @@ const formSchema = z
     eventDate: z.string().min(1, 'Event date is required'),
     suppressSurvey: z.boolean(),
     attendees: z.array(attendeeSchema),
-    // Upcoming-event fields. Optional at the schema level; mode-specific
-    // requirements (e.g. attendance) are enforced in onSubmit.
+    // Upcoming-event fields. Kept permissive here (empty string / false is
+    // valid) so the plain attendance form still passes; the stricter per-mode
+    // rules — a start time and a location for public events — are enforced by
+    // the refinements below.
     isPublic: z.boolean(),
     isOnline: z.boolean(),
     description: z.string(),
@@ -107,16 +109,14 @@ const formSchema = z
 
 type FormValues = z.infer<typeof formSchema>
 
-// 'event' is the unified create/edit flow — a quick attendance log by default,
-// expanding into a scheduled public event when "Public event" is checked.
-// 'connection' is coaching, which is genuinely different.
 export type EventFormMode = 'event' | 'connection'
 
 type EventFormProps = {
   mode: EventFormMode
   // When editing a saved event, start with the detail fields expanded rather
   // than collapsed behind the summary bar. Used by the post-create confirmation
-  // page's "Edit event" link (?edit=1) so the user lands ready to fix details.
+  // page's "Edit event" link (?expanded=1) so the user lands ready to fix
+  // details.
   startExpanded?: boolean
 }
 
@@ -253,9 +253,7 @@ export const EventForm = ({ mode, startExpanded }: EventFormProps) => {
       queryClient.invalidateQueries({
         queryKey: [API_PATH.EVENT_GET, eventId],
       })
-      // Invalidate every event list (home's "today" list, the full events
-      // page) so a newly created/edited event shows without a manual refresh.
-      // The global 60s staleTime would otherwise serve cached data on return.
+      // Refresh every event list so the change shows without a manual reload.
       queryClient.invalidateQueries({
         queryKey: [API_PATH.EVENT_LIST],
       })
@@ -285,11 +283,11 @@ export const EventForm = ({ mode, startExpanded }: EventFormProps) => {
               .fill(null)
               .map(() => ({ name: '' })),
       // Scheduled-event fields. Public defaults off, so a new event starts as the
-      // quick attendance form; checking "Public event" reveals the rest. Times
-      // come back from MySQL as "HH:MM:SS"; trim to the "HH:MM" the input expects.
+      // quick attendance form; checking "Public event" reveals the rest.
       isPublic: eventData?.is_public ?? false,
       isOnline: eventData?.is_online ?? false,
       description: eventData?.description ?? '',
+      // MySQL returns TIME as "HH:MM:SS"; slice to the "HH:MM" the input expects.
       startTime: (eventData?.start_time ?? '').slice(0, 5),
       endTime: (eventData?.end_time ?? '').slice(0, 5),
       timezone: eventData?.timezone || browserTz,
@@ -322,7 +320,10 @@ export const EventForm = ({ mode, startExpanded }: EventFormProps) => {
         !isConnection && (value.isPublic || editingHasUpcomingData)
 
       // Attendees are required for quick attendance entry and coaching, but not
-      // for public events (those are usually filled in later).
+      // for public events (those are usually filled in later). Enforced here
+      // rather than in a zod refinement because it depends on the trimmed/
+      // filtered attendee names and on editingHasUpcomingData, neither of which
+      // is a raw form field the schema can see.
       if (!includeUpcoming && attendeeNames.length === 0) {
         toast.error('At least one attendee is required')
         return
