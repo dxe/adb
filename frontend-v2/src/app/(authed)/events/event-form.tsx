@@ -33,6 +33,7 @@ import {
   getBrowserTimezone,
   getCommonTimezones,
   getZoneAbbreviation,
+  todayInTimezone,
 } from '@/lib/timezone'
 
 const EVENT_TYPES = [
@@ -48,15 +49,6 @@ const EVENT_TYPES = [
 
 const DEFAULT_FIELD_COUNT = 5
 const MIN_EMPTY_FIELDS = 1
-
-// Get today's date in YYYY-MM-DD format in the browser's local timezone
-const getTodayDate = () => {
-  const today = new Date()
-  const year = today.getFullYear()
-  const month = String(today.getMonth() + 1).padStart(2, '0')
-  const day = String(today.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
 
 // Zod schema for form validation.
 const attendeeSchema = z.object({
@@ -95,6 +87,9 @@ const formSchema = z
     lat: z.number().optional(),
     lng: z.number().optional(),
   })
+  // TODO: events that cross midnight (end before start, e.g. an overnight
+  // vigil) can't be expressed yet — leave the end time blank for now. If this
+  // becomes a real need, add an explicit "end date" rather than inferring it.
   .refine((v) => !(v.startTime && v.endTime) || v.endTime >= v.startTime, {
     message: 'End time must be after start time',
     path: ['endTime'],
@@ -483,7 +478,12 @@ export const EventForm = ({ mode, startExpanded }: EventFormProps) => {
   }, [isDirty])
 
   const setDateToToday = () => {
-    form.setFieldValue('eventDate', getTodayDate())
+    // "Today" in the event's own timezone, not the browser's, so it lands on
+    // the right calendar day around midnight when the two zones differ.
+    form.setFieldValue(
+      'eventDate',
+      todayInTimezone(form.state.values.timezone || browserTz),
+    )
   }
 
   if (eventId && isEventError) {

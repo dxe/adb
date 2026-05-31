@@ -46,14 +46,27 @@ export function getCommonTimezones(): string[] {
 
 // Today's calendar date (YYYY-MM-DD) in the given timezone. Used to compute
 // "today's events" in a defined zone rather than the DB/browser raw date.
-export function todayInTimezone(timezone: string): string {
+// `now` is injectable so callers can recompute on a timer (e.g. roll over at
+// local midnight). Falls back to the local-zone date if `timezone` is invalid,
+// so a bad stored zone can't throw during render.
+export function todayInTimezone(
+  timezone: string,
+  now: Date = new Date(),
+): string {
   // en-CA formats as YYYY-MM-DD.
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: timezone,
+  const opts: Intl.DateTimeFormatOptions = {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-  }).format(new Date())
+  }
+  try {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: timezone,
+      ...opts,
+    }).format(now)
+  } catch {
+    return new Intl.DateTimeFormat('en-CA', opts).format(now)
+  }
 }
 
 // Short timezone abbreviation (e.g. "PDT") for the given date in the given zone.
@@ -108,17 +121,22 @@ function toMinutesSinceMidnight(time: string): number | null {
   return Number(match[1]) * 60 + Number(match[2])
 }
 
-// Current wall-clock minutes-since-midnight in the given timezone.
+// Current wall-clock minutes-since-midnight in the given timezone. Falls back
+// to the local zone if `timezone` is invalid, so it can't throw during render.
 function nowMinutesInTimezone(timezone: string, now: Date): number {
-  const parts = new Intl.DateTimeFormat('en-GB', {
-    timeZone: timezone,
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-  }).formatToParts(now)
-  const hour = Number(parts.find((p) => p.type === 'hour')?.value ?? '0')
-  const minute = Number(parts.find((p) => p.type === 'minute')?.value ?? '0')
-  return hour * 60 + minute
+  try {
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: timezone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(now)
+    const hour = Number(parts.find((p) => p.type === 'hour')?.value ?? '0')
+    const minute = Number(parts.find((p) => p.type === 'minute')?.value ?? '0')
+    return hour * 60 + minute
+  } catch {
+    return now.getHours() * 60 + now.getMinutes()
+  }
 }
 
 // Whether `now` falls within an event's [start, end) window, evaluated in the
@@ -135,7 +153,7 @@ export function isEventHappeningNow(
   const start = startTime ? toMinutesSinceMidnight(startTime) : null
   if (start === null) return false
   const zone = timezone || getBrowserTimezone()
-  if (todayInTimezone(zone) !== dateStr) return false
+  if (todayInTimezone(zone, now) !== dateStr) return false
   // Default to a 1-hour window when no end time is set.
   const end = (endTime ? toMinutesSinceMidnight(endTime) : null) ?? start + 60
   const current = nowMinutesInTimezone(zone, now)

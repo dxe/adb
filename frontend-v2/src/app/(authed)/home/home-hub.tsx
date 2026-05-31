@@ -24,10 +24,20 @@ import {
 export function HomeHub() {
   const { user } = useAuthedPageContext()
 
+  // Re-render each minute so the "Happening now" badge appears/clears as time
+  // passes, and so the page rolls over to the next day at local midnight,
+  // without needing a manual refresh.
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60_000)
+    return () => clearInterval(id)
+  }, [])
+
   // "Today" is computed in the viewer's timezone (a defined zone) rather than
   // the DB/browser raw date, to avoid off-by-one-day errors. Chapters have no
   // timezone of their own, so the creator's zone is the best available default.
-  const today = useMemo(() => todayInTimezone(getBrowserTimezone()), [])
+  // Tied to `now` so a tab left open past midnight rolls over automatically.
+  const today = useMemo(() => todayInTimezone(getBrowserTimezone(), now), [now])
 
   // A friendly, human-readable form of today's date for the header. `today` is
   // already YYYY-MM-DD; parse at local midnight so the label can't drift a day.
@@ -45,7 +55,15 @@ export function HomeHub() {
   // page via its URL date filter rather than duplicating a list here. The
   // events list keeps its own default (last month → today) when opened directly.
   const upcomingHref = useMemo(() => {
-    const end = `${Number(today.slice(0, 4)) + 1}${today.slice(4)}`
+    // Add a year via Date math (not string slicing) so leap days like
+    // 2028-02-29 don't produce an invalid 2029-02-29.
+    const endDate = new Date(`${today}T00:00:00`)
+    endDate.setFullYear(endDate.getFullYear() + 1)
+    const end = [
+      endDate.getFullYear(),
+      String(endDate.getMonth() + 1).padStart(2, '0'),
+      String(endDate.getDate()).padStart(2, '0'),
+    ].join('-')
     return `/events?start=${today}&end=${end}`
   }, [today])
 
@@ -63,14 +81,6 @@ export function HomeHub() {
     queryKey: [API_PATH.EVENT_LIST, params],
     queryFn: ({ signal }) => apiClient.getEventList(params, signal),
   })
-
-  // Re-render each minute so the "Happening now" badge appears/clears as time
-  // passes without needing a manual refresh.
-  const [now, setNow] = useState(() => new Date())
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 60_000)
-    return () => clearInterval(id)
-  }, [])
 
   // Chronological by start time, with untimed events (quick attendance) last.
   const sortedEvents = useMemo(() => {

@@ -607,10 +607,10 @@ func CleanEventData(db *sqlx.DB, body io.Reader, chapterID int) (Event, error) {
 	e.IsPublic = eventJSON.IsPublic
 	e.IsOnline = eventJSON.IsOnline
 
-	// Description: trim and reject dangerous characters; empty -> NULL.
-	if err := checkForDangerousChars(eventJSON.Description); err != nil {
-		return Event{}, err
-	}
+	// Description: trim only; empty -> NULL. This is free-text prose, so common
+	// characters like & are allowed (unlike the event name). It is stored via a
+	// parameterized query and rendered React-escaped, so it carries no SQL- or
+	// HTML-injection risk.
 	e.Description = nullStringFromValue(eventJSON.Description)
 
 	// Start/end times are local wall-clock "HH:MM"; validate when present.
@@ -655,6 +655,22 @@ func CleanEventData(db *sqlx.DB, body io.Reader, chapterID int) (Event, error) {
 		}
 	}
 
+	// A publicly listed event must form a coherent schedule. The form enforces
+	// this, but guard server-side too so a malformed payload can't create a
+	// broken public listing. (end_time before start_time is intentionally not
+	// rejected here — see the form's note on overnight events.)
+	if e.IsPublic {
+		if !e.StartTime.Valid {
+			return Event{}, fmt.Errorf("public events require a start time")
+		}
+		if e.Timezone == "" {
+			return Event{}, fmt.Errorf("public events require a timezone")
+		}
+		if !e.IsOnline && e.LocationID == nil {
+			return Event{}, fmt.Errorf("public in-person events require a location")
+		}
+	}
+
 	return e, nil
 }
 
@@ -682,7 +698,10 @@ func nullStringFromValue(raw string) sql.NullString {
 
 // GetOrCreateLocation upserts a location keyed by (chapter_id, google_place_id)
 // and returns its id. Mirrors GetOrCreateActivist. Place metadata (name,
-// address, coordinates) is refreshed on conflict.
+// address, coordinates) is refreshed on conflict, but a blank/missing value in
+// the new payload never clobbers an already-stored value — so a later event
+// that picks the same place with a sparser Google response keeps the richer
+// record.
 func GetOrCreateLocation(db *sqlx.DB, chapterID int, placeID, name, formattedAddress string, lat, lng *float64) (int, error) {
 	tx, err := db.Beginx()
 	if err != nil {
@@ -691,7 +710,11 @@ func GetOrCreateLocation(db *sqlx.DB, chapterID int, placeID, name, formattedAdd
 
 	_, err = tx.Exec(`INSERT INTO locations (chapter_id, google_place_id, name, formatted_address, lat, lng)
 VALUES (?, ?, ?, ?, ?, ?)
-ON DUPLICATE KEY UPDATE name = VALUES(name), formatted_address = VALUES(formatted_address), lat = VALUES(lat), lng = VALUES(lng)`,
+ON DUPLICATE KEY UPDATE
+  name = IF(VALUES(name) <> '', VALUES(name), name),
+  formatted_address = IF(VALUES(formatted_address) <> '', VALUES(formatted_address), formatted_address),
+  lat = COALESCE(VALUES(lat), lat),
+  lng = COALESCE(VALUES(lng), lng)`,
 		chapterID, placeID, name, formattedAddress, lat, lng)
 	if err != nil {
 		_ = tx.Rollback()

@@ -118,6 +118,10 @@ export function PlacesAutocomplete({
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [text, setText] = useState(() => displayLabel(locationName, value))
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
+  // Set when we update the input programmatically (a dropdown selection or a
+  // parent-driven value sync) so the resulting onChange isn't mistaken for the
+  // user typing — see the onChange handler below.
+  const programmaticEditRef = useRef(false)
 
   // Keep the displayed text in sync when the parent value changes (e.g. loading
   // an existing event, or the Online checkbox clearing the field).
@@ -146,6 +150,10 @@ export function PlacesAutocomplete({
           const place = autocomplete.getPlace()
           if (!place.place_id) return
           const formatted = place.formatted_address ?? ''
+          // Selecting a suggestion mutates the input value; flag it so the
+          // onChange it may fire isn't treated as the user editing (which would
+          // immediately clear the place we're selecting).
+          programmaticEditRef.current = true
           setText(displayLabel(place.name, formatted))
           onSelect({
             google_place_id: place.place_id,
@@ -154,6 +162,9 @@ export function PlacesAutocomplete({
             lat: place.geometry?.location?.lat(),
             lng: place.geometry?.location?.lng(),
           })
+          setTimeout(() => {
+            programmaticEditRef.current = false
+          }, 0)
         })
         setStatus('ready')
       })
@@ -181,9 +192,16 @@ export function PlacesAutocomplete({
         }
         onChange={(e) => {
           setText(e.target.value)
-          // Clearing the text clears the selected place. Typing without
-          // selecting a suggestion does not submit a free-text location.
-          if (e.target.value.trim() === '') onClear()
+          if (programmaticEditRef.current) {
+            // Value set by a selection/sync, not the user — keep the place.
+            programmaticEditRef.current = false
+            return
+          }
+          // Any manual edit invalidates the committed place: a free-text value
+          // is never submitted, so drop the selected place until the user picks
+          // a fresh suggestion. Otherwise the visible text and the submitted
+          // location could silently drift apart.
+          onClear()
         }}
         className={cn(hasError && 'border-red-500')}
         autoComplete="off"
