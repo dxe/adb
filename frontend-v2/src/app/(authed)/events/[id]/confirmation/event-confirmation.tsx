@@ -25,6 +25,10 @@ export function EventConfirmation({ eventId }: { eventId: number }) {
     queryFn: ({ signal }) => apiClient.getEvent(eventId, signal),
   })
 
+  const timeRange = event ? formatEventTimeRange(event) : ''
+  const locationLabel =
+    event?.location?.name || event?.location?.formatted_address
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col items-center gap-3 text-center">
@@ -45,10 +49,10 @@ export function EventConfirmation({ eventId }: { eventId: number }) {
               {event.event_type}
             </span>
             <span>{format(parseISO(event.event_date), 'PPP')}</span>
-            {formatEventTimeRange(event) && (
+            {timeRange && (
               <span className="inline-flex items-center gap-1">
                 <Clock className="h-3.5 w-3.5" />
-                {formatEventTimeRange(event)}
+                {timeRange}
               </span>
             )}
             {event.is_online ? (
@@ -57,10 +61,10 @@ export function EventConfirmation({ eventId }: { eventId: number }) {
                 Online
               </span>
             ) : (
-              (event.location?.name || event.location?.formatted_address) && (
+              locationLabel && (
                 <span className="inline-flex items-center gap-1">
                   <MapPin className="h-3.5 w-3.5" />
-                  {event.location?.name || event.location?.formatted_address}
+                  {locationLabel}
                 </span>
               )
             )}
