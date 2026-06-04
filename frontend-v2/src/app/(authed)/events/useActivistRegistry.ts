@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { apiClient, API_PATH } from '@/lib/api'
 import { ActivistRegistry, type ActivistRecord } from './activist-registry'
@@ -14,7 +14,9 @@ import toast from 'react-hot-toast'
  * @returns Object containing the registry instance and query state
  */
 export function useActivistRegistry(chapterId: number) {
-  const registryRef = useRef(new ActivistRegistry())
+  // Stable registry instance for the lifetime of the component. Held in state
+  // (lazy initializer) rather than a ref so it can be read during render.
+  const [registry] = useState(() => new ActivistRegistry())
   const [isStorageLoaded, setIsStorageLoaded] = useState(false)
   const [isServerLoaded, setIsServerLoaded] = useState(false)
 
@@ -29,11 +31,14 @@ export function useActivistRegistry(chapterId: number) {
       console.info(
         '[Registry] IndexedDB not available - running without local caching',
       )
+      // One-shot loading flag set in response to an external condition
+      // (IndexedDB availability); the extra render on mount is harmless.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsStorageLoaded(true)
       return
     }
 
-    registryRef.current
+    registry
       .loadFromStorage(storage)
       .then(() => {
         if (mounted) setIsStorageLoaded(true)
@@ -43,7 +48,7 @@ export function useActivistRegistry(chapterId: number) {
 
         // Attempt to clear corrupted storage
         try {
-          await registryRef.current.clearStorage()
+          await registry.clearStorage()
         } catch (clearErr) {
           console.error('Failed to clear storage:', clearErr)
         }
@@ -58,13 +63,13 @@ export function useActivistRegistry(chapterId: number) {
     return () => {
       mounted = false
     }
-  }, [chapterId])
+  }, [chapterId, registry])
 
   const query = useQuery({
     queryKey: [API_PATH.ACTIVIST_LIST_BASIC],
     queryFn: async ({ signal }) => {
       // Get last sync time from registry (returns null if storage is unavailable)
-      const lastSyncTime = await registryRef.current.getLastSyncTime()
+      const lastSyncTime = await registry.getLastSyncTime()
       const result = await apiClient.getActivistListBasic(
         lastSyncTime ?? undefined,
         signal,
@@ -85,7 +90,10 @@ export function useActivistRegistry(chapterId: number) {
       toast.error(
         'Failed to fetch activist data. Information may be out of date.',
       )
-      if (mounted) setIsServerLoaded(true) // Mark as loaded to unblock UI (with stale data)
+      // One-shot loading flag set in response to an async query error to
+      // unblock the UI (with stale data); the extra render is harmless.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (mounted) setIsServerLoaded(true)
     }
 
     return () => {
@@ -105,16 +113,14 @@ export function useActivistRegistry(chapterId: number) {
 
       // Remove hidden activists (registry handles both memory and storage)
       if (hiddenIds.length > 0) {
-        await registryRef.current.removeActivistsByIds(hiddenIds)
+        await registry.removeActivistsByIds(hiddenIds)
       }
 
       // Filter activists to only those newer than what we have
       const activistsToUpdate: ActivistRecord[] = []
 
       for (const activist of newActivists) {
-        const existingActivist = registryRef.current.getActivistById(
-          activist.id,
-        )
+        const existingActivist = registry.getActivistById(activist.id)
 
         if (!existingActivist) {
           activistsToUpdate.push(activist)
@@ -143,10 +149,10 @@ export function useActivistRegistry(chapterId: number) {
       }
 
       // Merge newer activists (registry handles both memory and storage)
-      await registryRef.current.mergeActivists(activistsToUpdate)
+      await registry.mergeActivists(activistsToUpdate)
 
       // Update last sync timestamp
-      await registryRef.current.setLastSyncTime(new Date().toISOString())
+      await registry.setLastSyncTime(new Date().toISOString())
 
       if (mounted) setIsServerLoaded(true)
     }
@@ -162,10 +168,10 @@ export function useActivistRegistry(chapterId: number) {
     return () => {
       mounted = false
     }
-  }, [query.data])
+  }, [query.data, registry])
 
   return {
-    registry: registryRef.current,
+    registry,
     isLoading: !isStorageLoaded || !isServerLoaded,
   }
 }
