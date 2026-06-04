@@ -63,6 +63,8 @@ jobs:
           go mod download
       - name: Install frontend-v2 deps
         run: cd ./frontend-v2 && pnpm install --frozen-lockfile
+      - name: Lint frontend-v2
+        run: cd ./frontend-v2 && pnpm lint --max-warnings=0
       - name: Set up database user
         run: |
           mysql -h127.0.0.1 -P3306 -uroot -proot -e "CREATE USER 'adb_user'@'%' IDENTIFIED BY 'adbpassword';"
