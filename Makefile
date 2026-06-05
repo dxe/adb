@@ -66,9 +66,9 @@ dev_db:
 # Note: PNPM must be installed separately for each version of NPM used, since it is installed within each NPM installation.
 # Note: `go tool` cannot yet be used to install golang-migrate: https://github.com/golang-migrate/migrate/issues/1232
 deps:
-	. $(NVM_SCRIPT) && nvm i 22 && npm i -g pnpm@$(PNPM_VERSION) && pnpm i
+	. $(NVM_SCRIPT) && nvm i 22 && npm i -g pnpm@$(PNPM_VERSION) && pnpm i --config.confirmModulesPurge=false
 	. $(NVM_SCRIPT) && cd frontend && nvm i $(VUE_FRONTEND_NODE_VERSION) && npm i --legacy-peer-deps
-	. $(NVM_SCRIPT) && cd frontend-v2 && nvm i $(REACT_FRONTEND_NODE_VERSION) && npm i -g pnpm@$(PNPM_VERSION) && pnpm i
+	. $(NVM_SCRIPT) && cd frontend-v2 && nvm i $(REACT_FRONTEND_NODE_VERSION) && npm i -g pnpm@$(PNPM_VERSION) && pnpm i --config.confirmModulesPurge=false
 	cd pkg && go mod download
 	cd server/src && go mod download
 	cd cli && go mod download
