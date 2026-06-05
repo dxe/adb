@@ -3,6 +3,8 @@
 import { useStore } from '@tanstack/react-form'
 import { format, parseISO } from 'date-fns'
 import { ChevronDown, ChevronUp } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Textarea } from '@/components/ui/textarea'
@@ -105,6 +107,10 @@ export const ScheduledEventFields = ({
     form.store,
     (state) => state.values.locationName,
   )
+  const manualLocation = useStore(
+    form.store,
+    (state) => state.values.manualLocation,
+  )
   const timezones = getCommonTimezones()
 
   return (
@@ -194,35 +200,138 @@ export const ScheduledEventFields = ({
         )}
       </form.Field>
 
-      {/* Location (Google Places autocomplete; no free-text) */}
+      {/* Location: Google Places autocomplete, or a manual free-text entry for
+          spots that aren't a clean Place (intersections, public land, etc.). */}
       {!isOnline && (
-        <form.Field name="formattedAddress">
-          {(field) => (
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="location">
-                Location{isPublic ? '' : ' (optional)'}
-              </Label>
-              <PlacesAutocomplete
-                id="location"
-                apiKey={googlePlacesApiKey}
-                value={field.state.value ?? ''}
-                locationName={locationName}
-                onSelect={(place) => {
-                  form.setFieldValue('googlePlaceId', place.google_place_id)
-                  form.setFieldValue('locationName', place.location_name)
-                  form.setFieldValue(
-                    'formattedAddress',
-                    place.formatted_address,
-                  )
-                  form.setFieldValue('lat', place.lat)
-                  form.setFieldValue('lng', place.lng)
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="location">
+            Location{isPublic ? '' : ' (optional)'}
+          </Label>
+          {manualLocation ? (
+            <>
+              <form.Field name="locationName">
+                {(field) => (
+                  <div className="flex flex-col gap-2">
+                    <Input
+                      id="location"
+                      value={field.state.value ?? ''}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                      placeholder="e.g. 16th & Mission St (NW corner)"
+                      className={cn(
+                        field.state.meta.errors[0] && 'border-red-500',
+                      )}
+                    />
+                    <FieldError message={field.state.meta.errors[0]?.message} />
+                  </div>
+                )}
+              </form.Field>
+              <div className="flex gap-4">
+                <form.Field name="lat">
+                  {(field) => (
+                    <div className="flex flex-1 flex-col gap-2">
+                      <Label htmlFor="lat">Latitude (optional)</Label>
+                      <Input
+                        id="lat"
+                        type="number"
+                        inputMode="decimal"
+                        step="any"
+                        value={field.state.value ?? ''}
+                        onChange={(e) => {
+                          const n = e.target.valueAsNumber
+                          field.handleChange(Number.isNaN(n) ? undefined : n)
+                        }}
+                        placeholder="37.7749"
+                        className={cn(
+                          field.state.meta.errors[0] && 'border-red-500',
+                        )}
+                      />
+                      <FieldError
+                        message={field.state.meta.errors[0]?.message}
+                      />
+                    </div>
+                  )}
+                </form.Field>
+                <form.Field name="lng">
+                  {(field) => (
+                    <div className="flex flex-1 flex-col gap-2">
+                      <Label htmlFor="lng">Longitude (optional)</Label>
+                      <Input
+                        id="lng"
+                        type="number"
+                        inputMode="decimal"
+                        step="any"
+                        value={field.state.value ?? ''}
+                        onChange={(e) => {
+                          const n = e.target.valueAsNumber
+                          field.handleChange(Number.isNaN(n) ? undefined : n)
+                        }}
+                        placeholder="-122.4194"
+                        className={cn(
+                          field.state.meta.errors[0] && 'border-red-500',
+                        )}
+                      />
+                      <FieldError
+                        message={field.state.meta.errors[0]?.message}
+                      />
+                    </div>
+                  )}
+                </form.Field>
+              </div>
+              <button
+                type="button"
+                className="self-start text-sm text-primary hover:underline"
+                onClick={() => {
+                  clearLocation(form)
+                  form.setFieldValue('manualLocation', false)
                 }}
-                onClear={() => clearLocation(form)}
-              />
-              <FieldError message={field.state.meta.errors[0]?.message} />
-            </div>
+              >
+                Search Google Places instead
+              </button>
+            </>
+          ) : (
+            <>
+              <form.Field name="formattedAddress">
+                {(field) => (
+                  <div className="flex flex-col gap-2">
+                    <PlacesAutocomplete
+                      id="location"
+                      apiKey={googlePlacesApiKey}
+                      value={field.state.value ?? ''}
+                      locationName={locationName}
+                      onSelect={(place) => {
+                        form.setFieldValue(
+                          'googlePlaceId',
+                          place.google_place_id,
+                        )
+                        form.setFieldValue('locationName', place.location_name)
+                        form.setFieldValue(
+                          'formattedAddress',
+                          place.formatted_address,
+                        )
+                        form.setFieldValue('lat', place.lat)
+                        form.setFieldValue('lng', place.lng)
+                      }}
+                      onClear={() => clearLocation(form)}
+                    />
+                    <FieldError message={field.state.meta.errors[0]?.message} />
+                  </div>
+                )}
+              </form.Field>
+              <button
+                type="button"
+                className="self-start text-sm text-primary hover:underline"
+                onClick={() => {
+                  // Switching to manual: a free-text entry isn't a Google place.
+                  form.setFieldValue('googlePlaceId', '')
+                  form.setFieldValue('manualLocation', true)
+                }}
+              >
+                Can&apos;t find it? Enter location manually
+              </button>
+            </>
           )}
-        </form.Field>
+        </div>
       )}
 
       {/* Description */}

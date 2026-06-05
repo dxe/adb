@@ -107,6 +107,12 @@ type Event struct {
 	Timezone    string         `db:"timezone"`
 	IsPublic    bool           `db:"is_public"`
 
+	// Manual location (no Google Place): a free-text name plus optional
+	// coordinates, stored on the event itself. Used when LocationID is nil.
+	ManualLocationName string          `db:"manual_location_name"`
+	ManualLocationLat  sql.NullFloat64 `db:"manual_location_lat"`
+	ManualLocationLng  sql.NullFloat64 `db:"manual_location_lng"`
+
 	// Resolved location fields from LEFT JOIN locations (null when the event
 	// has no location). Read-only — not written back to the events table.
 	LocationPlaceID          sql.NullString  `db:"location_google_place_id"`
@@ -137,7 +143,9 @@ func (event *Event) ToJSON() EventJSON {
 		Timezone:  event.Timezone,
 		IsPublic:  event.IsPublic,
 	}
-	// Only attach a location when the event resolves to one (LEFT JOIN match).
+	// Attach a location when the event resolves to one: a Google Place (LEFT
+	// JOIN match) or a manual free-text location stored on the event. The two
+	// are mutually exclusive.
 	if event.LocationID != nil {
 		j.Location = &LocationJSON{
 			LocationID:       *event.LocationID,
@@ -146,6 +154,13 @@ func (event *Event) ToJSON() EventJSON {
 			FormattedAddress: event.LocationFormattedAddress.String,
 			Lat:              nullFloatToPtr(event.LocationLat),
 			Lng:              nullFloatToPtr(event.LocationLng),
+		}
+	} else if event.ManualLocationName != "" {
+		j.Location = &LocationJSON{
+			Name:             event.ManualLocationName,
+			FormattedAddress: event.ManualLocationName,
+			Lat:              nullFloatToPtr(event.ManualLocationLat),
+			Lng:              nullFloatToPtr(event.ManualLocationLng),
 		}
 	}
 	return j
@@ -217,6 +232,7 @@ func GetEvent(db *sqlx.DB, options GetEventOptions) (Event, error) {
 func getEvents(db *sqlx.DB, options GetEventOptions) ([]Event, error) {
 	query := `SELECT e.id, e.name, e.date, e.event_type, e.survey_sent, e.suppress_survey, e.circle_id, e.chapter_id,
 e.location_id, e.is_online, e.description, e.start_time, e.end_time, e.timezone, e.is_public,
+e.manual_location_name, e.manual_location_lat, e.manual_location_lng,
 l.google_place_id AS location_google_place_id,
 l.name AS location_name,
 l.formatted_address AS location_formatted_address,
@@ -427,9 +443,11 @@ func insertEvent(db *sqlx.DB, event Event) (eventID int, err error) {
 	}
 	res, err := tx.NamedExec(`INSERT INTO events
 (name, date, event_type, suppress_survey, circle_id, chapter_id,
- location_id, is_online, description, start_time, end_time, timezone, is_public)
+ location_id, is_online, description, start_time, end_time, timezone, is_public,
+ manual_location_name, manual_location_lat, manual_location_lng)
 VALUES (:name, :date, :event_type, :suppress_survey, :circle_id, :chapter_id,
- :location_id, :is_online, :description, :start_time, :end_time, :timezone, :is_public)`, event)
+ :location_id, :is_online, :description, :start_time, :end_time, :timezone, :is_public,
+ :manual_location_name, :manual_location_lat, :manual_location_lng)`, event)
 	if err != nil {
 		_ = tx.Rollback()
 		return 0, errors.Wrap(err, "failed to insert event")
@@ -483,7 +501,10 @@ SET
   start_time = :start_time,
   end_time = :end_time,
   timezone = :timezone,
-  is_public = :is_public
+  is_public = :is_public,
+  manual_location_name = :manual_location_name,
+  manual_location_lat = :manual_location_lat,
+  manual_location_lng = :manual_location_lng
 WHERE
   id = :id`, event)
 	if err != nil {
@@ -634,9 +655,11 @@ func CleanEventData(db *sqlx.DB, body io.Reader, chapterID int) (Event, error) {
 		}
 	}
 
-	// Location: a Google Place (no free-text). Only resolve a location when a
-	// place is supplied and the event is not online; otherwise location_id is
-	// NULL. This keeps attendance/online events location-less.
+	// Location. An in-person event resolves to either a Google Place (deduped
+	// into the locations table and referenced by location_id) or a manual
+	// free-text location with optional coordinates (stored on the event). Online
+	// events stay location-less. A place_id picks the Google path; otherwise a
+	// non-empty name is treated as a manual location.
 	if !e.IsOnline && eventJSON.Location != nil {
 		placeID := strings.TrimSpace(eventJSON.Location.GooglePlaceID)
 		if placeID != "" {
@@ -653,6 +676,18 @@ func CleanEventData(db *sqlx.DB, body io.Reader, chapterID int) (Event, error) {
 				return Event{}, err
 			}
 			e.LocationID = &locationID
+		} else {
+			name := strings.TrimSpace(eventJSON.Location.Name)
+			if name == "" {
+				name = strings.TrimSpace(eventJSON.Location.FormattedAddress)
+			}
+			e.ManualLocationName = name
+			if eventJSON.Location.Lat != nil {
+				e.ManualLocationLat = sql.NullFloat64{Float64: *eventJSON.Location.Lat, Valid: true}
+			}
+			if eventJSON.Location.Lng != nil {
+				e.ManualLocationLng = sql.NullFloat64{Float64: *eventJSON.Location.Lng, Valid: true}
+			}
 		}
 	}
 
@@ -667,7 +702,7 @@ func CleanEventData(db *sqlx.DB, body io.Reader, chapterID int) (Event, error) {
 		if e.Timezone == "" {
 			return Event{}, ValidationErrorf("public events require a timezone")
 		}
-		if !e.IsOnline && e.LocationID == nil {
+		if !e.IsOnline && e.LocationID == nil && e.ManualLocationName == "" {
 			return Event{}, ValidationErrorf("public in-person events require a location")
 		}
 	}

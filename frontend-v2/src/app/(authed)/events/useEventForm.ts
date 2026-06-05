@@ -135,6 +135,7 @@ export const useEventForm = ({ mode, startExpanded }: UseEventFormArgs) => {
         formattedAddress: current.formattedAddress,
         lat: current.lat,
         lng: current.lng,
+        manualLocation: current.manualLocation,
       }
 
       // Use keepDefaultValues to work around TanStack Form bug:
@@ -194,6 +195,12 @@ export const useEventForm = ({ mode, startExpanded }: UseEventFormArgs) => {
       formattedAddress: eventData?.location?.formatted_address ?? '',
       lat: eventData?.location?.lat ?? undefined,
       lng: eventData?.location?.lng ?? undefined,
+      // A stored location with no Google place id is a manual entry.
+      manualLocation: Boolean(
+        eventData?.location &&
+          !eventData.location.google_place_id &&
+          eventData.location.name,
+      ),
     }
   }, [eventData, isConnection, user.ChapterID, browserTz])
 
@@ -248,6 +255,31 @@ export const useEventForm = ({ mode, startExpanded }: UseEventFormArgs) => {
         (name) => !uniqueNames.has(name),
       )
 
+      // Resolve the location payload: a Google place, a manual free-text entry
+      // (with optional coordinates), or nothing (online / no location given).
+      const locationPayload = (() => {
+        if (value.isOnline) return undefined
+        if (value.googlePlaceId) {
+          return {
+            google_place_id: value.googlePlaceId,
+            name: value.locationName,
+            formatted_address: value.formattedAddress,
+            lat: value.lat,
+            lng: value.lng,
+          }
+        }
+        if (value.manualLocation && value.locationName.trim()) {
+          return {
+            google_place_id: '',
+            name: value.locationName.trim(),
+            formatted_address: value.locationName.trim(),
+            lat: Number.isFinite(value.lat) ? value.lat : undefined,
+            lng: Number.isFinite(value.lng) ? value.lng : undefined,
+          }
+        }
+        return undefined
+      })()
+
       await saveEventMutation.mutateAsync({
         event_id: Number(eventId || '0'),
         event_name: value.eventName.trim(),
@@ -265,18 +297,7 @@ export const useEventForm = ({ mode, startExpanded }: UseEventFormArgs) => {
           start_time: value.startTime,
           end_time: value.endTime,
           timezone: value.timezone,
-          // Online events (or no place picked) have no physical location.
-          ...(value.isOnline || !value.googlePlaceId
-            ? {}
-            : {
-                location: {
-                  google_place_id: value.googlePlaceId,
-                  name: value.locationName,
-                  formatted_address: value.formattedAddress,
-                  lat: value.lat,
-                  lng: value.lng,
-                },
-              }),
+          ...(locationPayload ? { location: locationPayload } : {}),
         }),
       })
     },
