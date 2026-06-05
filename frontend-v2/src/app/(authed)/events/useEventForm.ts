@@ -62,11 +62,11 @@ export const useEventForm = ({ mode, startExpanded }: UseEventFormArgs) => {
   // event stays fully editable even if its Public box is unchecked.
   const editingHasUpcomingData = Boolean(
     eventData &&
-      (eventData.is_public ||
-        eventData.is_online ||
-        eventData.start_time ||
-        eventData.location?.google_place_id ||
-        eventData.description),
+    (eventData.is_public ||
+      eventData.is_online ||
+      eventData.start_time ||
+      eventData.location?.google_place_id ||
+      eventData.description),
   )
 
   // When editing a saved event the detail fields (name, type, date, schedule,
@@ -198,8 +198,8 @@ export const useEventForm = ({ mode, startExpanded }: UseEventFormArgs) => {
       // A stored location with no Google place id is a manual entry.
       manualLocation: Boolean(
         eventData?.location &&
-          !eventData.location.google_place_id &&
-          eventData.location.name,
+        !eventData.location.google_place_id &&
+        eventData.location.name,
       ),
     }
   }, [eventData, isConnection, user.ChapterID, browserTz])
