@@ -118,23 +118,31 @@ export function PlacesAutocomplete({
 }: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [text, setText] = useState(() => displayLabel(locationName, value))
-  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
+  // No key: there's nothing to load, so start in the error (unavailable) state.
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(
+    apiKey ? 'loading' : 'error',
+  )
   // Set when we update the input programmatically (a dropdown selection or a
   // parent-driven value sync) so the resulting onChange isn't mistaken for the
   // user typing — see the onChange handler below.
   const programmaticEditRef = useRef(false)
 
   // Keep the displayed text in sync when the parent value changes (e.g. loading
-  // an existing event, or the Online checkbox clearing the field).
-  useEffect(() => {
+  // an existing event, or the Online checkbox clearing the field). Done during
+  // render via a previous-value check rather than in an effect, so the text
+  // updates in the same commit (no flash) without a cascading re-render.
+  const [syncedValue, setSyncedValue] = useState({ value, locationName })
+  if (
+    syncedValue.value !== value ||
+    syncedValue.locationName !== locationName
+  ) {
+    setSyncedValue({ value, locationName })
     setText(displayLabel(locationName, value))
-  }, [value, locationName])
+  }
 
   useEffect(() => {
-    if (!apiKey) {
-      setStatus('error')
-      return
-    }
+    // No key: status is already 'error' from initialization; nothing to load.
+    if (!apiKey) return
     let cancelled = false
     // The field silently disables itself on failure, so also surface a toast —
     // otherwise the user is left wondering why location search isn't working.

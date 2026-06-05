@@ -15,7 +15,7 @@ import {
 } from 'lucide-react'
 import { API_PATH, apiClient } from '@/lib/api'
 import { Button } from '@/components/ui/button'
-import { formatEventTimeRange } from '@/lib/timezone'
+import { formatEventTimeRange } from '@/lib/time'
 
 export function EventConfirmation({ eventId }: { eventId: number }) {
   // Hydrated by the server page (same query key as the event form), so this
@@ -36,7 +36,7 @@ export function EventConfirmation({ eventId }: { eventId: number }) {
         <div className="flex flex-col gap-1">
           <h2 className="text-xl font-semibold">Event created</h2>
           <p className="text-sm text-muted-foreground">
-            Your event is scheduled. Take attendance when the event happens.
+            Your event is scheduled.
           </p>
         </div>
       </div>

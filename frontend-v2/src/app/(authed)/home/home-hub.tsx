@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -14,15 +14,20 @@ import {
 import { API_PATH, apiClient, EventListItem, EventListParams } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
+import { userHasNavRole } from '$shared/nav-access'
 import {
   formatEventTimeRange,
   getBrowserTimezone,
   isEventHappeningNow,
   todayInTimezone,
-} from '@/lib/timezone'
+} from '@/lib/time'
 
 export function HomeHub() {
   const { user } = useAuthedPageContext()
+
+  // The events section is only relevant to people who can take attendance.
+  // Everyone else still gets the home page, just without the events content.
+  const hasAttendanceAccess = userHasNavRole(user.Roles, 'attendance')
 
   // Re-render each minute so the "Happening now" badge appears/clears as time
   // passes, and so the page rolls over to the next day at local midnight,
@@ -37,9 +42,14 @@ export function HomeHub() {
   // between the server (SSR) and the browser — near midnight or across zones
   // they can land on different calendar days, causing a hydration mismatch.
   // Gate the date-dependent label on a mount flag so the server and first
-  // client render agree; the real label fills in after hydration.
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
+  // client render agree; the real label fills in after hydration. Implemented
+  // with useSyncExternalStore (server snapshot false, client snapshot true)
+  // rather than a setState-in-effect.
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  )
 
   // "Today" is computed in the viewer's timezone (a defined zone) rather than
   // the DB/browser raw date, to avoid off-by-one-day errors. Chapters have no
@@ -88,6 +98,7 @@ export function HomeHub() {
   } = useQuery({
     queryKey: [API_PATH.EVENT_LIST, params],
     queryFn: ({ signal }) => apiClient.getEventList(params, signal),
+    enabled: hasAttendanceAccess,
   })
 
   // Chronological by start time, with untimed events (quick attendance) last.
@@ -116,61 +127,60 @@ export function HomeHub() {
       </header>
 
       {/* Today's events for quick attendance entry, plus a single entry point
-          for creating any new event (public or not). */}
-      <section className="rounded-xl border bg-card shadow-sm">
-        <div className="flex items-start justify-between gap-3 border-b p-5">
-          <div>
-            <h2 className="text-lg font-semibold">Today&apos;s events</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Pick an event happening today to enter attendance, or create a new
-              event.
-            </p>
+          for creating any new event (public or not). Only shown to users with
+          attendance access — others just see the home page header. */}
+      {hasAttendanceAccess && (
+        <section className="rounded-xl border bg-card shadow-sm">
+          <div className="flex items-start justify-between gap-3 border-b p-5">
+            <div>
+              <h2 className="text-lg font-semibold">Today&apos;s events</h2>
+            </div>
+            <Button asChild>
+              <Link href="/events/new">
+                <CalendarPlus className="h-4 w-4" />
+                New event
+              </Link>
+            </Button>
           </div>
-          <Button asChild>
-            <Link href="/events/new">
-              <CalendarPlus className="h-4 w-4" />
-              New event
+
+          <div className="flex flex-col gap-2 p-5">
+            {isLoading && (
+              <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading today&apos;s events...
+              </div>
+            )}
+
+            {isError && (
+              <div className="rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                Failed to load today&apos;s events.
+              </div>
+            )}
+
+            {!isLoading && !isError && events && events.length === 0 && (
+              <div className="rounded-md border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
+                No events scheduled for today.
+              </div>
+            )}
+
+            {!isLoading &&
+              !isError &&
+              sortedEvents?.map((event) => (
+                <TodayEventRow key={event.event_id} event={event} now={now} />
+              ))}
+          </div>
+
+          <div className="border-t p-5">
+            <Link
+              href={mounted ? upcomingHref : '/events'}
+              className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+            >
+              View today&apos;s &amp; upcoming events
+              <ArrowRight className="h-4 w-4" />
             </Link>
-          </Button>
-        </div>
-
-        <div className="flex flex-col gap-2 p-5">
-          {isLoading && (
-            <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Loading today&apos;s events...
-            </div>
-          )}
-
-          {isError && (
-            <div className="rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              Failed to load today&apos;s events.
-            </div>
-          )}
-
-          {!isLoading && !isError && events && events.length === 0 && (
-            <div className="rounded-md border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
-              No events scheduled for today.
-            </div>
-          )}
-
-          {!isLoading &&
-            !isError &&
-            sortedEvents?.map((event) => (
-              <TodayEventRow key={event.event_id} event={event} now={now} />
-            ))}
-        </div>
-
-        <div className="border-t p-5">
-          <Link
-            href={mounted ? upcomingHref : '/events'}
-            className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-          >
-            View today&apos;s &amp; upcoming events
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-      </section>
+          </div>
+        </section>
+      )}
     </div>
   )
 }

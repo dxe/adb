@@ -131,10 +131,11 @@ func (event *Event) ToJSON() EventJSON {
 
 		IsOnline:    event.IsOnline,
 		Description: event.Description.String,
-		StartTime:   event.StartTime.String,
-		EndTime:     event.EndTime.String,
-		Timezone:    event.Timezone,
-		IsPublic:    event.IsPublic,
+		// MySQL returns TIME as "HH:MM:SS"; the form/API contract is "HH:MM".
+		StartTime: trimTimeSeconds(event.StartTime.String),
+		EndTime:   trimTimeSeconds(event.EndTime.String),
+		Timezone:  event.Timezone,
+		IsPublic:  event.IsPublic,
 	}
 	// Only attach a location when the event resolves to one (LEFT JOIN match).
 	if event.LocationID != nil {
@@ -616,12 +617,12 @@ func CleanEventData(db *sqlx.DB, body io.Reader, chapterID int) (Event, error) {
 	// Start/end times are local wall-clock "HH:MM"; validate when present.
 	startTime, err := cleanEventTime(eventJSON.StartTime)
 	if err != nil {
-		return Event{}, fmt.Errorf("invalid start_time: %w", err)
+		return Event{}, ValidationErrorf("invalid start_time: %v", err)
 	}
 	e.StartTime = startTime
 	endTime, err := cleanEventTime(eventJSON.EndTime)
 	if err != nil {
-		return Event{}, fmt.Errorf("invalid end_time: %w", err)
+		return Event{}, ValidationErrorf("invalid end_time: %v", err)
 	}
 	e.EndTime = endTime
 
@@ -629,7 +630,7 @@ func CleanEventData(db *sqlx.DB, body io.Reader, chapterID int) (Event, error) {
 	e.Timezone = strings.TrimSpace(eventJSON.Timezone)
 	if e.Timezone != "" {
 		if _, err := time.LoadLocation(e.Timezone); err != nil {
-			return Event{}, fmt.Errorf("invalid timezone %q: %w", e.Timezone, err)
+			return Event{}, ValidationErrorf("invalid timezone %q: %v", e.Timezone, err)
 		}
 	}
 
@@ -661,13 +662,13 @@ func CleanEventData(db *sqlx.DB, body io.Reader, chapterID int) (Event, error) {
 	// rejected here — see the form's note on overnight events.)
 	if e.IsPublic {
 		if !e.StartTime.Valid {
-			return Event{}, fmt.Errorf("public events require a start time")
+			return Event{}, ValidationErrorf("public events require a start time")
 		}
 		if e.Timezone == "" {
-			return Event{}, fmt.Errorf("public events require a timezone")
+			return Event{}, ValidationErrorf("public events require a timezone")
 		}
 		if !e.IsOnline && e.LocationID == nil {
-			return Event{}, fmt.Errorf("public in-person events require a location")
+			return Event{}, ValidationErrorf("public in-person events require a location")
 		}
 	}
 
@@ -685,6 +686,16 @@ func cleanEventTime(raw string) (sql.NullString, error) {
 		return sql.NullString{}, err
 	}
 	return sql.NullString{String: raw, Valid: true}, nil
+}
+
+// trimTimeSeconds reduces a MySQL TIME value ("HH:MM:SS") to the "HH:MM"
+// wall-clock string the form and API contract use. Leaves shorter/empty values
+// untouched.
+func trimTimeSeconds(t string) string {
+	if len(t) >= 5 {
+		return t[:5]
+	}
+	return t
 }
 
 // nullStringFromValue trims a string and returns a NULL value when empty.

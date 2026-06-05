@@ -1774,10 +1774,7 @@ func (c MainController) AuthedUserInfoHandler(w http.ResponseWriter, r *http.Req
 	user.Roles = normalizeRoles(user.Roles)
 
 	writeJSON(w, map[string]interface{}{
-		"user": user,
-		// Referrer-restricted, client-side Google Places key. Served from the
-		// backend config (same source the Vue app uses) so it works in all
-		// environments without baking it into the Next.js build.
+		"user":               user,
 		"googlePlacesApiKey": config.GooglePlacesAPIKey,
 	})
 }

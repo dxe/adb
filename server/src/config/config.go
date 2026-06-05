@@ -69,8 +69,10 @@ var (
 	SignupURI    = mustGetenv("SIGNUP_ENDPOINT", "", false)
 	SignupAPIKey = mustGetenv("SIGNUP_KEY", "", false)
 
-	// For location picker on International form
-	GooglePlacesAPIKey        = mustGetenv("GOOGLE_PLACES_API_KEY", "", false)
+	// Referrer-restricted, client-side key for the location pickers (the
+	// International form and the events form); served to the frontend as-is.
+	GooglePlacesAPIKey = mustGetenv("GOOGLE_PLACES_API_KEY", "", false)
+	// Server-side key for backend Places lookups.
 	GooglePlacesBackendAPIKey = mustGetenv("GOOGLE_PLACES_API_KEY_BACKEND", "", false)
 
 	// For form processor

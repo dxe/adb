@@ -1,4 +1,4 @@
-// Timezone helpers for upcoming events.
+// Time and timezone helpers for events.
 //
 // An upcoming event is stored as a local calendar date, local wall-clock times,
 // and an IANA timezone name (e.g. "America/Los_Angeles") — deliberately not a
