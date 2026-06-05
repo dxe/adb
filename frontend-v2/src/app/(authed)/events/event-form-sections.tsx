@@ -327,7 +327,7 @@ export const ScheduledEventFields = ({
                   form.setFieldValue('manualLocation', true)
                 }}
               >
-                Can&apos;t find it? Enter location manually
+                Enter location manually
               </button>
             </>
           )}
