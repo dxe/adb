@@ -12,6 +12,13 @@ updates:
     directory: /frontend-v2
     schedule:
       interval: weekly
+    ignore:
+      # Pin ESLint to the v9 line: Next.js isn't compatible with ESLint 10 yet.
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      # Don't bump Tailwind to v4+: it requires a manual migration (v3 -> v4).
+      - dependency-name: "tailwindcss"
+        update-types: ["version-update:semver-major"]
     groups:
       all-npm:
         patterns:

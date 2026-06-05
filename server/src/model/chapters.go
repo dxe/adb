@@ -358,11 +358,13 @@ func GetChapterById(db *sqlx.DB, id int) (ChapterWithMailingList, error) {
 
 const SFBayPageID = 1377014279263790
 const NorthBayPageID = 495485410315891
+const SacramentoPageID = 627530843778299
 const AlcPageID = 287332515138353
 
 var BayAreaPages = []int{
 	SFBayPageID,
 	NorthBayPageID,
+	SacramentoPageID,
 }
 
 func IsBayAreaPage(pageId int) bool {
