@@ -3,14 +3,8 @@ Transform: AWS::Serverless-2016-10-31
 Description: DxE jobs — AWS Lambda jobs
 
 Parameters:
-  SmtpUser:
-    Type: String
-    NoEcho: true
-    Description: SMTP user, passed in from SSM at deploy time.
-  SmtpPass:
-    Type: String
-    NoEcho: true
-    Description: SMTP password, passed in from SSM at deploy time.
+  # SMTP and database secrets are SecureString SSM parameters resolved by the
+  # functions at runtime (see internal/secrets), not passed in at deploy time.
   ParamSecurityGroupIds:
     Type: List<AWS::EC2::SecurityGroup::Id>
     Description: Security group IDs for the Lambda VPC config.
@@ -28,19 +22,49 @@ Globals:
     VpcConfig:
       SecurityGroupIds: !Ref ParamSecurityGroupIds
       SubnetIds: !Ref ParamSubnetIds
-    Environment:
-      Variables:
-        SMTP_USER: !Ref SmtpUser
-        SMTP_PASS: !Ref SmtpPass
 
 Resources:
   HelloWorldFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: jobs-hello-world
+      FunctionName: adb-jobs-hello-world
       Handler: bootstrap
       CodeUri: bin/hello-world.zip
       Policies:
         - AWSLambdaVPCAccessExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action: ssm:GetParameter
+              Resource:
+                - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/smtp_user
+                - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/smtp_pass
+            - Effect: Allow
+              Action: kms:Decrypt
+              Resource: "*"
+              Condition:
+                StringEquals:
+                  kms:ViaService: !Sub ssm.${AWS::Region}.amazonaws.com
+
+  CommunityReportsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: adb-jobs-community-reports
+      Handler: bootstrap
+      CodeUri: bin/community-reports.zip
+      Policies:
+        - AWSLambdaVPCAccessExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action: ssm:GetParameter
+              Resource:
+                - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/mysql_lambda_host
+                - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/mysql_lambda_user
+                - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/mysql_lambda_password
+            - Effect: Allow
+              Action: kms:Decrypt
+              Resource: "*"
+              Condition:
+                StringEquals:
+                  kms:ViaService: !Sub ssm.${AWS::Region}.amazonaws.com
 
 # TODO: add CloudWatch alarms
