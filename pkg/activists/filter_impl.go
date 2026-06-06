@@ -1,10 +1,8 @@
-package persistence
+package activists
 
 import (
 	"fmt"
 	"strings"
-
-	"github.com/dxe/adb/model"
 )
 
 type filter interface {
@@ -66,7 +64,7 @@ func (f *hiddenFilter) buildWhere() []queryClause {
 
 // dateRangeFilter filters by a date column with optional NULL inclusion.
 type dateRangeFilter struct {
-	filter model.DateRangeFilter
+	filter DateRangeFilter
 	// joinSpec to use for the date column, or nil if on the main table.
 	join *joinSpec
 	// SQL expression for the date column (e.g. "a.interest_date" or "first_event_subquery.first_event_date").
@@ -120,7 +118,7 @@ func (f *dateRangeFilter) buildWhere() []queryClause {
 
 // intRangeFilter filters by an integer column using COALESCE to treat NULL as 0.
 type intRangeFilter struct {
-	filter model.IntRangeFilter
+	filter IntRangeFilter
 	// joinSpec to use, or nil if on the main table.
 	join *joinSpec
 	// SQL expression for the column (will be wrapped in COALESCE).
@@ -237,7 +235,7 @@ func (f *trainingFilter) buildWhere() []queryClause {
 	var clauses []queryClause
 
 	for _, col := range f.Completed {
-		if _, ok := model.ValidTrainingColumns[col]; !ok {
+		if _, ok := ValidTrainingColumns[col]; !ok {
 			continue
 		}
 		clauses = append(clauses, queryClause{
@@ -246,7 +244,7 @@ func (f *trainingFilter) buildWhere() []queryClause {
 	}
 
 	for _, col := range f.NotCompleted {
-		if _, ok := model.ValidTrainingColumns[col]; !ok {
+		if _, ok := ValidTrainingColumns[col]; !ok {
 			continue
 		}
 		clauses = append(clauses, queryClause{
@@ -311,7 +309,7 @@ func (f *followupsFilter) buildWhere() []queryClause {
 
 // prospectFilter filters by prospect flags.
 type prospectFilter struct {
-	Prospect string // model.ProspectFilterChapterMember or model.ProspectFilterOrganizer
+	Prospect string // ProspectFilterChapterMember or ProspectFilterOrganizer
 }
 
 func (f *prospectFilter) getJoins() []joinSpec {
@@ -320,11 +318,11 @@ func (f *prospectFilter) getJoins() []joinSpec {
 
 func (f *prospectFilter) buildWhere() []queryClause {
 	switch f.Prospect {
-	case model.ProspectFilterChapterMember:
+	case ProspectFilterChapterMember:
 		return []queryClause{{
 			sql: fmt.Sprintf("%s.prospect_chapter_member = true", activistTableAlias),
 		}}
-	case model.ProspectFilterOrganizer:
+	case ProspectFilterOrganizer:
 		return []queryClause{{
 			sql: fmt.Sprintf("%s.prospect_organizer = true", activistTableAlias),
 		}}

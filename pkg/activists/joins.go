@@ -1,9 +1,9 @@
-package persistence
+package activists
 
 import (
 	"fmt"
 
-	"github.com/dxe/adb/model"
+	"github.com/dxe/adb/pkg/shared"
 )
 
 // joinSpec represents a SQL join clause
@@ -110,7 +110,7 @@ LEFT JOIN (
 	JOIN events e ON e.id = ea.event_id
 	WHERE LOWER(e.event_type) IN (%s)
 	GROUP BY ea.activist_id
-) %s ON %s.activist_id = %s.id`, model.ActionEventTypesSQL, lastActionSubqueryKey, lastActionSubqueryKey, activistTableAlias),
+) %s ON %s.activist_id = %s.id`, shared.ActionEventTypesSQL, lastActionSubqueryKey, lastActionSubqueryKey, activistTableAlias),
 	}
 
 	totalPointsSubqueryJoin = joinSpec{
@@ -182,6 +182,6 @@ LEFT JOIN (
 	JOIN events e ON e.id = ea.event_id
 	WHERE YEAR(e.date) = YEAR(NOW()) AND MONTH(e.date) = MONTH(NOW())
 	GROUP BY ea.activist_id
-) %s ON %s.activist_id = %s.id`, model.ActionEventTypesSQL, communityEventTypes, mppRequirementsSubqueryKey, mppRequirementsSubqueryKey, activistTableAlias),
+) %s ON %s.activist_id = %s.id`, shared.ActionEventTypesSQL, communityEventTypes, mppRequirementsSubqueryKey, mppRequirementsSubqueryKey, activistTableAlias),
 	}
 )

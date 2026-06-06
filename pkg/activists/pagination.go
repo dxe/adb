@@ -1,4 +1,4 @@
-package persistence
+package activists
 
 import (
 	"database/sql"
@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/dxe/adb/model"
+	"github.com/dxe/adb/pkg/shared"
 	"github.com/go-sql-driver/mysql"
 	"github.com/pkg/errors"
 )
@@ -30,8 +30,8 @@ type activistPaginationCursor struct {
 	IdOffset int `json:"activist_id"`
 }
 
-func buildPaginationCursor(sortColumns []model.ActivistSortColumn, lastRow model.ActivistExtra) (string, error) {
-	if len(sortColumns) == 0 || sortColumns[len(sortColumns)-1].ColumnName != model.ColID {
+func buildPaginationCursor(sortColumns []ActivistSortColumn, lastRow ActivistExtra) (string, error) {
+	if len(sortColumns) == 0 || sortColumns[len(sortColumns)-1].ColumnName != ColID {
 		return "", errors.New("last sort column must be ID")
 	}
 
@@ -59,10 +59,10 @@ func parsePaginationCursor(str string) (activistPaginationCursor, error) {
 	var cursor activistPaginationCursor
 	decoded, err := base64.StdEncoding.DecodeString(str)
 	if err != nil {
-		return activistPaginationCursor{}, model.ValidationErrorf("invalid pagination cursor: %v", err)
+		return activistPaginationCursor{}, shared.ValidationErrorf("invalid pagination cursor: %v", err)
 	}
 	if err := json.Unmarshal(decoded, &cursor); err != nil {
-		return activistPaginationCursor{}, model.ValidationErrorf("invalid pagination cursor: %v", err)
+		return activistPaginationCursor{}, shared.ValidationErrorf("invalid pagination cursor: %v", err)
 	}
 	return cursor, nil
 }
@@ -143,7 +143,7 @@ func buildSeekPast(colExpr string, cursorVal any, desc bool) (string, []any) {
 // getSortValue extracts the value for the given database column tag from an ActivistExtra using
 // reflection on `db:` struct tags. Unwraps sql.Null* and mysql.NullTime types, returning
 // nil for NULL values.
-func getSortValue(activist model.ActivistExtra, colTag model.ActivistColumnName) (any, error) {
+func getSortValue(activist ActivistExtra, colTag ActivistColumnName) (any, error) {
 	target := string(colTag)
 	v := reflect.ValueOf(activist)
 	result := findDBTagValue(v, target)

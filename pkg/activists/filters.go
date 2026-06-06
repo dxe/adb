@@ -1,4 +1,4 @@
-package model
+package activists
 
 import (
 	"encoding/json"
@@ -67,10 +67,10 @@ func (f *DateRangeFilter) IsEmpty() bool {
 func (f *DateRangeFilter) Validate() error {
 	if !f.Gte.IsZero() && !f.Lt.IsZero() {
 		if !f.Gte.Before(f.Lt.Time) {
-			return ValidationErrorf("invalid date range")
+			return shared.ValidationErrorf("invalid date range")
 		}
 		if f.OrNull {
-			return ValidationErrorf("or_null is only valid for open-ended ranges (one bound must be missing)")
+			return shared.ValidationErrorf("or_null is only valid for open-ended ranges (one bound must be missing)")
 		}
 	}
 	return nil
@@ -88,14 +88,14 @@ func (f *IntRangeFilter) IsEmpty() bool {
 
 func (f *IntRangeFilter) Validate() error {
 	if f.Gte != nil && f.Lt != nil && *f.Gte >= *f.Lt {
-		return ValidationErrorf("invalid integer range")
+		return shared.ValidationErrorf("invalid integer range")
 	}
 	return nil
 }
 
 func assertNonNegative(f IntRangeFilter) error {
 	if (f.Gte != nil && *f.Gte < 0) || (f.Lt != nil && *f.Lt < 0) {
-		return ValidationErrorf("negative bounds")
+		return shared.ValidationErrorf("negative bounds")
 	}
 	return nil
 }
@@ -134,11 +134,11 @@ func (f *ActivistLevelFilter) Validate() error {
 		return nil
 	}
 	if f.Mode != "include" && f.Mode != "exclude" {
-		return ValidationErrorf("invalid activist level mode: %q", f.Mode)
+		return shared.ValidationErrorf("invalid activist level mode: %q", f.Mode)
 	}
 	for _, v := range f.Values {
 		if !ValidActivistLevels[v] {
-			return ValidationErrorf("invalid activist level: %q", v)
+			return shared.ValidationErrorf("invalid activist level: %q", v)
 		}
 	}
 	return nil
@@ -159,17 +159,17 @@ func (f *SourceFilter) Validate() error {
 	for i, v := range f.ContainsAny {
 		v = strings.TrimSpace(v)
 		if v == "" {
-			return ValidationErrorf("contains_any[%d] cannot be empty", i)
+			return shared.ValidationErrorf("contains_any[%d] cannot be empty", i)
 		}
 		containsSet[v] = struct{}{}
 	}
 	for i, v := range f.NotContainsAny {
 		v = strings.TrimSpace(v)
 		if v == "" {
-			return ValidationErrorf("not_contains_any[%d] cannot be empty", i)
+			return shared.ValidationErrorf("not_contains_any[%d] cannot be empty", i)
 		}
 		if _, exists := containsSet[v]; exists {
-			return ValidationErrorf("source token %q cannot be both contains_any and not_contains_any", v)
+			return shared.ValidationErrorf("source token %q cannot be both contains_any and not_contains_any", v)
 		}
 	}
 	return nil
@@ -205,22 +205,22 @@ func (f *TrainingFilter) Validate() error {
 	completedSet := make(map[string]struct{}, len(f.Completed))
 	for i, v := range f.Completed {
 		if strings.TrimSpace(v) == "" {
-			return ValidationErrorf("completed[%d] cannot be empty", i)
+			return shared.ValidationErrorf("completed[%d] cannot be empty", i)
 		}
 		if !ValidTrainingColumns[v] {
-			return ValidationErrorf("invalid training column: %q", v)
+			return shared.ValidationErrorf("invalid training column: %q", v)
 		}
 		completedSet[v] = struct{}{}
 	}
 	for i, v := range f.NotCompleted {
 		if strings.TrimSpace(v) == "" {
-			return ValidationErrorf("not_completed[%d] cannot be empty", i)
+			return shared.ValidationErrorf("not_completed[%d] cannot be empty", i)
 		}
 		if !ValidTrainingColumns[v] {
-			return ValidationErrorf("invalid training column: %q", v)
+			return shared.ValidationErrorf("invalid training column: %q", v)
 		}
 		if _, exists := completedSet[v]; exists {
-			return ValidationErrorf("training column %q cannot be both completed and not_completed", v)
+			return shared.ValidationErrorf("training column %q cannot be both completed and not_completed", v)
 		}
 	}
 	return nil
@@ -251,48 +251,48 @@ type QueryActivistFilters struct {
 
 func (f *QueryActivistFilters) Validate() error {
 	if f.ChapterId < 0 {
-		return ValidationErrorf("invalid chapter_id value: %d", f.ChapterId)
+		return shared.ValidationErrorf("invalid chapter_id value: %d", f.ChapterId)
 	}
 	if err := f.LastEvent.Validate(); err != nil {
-		return ValidationErrorf("invalid last event filter: %v", err)
+		return shared.ValidationErrorf("invalid last event filter: %v", err)
 	}
 	if err := f.ActivistLevel.Validate(); err != nil {
-		return ValidationErrorf("invalid activist level filter: %v", err)
+		return shared.ValidationErrorf("invalid activist level filter: %v", err)
 	}
 	if err := f.InterestDate.Validate(); err != nil {
-		return ValidationErrorf("invalid interest date filter: %v", err)
+		return shared.ValidationErrorf("invalid interest date filter: %v", err)
 	}
 	if err := f.FirstEvent.Validate(); err != nil {
-		return ValidationErrorf("invalid first event filter: %v", err)
+		return shared.ValidationErrorf("invalid first event filter: %v", err)
 	}
 	if err := assertNonNegative(f.TotalEvents); err != nil {
-		return ValidationErrorf("invalid total events filter: %v", err)
+		return shared.ValidationErrorf("invalid total events filter: %v", err)
 	}
 	if err := f.TotalEvents.Validate(); err != nil {
-		return ValidationErrorf("invalid total events filter: %v", err)
+		return shared.ValidationErrorf("invalid total events filter: %v", err)
 	}
 	if err := assertNonNegative(f.TotalInteractions); err != nil {
-		return ValidationErrorf("invalid total interactions filter: %v", err)
+		return shared.ValidationErrorf("invalid total interactions filter: %v", err)
 	}
 	if err := f.TotalInteractions.Validate(); err != nil {
-		return ValidationErrorf("invalid total interactions filter: %v", err)
+		return shared.ValidationErrorf("invalid total interactions filter: %v", err)
 	}
 	if err := f.Source.Validate(); err != nil {
-		return ValidationErrorf("invalid source filter: %v", err)
+		return shared.ValidationErrorf("invalid source filter: %v", err)
 	}
 	if err := f.Training.Validate(); err != nil {
-		return ValidationErrorf("invalid training filter: %v", err)
+		return shared.ValidationErrorf("invalid training filter: %v", err)
 	}
 	if f.AssignedTo < -1 {
-		return ValidationErrorf("invalid assigned_to value: %d", f.AssignedTo)
+		return shared.ValidationErrorf("invalid assigned_to value: %d", f.AssignedTo)
 	}
 	if f.Followups != "" && f.Followups != "all" && f.Followups != "due" && f.Followups != "upcoming" {
-		return ValidationErrorf("invalid followups value: %q", f.Followups)
+		return shared.ValidationErrorf("invalid followups value: %q", f.Followups)
 	}
 	if f.Prospect != "" &&
 		f.Prospect != ProspectFilterChapterMember &&
 		f.Prospect != ProspectFilterOrganizer {
-		return ValidationErrorf("invalid prospect value: %q", f.Prospect)
+		return shared.ValidationErrorf("invalid prospect value: %q", f.Prospect)
 	}
 	return nil
 }
