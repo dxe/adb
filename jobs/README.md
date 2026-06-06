@@ -14,6 +14,7 @@ AWS Lambda jobs for ADB, deployed with [AWS SAM](https://docs.aws.amazon.com/ser
 Install Python dependencies (currently just `aws-sam-cli`):
 
 ```bash
+cd jobs
 make deps
 ```
 
@@ -37,24 +38,27 @@ key. You must re-run it every time your console session expires.
 Cross-compiles each function to a `bootstrap` binary and zips it into `bin/`:
 
 ```bash
+cd jobs
 make build
 ```
 
 ## Deploy
 
 ```bash
+cd jobs
 make deploy
 ```
 
 ## Invoke (smoke test)
 
 ```bash
-aws lambda invoke --function-name jobs-hello-world --region us-west-2 /dev/stdout
-aws lambda invoke --function-name jobs-community-reports --region us-west-2 /dev/stdout
+aws lambda invoke --function-name adb-jobs-hello-world --region us-west-2 /dev/stdout
+aws lambda invoke --function-name adb-jobs-community-reports --region us-west-2 /dev/stdout
 ```
 
 ## Clean
 
 ```bash
+cd jobs
 make clean
 ```
