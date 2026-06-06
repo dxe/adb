@@ -61,6 +61,11 @@ export type AuthedUser = z.infer<typeof AuthedUserSchema>
 
 const AuthedUserResp = z.object({
   user: AuthedUserSchema,
+  // Referrer-restricted Google Places key, served from the backend config so
+  // it works in all environments without a build-time env var. Defaults to ''
+  // (not null/undefined) so consumers keep a plain `string` and treat the
+  // not-configured case as a simple falsy check rather than a null guard.
+  googlePlacesApiKey: z.string().optional().default(''),
 })
 
 const CsrfTokenResp = z.object({
@@ -221,6 +226,17 @@ const ActivistGetResp = z.object({
   activist: ActivistJSON,
 })
 
+// A deduped Google Place attached to an event. Grouped under `location` on the
+// API (resolved place fields are only meaningful together).
+const EventLocationSchema = z.object({
+  id: z.number().nullish(),
+  google_place_id: z.string().nullish(),
+  name: z.string().nullish(),
+  formatted_address: z.string().nullish(),
+  lat: z.number().nullish(),
+  lng: z.number().nullish(),
+})
+
 const EventGetResp = z.object({
   event: z.object({
     event_name: z.string(),
@@ -228,6 +244,16 @@ const EventGetResp = z.object({
     event_date: z.string(),
     attendees: z.array(z.string()).nullable(),
     suppress_survey: z.boolean(),
+    // Advance-event fields (optional; absent on legacy attendance events).
+    is_online: z.boolean().nullish(),
+    description: z.string().nullish(),
+    start_time: z.string().nullish(),
+    end_time: z.string().nullish(),
+    timezone: z.string().nullish(),
+    is_public: z.boolean().nullish(),
+    // Resolved location (a Google Place; no free-text). Null for
+    // attendance/online events.
+    location: EventLocationSchema.nullish(),
   }),
 })
 
@@ -241,6 +267,21 @@ interface SaveEventParams {
   added_attendees: string[]
   deleted_attendees: string[]
   suppress_survey: boolean
+  // Advance-event fields (optional).
+  is_online?: boolean
+  description?: string
+  start_time?: string
+  end_time?: string
+  timezone?: string
+  is_public?: boolean
+  // Location, submitted as a Google Place.
+  location?: {
+    google_place_id: string
+    name: string
+    formatted_address: string
+    lat?: number
+    lng?: number
+  }
 }
 
 const EventSaveResp = z.object({
@@ -254,6 +295,9 @@ const EventListItemSchema = z.object({
   event_name: z.string(),
   event_date: z.string(),
   event_type: z.string(),
+  start_time: z.string().nullish(),
+  end_time: z.string().nullish(),
+  timezone: z.string().nullish(),
   attendees: z
     .array(z.string())
     .nullable()
