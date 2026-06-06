@@ -17,6 +17,50 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Detect which services a push touched so the deploy jobs below can skip
+  # work that didn't change. GitHub's built-in `on.push.paths` filters gate a
+  # whole workflow, not individual jobs, so we use dorny/paths-filter to get
+  # per-job change detection while still running the test job exactly once.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      server: ${{ steps.filter.outputs.server }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      lambdas: ${{ steps.filter.outputs.lambdas }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # Full history so the push diff has a valid base to compare against.
+          fetch-depth: 0
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            # Everything baked into the server image (Dockerfile): the Go API
+            # and CLI, the shared pkg module, and the legacy Vue frontend.
+            server:
+              - 'Dockerfile'
+              - 'server/**'
+              - 'cli/**'
+              - 'pkg/**'
+              - 'frontend/**'
+              - 'shared/**'
+              - 'go.work'
+              - 'go.work.sum'
+            # Everything baked into the Next.js image (Dockerfile.frontend-v2).
+            frontend:
+              - 'Dockerfile.frontend-v2'
+              - 'frontend-v2/**'
+              - 'shared/**'
+            # The lambdas are their own Go module; pkg/ is pulled in via a
+            # replace directive (GOWORK=off), so both affect the binaries.
+            lambdas:
+              - 'jobs/**'
+              - 'pkg/**'
+
+  # Single shared test + lint run. Keep this job named `build` so existing
+  # branch-protection required checks keep matching it. The deploy jobs gate
+  # on it via `needs: build`, so nothing ships unless this passes.
   build:
     runs-on: ubuntu-latest
     services:
@@ -100,19 +144,29 @@ jobs:
           fi
 
           pnpm exec vitest --run --changed "$since_sha" --passWithNoTests
+
+  # Build and push the server image. Runs only on pushes, only when server
+  # inputs changed, and only after the test job passes.
+  deploy-server:
+    needs: [build, changes]
+    if: ${{ github.event_name == 'push' && needs.changes.outputs.server == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
       - name: Configure AWS credentials
-        if: ${{ github.event_name == 'push' }} # don't deploy branches
         uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-west-2
       - name: Login to Amazon ECR
-        if: ${{ github.event_name == 'push' }}
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
+      - name: Set up Docker Buildx
+        # Required for the gha cache backend below; the default docker driver
+        # cannot export a registry/gha build cache.
+        uses: docker/setup-buildx-action@v3
       - name: Build and push image to ECR (main)
-        if: ${{ github.event_name == 'push' && steps.login-ecr.outcome == 'success' }}
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -120,8 +174,29 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/dxe/adb:latest
             ${{ steps.login-ecr.outputs.registry }}/dxe/adb:${{ github.sha }}
+          # Distinct scope so the two images don't clobber each other's cache.
+          cache-from: type=gha,scope=server
+          cache-to: type=gha,scope=server,mode=max
+
+  # Build and push the Next.js image.
+  deploy-frontend:
+    needs: [build, changes]
+    if: ${{ github.event_name == 'push' && needs.changes.outputs.frontend == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
       - name: Build and push image to ECR (next.js)
-        if: ${{ github.event_name == 'push' && steps.login-ecr.outcome == 'success' }}
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -130,3 +205,31 @@ jobs:
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/dxe/adb-next:latest
             ${{ steps.login-ecr.outputs.registry }}/dxe/adb-next:${{ github.sha }}
+          cache-from: type=gha,scope=next
+          cache-to: type=gha,scope=next,mode=max
+
+  # Build and deploy the jobs lambdas via SAM. us-west-2 matches jobs/Makefile.
+  deploy-lambdas:
+    needs: [build, changes]
+    if: ${{ github.event_name == 'push' && needs.changes.outputs.lambdas == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: jobs/go.mod
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+      - name: Set up Python for SAM
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Deploy jobs lambdas
+        run: |
+          cd ./jobs
+          make deps
+          make deploy

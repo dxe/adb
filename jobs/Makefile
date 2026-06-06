@@ -12,7 +12,7 @@ $(FUNCTIONS):
 	# -trimpath and -buildvcs=false strip absolute paths and VCS stamps so the
 	# binary is byte-identical when the source is unchanged, avoiding a new Lambda version on every deploy.
 	GOWORK=off GOOS=linux GOARCH=arm64 CGO_ENABLED=0 \
-		go build -tags lambda.norpc -o bin/$@/bootstrap ./functions/$@
+		go build -trimpath -buildvcs=false -tags lambda.norpc -o bin/$@/bootstrap ./functions/$@
 	cd bin/$@ && zip -j ../$@.zip bootstrap
 
 clean:
