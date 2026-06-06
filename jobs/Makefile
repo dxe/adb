@@ -18,8 +18,5 @@ $(FUNCTIONS):
 clean:
 	rm -rf bin .aws-sam
 
-# SMTP and database secrets are no longer passed in at deploy time. The
-# functions resolve them from SSM at runtime (see internal/secrets), keeping
-# plaintext secrets off the deploy command line.
 deploy: build
 	sam deploy

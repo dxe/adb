@@ -11,7 +11,6 @@ import (
 	"github.com/dxe/adb/pkg/activists"
 )
 
-// SSM SecureString parameter names holding the Lambda's MySQL credentials.
 const (
 	dbHostParam     = "mysql_lambda_host"
 	dbUserParam     = "mysql_lambda_user"
@@ -36,7 +35,7 @@ func handler(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	conn, err := db.Open(host, user, password)
+	conn, err := db.Open(ctx, host, user, password)
 	if err != nil {
 		return "", err
 	}
@@ -44,10 +43,7 @@ func handler(ctx context.Context) (string, error) {
 
 	repo := activists.NewRepository(conn)
 
-	// Placeholder for future community-report logic. This natively runs the
-	// shared activist query code (no HTTP call to the server) and logs a count.
-	// Future work can build a richer activists.QueryActivistShape and call
-	// repo.StreamActivists to produce the actual report.
+	// Placeholder for future community-report logic.
 	count, err := repo.CountActivists(activists.QueryActivistFilters{})
 	if err != nil {
 		return "", fmt.Errorf("counting activists: %w", err)

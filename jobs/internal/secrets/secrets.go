@@ -1,7 +1,5 @@
 // Package secrets resolves SecureString values from AWS SSM Parameter Store at
-// runtime. Resolving secrets in-process (rather than passing them through
-// `sam deploy --parameter-overrides`) keeps plaintext secrets out of the deploy
-// command line and the CloudFormation template.
+// runtime.
 package secrets
 
 import (

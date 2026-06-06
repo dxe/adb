@@ -12,8 +12,6 @@ import (
 	"github.com/dxe/adb/jobs/internal/secrets"
 )
 
-// TODO: make the SMTP target configurable once additional jobs need different
-// SMTP targets.
 const (
 	smtpHost     = "email-smtp.us-west-2.amazonaws.com"
 	smtpPort     = "465"
@@ -23,7 +21,6 @@ const (
 	emailSubject = "Hello World"
 	emailBody    = "Hello World!"
 
-	// SSM SecureString parameter names holding the SMTP credentials.
 	smtpUserParam = "smtp_user"
 	smtpPassParam = "smtp_pass"
 )
