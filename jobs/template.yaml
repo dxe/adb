@@ -11,6 +11,18 @@ Parameters:
     Type: String
     NoEcho: true
     Description: SMTP password, passed in from SSM at deploy time.
+  DbHost:
+    Type: String
+    NoEcho: true
+    Description: Database host, passed in from the mysql_lambda_host SSM parameter at deploy time.
+  DbUser:
+    Type: String
+    NoEcho: true
+    Description: Database user, passed in from the mysql_lambda_user SSM parameter at deploy time.
+  DbPassword:
+    Type: String
+    NoEcho: true
+    Description: Database password, passed in from the mysql_lambda_password SSM parameter at deploy time.
   ParamSecurityGroupIds:
     Type: List<AWS::EC2::SecurityGroup::Id>
     Description: Security group IDs for the Lambda VPC config.
@@ -42,5 +54,19 @@ Resources:
       CodeUri: bin/hello-world.zip
       Policies:
         - AWSLambdaVPCAccessExecutionRole
+
+  CommunityReportsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: jobs-community-reports
+      Handler: bootstrap
+      CodeUri: bin/community-reports.zip
+      Policies:
+        - AWSLambdaVPCAccessExecutionRole
+      Environment:
+        Variables:
+          DB_HOST: !Ref DbHost
+          DB_USER: !Ref DbUser
+          DB_PASSWORD: !Ref DbPassword
 
 # TODO: add CloudWatch alarms

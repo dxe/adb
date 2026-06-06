@@ -8,6 +8,8 @@ AWS Lambda jobs for ADB, deployed with [AWS SAM](https://docs.aws.amazon.com/ser
 - Python + pip (preinstalled in the devcontainer)
 - AWS credentials with deploy permissions for `us-west-2`
 - SSM parameters `smtp_user` and `smtp_pass` set in `us-west-2`
+- SSM parameters `mysql_lambda_host`, `mysql_lambda_user`, and
+  `mysql_lambda_password` set in `us-west-2` (used by `community-reports`).
 
 Install Python dependencies (currently just `aws-sam-cli`):
 
@@ -28,6 +30,7 @@ key. You must re-run it every time your console session expires.
 ## Functions
 
 - `hello-world` — sends a "Hello World" email to `ataylor@directactioneverywhere.com`.
+- `community-reports` — sends email reports to community team.
 
 ## Build
 
@@ -47,6 +50,7 @@ make deploy
 
 ```bash
 aws lambda invoke --function-name jobs-hello-world --region us-west-2 /dev/stdout
+aws lambda invoke --function-name jobs-community-reports --region us-west-2 /dev/stdout
 ```
 
 ## Clean
