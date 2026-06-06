@@ -421,10 +421,10 @@ func TestUpdateActivist(t *testing.T) {
 	activist.Email = "ataylor2@example.org"
 	activist.Phone = "510-111-1234"
 	activist.ActivistAddress = ActivistAddress{
-		"6 Animal Rights Way", "New York", "NY",
+		StreetAddress: "6 Animal Rights Way", City: "New York", State: "NY",
 	}
 	activist.Location = sql.NullString{String: "90001", Valid: true}
-	activist.Coords = Coords{1, 2}
+	activist.Coords = Coords{Lat: 1, Lng: 2}
 
 	u := MakeUserRepoStub(t, nil)
 	authedUser := ADBUser{ID: DevTestUserId, Email: DevTestUserEmail, Roles: []string{shared.RoleAdmin}}
@@ -439,7 +439,7 @@ func TestUpdateActivist(t *testing.T) {
 	assert.Equal(t, "Alex Taylor", updatedActivist.Name)
 	assert.Equal(t, "ataylor2@example.org", updatedActivist.Email)
 	assert.Equal(t, "510-111-1234", updatedActivist.Phone)
-	assert.Equal(t, ActivistAddress{"6 Animal Rights Way", "New York", "NY"}, updatedActivist.ActivistAddress)
+	assert.Equal(t, ActivistAddress{StreetAddress: "6 Animal Rights Way", City: "New York", State: "NY"}, updatedActivist.ActivistAddress)
 	assert.Equal(t, sql.NullString{String: "90001", Valid: true}, updatedActivist.Location)
 	assert.Equal(t, Coords{Lat: 1, Lng: 2}, updatedActivist.Coords)
 }
@@ -895,7 +895,7 @@ func TestMergeActivist(t *testing.T) {
 			assert.Equal(t, mustParseTime(t, "2025-01-02"), a2.AddressUpdated)
 			assert.Equal(t, mustParseTime(t, "2025-01-02"), a2.LocationUpdated)
 			assert.Equal(t, "100 Berkeley Way", a2.StreetAddress)
-			assert.Equal(t, Coords{1, 2}, a2.Coords)
+			assert.Equal(t, Coords{Lat: 1, Lng: 2}, a2.Coords)
 		})
 
 		t.Run("DoesNotMergeNewerButEmptyValues", func(t *testing.T) {
@@ -917,7 +917,7 @@ func TestMergeActivist(t *testing.T) {
 			a2 = MustGetActivist(t, db, a2.ID)
 			assert.Equal(t, mustParseTime(t, "2025-01-01"), a2.AddressUpdated)
 			assert.Equal(t, "200 Berkeley Way", a2.StreetAddress)
-			assert.Equal(t, Coords{3, 4}, a2.Coords)
+			assert.Equal(t, Coords{Lat: 3, Lng: 4}, a2.Coords)
 		})
 
 		t.Run("DoesNotMergeOlderValues", func(t *testing.T) {
@@ -939,7 +939,7 @@ func TestMergeActivist(t *testing.T) {
 			a2 = MustGetActivist(t, db, a2.ID)
 			assert.Equal(t, mustParseTime(t, "2025-01-02"), a2.AddressUpdated)
 			assert.Equal(t, "200 Berkeley Way", a2.StreetAddress)
-			assert.Equal(t, Coords{3, 4}, a2.Coords)
+			assert.Equal(t, Coords{Lat: 3, Lng: 4}, a2.Coords)
 		})
 
 		t.Run("MergesAddressWhenCityMatches", func(t *testing.T) {

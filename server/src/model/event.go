@@ -16,7 +16,6 @@ import (
 /** Constant and Global Variable Definitions */
 
 const EventDateLayout string = "2006-01-02"
-const ActionEventTypesSQL string = "'Outreach', 'Action', 'Campaign Action', 'Animal Care', 'Frontline Surveillance'"
 
 var EventTypes map[string]bool = map[string]bool{
 	"Action":                 true,

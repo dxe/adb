@@ -1,4 +1,4 @@
-package persistence
+package activists
 
 import (
 	"database/sql"
@@ -7,11 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dxe/adb/model"
 	"github.com/jmoiron/sqlx"
 )
 
-func (r DBActivistRepository) DebugActivistQuery(options model.QueryActivistOptions, username string) (int64, error) {
+func (r Repository) DebugActivistQuery(options QueryActivistOptions, username string) (int64, error) {
 	query, _, _, err := buildActivistsQueryFromShape(options.Shape)
 	if err != nil {
 		return 0, err
