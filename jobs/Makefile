@@ -1,5 +1,4 @@
 FUNCTIONS := hello-world community-reports
-REGION := us-west-2
 
 .PHONY: build clean deploy deps $(FUNCTIONS)
 
@@ -19,10 +18,8 @@ $(FUNCTIONS):
 clean:
 	rm -rf bin .aws-sam
 
+# SMTP and database secrets are no longer passed in at deploy time. The
+# functions resolve them from SSM at runtime (see internal/secrets), keeping
+# plaintext secrets off the deploy command line.
 deploy: build
-	sam deploy --parameter-overrides \
-	  "SmtpUser=$$(aws ssm get-parameter --name smtp_user --with-decryption --region $(REGION) --query Parameter.Value --output text)" \
-	  "SmtpPass=$$(aws ssm get-parameter --name smtp_pass --with-decryption --region $(REGION) --query Parameter.Value --output text)" \
-	  "DbHost=$$(aws ssm get-parameter --name mysql_lambda_host --with-decryption --region $(REGION) --query Parameter.Value --output text)" \
-	  "DbUser=$$(aws ssm get-parameter --name mysql_lambda_user --with-decryption --region $(REGION) --query Parameter.Value --output text)" \
-	  "DbPassword=$$(aws ssm get-parameter --name mysql_lambda_password --with-decryption --region $(REGION) --query Parameter.Value --output text)"
+	sam deploy

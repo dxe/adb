@@ -7,11 +7,36 @@ import (
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/dxe/adb/jobs/internal/db"
+	"github.com/dxe/adb/jobs/internal/secrets"
 	"github.com/dxe/adb/pkg/activists"
 )
 
+// SSM SecureString parameter names holding the Lambda's MySQL credentials.
+const (
+	dbHostParam     = "mysql_lambda_host"
+	dbUserParam     = "mysql_lambda_user"
+	dbPasswordParam = "mysql_lambda_password"
+)
+
 func handler(ctx context.Context) (string, error) {
-	conn, err := db.Open()
+	sec, err := secrets.New(ctx)
+	if err != nil {
+		return "", err
+	}
+	host, err := sec.Get(ctx, dbHostParam)
+	if err != nil {
+		return "", err
+	}
+	user, err := sec.Get(ctx, dbUserParam)
+	if err != nil {
+		return "", err
+	}
+	password, err := sec.Get(ctx, dbPasswordParam)
+	if err != nil {
+		return "", err
+	}
+
+	conn, err := db.Open(host, user, password)
 	if err != nil {
 		return "", err
 	}

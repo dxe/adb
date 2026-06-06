@@ -3,7 +3,6 @@ package db
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/dxe/adb/pkg/shared"
 
@@ -17,13 +16,12 @@ const (
 )
 
 // Open connects to the ADB MySQL database using the same DSN format as the
-// server (see config.DBDataSource / shared.BuildDBDataSource).
-func Open() (*sqlx.DB, error) {
-	host := os.Getenv("DB_HOST")
-	user := os.Getenv("DB_USER")
-	password := os.Getenv("DB_PASSWORD")
+// server (see config.DBDataSource / shared.BuildDBDataSource). Credentials are
+// resolved by the caller (from SSM) rather than read from the environment, so
+// they never appear in the deploy command line or the CloudFormation template.
+func Open(host, user, password string) (*sqlx.DB, error) {
 	if host == "" || user == "" || password == "" {
-		return nil, fmt.Errorf("DB_HOST, DB_USER, and DB_PASSWORD must be set")
+		return nil, fmt.Errorf("host, user, and password must be set")
 	}
 
 	protocol := fmt.Sprintf("tcp(%s:%d)", host, dbPort)

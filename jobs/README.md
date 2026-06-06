@@ -11,6 +11,10 @@ AWS Lambda jobs for ADB, deployed with [AWS SAM](https://docs.aws.amazon.com/ser
 - SSM parameters `mysql_lambda_host`, `mysql_lambda_user`, and
   `mysql_lambda_password` set in `us-west-2` (used by `community-reports`).
 
+The functions resolve these SecureString parameters from SSM at runtime (see
+`internal/secrets`); they are not passed in at deploy time. The template grants
+each function `ssm:GetParameter` + `kms:Decrypt` for only the parameters it uses.
+
 Install Python dependencies (currently just `aws-sam-cli`):
 
 ```bash
