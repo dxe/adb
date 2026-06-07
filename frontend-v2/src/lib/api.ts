@@ -34,6 +34,7 @@ export const API_PATH = {
   EVENT_LIST: 'event/list',
   EVENT_DELETE: 'event/delete',
   COACHING_SAVE: 'connection/save',
+  ADMIN_SEND_TEST_EMAIL: 'api/admin/send-test-email',
 }
 
 export const StaticResourcesHashResp = z.object({
@@ -650,6 +651,22 @@ export class ApiClient {
         })
         .json()
       return UserSaveResp.parse(resp).user
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  sendTestEmail = async (email: string) => {
+    try {
+      const csrfToken = await this.getCsrfToken()
+      const resp = await this.client
+        .post(API_PATH.ADMIN_SEND_TEST_EMAIL, {
+          json: { email },
+          headers: { 'X-CSRF-Token': csrfToken },
+        })
+        .json()
+      this.throwIfApiError(resp)
+      return SuccessResp.parse(resp)
     } catch (err) {
       return this.handleKyError(err)
     }

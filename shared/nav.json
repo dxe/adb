@@ -164,6 +164,12 @@
           "href": "/admin/external_events",
           "page": "FacebookEvents",
           "roleRequired": ["admin"]
+        },
+        {
+          "label": "Configuration",
+          "href": "/v2/config",
+          "page": "Config",
+          "roleRequired": ["admin"]
         }
       ]
     },
