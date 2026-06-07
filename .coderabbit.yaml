@@ -1,4 +1,6 @@
 reviews:
+  auto_review:
+    enabled: false
   tools:
     golangci-lint:
       # golangci-lint must run per-module (cd cli && golangci-lint run ./..., etc.)
