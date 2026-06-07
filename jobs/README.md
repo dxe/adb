@@ -34,7 +34,7 @@ key. You must re-run it every time your console session expires.
 
 ## Functions
 
-- `hello-world` — sends a "Hello World" email to `ataylor@directactioneverywhere.com`.
+- `hello-world` — sends a "Hello World" email.
 - `community-reports` — sends email reports to community team.
 
 ## Build

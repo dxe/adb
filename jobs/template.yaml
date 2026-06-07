@@ -60,6 +60,8 @@ Resources:
                 - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/mysql_lambda_host
                 - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/mysql_lambda_user
                 - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/mysql_lambda_password
+                - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/smtp_user
+                - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/smtp_pass
             - Effect: Allow
               Action: kms:Decrypt
               Resource: "*"
