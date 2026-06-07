@@ -41,8 +41,6 @@ jobs:
         id: filter
         with:
           filters: |
-            # Everything baked into the server image (Dockerfile): the Go API
-            # and CLI, the shared pkg module, and the legacy Vue frontend.
             server:
               - 'Dockerfile'
               - 'server/**'
@@ -52,20 +50,16 @@ jobs:
               - 'shared/**'
               - 'go.work'
               - 'go.work.sum'
-            # Everything baked into the Next.js image (Dockerfile.frontend-v2).
             frontend:
               - 'Dockerfile.frontend-v2'
               - 'frontend-v2/**'
               - 'shared/**'
-            # The lambdas are their own Go module; pkg/ is pulled in via a
-            # replace directive (GOWORK=off), so both affect the binaries.
             lambdas:
               - 'jobs/**'
               - 'pkg/**'
 
-  # Single shared test + lint run. The image builds run in parallel with this
-  # job, but the promote jobs that flip an image to :latest gate on it via
-  # `needs: test`, so nothing ships unless this passes.
+  # Single shared test + lint run. Image builds run in parallel with this (see
+  # build-server for the rationale); the promote jobs gate on it via `needs: test`.
   test:
     runs-on: ubuntu-latest
     services:
@@ -183,9 +177,8 @@ jobs:
           cache-from: type=gha,scope=server
           cache-to: type=gha,scope=server,mode=max
 
-  # Promote the freshly built server image to :latest once tests pass. This is
-  # a registry-side manifest retag (no layer pull/push), so it finishes in
-  # seconds — the deploy effectively starts the moment tests go green.
+  # Promote the freshly built server image to :latest. Registry-side manifest
+  # retag (no layer pull/push), so it finishes in seconds.
   promote-server:
     needs: [test, build-server, changes]
     if: ${{ github.event_name == 'push' && needs.changes.outputs.server == 'true' }}
@@ -238,7 +231,7 @@ jobs:
           cache-from: type=gha,scope=next
           cache-to: type=gha,scope=next,mode=max
 
-  # Promote the freshly built Next.js image to :latest once tests pass.
+  # Promote the freshly built Next.js image to :latest (see promote-server).
   promote-frontend:
     needs: [test, build-frontend, changes]
     if: ${{ github.event_name == 'push' && needs.changes.outputs.frontend == 'true' }}
