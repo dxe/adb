@@ -12,13 +12,14 @@ import (
 	"github.com/dxe/adb/jobs/internal/mailer"
 	"github.com/dxe/adb/jobs/internal/secrets"
 	"github.com/dxe/adb/pkg/activists"
+	"github.com/dxe/adb/pkg/shared"
 )
 
 const (
 	toAddress    = "community@directactioneverywhere.com"
 	emailSubject = "Community Report: New Activists"
 
-	reportChapterID = 47
+	reportChapterID = shared.SFBayChapterId
 )
 
 func handler(ctx context.Context) (string, error) {
