@@ -201,10 +201,13 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@fa648b43de3d4d023bcb3f89ed6940096949c419 # v2
       - name: Retag :${{ github.sha }} as :latest
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          SHA: ${{ github.sha }}
         run: |
           docker buildx imagetools create \
-            --tag ${{ steps.login-ecr.outputs.registry }}/dxe/adb:latest \
-            ${{ steps.login-ecr.outputs.registry }}/dxe/adb:${{ github.sha }}
+            --tag "$REGISTRY/dxe/adb:latest" \
+            "$REGISTRY/dxe/adb:$SHA"
 
   # Build and push the Next.js image under an immutable :<sha> tag, in parallel
   # with `test` (see build-server for the rationale).
@@ -251,10 +254,13 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@fa648b43de3d4d023bcb3f89ed6940096949c419 # v2
       - name: Retag :${{ github.sha }} as :latest
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          SHA: ${{ github.sha }}
         run: |
           docker buildx imagetools create \
-            --tag ${{ steps.login-ecr.outputs.registry }}/dxe/adb-next:latest \
-            ${{ steps.login-ecr.outputs.registry }}/dxe/adb-next:${{ github.sha }}
+            --tag "$REGISTRY/dxe/adb-next:latest" \
+            "$REGISTRY/dxe/adb-next:$SHA"
 
   # Build and deploy the jobs lambdas via SAM. us-west-2 matches jobs/Makefile.
   deploy-lambdas:
