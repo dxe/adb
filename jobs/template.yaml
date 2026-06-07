@@ -68,5 +68,12 @@ Resources:
               Condition:
                 StringEquals:
                   kms:ViaService: !Sub ssm.${AWS::Region}.amazonaws.com
+      Events:
+        WeeklySchedule:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 12 ? * MON *)
+            Description: Run community reports every Monday at 4 AM Pacific (12:00 UTC / PST)
+            Enabled: true
 
 # TODO: add CloudWatch alarms
