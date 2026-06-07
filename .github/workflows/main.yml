@@ -41,8 +41,6 @@ jobs:
         id: filter
         with:
           filters: |
-            # Everything baked into the server image (Dockerfile): the Go API
-            # and CLI, the shared pkg module, and the legacy Vue frontend.
             server:
               - 'Dockerfile'
               - 'server/**'
@@ -52,19 +50,16 @@ jobs:
               - 'shared/**'
               - 'go.work'
               - 'go.work.sum'
-            # Everything baked into the Next.js image (Dockerfile.frontend-v2).
             frontend:
               - 'Dockerfile.frontend-v2'
               - 'frontend-v2/**'
               - 'shared/**'
-            # The lambdas are their own Go module; pkg/ is pulled in via a
-            # replace directive (GOWORK=off), so both affect the binaries.
             lambdas:
               - 'jobs/**'
               - 'pkg/**'
 
-  # Single shared test + lint run. The deploy jobs gate on it via
-  # `needs: test`, so nothing ships unless this passes.
+  # Single shared test + lint run. Image builds run in parallel with this (see
+  # build-server for the rationale); the promote jobs gate on it via `needs: test`.
   test:
     runs-on: ubuntu-latest
     services:
@@ -149,10 +144,12 @@ jobs:
 
           pnpm exec vitest --run --changed "$since_sha" --passWithNoTests
 
-  # Build and push the server image. Runs only on pushes, only when server
-  # inputs changed, and only after the test job passes.
-  deploy-server:
-    needs: [test, changes]
+  # Build and push the server image under an immutable :<sha> tag. Runs only on
+  # pushes, only when server inputs changed. Deliberately does NOT gate on
+  # `test`, so this slow build overlaps the test run. A :<sha> tag triggers no
+  # deploy on its own; only promote-server (gated on tests) flips it to :latest.
+  build-server:
+    needs: [changes]
     if: ${{ github.event_name == 'push' && needs.changes.outputs.server == 'true' }}
     runs-on: ubuntu-latest
     steps:
@@ -175,16 +172,40 @@ jobs:
         with:
           context: .
           push: true
-          tags: |
-            ${{ steps.login-ecr.outputs.registry }}/dxe/adb:latest
-            ${{ steps.login-ecr.outputs.registry }}/dxe/adb:${{ github.sha }}
+          tags: ${{ steps.login-ecr.outputs.registry }}/dxe/adb:${{ github.sha }}
           # Distinct scope so the two images don't clobber each other's cache.
           cache-from: type=gha,scope=server
           cache-to: type=gha,scope=server,mode=max
 
-  # Build and push the Next.js image.
-  deploy-frontend:
-    needs: [test, changes]
+  # Promote the freshly built server image to :latest. Registry-side manifest
+  # retag (no layer pull/push), so it finishes in seconds.
+  promote-server:
+    needs: [test, build-server, changes]
+    if: ${{ github.event_name == 'push' && needs.changes.outputs.server == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@fa648b43de3d4d023bcb3f89ed6940096949c419 # v2
+      - name: Retag :${{ github.sha }} as :latest
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          SHA: ${{ github.sha }}
+        run: |
+          docker buildx imagetools create \
+            --tag "$REGISTRY/dxe/adb:latest" \
+            "$REGISTRY/dxe/adb:$SHA"
+
+  # Build and push the Next.js image under an immutable :<sha> tag, in parallel
+  # with `test` (see build-server for the rationale).
+  build-frontend:
+    needs: [changes]
     if: ${{ github.event_name == 'push' && needs.changes.outputs.frontend == 'true' }}
     runs-on: ubuntu-latest
     steps:
@@ -206,11 +227,33 @@ jobs:
           context: .
           file: Dockerfile.frontend-v2
           push: true
-          tags: |
-            ${{ steps.login-ecr.outputs.registry }}/dxe/adb-next:latest
-            ${{ steps.login-ecr.outputs.registry }}/dxe/adb-next:${{ github.sha }}
+          tags: ${{ steps.login-ecr.outputs.registry }}/dxe/adb-next:${{ github.sha }}
           cache-from: type=gha,scope=next
           cache-to: type=gha,scope=next,mode=max
+
+  # Promote the freshly built Next.js image to :latest (see promote-server).
+  promote-frontend:
+    needs: [test, build-frontend, changes]
+    if: ${{ github.event_name == 'push' && needs.changes.outputs.frontend == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@fa648b43de3d4d023bcb3f89ed6940096949c419 # v2
+      - name: Retag :${{ github.sha }} as :latest
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          SHA: ${{ github.sha }}
+        run: |
+          docker buildx imagetools create \
+            --tag "$REGISTRY/dxe/adb-next:latest" \
+            "$REGISTRY/dxe/adb-next:$SHA"
 
   # Build and deploy the jobs lambdas via SAM. us-west-2 matches jobs/Makefile.
   deploy-lambdas:
