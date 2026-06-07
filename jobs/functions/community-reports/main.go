@@ -17,7 +17,7 @@ import (
 
 const (
 	toAddress    = "community@directactioneverywhere.com"
-	emailSubject = "Community Report: New Activists"
+	emailSubject = "[Community Report] New Activists"
 
 	reportChapterID = shared.SFBayChapterId
 )
