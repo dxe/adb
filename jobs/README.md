@@ -11,10 +11,6 @@ AWS Lambda jobs for ADB, deployed with [AWS SAM](https://docs.aws.amazon.com/ser
 - SSM parameters `mysql_lambda_host`, `mysql_lambda_user`, and
   `mysql_lambda_password` set in `us-west-2` (used by `community-reports`).
 
-The functions resolve these SecureString parameters from SSM at runtime (see
-`internal/secrets`); they are not passed in at deploy time. The template grants
-each function `ssm:GetParameter` + `kms:Decrypt` for only the parameters it uses.
-
 Install Python dependencies (currently just `aws-sam-cli`):
 
 ```bash
@@ -65,4 +61,27 @@ aws lambda invoke --function-name adb-jobs-community-reports --region us-west-2 
 ```bash
 cd jobs
 make clean
+```
+
+## CI deploy permissions
+
+The GitHub Actions `deploy-lambdas` job (see `.github/workflows/main.yml`) runs
+`make deploy` as the `github-actions` IAM user. The permissions it needs to run
+`sam deploy` against this stack were granted via the customer-managed policy
+`adb-sam-deploy-jobs`, attached to that user. The policy was created by hand
+(there is no IaC for the AWS account); to view or edit it, open the `us-east-1`
+console (IAM is global): IAM → Policies → search `adb-sam-deploy-jobs`, or go to
+<https://us-east-1.console.aws.amazon.com/iam/home#/policies/details/arn:aws:iam::521324062467:policy%2Fadb-sam-deploy-jobs>.
+
+The commands that created and attached it:
+
+```bash
+# Create the policy from a local document (CloudFormation, Lambda, IAM roles,
+# EventBridge, and EC2 describe — all scoped to the jobs stack's resources).
+aws iam create-policy --policy-name adb-sam-deploy-jobs \
+  --policy-document file://.../policy.json
+
+# Attach it to the CI user.
+aws iam attach-user-policy --user-name github-actions \
+  --policy-arn arn:aws:iam::521324062467:policy/adb-sam-deploy-jobs
 ```
