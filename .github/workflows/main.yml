@@ -63,10 +63,9 @@ jobs:
               - 'jobs/**'
               - 'pkg/**'
 
-  # Single shared test + lint run. Keep this job named `build` so existing
-  # branch-protection required checks keep matching it. The deploy jobs gate
-  # on it via `needs: build`, so nothing ships unless this passes.
-  build:
+  # Single shared test + lint run. The deploy jobs gate on it via
+  # `needs: test`, so nothing ships unless this passes.
+  test:
     runs-on: ubuntu-latest
     services:
       mysql:
@@ -153,7 +152,7 @@ jobs:
   # Build and push the server image. Runs only on pushes, only when server
   # inputs changed, and only after the test job passes.
   deploy-server:
-    needs: [build, changes]
+    needs: [test, changes]
     if: ${{ github.event_name == 'push' && needs.changes.outputs.server == 'true' }}
     runs-on: ubuntu-latest
     steps:
@@ -185,7 +184,7 @@ jobs:
 
   # Build and push the Next.js image.
   deploy-frontend:
-    needs: [build, changes]
+    needs: [test, changes]
     if: ${{ github.event_name == 'push' && needs.changes.outputs.frontend == 'true' }}
     runs-on: ubuntu-latest
     steps:
@@ -215,7 +214,7 @@ jobs:
 
   # Build and deploy the jobs lambdas via SAM. us-west-2 matches jobs/Makefile.
   deploy-lambdas:
-    needs: [build, changes]
+    needs: [test, changes]
     if: ${{ github.event_name == 'push' && needs.changes.outputs.lambdas == 'true' }}
     runs-on: ubuntu-latest
     steps:
