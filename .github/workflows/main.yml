@@ -16,6 +16,11 @@ on:
       - ".vscode/**"
   workflow_dispatch:
 
+# Restrict GITHUB_TOKEN to the minimum these jobs need rather than inheriting
+# the repo/org default scopes. Write scopes are not needed here.
+permissions:
+  contents: read
+
 jobs:
   # Detect which services a push touched so the deploy jobs below can skip
   # work that didn't change. GitHub's built-in `on.push.paths` filters gate a
