@@ -47,7 +47,6 @@ jobs:
               - 'cli/**'
               - 'pkg/**'
               - 'frontend/**'
-              - 'shared/**'
               - 'go.work'
               - 'go.work.sum'
             frontend:
