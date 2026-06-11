@@ -171,6 +171,68 @@ func TestGetEvents_orderBy(t *testing.T) {
 	require.Equal(t, gotEvents[1].EventName, "earlier event")
 }
 
+func TestEventNameBooleanQuery(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{"single word", "chapter", "chapter*"},
+		{"multiple words", "chapter meeting", "chapter* meeting*"},
+		{"collapses extra whitespace", "  chapter   meeting  ", "chapter* meeting*"},
+		{"strips boolean operators", "+chapter -meeting", "chapter* meeting*"},
+		{"strips wildcards and quotes", "*chap* \"meet\"", "chap* meet*"},
+		{"splits on operators within a term", "anti-fur", "anti* fur*"},
+		{"splits on embedded operators across terms", "anti-fur pro+test", "anti* fur* pro* test*"},
+		{"drops operator-only terms", "chapter + -", "chapter*"},
+		{"empty input", "", ""},
+		{"whitespace only", "   ", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require.Equal(t, tt.want, eventNameBooleanQuery(tt.input))
+		})
+	}
+}
+
+func TestGetEvents_nameQueryPrefix(t *testing.T) {
+	db := testdb.NewDB()
+	defer func() { _ = db.Close() }()
+
+	d1, err := time.Parse("2006-01-02", "2017-01-15")
+	require.NoError(t, err)
+
+	for _, name := range []string{"chapter meeting", "potluck dinner", "anti-fur protest"} {
+		_, err := InsertUpdateEvent(db, Event{
+			EventName: name,
+			EventDate: d1,
+			EventType: "Working Group",
+			ChapterID: 1,
+		})
+		require.NoError(t, err)
+	}
+
+	// A whole-word query still matches.
+	gotEvents, err := GetEvents(db, GetEventOptions{EventNameQuery: "chapter"})
+	require.NoError(t, err)
+	require.Len(t, gotEvents, 1)
+	require.Equal(t, "chapter meeting", gotEvents[0].EventName)
+
+	// A prefix of a word now matches too.
+	gotEvents, err = GetEvents(db, GetEventOptions{EventNameQuery: "chapt"})
+	require.NoError(t, err)
+	require.Len(t, gotEvents, 1)
+	require.Equal(t, "chapter meeting", gotEvents[0].EventName)
+
+	// A hyphenated query matches a hyphenated name: MySQL tokenizes both sides
+	// of the hyphen, so the operator must split the term rather than collapse it.
+	gotEvents, err = GetEvents(db, GetEventOptions{EventNameQuery: "anti-fur"})
+	require.NoError(t, err)
+	require.Len(t, gotEvents, 1)
+	require.Equal(t, "anti-fur protest", gotEvents[0].EventName)
+}
+
 func TestInsertUpdateEvent(t *testing.T) {
 	db := testdb.NewDB()
 	defer func() { _ = db.Close() }()
