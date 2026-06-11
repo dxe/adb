@@ -138,6 +138,29 @@ func GetEvent(db *sqlx.DB, options GetEventOptions) (Event, error) {
 	return events[0], nil
 }
 
+// eventNameBooleanQuery converts a free-text event-name search into a MySQL
+// fulltext boolean-mode query where each term is given a trailing '*' so that
+// prefixes match. Boolean-mode operator characters are replaced with spaces so
+// that they are neither interpreted as operators nor merge adjacent words into
+// a token that cannot match: MySQL's fulltext parser splits on those characters
+// at index time (e.g. "anti-fur" is stored as "anti" and "fur"), so a
+// concatenated "antifur" would never match.
+func eventNameBooleanQuery(query string) string {
+	cleaned := strings.Map(func(r rune) rune {
+		switch r {
+		case '+', '-', '<', '>', '(', ')', '~', '*', '"', '@':
+			return ' '
+		}
+		return r
+	}, query)
+
+	var terms []string
+	for _, field := range strings.Fields(cleaned) {
+		terms = append(terms, field+"*")
+	}
+	return strings.Join(terms, " ")
+}
+
 func getEvents(db *sqlx.DB, options GetEventOptions) ([]Event, error) {
 	query := `SELECT e.id, e.name, e.date, e.event_type, e.survey_sent, e.suppress_survey, e.circle_id, e.chapter_id FROM events e `
 
@@ -189,7 +212,10 @@ ON (e.id = ea.event_id AND ea.activist_id = a.id)
 		where("e.event_type like ?", options.EventType)
 	}
 	if options.EventNameQuery != "" {
-		where("MATCH (e.name) AGAINST (?)", options.EventNameQuery)
+		// Use boolean mode with a trailing '*' on each term so that
+		// prefixes match (e.g. "chapt" matches "chapter meeting"), not
+		// just whole words as in natural-language mode.
+		where("MATCH (e.name) AGAINST (? IN BOOLEAN MODE)", eventNameBooleanQuery(options.EventNameQuery))
 	}
 
 	// Add the where clauses to the query.
