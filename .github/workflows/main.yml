@@ -16,8 +16,50 @@ on:
       - ".vscode/**"
   workflow_dispatch:
 
+# Restrict GITHUB_TOKEN to the minimum these jobs need rather than inheriting
+# the repo/org default scopes. Write scopes are not needed here.
+permissions:
+  contents: read
+
 jobs:
-  build:
+  # Detect which services a push touched so the deploy jobs below can skip
+  # work that didn't change. GitHub's built-in `on.push.paths` filters gate a
+  # whole workflow, not individual jobs, so we use dorny/paths-filter to get
+  # per-job change detection while still running the test job exactly once.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      server: ${{ steps.filter.outputs.server }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      lambdas: ${{ steps.filter.outputs.lambdas }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          # Full history so the push diff has a valid base to compare against.
+          fetch-depth: 0
+      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
+        id: filter
+        with:
+          filters: |
+            server:
+              - 'Dockerfile'
+              - 'server/**'
+              - 'cli/**'
+              - 'pkg/**'
+              - 'frontend/**'
+              - 'go.work'
+              - 'go.work.sum'
+            frontend:
+              - 'Dockerfile.frontend-v2'
+              - 'frontend-v2/**'
+              - 'shared/**'
+            lambdas:
+              - 'jobs/**'
+              - 'pkg/**'
+
+  # Single shared test + lint run. Image builds run in parallel with this (see
+  # build-server for the rationale); the promote jobs gate on it via `needs: test`.
+  test:
     runs-on: ubuntu-latest
     services:
       mysql:
@@ -33,19 +75,19 @@ jobs:
           --health-timeout=5s
           --health-retries=10
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
           go-version-file: server/src/go.mod
       - name: Set up pnpm
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
         with:
           # Please keep pnpm version in sync with package.json
           version: 10.32.1
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: 22
           cache: pnpm
@@ -100,33 +142,141 @@ jobs:
           fi
 
           pnpm exec vitest --run --changed "$since_sha" --passWithNoTests
+
+  # Build and push the server image under an immutable :<sha> tag. Runs only on
+  # pushes, only when server inputs changed. Deliberately does NOT gate on
+  # `test`, so this slow build overlaps the test run. A :<sha> tag triggers no
+  # deploy on its own; only promote-server (gated on tests) flips it to :latest.
+  build-server:
+    needs: [changes]
+    if: ${{ github.event_name == 'push' && needs.changes.outputs.server == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Configure AWS credentials
-        if: ${{ github.event_name == 'push' }} # don't deploy branches
-        uses: aws-actions/configure-aws-credentials@v6
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-west-2
       - name: Login to Amazon ECR
-        if: ${{ github.event_name == 'push' }}
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+        uses: aws-actions/amazon-ecr-login@d539f0932e70871a027e9d5a9d8fc38589180a64 # v2
+      - name: Set up Docker Buildx
+        # Required for the gha cache backend below; the default docker driver
+        # cannot export a registry/gha build cache.
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
       - name: Build and push image to ECR (main)
-        if: ${{ github.event_name == 'push' && steps.login-ecr.outcome == 'success' }}
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7
         with:
           context: .
           push: true
-          tags: |
-            ${{ steps.login-ecr.outputs.registry }}/dxe/adb:latest
-            ${{ steps.login-ecr.outputs.registry }}/dxe/adb:${{ github.sha }}
+          tags: ${{ steps.login-ecr.outputs.registry }}/dxe/adb:${{ github.sha }}
+          # Distinct scope so the two images don't clobber each other's cache.
+          cache-from: type=gha,scope=server
+          cache-to: type=gha,scope=server,mode=max
+
+  # Promote the freshly built server image to :latest. Registry-side manifest
+  # retag (no layer pull/push), so it finishes in seconds.
+  promote-server:
+    needs: [test, build-server, changes]
+    if: ${{ github.event_name == 'push' && needs.changes.outputs.server == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@d539f0932e70871a027e9d5a9d8fc38589180a64 # v2
+      - name: Retag :${{ github.sha }} as :latest
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          SHA: ${{ github.sha }}
+        run: |
+          docker buildx imagetools create \
+            --tag "$REGISTRY/dxe/adb:latest" \
+            "$REGISTRY/dxe/adb:$SHA"
+
+  # Build and push the Next.js image under an immutable :<sha> tag, in parallel
+  # with `test` (see build-server for the rationale).
+  build-frontend:
+    needs: [changes]
+    if: ${{ github.event_name == 'push' && needs.changes.outputs.frontend == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@d539f0932e70871a027e9d5a9d8fc38589180a64 # v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
       - name: Build and push image to ECR (next.js)
-        if: ${{ github.event_name == 'push' && steps.login-ecr.outcome == 'success' }}
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7
         with:
           context: .
           file: Dockerfile.frontend-v2
           push: true
-          tags: |
-            ${{ steps.login-ecr.outputs.registry }}/dxe/adb-next:latest
-            ${{ steps.login-ecr.outputs.registry }}/dxe/adb-next:${{ github.sha }}
+          tags: ${{ steps.login-ecr.outputs.registry }}/dxe/adb-next:${{ github.sha }}
+          cache-from: type=gha,scope=next
+          cache-to: type=gha,scope=next,mode=max
+
+  # Promote the freshly built Next.js image to :latest (see promote-server).
+  promote-frontend:
+    needs: [test, build-frontend, changes]
+    if: ${{ github.event_name == 'push' && needs.changes.outputs.frontend == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@d539f0932e70871a027e9d5a9d8fc38589180a64 # v2
+      - name: Retag :${{ github.sha }} as :latest
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          SHA: ${{ github.sha }}
+        run: |
+          docker buildx imagetools create \
+            --tag "$REGISTRY/dxe/adb-next:latest" \
+            "$REGISTRY/dxe/adb-next:$SHA"
+
+  # Build and deploy the jobs lambdas via SAM. us-west-2 matches jobs/Makefile.
+  deploy-lambdas:
+    needs: [test, changes]
+    if: ${{ github.event_name == 'push' && needs.changes.outputs.lambdas == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: jobs/go.mod
+      - name: Set up Python for SAM
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.12"
+      - name: Install SAM dependencies
+        run: cd ./jobs && make deps
+      # Configure credentials only after deps are installed so the untrusted
+      # pip packages can't run with AWS credentials present in the environment.
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+      - name: Deploy jobs lambdas
+        run: cd ./jobs && make deploy

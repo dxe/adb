@@ -112,7 +112,7 @@
         },
         {
           "label": "All Activists",
-          "href": "/v2/activists?columns=pronouns,email,phone,activist_level,location,city",
+          "href": "/v2/activists?columns=pronouns,email,phone,activist_level,location,city,total_events,last_event&sort=-last_event&totalEvents=1..",
           "page": "ActivistListV2",
           "visibleForNonSFBay": true
         },
@@ -163,6 +163,12 @@
           "label": "Facebook Events",
           "href": "/admin/external_events",
           "page": "FacebookEvents",
+          "roleRequired": ["admin"]
+        },
+        {
+          "label": "Configuration",
+          "href": "/v2/config",
+          "page": "Config",
           "roleRequired": ["admin"]
         }
       ]

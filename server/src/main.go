@@ -26,6 +26,7 @@ import (
 	"github.com/dxe/adb/event_sync"
 	"github.com/dxe/adb/form_processor"
 	"github.com/dxe/adb/google_groups_sync"
+	"github.com/dxe/adb/mailer"
 	"github.com/dxe/adb/model"
 	"github.com/dxe/adb/pkg/shared"
 	"github.com/dxe/adb/survey_mailer"
@@ -372,6 +373,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	admin.Handle("/chapter/save", alice.New(main.apiIntlCoordinatorAuthMiddleware).ThenFunc(main.ChapterSaveHandler))
 	admin.Handle("/admin/external_events/feature", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.AdminFeatureEventHandler))
 	admin.Handle("/admin/external_events/cancel", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.AdminCancelEventHandler))
+	admin.Handle("/api/admin/send-test-email", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.AdminSendTestEmailHandler)).Methods(http.MethodPost)
 	admin.Handle("/auth/switch_chapter", alice.New(main.authAdminMiddleware).ThenFunc(main.SwitchActiveChapterHandler))
 	admin.Handle("/api/users", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UsersListHandler)).Methods(http.MethodGet)
 	admin.Handle("/api/users", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UserCreateHandler)).Methods(http.MethodPost)
@@ -1889,6 +1891,38 @@ func (c MainController) AdminFeatureEventHandler(w http.ResponseWriter, r *http.
 	}
 
 	err = model.FeatureExternalEvent(c.db, eventData.ID, eventData.Featured)
+	if err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	writeJSON(w, map[string]interface{}{
+		"status": "success",
+	})
+}
+
+func (c MainController) AdminSendTestEmailHandler(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Email string `json:"email"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sendErrorMessage(w, err)
+		return
+	}
+
+	email := strings.TrimSpace(body.Email)
+	if email == "" {
+		sendErrorMessage(w, fmt.Errorf("an email address is required"))
+		return
+	}
+
+	err := mailer.SendContext(r.Context(), mailer.Message{
+		FromName:    "Activist Database",
+		FromAddress: config.SurveyFromEmail,
+		ToAddress:   email,
+		Subject:     "ADB SMTP test email",
+		BodyHTML:    "<p>This is a test email from the Activist Database configuration page. If you received it, SMTP is configured correctly.</p>",
+	})
 	if err != nil {
 		sendErrorMessage(w, err)
 		return

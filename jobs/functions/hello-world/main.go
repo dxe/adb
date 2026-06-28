@@ -6,13 +6,12 @@ import (
 	"fmt"
 	"net"
 	"net/smtp"
-	"os"
 	"time"
 
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/dxe/adb/jobs/internal/secrets"
 )
 
-// TODO: make these configurable via environment / SSM once additional jobs need different SMTP targets.
 const (
 	smtpHost     = "email-smtp.us-west-2.amazonaws.com"
 	smtpPort     = "465"
@@ -21,13 +20,23 @@ const (
 	fromName     = "DxE Reporting"
 	emailSubject = "Hello World"
 	emailBody    = "Hello World!"
+
+	smtpUserParam = "smtp_user"
+	smtpPassParam = "smtp_pass"
 )
 
 func handler(ctx context.Context) (string, error) {
-	user := os.Getenv("SMTP_USER")
-	pass := os.Getenv("SMTP_PASS")
-	if user == "" || pass == "" {
-		return "", fmt.Errorf("SMTP_USER and SMTP_PASS must be set")
+	sec, err := secrets.New(ctx)
+	if err != nil {
+		return "", err
+	}
+	user, err := sec.Get(ctx, smtpUserParam)
+	if err != nil {
+		return "", err
+	}
+	pass, err := sec.Get(ctx, smtpPassParam)
+	if err != nil {
+		return "", err
 	}
 
 	msg := []byte(
