@@ -189,7 +189,13 @@ picker locally, create a `.env` file in the repository root (it is loaded by
 GOOGLE_PLACES_API_KEY=...
 ```
 
-This API key can be found in GCP under the dev environment.
+This API key can be found in GCP under the dev environment:
+https://console.cloud.google.com/apis/credentials/key/68509fdd-6190-406e-b89f-16286be4faf5?project=places-api-308104
+
+If you debug the server through the VS Code "Go Server" launch config rather
+than `make run`, note that it loads `.env` unconditionally. Create the file
+(an empty `touch .env` is fine) if you don't have one, or the debugger will
+fail to start.
 
 ## Logging and Monitoring
 

@@ -288,9 +288,13 @@ export const useEventForm = ({
           lng !== undefined
         if (!name && !hasGeo) return undefined
         return {
-          google_place_id: value.googlePlaceId,
           name,
-          formatted_address: address || name,
+          // Omit the geo fields when empty (e.g. a manual lat/lng location with
+          // no Google place or formatted address).
+          ...(value.googlePlaceId
+            ? { google_place_id: value.googlePlaceId }
+            : {}),
+          ...(address ? { formatted_address: address } : {}),
           lat,
           lng,
         }

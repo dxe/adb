@@ -114,73 +114,82 @@ export function HomeHub() {
     })
   }, [events])
 
-  return (
-    <div className="flex flex-col gap-6">
+  // The home page is built around today's events, which only matter to users
+  // with attendance access (admin/organizer/attendance roles). The only users
+  // without it are intl_coordinator-only accounts, whose app is the admin
+  // pages — so they just get a plain chapter/date header, no events content.
+  if (!hasAttendanceAccess) {
+    return (
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">
-          Welcome{user.Name ? `, ${user.Name.split(' ')[0]}` : ''}
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
           {user.ChapterName}
-          {mounted && ` · ${todayLabel}`}
-        </p>
+        </h1>
+        {mounted && (
+          <p className="mt-1 text-sm text-muted-foreground">{todayLabel}</p>
+        )}
+      </header>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <header className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Today&apos;s events
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {user.ChapterName}
+            {mounted && ` · ${todayLabel}`}
+          </p>
+        </div>
+        <Button asChild>
+          <Link href="/events/new">
+            <CalendarPlus className="h-4 w-4" />
+            New event
+          </Link>
+        </Button>
       </header>
 
-      {/* Today's events for quick attendance entry, plus a single entry point
-          for creating any new event (public or not). Only shown to users with
-          attendance access — others just see the home page header. */}
-      {hasAttendanceAccess && (
-        <section className="rounded-xl border bg-card shadow-sm">
-          <div className="flex items-start justify-between gap-3 border-b p-5">
-            <div>
-              <h2 className="text-lg font-semibold">Today&apos;s events</h2>
+      {/* Today's events for quick attendance entry. */}
+      <section className="rounded-xl border bg-card shadow-sm">
+        <div className="flex flex-col gap-2 p-5">
+          {isLoading && (
+            <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Loading today&apos;s events...
             </div>
-            <Button asChild>
-              <Link href="/events/new">
-                <CalendarPlus className="h-4 w-4" />
-                New event
-              </Link>
-            </Button>
-          </div>
+          )}
 
-          <div className="flex flex-col gap-2 p-5">
-            {isLoading && (
-              <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Loading today&apos;s events...
-              </div>
-            )}
+          {isError && (
+            <div className="rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              Failed to load today&apos;s events.
+            </div>
+          )}
 
-            {isError && (
-              <div className="rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                Failed to load today&apos;s events.
-              </div>
-            )}
+          {!isLoading && !isError && events && events.length === 0 && (
+            <div className="rounded-md border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
+              No events scheduled for today.
+            </div>
+          )}
 
-            {!isLoading && !isError && events && events.length === 0 && (
-              <div className="rounded-md border border-dashed px-4 py-8 text-center text-sm text-muted-foreground">
-                No events scheduled for today.
-              </div>
-            )}
+          {!isLoading &&
+            !isError &&
+            sortedEvents?.map((event) => (
+              <TodayEventRow key={event.event_id} event={event} now={now} />
+            ))}
+        </div>
 
-            {!isLoading &&
-              !isError &&
-              sortedEvents?.map((event) => (
-                <TodayEventRow key={event.event_id} event={event} now={now} />
-              ))}
-          </div>
-
-          <div className="border-t p-5">
-            <Link
-              href={mounted ? upcomingHref : '/events'}
-              className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-            >
-              View today&apos;s &amp; upcoming events
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-        </section>
-      )}
+        <div className="border-t p-5">
+          <Link
+            href={mounted ? upcomingHref : '/events'}
+            className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+          >
+            View today&apos;s &amp; upcoming events
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      </section>
     </div>
   )
 }

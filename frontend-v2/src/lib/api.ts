@@ -274,11 +274,13 @@ interface SaveEventParams {
   end_time?: string
   timezone?: string
   is_public?: boolean
-  // Location: a free-text name plus optional geo data.
+  // Location: a free-text name plus optional geo data. Only the name is
+  // required; the geo fields are omitted when empty (e.g. a manual lat/lng
+  // location with no Google place or formatted address).
   location?: {
-    google_place_id: string
+    google_place_id?: string
     name: string
-    formatted_address: string
+    formatted_address?: string
     lat?: number
     lng?: number
   }

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Textarea } from '@/components/ui/textarea'
+import { Collapse } from '@/components/ui/collapse'
 import {
   Select,
   SelectContent,
@@ -19,7 +20,6 @@ import { TimeField } from '@/components/ui/time-field'
 import { PlacesAutocomplete } from './places-autocomplete'
 import { AttendeeInputField } from './attendee-input-field'
 import { getCommonTimezones, getZoneAbbreviation } from '@/lib/time'
-import { SUGGESTED_LOCATION_NAMES } from './event-form-schema'
 import type { ActivistRegistry } from './activist-registry'
 import type { EventFormApi } from './useEventForm'
 
@@ -39,6 +39,14 @@ export const FieldError = ({
     </p>
   )
 }
+
+// Muted sub-heading that separates the scheduled-event fields into groups
+// (When / Where / Details) so each block reads as a distinct section.
+const SectionHeading = ({ children }: { children: React.ReactNode }) => (
+  <h3 className="text-xs font-semibold uppercase tracking-wide text-blue-900/60">
+    {children}
+  </h3>
+)
 
 // Clears the geo data attached to a location (Google place + coordinates) while
 // leaving the free-text name intact. Used when the user edits the place search
@@ -111,11 +119,11 @@ export const EventDetailsCard = ({
           <ChevronLeft className="h-5 w-5 shrink-0 text-muted-foreground" />
         )}
       </button>
-      {detailsExpanded && (
+      <Collapse open={detailsExpanded}>
         <div className="flex flex-col gap-4 border-t border-blue-200 bg-background p-4">
           {children}
         </div>
-      )}
+      </Collapse>
     </div>
   )
 }
@@ -123,9 +131,13 @@ export const EventDetailsCard = ({
 export const ScheduledEventFields = ({
   form,
   googlePlacesApiKey,
+  // Whether this section is currently revealed. Gates the Google Maps load so it
+  // stays dormant while the (still-mounted, for animation) section is collapsed.
+  active = true,
 }: {
   form: EventFormApi
   googlePlacesApiKey: string
+  active?: boolean
 }) => {
   const isPublic = useStore(form.store, (state) => state.values.isPublic)
   const isOnline = useStore(form.store, (state) => state.values.isOnline)
@@ -137,133 +149,113 @@ export const ScheduledEventFields = ({
   const timezones = getCommonTimezones()
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border bg-muted/30 p-4">
-      {/* Start / End Time */}
-      <div className="flex gap-4">
-        <form.Field name="startTime">
+    <div className="flex flex-col gap-6 rounded-lg border border-blue-200 bg-blue-50/40 p-4">
+      {/* When: start/end time + timezone */}
+      <div className="flex flex-col gap-4">
+        <SectionHeading>When</SectionHeading>
+        {/* Start / End Time */}
+        <div className="flex gap-4">
+          <form.Field name="startTime">
+            {(field) => (
+              <div className="flex flex-1 flex-col gap-2">
+                <Label htmlFor="startTime">
+                  Start time{isPublic ? '' : ' (optional)'}
+                </Label>
+                <TimeField
+                  aria-label="Start time"
+                  value={field.state.value ?? ''}
+                  onChange={(v) => field.handleChange(v)}
+                  onClear={() => field.handleChange('')}
+                  hasError={Boolean(field.state.meta.errors[0])}
+                />
+                <FieldError message={field.state.meta.errors[0]?.message} />
+              </div>
+            )}
+          </form.Field>
+          <form.Field name="endTime">
+            {(field) => (
+              <div className="flex flex-1 flex-col gap-2">
+                <Label htmlFor="endTime">End time (optional)</Label>
+                <TimeField
+                  aria-label="End time"
+                  value={field.state.value ?? ''}
+                  onChange={(v) => field.handleChange(v)}
+                  onClear={() => field.handleChange('')}
+                  hasError={Boolean(field.state.meta.errors[0])}
+                />
+                <FieldError message={field.state.meta.errors[0]?.message} />
+              </div>
+            )}
+          </form.Field>
+        </div>
+
+        {/* Timezone */}
+        <form.Field name="timezone">
           {(field) => (
-            <div className="flex flex-1 flex-col gap-2">
-              <Label htmlFor="startTime">
-                Start time{isPublic ? '' : ' (optional)'}
-              </Label>
-              <TimeField
-                aria-label="Start time"
-                value={field.state.value ?? ''}
-                onChange={(v) => field.handleChange(v)}
-                onClear={() => field.handleChange('')}
-                hasError={Boolean(field.state.meta.errors[0])}
-              />
-              <FieldError message={field.state.meta.errors[0]?.message} />
-            </div>
-          )}
-        </form.Field>
-        <form.Field name="endTime">
-          {(field) => (
-            <div className="flex flex-1 flex-col gap-2">
-              <Label htmlFor="endTime">End time (optional)</Label>
-              <TimeField
-                aria-label="End time"
-                value={field.state.value ?? ''}
-                onChange={(v) => field.handleChange(v)}
-                onClear={() => field.handleChange('')}
-                hasError={Boolean(field.state.meta.errors[0])}
-              />
-              <FieldError message={field.state.meta.errors[0]?.message} />
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="timezone">Timezone</Label>
+              <Select
+                value={field.state.value}
+                onValueChange={(value) => field.handleChange(value)}
+              >
+                <SelectTrigger id="timezone">
+                  <SelectValue placeholder="Select timezone" />
+                </SelectTrigger>
+                <SelectContent className="max-h-72">
+                  {timezones.map((tz) => {
+                    const abbr = getZoneAbbreviation(eventDate, tz)
+                    return (
+                      <SelectItem key={tz} value={tz}>
+                        {`${tz.replace(/_/g, ' ')}${abbr ? ` (${abbr})` : ''}`}
+                      </SelectItem>
+                    )
+                  })}
+                </SelectContent>
+              </Select>
             </div>
           )}
         </form.Field>
       </div>
 
-      {/* Timezone */}
-      <form.Field name="timezone">
-        {(field) => (
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="timezone">Timezone</Label>
-            <Select
-              value={field.state.value}
-              onValueChange={(value) => field.handleChange(value)}
-            >
-              <SelectTrigger id="timezone">
-                <SelectValue placeholder="Select timezone" />
-              </SelectTrigger>
-              <SelectContent className="max-h-72">
-                {timezones.map((tz) => {
-                  const abbr = getZoneAbbreviation(eventDate, tz)
-                  return (
-                    <SelectItem key={tz} value={tz}>
-                      {`${tz.replace(/_/g, ' ')}${abbr ? ` (${abbr})` : ''}`}
-                    </SelectItem>
-                  )
-                })}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-      </form.Field>
+      {/* Where: online toggle + physical location */}
+      <div className="flex flex-col gap-4">
+        <SectionHeading>Where</SectionHeading>
+        {/* Online checkbox */}
+        <form.Field name="isOnline">
+          {(field) => (
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="isOnline"
+                checked={field.state.value}
+                onCheckedChange={(checked) => {
+                  const online = Boolean(checked)
+                  field.handleChange(online)
+                  if (online) {
+                    clearLocation(form)
+                  }
+                }}
+              />
+              <Label htmlFor="isOnline" className="cursor-pointer">
+                Online event (no physical location)
+              </Label>
+            </div>
+          )}
+        </form.Field>
 
-      {/* Online checkbox */}
-      <form.Field name="isOnline">
-        {(field) => (
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="isOnline"
-              checked={field.state.value}
-              onCheckedChange={(checked) => {
-                const online = Boolean(checked)
-                field.handleChange(online)
-                if (online) {
-                  clearLocation(form)
-                }
-              }}
-            />
-            <Label htmlFor="isOnline" className="cursor-pointer">
-              Online event (no physical location)
-            </Label>
-          </div>
-        )}
-      </form.Field>
-
-      {/* Location: Google Places autocomplete, or a manual free-text entry for
-          spots that aren't a clean Place (intersections, public land, etc.). */}
-      {!isOnline && (
-        <div className="flex flex-col gap-3">
-          {/* Display name: always editable and stored on the event itself, so
-              correcting a typo here never affects any other event. */}
-          <form.Field name="locationName">
-            {(field) => (
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="locationName">
-                  Location name{isPublic ? '' : ' (optional)'}
-                </Label>
-                <Input
-                  id="locationName"
-                  list="location-name-suggestions"
-                  value={field.state.value ?? ''}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  onBlur={field.handleBlur}
-                  placeholder="e.g. Dolores Park, or 16th & Mission St (NW corner)"
-                  className={cn(field.state.meta.errors[0] && 'border-red-500')}
-                />
-                <datalist id="location-name-suggestions">
-                  {SUGGESTED_LOCATION_NAMES.map((name) => (
-                    <option key={name} value={name} />
-                  ))}
-                </datalist>
-                <FieldError message={field.state.meta.errors[0]?.message} />
-              </div>
-            )}
-          </form.Field>
-
-          {/* Optional geo data: found via Google Places (fills the address and
-              coordinates) or entered as manual coordinates for spots that aren't
-              a clean Place (intersections, public land, etc.). */}
-          {manualLocation ? (
-            <>
+        {/* Location: pick a place (or enter coordinates), then confirm/edit the
+          display name filled in from it. Online events have no location. */}
+        <Collapse open={!isOnline} className={cn(isOnline && '-mt-4')}>
+          <div className="flex flex-col gap-3">
+            {/* Geo first: a Google Places search (default) or manual coordinates
+              for spots that aren't a clean Place (intersections, public land). */}
+            {manualLocation ? (
               <div className="flex gap-4">
                 <form.Field name="lat">
                   {(field) => (
                     <div className="flex flex-1 flex-col gap-2">
-                      <Label htmlFor="lat">Latitude (optional)</Label>
+                      <Label htmlFor="lat">
+                        Latitude{isPublic ? '' : ' (optional)'}
+                      </Label>
                       <Input
                         id="lat"
                         type="number"
@@ -288,7 +280,9 @@ export const ScheduledEventFields = ({
                 <form.Field name="lng">
                   {(field) => (
                     <div className="flex flex-1 flex-col gap-2">
-                      <Label htmlFor="lng">Longitude (optional)</Label>
+                      <Label htmlFor="lng">
+                        Longitude{isPublic ? '' : ' (optional)'}
+                      </Label>
                       <Input
                         id="lng"
                         type="number"
@@ -311,31 +305,17 @@ export const ScheduledEventFields = ({
                   )}
                 </form.Field>
               </div>
-              <button
-                type="button"
-                className="self-start text-sm text-primary hover:underline"
-                onClick={() => {
-                  clearGeo(form)
-                  form.setFieldValue('manualLocation', false)
-                }}
-              >
-                Search Google Places instead
-              </button>
-            </>
-          ) : (
-            <>
+            ) : (
               <form.Field name="formattedAddress">
                 {(field) => (
                   <div className="flex flex-col gap-2">
-                    <Label
-                      htmlFor="location"
-                      className="text-sm text-muted-foreground"
-                    >
-                      Map location (optional)
+                    <Label htmlFor="location">
+                      Location address{isPublic ? '' : ' (optional)'}
                     </Label>
                     <PlacesAutocomplete
                       id="location"
                       apiKey={googlePlacesApiKey}
+                      active={active && !isOnline}
                       value={field.state.value ?? ''}
                       onSelect={(place) => {
                         form.setFieldValue(
@@ -348,9 +328,11 @@ export const ScheduledEventFields = ({
                         )
                         form.setFieldValue('lat', place.lat)
                         form.setFieldValue('lng', place.lng)
-                        // Offer the picked name as a default, but never
-                        // overwrite a name the user already typed.
-                        if (!form.state.values.locationName.trim()) {
+                        // Fill the editable display name from the picked place,
+                        // but only when Google gave a real name (not a bare
+                        // address) — otherwise leave whatever's there for the
+                        // user to fill in.
+                        if (place.location_name) {
                           form.setFieldValue(
                             'locationName',
                             place.location_name,
@@ -363,37 +345,70 @@ export const ScheduledEventFields = ({
                   </div>
                 )}
               </form.Field>
-              <button
-                type="button"
-                className="self-start text-sm text-primary hover:underline"
-                onClick={() => {
-                  clearGeo(form)
-                  form.setFieldValue('manualLocation', true)
-                }}
-              >
-                Enter coordinates manually
-              </button>
-            </>
-          )}
-        </div>
-      )}
+            )}
 
-      {/* Description */}
-      <form.Field name="description">
-        {(field) => (
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={field.state.value ?? ''}
-              onChange={(e) => field.handleChange(e.target.value)}
-              onBlur={field.handleBlur}
-              placeholder="Optional event description"
-              rows={6}
-            />
+            {/* Toggle between the place search and manual coordinates, right under
+              the geo control it switches. */}
+            <button
+              type="button"
+              className="-mt-2 self-start text-sm text-primary hover:underline"
+              onClick={() => {
+                clearGeo(form)
+                form.setFieldValue('manualLocation', !manualLocation)
+              }}
+            >
+              {manualLocation
+                ? 'Search for a place instead'
+                : 'Enter coordinates manually'}
+            </button>
+
+            {/* Display name: filled in from the picked place (or typed for a
+              coords-only spot), always editable, and stored on the event itself
+              — so correcting it never affects another event. */}
+            <form.Field name="locationName">
+              {(field) => (
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="locationName">
+                    Location name{isPublic ? '' : ' (optional)'}
+                  </Label>
+                  <Input
+                    id="locationName"
+                    value={field.state.value ?? ''}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    placeholder="e.g. Berkeley Animal Rights Center"
+                    className={cn(
+                      field.state.meta.errors[0] && 'border-red-500',
+                    )}
+                  />
+                  <FieldError message={field.state.meta.errors[0]?.message} />
+                </div>
+              )}
+            </form.Field>
           </div>
-        )}
-      </form.Field>
+        </Collapse>
+      </div>
+
+      {/* Information: free-form description */}
+      <div className="flex flex-col gap-4">
+        <SectionHeading>Information</SectionHeading>
+        {/* Description */}
+        <form.Field name="description">
+          {(field) => (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={field.state.value ?? ''}
+                onChange={(e) => field.handleChange(e.target.value)}
+                onBlur={field.handleBlur}
+                placeholder="Optional event description"
+                rows={6}
+              />
+            </div>
+          )}
+        </form.Field>
+      </div>
     </div>
   )
 }

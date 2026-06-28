@@ -673,8 +673,15 @@ func CleanEventData(db *sqlx.DB, body io.Reader, chapterID int) (Event, error) {
 		if e.Timezone == "" {
 			return Event{}, ValidationErrorf("public events require a timezone")
 		}
-		if !e.IsOnline && e.LocationName == "" {
-			return Event{}, ValidationErrorf("public in-person events require a location")
+		if !e.IsOnline {
+			if e.LocationName == "" {
+				return Event{}, ValidationErrorf("public in-person events require a location name")
+			}
+			// A geo location is required too: either a selected Google place or
+			// manual coordinates.
+			if e.LocationPlaceID == "" && (!e.LocationLat.Valid || !e.LocationLng.Valid) {
+				return Event{}, ValidationErrorf("public in-person events require a selected place or coordinates")
+			}
 		}
 	}
 

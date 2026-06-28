@@ -74,13 +74,13 @@ export function EventConfirmation({ eventId }: { eventId: number }) {
 
       <div className="flex flex-col gap-2">
         <Button asChild>
-          <Link href={`/events/${eventId}`}>
+          <Link href={`/events/${eventId}?attendees=1`}>
             <Users className="h-4 w-4" />
             Take attendance now
           </Link>
         </Button>
         <Button asChild variant="outline">
-          <Link href={`/events/${eventId}?expanded=1`}>
+          <Link href={`/events/${eventId}?expanded=1&attendees=0`}>
             <Pencil className="h-4 w-4" />
             Edit event
           </Link>

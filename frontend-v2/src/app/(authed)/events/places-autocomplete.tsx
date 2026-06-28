@@ -91,6 +91,11 @@ type Props = {
   disabled?: boolean
   hasError?: boolean
   id?: string
+  // Defer loading the (third-party) Maps script until the field is actually
+  // revealed. Lets callers keep this mounted inside a collapsed/animated section
+  // without pulling in Google Maps — or surfacing its load-error toast — for
+  // forms that never show the location field.
+  active?: boolean
 }
 
 export function PlacesAutocomplete({
@@ -101,6 +106,7 @@ export function PlacesAutocomplete({
   disabled,
   hasError,
   id,
+  active = true,
 }: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [text, setText] = useState(value)
@@ -125,7 +131,8 @@ export function PlacesAutocomplete({
 
   useEffect(() => {
     // No key: status is already 'error' from initialization; nothing to load.
-    if (!apiKey) return
+    // Not active yet: wait until the field is revealed before loading Maps.
+    if (!apiKey || !active) return
     let cancelled = false
     // The field silently disables itself on failure, so also surface a toast —
     // otherwise the user is left wondering why location search isn't working.
@@ -155,6 +162,13 @@ export function PlacesAutocomplete({
           const place = autocomplete.getPlace()
           if (!place.place_id) return
           const formatted = place.formatted_address ?? ''
+          const name = place.name ?? ''
+          // For a plain address result Google sets `name` to the street-address
+          // line, which is just the prefix of the formatted address — only a
+          // named POI/business gives a `name` distinct from its address. Don't
+          // offer a bare address as the location name; leave it empty so we
+          // skip autofilling it downstream.
+          const locationName = name && !formatted.startsWith(name) ? name : ''
           // Selecting a suggestion mutates the input value; flag it so the
           // onChange it may fire isn't treated as the user editing (which would
           // immediately clear the place we're selecting).
@@ -162,7 +176,7 @@ export function PlacesAutocomplete({
           setText(formatted)
           onSelect({
             google_place_id: place.place_id,
-            location_name: place.name ?? '',
+            location_name: locationName,
             formatted_address: formatted,
             lat: place.geometry?.location?.lat(),
             lng: place.geometry?.location?.lng(),
@@ -181,7 +195,7 @@ export function PlacesAutocomplete({
     }
     // onSelect is stable enough for our usage; we intentionally load once.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiKey])
+  }, [apiKey, active])
 
   return (
     <div className="flex flex-col gap-1">
@@ -193,7 +207,7 @@ export function PlacesAutocomplete({
         placeholder={
           status === 'error'
             ? 'Location search unavailable'
-            : 'Search for a place'
+            : 'Search for a place name or address'
         }
         onChange={(e) => {
           setText(e.target.value)

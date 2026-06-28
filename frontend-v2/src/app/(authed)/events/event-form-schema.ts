@@ -14,13 +14,6 @@ export const EVENT_TYPES = [
 export const DEFAULT_FIELD_COUNT = 5
 export const MIN_EMPTY_FIELDS = 1
 
-// Curated location-name suggestions, offered (but not forced) on the location
-// field so recurring venues get a single canonical spelling instead of drifting
-// into "ARC", "Berkeley ARC", etc. Free text is still allowed.
-export const SUGGESTED_LOCATION_NAMES = [
-  'Berkeley Animal Rights Center',
-] as const
-
 export type EventFormMode = 'event' | 'connection'
 
 // Zod schema for form validation.
@@ -82,12 +75,33 @@ export const formSchema = z
     message: 'Start time is required for public events',
     path: ['startTime'],
   })
-  // In-person public events need a location name; online ones don't. Geo data
-  // (a Google place or coordinates) is optional — the name is what's required.
+  // In-person public events need a display name (filled from the place or
+  // typed); online ones don't.
   .refine((v) => !v.isPublic || v.isOnline || v.locationName.trim() !== '', {
-    message: 'Location is required for in-person public events',
+    message: 'Location name is required for in-person public events',
     path: ['locationName'],
   })
+  // ...and a geo location: a selected Google place (search mode)...
+  .refine(
+    (v) =>
+      !v.isPublic || v.isOnline || v.manualLocation || Boolean(v.googlePlaceId),
+    {
+      message: 'Search and select a place, or switch to coordinates',
+      path: ['formattedAddress'],
+    },
+  )
+  // ...or both coordinates (manual mode).
+  .refine(
+    (v) =>
+      !v.isPublic ||
+      v.isOnline ||
+      !v.manualLocation ||
+      (v.lat !== undefined && v.lng !== undefined),
+    {
+      message: 'Enter both latitude and longitude',
+      path: ['lat'],
+    },
+  )
   // Manual coordinates, when provided, must be valid.
   .refine((v) => v.lat === undefined || (v.lat >= -90 && v.lat <= 90), {
     message: 'Latitude must be between -90 and 90',
