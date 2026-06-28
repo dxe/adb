@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
-	"fmt"
 	"io"
 	"strings"
 	"time"
@@ -64,15 +63,14 @@ type EventJSON struct {
 	Timezone    string `json:"timezone,omitempty"`   // IANA zone, e.g. "America/Los_Angeles"
 	IsPublic    bool   `json:"is_public"`
 
-	// Location. Submitted as a Google Place (no free-text); resolved place
-	// fields are echoed back for display when reading an event. Null/omitted
-	// for attendance and online events.
+	// Location. A free-text name plus optional geo data (Google Place id and/or
+	// coordinates). Null/omitted for attendance and online events.
 	Location *LocationJSON `json:"location,omitempty"`
 }
 
-// LocationJSON is the deduped Google Place attached to an event.
+// LocationJSON is the location attached to an event: a free-text display name
+// with optional geo data. Stored on the event itself, not in a shared table.
 type LocationJSON struct {
-	LocationID       int      `json:"id,omitempty"`
 	GooglePlaceID    string   `json:"google_place_id,omitempty"`
 	Name             string   `json:"name,omitempty"`
 	FormattedAddress string   `json:"formatted_address,omitempty"`
@@ -99,7 +97,6 @@ type Event struct {
 	ChapterID             int        `db:"chapter_id"`
 
 	// Advance-event columns.
-	LocationID  *int           `db:"location_id"`
 	IsOnline    bool           `db:"is_online"`
 	Description sql.NullString `db:"description"`
 	StartTime   sql.NullString `db:"start_time"`
@@ -107,19 +104,14 @@ type Event struct {
 	Timezone    string         `db:"timezone"`
 	IsPublic    bool           `db:"is_public"`
 
-	// Manual location (no Google Place): a free-text name plus optional
-	// coordinates, stored on the event itself. Used when LocationID is nil.
-	ManualLocationName string          `db:"manual_location_name"`
-	ManualLocationLat  sql.NullFloat64 `db:"manual_location_lat"`
-	ManualLocationLng  sql.NullFloat64 `db:"manual_location_lng"`
-
-	// Resolved location fields from LEFT JOIN locations (null when the event
-	// has no location). Read-only — not written back to the events table.
-	LocationPlaceID          sql.NullString  `db:"location_google_place_id"`
-	LocationName             sql.NullString  `db:"location_name"`
-	LocationFormattedAddress sql.NullString  `db:"location_formatted_address"`
-	LocationLat              sql.NullFloat64 `db:"location_lat"`
-	LocationLng              sql.NullFloat64 `db:"location_lng"`
+	// Location, stored denormalized on the event: a free-text display name
+	// (always editable, never shared between events) plus optional geo data — a
+	// Google Place id and/or coordinates. Online events leave these empty.
+	LocationName    string          `db:"location_name"`
+	LocationAddress string          `db:"location_address"`
+	LocationPlaceID string          `db:"location_google_place_id"`
+	LocationLat     sql.NullFloat64 `db:"location_lat"`
+	LocationLng     sql.NullFloat64 `db:"location_lng"`
 }
 
 func (event *Event) ToJSON() EventJSON {
@@ -143,24 +135,15 @@ func (event *Event) ToJSON() EventJSON {
 		Timezone:  event.Timezone,
 		IsPublic:  event.IsPublic,
 	}
-	// Attach a location when the event resolves to one: a Google Place (LEFT
-	// JOIN match) or a manual free-text location stored on the event. The two
-	// are mutually exclusive.
-	if event.LocationID != nil {
+	// Attach a location whenever the event carries one. A name is always present
+	// for an in-person event, but echo back any stored geo too.
+	if event.LocationName != "" || event.LocationAddress != "" || event.LocationLat.Valid {
 		j.Location = &LocationJSON{
-			LocationID:       *event.LocationID,
-			GooglePlaceID:    event.LocationPlaceID.String,
-			Name:             event.LocationName.String,
-			FormattedAddress: event.LocationFormattedAddress.String,
+			GooglePlaceID:    event.LocationPlaceID,
+			Name:             event.LocationName,
+			FormattedAddress: event.LocationAddress,
 			Lat:              nullFloatToPtr(event.LocationLat),
 			Lng:              nullFloatToPtr(event.LocationLng),
-		}
-	} else if event.ManualLocationName != "" {
-		j.Location = &LocationJSON{
-			Name:             event.ManualLocationName,
-			FormattedAddress: event.ManualLocationName,
-			Lat:              nullFloatToPtr(event.ManualLocationLat),
-			Lng:              nullFloatToPtr(event.ManualLocationLng),
 		}
 	}
 	return j
@@ -231,15 +214,9 @@ func GetEvent(db *sqlx.DB, options GetEventOptions) (Event, error) {
 
 func getEvents(db *sqlx.DB, options GetEventOptions) ([]Event, error) {
 	query := `SELECT e.id, e.name, e.date, e.event_type, e.survey_sent, e.suppress_survey, e.circle_id, e.chapter_id,
-e.location_id, e.is_online, e.description, e.start_time, e.end_time, e.timezone, e.is_public,
-e.manual_location_name, e.manual_location_lat, e.manual_location_lng,
-l.google_place_id AS location_google_place_id,
-l.name AS location_name,
-l.formatted_address AS location_formatted_address,
-l.lat AS location_lat,
-l.lng AS location_lng
-FROM events e
-LEFT JOIN locations l ON e.location_id = l.id `
+e.is_online, e.description, e.start_time, e.end_time, e.timezone, e.is_public,
+e.location_name, e.location_address, e.location_google_place_id, e.location_lat, e.location_lng
+FROM events e `
 
 	// Items in whereClause are added to the query in order, separated by ' AND '.
 	var whereClause []string
@@ -443,11 +420,11 @@ func insertEvent(db *sqlx.DB, event Event) (eventID int, err error) {
 	}
 	res, err := tx.NamedExec(`INSERT INTO events
 (name, date, event_type, suppress_survey, circle_id, chapter_id,
- location_id, is_online, description, start_time, end_time, timezone, is_public,
- manual_location_name, manual_location_lat, manual_location_lng)
+ is_online, description, start_time, end_time, timezone, is_public,
+ location_name, location_address, location_google_place_id, location_lat, location_lng)
 VALUES (:name, :date, :event_type, :suppress_survey, :circle_id, :chapter_id,
- :location_id, :is_online, :description, :start_time, :end_time, :timezone, :is_public,
- :manual_location_name, :manual_location_lat, :manual_location_lng)`, event)
+ :is_online, :description, :start_time, :end_time, :timezone, :is_public,
+ :location_name, :location_address, :location_google_place_id, :location_lat, :location_lng)`, event)
 	if err != nil {
 		_ = tx.Rollback()
 		return 0, errors.Wrap(err, "failed to insert event")
@@ -487,7 +464,16 @@ func updateEvent(db *sqlx.DB, event Event) (eventID int, err error) {
 		return 0, errors.Errorf("Event with id %d does not exist", event.ID)
 	}
 
-	// Update the event
+	// Update the event.
+	//
+	// TODO(concurrency): these detail fields are last-write-wins. If two people
+	// have the edit form open and both save, the later save silently clobbers the
+	// earlier one. Attendees are unaffected (saved as an add/delete diff, see
+	// insertEventAttendance), and detail co-editing is rare for our user base, so
+	// this is deferred. The fix is optimistic locking: add an updated_at/version
+	// column to events, have the form send the value it loaded, scope this UPDATE
+	// with `AND updated_at = ?`, and return a 409 the form turns into a "this
+	// event was changed by someone else, reload" prompt when 0 rows match.
 	_, err = tx.NamedExec(`UPDATE events
 SET
   name = :name,
@@ -495,16 +481,17 @@ SET
   event_type = :event_type,
   suppress_survey = :suppress_survey,
   circle_id = :circle_id,
-  location_id = :location_id,
   is_online = :is_online,
   description = :description,
   start_time = :start_time,
   end_time = :end_time,
   timezone = :timezone,
   is_public = :is_public,
-  manual_location_name = :manual_location_name,
-  manual_location_lat = :manual_location_lat,
-  manual_location_lng = :manual_location_lng
+  location_name = :location_name,
+  location_address = :location_address,
+  location_google_place_id = :location_google_place_id,
+  location_lat = :location_lat,
+  location_lng = :location_lng
 WHERE
   id = :id`, event)
 	if err != nil {
@@ -655,39 +642,23 @@ func CleanEventData(db *sqlx.DB, body io.Reader, chapterID int) (Event, error) {
 		}
 	}
 
-	// Location. An in-person event resolves to either a Google Place (deduped
-	// into the locations table and referenced by location_id) or a manual
-	// free-text location with optional coordinates (stored on the event). Online
-	// events stay location-less. A place_id picks the Google path; otherwise a
-	// non-empty name is treated as a manual location.
+	// Location. An in-person event carries a free-text display name plus optional
+	// geo data — a Google Place id and/or coordinates. The name is always stored
+	// on the event itself (there is no shared place record), so editing it never
+	// affects another event. Online events stay location-less.
 	if !e.IsOnline && eventJSON.Location != nil {
-		placeID := strings.TrimSpace(eventJSON.Location.GooglePlaceID)
-		if placeID != "" {
-			locationID, err := GetOrCreateLocation(
-				db,
-				chapterID,
-				placeID,
-				strings.TrimSpace(eventJSON.Location.Name),
-				strings.TrimSpace(eventJSON.Location.FormattedAddress),
-				eventJSON.Location.Lat,
-				eventJSON.Location.Lng,
-			)
-			if err != nil {
-				return Event{}, err
-			}
-			e.LocationID = &locationID
-		} else {
-			name := strings.TrimSpace(eventJSON.Location.Name)
-			if name == "" {
-				name = strings.TrimSpace(eventJSON.Location.FormattedAddress)
-			}
-			e.ManualLocationName = name
-			if eventJSON.Location.Lat != nil {
-				e.ManualLocationLat = sql.NullFloat64{Float64: *eventJSON.Location.Lat, Valid: true}
-			}
-			if eventJSON.Location.Lng != nil {
-				e.ManualLocationLng = sql.NullFloat64{Float64: *eventJSON.Location.Lng, Valid: true}
-			}
+		name := strings.TrimSpace(eventJSON.Location.Name)
+		if name == "" {
+			name = strings.TrimSpace(eventJSON.Location.FormattedAddress)
+		}
+		e.LocationName = name
+		e.LocationAddress = strings.TrimSpace(eventJSON.Location.FormattedAddress)
+		e.LocationPlaceID = strings.TrimSpace(eventJSON.Location.GooglePlaceID)
+		if eventJSON.Location.Lat != nil {
+			e.LocationLat = sql.NullFloat64{Float64: *eventJSON.Location.Lat, Valid: true}
+		}
+		if eventJSON.Location.Lng != nil {
+			e.LocationLng = sql.NullFloat64{Float64: *eventJSON.Location.Lng, Valid: true}
 		}
 	}
 
@@ -702,7 +673,7 @@ func CleanEventData(db *sqlx.DB, body io.Reader, chapterID int) (Event, error) {
 		if e.Timezone == "" {
 			return Event{}, ValidationErrorf("public events require a timezone")
 		}
-		if !e.IsOnline && e.LocationID == nil && e.ManualLocationName == "" {
+		if !e.IsOnline && e.LocationName == "" {
 			return Event{}, ValidationErrorf("public in-person events require a location")
 		}
 	}
@@ -740,46 +711,6 @@ func nullStringFromValue(raw string) sql.NullString {
 		return sql.NullString{}
 	}
 	return sql.NullString{String: raw, Valid: true}
-}
-
-// GetOrCreateLocation upserts a location keyed by (chapter_id, google_place_id)
-// and returns its id. Mirrors GetOrCreateActivist. Place metadata (name,
-// address, coordinates) is refreshed on conflict, but a blank/missing value in
-// the new payload never clobbers an already-stored value — so a later event
-// that picks the same place with a sparser Google response keeps the richer
-// record.
-func GetOrCreateLocation(db *sqlx.DB, chapterID int, placeID, name, formattedAddress string, lat, lng *float64) (int, error) {
-	tx, err := db.Beginx()
-	if err != nil {
-		return 0, fmt.Errorf("failed to create transaction: %w", err)
-	}
-
-	_, err = tx.Exec(`INSERT INTO locations (chapter_id, google_place_id, name, formatted_address, lat, lng)
-VALUES (?, ?, ?, ?, ?, ?)
-ON DUPLICATE KEY UPDATE
-  name = IF(VALUES(name) <> '', VALUES(name), name),
-  formatted_address = IF(VALUES(formatted_address) <> '', VALUES(formatted_address), formatted_address),
-  lat = COALESCE(VALUES(lat), lat),
-  lng = COALESCE(VALUES(lng), lng)`,
-		chapterID, placeID, name, formattedAddress, lat, lng)
-	if err != nil {
-		_ = tx.Rollback()
-		return 0, fmt.Errorf("failed to upsert location %s: %w", placeID, err)
-	}
-
-	var locationID int
-	err = tx.Get(&locationID, `SELECT id FROM locations WHERE chapter_id = ? AND google_place_id = ?`, chapterID, placeID)
-	if err != nil {
-		_ = tx.Rollback()
-		return 0, fmt.Errorf("failed to get location %s: %w", placeID, err)
-	}
-
-	if err := tx.Commit(); err != nil {
-		_ = tx.Rollback()
-		return 0, fmt.Errorf("failed to commit location %s: %w", placeID, err)
-	}
-
-	return locationID, nil
 }
 
 func cleanEventAttendanceData(db *sqlx.DB, attendees []string, chapterID int) ([]Activist, error) {

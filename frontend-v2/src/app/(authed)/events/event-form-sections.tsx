@@ -2,7 +2,7 @@
 
 import { useStore } from '@tanstack/react-form'
 import { format, parseISO } from 'date-fns'
-import { ChevronDown, ChevronUp } from 'lucide-react'
+import { ChevronDown, ChevronLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -19,6 +19,7 @@ import { TimeField } from '@/components/ui/time-field'
 import { PlacesAutocomplete } from './places-autocomplete'
 import { AttendeeInputField } from './attendee-input-field'
 import { getCommonTimezones, getZoneAbbreviation } from '@/lib/time'
+import { SUGGESTED_LOCATION_NAMES } from './event-form-schema'
 import type { ActivistRegistry } from './activist-registry'
 import type { EventFormApi } from './useEventForm'
 
@@ -39,57 +40,83 @@ export const FieldError = ({
   )
 }
 
-// Online events (or no place picked) have no physical location: clear it. Used
-// by both the online-checkbox handler and the location field's onClear.
-export const clearLocation = (form: EventFormApi) => {
+// Clears the geo data attached to a location (Google place + coordinates) while
+// leaving the free-text name intact. Used when the user edits the place search
+// away from a selection, or switches between the search and manual coordinates.
+export const clearGeo = (form: EventFormApi) => {
   form.setFieldValue('googlePlaceId', '')
-  form.setFieldValue('locationName', '')
   form.setFieldValue('formattedAddress', '')
   form.setFieldValue('lat', undefined)
   form.setFieldValue('lng', undefined)
 }
 
-export const EventDetailsSummaryBar = ({
+// Online events have no physical location: clear the name and geo. Used by the
+// online-checkbox handler.
+export const clearLocation = (form: EventFormApi) => {
+  form.setFieldValue('locationName', '')
+  clearGeo(form)
+}
+
+// Collapsible card wrapping the event detail fields when editing a saved event.
+// Collapsed, the header shows a summary (name · type · date) so attendees sit
+// near the top; expanded, the detail fields render *inside* the same bordered
+// container (rather than below it) so the form reads as one contained unit.
+export const EventDetailsCard = ({
   form,
   isConnection,
   detailsExpanded,
   onToggle,
+  children,
 }: {
   form: EventFormApi
   isConnection: boolean
   detailsExpanded: boolean
   onToggle: () => void
+  children: React.ReactNode
 }) => {
   const eventName = useStore(form.store, (state) => state.values.eventName)
   const eventType = useStore(form.store, (state) => state.values.eventType)
   const eventDate = useStore(form.store, (state) => state.values.eventDate)
 
   return (
-    <button
-      type="button"
-      onClick={onToggle}
-      aria-expanded={detailsExpanded}
-      className="flex w-full items-center justify-between gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-left shadow-sm transition-colors hover:bg-blue-100"
-    >
-      <div className="min-w-0">
-        <p className="truncate text-base font-semibold text-foreground">
-          {eventName || (isConnection ? 'Connection' : 'Event')}
-        </p>
-        <p className="truncate text-sm text-muted-foreground">
-          {[
-            !isConnection && eventType,
-            eventDate && format(parseISO(eventDate), 'PPP'),
-          ]
-            .filter(Boolean)
-            .join(' · ')}
-        </p>
-      </div>
-      {detailsExpanded ? (
-        <ChevronUp className="h-5 w-5 shrink-0 text-muted-foreground" />
-      ) : (
-        <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground" />
+    <div className="overflow-hidden rounded-lg border border-blue-200 bg-blue-50 shadow-sm">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={detailsExpanded}
+        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-blue-100"
+      >
+        <div className="min-w-0">
+          {detailsExpanded ? (
+            <p className="text-base font-semibold text-foreground">Details</p>
+          ) : (
+            <>
+              <p className="truncate text-base font-semibold text-foreground">
+                {eventName || (isConnection ? 'Connection' : 'Event')}
+              </p>
+              <p className="truncate text-sm text-muted-foreground">
+                {[
+                  !isConnection && eventType,
+                  eventDate && format(parseISO(eventDate), 'PPP'),
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </p>
+            </>
+          )}
+        </div>
+        {detailsExpanded ? (
+          <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground" />
+        ) : (
+          <ChevronLeft className="h-5 w-5 shrink-0 text-muted-foreground" />
+        )}
+      </button>
+      {detailsExpanded && (
+        <div className="flex flex-col gap-4 border-t border-blue-200 bg-background p-4">
+          {children}
+        </div>
       )}
-    </button>
+    </div>
   )
 }
 
@@ -103,10 +130,6 @@ export const ScheduledEventFields = ({
   const isPublic = useStore(form.store, (state) => state.values.isPublic)
   const isOnline = useStore(form.store, (state) => state.values.isOnline)
   const eventDate = useStore(form.store, (state) => state.values.eventDate)
-  const locationName = useStore(
-    form.store,
-    (state) => state.values.locationName,
-  )
   const manualLocation = useStore(
     form.store,
     (state) => state.values.manualLocation,
@@ -203,29 +226,39 @@ export const ScheduledEventFields = ({
       {/* Location: Google Places autocomplete, or a manual free-text entry for
           spots that aren't a clean Place (intersections, public land, etc.). */}
       {!isOnline && (
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="location">
-            Location{isPublic ? '' : ' (optional)'}
-          </Label>
+        <div className="flex flex-col gap-3">
+          {/* Display name: always editable and stored on the event itself, so
+              correcting a typo here never affects any other event. */}
+          <form.Field name="locationName">
+            {(field) => (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="locationName">
+                  Location name{isPublic ? '' : ' (optional)'}
+                </Label>
+                <Input
+                  id="locationName"
+                  list="location-name-suggestions"
+                  value={field.state.value ?? ''}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  onBlur={field.handleBlur}
+                  placeholder="e.g. Dolores Park, or 16th & Mission St (NW corner)"
+                  className={cn(field.state.meta.errors[0] && 'border-red-500')}
+                />
+                <datalist id="location-name-suggestions">
+                  {SUGGESTED_LOCATION_NAMES.map((name) => (
+                    <option key={name} value={name} />
+                  ))}
+                </datalist>
+                <FieldError message={field.state.meta.errors[0]?.message} />
+              </div>
+            )}
+          </form.Field>
+
+          {/* Optional geo data: found via Google Places (fills the address and
+              coordinates) or entered as manual coordinates for spots that aren't
+              a clean Place (intersections, public land, etc.). */}
           {manualLocation ? (
             <>
-              <form.Field name="locationName">
-                {(field) => (
-                  <div className="flex flex-col gap-2">
-                    <Input
-                      id="location"
-                      value={field.state.value ?? ''}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      onBlur={field.handleBlur}
-                      placeholder="e.g. 16th & Mission St (NW corner)"
-                      className={cn(
-                        field.state.meta.errors[0] && 'border-red-500',
-                      )}
-                    />
-                    <FieldError message={field.state.meta.errors[0]?.message} />
-                  </div>
-                )}
-              </form.Field>
               <div className="flex gap-4">
                 <form.Field name="lat">
                   {(field) => (
@@ -241,7 +274,7 @@ export const ScheduledEventFields = ({
                           const n = e.target.valueAsNumber
                           field.handleChange(Number.isNaN(n) ? undefined : n)
                         }}
-                        placeholder="37.7749"
+                        placeholder="e.g. 37.7749"
                         className={cn(
                           field.state.meta.errors[0] && 'border-red-500',
                         )}
@@ -266,7 +299,7 @@ export const ScheduledEventFields = ({
                           const n = e.target.valueAsNumber
                           field.handleChange(Number.isNaN(n) ? undefined : n)
                         }}
-                        placeholder="-122.4194"
+                        placeholder="e.g. -122.4194"
                         className={cn(
                           field.state.meta.errors[0] && 'border-red-500',
                         )}
@@ -282,7 +315,7 @@ export const ScheduledEventFields = ({
                 type="button"
                 className="self-start text-sm text-primary hover:underline"
                 onClick={() => {
-                  clearLocation(form)
+                  clearGeo(form)
                   form.setFieldValue('manualLocation', false)
                 }}
               >
@@ -294,25 +327,37 @@ export const ScheduledEventFields = ({
               <form.Field name="formattedAddress">
                 {(field) => (
                   <div className="flex flex-col gap-2">
+                    <Label
+                      htmlFor="location"
+                      className="text-sm text-muted-foreground"
+                    >
+                      Map location (optional)
+                    </Label>
                     <PlacesAutocomplete
                       id="location"
                       apiKey={googlePlacesApiKey}
                       value={field.state.value ?? ''}
-                      locationName={locationName}
                       onSelect={(place) => {
                         form.setFieldValue(
                           'googlePlaceId',
                           place.google_place_id,
                         )
-                        form.setFieldValue('locationName', place.location_name)
                         form.setFieldValue(
                           'formattedAddress',
                           place.formatted_address,
                         )
                         form.setFieldValue('lat', place.lat)
                         form.setFieldValue('lng', place.lng)
+                        // Offer the picked name as a default, but never
+                        // overwrite a name the user already typed.
+                        if (!form.state.values.locationName.trim()) {
+                          form.setFieldValue(
+                            'locationName',
+                            place.location_name,
+                          )
+                        }
                       }}
-                      onClear={() => clearLocation(form)}
+                      onClear={() => clearGeo(form)}
                     />
                     <FieldError message={field.state.meta.errors[0]?.message} />
                   </div>
@@ -322,12 +367,11 @@ export const ScheduledEventFields = ({
                 type="button"
                 className="self-start text-sm text-primary hover:underline"
                 onClick={() => {
-                  // Switching to manual: a free-text entry isn't a Google place.
-                  form.setFieldValue('googlePlaceId', '')
+                  clearGeo(form)
                   form.setFieldValue('manualLocation', true)
                 }}
               >
-                Enter location manually
+                Enter coordinates manually
               </button>
             </>
           )}

@@ -226,10 +226,10 @@ const ActivistGetResp = z.object({
   activist: ActivistJSON,
 })
 
-// A deduped Google Place attached to an event. Grouped under `location` on the
-// API (resolved place fields are only meaningful together).
+// The location attached to an event: a free-text display name plus optional geo
+// data (a Google Place id and/or coordinates). Grouped under `location` on the
+// API.
 const EventLocationSchema = z.object({
-  id: z.number().nullish(),
   google_place_id: z.string().nullish(),
   name: z.string().nullish(),
   formatted_address: z.string().nullish(),
@@ -251,7 +251,7 @@ const EventGetResp = z.object({
     end_time: z.string().nullish(),
     timezone: z.string().nullish(),
     is_public: z.boolean().nullish(),
-    // Resolved location (a Google Place; no free-text). Null for
+    // Location: a free-text name plus optional geo data. Null for
     // attendance/online events.
     location: EventLocationSchema.nullish(),
   }),
@@ -274,7 +274,7 @@ interface SaveEventParams {
   end_time?: string
   timezone?: string
   is_public?: boolean
-  // Location, submitted as a Google Place.
+  // Location: a free-text name plus optional geo data.
   location?: {
     google_place_id: string
     name: string

@@ -14,6 +14,13 @@ export const EVENT_TYPES = [
 export const DEFAULT_FIELD_COUNT = 5
 export const MIN_EMPTY_FIELDS = 1
 
+// Curated location-name suggestions, offered (but not forced) on the location
+// field so recurring venues get a single canonical spelling instead of drifting
+// into "ARC", "Berkeley ARC", etc. Free text is still allowed.
+export const SUGGESTED_LOCATION_NAMES = [
+  'Berkeley Animal Rights Center',
+] as const
+
 export type EventFormMode = 'event' | 'connection'
 
 // Zod schema for form validation.
@@ -49,14 +56,18 @@ export const formSchema = z
     startTime: z.string(),
     endTime: z.string(),
     timezone: z.string(),
-    googlePlaceId: z.string(),
+    // Location: a free-text display name (always editable) plus optional geo
+    // data. googlePlaceId/formattedAddress/lat/lng come from a Google Places
+    // pick; lat/lng can also be entered by hand for spots that aren't a clean
+    // Place, like an intersection. The name is stored on the event itself, so
+    // editing it never affects another event.
     locationName: z.string(),
+    googlePlaceId: z.string(),
     formattedAddress: z.string(),
     lat: z.number().optional(),
     lng: z.number().optional(),
-    // When true, the location is entered by hand (free-text name + optional
-    // coordinates) instead of picked from Google Places — for spots that aren't
-    // a clean Place, like an intersection. Stored on the event, not deduped.
+    // UI-only: when true, show manual latitude/longitude inputs instead of the
+    // Google Places search. Not submitted to the server.
     manualLocation: z.boolean(),
   })
   // TODO: events that cross midnight (end before start, e.g. an overnight
@@ -71,27 +82,12 @@ export const formSchema = z
     message: 'Start time is required for public events',
     path: ['startTime'],
   })
-  // In-person public events need a location; online ones don't. The Google
-  // path requires a picked place; the manual path requires a typed name.
-  .refine(
-    (v) =>
-      !v.isPublic || v.isOnline || v.manualLocation || Boolean(v.googlePlaceId),
-    {
-      message: 'Location is required for in-person public events',
-      path: ['formattedAddress'],
-    },
-  )
-  .refine(
-    (v) =>
-      !v.isPublic ||
-      v.isOnline ||
-      !v.manualLocation ||
-      v.locationName.trim() !== '',
-    {
-      message: 'Location is required for in-person public events',
-      path: ['locationName'],
-    },
-  )
+  // In-person public events need a location name; online ones don't. Geo data
+  // (a Google place or coordinates) is optional — the name is what's required.
+  .refine((v) => !v.isPublic || v.isOnline || v.locationName.trim() !== '', {
+    message: 'Location is required for in-person public events',
+    path: ['locationName'],
+  })
   // Manual coordinates, when provided, must be valid.
   .refine((v) => v.lat === undefined || (v.lat >= -90 && v.lat <= 90), {
     message: 'Latitude must be between -90 and 90',

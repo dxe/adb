@@ -21,11 +21,20 @@ import {
 type UseEventFormArgs = {
   mode: EventFormMode
   startExpanded?: boolean
+  // For a public event the attendee fields default to collapsed behind an "Add
+  // attendees" link (attendance is usually recorded later). Callers that open
+  // an event to manage it — the event list, home, "Take attendance now" — pass
+  // true so the fields are visible immediately.
+  startAttendeesExpanded?: boolean
 }
 
 export type EventFormApi = ReturnType<typeof useEventForm>['form']
 
-export const useEventForm = ({ mode, startExpanded }: UseEventFormArgs) => {
+export const useEventForm = ({
+  mode,
+  startExpanded,
+  startAttendeesExpanded,
+}: UseEventFormArgs) => {
   const router = useRouter()
   const params = useParams()
   const queryClient = useQueryClient()
@@ -65,7 +74,7 @@ export const useEventForm = ({ mode, startExpanded }: UseEventFormArgs) => {
     (eventData.is_public ||
       eventData.is_online ||
       eventData.start_time ||
-      eventData.location?.google_place_id ||
+      eventData.location?.name ||
       eventData.description),
   )
 
@@ -75,6 +84,13 @@ export const useEventForm = ({ mode, startExpanded }: UseEventFormArgs) => {
   // attendance. New events start expanded since you're filling them out.
   const [detailsExpanded, setDetailsExpanded] = useState(
     startExpanded ?? !eventId,
+  )
+  // A public event hides the attendee fields behind an "Add attendees" link
+  // (attendance is usually taken later, at the event), but lets the user open
+  // them to record attendees up front. Defaults to collapsed; callers that open
+  // an event to manage it pass startAttendeesExpanded to show them outright.
+  const [attendeesExpanded, setAttendeesExpanded] = useState(
+    startAttendeesExpanded ?? false,
   )
 
   const saveEventMutation = useMutation({
@@ -190,16 +206,17 @@ export const useEventForm = ({ mode, startExpanded }: UseEventFormArgs) => {
       startTime: eventData?.start_time ?? '',
       endTime: eventData?.end_time ?? '',
       timezone: eventData?.timezone || browserTz,
-      googlePlaceId: eventData?.location?.google_place_id ?? '',
       locationName: eventData?.location?.name ?? '',
+      googlePlaceId: eventData?.location?.google_place_id ?? '',
       formattedAddress: eventData?.location?.formatted_address ?? '',
       lat: eventData?.location?.lat ?? undefined,
       lng: eventData?.location?.lng ?? undefined,
-      // A stored location with no Google place id is a manual entry.
+      // Show the manual-coordinates inputs (instead of the Google search) when a
+      // saved location has coordinates but isn't a Google place.
       manualLocation: Boolean(
         eventData?.location &&
         !eventData.location.google_place_id &&
-        eventData.location.name,
+        (eventData.location.lat != null || eventData.location.lng != null),
       ),
     }
   }, [eventData, isConnection, user.ChapterID, browserTz])
@@ -255,29 +272,28 @@ export const useEventForm = ({ mode, startExpanded }: UseEventFormArgs) => {
         (name) => !uniqueNames.has(name),
       )
 
-      // Resolve the location payload: a Google place, a manual free-text entry
-      // (with optional coordinates), or nothing (online / no location given).
+      // Resolve the location payload: a free-text name plus optional geo data (a
+      // Google place and/or coordinates). Nothing is sent for an online event or
+      // when no location was given.
       const locationPayload = (() => {
         if (value.isOnline) return undefined
-        if (value.googlePlaceId) {
-          return {
-            google_place_id: value.googlePlaceId,
-            name: value.locationName,
-            formatted_address: value.formattedAddress,
-            lat: value.lat,
-            lng: value.lng,
-          }
+        const name = value.locationName.trim()
+        const address = value.formattedAddress.trim()
+        const lat = Number.isFinite(value.lat) ? value.lat : undefined
+        const lng = Number.isFinite(value.lng) ? value.lng : undefined
+        const hasGeo =
+          Boolean(value.googlePlaceId) ||
+          Boolean(address) ||
+          lat !== undefined ||
+          lng !== undefined
+        if (!name && !hasGeo) return undefined
+        return {
+          google_place_id: value.googlePlaceId,
+          name,
+          formatted_address: address || name,
+          lat,
+          lng,
         }
-        if (value.manualLocation && value.locationName.trim()) {
-          return {
-            google_place_id: '',
-            name: value.locationName.trim(),
-            formatted_address: value.locationName.trim(),
-            lat: Number.isFinite(value.lat) ? value.lat : undefined,
-            lng: Number.isFinite(value.lng) ? value.lng : undefined,
-          }
-        }
-        return undefined
       })()
 
       await saveEventMutation.mutateAsync({
@@ -288,9 +304,7 @@ export const useEventForm = ({ mode, startExpanded }: UseEventFormArgs) => {
         added_attendees: addedAttendees,
         deleted_attendees: deletedAttendees,
         suppress_survey: value.suppressSurvey,
-        // Only send scheduled-event fields when they're in play, keeping the
-        // plain attendance/connection save payload unchanged.
-        ...(includeUpcoming && {
+        ...(!isConnection && {
           is_public: value.isPublic,
           is_online: value.isOnline,
           description: value.description.trim(),
@@ -322,11 +336,11 @@ export const useEventForm = ({ mode, startExpanded }: UseEventFormArgs) => {
   // that data keeps it visible regardless. Never shown for coaching.
   const showUpcomingFields =
     !isConnection && (isPublic || editingHasUpcomingData)
-  // A brand-new public event must be saved before attendance can be recorded —
-  // attendance happens later, at the event. Everywhere else (quick attendance
-  // entry, coaching, and any saved event) the attendee fields show right away.
-  const isNewPublicEvent = !eventId && showUpcomingFields
-  const showAttendeeSection = !isNewPublicEvent
+  // For a public event, attendance is usually recorded later (at the event), so
+  // the attendee fields stay tucked behind an "Add attendees" link until they're
+  // needed — whether the event is brand new or already saved. Everywhere else
+  // (quick attendance entry, coaching) the fields show right away.
+  const showAttendeeSection = !showUpcomingFields
 
   // Predicts whether the server will send a survey by default.
   const shouldShowSuppressSurveyCheckbox = useMemo(() => {
@@ -366,6 +380,11 @@ export const useEventForm = ({ mode, startExpanded }: UseEventFormArgs) => {
   )
 
   const ensureMinimumEmptyFields = () => {
+    // Once the user has started entering attendees, keep the section open even
+    // if the names are later cleared, so it doesn't collapse out from under them
+    // mid-edit (e.g. after checking "Public event" on a form that already has
+    // attendees).
+    setAttendeesExpanded(true)
     const currentAttendees = form.state.values.attendees
     const emptyCount = currentAttendees.filter((it) => !it.name.length).length
     if (emptyCount < MIN_EMPTY_FIELDS) {
@@ -410,6 +429,8 @@ export const useEventForm = ({ mode, startExpanded }: UseEventFormArgs) => {
     activistRegistry,
     detailsExpanded,
     setDetailsExpanded,
+    attendeesExpanded,
+    setAttendeesExpanded,
     inputRefs,
     activeInputIndex,
     setActiveInputIndex,
@@ -420,7 +441,6 @@ export const useEventForm = ({ mode, startExpanded }: UseEventFormArgs) => {
     attendeeCount,
     shouldShowSuppressSurveyCheckbox,
     showUpcomingFields,
-    isNewPublicEvent,
     showAttendeeSection,
     editingHasUpcomingData,
     isDirty,

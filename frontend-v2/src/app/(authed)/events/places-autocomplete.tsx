@@ -5,8 +5,9 @@ import toast from 'react-hot-toast'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 
-// The resolved place we capture on selection. No free-text is submitted — a
-// place is only set via the Google autocomplete dropdown.
+// The resolved place we capture on selection from the Google autocomplete
+// dropdown. The picked name is offered as a default for the (separate, always
+// editable) location-name field; the rest is geo data attached to the event.
 export type PlaceValue = {
   google_place_id: string
   location_name: string
@@ -48,18 +49,6 @@ declare global {
 
 const MAPS_SCRIPT_ID = 'google-maps-places-js'
 
-// Builds the text shown in the input: the place/business name followed by its
-// address. For a plain-address result Google returns the street address as the
-// `name`, so we skip the name when the address already begins with it to avoid
-// "399 4th St, 399 4th St, San Francisco…".
-function displayLabel(name: string | undefined, address: string): string {
-  const trimmed = (name ?? '').trim()
-  if (!trimmed) return address
-  if (!address) return trimmed
-  if (address.toLowerCase().startsWith(trimmed.toLowerCase())) return address
-  return `${trimmed}, ${address}`
-}
-
 // Loads the Maps JS `places` library once, reusing an in-flight/finished load.
 function loadPlacesLibrary(apiKey: string): Promise<void> {
   if (typeof window === 'undefined') {
@@ -97,8 +86,6 @@ type Props = {
   apiKey: string
   // The currently selected formatted address (display text for the input).
   value: string
-  // The selected place/business name, shown alongside the address.
-  locationName?: string
   onSelect: (place: PlaceValue) => void
   onClear: () => void
   disabled?: boolean
@@ -109,7 +96,6 @@ type Props = {
 export function PlacesAutocomplete({
   apiKey,
   value,
-  locationName,
   onSelect,
   onClear,
   disabled,
@@ -117,7 +103,7 @@ export function PlacesAutocomplete({
   id,
 }: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null)
-  const [text, setText] = useState(() => displayLabel(locationName, value))
+  const [text, setText] = useState(value)
   // No key: there's nothing to load, so start in the error (unavailable) state.
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(
     apiKey ? 'loading' : 'error',
@@ -131,13 +117,10 @@ export function PlacesAutocomplete({
   // an existing event, or the Online checkbox clearing the field). Done during
   // render via a previous-value check rather than in an effect, so the text
   // updates in the same commit (no flash) without a cascading re-render.
-  const [syncedValue, setSyncedValue] = useState({ value, locationName })
-  if (
-    syncedValue.value !== value ||
-    syncedValue.locationName !== locationName
-  ) {
-    setSyncedValue({ value, locationName })
-    setText(displayLabel(locationName, value))
+  const [syncedValue, setSyncedValue] = useState(value)
+  if (syncedValue !== value) {
+    setSyncedValue(value)
+    setText(value)
   }
 
   useEffect(() => {
@@ -176,7 +159,7 @@ export function PlacesAutocomplete({
           // onChange it may fire isn't treated as the user editing (which would
           // immediately clear the place we're selecting).
           programmaticEditRef.current = true
-          setText(displayLabel(place.name, formatted))
+          setText(formatted)
           onSelect({
             google_place_id: place.place_id,
             location_name: place.name ?? '',
