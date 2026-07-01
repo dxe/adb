@@ -182,8 +182,8 @@ Please reach out to tech@dxe.io to get an API key to sign people up.
 - GOOGLE_PLACES_API_KEY
 
 This key is not in `server/debug.env`. To use the location picker locally, add
-it to the `server/.env` file (created by `make deps`, loaded on top of
-`server/debug.env`):
+it to `server/.env` (created empty by `make deps`, loaded on top of
+`server/debug.env`). See `server/.env.example` for the available keys:
 
 ```
 GOOGLE_PLACES_API_KEY=...
