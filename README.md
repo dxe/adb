@@ -177,9 +177,20 @@ Please reach out to tech@dxe.io to get an API key to sign people up.
 
 - IPGEOLOCATION_KEY
 
-### Google Places API Key for finding city information on public-facing forms
+### Google Places API Key for finding city information on public-facing forms and the events location picker
 
 - GOOGLE_PLACES_API_KEY
+
+This key is not in `server/debug.env`. To use the location picker locally, add
+it to `server/.env` (created empty by `make deps`, loaded on top of
+`server/debug.env`). See `server/.env.example` for the available keys:
+
+```
+GOOGLE_PLACES_API_KEY=...
+```
+
+This API key can be found in GCP under the dev environment:
+https://console.cloud.google.com/apis/credentials/key/68509fdd-6190-406e-b89f-16286be4faf5?project=places-api-308104
 
 ## Logging and Monitoring
 

@@ -6,7 +6,7 @@
 <template>
   <b-navbar fixed-top shadow id="mainNav" @dblclick.native="toggleDevColors">
     <template #brand>
-      <b-navbar-item tag="div">
+      <b-navbar-item tag="a" href="/v2/home">
         <img src="/static/img/logo1.png" alt="DxE" />
       </b-navbar-item>
     </template>

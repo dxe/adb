@@ -1,0 +1,12 @@
+ALTER TABLE events
+  DROP COLUMN is_online,
+  DROP COLUMN description,
+  DROP COLUMN start_time,
+  DROP COLUMN end_time,
+  DROP COLUMN timezone,
+  DROP COLUMN is_public,
+  DROP COLUMN location_name,
+  DROP COLUMN location_address,
+  DROP COLUMN location_google_place_id,
+  DROP COLUMN location_lat,
+  DROP COLUMN location_lng;
