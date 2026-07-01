@@ -38,13 +38,13 @@ run_all:
 
 # Just start the go program without recompiling the JS.
 run:
-	@[ -f .env ] || { echo "Error: .env not found. Run 'make deps' first."; exit 1; }
+	@[ -f server/.env ] || { echo "Error: server/.env not found. Run 'make deps' first."; exit 1; }
 
 	cd server/src && go install # Install first so that we keep cached build objects around.
 
 	set -a && \
 	. server/debug.env && \
-	. ./.env && \
+	. server/.env && \
 	set +a && \
 	cd server/src && \
 	PORT=$(PORT) go run main.go
@@ -68,10 +68,10 @@ dev_db:
 # Note: PNPM must be installed separately for each version of NPM used, since it is installed within each NPM installation.
 # Note: `go tool` cannot yet be used to install golang-migrate: https://github.com/golang-migrate/migrate/issues/1232
 deps:
-	# Ensure a root .env exists. Both `make run` and the VS Code "Go Server"
-	# launch config load it unconditionally and error if it's missing, so deps
-	# (the required first step) creates it. Harmless if the file already exists.
-	touch .env
+	# Ensure server/.env exists. Both `make run` and the VS Code "Go Server"
+	# launch config load it unconditionally (layered on server/debug.env) and
+	# error if it's missing, so deps (the required first step) creates it.
+	touch server/.env
 	. $(NVM_SCRIPT) && nvm i 22 && npm i -g pnpm@$(PNPM_VERSION) && pnpm i --config.confirmModulesPurge=false
 	. $(NVM_SCRIPT) && cd frontend && nvm i $(VUE_FRONTEND_NODE_VERSION) && npm i --legacy-peer-deps
 	. $(NVM_SCRIPT) && cd frontend-v2 && nvm i $(REACT_FRONTEND_NODE_VERSION) && npm i -g pnpm@$(PNPM_VERSION) && pnpm i --config.confirmModulesPurge=false

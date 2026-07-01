@@ -53,13 +53,13 @@
       "request": "launch",
       "mode": "debug",
       "program": "${workspaceFolder}/server/src/main.go",
-      // Please keep in sync with Makefile `run`. The optional root .env layers
-      // local secrets (e.g. GOOGLE_PLACES_API_KEY) on top of debug.env. Unlike
-      // the Makefile this isn't conditional — the debugger errors if a listed
-      // file is missing, so `make deps` touches .env to guarantee it exists.
+      // Please keep in sync with Makefile `run`. server/.env layers local
+      // secrets (e.g. GOOGLE_PLACES_API_KEY) on top of debug.env. The debugger
+      // errors if a listed file is missing, so `make deps` creates server/.env
+      // to guarantee it exists.
       "envFile": [
         "${workspaceFolder}/server/debug.env",
-        "${workspaceFolder}/.env",
+        "${workspaceFolder}/server/.env",
       ],
     },
     {
