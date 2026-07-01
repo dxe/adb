@@ -101,17 +101,29 @@ export function getZoneAbbreviation(dateStr: string, timezone: string): string {
 }
 
 /**
+ * Parses a "HH:MM" (or "HH:MM:SS") wall-clock string into numeric hours and
+ * minutes; null if it doesn't match. The single place the accepted time format
+ * is defined — both the 12h label and the minutes-since-midnight math use it.
+ */
+function parseWallClock(
+  time: string,
+): { hours: number; minutes: number } | null {
+  const match = /^(\d{1,2}):(\d{2})/.exec(time.trim())
+  if (!match) return null
+  return { hours: Number(match[1]), minutes: Number(match[2]) }
+}
+
+/**
  * Formats a 24h "HH:MM" wall-clock string as a 12h label (e.g. "3:00 PM").
  * Returns '' for empty/invalid input.
  */
 export function formatWallClock(time: string): string {
-  const match = /^(\d{1,2}):(\d{2})/.exec(time.trim())
-  if (!match) return ''
-  const hours = Number(match[1])
-  const minutes = match[2]
+  const parsed = parseWallClock(time)
+  if (!parsed) return ''
+  const { hours, minutes } = parsed
   const period = hours >= 12 ? 'PM' : 'AM'
   const hour12 = hours % 12 === 0 ? 12 : hours % 12
-  return `${hour12}:${minutes} ${period}`
+  return `${hour12}:${String(minutes).padStart(2, '0')} ${period}`
 }
 
 // The subset of an event's fields needed to render its time range. Taken as a
@@ -137,9 +149,9 @@ export function formatEventTimeRange(event: EventTimeFields): string {
 
 /** Parses "HH:MM" or "HH:MM:SS" into minutes since midnight; null if invalid. */
 function toMinutesSinceMidnight(time: string): number | null {
-  const match = /^(\d{1,2}):(\d{2})/.exec(time.trim())
-  if (!match) return null
-  return Number(match[1]) * 60 + Number(match[2])
+  const parsed = parseWallClock(time)
+  if (!parsed) return null
+  return parsed.hours * 60 + parsed.minutes
 }
 
 /**
