@@ -26,11 +26,11 @@ import { useEventForm } from './useEventForm'
 import {
   AttendeesSection,
   EventDetailsCard,
-  FieldError,
   ScheduledEventFields,
 } from './event-form-sections'
 import { Switch } from '@/components/ui/switch'
 import { Collapse } from '@/components/ui/collapse'
+import { FieldError } from './field-error'
 
 export type { EventFormMode }
 

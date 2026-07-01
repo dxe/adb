@@ -19,26 +19,10 @@ import {
 import { TimeField } from '@/components/ui/time-field'
 import { PlacesAutocomplete } from './places-autocomplete'
 import { AttendeeInputField } from './attendee-input-field'
+import { FieldError } from './field-error'
 import { getCommonTimezones, getZoneAbbreviation } from '@/lib/time'
 import type { ActivistRegistry } from './activist-registry'
 import type { EventFormApi } from './useEventForm'
-
-// Replaces the repeated field-error paragraph. The date field renders this with
-// an extra `mt-1`, so callers can opt into that spacing.
-export const FieldError = ({
-  message,
-  className,
-}: {
-  message?: string
-  className?: string
-}) => {
-  if (!message) return null
-  return (
-    <p className={`text-sm text-red-500${className ? ` ${className}` : ''}`}>
-      {message}
-    </p>
-  )
-}
 
 // Muted sub-heading that separates the scheduled-event fields into groups
 // (When / Where / Details) so each block reads as a distinct section.
