@@ -56,7 +56,7 @@
       // Please keep in sync with Makefile `run`. The optional root .env layers
       // local secrets (e.g. GOOGLE_PLACES_API_KEY) on top of debug.env. Unlike
       // the Makefile this isn't conditional — the debugger errors if a listed
-      // file is missing, so `touch .env` if you don't have one.
+      // file is missing, so `make deps` touches .env to guarantee it exists.
       "envFile": [
         "${workspaceFolder}/server/debug.env",
         "${workspaceFolder}/.env",
