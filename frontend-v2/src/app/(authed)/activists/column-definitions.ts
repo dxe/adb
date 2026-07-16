@@ -21,12 +21,7 @@ export type ColumnCategory =
 
 // How an editable field renders in the activist edit form. Default is 'text'.
 export type ActivistEditInputType =
-  | 'text'
-  | 'textarea'
-  | 'date'
-  | 'checkbox'
-  | 'user-select'
-  | 'enum-select'
+  'text' | 'textarea' | 'date' | 'checkbox' | 'user-select' | 'enum-select'
 
 export interface ColumnDefinition {
   name: ActivistColumnName

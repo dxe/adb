@@ -5,7 +5,7 @@
 
 gofiles=$(cd server && gofmt -l .)
 # Pin to same version as root package.json to match `make fmt`.
-webfiles=$(pnpx prettier@3.7.3 -l --cache --cache-strategy metadata .)
+webfiles=$(pnpx prettier@3.9.5 -l --cache --cache-strategy metadata .)
 [ -z "$gofiles" -a -z "$webfiles" ] && exit 0
 
 echo >&2 "Misformatted files:"
