@@ -1,6 +1,9 @@
 {
   "name": "dxe-adb",
   "private": true,
+  "_comments": {
+    "prettier": "Please keep version in sync with .githooks/pre-commit"
+  },
   "devDependencies": {
     "prettier": "~3.7.3"
   },
