@@ -93,6 +93,8 @@ export function TagInput({
 
   const atMax = max !== undefined && value.length >= max
   const showInput = !disabled && !atMax
+  // The input unmounts while hidden, so the label must not reference it then.
+  const labelFor = showInput ? inputId : undefined
 
   const suggestions = useMemo(() => {
     const query = text.trim().toLowerCase()
@@ -214,10 +216,7 @@ export function TagInput({
 
   return (
     <div className="space-y-1.5">
-      {/* Only reference the input while it's actually rendered — it's hidden
-          when `disabled` or once `max` selections are reached, and a label
-          must not point at a non-existent element. */}
-      <Label htmlFor={showInput ? inputId : undefined}>{label}</Label>
+      <Label htmlFor={labelFor}>{label}</Label>
       {control}
     </div>
   )
