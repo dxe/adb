@@ -9,11 +9,8 @@ import { getCookies } from '@/lib/auth'
 import { redirectForHttpError } from '@/lib/server-auth'
 import WorkingGroupsPage from './working-groups-page'
 
-// Gating for this page happens server-side: the working_group/* endpoints
-// require SF Bay organizer access (admin, or organizer + SF Bay chapter). A
-// non-authorized user's fetchQuery below throws HTTPStatusError(403), which
-// redirectForHttpError turns into Next's forbidden() page. See users/page.tsx
-// for the same pattern applied to admin-only endpoints.
+// Access gating is server-side: working_group/* returns 403 for non-SF-Bay
+// organizers, which redirectForHttpError turns into forbidden().
 export default async function WorkingGroupsListPage() {
   const apiClient = new ApiClient(await getCookies())
   const queryClient = new QueryClient()

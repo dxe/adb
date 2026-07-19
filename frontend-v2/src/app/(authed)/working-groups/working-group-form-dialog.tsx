@@ -127,9 +127,7 @@ export function WorkingGroupFormDialog({
         return
       }
 
-      // Rebuild the members array based on current selections. A person
-      // selected as point person takes priority over also appearing in the
-      // members/non-members lists (matches legacy behavior).
+      // The point person wins over duplicate member entries (legacy parity).
       const pointPersonName = value.pointPerson[0]
       const members: WorkingGroupMemberInput[] = []
       if (pointPersonName) {
@@ -164,8 +162,7 @@ export function WorkingGroupFormDialog({
         description: value.description,
         meeting_time: value.meetingTime,
         meeting_location: value.meetingLocation,
-        // Not editable in this UI (legacy page doesn't expose it either);
-        // preserve the existing value so saving doesn't clear it.
+        // Not editable here (nor in legacy); round-trip so saving doesn't clear it.
         coords: workingGroup?.coords ?? '',
         members,
       })

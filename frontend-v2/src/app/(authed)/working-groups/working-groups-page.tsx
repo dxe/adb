@@ -9,8 +9,7 @@ import { WorkingGroupTable } from './working-group-table'
 import { WorkingGroupFormDialog } from './working-group-form-dialog'
 import { DeleteWorkingGroupDialog } from './delete-working-group-dialog'
 
-// Sentinel distinguishing "dialog closed" from "creating a new working group"
-// (which has no WorkingGroup to edit yet).
+// Sentinel for the create dialog, which has no WorkingGroup to edit yet.
 const NEW_WORKING_GROUP = 'new' as const
 
 export default function WorkingGroupsPage() {
