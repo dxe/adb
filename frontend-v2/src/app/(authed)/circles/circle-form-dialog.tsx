@@ -195,29 +195,23 @@ export function CircleFormDialog({
             <Label htmlFor="circle-visible">Visible to public</Label>
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="circle-host">Host</Label>
-            <TagInput
-              id="circle-host"
-              value={host}
-              onChange={setHost}
-              options={activistNames}
-              placeholder="Search by name..."
-              max={1}
-            />
-          </div>
+          <TagInput
+            label="Host"
+            value={host}
+            onChange={setHost}
+            options={activistNames}
+            placeholder="Search by name..."
+            max={1}
+          />
 
           {isGeo && (
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="circle-members">Members</Label>
-              <TagInput
-                id="circle-members"
-                value={members}
-                onChange={setMembers}
-                options={activistNames}
-                placeholder="Search by name..."
-              />
-            </div>
+            <TagInput
+              label="Members"
+              value={members}
+              onChange={setMembers}
+              options={activistNames}
+              placeholder="Search by name..."
+            />
           )}
 
           <DialogFooter>
