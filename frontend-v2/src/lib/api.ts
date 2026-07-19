@@ -296,14 +296,10 @@ export interface EventListParams {
   event_type: EventType
 }
 
-// The SF Bay Facebook page ID. Listing external events for this page returns
-// merged/deduped events from all SF Bay Area Facebook pages (see
-// ListFBEventsHandler in server/src/main.go).
+// Listing events for this page ID returns merged events from all SF Bay pages.
 const SF_BAY_FACEBOOK_PAGE_ID = '1377014279263790'
 
-// Go's ExternalEvent struct (server/src/model/external_events.go) has no
-// `json` tags, so field names are serialized as-is (PascalCase). Only the
-// fields the admin external-events page needs are declared here.
+// Go's ExternalEvent struct has no `json` tags, so fields serialize as PascalCase.
 const ExternalEventSchema = z.object({
   ID: z.string(),
   Name: z.string(),
@@ -777,17 +773,13 @@ export class ApiClient {
     }
   }
 
-  // Lists upcoming Facebook/Eventbrite events for the SF Bay page, matching
-  // the legacy admin FacebookEvents.vue page's hardcoded page ID and
-  // "today onward" start_time window. The date is derived from UTC explicitly
-  // so the SSR prefetch (server TZ) and the client refetch (browser TZ) always
-  // agree on the "today" boundary.
   getExternalEvents = async (signal?: AbortSignal) => {
     try {
-      const startTime = `${new Date().toISOString().slice(0, 10)}T00:00:00Z`
+      // UTC date so SSR prefetch and client refetch agree on the "today" boundary.
+      const startOfTodayUtc = `${new Date().toISOString().slice(0, 10)}T00:00:00Z`
       const resp = await this.client
         .get(`${API_PATH.EXTERNAL_EVENTS_LIST}/${SF_BAY_FACEBOOK_PAGE_ID}`, {
-          searchParams: { start_time: startTime },
+          searchParams: { start_time: startOfTodayUtc },
           signal,
         })
         .json()
