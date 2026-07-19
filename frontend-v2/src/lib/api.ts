@@ -315,7 +315,7 @@ export type CircleMember = z.infer<typeof CircleMemberSchema>
 export const CircleGroupSchema = z.object({
   id: z.number(),
   name: z.string(),
-  type: z.string(),
+  type: z.enum(CIRCLE_TYPE_VALUES),
   members: z
     .array(CircleMemberSchema)
     .nullable()
@@ -818,6 +818,7 @@ export class ApiClient {
       const resp = await this.client
         .get(API_PATH.ACTIVIST_NAMES_CHAPTER_MEMBERS, { signal })
         .json()
+      this.throwIfApiError(resp)
       return ActivistNamesResp.parse(resp).activist_names
     } catch (err) {
       return this.handleKyError(err)

@@ -26,7 +26,11 @@ export default function CirclesPage() {
     queryFn: ({ signal }) => apiClient.getCircles(signal),
   })
 
-  const { data: activistNames, isLoading: isActivistsLoading } = useQuery({
+  const {
+    data: activistNames,
+    isLoading: isActivistsLoading,
+    isError: isActivistsError,
+  } = useQuery({
     queryKey: [API_PATH.ACTIVIST_NAMES_CHAPTER_MEMBERS],
     queryFn: ({ signal }) => apiClient.getChapterMemberActivistNames(signal),
   })
@@ -123,13 +127,21 @@ export default function CirclesPage() {
           Failed to load circles. Please try again.
         </div>
       ) : (
-        <CircleTable
-          circles={filteredCircles}
-          mode={mode}
-          membersVisible={membersVisible}
-          onEdit={openEditDialog}
-          onDelete={setDeletingCircle}
-        />
+        <>
+          {isActivistsError && (
+            <div className="text-sm text-destructive">
+              Failed to load activist names. The host and member autocomplete
+              will be unavailable — reload the page to try again.
+            </div>
+          )}
+          <CircleTable
+            circles={filteredCircles}
+            mode={mode}
+            membersVisible={membersVisible}
+            onEdit={openEditDialog}
+            onDelete={setDeletingCircle}
+          />
+        </>
       )}
 
       {isFormOpen && (
