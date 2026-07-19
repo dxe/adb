@@ -24,6 +24,7 @@ import {
   WorkingGroupSavePayload,
 } from '@/lib/api'
 import { TagInput } from '@/components/tag-input'
+import { findPointPerson } from '@/lib/members'
 
 interface WorkingGroupFormValues {
   name: string
@@ -54,10 +55,8 @@ function buildInitialValues(
     }
   }
 
-  // There should only ever be one point person.
-  const pointPerson = workingGroup.members
-    .filter((m) => m.point_person)
-    .map((m) => m.name)
+  const pointPersonName = findPointPerson(workingGroup.members)?.name
+  const pointPerson = pointPersonName ? [pointPersonName] : []
   const members = workingGroup.members
     .filter((m) => !m.point_person && !m.non_member_on_mailing_list)
     .map((m) => m.name)

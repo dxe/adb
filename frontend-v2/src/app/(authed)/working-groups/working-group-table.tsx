@@ -21,17 +21,7 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { SortIndicator } from '@/components/ui/sort-indicator'
-
-// Includes the point person, matching the legacy page's "Total Members" count.
-function countMailingListMembers(workingGroup: WorkingGroup): number {
-  return workingGroup.members.filter((m) => !m.non_member_on_mailing_list)
-    .length
-}
-
-function getPointPersonName(workingGroup: WorkingGroup): string {
-  // There should only ever be one point person.
-  return workingGroup.members.find((m) => m.point_person)?.name ?? ''
-}
+import { countMailingListMembers, findPointPerson } from '@/lib/members'
 
 export function WorkingGroupTable({
   workingGroups,
@@ -113,7 +103,7 @@ export function WorkingGroupTable({
       {
         id: 'pointPerson',
         header: 'Point Person',
-        accessorFn: (row) => getPointPersonName(row),
+        accessorFn: (row) => findPointPerson(row.members)?.name ?? '',
       },
     ]
 
@@ -137,7 +127,7 @@ export function WorkingGroupTable({
       cols.push({
         id: 'totalMembers',
         header: 'Total Members',
-        accessorFn: (row) => countMailingListMembers(row),
+        accessorFn: (row) => countMailingListMembers(row.members),
       })
     }
 
@@ -246,7 +236,9 @@ export function WorkingGroupTable({
                 <dl className="mt-3 text-sm space-y-1">
                   <div className="flex gap-2">
                     <dt className="text-muted-foreground">Point Person:</dt>
-                    <dd>{getPointPersonName(workingGroup) || '—'}</dd>
+                    <dd>
+                      {findPointPerson(workingGroup.members)?.name || '—'}
+                    </dd>
                   </div>
                   {membersVisible ? (
                     members.length > 0 && (
@@ -258,7 +250,7 @@ export function WorkingGroupTable({
                   ) : (
                     <div className="flex gap-2">
                       <dt className="text-muted-foreground">Total Members:</dt>
-                      <dd>{countMailingListMembers(workingGroup)}</dd>
+                      <dd>{countMailingListMembers(workingGroup.members)}</dd>
                     </div>
                   )}
                 </dl>
