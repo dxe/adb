@@ -5,6 +5,12 @@ import toast from 'react-hot-toast'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 
+export type GoogleAddressComponent = {
+  long_name: string
+  short_name: string
+  types: string[]
+}
+
 // The resolved place we capture on selection from the Google autocomplete
 // dropdown. The picked name is offered as a default for the (separate, always
 // editable) location-name field; the rest is geo data attached to the event.
@@ -14,6 +20,8 @@ export type PlaceValue = {
   formatted_address: string
   lat?: number
   lng?: number
+  // Only populated when 'address_components' is in the requested fields.
+  address_components?: GoogleAddressComponent[]
 }
 
 // Narrow typings for just the slice of the Google Maps Places API we use, so we
@@ -23,6 +31,7 @@ type GooglePlaceResult = {
   name?: string
   formatted_address?: string
   geometry?: { location?: { lat: () => number; lng: () => number } }
+  address_components?: GoogleAddressComponent[]
 }
 
 type GoogleAutocomplete = {
@@ -81,6 +90,8 @@ function loadPlacesLibrary(apiKey: string): Promise<void> {
   })
 }
 
+const DEFAULT_FIELDS = ['place_id', 'name', 'formatted_address', 'geometry']
+
 type Props = {
   // Referrer-restricted Google Places key, served from the backend config.
   apiKey: string
@@ -88,6 +99,8 @@ type Props = {
   value: string
   onSelect: (place: PlaceValue) => void
   onClear: () => void
+  // Called when a selection resolves without a usable place (no place_id).
+  onNoResult?: () => void
   disabled?: boolean
   hasError?: boolean
   id?: string
@@ -96,6 +109,12 @@ type Props = {
   // without pulling in Google Maps — or surfacing its load-error toast — for
   // forms that never show the location field.
   active?: boolean
+  // Autocomplete restriction, e.g. ['(cities)']. Unrestricted by default.
+  types?: string[]
+  // Place Details fields to request.
+  fields?: string[]
+  placeholder?: string
+  loadErrorMessage?: string
 }
 
 export function PlacesAutocomplete({
@@ -103,10 +122,15 @@ export function PlacesAutocomplete({
   value,
   onSelect,
   onClear,
+  onNoResult,
   disabled,
   hasError,
   id,
   active = true,
+  types,
+  fields = DEFAULT_FIELDS,
+  placeholder = 'Search for a place name or address',
+  loadErrorMessage = 'Location search failed to load. You can still save without a location.',
 }: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [text, setText] = useState(value)
@@ -140,12 +164,7 @@ export function PlacesAutocomplete({
     const reportLoadError = () => {
       if (cancelled) return
       setStatus('error')
-      toast.error(
-        'Location search failed to load. You can still save without a location.',
-        {
-          id: 'places-load-error',
-        },
-      )
+      toast.error(loadErrorMessage, { id: 'places-load-error' })
     }
     loadPlacesLibrary(apiKey)
       .then(() => {
@@ -156,11 +175,15 @@ export function PlacesAutocomplete({
           return
         }
         const autocomplete = new places.Autocomplete(inputRef.current, {
-          fields: ['place_id', 'name', 'formatted_address', 'geometry'],
+          fields,
+          ...(types && { types }),
         })
         autocomplete.addListener('place_changed', () => {
           const place = autocomplete.getPlace()
-          if (!place.place_id) return
+          if (!place.place_id) {
+            onNoResult?.()
+            return
+          }
           const formatted = place.formatted_address ?? ''
           const name = place.name ?? ''
           // For a plain address result Google sets `name` to the street-address
@@ -180,6 +203,7 @@ export function PlacesAutocomplete({
             formatted_address: formatted,
             lat: place.geometry?.location?.lat(),
             lng: place.geometry?.location?.lng(),
+            address_components: place.address_components,
           })
           setTimeout(() => {
             programmaticEditRef.current = false
@@ -205,9 +229,7 @@ export function PlacesAutocomplete({
         value={text}
         disabled={disabled || status === 'error'}
         placeholder={
-          status === 'error'
-            ? 'Location search unavailable'
-            : 'Search for a place name or address'
+          status === 'error' ? 'Location search unavailable' : placeholder
         }
         onChange={(e) => {
           setText(e.target.value)

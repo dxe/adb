@@ -801,7 +801,7 @@ export class ApiClient {
     }
   }
 
-  // Public Places key endpoint; PR #429 adds the same key to /user/me for authed pages.
+  // Public Places key endpoint for anonymous visitors; authed pages get the key from /user/me.
   getPlacesApiKey = async (signal?: AbortSignal) => {
     try {
       const resp = await this.client

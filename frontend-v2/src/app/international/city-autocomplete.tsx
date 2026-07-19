@@ -1,9 +1,9 @@
-/// <reference types="google.maps" />
 'use client'
 
-import Script from 'next/script'
-import { useEffect, useRef, useState } from 'react'
-import { Input } from '@/components/ui/input'
+import {
+  PlacesAutocomplete,
+  PlaceValue,
+} from '@/components/places-autocomplete'
 
 export interface CityValue {
   city: string
@@ -13,14 +13,22 @@ export interface CityValue {
   lng: number
 }
 
-const isMapsPlacesLoaded = () =>
-  typeof google !== 'undefined' && !!google.maps?.places
+const CITY_FIELDS = [
+  'place_id',
+  'address_components',
+  'geometry',
+  'formatted_address',
+]
 
 // Name forms (long vs short) mirror the legacy vue-google-autocomplete parsing.
-function parseCityFromPlace(
-  place: google.maps.places.PlaceResult,
-): CityValue | null {
-  if (!place.geometry?.location || !place.address_components) return null
+function parseCityFromPlace(place: PlaceValue): CityValue | null {
+  if (
+    !place.address_components ||
+    place.lat === undefined ||
+    place.lng === undefined
+  ) {
+    return null
+  }
 
   let city = ''
   let state = ''
@@ -33,88 +41,45 @@ function parseCityFromPlace(
     else if (type === 'country') country = component.short_name
   }
 
-  return {
-    city,
-    state,
-    country,
-    lat: place.geometry.location.lat(),
-    lng: place.geometry.location.lng(),
-  }
+  return { city, state, country, lat: place.lat, lng: place.lng }
 }
 
-/** City-restricted Google Places Autocomplete input. With no `apiKey` (yet),
- *  the input still works but offers no suggestions. */
+/** City-restricted Places autocomplete emitting parsed city/state/country/lat/lng. */
 export function CityAutocomplete({
   id,
   placeholder,
   apiKey,
+  hasError,
   onSelect,
   onNoResults,
 }: {
   id?: string
   placeholder?: string
   apiKey: string | undefined
+  hasError?: boolean
   onSelect: (value: CityValue) => void
   onNoResults?: () => void
 }) {
-  const inputRef = useRef<HTMLInputElement>(null)
-  // next/script won't re-fire onLoad if the Maps script is already loaded.
-  const [scriptLoaded, setScriptLoaded] = useState(isMapsPlacesLoaded)
-
-  // Ref keeps the widget-building effect from re-running on parent re-renders.
-  const callbacksRef = useRef({ onSelect, onNoResults })
-  useEffect(() => {
-    callbacksRef.current = { onSelect, onNoResults }
-  })
-
-  useEffect(() => {
-    const inputEl = inputRef.current
-    if (!scriptLoaded || !inputEl || !isMapsPlacesLoaded()) return
-
-    // Strict mode's double-invoked effect would otherwise leave an orphaned
-    // duplicate suggestion dropdown (.pac-container) on document.body.
-    const pacContainersBefore = new Set(
-      document.querySelectorAll('.pac-container'),
-    )
-
-    const autocomplete = new google.maps.places.Autocomplete(inputEl, {
-      types: ['(cities)'],
-    })
-    autocomplete.setFields(['address_components', 'geometry'])
-
-    autocomplete.addListener('place_changed', () => {
-      const value = parseCityFromPlace(autocomplete.getPlace())
-      if (value) {
-        callbacksRef.current.onSelect(value)
-      } else {
-        callbacksRef.current.onNoResults?.()
-      }
-    })
-
-    return () => {
-      google.maps.event.clearInstanceListeners(autocomplete)
-      document.querySelectorAll('.pac-container').forEach((el) => {
-        if (!pacContainersBefore.has(el)) el.remove()
-      })
-    }
-  }, [scriptLoaded])
-
   return (
-    <>
-      {apiKey && (
-        <Script
-          src={`https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places`}
-          strategy="afterInteractive"
-          onLoad={() => setScriptLoaded(true)}
-        />
-      )}
-      <Input
-        id={id}
-        ref={inputRef}
-        type="text"
-        placeholder={placeholder}
-        autoComplete="off"
-      />
-    </>
+    <PlacesAutocomplete
+      id={id}
+      apiKey={apiKey ?? ''}
+      value=""
+      placeholder={placeholder}
+      types={['(cities)']}
+      fields={CITY_FIELDS}
+      loadErrorMessage="Location search failed to load. Please try again later."
+      hasError={hasError}
+      onSelect={(place) => {
+        const city = parseCityFromPlace(place)
+        if (city) {
+          onSelect(city)
+        } else {
+          onNoResults?.()
+        }
+      }}
+      onClear={() => onNoResults?.()}
+      onNoResult={() => onNoResults?.()}
+    />
   )
 }
