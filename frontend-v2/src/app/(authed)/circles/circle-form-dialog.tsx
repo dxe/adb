@@ -11,6 +11,7 @@ import {
   CircleGroup,
   SaveCircleMemberParams,
 } from '@/lib/api'
+import { findPointPerson } from '@/lib/members'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -54,8 +55,8 @@ function buildInitialValues(circle: CircleGroup | null): CircleFormValues {
     }
   }
 
-  // There should only ever be one point person.
-  const host = circle.members.filter((m) => m.point_person).map((m) => m.name)
+  const pointPerson = findPointPerson(circle.members)
+  const host = pointPerson ? [pointPerson.name] : []
   const members = circle.members
     .filter((m) => !m.point_person)
     .map((m) => m.name)

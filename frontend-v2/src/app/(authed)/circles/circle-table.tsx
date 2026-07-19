@@ -12,6 +12,7 @@ import {
 import { isAfter, isValid, parseISO, subDays } from 'date-fns'
 import { Pencil, Trash2 } from 'lucide-react'
 import type { CircleGroup } from '@/lib/api'
+import { countMailingListMembers, findPointPerson } from '@/lib/members'
 import { Button } from '@/components/ui/button'
 import {
   Table,
@@ -44,15 +45,6 @@ const toneClasses: Record<'stale' | 'warning' | 'fresh', string> = {
   stale: 'bg-red-100 text-red-700',
   warning: 'bg-amber-100 text-amber-800',
   fresh: 'bg-emerald-100 text-emerald-700',
-}
-
-function hostName(circle: CircleGroup): string {
-  // There should only ever be one point person.
-  return circle.members.find((m) => m.point_person)?.name ?? ''
-}
-
-function memberCount(circle: CircleGroup): number {
-  return circle.members.filter((m) => !m.non_member_on_mailing_list).length
 }
 
 export function CircleTable({
@@ -120,7 +112,7 @@ export function CircleTable({
       {
         id: 'host',
         header: 'Host',
-        accessorFn: (row) => hostName(row),
+        accessorFn: (row) => findPointPerson(row.members)?.name ?? '',
       },
     ]
 
@@ -173,7 +165,7 @@ export function CircleTable({
       cols.push({
         id: 'totalMembers',
         header: 'Total Members',
-        accessorFn: (row) => memberCount(row),
+        accessorFn: (row) => countMailingListMembers(row.members),
       })
     }
 
