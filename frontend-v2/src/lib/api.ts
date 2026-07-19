@@ -35,6 +35,7 @@ export const API_PATH = {
   EVENT_DELETE: 'event/delete',
   COACHING_SAVE: 'connection/save',
   ADMIN_SEND_TEST_EMAIL: 'api/admin/send-test-email',
+  APPLICATION_FORM_SUBMIT: 'apply',
 }
 
 export const StaticResourcesHashResp = z.object({
@@ -296,6 +297,28 @@ export interface EventListParams {
 const SuccessResp = z.object({
   status: z.literal('success'),
 })
+
+// Payload shape for the public "Apply" (chapter member / organizer)
+// application form. Mirrors ApplicationFormData in
+// server/src/model/forms.go; `name`, `firstName`, and `lastName` are all
+// sent (as the legacy form did) even though the Go handler only persists
+// `name`.
+export interface ApplicationFormPayload {
+  name: string
+  firstName: string
+  lastName: string
+  pronouns: string
+  email: string
+  address: string
+  city: string
+  zip: string
+  phone: string
+  birthday: string
+  referral: string
+  language: string
+  accessibility: string
+  applicationType: string
+}
 
 const ApiErrorResp = z.object({
   status: z.literal('error'),
@@ -743,6 +766,25 @@ export class ApiClient {
           body,
           headers: { 'X-CSRF-Token': csrfToken },
         })
+        .json()
+      this.throwIfApiError(resp)
+      return SuccessResp.parse(resp)
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  // Public, unauthenticated endpoint backing the chapter member / organizer
+  // "Apply" form. Matches ApplicationFormData in server/src/model/forms.go.
+  // No CSRF token is required since the Go route isn't wrapped in the CSRF
+  // middleware (it's a plain, unauthenticated POST, matching the legacy form).
+  submitApplicationForm = async (
+    payload: ApplicationFormPayload,
+    signal?: AbortSignal,
+  ) => {
+    try {
+      const resp = await this.client
+        .post(API_PATH.APPLICATION_FORM_SUBMIT, { json: payload, signal })
         .json()
       this.throwIfApiError(resp)
       return SuccessResp.parse(resp)
