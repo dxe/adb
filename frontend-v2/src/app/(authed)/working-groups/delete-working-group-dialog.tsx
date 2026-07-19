@@ -22,6 +22,10 @@ export function DeleteWorkingGroupDialog({
 }) {
   const queryClient = useQueryClient()
 
+  // Best-effort mirror of the backend rule: working_group/delete rejects
+  // groups that still have working_group_members rows.
+  const hasMembers = workingGroup.members.length > 0
+
   const mutation = useMutation({
     mutationFn: () => apiClient.deleteWorkingGroup(workingGroup.id),
     onSuccess: () => {
@@ -50,8 +54,9 @@ export function DeleteWorkingGroupDialog({
         <div className="flex items-start gap-2 rounded-md border border-yellow-300 bg-yellow-50 p-3 text-sm text-yellow-900">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>
-            Before deleting a working group, be sure to remove all members of
-            that group.
+            {hasMembers
+              ? 'This working group still has members (including non-members on its mailing list). Remove them all before it can be deleted.'
+              : 'Before deleting a working group, be sure to remove all members of that group.'}
           </span>
         </div>
         <DialogFooter>
@@ -65,7 +70,7 @@ export function DeleteWorkingGroupDialog({
           <Button
             variant="destructive"
             onClick={() => mutation.mutate()}
-            disabled={mutation.isPending}
+            disabled={mutation.isPending || hasMembers}
           >
             {mutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
             Delete

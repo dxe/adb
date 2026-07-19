@@ -84,7 +84,7 @@ export default function WorkingGroupsPage() {
           <Loader2 className="h-4 w-4 animate-spin" />
           Loading working groups...
         </div>
-      ) : isError || !workingGroups ? (
+      ) : isError ? (
         <div className="text-sm text-destructive">
           Failed to load working groups. Please try again.
         </div>
@@ -97,7 +97,7 @@ export default function WorkingGroupsPage() {
             </div>
           )}
           <WorkingGroupTable
-            workingGroups={workingGroups}
+            workingGroups={workingGroups ?? []}
             membersVisible={membersVisible}
             onEdit={setEditingTarget}
             onDelete={setDeletingTarget}
@@ -105,7 +105,7 @@ export default function WorkingGroupsPage() {
         </>
       )}
 
-      {editingTarget !== null && (
+      {editingTarget != null && (
         <WorkingGroupFormDialog
           workingGroup={
             editingTarget === NEW_WORKING_GROUP ? null : editingTarget

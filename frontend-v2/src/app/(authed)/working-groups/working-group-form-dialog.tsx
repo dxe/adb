@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import { useForm } from '@tanstack/react-form'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
+import { z } from 'zod'
 import { Loader2, Save } from 'lucide-react'
 import {
   Dialog,
@@ -26,17 +27,25 @@ import {
 import { TagInput } from '@/components/tag-input'
 import { findPointPerson } from '@/lib/members'
 
-interface WorkingGroupFormValues {
-  name: string
-  email: string
-  description: string
-  meetingTime: string
-  meetingLocation: string
-  visible: boolean
-  pointPerson: string[]
-  members: string[]
-  nonMembers: string[]
-}
+// Trimming name/email matches the legacy Vue form's `v-model.trim`.
+const workingGroupFormSchema = z.object({
+  name: z.string().trim().min(1, 'Working group name must not be blank'),
+  email: z
+    .string()
+    .trim()
+    .refine((email) => email.includes('@'), {
+      error: (issue) => `Working group email must contain @: ${issue.input}`,
+    }),
+  description: z.string(),
+  meetingTime: z.string(),
+  meetingLocation: z.string(),
+  visible: z.boolean(),
+  pointPerson: z.array(z.string()).max(1),
+  members: z.array(z.string()),
+  nonMembers: z.array(z.string()),
+})
+
+type WorkingGroupFormValues = z.input<typeof workingGroupFormSchema>
 
 function buildInitialValues(
   workingGroup: WorkingGroup | null,
@@ -92,8 +101,46 @@ export function WorkingGroupFormDialog({
   const queryClient = useQueryClient()
 
   const mutation = useMutation({
-    mutationFn: (payload: WorkingGroupSavePayload) =>
-      apiClient.saveWorkingGroup(payload),
+    mutationFn: (value: z.output<typeof workingGroupFormSchema>) => {
+      // The point person wins over duplicate member entries (legacy parity).
+      const pointPersonName = value.pointPerson[0]
+      const notPointPerson = (name: string) => name !== pointPersonName
+      const members: WorkingGroupMemberInput[] = [
+        ...(pointPersonName
+          ? [
+              {
+                name: pointPersonName,
+                point_person: true,
+                non_member_on_mailing_list: false,
+              },
+            ]
+          : []),
+        ...value.members.filter(notPointPerson).map((name) => ({
+          name,
+          point_person: false,
+          non_member_on_mailing_list: false,
+        })),
+        ...value.nonMembers.filter(notPointPerson).map((name) => ({
+          name,
+          point_person: false,
+          non_member_on_mailing_list: true,
+        })),
+      ]
+
+      const payload: WorkingGroupSavePayload = {
+        id: workingGroup?.id,
+        name: value.name,
+        email: value.email,
+        visible: value.visible,
+        description: value.description,
+        meeting_time: value.meetingTime,
+        meeting_location: value.meetingLocation,
+        // Not editable here (nor in legacy); round-trip so saving doesn't clear it.
+        coords: workingGroup?.coords ?? '',
+        members,
+      }
+      return apiClient.saveWorkingGroup(payload)
+    },
     onSuccess: (saved) => {
       queryClient.invalidateQueries({
         queryKey: [API_PATH.WORKING_GROUP_LIST],
@@ -116,56 +163,14 @@ export function WorkingGroupFormDialog({
   const form = useForm({
     defaultValues: initialValues,
     onSubmit: async ({ value }) => {
-      const name = value.name.trim()
-      if (!name) {
-        toast.error('Working group name must not be blank')
+      const parsed = workingGroupFormSchema.safeParse(value)
+      if (!parsed.success) {
+        toast.error(
+          parsed.error.issues[0]?.message ?? 'Please check the form fields',
+        )
         return
       }
-      const email = value.email.trim()
-      if (!email.includes('@')) {
-        toast.error(`Working group email must contain @: ${email}`)
-        return
-      }
-
-      // The point person wins over duplicate member entries (legacy parity).
-      const pointPersonName = value.pointPerson[0]
-      const members: WorkingGroupMemberInput[] = []
-      if (pointPersonName) {
-        members.push({
-          name: pointPersonName,
-          point_person: true,
-          non_member_on_mailing_list: false,
-        })
-      }
-      for (const m of value.members) {
-        if (m === pointPersonName) continue
-        members.push({
-          name: m,
-          point_person: false,
-          non_member_on_mailing_list: false,
-        })
-      }
-      for (const m of value.nonMembers) {
-        if (m === pointPersonName) continue
-        members.push({
-          name: m,
-          point_person: false,
-          non_member_on_mailing_list: true,
-        })
-      }
-
-      await mutation.mutateAsync({
-        id: workingGroup?.id,
-        name,
-        email,
-        visible: value.visible,
-        description: value.description,
-        meeting_time: value.meetingTime,
-        meeting_location: value.meetingLocation,
-        // Not editable here (nor in legacy); round-trip so saving doesn't clear it.
-        coords: workingGroup?.coords ?? '',
-        members,
-      })
+      await mutation.mutateAsync(parsed.data)
     },
   })
 
