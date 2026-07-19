@@ -278,7 +278,7 @@ export function WorkingGroupFormDialog({
                 options={organizerNames}
                 value={field.state.value}
                 onChange={field.handleChange}
-                max={1}
+                single
               />
             )}
           </form.Field>
