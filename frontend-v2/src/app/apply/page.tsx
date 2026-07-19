@@ -6,9 +6,7 @@ export const metadata: Metadata = {
   title: 'Join DxE SF Bay',
 }
 
-// Public, unauthenticated page (no navbar / auth provider). Mirrors the
-// legacy Vue page at frontend/FormApply.vue, served by the Go backend at
-// the (unauthenticated) `/apply` route.
+// Public page (no auth/navbar); ports the legacy frontend/FormApply.vue.
 export default function ApplyPage() {
   return (
     <ContentWrapper size="md" className="gap-6">

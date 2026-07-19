@@ -3,6 +3,7 @@
 import { FormEvent, useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
@@ -10,7 +11,37 @@ import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import { ApplicationFormPayload } from '@/lib/api'
 
-type ApplicationType = 'organizer' | 'chapter-member' | ''
+// Key order and message text match the legacy Vue form's validation order.
+// The schema trims because native `required` misses whitespace-only input.
+const applicationSchema = z.object({
+  firstName: z.string().trim().min(1, 'First Name is required.'),
+  lastName: z.string().trim().min(1, 'Last Name is required.'),
+  pronouns: z.string().trim(),
+  email: z.string().trim().min(1, 'Email is required.'),
+  address: z.string().trim().min(1, 'Street Address is required.'),
+  city: z.string().trim().min(1, 'City is required.'),
+  zip: z.string().trim().min(1, 'Zip Code is required.'),
+  phone: z.string().trim().min(1, 'Phone is required.'),
+  birthday: z.string().trim().min(1, 'Birthday is required.'),
+  conduct: z.literal(true, {
+    message: 'You must agree to the code of conduct.',
+  }),
+  mission: z.literal(true, {
+    message: 'Please must agree with our mission & values.',
+  }),
+  consent: z.literal(true, {
+    message: 'Please must agree to watch a video & take a quiz on consent.',
+  }),
+  applicationType: z.enum(['organizer', 'chapter-member'], {
+    message:
+      'You must choose whether or not you are interested in becoming an organizer.',
+  }),
+  referral: z.string().trim(),
+  language: z.string().trim(),
+  accessibility: z.string().trim(),
+})
+
+type ApplicationType = z.infer<typeof applicationSchema>['applicationType'] | ''
 
 function Field({
   id,
@@ -66,14 +97,7 @@ function AgreementToggle({
   )
 }
 
-/**
- * The actual application fields, submitted to POST /apply. Mirrors the
- * `showForm && !submitSuccess` section of frontend/FormApply.vue, including
- * the field-required validation (native HTML5 `required` here, matching the
- * legacy checkHtml5Validity() checks) and the ordered business-rule checks
- * (conduct -> mission -> consent -> applicationType) surfaced as toasts,
- * which fire after native validation passes.
- */
+/** The application form fields, validated against applicationSchema and submitted to POST /apply. */
 export function ApplicationFields({
   onSubmit,
   isSubmitting,
@@ -101,72 +125,45 @@ export function ApplicationFields({
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
 
-    // Trim at submit time rather than on every keystroke (unlike the legacy
-    // Vue form's `v-model.trim`, which trims per-keystroke and can clip the
-    // space between words while typing a multi-word address/city).
-    const trimmed = {
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      pronouns: pronouns.trim(),
-      email: email.trim(),
-      address: address.trim(),
-      city: city.trim(),
-      zip: zip.trim(),
-      phone: phone.trim(),
-      birthday: birthday.trim(),
-      referral: referral.trim(),
-      language: language.trim(),
-      accessibility: accessibility.trim(),
-    }
-
-    // Native HTML5 `required` blocks empty fields before this handler fires,
-    // but a whitespace-only value passes `required` and would submit as an
-    // empty string after trimming. Re-check the trimmed values here, in field
-    // order, before the business-rule checks (mirroring the legacy flow where
-    // field validation ran first).
-    const requiredFields: Array<[keyof typeof trimmed, string]> = [
-      ['firstName', 'First Name'],
-      ['lastName', 'Last Name'],
-      ['email', 'Email'],
-      ['address', 'Street Address'],
-      ['city', 'City'],
-      ['zip', 'Zip Code'],
-      ['phone', 'Phone'],
-      ['birthday', 'Birthday'],
-    ]
-    for (const [field, label] of requiredFields) {
-      if (!trimmed[field]) {
-        toast.error(`${label} is required.`)
-        return
-      }
-    }
-
-    // Business-rule checks, same order as the legacy Vue submitForm().
-    if (!conduct) {
-      toast.error('You must agree to the code of conduct.')
-      return
-    }
-    if (!mission) {
-      toast.error('Please must agree with our mission & values.')
-      return
-    }
-    if (!consent) {
-      toast.error(
-        'Please must agree to watch a video & take a quiz on consent.',
-      )
-      return
-    }
-    if (!applicationType) {
-      toast.error(
-        'You must choose whether or not you are interested in becoming an organizer.',
-      )
-      return
-    }
-
-    onSubmit({
-      name: `${trimmed.firstName} ${trimmed.lastName}`,
-      ...trimmed,
+    const parsed = applicationSchema.safeParse({
+      firstName,
+      lastName,
+      pronouns,
+      email,
+      address,
+      city,
+      zip,
+      phone,
+      birthday,
+      conduct,
+      mission,
+      consent,
       applicationType,
+      referral,
+      language,
+      accessibility,
+    })
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0].message)
+      return
+    }
+
+    const values = parsed.data
+    onSubmit({
+      name: `${values.firstName} ${values.lastName}`,
+      firstName: values.firstName,
+      lastName: values.lastName,
+      pronouns: values.pronouns,
+      email: values.email,
+      address: values.address,
+      city: values.city,
+      zip: values.zip,
+      phone: values.phone,
+      birthday: values.birthday,
+      referral: values.referral,
+      language: values.language,
+      accessibility: values.accessibility,
+      applicationType: values.applicationType,
     })
   }
 

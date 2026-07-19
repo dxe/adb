@@ -31,9 +31,7 @@ export function ApplyForm() {
   })
 
   function handleNotLocal() {
-    // The international application flow hasn't been ported yet, so this
-    // intentionally sends the user to the legacy Vue-served page (outside
-    // of /v2), matching frontend/FormApply.vue's notLocal().
+    // The international flow isn't ported yet; go to the legacy Vue-served page.
     window.location.href = '/international'
   }
 

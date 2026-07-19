@@ -298,11 +298,8 @@ const SuccessResp = z.object({
   status: z.literal('success'),
 })
 
-// Payload shape for the public "Apply" (chapter member / organizer)
-// application form. Mirrors ApplicationFormData in
-// server/src/model/forms.go; `name`, `firstName`, and `lastName` are all
-// sent (as the legacy form did) even though the Go handler only persists
-// `name`.
+// Mirrors ApplicationFormData in server/src/model/forms.go. Like the legacy
+// form, also sends firstName/lastName even though Go only persists `name`.
 export interface ApplicationFormPayload {
   name: string
   firstName: string
@@ -774,10 +771,7 @@ export class ApiClient {
     }
   }
 
-  // Public, unauthenticated endpoint backing the chapter member / organizer
-  // "Apply" form. Matches ApplicationFormData in server/src/model/forms.go.
-  // No CSRF token is required since the Go route isn't wrapped in the CSRF
-  // middleware (it's a plain, unauthenticated POST, matching the legacy form).
+  // Public, unauthenticated POST; the /apply Go route has no CSRF middleware.
   submitApplicationForm = async (
     payload: ApplicationFormPayload,
     signal?: AbortSignal,
