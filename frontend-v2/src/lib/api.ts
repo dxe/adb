@@ -465,17 +465,25 @@ export class ApiClient {
   }
 
   getActivistNames = async (signal?: AbortSignal) => {
-    const resp = await this.client
-      .get(API_PATH.ACTIVIST_NAMES_GET, { signal })
-      .json()
-    return ActivistNamesResp.parse(resp)
+    try {
+      const resp = await this.client
+        .get(API_PATH.ACTIVIST_NAMES_GET, { signal })
+        .json()
+      return ActivistNamesResp.parse(resp)
+    } catch (err) {
+      return this.handleKyError(err)
+    }
   }
 
   getOrganizerNames = async (signal?: AbortSignal) => {
-    const resp = await this.client
-      .get(API_PATH.ACTIVIST_NAMES_GET_ORGANIZERS, { signal })
-      .json()
-    return ActivistNamesResp.parse(resp)
+    try {
+      const resp = await this.client
+        .get(API_PATH.ACTIVIST_NAMES_GET_ORGANIZERS, { signal })
+        .json()
+      return ActivistNamesResp.parse(resp)
+    } catch (err) {
+      return this.handleKyError(err)
+    }
   }
 
   getActivistListBasic = async (
