@@ -18,10 +18,10 @@ export default async function EditChapterPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const chapterId = parseInt(id)
-  if (Number.isNaN(chapterId)) {
+  if (!/^\d+$/.test(id)) {
     notFound()
   }
+  const chapterId = Number(id)
 
   const apiClient = new ApiClient(await getCookies())
   const queryClient = new QueryClient()

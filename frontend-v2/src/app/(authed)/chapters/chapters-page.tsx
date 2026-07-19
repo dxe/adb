@@ -36,7 +36,12 @@ function useMentorOptions(chapters: ChapterAdmin[]): string[] {
 
 export default function ChaptersPage() {
   const queryClient = useQueryClient()
-  const { data: chapters, isLoading } = useQuery({
+  const {
+    data: chapters,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
     queryKey: CHAPTER_ADMIN_QUERY_KEY,
     queryFn: ({ signal }) => apiClient.getChapterAdminList(signal),
   })
@@ -189,6 +194,12 @@ export default function ChaptersPage() {
         <div className="flex items-center gap-2 text-muted-foreground text-sm">
           <Loader2 className="h-4 w-4 animate-spin" />
           Loading chapters...
+        </div>
+      ) : isError ? (
+        <div className="text-sm text-destructive">
+          {error instanceof Error
+            ? error.message
+            : 'Failed to load chapters. Please try again.'}
         </div>
       ) : (
         <ChapterTable

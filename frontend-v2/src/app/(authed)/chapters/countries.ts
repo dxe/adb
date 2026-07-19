@@ -4,8 +4,8 @@ export interface Country {
   flag: string
 }
 
-// Extracted verbatim from frontend/ChapterList.vue's allCountries list to keep
-// country/flag parity with the legacy Vue chapters page.
+// Extracted from frontend/ChapterList.vue's allCountries list (display names
+// only; the persisted value is `code`, so fixing Vue's "SuriName" typo is safe).
 export const COUNTRIES: Country[] = [
   { name: 'Ascension Island', code: 'AC', flag: '🇦🇨' },
   { name: 'Andorra', code: 'AD', flag: '🇦🇩' },
@@ -219,7 +219,7 @@ export const COUNTRIES: Country[] = [
   { name: 'San Marino', code: 'SM', flag: '🇸🇲' },
   { name: 'Senegal', code: 'SN', flag: '🇸🇳' },
   { name: 'Somalia', code: 'SO', flag: '🇸🇴' },
-  { name: 'SuriName', code: 'SR', flag: '🇸🇷' },
+  { name: 'Suriname', code: 'SR', flag: '🇸🇷' },
   { name: 'South Sudan', code: 'SS', flag: '🇸🇸' },
   { name: 'São Tomé & Príncipe', code: 'ST', flag: '🇸🇹' },
   { name: 'El Salvador', code: 'SV', flag: '🇸🇻' },

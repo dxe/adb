@@ -38,7 +38,7 @@ function composeChapterEmail(chapter: ChapterAdmin) {
     toast.error(`There are no email addresses listed for ${chapter.Name}!`)
     return
   }
-  window.open(link)
+  window.open(link, '_blank', 'noopener,noreferrer')
 }
 
 export function ChapterTable({
