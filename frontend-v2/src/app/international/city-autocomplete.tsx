@@ -13,18 +13,37 @@ export interface CityValue {
   lng: number
 }
 
-/**
- * Text input backed by the Google Places Autocomplete widget, restricted to
- * cities. This replaces the legacy Vue app's `vue-google-autocomplete`
- * component (frontend/external/vue-google-autocomplete). It replicates that
- * component's address-component parsing: `locality` -> city (long_name),
- * `administrative_area_level_1` -> state (short_name), `country` -> country
- * (short_name, matching DxE's mailing-list DB convention).
- *
- * `apiKey` is fetched at runtime by the parent (from the public
- * /places_api_key endpoint). While it is undefined/empty, the input still
- * renders and accepts text, but no autocomplete suggestions appear.
- */
+const isMapsPlacesLoaded = () =>
+  typeof google !== 'undefined' && !!google.maps?.places
+
+// Name forms (long vs short) mirror the legacy vue-google-autocomplete parsing.
+function parseCityFromPlace(
+  place: google.maps.places.PlaceResult,
+): CityValue | null {
+  if (!place.geometry?.location || !place.address_components) return null
+
+  let city = ''
+  let state = ''
+  let country = ''
+  for (const component of place.address_components) {
+    const type = component.types[0]
+    if (type === 'locality') city = component.long_name
+    else if (type === 'administrative_area_level_1')
+      state = component.short_name
+    else if (type === 'country') country = component.short_name
+  }
+
+  return {
+    city,
+    state,
+    country,
+    lat: place.geometry.location.lat(),
+    lng: place.geometry.location.lng(),
+  }
+}
+
+/** City-restricted Google Places Autocomplete input. With no `apiKey` (yet),
+ *  the input still works but offers no suggestions. */
 export function CityAutocomplete({
   id,
   placeholder,
@@ -39,67 +58,37 @@ export function CityAutocomplete({
   onNoResults?: () => void
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
-  // The Maps script may already be present (e.g. after a client-side
-  // re-navigation, next/script won't re-fire onLoad), so probe for it.
-  const [scriptLoaded, setScriptLoaded] = useState(
-    () => typeof google !== 'undefined' && !!google.maps?.places,
-  )
+  // next/script won't re-fire onLoad if the Maps script is already loaded.
+  const [scriptLoaded, setScriptLoaded] = useState(isMapsPlacesLoaded)
 
-  // Keep the latest callbacks in a ref so the effect below doesn't need them
-  // in its dependency array (re-running it would tear down and rebuild the
-  // Autocomplete widget whenever the parent re-renders with new closures).
+  // Ref keeps the widget-building effect from re-running on parent re-renders.
   const callbacksRef = useRef({ onSelect, onNoResults })
   useEffect(() => {
     callbacksRef.current = { onSelect, onNoResults }
   })
 
   useEffect(() => {
-    if (!scriptLoaded) return
     const inputEl = inputRef.current
-    // `scriptLoaded` is only set once the Maps JS API's onLoad fires, so the
-    // ambient `google` namespace (from @types/google.maps) is available here.
-    const places =
-      typeof google !== 'undefined' ? google.maps?.places : undefined
-    if (!inputEl || !places) return
+    if (!scriptLoaded || !inputEl || !isMapsPlacesLoaded()) return
 
-    // Track the suggestion dropdowns (.pac-container) that already exist so
-    // that only the one added by this widget instance is removed on cleanup.
-    // Without this, React strict mode's double-invoked effects would leave an
-    // orphaned duplicate dropdown attached to the document body.
+    // Strict mode's double-invoked effect would otherwise leave an orphaned
+    // duplicate suggestion dropdown (.pac-container) on document.body.
     const pacContainersBefore = new Set(
       document.querySelectorAll('.pac-container'),
     )
 
-    const autocomplete = new places.Autocomplete(inputEl, {
+    const autocomplete = new google.maps.places.Autocomplete(inputEl, {
       types: ['(cities)'],
     })
     autocomplete.setFields(['address_components', 'geometry'])
 
     autocomplete.addListener('place_changed', () => {
-      const place = autocomplete.getPlace()
-      if (!place.geometry?.location || !place.address_components) {
+      const value = parseCityFromPlace(autocomplete.getPlace())
+      if (value) {
+        callbacksRef.current.onSelect(value)
+      } else {
         callbacksRef.current.onNoResults?.()
-        return
       }
-
-      let city = ''
-      let state = ''
-      let country = ''
-      for (const component of place.address_components) {
-        const type = component.types[0]
-        if (type === 'locality') city = component.long_name
-        else if (type === 'administrative_area_level_1')
-          state = component.short_name
-        else if (type === 'country') country = component.short_name
-      }
-
-      callbacksRef.current.onSelect({
-        city,
-        state,
-        country,
-        lat: place.geometry.location.lat(),
-        lng: place.geometry.location.lng(),
-      })
     })
 
     return () => {

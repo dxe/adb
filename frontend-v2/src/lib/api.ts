@@ -308,9 +308,7 @@ const PlacesApiKeyResp = z.object({
   googlePlacesApiKey: z.string(),
 })
 
-// Matches `model.InternationalFormData` in server/src/model/forms.go. `id`
-// and `skills` are omitted since the form doesn't populate them and the Go
-// decoder ignores unrecognized/missing fields.
+// Matches `model.InternationalFormData` JSON tags (unused id/skills omitted).
 export interface InternationalFormPayload {
   firstName: string
   lastName: string
@@ -757,9 +755,8 @@ export class ApiClient {
     }
   }
 
-  // Public, unauthenticated endpoint serving the referrer-restricted Google
-  // Places API key; used by public pages that need Places autocomplete.
-  // Authed pages should prefer the key from /user/me instead.
+  // Public endpoint serving the referrer-restricted Google Places API key;
+  // authed pages should prefer the key from /user/me instead.
   getPlacesApiKey = async (signal?: AbortSignal) => {
     try {
       const resp = await this.client
@@ -771,8 +768,7 @@ export class ApiClient {
     }
   }
 
-  // Public, unauthenticated endpoint (no CSRF token required); used by the
-  // international chapter application form at /international.
+  // Public, unauthenticated endpoint; no CSRF token required.
   submitInternationalForm = async (payload: InternationalFormPayload) => {
     try {
       const resp = await this.client

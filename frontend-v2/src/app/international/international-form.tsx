@@ -53,11 +53,7 @@ export function InternationalForm() {
   const [location, setLocation] = useState<CityValue>(initialLocation)
   const [locationChosen, setLocationChosen] = useState(false)
 
-  // The Google Places API key is served by a small public endpoint at
-  // runtime (it is referrer-restricted, and the legacy Go-templated
-  // /international page already embedded it for anonymous visitors). If the
-  // fetch fails or the key is empty, the form still works — the city field
-  // just won't offer autocomplete suggestions.
+  // On failure the form still works; the city field just has no suggestions.
   const { data: placesApiKey } = useQuery({
     queryKey: [API_PATH.PLACES_API_KEY],
     queryFn: ({ signal }) => apiClient.getPlacesApiKey(signal),
@@ -86,9 +82,7 @@ export function InternationalForm() {
       setSubmitSuccess(true)
     },
     onError: () => {
-      // Always show the generic message (matching the legacy Vue form) —
-      // backend error text may contain raw internal details (e.g. wrapped DB
-      // errors) that shouldn't be shown to anonymous visitors.
+      // Generic message only — backend error text may leak internal details.
       toast.error(ERROR_MESSAGE)
     },
   })
@@ -250,10 +244,7 @@ export function InternationalForm() {
             setLocation(value)
             setLocationChosen(true)
           }}
-          // Intentional deviation from the legacy Vue form: it never listened
-          // to the widget's no-results event, so a previously selected city
-          // stayed "valid" even after the user typed over it. Resetting here
-          // is stricter and prevents submitting a stale location.
+          // Stricter than the legacy form, which kept stale selections valid.
           onNoResults={() => setLocationChosen(false)}
         />
         {!locationChosen && (
@@ -319,8 +310,7 @@ export function InternationalForm() {
           and understand that I may be removed if I fail to do so.
         </p>
 
-        {/* Like the legacy Buefy radio-button, agreement can be selected but
-            not un-selected (a radio can't be un-checked once chosen). */}
+        {/* Like the legacy Buefy radio-button, agreement can't be un-selected. */}
         <button
           type="button"
           onClick={() => setTermsAgreed(true)}
