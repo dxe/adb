@@ -35,6 +35,7 @@ export const API_PATH = {
   EVENT_DELETE: 'event/delete',
   COACHING_SAVE: 'connection/save',
   ADMIN_SEND_TEST_EMAIL: 'api/admin/send-test-email',
+  INTEREST_FORM_SUBMIT: 'interest',
 }
 
 export const StaticResourcesHashResp = z.object({
@@ -296,6 +297,22 @@ export interface EventListParams {
 const SuccessResp = z.object({
   status: z.literal('success'),
 })
+
+// Payload for the public (unauthenticated) "Interest" sign-up form, submitted
+// from frontend-v2/src/app/interest. Field names/shape must match
+// model.InterestFormData in server/src/model/forms.go exactly.
+export interface InterestFormPayload {
+  chapterId: number
+  form: string
+  name: string
+  email: string
+  zip: string
+  phone: string
+  referralFriends: string
+  referralApply: string
+  referralOutlet: string
+  interests: string
+}
 
 const ApiErrorResp = z.object({
   status: z.literal('error'),
@@ -743,6 +760,21 @@ export class ApiClient {
           body,
           headers: { 'X-CSRF-Token': csrfToken },
         })
+        .json()
+      this.throwIfApiError(resp)
+      return SuccessResp.parse(resp)
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  // Public (unauthenticated) endpoint backing the "Interest" sign-up form.
+  // No CSRF token needed: the Go route is registered outside the CSRF
+  // middleware group (see InterestFormHandler in server/src/main.go).
+  submitInterestForm = async (payload: InterestFormPayload) => {
+    try {
+      const resp = await this.client
+        .post(API_PATH.INTEREST_FORM_SUBMIT, { json: payload })
         .json()
       this.throwIfApiError(resp)
       return SuccessResp.parse(resp)
