@@ -45,10 +45,12 @@ export function ChapterTable({
   chapters,
   showFacebookColumns,
   onDelete,
+  isDeleting,
 }: {
   chapters: ChapterAdmin[]
   showFacebookColumns: boolean
   onDelete: (chapter: ChapterAdmin) => void
+  isDeleting: boolean
 }) {
   const [sorting, setSorting] = useState<SortingState>([
     { id: 'Name', desc: false },
@@ -102,6 +104,7 @@ export function ChapterTable({
               variant="outline"
               size="icon"
               aria-label={`Delete ${row.original.Name}`}
+              disabled={isDeleting}
               onClick={() => onDelete(row.original)}
             >
               <Trash2 className="h-4 w-4 text-destructive" />
@@ -181,7 +184,7 @@ export function ChapterTable({
           ] satisfies ColumnDef<ChapterAdmin>[])
         : []),
     ]
-  }, [showFacebookColumns, onDelete])
+  }, [showFacebookColumns, onDelete, isDeleting])
 
   // eslint-disable-next-line react-hooks/incompatible-library -- Remove once TanStack Table supports React Compiler.
   const table = useReactTable({

@@ -145,10 +145,8 @@ export function flattenChapterOrganizers(
   )
 }
 
-// The chapters admin page (list + create/edit) needs the full `fb_pages` row,
-// not just the ChapterID/Name pair used for chapter-picker dropdowns. `.passthrough()`
-// preserves fields the admin UI never displays or edits (e.g. EmailToken,
-// LastCheckinEmailSent) so saving a chapter can't silently wipe them.
+// Full `fb_pages` row for the chapters admin page. `.passthrough()` preserves
+// fields the UI never edits (e.g. EmailToken) so saves can't silently wipe them.
 const ChapterOrganizerAdminSchema = z.object({
   Name: z.string(),
   Email: z.string(),

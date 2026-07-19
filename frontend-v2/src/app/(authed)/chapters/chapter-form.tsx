@@ -24,7 +24,12 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { DatePicker } from '@/components/ui/date-picker'
-import { apiClient, CHAPTER_ADMIN_QUERY_KEY, ChapterAdmin } from '@/lib/api'
+import {
+  API_PATH,
+  apiClient,
+  CHAPTER_ADMIN_QUERY_KEY,
+  ChapterAdmin,
+} from '@/lib/api'
 import { COUNTRIES } from './countries'
 import { formatDateYmd, parseDateYmd, REGIONS } from './chapter-utils'
 
@@ -118,6 +123,8 @@ function ChapterFormInner({
     mutationFn: (payload: Partial<ChapterAdmin>) =>
       apiClient.saveChapterAdmin(payload),
     onSuccess: (savedChapter) => {
+      // Prefix match also refreshes the chapter-picker and intl-organizers caches.
+      queryClient.invalidateQueries({ queryKey: [API_PATH.CHAPTER_LIST] })
       queryClient.setQueryData<ChapterAdmin[]>(
         CHAPTER_ADMIN_QUERY_KEY,
         (old) => {
@@ -162,8 +169,7 @@ function ChapterFormInner({
         COUNTRIES.find((c) => c.code === parsed.data.country)?.flag ?? ''
 
       // Spread the original chapter first so fields the form never displays
-      // (e.g. EmailToken, LastCheckinEmailSent) round-trip unchanged instead
-      // of being wiped out by the save.
+      // (e.g. EmailToken) round-trip unchanged instead of being wiped on save.
       const payload: Partial<ChapterAdmin> = {
         ...chapter,
         Name: parsed.data.name,

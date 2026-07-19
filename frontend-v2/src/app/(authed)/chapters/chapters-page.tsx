@@ -5,7 +5,12 @@ import Link from 'next/link'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { Download, Loader2, Plus } from 'lucide-react'
-import { apiClient, CHAPTER_ADMIN_QUERY_KEY, ChapterAdmin } from '@/lib/api'
+import {
+  API_PATH,
+  apiClient,
+  CHAPTER_ADMIN_QUERY_KEY,
+  ChapterAdmin,
+} from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -63,6 +68,8 @@ export default function ChaptersPage() {
   const deleteMutation = useMutation({
     mutationFn: (chapterId: number) => apiClient.deleteChapterAdmin(chapterId),
     onSuccess: (_, chapterId) => {
+      // Prefix match also refreshes the chapter-picker and intl-organizers caches.
+      queryClient.invalidateQueries({ queryKey: [API_PATH.CHAPTER_LIST] })
       queryClient.setQueryData<ChapterAdmin[]>(CHAPTER_ADMIN_QUERY_KEY, (old) =>
         old?.filter((c) => c.ChapterID !== chapterId),
       )
@@ -188,6 +195,7 @@ export default function ChaptersPage() {
           chapters={filteredChapters}
           showFacebookColumns={showFacebookColumns}
           onDelete={handleDelete}
+          isDeleting={deleteMutation.isPending}
         />
       )}
     </div>
