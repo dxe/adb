@@ -161,8 +161,8 @@
         },
         {
           "label": "Facebook Events",
-          "href": "/admin/external_events",
-          "page": "FacebookEvents",
+          "href": "/v2/external-events",
+          "page": "FacebookEvents_beta",
           "roleRequired": ["admin"]
         },
         {
@@ -273,6 +273,13 @@
           "page": "NewActivistsPendingWorkshopList",
           "roleRequired": ["organizer"],
           "visibleForNonSFBay": false
+        },
+        {
+          "label": "Facebook Events",
+          "href": "/admin/external_events",
+          "page": "FacebookEvents",
+          "roleRequired": ["admin"],
+          "visibleForNonSFBay": true
         }
       ]
     }

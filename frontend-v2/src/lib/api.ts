@@ -1,5 +1,6 @@
 import ky, { HTTPError, KyInstance } from 'ky'
 import { z } from 'zod'
+import { format } from 'date-fns'
 import {
   ActivistJSON,
   ActivistPatchInput,
@@ -35,6 +36,9 @@ export const API_PATH = {
   EVENT_DELETE: 'event/delete',
   COACHING_SAVE: 'connection/save',
   ADMIN_SEND_TEST_EMAIL: 'api/admin/send-test-email',
+  EXTERNAL_EVENTS_LIST: 'external_events',
+  EXTERNAL_EVENT_FEATURE: 'admin/external_events/feature',
+  EXTERNAL_EVENT_CANCEL: 'admin/external_events/cancel',
 }
 
 export const StaticResourcesHashResp = z.object({
@@ -292,6 +296,29 @@ export interface EventListParams {
   event_date_end: string
   event_type: EventType
 }
+
+// The SF Bay Facebook page ID. Listing external events for this page returns
+// merged/deduped events from all SF Bay Area Facebook pages (see
+// ListFBEventsHandler in server/src/main.go).
+const SF_BAY_FACEBOOK_PAGE_ID = '1377014279263790'
+
+// Go's ExternalEvent struct (server/src/model/external_events.go) has no
+// `json` tags, so field names are serialized as-is (PascalCase). Only the
+// fields the admin external-events page needs are declared here.
+const ExternalEventSchema = z.object({
+  ID: z.string(),
+  Name: z.string(),
+  StartTime: z.string(),
+  Featured: z.boolean(),
+})
+export type ExternalEvent = z.infer<typeof ExternalEventSchema>
+
+const ExternalEventsListResp = z.object({
+  events: z
+    .array(ExternalEventSchema)
+    .nullable()
+    .transform((v) => v ?? []),
+})
 
 const SuccessResp = z.object({
   status: z.literal('success'),
@@ -741,6 +768,56 @@ export class ApiClient {
       const resp = await this.client
         .post(API_PATH.EVENT_DELETE, {
           body,
+          headers: { 'X-CSRF-Token': csrfToken },
+        })
+        .json()
+      this.throwIfApiError(resp)
+      return SuccessResp.parse(resp)
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  // Lists upcoming Facebook/Eventbrite events for the SF Bay page, matching
+  // the legacy admin FacebookEvents.vue page's hardcoded page ID and
+  // "today onward" start_time window.
+  getExternalEvents = async (signal?: AbortSignal) => {
+    try {
+      const startTime = `${format(new Date(), 'yyyy-MM-dd')}T00:00:00Z`
+      const resp = await this.client
+        .get(`${API_PATH.EXTERNAL_EVENTS_LIST}/${SF_BAY_FACEBOOK_PAGE_ID}`, {
+          searchParams: { start_time: startTime },
+          signal,
+        })
+        .json()
+      return ExternalEventsListResp.parse(resp).events
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  featureExternalEvent = async (id: string, featured: boolean) => {
+    try {
+      const csrfToken = await this.getCsrfToken()
+      const resp = await this.client
+        .post(API_PATH.EXTERNAL_EVENT_FEATURE, {
+          json: { id, featured },
+          headers: { 'X-CSRF-Token': csrfToken },
+        })
+        .json()
+      this.throwIfApiError(resp)
+      return SuccessResp.parse(resp)
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  cancelExternalEvent = async (id: string) => {
+    try {
+      const csrfToken = await this.getCsrfToken()
+      const resp = await this.client
+        .post(API_PATH.EXTERNAL_EVENT_CANCEL, {
+          json: { id },
           headers: { 'X-CSRF-Token': csrfToken },
         })
         .json()
