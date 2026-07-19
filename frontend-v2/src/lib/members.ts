@@ -1,8 +1,3 @@
-/**
- * Helpers shared by pages that render working-group/circle member lists
- * (both use the same member shape and legacy display rules).
- */
-
 /** Minimal structural member shape satisfied by both `WorkingGroup` and circle members. */
 export interface MemberLike {
   name: string
