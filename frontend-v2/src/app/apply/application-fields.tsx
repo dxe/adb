@@ -47,13 +47,16 @@ function AgreementToggle({
 }) {
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-sm">{children}</p>
+      <p id={`${id}-statement`} className="text-sm">
+        {children}
+      </p>
       <label
         htmlFor={id}
         className="flex w-fit cursor-pointer items-center gap-2 rounded-md border p-2 text-sm"
       >
         <Checkbox
           id={id}
+          aria-describedby={`${id}-statement`}
           checked={checked}
           onCheckedChange={(value) => onCheckedChange(Boolean(value))}
         />
@@ -98,11 +101,47 @@ export function ApplicationFields({
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
 
-    // Native HTML5 `required` validation on the fields below (first/last
-    // name, email, address, city, zip, phone, birthday) already blocked
-    // this handler from firing if any of them are empty, so the checks
-    // below only need to cover the remaining business rules -- same order
-    // as the legacy Vue submitForm().
+    // Trim at submit time rather than on every keystroke (unlike the legacy
+    // Vue form's `v-model.trim`, which trims per-keystroke and can clip the
+    // space between words while typing a multi-word address/city).
+    const trimmed = {
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      pronouns: pronouns.trim(),
+      email: email.trim(),
+      address: address.trim(),
+      city: city.trim(),
+      zip: zip.trim(),
+      phone: phone.trim(),
+      birthday: birthday.trim(),
+      referral: referral.trim(),
+      language: language.trim(),
+      accessibility: accessibility.trim(),
+    }
+
+    // Native HTML5 `required` blocks empty fields before this handler fires,
+    // but a whitespace-only value passes `required` and would submit as an
+    // empty string after trimming. Re-check the trimmed values here, in field
+    // order, before the business-rule checks (mirroring the legacy flow where
+    // field validation ran first).
+    const requiredFields: Array<[keyof typeof trimmed, string]> = [
+      ['firstName', 'First Name'],
+      ['lastName', 'Last Name'],
+      ['email', 'Email'],
+      ['address', 'Street Address'],
+      ['city', 'City'],
+      ['zip', 'Zip Code'],
+      ['phone', 'Phone'],
+      ['birthday', 'Birthday'],
+    ]
+    for (const [field, label] of requiredFields) {
+      if (!trimmed[field]) {
+        toast.error(`${label} is required.`)
+        return
+      }
+    }
+
+    // Business-rule checks, same order as the legacy Vue submitForm().
     if (!conduct) {
       toast.error('You must agree to the code of conduct.')
       return
@@ -124,26 +163,9 @@ export function ApplicationFields({
       return
     }
 
-    // Trim at submit time rather than on every keystroke (unlike the legacy
-    // Vue form's `v-model.trim`, which trims per-keystroke and can clip the
-    // space between words while typing a multi-word address/city).
-    const trimmedFirstName = firstName.trim()
-    const trimmedLastName = lastName.trim()
-
     onSubmit({
-      name: `${trimmedFirstName} ${trimmedLastName}`,
-      firstName: trimmedFirstName,
-      lastName: trimmedLastName,
-      pronouns: pronouns.trim(),
-      email: email.trim(),
-      address: address.trim(),
-      city: city.trim(),
-      zip: zip.trim(),
-      phone: phone.trim(),
-      birthday: birthday.trim(),
-      referral: referral.trim(),
-      language: language.trim(),
-      accessibility: accessibility.trim(),
+      name: `${trimmed.firstName} ${trimmed.lastName}`,
+      ...trimmed,
       applicationType,
     })
   }
