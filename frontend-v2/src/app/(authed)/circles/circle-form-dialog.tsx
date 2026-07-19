@@ -1,8 +1,10 @@
 'use client'
 
-import { FormEvent, useState } from 'react'
+import { useMemo } from 'react'
+import { useForm } from '@tanstack/react-form'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
+import { z } from 'zod'
 import {
   API_PATH,
   apiClient,
@@ -23,6 +25,53 @@ import { Label } from '@/components/ui/label'
 import { TagInput } from '@/components/tag-input'
 import type { CircleMode } from './search-params'
 
+// The legacy Vue form used `v-model.trim` on its text fields, so trimming
+// happens here in the schema at submit time for parity.
+const circleFormSchema = z.object({
+  name: z.string().trim().min(1, 'Circle name must not be blank'),
+  description: z.string().trim(),
+  meetingTime: z.string().trim(),
+  meetingLocation: z.string().trim(),
+  coords: z.string().trim(),
+  visible: z.boolean(),
+  host: z.array(z.string()).max(1),
+  members: z.array(z.string()),
+})
+
+type CircleFormValues = z.input<typeof circleFormSchema>
+
+function buildInitialValues(circle: CircleGroup | null): CircleFormValues {
+  if (!circle) {
+    return {
+      name: '',
+      description: '',
+      meetingTime: '',
+      meetingLocation: '',
+      coords: '',
+      visible: false,
+      host: [],
+      members: [],
+    }
+  }
+
+  // There should only ever be one point person.
+  const host = circle.members.filter((m) => m.point_person).map((m) => m.name)
+  const members = circle.members
+    .filter((m) => !m.point_person)
+    .map((m) => m.name)
+
+  return {
+    name: circle.name,
+    description: circle.description,
+    meetingTime: circle.meeting_time,
+    meetingLocation: circle.meeting_location,
+    coords: circle.coords,
+    visible: circle.visible,
+    host,
+    members,
+  }
+}
+
 type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -42,47 +91,28 @@ export function CircleFormDialog({
   const isGeo = mode === 'geo'
   const isEditing = circle !== null
 
-  const [name, setName] = useState(circle?.name ?? '')
-  const [description, setDescription] = useState(circle?.description ?? '')
-  const [meetingTime, setMeetingTime] = useState(circle?.meeting_time ?? '')
-  const [meetingLocation, setMeetingLocation] = useState(
-    circle?.meeting_location ?? '',
-  )
-  const [coords, setCoords] = useState(circle?.coords ?? '')
-  const [visible, setVisible] = useState(circle?.visible ?? false)
-  const [host, setHost] = useState<string[]>(() => {
-    const pointPerson = circle?.members.find((m) => m.point_person)
-    return pointPerson ? [pointPerson.name] : []
-  })
-  const [members, setMembers] = useState<string[]>(
-    () =>
-      circle?.members.filter((m) => !m.point_person).map((m) => m.name) ?? [],
-  )
-
   const mutation = useMutation({
-    mutationFn: () => {
+    mutationFn: (value: z.output<typeof circleFormSchema>) => {
       const memberParams: SaveCircleMemberParams[] = []
-      if (host.length > 0) {
-        memberParams.push({ name: host[0], point_person: true })
+      const hostName = value.host[0]
+      if (hostName) {
+        memberParams.push({ name: hostName, point_person: true })
       }
-      members.forEach((memberName) => {
-        const sameAsHost = host.length > 0 && host[0] === memberName
-        if (!sameAsHost) {
+      value.members.forEach((memberName) => {
+        if (memberName !== hostName) {
           memberParams.push({ name: memberName, point_person: false })
         }
       })
 
-      // The legacy Vue form used `v-model.trim` on these text fields, so trim
-      // them at submit time for parity.
       return apiClient.saveCircle({
         id: circle?.id ?? 0,
-        name: name.trim(),
+        name: value.name,
         type: isGeo ? 'geo-circle' : 'circle',
-        description: description.trim(),
-        meeting_time: meetingTime.trim(),
-        meeting_location: meetingLocation.trim(),
-        coords: coords.trim(),
-        visible,
+        description: value.description,
+        meeting_time: value.meetingTime,
+        meeting_location: value.meetingLocation,
+        coords: value.coords,
+        visible: value.visible,
         members: memberParams,
       })
     },
@@ -96,17 +126,26 @@ export function CircleFormDialog({
     },
   })
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault()
-    if (!name.trim()) {
-      toast.error('Circle name must not be blank')
-      return
-    }
-    mutation.mutate()
-  }
+  const initialValues = useMemo(() => buildInitialValues(circle), [circle])
+
+  const form = useForm({
+    defaultValues: initialValues,
+    onSubmit: async ({ value }) => {
+      const parsed = circleFormSchema.safeParse(value)
+      if (!parsed.success) {
+        toast.error(
+          parsed.error.issues[0]?.message ?? 'Please check the form fields',
+        )
+        return
+      }
+      await mutation.mutateAsync(parsed.data)
+    },
+  })
+
+  const isSubmitting = mutation.isPending
 
   const handleOpenChange = (next: boolean) => {
-    if (mutation.isPending) return
+    if (isSubmitting) return
     onOpenChange(next)
   }
 
@@ -115,103 +154,144 @@ export function CircleFormDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            form.handleSubmit()
+          }}
+          className="flex flex-col gap-4"
+        >
           <DialogHeader>
             <DialogTitle>
               {isEditing ? 'Edit' : 'New'} {circleLabel}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="circle-name">Name</Label>
-            <Input
-              id="circle-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              autoFocus
-            />
-          </div>
+          <form.Field name="name">
+            {(field) => (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="circle-name">Name</Label>
+                <Input
+                  id="circle-name"
+                  value={field.state.value}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  onBlur={field.handleBlur}
+                  required
+                  autoFocus
+                />
+              </div>
+            )}
+          </form.Field>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="circle-description">
-              Description{isGeo ? ' or Notes' : ''}
-            </Label>
-            <Input
-              id="circle-description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
+          <form.Field name="description">
+            {(field) => (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="circle-description">
+                  Description{isGeo ? ' or Notes' : ''}
+                </Label>
+                <Input
+                  id="circle-description"
+                  value={field.state.value}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                />
+              </div>
+            )}
+          </form.Field>
 
           {!isGeo && (
             <>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="circle-meeting-time">
-                  Meeting Day &amp; Time
-                </Label>
-                <Input
-                  id="circle-meeting-time"
-                  value={meetingTime}
-                  onChange={(e) => setMeetingTime(e.target.value)}
-                />
-              </div>
+              <form.Field name="meetingTime">
+                {(field) => (
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="circle-meeting-time">
+                      Meeting Day &amp; Time
+                    </Label>
+                    <Input
+                      id="circle-meeting-time"
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                    />
+                  </div>
+                )}
+              </form.Field>
 
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="circle-meeting-location">
-                  Meeting Location
-                </Label>
-                <Input
-                  id="circle-meeting-location"
-                  value={meetingLocation}
-                  onChange={(e) => setMeetingLocation(e.target.value)}
-                />
-              </div>
+              <form.Field name="meetingLocation">
+                {(field) => (
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="circle-meeting-location">
+                      Meeting Location
+                    </Label>
+                    <Input
+                      id="circle-meeting-location"
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                    />
+                  </div>
+                )}
+              </form.Field>
             </>
           )}
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="circle-coords">Coordinates</Label>
-            <Input
-              id="circle-coords"
-              value={coords}
-              onChange={(e) => setCoords(e.target.value)}
-              disabled={isGeo}
-            />
-            {isGeo && (
-              <p className="text-xs text-muted-foreground">
-                Coordinates for geo-circles are calculated automatically from
-                member locations.
-              </p>
+          <form.Field name="coords">
+            {(field) => (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="circle-coords">Coordinates</Label>
+                <Input
+                  id="circle-coords"
+                  value={field.state.value}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  disabled={isGeo}
+                />
+                {isGeo && (
+                  <p className="text-xs text-muted-foreground">
+                    Coordinates for geo-circles are calculated automatically
+                    from member locations.
+                  </p>
+                )}
+              </div>
             )}
-          </div>
+          </form.Field>
 
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="circle-visible"
-              checked={visible}
-              onCheckedChange={(value) => setVisible(Boolean(value))}
-            />
-            <Label htmlFor="circle-visible">Visible to public</Label>
-          </div>
+          <form.Field name="visible">
+            {(field) => (
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="circle-visible"
+                  checked={field.state.value}
+                  onCheckedChange={(checked) =>
+                    field.handleChange(Boolean(checked))
+                  }
+                />
+                <Label htmlFor="circle-visible">Visible to public</Label>
+              </div>
+            )}
+          </form.Field>
 
-          <TagInput
-            label="Host"
-            value={host}
-            onChange={setHost}
-            options={activistNames}
-            placeholder="Search by name..."
-            max={1}
-          />
+          <form.Field name="host">
+            {(field) => (
+              <TagInput
+                label="Host"
+                value={field.state.value}
+                onChange={field.handleChange}
+                options={activistNames}
+                placeholder="Search by name..."
+                max={1}
+              />
+            )}
+          </form.Field>
 
           {isGeo && (
-            <TagInput
-              label="Members"
-              value={members}
-              onChange={setMembers}
-              options={activistNames}
-              placeholder="Search by name..."
-            />
+            <form.Field name="members">
+              {(field) => (
+                <TagInput
+                  label="Members"
+                  value={field.state.value}
+                  onChange={field.handleChange}
+                  options={activistNames}
+                  placeholder="Search by name..."
+                />
+              )}
+            </form.Field>
           )}
 
           <DialogFooter>
@@ -219,12 +299,12 @@ export function CircleFormDialog({
               type="button"
               variant="outline"
               onClick={() => handleOpenChange(false)}
-              disabled={mutation.isPending}
+              disabled={isSubmitting}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={mutation.isPending}>
-              {mutation.isPending ? 'Saving...' : 'Save'}
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Saving...' : 'Save'}
             </Button>
           </DialogFooter>
         </form>

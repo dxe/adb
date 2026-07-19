@@ -1,6 +1,14 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  getSortedRowModel,
+  SortingState,
+  useReactTable,
+} from '@tanstack/react-table'
 import { isAfter, isValid, parseISO, subDays } from 'date-fns'
 import { Pencil, Trash2 } from 'lucide-react'
 import type { CircleGroup } from '@/lib/api'
@@ -17,20 +25,18 @@ import { SortIndicator } from '@/components/ui/sort-indicator'
 import { cn } from '@/lib/utils'
 import type { CircleMode } from './search-params'
 
-type SortColumn = 'name' | 'last_meeting'
-type SortState = { column: SortColumn; desc: boolean }
+const STALE_AFTER_DAYS = 32
+const FRESH_WITHIN_DAYS = 15
 
-/** Mirrors the legacy `colorLastMeeting` freshness indicator: red (stale) if
- * the last event was more than 32 days ago, yellow between 15-32 days ago,
- * and green within the last 15 days. */
+// Mirrors the legacy `colorLastMeeting` freshness indicator.
 function lastMeetingTone(text: string): 'stale' | 'warning' | 'fresh' | null {
   if (!text) return null
   const time = parseISO(text)
   if (!isValid(time)) return null
   const now = new Date()
   let tone: 'stale' | 'warning' | 'fresh' = 'stale'
-  if (isAfter(time, subDays(now, 32))) tone = 'warning'
-  if (isAfter(time, subDays(now, 15))) tone = 'fresh'
+  if (isAfter(time, subDays(now, STALE_AFTER_DAYS))) tone = 'warning'
+  if (isAfter(time, subDays(now, FRESH_WITHIN_DAYS))) tone = 'fresh'
   return tone
 }
 
@@ -62,133 +68,164 @@ export function CircleTable({
   onEdit: (circle: CircleGroup) => void
   onDelete: (circle: CircleGroup) => void
 }) {
-  const [sort, setSort] = useState<SortState>({ column: 'name', desc: false })
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: 'name', desc: false },
+  ])
 
-  const sorted = useMemo(() => {
-    const copy = [...circles]
-    copy.sort((a, b) => {
-      let cmp: number
-      if (sort.column === 'name') {
-        cmp = a.name.localeCompare(b.name)
-      } else {
-        cmp = a.last_meeting.localeCompare(b.last_meeting)
-      }
-      return sort.desc ? -cmp : cmp
-    })
-    return copy
-  }, [circles, sort])
+  const columns = useMemo<ColumnDef<CircleGroup>[]>(() => {
+    const cols: ColumnDef<CircleGroup>[] = [
+      {
+        id: 'actions',
+        header: 'Actions',
+        cell: ({ row }) => (
+          <div className="flex gap-1">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              aria-label={`Edit ${row.original.name}`}
+              onClick={() => onEdit(row.original)}
+            >
+              <Pencil className="h-4 w-4 text-primary" />
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              aria-label={`Delete ${row.original.name}`}
+              onClick={() => onDelete(row.original)}
+            >
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          </div>
+        ),
+      },
+      {
+        id: 'name',
+        header: ({ column }) => (
+          <button
+            type="button"
+            onClick={column.getToggleSortingHandler()}
+            className="flex items-center gap-1"
+          >
+            <span>Name</span>
+            <SortIndicator sorted={column.getIsSorted()} />
+          </button>
+        ),
+        accessorKey: 'name',
+        cell: ({ getValue }) => (
+          <span className="font-medium">{getValue<string>()}</span>
+        ),
+      },
+      {
+        id: 'host',
+        header: 'Host',
+        accessorFn: (row) => hostName(row),
+      },
+    ]
 
-  const toggleSort = (column: SortColumn) => {
-    setSort((prev) =>
-      prev.column === column
-        ? { column, desc: !prev.desc }
-        : { column, desc: false },
-    )
-  }
+    if (mode === 'interest') {
+      cols.push({
+        id: 'lastMeeting',
+        header: ({ column }) => (
+          <button
+            type="button"
+            onClick={column.getToggleSortingHandler()}
+            className="flex items-center gap-1"
+          >
+            <span>Last Event</span>
+            <SortIndicator sorted={column.getIsSorted()} />
+          </button>
+        ),
+        accessorKey: 'last_meeting',
+        cell: ({ getValue }) => {
+          const lastMeeting = getValue<string>()
+          const tone = lastMeetingTone(lastMeeting)
+          return (
+            <span
+              className={cn(
+                'rounded-full px-2 py-0.5 text-xs font-medium',
+                tone ? toneClasses[tone] : 'bg-muted text-muted-foreground',
+              )}
+            >
+              {lastMeeting || 'None'}
+            </span>
+          )
+        },
+      })
+    } else if (membersVisible) {
+      cols.push({
+        id: 'members',
+        header: 'Members',
+        cell: ({ row }) => {
+          const members = row.original.members.filter((m) => !m.point_person)
+          if (members.length === 0) return null
+          return (
+            <ul className="list-disc space-y-0.5 pl-4">
+              {members.map((m) => (
+                <li key={m.name}>{m.name}</li>
+              ))}
+            </ul>
+          )
+        },
+      })
+    } else {
+      cols.push({
+        id: 'totalMembers',
+        header: 'Total Members',
+        accessorFn: (row) => memberCount(row),
+      })
+    }
 
-  const sortIndicatorFor = (column: SortColumn) =>
-    sort.column === column ? (sort.desc ? 'desc' : 'asc') : false
+    return cols
+  }, [mode, membersVisible, onEdit, onDelete])
+
+  // eslint-disable-next-line react-hooks/incompatible-library -- Remove once TanStack Table supports React Compiler.
+  const table = useReactTable({
+    data: circles,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    onSortingChange: setSorting,
+    state: { sorting },
+  })
+
+  const rows = table.getRowModel().rows
 
   return (
     <div className="rounded-md border">
       <Table>
         <TableHeader>
-          <TableRow>
-            <TableHead className="w-[96px]">Actions</TableHead>
-            <TableHead>
-              <button
-                type="button"
-                onClick={() => toggleSort('name')}
-                className="flex items-center gap-1"
-              >
-                <span>Name</span>
-                <SortIndicator sorted={sortIndicatorFor('name')} />
-              </button>
-            </TableHead>
-            <TableHead>Host</TableHead>
-            {mode === 'interest' && (
-              <TableHead>
-                <button
-                  type="button"
-                  onClick={() => toggleSort('last_meeting')}
-                  className="flex items-center gap-1"
-                >
-                  <span>Last Event</span>
-                  <SortIndicator sorted={sortIndicatorFor('last_meeting')} />
-                </button>
-              </TableHead>
-            )}
-            {mode === 'geo' && !membersVisible && (
-              <TableHead>Total Members</TableHead>
-            )}
-            {mode === 'geo' && membersVisible && <TableHead>Members</TableHead>}
-          </TableRow>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <TableRow key={headerGroup.id}>
+              {headerGroup.headers.map((header) => (
+                <TableHead key={header.id} className="whitespace-nowrap">
+                  {header.isPlaceholder
+                    ? null
+                    : flexRender(
+                        header.column.columnDef.header,
+                        header.getContext(),
+                      )}
+                </TableHead>
+              ))}
+            </TableRow>
+          ))}
         </TableHeader>
         <TableBody>
-          {sorted.length ? (
-            sorted.map((circle) => {
-              const tone = lastMeetingTone(circle.last_meeting)
-              return (
-                <TableRow key={circle.id}>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        aria-label={`Edit ${circle.name}`}
-                        onClick={() => onEdit(circle)}
-                      >
-                        <Pencil className="h-4 w-4 text-primary" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        aria-label={`Delete ${circle.name}`}
-                        onClick={() => onDelete(circle)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
+          {rows.length ? (
+            rows.map((row) => (
+              <TableRow key={row.id}>
+                {row.getVisibleCells().map((cell) => (
+                  <TableCell key={cell.id}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
-                  <TableCell className="font-medium">{circle.name}</TableCell>
-                  <TableCell>{hostName(circle)}</TableCell>
-                  {mode === 'interest' && (
-                    <TableCell>
-                      <span
-                        className={cn(
-                          'rounded-full px-2 py-0.5 text-xs font-medium',
-                          tone
-                            ? toneClasses[tone]
-                            : 'bg-muted text-muted-foreground',
-                        )}
-                      >
-                        {circle.last_meeting || 'None'}
-                      </span>
-                    </TableCell>
-                  )}
-                  {mode === 'geo' && !membersVisible && (
-                    <TableCell>{memberCount(circle)}</TableCell>
-                  )}
-                  {mode === 'geo' && membersVisible && (
-                    <TableCell>
-                      <ul className="list-disc space-y-0.5 pl-4">
-                        {circle.members
-                          .filter((m) => !m.point_person)
-                          .map((m) => (
-                            <li key={m.name}>{m.name}</li>
-                          ))}
-                      </ul>
-                    </TableCell>
-                  )}
-                </TableRow>
-              )
-            })
+                ))}
+              </TableRow>
+            ))
           ) : (
             <TableRow>
               <TableCell
-                colSpan={4}
+                colSpan={columns.length}
                 className="py-6 text-center text-muted-foreground"
               >
                 No {mode === 'interest' ? 'circles' : 'geo-circles'} found.
