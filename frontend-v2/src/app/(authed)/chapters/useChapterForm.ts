@@ -69,12 +69,10 @@ export function useChapterForm({
       onSubmit: chapterFormSubmitSchema,
     },
     onSubmit: async ({ value }) => {
-      const parsed = chapterFormSubmitSchema.safeParse(value)
-      if (!parsed.success) {
-        toast.error('Please fix the highlighted errors.')
-        return
-      }
-      await mutation.mutateAsync(buildChapterPayload(chapter, parsed.data))
+      // validators.onSubmit already blocked invalid values; this parse only
+      // narrows the type to ChapterFormSubmitValues.
+      const parsed = chapterFormSubmitSchema.parse(value)
+      await mutation.mutateAsync(buildChapterPayload(chapter, parsed))
     },
   })
 
