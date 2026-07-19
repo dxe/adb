@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Button } from '@/components/ui/button'
+import { FieldError } from '@/app/(authed)/events/field-error'
 import { apiClient, InterestFormPayload } from '@/lib/api'
 import { parseInterestFormOptions } from './form-options'
 
@@ -116,9 +117,11 @@ export function InterestForm() {
     validators: {
       onSubmit: formSchema,
     },
-    onSubmitInvalid: ({ value }) => {
-      const parsed = formSchema.safeParse(value)
-      if (!parsed.success) toast.error(parsed.error.issues[0].message)
+    onSubmitInvalid: ({ formApi }) => {
+      const firstError = Object.values(formApi.state.fieldMeta)
+        .flatMap((meta) => meta?.errors ?? [])
+        .at(0)
+      if (firstError) toast.error(firstError.message)
     },
     onSubmit: ({ value }) => {
       // safeParse applies the schema's trim transforms, which the form's
@@ -199,11 +202,7 @@ export function InterestForm() {
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
               />
-              {field.state.meta.errors[0] && (
-                <p className="text-sm text-destructive">
-                  {field.state.meta.errors[0]?.message}
-                </p>
-              )}
+              <FieldError message={field.state.meta.errors[0]?.message} />
             </div>
           )}
         </form.Field>
@@ -221,11 +220,7 @@ export function InterestForm() {
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
               />
-              {field.state.meta.errors[0] && (
-                <p className="text-sm text-destructive">
-                  {field.state.meta.errors[0]?.message}
-                </p>
-              )}
+              <FieldError message={field.state.meta.errors[0]?.message} />
             </div>
           )}
         </form.Field>
@@ -243,11 +238,7 @@ export function InterestForm() {
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
               />
-              {field.state.meta.errors[0] && (
-                <p className="text-sm text-destructive">
-                  {field.state.meta.errors[0]?.message}
-                </p>
-              )}
+              <FieldError message={field.state.meta.errors[0]?.message} />
             </div>
           )}
         </form.Field>
@@ -265,11 +256,7 @@ export function InterestForm() {
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
               />
-              {field.state.meta.errors[0] && (
-                <p className="text-sm text-destructive">
-                  {field.state.meta.errors[0]?.message}
-                </p>
-              )}
+              <FieldError message={field.state.meta.errors[0]?.message} />
             </div>
           )}
         </form.Field>
@@ -287,11 +274,7 @@ export function InterestForm() {
                 onChange={(e) => field.handleChange(e.target.value)}
                 onBlur={field.handleBlur}
               />
-              {field.state.meta.errors[0] && (
-                <p className="text-sm text-destructive">
-                  {field.state.meta.errors[0]?.message}
-                </p>
-              )}
+              <FieldError message={field.state.meta.errors[0]?.message} />
             </div>
           )}
         </form.Field>
