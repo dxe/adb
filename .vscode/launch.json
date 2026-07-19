@@ -53,7 +53,14 @@
       "request": "launch",
       "mode": "debug",
       "program": "${workspaceFolder}/server/src/main.go",
-      "envFile": "${workspaceFolder}/server/debug.env",
+      // Please keep in sync with Makefile `run`. server/.env layers local
+      // secrets (e.g. GOOGLE_PLACES_API_KEY) on top of debug.env. The debugger
+      // errors if a listed file is missing, so `make deps` creates server/.env
+      // to guarantee it exists.
+      "envFile": [
+        "${workspaceFolder}/server/debug.env",
+        "${workspaceFolder}/server/.env",
+      ],
     },
     {
       // Runs all Go tests across all packages. For debugging individual

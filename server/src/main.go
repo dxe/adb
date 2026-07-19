@@ -659,7 +659,7 @@ func (c MainController) HomeHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Most roles grant access to take attendance.
 	if model.UserHasAttendanceAccess(user) {
-		http.Redirect(w, r, "/v2/events/new", http.StatusFound)
+		http.Redirect(w, r, "/v2/home", http.StatusFound)
 		return
 	}
 
@@ -1776,7 +1776,8 @@ func (c MainController) AuthedUserInfoHandler(w http.ResponseWriter, r *http.Req
 	user.Roles = normalizeRoles(user.Roles)
 
 	writeJSON(w, map[string]interface{}{
-		"user": user,
+		"user":               user,
+		"googlePlacesApiKey": config.GooglePlacesAPIKey,
 	})
 }
 
