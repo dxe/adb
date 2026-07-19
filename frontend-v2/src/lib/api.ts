@@ -755,8 +755,7 @@ export class ApiClient {
     }
   }
 
-  // Public endpoint serving the referrer-restricted Google Places API key;
-  // authed pages should prefer the key from /user/me instead.
+  // Public Places key endpoint; PR #429 adds the same key to /user/me for authed pages.
   getPlacesApiKey = async (signal?: AbortSignal) => {
     try {
       const resp = await this.client
