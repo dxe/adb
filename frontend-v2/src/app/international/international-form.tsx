@@ -300,7 +300,7 @@ export function InternationalForm() {
           desire to help end animal exploitation. From this point forward, I
           commit to upholding DxE&apos;s{' '}
           <a
-            href="http://dxe.io/values"
+            href="https://dxe.io/values"
             target="_blank"
             rel="noreferrer"
             className="underline"
@@ -309,7 +309,7 @@ export function InternationalForm() {
           </a>{' '}
           and{' '}
           <a
-            href="http://dxe.io/conduct"
+            href="https://dxe.io/conduct"
             target="_blank"
             rel="noreferrer"
             className="underline"
