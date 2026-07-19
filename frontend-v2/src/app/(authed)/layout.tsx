@@ -9,7 +9,12 @@ export default async function AuthedLayout({ children }: PropsWithChildren) {
   if (!session.user) redirect('/login')
 
   return (
-    <AuthedPageProvider ctx={{ user: session.user }}>
+    <AuthedPageProvider
+      ctx={{
+        user: session.user,
+        googlePlacesApiKey: session.googlePlacesApiKey,
+      }}
+    >
       <Navbar />
       {children}
     </AuthedPageProvider>

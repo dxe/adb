@@ -282,9 +282,13 @@ export const Navbar = () => {
       }
     >
       <div className={buefyStyles['navbar-brand']}>
-        <div className={buefyStyles['navbar-item']}>
+        <Link
+          href="/home"
+          className={buefyStyles['navbar-item']}
+          onClick={closeNav}
+        >
           <Image src={logo1} alt="DxE" className="w-[30.5px] h-auto" priority />
-        </div>
+        </Link>
         <button
           aria-label="menu"
           className={clsx(buefyStyles['navbar-burger'], buefyStyles['burger'], {
