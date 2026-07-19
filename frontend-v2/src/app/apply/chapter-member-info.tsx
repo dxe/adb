@@ -2,10 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 
-/**
- * Informational copy shown before the applicant starts filling out the
- * form. Text content is identical to frontend/FormApply.vue.
- */
+/** Informational copy (identical to frontend/FormApply.vue) shown before the application fields. */
 export function ChapterMemberInfo({ onApply }: { onApply: () => void }) {
   return (
     <div className="flex flex-col gap-4">

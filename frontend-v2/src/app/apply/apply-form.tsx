@@ -12,28 +12,18 @@ import { ThankYou } from '@/app/apply/thank-you'
 const ERROR_MESSAGE =
   'Sorry, there was an error submitting your form. Please try again.'
 
-/**
- * Orchestrates the multi-step "Apply" flow, mirroring the top-level
- * `local` / `showForm` / `submitSuccess` state machine in
- * frontend/FormApply.vue:
- *  1. Ask whether the applicant lives near the SF Bay Area chapter. If not,
- *     send them to the (legacy, still Vue-served) /international page.
- *  2. Show informational copy about becoming a chapter member, with an
- *     "Apply now" button that reveals the form.
- *  3. Show the application form. On submit, POST to /apply.
- *  4. Show a thank-you message on success.
- */
+type Step = 'localCheck' | 'info' | 'fields' | 'thankYou'
+
+/** Orchestrates the multi-step "Apply" flow ported from frontend/FormApply.vue. */
 export function ApplyForm() {
-  const [local, setLocal] = useState(false)
-  const [showForm, setShowForm] = useState(false)
-  const [submitSuccess, setSubmitSuccess] = useState(false)
+  const [step, setStep] = useState<Step>('localCheck')
 
   const mutation = useMutation({
     mutationFn: (payload: ApplicationFormPayload) =>
       apiClient.submitApplicationForm(payload),
     onSuccess: () => {
       toast.success('Submitted!')
-      setSubmitSuccess(true)
+      setStep('thankYou')
     },
     onError: () => {
       toast.error(ERROR_MESSAGE)
@@ -48,33 +38,28 @@ export function ApplyForm() {
   }
 
   function handleApply() {
-    setShowForm(true)
+    setStep('fields')
     window.scrollTo(0, 0)
   }
 
-  return (
-    <>
-      {!local && (
+  switch (step) {
+    case 'localCheck':
+      return (
         <LocalCheck
-          onLocal={() => setLocal(true)}
+          onLocal={() => setStep('info')}
           onNotLocal={handleNotLocal}
         />
-      )}
-
-      {submitSuccess && <ThankYou />}
-
-      {local && !submitSuccess && (
-        <>
-          {!showForm && <ChapterMemberInfo onApply={handleApply} />}
-
-          {showForm && (
-            <ApplicationFields
-              onSubmit={(payload) => mutation.mutate(payload)}
-              isSubmitting={mutation.isPending}
-            />
-          )}
-        </>
-      )}
-    </>
-  )
+      )
+    case 'info':
+      return <ChapterMemberInfo onApply={handleApply} />
+    case 'fields':
+      return (
+        <ApplicationFields
+          onSubmit={(payload) => mutation.mutate(payload)}
+          isSubmitting={mutation.isPending}
+        />
+      )
+    case 'thankYou':
+      return <ThankYou />
+  }
 }

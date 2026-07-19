@@ -2,12 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 
-/**
- * Gate shown before anything else: chapter membership is specific to the
- * SF Bay Area chapter, so we ask if the applicant lives nearby before
- * showing the rest of the form. Matches the `local` radio buttons in
- * frontend/FormApply.vue.
- */
+/** Asks whether the applicant lives near the SF Bay Area chapter before showing the rest of the flow. */
 export function LocalCheck({
   onLocal,
   onNotLocal,
