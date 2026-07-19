@@ -65,9 +65,13 @@ export function InterestForm() {
       ? parsedChapterId
       : SF_BAY_CHAPTER_ID
     const formName = searchParams.get('name') || 'Interest Form'
+    // Matching the Vue original, the default title is computed from the raw
+    // parsed chapterId (possibly NaN), NOT the SF-Bay-defaulted one: a
+    // missing/invalid chapterId param yields the generic title even though
+    // the submitted chapterId falls back to SF_BAY_CHAPTER_ID.
     const formTitle =
       searchParams.get('title') ||
-      (chapterId === SF_BAY_CHAPTER_ID
+      (parsedChapterId === SF_BAY_CHAPTER_ID
         ? 'DxE SF Bay - Get Involved'
         : 'Direct Action Everywhere - Get Involved')
     const formDescription = searchParams.get('description') || ''
@@ -162,7 +166,10 @@ export function InterestForm() {
   if (submitSuccess) {
     return (
       <div className="flex flex-col gap-4">
-        <h1 className="text-lg">{formOptions.formTitle}</h1>
+        <div className="flex flex-col gap-1">
+          <h1 className="text-lg">{formOptions.formTitle}</h1>
+          {formOptions.formDescription && <p>{formOptions.formDescription}</p>}
+        </div>
         {formOptions.formName === 'Check-in' ? (
           <>
             <p>
