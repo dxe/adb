@@ -7,72 +7,29 @@ import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 
 export interface TagInputProps {
-  /**
-   * Currently selected values, rendered as removable chips. Order is
-   * preserved (new selections are appended).
-   */
+  /** Selected values, rendered as removable chips (new selections are appended). */
   value: string[]
   /** Called with the full next array whenever a chip is added or removed. */
   onChange: (next: string[]) => void
-  /**
-   * The full universe of selectable values (e.g. all activist names). The
-   * caller owns fetching/loading this list — this component does not fetch
-   * data itself, it only filters/renders what it's given.
-   *
-   * Values already present in `value` are excluded from suggestions.
-   */
+  /** All selectable values — callers own data fetching; already-selected values are excluded from suggestions. */
   options: string[]
-  /**
-   * Optional label rendered above the control via the shared `Label`
-   * primitive, wired up with `htmlFor`/`id`. Omit this if the caller wants
-   * to render its own external `<Label htmlFor={id}>` next to the control
-   * (pass `id` in that case so the label's `htmlFor` still resolves).
-   */
+  /** Optional label rendered above the control, wired to the input via `htmlFor`. */
   label?: string
-  /**
-   * `id` applied to the text input. Auto-generated if omitted. Only needed
-   * explicitly when an external label (not the built-in `label` prop) needs
-   * to reference this input via `htmlFor`. Note that the input is unmounted
-   * while `disabled` or once `max` selections are reached, so an external
-   * label's `htmlFor` dangles in those states — prefer the built-in `label`
-   * prop, which handles this.
-   */
+  /** Input id for an external label (auto-generated if omitted); prefer `label`, since the input unmounts while hidden. */
   id?: string
   /** Placeholder shown in the text input while no chips are selected. */
   placeholder?: string
-  /**
-   * Maximum number of selected values. Once reached, the text input is
-   * hidden (existing chips remain visible and, unless `disabled`,
-   * removable). Omit for unbounded selection. Pass `1` for single-select
-   * (point person, host, etc.) usage.
-   */
+  /** Max selections — the input hides once reached; pass 1 for single-select, omit for unbounded. */
   max?: number
-  /**
-   * Maximum number of matching suggestions shown in the dropdown at once.
-   * @default 20
-   */
+  /** Max suggestions shown in the dropdown (default 20). */
   maxSuggestions?: number
   /** Disables the control: hides the text input and chip-remove buttons. */
   disabled?: boolean
 }
 
 /**
- * Chip/tag multi-select with type-ahead filtering over a fixed list of
- * `options`, restricted to those options (there is no free-text/allow-new
- * mode — this matches the legacy Vue `b-taginput` usages this component
- * replaces, which all set `allow-new: false`).
- *
- * Filtering is case-insensitive "starts with", matching the legacy Vue
- * `getFilteredActivists`/`getFilteredOrganizers` behavior (`WorkingGroupList.vue`,
- * `CirclesList.vue`) that both the Working Groups and Circles pages ported from.
- *
- * Keyboard behavior:
- * - `Enter` selects the first suggestion (no-op if there are none).
- * - `Backspace` on an empty input removes the last chip.
- *
- * This is a presentational component: callers own data fetching (typically
- * via a `useQuery` call that loads a plain name list once) and pass the
- * result in as `options`.
+ * Chip multi-select with type-ahead restricted to `options`, matched by case-insensitive
+ * prefix to mirror the legacy Vue `b-taginput` (allow-new: false) usages it replaces.
  */
 export function TagInput({
   value,
