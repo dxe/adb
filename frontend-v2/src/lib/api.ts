@@ -16,6 +16,7 @@ import {
 export const API_PATH = {
   STATIC_RESOURCE_HASH: 'static_resources_hash',
   ACTIVIST_NAMES_GET: 'activist_names/get',
+  ACTIVIST_NAMES_GET_ORGANIZERS: 'activist_names/get_organizers',
   ACTIVIST_LIST_BASIC: 'activist/list_basic',
   ACTIVISTS_SEARCH: 'api/activists',
   ACTIVISTS_COUNT: 'api/activists/count',
@@ -35,6 +36,9 @@ export const API_PATH = {
   EVENT_DELETE: 'event/delete',
   COACHING_SAVE: 'connection/save',
   ADMIN_SEND_TEST_EMAIL: 'api/admin/send-test-email',
+  WORKING_GROUP_LIST: 'working_group/list',
+  WORKING_GROUP_SAVE: 'working_group/save',
+  WORKING_GROUP_DELETE: 'working_group/delete',
 }
 
 export const StaticResourcesHashResp = z.object({
@@ -170,6 +174,57 @@ const UserGetResp = z.object({
 export const ActivistNamesResp = z.object({
   activist_names: z.array(z.string()),
 })
+
+const WorkingGroupMemberSchema = z.object({
+  name: z.string(),
+  email: z.string(),
+  point_person: z.boolean(),
+  non_member_on_mailing_list: z.boolean(),
+})
+export type WorkingGroupMember = z.infer<typeof WorkingGroupMemberSchema>
+
+const WorkingGroupSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  email: z.string(),
+  members: z
+    .array(WorkingGroupMemberSchema)
+    .nullable()
+    .transform((v) => v ?? []),
+  visible: z.boolean(),
+  description: z.string(),
+  meeting_time: z.string(),
+  meeting_location: z.string(),
+  coords: z.string(),
+})
+export type WorkingGroup = z.infer<typeof WorkingGroupSchema>
+
+const WorkingGroupListResp = z.object({
+  working_groups: z.array(WorkingGroupSchema),
+})
+
+const WorkingGroupSaveResp = z.object({
+  status: z.literal('success'),
+  working_group: WorkingGroupSchema,
+})
+
+export interface WorkingGroupMemberInput {
+  name: string
+  point_person: boolean
+  non_member_on_mailing_list: boolean
+}
+
+export interface WorkingGroupSavePayload {
+  id?: number
+  name: string
+  email: string
+  visible: boolean
+  description: string
+  meeting_time: string
+  meeting_location: string
+  coords: string
+  members: WorkingGroupMemberInput[]
+}
 
 export const ActivistListBasicResp = z.object({
   activists: z.array(
@@ -412,6 +467,13 @@ export class ApiClient {
   getActivistNames = async (signal?: AbortSignal) => {
     const resp = await this.client
       .get(API_PATH.ACTIVIST_NAMES_GET, { signal })
+      .json()
+    return ActivistNamesResp.parse(resp)
+  }
+
+  getOrganizerNames = async (signal?: AbortSignal) => {
+    const resp = await this.client
+      .get(API_PATH.ACTIVIST_NAMES_GET_ORGANIZERS, { signal })
       .json()
     return ActivistNamesResp.parse(resp)
   }
@@ -741,6 +803,50 @@ export class ApiClient {
       const resp = await this.client
         .post(API_PATH.EVENT_DELETE, {
           body,
+          headers: { 'X-CSRF-Token': csrfToken },
+        })
+        .json()
+      this.throwIfApiError(resp)
+      return SuccessResp.parse(resp)
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  getWorkingGroups = async (signal?: AbortSignal) => {
+    try {
+      const resp = await this.client
+        .get(API_PATH.WORKING_GROUP_LIST, { signal })
+        .json()
+      this.throwIfApiError(resp)
+      return WorkingGroupListResp.parse(resp).working_groups
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  saveWorkingGroup = async (payload: WorkingGroupSavePayload) => {
+    try {
+      const csrfToken = await this.getCsrfToken()
+      const resp = await this.client
+        .post(API_PATH.WORKING_GROUP_SAVE, {
+          json: payload,
+          headers: { 'X-CSRF-Token': csrfToken },
+        })
+        .json()
+      this.throwIfApiError(resp)
+      return WorkingGroupSaveResp.parse(resp).working_group
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  deleteWorkingGroup = async (workingGroupId: number) => {
+    try {
+      const csrfToken = await this.getCsrfToken()
+      const resp = await this.client
+        .post(API_PATH.WORKING_GROUP_DELETE, {
+          json: { working_group_id: workingGroupId },
           headers: { 'X-CSRF-Token': csrfToken },
         })
         .json()

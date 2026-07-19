@@ -49,8 +49,8 @@
         },
         {
           "label": "Working Groups",
-          "href": "/list_working_groups",
-          "page": "WorkingGroupList"
+          "href": "/v2/working-groups",
+          "page": "WorkingGroupList_beta"
         }
       ]
     },
@@ -271,6 +271,13 @@
           "label": "New Activists Pending Workshop",
           "href": "/new_activists_pending_workshop",
           "page": "NewActivistsPendingWorkshopList",
+          "roleRequired": ["organizer"],
+          "visibleForNonSFBay": false
+        },
+        {
+          "label": "Working Groups",
+          "href": "/list_working_groups",
+          "page": "WorkingGroupList",
           "roleRequired": ["organizer"],
           "visibleForNonSFBay": false
         }
