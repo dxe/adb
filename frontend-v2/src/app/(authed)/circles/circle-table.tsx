@@ -50,13 +50,13 @@ const toneClasses: Record<'stale' | 'warning' | 'fresh', string> = {
 export function CircleTable({
   circles,
   mode,
-  membersVisible,
+  isMembersVisible,
   onEdit,
   onDelete,
 }: {
   circles: CircleGroup[]
   mode: CircleMode
-  membersVisible: boolean
+  isMembersVisible: boolean
   onEdit: (circle: CircleGroup) => void
   onDelete: (circle: CircleGroup) => void
 }) {
@@ -65,7 +65,58 @@ export function CircleTable({
   ])
 
   const columns = useMemo<ColumnDef<CircleGroup>[]>(() => {
-    const cols: ColumnDef<CircleGroup>[] = [
+    const lastEventColumn: ColumnDef<CircleGroup> = {
+      id: 'lastMeeting',
+      header: ({ column }) => (
+        <button
+          type="button"
+          onClick={column.getToggleSortingHandler()}
+          className="flex items-center gap-1"
+        >
+          <span>Last Event</span>
+          <SortIndicator sorted={column.getIsSorted()} />
+        </button>
+      ),
+      accessorKey: 'last_meeting',
+      cell: ({ getValue }) => {
+        const lastMeeting = getValue<string>()
+        const tone = lastMeetingTone(lastMeeting)
+        return (
+          <span
+            className={cn(
+              'rounded-full px-2 py-0.5 text-xs font-medium',
+              tone ? toneClasses[tone] : 'bg-muted text-muted-foreground',
+            )}
+          >
+            {lastMeeting || 'None'}
+          </span>
+        )
+      },
+    }
+
+    const membersColumn: ColumnDef<CircleGroup> = {
+      id: 'members',
+      header: 'Members',
+      cell: ({ row }) => {
+        const members = row.original.members.filter((m) => !m.point_person)
+        if (members.length === 0) return null
+        return (
+          <ul className="list-disc space-y-0.5 pl-4">
+            {members.map((m) => (
+              <li key={m.name}>{m.name}</li>
+            ))}
+          </ul>
+        )
+      },
+    }
+
+    const totalMembersColumn: ColumnDef<CircleGroup> = {
+      id: 'totalMembers',
+      header: 'Total Members',
+      accessorFn: (row) => countMailingListMembers(row.members),
+    }
+
+    return [
       {
         id: 'actions',
         header: 'Actions',
@@ -114,63 +165,11 @@ export function CircleTable({
         header: 'Host',
         accessorFn: (row) => findPointPerson(row.members)?.name ?? '',
       },
+      ...(mode === 'interest'
+        ? [lastEventColumn]
+        : [isMembersVisible ? membersColumn : totalMembersColumn]),
     ]
-
-    if (mode === 'interest') {
-      cols.push({
-        id: 'lastMeeting',
-        header: ({ column }) => (
-          <button
-            type="button"
-            onClick={column.getToggleSortingHandler()}
-            className="flex items-center gap-1"
-          >
-            <span>Last Event</span>
-            <SortIndicator sorted={column.getIsSorted()} />
-          </button>
-        ),
-        accessorKey: 'last_meeting',
-        cell: ({ getValue }) => {
-          const lastMeeting = getValue<string>()
-          const tone = lastMeetingTone(lastMeeting)
-          return (
-            <span
-              className={cn(
-                'rounded-full px-2 py-0.5 text-xs font-medium',
-                tone ? toneClasses[tone] : 'bg-muted text-muted-foreground',
-              )}
-            >
-              {lastMeeting || 'None'}
-            </span>
-          )
-        },
-      })
-    } else if (membersVisible) {
-      cols.push({
-        id: 'members',
-        header: 'Members',
-        cell: ({ row }) => {
-          const members = row.original.members.filter((m) => !m.point_person)
-          if (members.length === 0) return null
-          return (
-            <ul className="list-disc space-y-0.5 pl-4">
-              {members.map((m) => (
-                <li key={m.name}>{m.name}</li>
-              ))}
-            </ul>
-          )
-        },
-      })
-    } else {
-      cols.push({
-        id: 'totalMembers',
-        header: 'Total Members',
-        accessorFn: (row) => countMailingListMembers(row.members),
-      })
-    }
-
-    return cols
-  }, [mode, membersVisible, onEdit, onDelete])
+  }, [mode, isMembersVisible, onEdit, onDelete])
 
   // eslint-disable-next-line react-hooks/incompatible-library -- Remove once TanStack Table supports React Compiler.
   const table = useReactTable({

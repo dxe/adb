@@ -22,6 +22,9 @@ type Props = {
 export function DeleteCircleDialog({ open, onOpenChange, circle }: Props) {
   const queryClient = useQueryClient()
 
+  // Best-effort mirror of the backend rule: circle/delete rejects circles that still have members.
+  const hasMembers = circle.members.length > 0
+
   const mutation = useMutation({
     mutationFn: () => apiClient.deleteCircle(circle.id),
     onSuccess: () => {
@@ -51,8 +54,9 @@ export function DeleteCircleDialog({ open, onOpenChange, circle }: Props) {
         <div className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <p>
-            Before deleting a circle, be sure to remove all members of that
-            circle.
+            {hasMembers
+              ? 'This circle still has members. Remove them all before it can be deleted.'
+              : 'Before deleting a circle, be sure to remove all members of that circle.'}
           </p>
         </div>
         <DialogFooter>
@@ -68,7 +72,7 @@ export function DeleteCircleDialog({ open, onOpenChange, circle }: Props) {
             type="button"
             variant="destructive"
             onClick={() => mutation.mutate()}
-            disabled={mutation.isPending}
+            disabled={mutation.isPending || hasMembers}
           >
             {mutation.isPending ? 'Deleting...' : 'Delete'}
           </Button>

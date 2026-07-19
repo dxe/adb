@@ -35,7 +35,7 @@ export default function CirclesPage() {
     queryFn: ({ signal }) => apiClient.getChapterMemberActivistNames(signal),
   })
 
-  const [membersVisible, setMembersVisible] = useState(false)
+  const [isMembersVisible, setIsMembersVisible] = useState(false)
   const [editingCircle, setEditingCircle] = useState<CircleGroup | null>(null)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [deletingCircle, setDeletingCircle] = useState<CircleGroup | null>(null)
@@ -109,9 +109,9 @@ export default function CirclesPage() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => setMembersVisible((v) => !v)}
+            onClick={() => setIsMembersVisible((v) => !v)}
           >
-            {membersVisible ? 'Hide' : 'Show'} members
+            {isMembersVisible ? 'Hide' : 'Show'} members
           </Button>
         )}
       </div>
@@ -136,7 +136,7 @@ export default function CirclesPage() {
           <CircleTable
             circles={filteredCircles}
             mode={mode}
-            membersVisible={membersVisible}
+            isMembersVisible={isMembersVisible}
             onEdit={openEditDialog}
             onDelete={setDeletingCircle}
           />

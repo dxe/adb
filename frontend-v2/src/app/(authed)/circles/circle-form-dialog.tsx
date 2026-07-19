@@ -93,16 +93,15 @@ export function CircleFormDialog({
 
   const mutation = useMutation({
     mutationFn: (value: z.output<typeof circleFormSchema>) => {
-      const memberParams: SaveCircleMemberParams[] = []
+      // The host wins over a duplicate member entry (legacy parity).
       const hostName = value.host[0]
-      if (hostName) {
-        memberParams.push({ name: hostName, point_person: true })
-      }
-      value.members.forEach((memberName) => {
-        if (memberName !== hostName) {
-          memberParams.push({ name: memberName, point_person: false })
-        }
-      })
+      const notHost = (name: string) => name !== hostName
+      const memberParams: SaveCircleMemberParams[] = [
+        ...(hostName ? [{ name: hostName, point_person: true }] : []),
+        ...value.members
+          .filter(notHost)
+          .map((name) => ({ name, point_person: false })),
+      ]
 
       return apiClient.saveCircle({
         id: circle?.id ?? 0,
