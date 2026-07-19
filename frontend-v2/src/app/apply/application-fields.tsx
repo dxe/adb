@@ -11,8 +11,8 @@ import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import { ApplicationFormPayload } from '@/lib/api'
 
-// Key order and message text match the legacy Vue form's validation order.
-// The schema trims because native `required` misses whitespace-only input.
+// Key order and message text match the legacy Vue form's validation order;
+// the form is noValidate, so inputs' `required` attrs are a11y-only.
 const applicationSchema = z.object({
   firstName: z.string().trim().min(1, 'First Name is required.'),
   lastName: z.string().trim().min(1, 'Last Name is required.'),
@@ -168,7 +168,7 @@ export function ApplicationFields({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
       <h2 className="text-xl font-semibold">Take direct action for animals</h2>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
