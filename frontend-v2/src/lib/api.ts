@@ -811,8 +811,7 @@ export class ApiClient {
     }
   }
 
-  // Names of activists in the caller's own chapter who are chapter members or
-  // organizers (used to populate the circle host/members autocomplete).
+  // Chapter-member/organizer names in the caller's chapter, for the circle member autocomplete.
   getChapterMemberActivistNames = async (signal?: AbortSignal) => {
     try {
       const resp = await this.client

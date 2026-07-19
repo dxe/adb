@@ -40,8 +40,7 @@ export default function CirclesPage() {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [deletingCircle, setDeletingCircle] = useState<CircleGroup | null>(null)
 
-  // The backend's `/circle/list` returns both circle types in one flat list;
-  // filtering by mode happens client-side, matching the legacy Vue component.
+  // /circle/list returns both circle types; filter by mode client-side like the legacy Vue page.
   const filteredCircles = useMemo(() => {
     if (!circles) return []
     const wantedType = mode === 'geo' ? 'geo-circle' : 'circle'

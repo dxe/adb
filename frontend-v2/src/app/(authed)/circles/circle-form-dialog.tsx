@@ -26,8 +26,7 @@ import { Label } from '@/components/ui/label'
 import { TagInput } from '@/components/tag-input'
 import type { CircleMode } from './search-params'
 
-// The legacy Vue form used `v-model.trim` on its text fields, so trimming
-// happens here in the schema at submit time for parity.
+// Trimming matches the legacy Vue form's `v-model.trim`.
 const circleFormSchema = z.object({
   name: z.string().trim().min(1, 'Circle name must not be blank'),
   description: z.string().trim(),

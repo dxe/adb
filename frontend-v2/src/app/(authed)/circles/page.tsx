@@ -9,11 +9,8 @@ import { getCookies } from '@/lib/auth'
 import { redirectForHttpError } from '@/lib/server-auth'
 import CirclesPage from './circles-page'
 
-// Circles ("Interest Circles" and "Geo-Circles" in the nav) are gated by the
-// Go backend's `apiSFBayOrganizerAuthMiddleware` on the endpoints prefetched
-// below (admins always have access; organizers only if their chapter is SF
-// Bay). `redirectForHttpError` surfaces the backend's 403 as Next's forbidden
-// UI, so no role logic is duplicated here.
+// Access (SF Bay organizer or any admin) is enforced by the Go middleware on the
+// prefetched endpoints; redirectForHttpError surfaces its 403 as Next's forbidden UI.
 export default async function CircleGroupsPage() {
   const apiClient = new ApiClient(await getCookies())
   const queryClient = new QueryClient()
