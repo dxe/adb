@@ -23,7 +23,7 @@ import {
   WorkingGroupMemberInput,
   WorkingGroupSavePayload,
 } from '@/lib/api'
-import { PersonMultiSelect } from './person-multi-select'
+import { TagInput } from '@/components/tag-input'
 
 interface WorkingGroupFormValues {
   name: string
@@ -288,7 +288,7 @@ export function WorkingGroupFormDialog({
 
           <form.Field name="pointPerson">
             {(field) => (
-              <PersonMultiSelect
+              <TagInput
                 label="Point Person"
                 options={organizerNames}
                 value={field.state.value}
@@ -300,7 +300,7 @@ export function WorkingGroupFormDialog({
 
           <form.Field name="members">
             {(field) => (
-              <PersonMultiSelect
+              <TagInput
                 label="Members"
                 options={organizerNames}
                 value={field.state.value}
@@ -311,7 +311,7 @@ export function WorkingGroupFormDialog({
 
           <form.Field name="nonMembers">
             {(field) => (
-              <PersonMultiSelect
+              <TagInput
                 label="Non-members on Mailing List"
                 options={activistNames}
                 value={field.state.value}
