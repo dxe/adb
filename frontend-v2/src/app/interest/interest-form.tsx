@@ -1,18 +1,18 @@
 'use client'
 
-import { FormEvent, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useForm } from '@tanstack/react-form'
+import { useMutation } from '@tanstack/react-query'
+import { z } from 'zod'
 import toast from 'react-hot-toast'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Button } from '@/components/ui/button'
-import { apiClient } from '@/lib/api'
-import { SF_BAY_CHAPTER_ID } from '@/lib/constants'
-
-const ERROR_MESSAGE =
-  'Sorry, there was an error submitting your form. Please try again.'
+import { apiClient, InterestFormPayload } from '@/lib/api'
+import { parseInterestFormOptions } from './form-options'
 
 const ACTIVISM_INTERESTS = [
   {
@@ -52,124 +52,117 @@ const REFERRAL_OUTLET_OPTIONS = [
   { value: 'In-person Invite', label: 'Someone invited me in person' },
 ] as const
 
+// Unlike the legacy form (native browser validation bubbles), validation is
+// via zod with the form set to noValidate; `required` attrs are a11y-only.
+const formSchema = z.object({
+  firstName: z.string().trim().min(1, 'First Name is required.').max(35),
+  lastName: z.string().trim().min(1, 'Last Name is required.').max(35),
+  email: z
+    .string()
+    .trim()
+    .min(1, 'Email is required.')
+    .max(80)
+    .email('Enter a valid email.'),
+  phone: z.string().trim().min(1, 'Phone Number is required.').max(20),
+  zip: z.string().trim().min(1, 'Zip Code is required.').max(5),
+  referralFriends: z.string().trim().max(200),
+  referralApply: z.string().trim().max(200),
+  referralOutlet: z.string(),
+  activismInterests: z.array(z.string()),
+})
+
+type FormValues = z.infer<typeof formSchema>
+
 export function InterestForm() {
   const searchParams = useSearchParams()
-
-  // Mirrors the query-param parsing in FormInterest.vue's created() hook.
-  const formOptions = useMemo(() => {
-    const chapterIdStr = searchParams.get('chapterId')
-    const parsedChapterId =
-      chapterIdStr != null ? parseInt(chapterIdStr, 10) : NaN
-    const chapterId = !Number.isNaN(parsedChapterId)
-      ? parsedChapterId
-      : SF_BAY_CHAPTER_ID
-    const formName = searchParams.get('name') || 'Interest Form'
-    // Vue parity: the default title checks the raw parsed chapterId (NaN
-    // when missing/invalid), not the SF-Bay-defaulted value.
-    const formTitle =
-      searchParams.get('title') ||
-      (parsedChapterId === SF_BAY_CHAPTER_ID
-        ? 'DxE SF Bay - Get Involved'
-        : 'Direct Action Everywhere - Get Involved')
-    const formDescription = searchParams.get('description') || ''
-    // Vue parity: showInterests defaults true; other show* flags default false.
-    const showInterests = searchParams.get('showInterests') !== 'false'
-    const showReferralFriends =
-      searchParams.get('showReferralFriends') === 'true'
-    const showReferralApply = searchParams.get('showReferralApply') === 'true'
-    const showReferralOutlet = searchParams.get('showReferralOutlet') === 'true'
-    const referralApplyParam = searchParams.get('referralApply') || ''
-    const initialReferralApply =
-      referralApplyParam !== 'null' ? referralApplyParam : ''
-
-    return {
-      chapterId,
-      formName,
-      formTitle,
-      formDescription,
-      showInterests,
-      showReferralFriends,
-      showReferralApply,
-      showReferralOutlet,
-      initialReferralApply,
-    }
-  }, [searchParams])
+  const formOptions = useMemo(
+    () => parseInterestFormOptions(new URLSearchParams(searchParams)),
+    [searchParams],
+  )
 
   useEffect(() => {
     document.title = formOptions.formTitle
   }, [formOptions.formTitle])
 
-  const [firstName, setFirstName] = useState('')
-  const [lastName, setLastName] = useState('')
-  const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
-  const [zip, setZip] = useState('')
-  const [referralFriends, setReferralFriends] = useState('')
-  const [referralApply, setReferralApply] = useState(
-    formOptions.initialReferralApply,
-  )
-  const [referralOutlet, setReferralOutlet] = useState('')
-  const [activismInterests, setActivismInterests] = useState<string[]>([])
-  const [submitting, setSubmitting] = useState(false)
-  const [submitSuccess, setSubmitSuccess] = useState(false)
+  // Set to the submitted name on success; doubles as the success-screen toggle.
+  const [submittedName, setSubmittedName] = useState<string | null>(null)
 
-  const toggleActivismInterest = (value: string, checked: boolean) => {
-    setActivismInterests((prev) =>
-      checked ? [...prev, value] : prev.filter((v) => v !== value),
-    )
-  }
+  const mutation = useMutation({
+    mutationFn: (payload: InterestFormPayload) =>
+      apiClient.submitInterestForm(payload),
+    onSuccess: (_data, payload) => {
+      toast.success('Submitted!')
+      setSubmittedName(payload.name)
+    },
+    onError: () => {
+      toast.error(
+        'Sorry, there was an error submitting your form. Please try again.',
+      )
+    },
+  })
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const formEl = e.currentTarget
-    if (!formEl.checkValidity()) {
-      formEl.reportValidity()
-      return
-    }
-
-    setSubmitting(true)
-    try {
-      await apiClient.submitInterestForm({
+  const form = useForm({
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      zip: '',
+      referralFriends: '',
+      referralApply: formOptions.initialReferralApply,
+      referralOutlet: '',
+      activismInterests: [],
+    } as FormValues,
+    validators: {
+      onSubmit: formSchema,
+    },
+    onSubmitInvalid: ({ value }) => {
+      const parsed = formSchema.safeParse(value)
+      if (!parsed.success) toast.error(parsed.error.issues[0].message)
+    },
+    onSubmit: ({ value }) => {
+      // safeParse applies the schema's trim transforms, which the form's
+      // onSubmit validator does not.
+      const parsed = formSchema.safeParse(value)
+      if (!parsed.success) return
+      const values = parsed.data
+      mutation.mutate({
         chapterId: formOptions.chapterId,
         form: `${formOptions.formName} Form`,
-        name: `${firstName} ${lastName}`,
-        email,
-        zip,
-        phone,
-        referralFriends,
-        referralApply,
-        referralOutlet,
+        name: `${values.firstName} ${values.lastName}`,
+        email: values.email,
+        zip: values.zip,
+        phone: values.phone,
+        referralFriends: values.referralFriends,
+        referralApply: values.referralApply,
+        referralOutlet: values.referralOutlet,
         // Vue parity: "Circle Interest" mode always submitted empty
         // interests (its circleInterests UI was never rendered).
         interests:
           formOptions.formName === 'Circle Interest'
             ? ''
-            : activismInterests.join(', '),
+            : values.activismInterests.join(', '),
       })
-      toast.success('Submitted!')
-      setSubmitSuccess(true)
-    } catch {
-      toast.error(ERROR_MESSAGE)
-    } finally {
-      setSubmitting(false)
-    }
-  }
+    },
+  })
 
-  if (submitSuccess) {
+  const header = (
+    <div className="flex flex-col gap-1">
+      <h1 className="text-lg">{formOptions.formTitle}</h1>
+      {formOptions.formDescription && <p>{formOptions.formDescription}</p>}
+    </div>
+  )
+
+  if (submittedName !== null) {
     return (
       <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-lg">{formOptions.formTitle}</h1>
-          {formOptions.formDescription && <p>{formOptions.formDescription}</p>}
-        </div>
+        {header}
         {formOptions.formName === 'Check-in' ? (
           <>
-            <p>
-              Thank you, {firstName} {lastName}!
-            </p>
+            <p>Thank you, {submittedName}!</p>
             <Button
               onClick={() => window.location.reload()}
-              disabled={submitting}
+              disabled={mutation.isPending}
             >
               Submit another form
             </Button>
@@ -182,148 +175,232 @@ export function InterestForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-lg">{formOptions.formTitle}</h1>
-        {formOptions.formDescription && <p>{formOptions.formDescription}</p>}
-      </div>
+    <form
+      onSubmit={(e) => {
+        e.preventDefault()
+        form.handleSubmit()
+      }}
+      noValidate
+      className="flex flex-col gap-6"
+    >
+      {header}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="firstName">First Name</Label>
-          <Input
-            id="firstName"
-            type="text"
-            required
-            maxLength={35}
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value.trim())}
-          />
-        </div>
+        <form.Field name="firstName">
+          {(field) => (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="firstName">First Name</Label>
+              <Input
+                id="firstName"
+                type="text"
+                required
+                maxLength={35}
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                onBlur={field.handleBlur}
+              />
+              {field.state.meta.errors[0] && (
+                <p className="text-sm text-destructive">
+                  {field.state.meta.errors[0]?.message}
+                </p>
+              )}
+            </div>
+          )}
+        </form.Field>
 
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="lastName">Last Name</Label>
-          <Input
-            id="lastName"
-            type="text"
-            required
-            maxLength={35}
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value.trim())}
-          />
-        </div>
+        <form.Field name="lastName">
+          {(field) => (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="lastName">Last Name</Label>
+              <Input
+                id="lastName"
+                type="text"
+                required
+                maxLength={35}
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                onBlur={field.handleBlur}
+              />
+              {field.state.meta.errors[0] && (
+                <p className="text-sm text-destructive">
+                  {field.state.meta.errors[0]?.message}
+                </p>
+              )}
+            </div>
+          )}
+        </form.Field>
 
-        <div className="flex flex-col gap-2 sm:col-span-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            required
-            maxLength={80}
-            value={email}
-            onChange={(e) => setEmail(e.target.value.trim())}
-          />
-        </div>
+        <form.Field name="email">
+          {(field) => (
+            <div className="flex flex-col gap-2 sm:col-span-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                required
+                maxLength={80}
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                onBlur={field.handleBlur}
+              />
+              {field.state.meta.errors[0] && (
+                <p className="text-sm text-destructive">
+                  {field.state.meta.errors[0]?.message}
+                </p>
+              )}
+            </div>
+          )}
+        </form.Field>
 
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="phone">Phone Number</Label>
-          <Input
-            id="phone"
-            type="text"
-            required
-            maxLength={20}
-            value={phone}
-            onChange={(e) => setPhone(e.target.value.trim())}
-          />
-        </div>
+        <form.Field name="phone">
+          {(field) => (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input
+                id="phone"
+                type="text"
+                required
+                maxLength={20}
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                onBlur={field.handleBlur}
+              />
+              {field.state.meta.errors[0] && (
+                <p className="text-sm text-destructive">
+                  {field.state.meta.errors[0]?.message}
+                </p>
+              )}
+            </div>
+          )}
+        </form.Field>
 
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="zip">Zip Code</Label>
-          <Input
-            id="zip"
-            type="text"
-            required
-            maxLength={5}
-            value={zip}
-            onChange={(e) => setZip(e.target.value.trim())}
-          />
-        </div>
+        <form.Field name="zip">
+          {(field) => (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="zip">Zip Code</Label>
+              <Input
+                id="zip"
+                type="text"
+                required
+                maxLength={5}
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                onBlur={field.handleBlur}
+              />
+              {field.state.meta.errors[0] && (
+                <p className="text-sm text-destructive">
+                  {field.state.meta.errors[0]?.message}
+                </p>
+              )}
+            </div>
+          )}
+        </form.Field>
       </div>
 
       {formOptions.showInterests && (
-        <div className="flex flex-col gap-3">
-          <p>What are your activism interests, if any?</p>
-          <div className="flex flex-col gap-3">
-            {ACTIVISM_INTERESTS.map((interest) => (
-              <Label
-                key={interest.value}
-                className="flex flex-row items-start gap-2 font-normal"
-              >
-                <Checkbox
-                  className="mt-1"
-                  checked={activismInterests.includes(interest.value)}
-                  onCheckedChange={(checked) =>
-                    toggleActivismInterest(interest.value, Boolean(checked))
-                  }
-                />
-                <span>
-                  <strong>{interest.label}</strong>{' '}
-                  <span className="text-sm">{interest.description}</span>
-                </span>
-              </Label>
-            ))}
-          </div>
-        </div>
+        <form.Field name="activismInterests">
+          {(field) => (
+            <div className="flex flex-col gap-3">
+              <p>What are your activism interests, if any?</p>
+              <div className="flex flex-col gap-3">
+                {ACTIVISM_INTERESTS.map((interest) => (
+                  <Label
+                    key={interest.value}
+                    className="flex flex-row items-start gap-2 font-normal"
+                  >
+                    <Checkbox
+                      className="mt-1"
+                      checked={field.state.value.includes(interest.value)}
+                      onCheckedChange={(checked) =>
+                        field.handleChange(
+                          checked
+                            ? [...field.state.value, interest.value]
+                            : field.state.value.filter(
+                                (v) => v !== interest.value,
+                              ),
+                        )
+                      }
+                    />
+                    <span>
+                      <strong>{interest.label}</strong>{' '}
+                      <span className="text-sm">{interest.description}</span>
+                    </span>
+                  </Label>
+                ))}
+              </div>
+            </div>
+          )}
+        </form.Field>
       )}
 
       {formOptions.showReferralFriends && (
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="referralFriends">
-            List any existing DxE activists who you are close friends with
-          </Label>
-          <Input
-            id="referralFriends"
-            type="text"
-            maxLength={200}
-            value={referralFriends}
-            onChange={(e) => setReferralFriends(e.target.value.trim())}
-          />
-        </div>
+        <form.Field name="referralFriends">
+          {(field) => (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="referralFriends">
+                List any existing DxE activists who you are close friends with
+              </Label>
+              <Input
+                id="referralFriends"
+                type="text"
+                maxLength={200}
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                onBlur={field.handleBlur}
+              />
+            </div>
+          )}
+        </form.Field>
       )}
 
       {formOptions.showReferralApply && (
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="referralApply">Who encouraged you to sign up?</Label>
-          <Input
-            id="referralApply"
-            type="text"
-            maxLength={200}
-            value={referralApply}
-            onChange={(e) => setReferralApply(e.target.value.trim())}
-          />
-        </div>
+        <form.Field name="referralApply">
+          {(field) => (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="referralApply">
+                Who encouraged you to sign up?
+              </Label>
+              <Input
+                id="referralApply"
+                type="text"
+                maxLength={200}
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                onBlur={field.handleBlur}
+              />
+            </div>
+          )}
+        </form.Field>
       )}
 
       {formOptions.showReferralOutlet && (
-        <div className="flex flex-col gap-3">
-          <p>
-            Where did you hear about this opportunity to get involved in DxE?
-          </p>
-          <RadioGroup value={referralOutlet} onValueChange={setReferralOutlet}>
-            {REFERRAL_OUTLET_OPTIONS.map((option) => (
-              <Label
-                key={option.value}
-                className="flex flex-row items-center gap-2 font-normal"
+        <form.Field name="referralOutlet">
+          {(field) => (
+            <div className="flex flex-col gap-3">
+              <p>
+                Where did you hear about this opportunity to get involved in
+                DxE?
+              </p>
+              <RadioGroup
+                value={field.state.value}
+                onValueChange={field.handleChange}
               >
-                <RadioGroupItem value={option.value} />
-                {option.label}
-              </Label>
-            ))}
-          </RadioGroup>
-        </div>
+                {REFERRAL_OUTLET_OPTIONS.map((option) => (
+                  <Label
+                    key={option.value}
+                    className="flex flex-row items-center gap-2 font-normal"
+                  >
+                    <RadioGroupItem value={option.value} />
+                    {option.label}
+                  </Label>
+                ))}
+              </RadioGroup>
+            </div>
+          )}
+        </form.Field>
       )}
 
-      <Button type="submit" disabled={submitting} className="w-fit">
+      <Button type="submit" disabled={mutation.isPending} className="w-fit">
         Submit
       </Button>
     </form>
