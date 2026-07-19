@@ -188,7 +188,7 @@ export function CircleTable({
           ) : (
             <TableRow>
               <TableCell
-                colSpan={mode === 'interest' ? 4 : 4}
+                colSpan={4}
                 className="py-6 text-center text-muted-foreground"
               >
                 No {mode === 'interest' ? 'circles' : 'geo-circles'} found.

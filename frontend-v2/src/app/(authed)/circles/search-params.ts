@@ -1,4 +1,4 @@
-import { createLoader, parseAsStringLiteral } from 'nuqs/server'
+import { parseAsStringLiteral } from 'nuqs/server'
 
 // This single page serves both the "Interest Circles" and "Geo-Circles" nav
 // entries (mirroring the legacy Vue `CirclesList.vue` component, which is
@@ -10,5 +10,3 @@ export type CircleMode = (typeof CIRCLE_MODES)[number]
 export const circleSearchParamParsers = {
   type: parseAsStringLiteral(CIRCLE_MODES).withDefault('interest'),
 }
-
-export const loadCircleSearchParams = createLoader(circleSearchParamParsers)

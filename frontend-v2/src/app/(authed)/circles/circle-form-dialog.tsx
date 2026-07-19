@@ -72,14 +72,16 @@ export function CircleFormDialog({
         }
       })
 
+      // The legacy Vue form used `v-model.trim` on these text fields, so trim
+      // them at submit time for parity.
       return apiClient.saveCircle({
         id: circle?.id ?? 0,
         name: name.trim(),
         type: isGeo ? 'geo-circle' : 'circle',
-        description,
-        meeting_time: meetingTime,
-        meeting_location: meetingLocation,
-        coords,
+        description: description.trim(),
+        meeting_time: meetingTime.trim(),
+        meeting_location: meetingLocation.trim(),
+        coords: coords.trim(),
         visible,
         members: memberParams,
       })
