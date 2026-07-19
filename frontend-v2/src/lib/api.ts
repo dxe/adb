@@ -298,11 +298,8 @@ const SuccessResp = z.object({
   status: z.literal('success'),
 })
 
-// Payload for the public (unauthenticated) "Interest" sign-up form, submitted
-// from frontend-v2/src/app/interest. Keys must align with the JSON tags of
-// model.InterestFormData in server/src/model/forms.go for the fields this
-// form submits. (The Go struct also has a submitted_via_signup_service field
-// that this form never sends; it harmlessly defaults to false.)
+// Public interest form payload. Keys match model.InterestFormData's JSON
+// tags (server/src/model/forms.go) for the fields this form submits.
 export interface InterestFormPayload {
   chapterId: number
   form: string
@@ -770,9 +767,7 @@ export class ApiClient {
     }
   }
 
-  // Public (unauthenticated) endpoint backing the "Interest" sign-up form.
-  // No CSRF token needed: the Go route is registered outside the CSRF
-  // middleware group (see InterestFormHandler in server/src/main.go).
+  // Public endpoint; no CSRF token (route is outside the CSRF middleware group).
   submitInterestForm = async (payload: InterestFormPayload) => {
     try {
       const resp = await this.client

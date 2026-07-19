@@ -55,8 +55,7 @@ const REFERRAL_OUTLET_OPTIONS = [
 export function InterestForm() {
   const searchParams = useSearchParams()
 
-  // Form options are derived once from the URL query params, mirroring the
-  // `created()` hook in frontend/FormInterest.vue.
+  // Mirrors the query-param parsing in FormInterest.vue's created() hook.
   const formOptions = useMemo(() => {
     const chapterIdStr = searchParams.get('chapterId')
     const parsedChapterId =
@@ -65,19 +64,15 @@ export function InterestForm() {
       ? parsedChapterId
       : SF_BAY_CHAPTER_ID
     const formName = searchParams.get('name') || 'Interest Form'
-    // Matching the Vue original, the default title is computed from the raw
-    // parsed chapterId (possibly NaN), NOT the SF-Bay-defaulted one: a
-    // missing/invalid chapterId param yields the generic title even though
-    // the submitted chapterId falls back to SF_BAY_CHAPTER_ID.
+    // Vue parity: the default title checks the raw parsed chapterId (NaN
+    // when missing/invalid), not the SF-Bay-defaulted value.
     const formTitle =
       searchParams.get('title') ||
       (parsedChapterId === SF_BAY_CHAPTER_ID
         ? 'DxE SF Bay - Get Involved'
         : 'Direct Action Everywhere - Get Involved')
     const formDescription = searchParams.get('description') || ''
-    // Note the asymmetry, matching the Vue original: showInterests defaults
-    // to true (hidden only when explicitly "false"), while the other show*
-    // flags default to false (shown only when explicitly "true").
+    // Vue parity: showInterests defaults true; other show* flags default false.
     const showInterests = searchParams.get('showInterests') !== 'false'
     const showReferralFriends =
       searchParams.get('showReferralFriends') === 'true'
@@ -144,11 +139,8 @@ export function InterestForm() {
         referralFriends,
         referralApply,
         referralOutlet,
-        // The legacy form has a "Circle Interest" mode that submits
-        // `circleInterests` instead of `activismInterests`, but the Vue
-        // template never rendered any UI bound to `circleInterests`, so it
-        // was always an empty array. We replicate that exact (dead-code)
-        // behavior here rather than porting unused functionality.
+        // Vue parity: "Circle Interest" mode always submitted empty
+        // interests (its circleInterests UI was never rendered).
         interests:
           formOptions.formName === 'Circle Interest'
             ? ''
