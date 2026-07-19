@@ -1,6 +1,5 @@
 import ky, { HTTPError, KyInstance } from 'ky'
 import { z } from 'zod'
-import { format } from 'date-fns'
 import {
   ActivistJSON,
   ActivistPatchInput,
@@ -780,10 +779,12 @@ export class ApiClient {
 
   // Lists upcoming Facebook/Eventbrite events for the SF Bay page, matching
   // the legacy admin FacebookEvents.vue page's hardcoded page ID and
-  // "today onward" start_time window.
+  // "today onward" start_time window. The date is derived from UTC explicitly
+  // so the SSR prefetch (server TZ) and the client refetch (browser TZ) always
+  // agree on the "today" boundary.
   getExternalEvents = async (signal?: AbortSignal) => {
     try {
-      const startTime = `${format(new Date(), 'yyyy-MM-dd')}T00:00:00Z`
+      const startTime = `${new Date().toISOString().slice(0, 10)}T00:00:00Z`
       const resp = await this.client
         .get(`${API_PATH.EXTERNAL_EVENTS_LIST}/${SF_BAY_FACEBOOK_PAGE_ID}`, {
           searchParams: { start_time: startTime },
