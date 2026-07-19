@@ -275,7 +275,7 @@ export function CircleFormDialog({
                 onChange={field.handleChange}
                 options={activistNames}
                 placeholder="Search by name..."
-                max={1}
+                single
               />
             )}
           </form.Field>
