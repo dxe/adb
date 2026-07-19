@@ -35,6 +35,7 @@ export const API_PATH = {
   EVENT_DELETE: 'event/delete',
   COACHING_SAVE: 'connection/save',
   ADMIN_SEND_TEST_EMAIL: 'api/admin/send-test-email',
+  INTERNATIONAL_FORM_SUBMIT: 'international',
 }
 
 export const StaticResourcesHashResp = z.object({
@@ -301,6 +302,23 @@ const ApiErrorResp = z.object({
   status: z.literal('error'),
   message: z.string(),
 })
+
+// Matches `model.InternationalFormData` in server/src/model/forms.go. `id`
+// and `skills` are omitted since the form doesn't populate them and the Go
+// decoder ignores unrecognized/missing fields.
+export interface InternationalFormPayload {
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  interest: 'participate' | 'organize'
+  involvement: string
+  city: string
+  state: string
+  country: string
+  lat: number
+  lng: number
+}
 
 export class HTTPStatusError extends Error {
   constructor(
@@ -729,6 +747,20 @@ export class ApiClient {
         .json()
       this.throwIfApiError(resp)
       return EventListResp.parse(resp)
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  // Public, unauthenticated endpoint (no CSRF token required); used by the
+  // international chapter application form at /international.
+  submitInternationalForm = async (payload: InternationalFormPayload) => {
+    try {
+      const resp = await this.client
+        .post(API_PATH.INTERNATIONAL_FORM_SUBMIT, { json: payload })
+        .json()
+      this.throwIfApiError(resp)
+      return SuccessResp.parse(resp)
     } catch (err) {
       return this.handleKyError(err)
     }
