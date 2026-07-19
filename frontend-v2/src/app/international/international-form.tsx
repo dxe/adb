@@ -2,14 +2,14 @@
 
 import { useState } from 'react'
 import { useForm } from '@tanstack/react-form'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 import toast from 'react-hot-toast'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { apiClient, HTTPStatusError } from '@/lib/api'
+import { API_PATH, apiClient } from '@/lib/api'
 import { CityAutocomplete, CityValue } from './city-autocomplete'
 
 const ERROR_MESSAGE =
@@ -53,6 +53,18 @@ export function InternationalForm() {
   const [location, setLocation] = useState<CityValue>(initialLocation)
   const [locationChosen, setLocationChosen] = useState(false)
 
+  // The Google Places API key is served by a small public endpoint at
+  // runtime (it is referrer-restricted, and the legacy Go-templated
+  // /international page already embedded it for anonymous visitors). If the
+  // fetch fails or the key is empty, the form still works — the city field
+  // just won't offer autocomplete suggestions.
+  const { data: placesApiKey } = useQuery({
+    queryKey: [API_PATH.PLACES_API_KEY],
+    queryFn: ({ signal }) => apiClient.getPlacesApiKey(signal),
+    staleTime: Infinity,
+    retry: 1,
+  })
+
   const mutation = useMutation({
     mutationFn: async (values: FormValues) => {
       return apiClient.submitInternationalForm({
@@ -73,10 +85,11 @@ export function InternationalForm() {
       toast.success('Submitted!')
       setSubmitSuccess(true)
     },
-    onError: (err: unknown) => {
-      const message =
-        err instanceof HTTPStatusError ? err.message : ERROR_MESSAGE
-      toast.error(message || ERROR_MESSAGE)
+    onError: () => {
+      // Always show the generic message (matching the legacy Vue form) —
+      // backend error text may contain raw internal details (e.g. wrapped DB
+      // errors) that shouldn't be shown to anonymous visitors.
+      toast.error(ERROR_MESSAGE)
     },
   })
 
@@ -232,10 +245,15 @@ export function InternationalForm() {
         <CityAutocomplete
           id="citySearch"
           placeholder="Enter your city & country"
+          apiKey={placesApiKey}
           onSelect={(value) => {
             setLocation(value)
             setLocationChosen(true)
           }}
+          // Intentional deviation from the legacy Vue form: it never listened
+          // to the widget's no-results event, so a previously selected city
+          // stayed "valid" even after the user typed over it. Resetting here
+          // is stricter and prevents submitting a stale location.
           onNoResults={() => setLocationChosen(false)}
         />
         {!locationChosen && (
@@ -301,9 +319,11 @@ export function InternationalForm() {
           and understand that I may be removed if I fail to do so.
         </p>
 
+        {/* Like the legacy Buefy radio-button, agreement can be selected but
+            not un-selected (a radio can't be un-checked once chosen). */}
         <button
           type="button"
-          onClick={() => setTermsAgreed((agreed) => !agreed)}
+          onClick={() => setTermsAgreed(true)}
           aria-pressed={termsAgreed}
           className={`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
             termsAgreed

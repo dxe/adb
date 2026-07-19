@@ -36,6 +36,7 @@ export const API_PATH = {
   COACHING_SAVE: 'connection/save',
   ADMIN_SEND_TEST_EMAIL: 'api/admin/send-test-email',
   INTERNATIONAL_FORM_SUBMIT: 'international',
+  PLACES_API_KEY: 'places_api_key',
 }
 
 export const StaticResourcesHashResp = z.object({
@@ -301,6 +302,10 @@ const SuccessResp = z.object({
 const ApiErrorResp = z.object({
   status: z.literal('error'),
   message: z.string(),
+})
+
+const PlacesApiKeyResp = z.object({
+  googlePlacesApiKey: z.string(),
 })
 
 // Matches `model.InternationalFormData` in server/src/model/forms.go. `id`
@@ -747,6 +752,20 @@ export class ApiClient {
         .json()
       this.throwIfApiError(resp)
       return EventListResp.parse(resp)
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  // Public, unauthenticated endpoint serving the referrer-restricted Google
+  // Places API key; used by public pages that need Places autocomplete.
+  // Authed pages should prefer the key from /user/me instead.
+  getPlacesApiKey = async (signal?: AbortSignal) => {
+    try {
+      const resp = await this.client
+        .get(API_PATH.PLACES_API_KEY, { signal })
+        .json()
+      return PlacesApiKeyResp.parse(resp).googlePlacesApiKey
     } catch (err) {
       return this.handleKyError(err)
     }

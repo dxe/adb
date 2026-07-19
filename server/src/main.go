@@ -275,6 +275,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.HandleFunc("/apply", main.ApplicationFormHandler)
 	router.HandleFunc("/interest", main.InterestFormHandler)
 	router.HandleFunc("/international", main.InternationalFormHandler)
+	router.HandleFunc("/places_api_key", main.PlacesAPIKeyHandler)
 
 	// Error pages
 	router.HandleFunc("/403", main.ForbiddenHandler)
@@ -2219,6 +2220,17 @@ func (c MainController) InterestFormHandler(w http.ResponseWriter, r *http.Reque
 			"status": "success",
 		})
 	}
+}
+
+// PlacesAPIKeyHandler serves the Google Places API key to unauthenticated
+// visitors so that public pages (e.g. the international application form at
+// /v2/international) can load the Google Maps Places autocomplete. The key is
+// referrer-restricted, and the legacy Go-templated /international page already
+// embedded it in HTML served to anonymous visitors, so this is no new exposure.
+func (c MainController) PlacesAPIKeyHandler(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, map[string]string{
+		"googlePlacesApiKey": config.GooglePlacesAPIKey,
+	})
 }
 
 func (c MainController) InternationalFormHandler(w http.ResponseWriter, r *http.Request) {
