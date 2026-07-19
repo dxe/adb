@@ -96,20 +96,9 @@ export function WorkingGroupFormDialog({
     mutationFn: (payload: WorkingGroupSavePayload) =>
       apiClient.saveWorkingGroup(payload),
     onSuccess: (saved) => {
-      queryClient.setQueryData(
-        [API_PATH.WORKING_GROUP_LIST],
-        (old: WorkingGroup[] | undefined) => {
-          if (!old) return old
-          const idx = old.findIndex((wg) => wg.id === saved.id)
-          if (idx === -1) {
-            // New working group, insert at the top.
-            return [saved, ...old]
-          }
-          const next = old.slice()
-          next[idx] = saved
-          return next
-        },
-      )
+      queryClient.invalidateQueries({
+        queryKey: [API_PATH.WORKING_GROUP_LIST],
+      })
       toast.success(`${saved.name} saved`)
       onClose()
     },

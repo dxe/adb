@@ -22,9 +22,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { SortIndicator } from '@/components/ui/sort-indicator'
 
-// Counts members that are on the mailing list (matches legacy behavior:
-// includes the point person, excludes members flagged as
-// non_member_on_mailing_list).
+// Includes the point person, matching the legacy page's "Total Members" count.
 function countMailingListMembers(workingGroup: WorkingGroup): number {
   return workingGroup.members.filter((m) => !m.non_member_on_mailing_list)
     .length

@@ -25,11 +25,9 @@ export function DeleteWorkingGroupDialog({
   const mutation = useMutation({
     mutationFn: () => apiClient.deleteWorkingGroup(workingGroup.id),
     onSuccess: () => {
-      queryClient.setQueryData(
-        [API_PATH.WORKING_GROUP_LIST],
-        (old: WorkingGroup[] | undefined) =>
-          old ? old.filter((wg) => wg.id !== workingGroup.id) : old,
-      )
+      queryClient.invalidateQueries({
+        queryKey: [API_PATH.WORKING_GROUP_LIST],
+      })
       toast.success(`${workingGroup.name} deleted`)
       onClose()
     },

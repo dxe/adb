@@ -14,17 +14,29 @@ import { DeleteWorkingGroupDialog } from './delete-working-group-dialog'
 const NEW_WORKING_GROUP = 'new' as const
 
 export default function WorkingGroupsPage() {
-  const { data: workingGroups, isLoading: isWorkingGroupsLoading } = useQuery({
+  const {
+    data: workingGroups,
+    isLoading: isWorkingGroupsLoading,
+    isError,
+  } = useQuery({
     queryKey: [API_PATH.WORKING_GROUP_LIST],
     queryFn: ({ signal }) => apiClient.getWorkingGroups(signal),
   })
 
-  const { data: organizersResp, isLoading: isOrganizersLoading } = useQuery({
+  const {
+    data: organizersResp,
+    isLoading: isOrganizersLoading,
+    isError: isOrganizersError,
+  } = useQuery({
     queryKey: [API_PATH.ACTIVIST_NAMES_GET_ORGANIZERS],
     queryFn: ({ signal }) => apiClient.getOrganizerNames(signal),
   })
 
-  const { data: activistsResp, isLoading: isActivistsLoading } = useQuery({
+  const {
+    data: activistsResp,
+    isLoading: isActivistsLoading,
+    isError: isActivistsError,
+  } = useQuery({
     queryKey: [API_PATH.ACTIVIST_NAMES_GET],
     queryFn: ({ signal }) => apiClient.getActivistNames(signal),
   })
@@ -73,17 +85,25 @@ export default function WorkingGroupsPage() {
           <Loader2 className="h-4 w-4 animate-spin" />
           Loading working groups...
         </div>
-      ) : workingGroups ? (
-        <WorkingGroupTable
-          workingGroups={workingGroups}
-          membersVisible={membersVisible}
-          onEdit={setEditingTarget}
-          onDelete={setDeletingTarget}
-        />
-      ) : (
+      ) : isError || !workingGroups ? (
         <div className="text-sm text-destructive">
-          Failed to load working groups
+          Failed to load working groups. Please try again.
         </div>
+      ) : (
+        <>
+          {(isOrganizersError || isActivistsError) && (
+            <div className="text-sm text-destructive">
+              Failed to load activist names. The point person and member
+              autocomplete will be unavailable — reload the page to try again.
+            </div>
+          )}
+          <WorkingGroupTable
+            workingGroups={workingGroups}
+            membersVisible={membersVisible}
+            onEdit={setEditingTarget}
+            onDelete={setDeletingTarget}
+          />
+        </>
       )}
 
       {editingTarget !== null && (
