@@ -296,10 +296,10 @@ export interface EventListParams {
   event_type: EventType
 }
 
-// Listing events for this page ID returns merged events from all SF Bay pages.
+// The external events admin page is only used for SF Bay (parity with the
+// legacy Vue page), so the page ID is hardcoded.
 const SF_BAY_FACEBOOK_PAGE_ID = '1377014279263790'
 
-// Go's ExternalEvent struct has no `json` tags, so fields serialize as PascalCase.
 const ExternalEventSchema = z.object({
   ID: z.string(),
   Name: z.string(),

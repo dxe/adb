@@ -54,7 +54,7 @@ export function CancelEventDialog({
         </DialogHeader>
         <p className="text-sm">
           Are you sure you want to cancel &ldquo;{eventName}&rdquo;? It will no
-          longer be shown to activists.
+          longer be displayed on the public events page.
         </p>
         <DialogFooter>
           <Button
