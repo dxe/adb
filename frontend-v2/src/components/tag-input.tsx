@@ -15,12 +15,10 @@ export interface TagInputProps {
   options: string[]
   /** Optional label rendered above the control, wired to the input via `htmlFor`. */
   label?: string
-  /** Input id for an external label (auto-generated if omitted); prefer `label`, since the input unmounts while hidden. */
-  id?: string
   /** Placeholder shown in the text input while no chips are selected. */
   placeholder?: string
-  /** Max selections — the input hides once reached; pass 1 for single-select, omit for unbounded. */
-  max?: number
+  /** Allow only one selection — the input hides while a value is picked. */
+  single?: boolean
   /** Max suggestions shown in the dropdown (default 20). */
   maxSuggestions?: number
   /** Disables the control: hides the text input and chip-remove buttons. */
@@ -36,45 +34,45 @@ export function TagInput({
   onChange,
   options,
   label,
-  id,
   placeholder = 'Search by name...',
-  max,
+  single = false,
   maxSuggestions = 20,
   disabled = false,
 }: TagInputProps) {
   const [text, setText] = useState('')
-  const [open, setOpen] = useState(false)
-  const generatedId = useId()
-  const inputId = id ?? generatedId
+  const [isOpen, setIsOpen] = useState(false)
+  const inputId = useId()
   const listboxId = `${inputId}-listbox`
 
-  const atMax = max !== undefined && value.length >= max
-  const showInput = !disabled && !atMax
+  const atLimit = single && value.length > 0
+  const showInput = !disabled && !atLimit
   // The input unmounts while hidden, so the label must not reference it then.
   const labelFor = showInput ? inputId : undefined
 
+  const selectedSet = useMemo(() => new Set(value), [value])
   const suggestions = useMemo(() => {
     const query = text.trim().toLowerCase()
     if (!query) return []
     return options
       .filter(
-        (name) => !value.includes(name) && name.toLowerCase().startsWith(query),
+        (name) =>
+          !selectedSet.has(name) && name.toLowerCase().startsWith(query),
       )
       .slice(0, maxSuggestions)
-  }, [options, text, value, maxSuggestions])
+  }, [options, text, selectedSet, maxSuggestions])
 
   const addValue = (name: string) => {
-    if (!name.trim() || value.includes(name) || atMax) return
+    if (!name.trim() || selectedSet.has(name) || atLimit) return
     onChange([...value, name])
     setText('')
-    setOpen(false)
+    setIsOpen(false)
   }
 
   const removeValue = (name: string) => {
     onChange(value.filter((v) => v !== name))
   }
 
-  const dropdownOpen = open && suggestions.length > 0
+  const dropdownOpen = isOpen && suggestions.length > 0
 
   const control = (
     <div
@@ -103,7 +101,7 @@ export function TagInput({
         </span>
       ))}
       {showInput && (
-        <Popover open={dropdownOpen} onOpenChange={setOpen}>
+        <Popover open={dropdownOpen} onOpenChange={setIsOpen}>
           <PopoverAnchor asChild>
             <input
               id={inputId}
@@ -116,10 +114,10 @@ export function TagInput({
               placeholder={value.length === 0 ? placeholder : undefined}
               onChange={(e) => {
                 setText(e.target.value)
-                setOpen(true)
+                setIsOpen(true)
               }}
-              onFocus={() => setOpen(true)}
-              onBlur={() => setOpen(false)}
+              onFocus={() => setIsOpen(true)}
+              onBlur={() => setIsOpen(false)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault()
@@ -146,10 +144,9 @@ export function TagInput({
               role="listbox"
               className="max-h-[240px] overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg"
             >
-              {suggestions.map((s, i) => (
+              {suggestions.map((s) => (
                 <li
                   key={s}
-                  id={`${listboxId}-option-${i}`}
                   role="option"
                   aria-selected={false}
                   className="cursor-pointer px-3 py-1 text-sm hover:bg-gray-100"
