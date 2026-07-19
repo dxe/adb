@@ -1,6 +1,6 @@
 'use client'
 
-import { FormEvent, useState } from 'react'
+import { useForm } from '@tanstack/react-form'
 import { Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { z } from 'zod'
@@ -41,7 +41,45 @@ const applicationSchema = z.object({
   accessibility: z.string().trim(),
 })
 
-type ApplicationType = z.infer<typeof applicationSchema>['applicationType'] | ''
+type ApplicationType = z.infer<typeof applicationSchema>['applicationType']
+
+interface ApplicationFormValues {
+  firstName: string
+  lastName: string
+  pronouns: string
+  email: string
+  address: string
+  city: string
+  zip: string
+  phone: string
+  birthday: string
+  conduct: boolean
+  mission: boolean
+  consent: boolean
+  applicationType: ApplicationType | null
+  referral: string
+  language: string
+  accessibility: string
+}
+
+const defaultValues: ApplicationFormValues = {
+  firstName: '',
+  lastName: '',
+  pronouns: '',
+  email: '',
+  address: '',
+  city: '',
+  zip: '',
+  phone: '',
+  birthday: '',
+  conduct: false,
+  mission: false,
+  consent: false,
+  applicationType: null,
+  referral: '',
+  language: '',
+  accessibility: '',
+}
 
 function Field({
   id,
@@ -105,302 +143,363 @@ export function ApplicationFields({
   onSubmit: (payload: ApplicationFormPayload) => void
   isSubmitting: boolean
 }) {
-  const [firstName, setFirstName] = useState('')
-  const [lastName, setLastName] = useState('')
-  const [pronouns, setPronouns] = useState('')
-  const [mission, setMission] = useState(false)
-  const [conduct, setConduct] = useState(false)
-  const [consent, setConsent] = useState(false)
-  const [email, setEmail] = useState('')
-  const [address, setAddress] = useState('')
-  const [city, setCity] = useState('')
-  const [zip, setZip] = useState('')
-  const [phone, setPhone] = useState('')
-  const [birthday, setBirthday] = useState('')
-  const [referral, setReferral] = useState('')
-  const [language, setLanguage] = useState('')
-  const [accessibility, setAccessibility] = useState('')
-  const [applicationType, setApplicationType] = useState<ApplicationType>('')
+  const form = useForm({
+    defaultValues,
+    onSubmit: async ({ value }) => {
+      const parsed = applicationSchema.safeParse(value)
+      if (!parsed.success) {
+        toast.error(parsed.error.issues[0].message)
+        return
+      }
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-
-    const parsed = applicationSchema.safeParse({
-      firstName,
-      lastName,
-      pronouns,
-      email,
-      address,
-      city,
-      zip,
-      phone,
-      birthday,
-      conduct,
-      mission,
-      consent,
-      applicationType,
-      referral,
-      language,
-      accessibility,
-    })
-    if (!parsed.success) {
-      toast.error(parsed.error.issues[0].message)
-      return
-    }
-
-    const values = parsed.data
-    onSubmit({
-      name: `${values.firstName} ${values.lastName}`,
-      firstName: values.firstName,
-      lastName: values.lastName,
-      pronouns: values.pronouns,
-      email: values.email,
-      address: values.address,
-      city: values.city,
-      zip: values.zip,
-      phone: values.phone,
-      birthday: values.birthday,
-      referral: values.referral,
-      language: values.language,
-      accessibility: values.accessibility,
-      applicationType: values.applicationType,
-    })
-  }
+      const values = parsed.data
+      onSubmit({
+        name: `${values.firstName} ${values.lastName}`,
+        firstName: values.firstName,
+        lastName: values.lastName,
+        pronouns: values.pronouns,
+        email: values.email,
+        address: values.address,
+        city: values.city,
+        zip: values.zip,
+        phone: values.phone,
+        birthday: values.birthday,
+        referral: values.referral,
+        language: values.language,
+        accessibility: values.accessibility,
+        applicationType: values.applicationType,
+      })
+    },
+  })
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
+    <form
+      onSubmit={(e) => {
+        e.preventDefault()
+        form.handleSubmit()
+      }}
+      noValidate
+      className="flex flex-col gap-6"
+    >
       <h2 className="text-xl font-semibold">Take direct action for animals</h2>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <Field id="firstName" label="First Name">
-          <Input
-            id="firstName"
-            type="text"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-            required
-            maxLength={35}
-          />
-        </Field>
+        <form.Field name="firstName">
+          {(field) => (
+            <Field id="firstName" label="First Name">
+              <Input
+                id="firstName"
+                type="text"
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                onBlur={field.handleBlur}
+                required
+                maxLength={35}
+              />
+            </Field>
+          )}
+        </form.Field>
 
-        <Field id="lastName" label="Last Name">
-          <Input
-            id="lastName"
-            type="text"
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-            required
-            maxLength={35}
-          />
-        </Field>
+        <form.Field name="lastName">
+          {(field) => (
+            <Field id="lastName" label="Last Name">
+              <Input
+                id="lastName"
+                type="text"
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                onBlur={field.handleBlur}
+                required
+                maxLength={35}
+              />
+            </Field>
+          )}
+        </form.Field>
 
-        <Field
-          id="pronouns"
-          label="Pronouns (optional)"
-          className="md:col-span-2"
-        >
-          <Input
-            id="pronouns"
-            type="text"
-            value={pronouns}
-            onChange={(e) => setPronouns(e.target.value)}
-            maxLength={20}
-            placeholder="she/her, he/him, they/them, etc."
-          />
-        </Field>
+        <form.Field name="pronouns">
+          {(field) => (
+            <Field
+              id="pronouns"
+              label="Pronouns (optional)"
+              className="md:col-span-2"
+            >
+              <Input
+                id="pronouns"
+                type="text"
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                onBlur={field.handleBlur}
+                maxLength={20}
+                placeholder="she/her, he/him, they/them, etc."
+              />
+            </Field>
+          )}
+        </form.Field>
 
-        <AgreementToggle
-          id="mission"
-          checked={mission}
-          onCheckedChange={setMission}
-        >
-          I support DxE&rsquo;s{' '}
-          <a
-            href="https://www.directactioneverywhere.com/core-values"
-            target="_blank"
-            rel="noreferrer"
-            className="text-primary underline"
-          >
-            mission and values
-          </a>
-          .
-        </AgreementToggle>
+        <form.Field name="mission">
+          {(field) => (
+            <AgreementToggle
+              id="mission"
+              checked={field.state.value}
+              onCheckedChange={(checked) => field.handleChange(checked)}
+            >
+              I support DxE&rsquo;s{' '}
+              <a
+                href="https://www.directactioneverywhere.com/core-values"
+                target="_blank"
+                rel="noreferrer"
+                className="text-primary underline"
+              >
+                mission and values
+              </a>
+              .
+            </AgreementToggle>
+          )}
+        </form.Field>
 
-        <AgreementToggle
-          id="conduct"
-          checked={conduct}
-          onCheckedChange={setConduct}
-        >
-          I will uphold DxE&rsquo;s{' '}
-          <a
-            href="https://dxe.io/conduct"
-            target="_blank"
-            rel="noreferrer"
-            className="text-primary underline"
-          >
-            code of conduct
-          </a>
-          .
-        </AgreementToggle>
+        <form.Field name="conduct">
+          {(field) => (
+            <AgreementToggle
+              id="conduct"
+              checked={field.state.value}
+              onCheckedChange={(checked) => field.handleChange(checked)}
+            >
+              I will uphold DxE&rsquo;s{' '}
+              <a
+                href="https://dxe.io/conduct"
+                target="_blank"
+                rel="noreferrer"
+                className="text-primary underline"
+              >
+                code of conduct
+              </a>
+              .
+            </AgreementToggle>
+          )}
+        </form.Field>
 
-        <AgreementToggle
-          id="consent"
-          checked={consent}
-          onCheckedChange={setConsent}
-        >
-          I agree to watch a video and{' '}
-          <a
-            href="https://dxe.io/refresherquiz"
-            target="_blank"
-            rel="noreferrer"
-            className="text-primary underline"
-          >
-            take a quiz
-          </a>{' '}
-          on consent.
-        </AgreementToggle>
+        <form.Field name="consent">
+          {(field) => (
+            <AgreementToggle
+              id="consent"
+              checked={field.state.value}
+              onCheckedChange={(checked) => field.handleChange(checked)}
+            >
+              I agree to watch a video and{' '}
+              <a
+                href="https://dxe.io/refresherquiz"
+                target="_blank"
+                rel="noreferrer"
+                className="text-primary underline"
+              >
+                take a quiz
+              </a>{' '}
+              on consent.
+            </AgreementToggle>
+          )}
+        </form.Field>
 
         <div className="md:col-span-2">
           <h2 className="mt-3 text-xl font-semibold">Contact Info</h2>
         </div>
 
-        <Field id="email" label="Email" className="md:col-span-2">
-          <Input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            maxLength={60}
-          />
-        </Field>
+        <form.Field name="email">
+          {(field) => (
+            <Field id="email" label="Email" className="md:col-span-2">
+              <Input
+                id="email"
+                type="email"
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                onBlur={field.handleBlur}
+                required
+                maxLength={60}
+              />
+            </Field>
+          )}
+        </form.Field>
 
-        <Field id="address" label="Street Address" className="md:col-span-2">
-          <Input
-            id="address"
-            type="text"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            required
-            maxLength={60}
-          />
-        </Field>
-
-        <Field id="city" label="City">
-          <Input
-            id="city"
-            type="text"
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            required
-            maxLength={90}
-          />
-        </Field>
-
-        <Field id="zip" label="Zip Code">
-          <Input
-            id="zip"
-            type="text"
-            inputMode="numeric"
-            value={zip}
-            onChange={(e) => setZip(e.target.value)}
-            required
-            maxLength={5}
-          />
-        </Field>
-
-        <Field id="phone" label="Phone">
-          <Input
-            id="phone"
-            type="text"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            required
-            maxLength={20}
-          />
-        </Field>
-
-        <Field id="birthday" label="Birthday">
-          <Input
-            id="birthday"
-            type="date"
-            value={birthday}
-            onChange={(e) => setBirthday(e.target.value)}
-            required
-          />
-        </Field>
-
-        <Field id="referral" label="Who encouraged you to apply? (optional)">
-          <Input
-            id="referral"
-            type="text"
-            value={referral}
-            onChange={(e) => setReferral(e.target.value)}
-            maxLength={100}
-          />
-        </Field>
-
-        <Field
-          id="language"
-          label="Primary language (optional)"
-          message="We try to create materials and events in your primary language when possible."
-        >
-          <Input
-            id="language"
-            type="text"
-            value={language}
-            onChange={(e) => setLanguage(e.target.value)}
-            maxLength={40}
-          />
-        </Field>
-
-        <Field
-          id="accessibility"
-          label="Accessibility needs (optional)"
-          message="We do our best to accommodate our events to your needs."
-          className="md:col-span-2"
-        >
-          <Input
-            id="accessibility"
-            type="text"
-            value={accessibility}
-            onChange={(e) => setAccessibility(e.target.value)}
-            maxLength={300}
-          />
-        </Field>
-
-        <div className="flex flex-col gap-2 md:col-span-2">
-          <Label>
-            Are you interested in further leveling up your activism by becoming
-            an Organizer?
-          </Label>
-          <p className="text-xs text-muted-foreground">
-            Organizers take ownership over achieving the chapter&rsquo;s
-            objectives and make our chapter function by organizing community
-            events, editing videos, leading protests, raising money, writing
-            press releases, and more. By becoming an organizer, you become a
-            primary driver of the chapter&rsquo;s objectives. They volunteer for
-            2-5 hours per week.
-          </p>
-          <div className="flex gap-3">
-            <Button
-              type="button"
-              variant={applicationType === 'organizer' ? 'default' : 'outline'}
-              onClick={() => setApplicationType('organizer')}
+        <form.Field name="address">
+          {(field) => (
+            <Field
+              id="address"
+              label="Street Address"
+              className="md:col-span-2"
             >
-              Yes
-            </Button>
-            <Button
-              type="button"
-              variant={
-                applicationType === 'chapter-member' ? 'default' : 'outline'
-              }
-              onClick={() => setApplicationType('chapter-member')}
+              <Input
+                id="address"
+                type="text"
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                onBlur={field.handleBlur}
+                required
+                maxLength={60}
+              />
+            </Field>
+          )}
+        </form.Field>
+
+        <form.Field name="city">
+          {(field) => (
+            <Field id="city" label="City">
+              <Input
+                id="city"
+                type="text"
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                onBlur={field.handleBlur}
+                required
+                maxLength={90}
+              />
+            </Field>
+          )}
+        </form.Field>
+
+        <form.Field name="zip">
+          {(field) => (
+            <Field id="zip" label="Zip Code">
+              <Input
+                id="zip"
+                type="text"
+                inputMode="numeric"
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                onBlur={field.handleBlur}
+                required
+                maxLength={5}
+              />
+            </Field>
+          )}
+        </form.Field>
+
+        <form.Field name="phone">
+          {(field) => (
+            <Field id="phone" label="Phone">
+              <Input
+                id="phone"
+                type="text"
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                onBlur={field.handleBlur}
+                required
+                maxLength={20}
+              />
+            </Field>
+          )}
+        </form.Field>
+
+        <form.Field name="birthday">
+          {(field) => (
+            <Field id="birthday" label="Birthday">
+              <Input
+                id="birthday"
+                type="date"
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                onBlur={field.handleBlur}
+                required
+              />
+            </Field>
+          )}
+        </form.Field>
+
+        <form.Field name="referral">
+          {(field) => (
+            <Field
+              id="referral"
+              label="Who encouraged you to apply? (optional)"
             >
-              No (or not sure)
-            </Button>
-          </div>
-        </div>
+              <Input
+                id="referral"
+                type="text"
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                onBlur={field.handleBlur}
+                maxLength={100}
+              />
+            </Field>
+          )}
+        </form.Field>
+
+        <form.Field name="language">
+          {(field) => (
+            <Field
+              id="language"
+              label="Primary language (optional)"
+              message="We try to create materials and events in your primary language when possible."
+            >
+              <Input
+                id="language"
+                type="text"
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                onBlur={field.handleBlur}
+                maxLength={40}
+              />
+            </Field>
+          )}
+        </form.Field>
+
+        <form.Field name="accessibility">
+          {(field) => (
+            <Field
+              id="accessibility"
+              label="Accessibility needs (optional)"
+              message="We do our best to accommodate our events to your needs."
+              className="md:col-span-2"
+            >
+              <Input
+                id="accessibility"
+                type="text"
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                onBlur={field.handleBlur}
+                maxLength={300}
+              />
+            </Field>
+          )}
+        </form.Field>
+
+        <form.Field name="applicationType">
+          {(field) => (
+            <div className="flex flex-col gap-2 md:col-span-2">
+              <Label>
+                Are you interested in further leveling up your activism by
+                becoming an Organizer?
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Organizers take ownership over achieving the chapter&rsquo;s
+                objectives and make our chapter function by organizing community
+                events, editing videos, leading protests, raising money, writing
+                press releases, and more. By becoming an organizer, you become a
+                primary driver of the chapter&rsquo;s objectives. They volunteer
+                for 2-5 hours per week.
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant={
+                    field.state.value === 'organizer' ? 'default' : 'outline'
+                  }
+                  onClick={() => field.handleChange('organizer')}
+                >
+                  Yes
+                </Button>
+                <Button
+                  type="button"
+                  variant={
+                    field.state.value === 'chapter-member'
+                      ? 'default'
+                      : 'outline'
+                  }
+                  onClick={() => field.handleChange('chapter-member')}
+                >
+                  No (or not sure)
+                </Button>
+              </div>
+            </div>
+          )}
+        </form.Field>
       </div>
 
       <Button type="submit" disabled={isSubmitting} className="mt-3 w-fit">

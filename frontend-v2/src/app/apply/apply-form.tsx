@@ -9,9 +9,6 @@ import { ChapterMemberInfo } from '@/app/apply/chapter-member-info'
 import { ApplicationFields } from '@/app/apply/application-fields'
 import { ThankYou } from '@/app/apply/thank-you'
 
-const ERROR_MESSAGE =
-  'Sorry, there was an error submitting your form. Please try again.'
-
 type Step = 'localCheck' | 'info' | 'fields' | 'thankYou'
 
 /** Orchestrates the multi-step "Apply" flow ported from frontend/FormApply.vue. */
@@ -26,7 +23,9 @@ export function ApplyForm() {
       setStep('thankYou')
     },
     onError: () => {
-      toast.error(ERROR_MESSAGE)
+      toast.error(
+        'Sorry, there was an error submitting your form. Please try again.',
+      )
     },
   })
 
