@@ -32,7 +32,10 @@ export interface TagInputProps {
   /**
    * `id` applied to the text input. Auto-generated if omitted. Only needed
    * explicitly when an external label (not the built-in `label` prop) needs
-   * to reference this input via `htmlFor`.
+   * to reference this input via `htmlFor`. Note that the input is unmounted
+   * while `disabled` or once `max` selections are reached, so an external
+   * label's `htmlFor` dangles in those states — prefer the built-in `label`
+   * prop, which handles this.
    */
   id?: string
   /** Placeholder shown in the text input while no chips are selected. */
@@ -86,9 +89,12 @@ export function TagInput({
   const [open, setOpen] = useState(false)
   const generatedId = useId()
   const inputId = id ?? generatedId
+  const listboxId = `${inputId}-listbox`
 
   const atMax = max !== undefined && value.length >= max
   const showInput = !disabled && !atMax
+  // The input unmounts while hidden, so the label must not reference it then.
+  const labelFor = showInput ? inputId : undefined
 
   const suggestions = useMemo(() => {
     const query = text.trim().toLowerCase()
@@ -110,6 +116,8 @@ export function TagInput({
   const removeValue = (name: string) => {
     onChange(value.filter((v) => v !== name))
   }
+
+  const dropdownOpen = open && suggestions.length > 0
 
   const control = (
     <div
@@ -138,10 +146,14 @@ export function TagInput({
         </span>
       ))}
       {showInput && (
-        <Popover open={open && suggestions.length > 0} onOpenChange={setOpen}>
+        <Popover open={dropdownOpen} onOpenChange={setOpen}>
           <PopoverAnchor asChild>
             <input
               id={inputId}
+              role="combobox"
+              aria-autocomplete="list"
+              aria-expanded={dropdownOpen}
+              aria-controls={listboxId}
               className="min-w-[8rem] flex-1 border-0 bg-transparent p-1 text-sm outline-none placeholder:text-muted-foreground"
               value={text}
               placeholder={value.length === 0 ? placeholder : undefined}
@@ -173,12 +185,14 @@ export function TagInput({
             onCloseAutoFocus={(e) => e.preventDefault()}
           >
             <ul
+              id={listboxId}
               role="listbox"
               className="max-h-[240px] overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg"
             >
-              {suggestions.map((s) => (
+              {suggestions.map((s, i) => (
                 <li
                   key={s}
+                  id={`${listboxId}-option-${i}`}
                   role="option"
                   aria-selected={false}
                   className="cursor-pointer px-3 py-1 text-sm hover:bg-gray-100"
@@ -202,7 +216,7 @@ export function TagInput({
 
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={inputId}>{label}</Label>
+      <Label htmlFor={labelFor}>{label}</Label>
       {control}
     </div>
   )
