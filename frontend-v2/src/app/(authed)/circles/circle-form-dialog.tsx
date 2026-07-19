@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { ActivistTagInput } from './activist-tag-input'
+import { TagInput } from '@/components/tag-input'
 import type { CircleMode } from './search-params'
 
 type Props = {
@@ -197,20 +197,20 @@ export function CircleFormDialog({
 
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="circle-host">Host</Label>
-            <ActivistTagInput
+            <TagInput
               id="circle-host"
               value={host}
               onChange={setHost}
               options={activistNames}
               placeholder="Search by name..."
-              maxItems={1}
+              max={1}
             />
           </div>
 
           {isGeo && (
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="circle-members">Members</Label>
-              <ActivistTagInput
+              <TagInput
                 id="circle-members"
                 value={members}
                 onChange={setMembers}
