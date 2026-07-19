@@ -299,8 +299,10 @@ const SuccessResp = z.object({
 })
 
 // Payload for the public (unauthenticated) "Interest" sign-up form, submitted
-// from frontend-v2/src/app/interest. Field names/shape must match
-// model.InterestFormData in server/src/model/forms.go exactly.
+// from frontend-v2/src/app/interest. Keys must align with the JSON tags of
+// model.InterestFormData in server/src/model/forms.go for the fields this
+// form submits. (The Go struct also has a submitted_via_signup_service field
+// that this form never sends; it harmlessly defaults to false.)
 export interface InterestFormPayload {
   chapterId: number
   form: string
