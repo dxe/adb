@@ -358,8 +358,7 @@ export class HTTPStatusError extends Error {
   }
 }
 
-// Module-level cache for the CSRF token. Safe to cache indefinitely because
-// the _gorilla_csrf cookie (and thus the token value) doesn't rotate mid-session.
+// Module-level cache for the CSRF token, shared across ApiClient instances.
 let _csrfTokenCache: string | undefined
 let _csrfTokenPending: Promise<string | undefined> | null = null
 
@@ -380,6 +379,25 @@ async function getCsrfToken(client: ApiClient): Promise<string | undefined> {
     )
   }
   return _csrfTokenPending
+}
+
+// Drops the cached token so the next getCsrfToken() refetches from the server.
+function invalidateCsrfToken() {
+  _csrfTokenCache = undefined
+  _csrfTokenPending = null
+}
+
+// Whether the given error is a 403 caused by a rejected CSRF token.
+// Distinguishes from authorization 403.
+function isCsrfRejection(err: unknown): boolean {
+  return (
+    err instanceof HTTPError &&
+    err.response.status === 403 &&
+    typeof err.data === 'string' &&
+    // The CSRF middleware's body is "Forbidden - <reason>" and its token
+    // reasons contain "CSRF".
+    err.data.includes('CSRF')
+  )
 }
 
 export function preloadCsrfToken() {
@@ -453,6 +471,25 @@ export class ApiClient {
 
   private getCsrfToken(): Promise<string | undefined> {
     return getCsrfToken(this)
+  }
+
+  // Runs a CSRF-protected request, passing `run` the current token to attach as
+  // the X-CSRF-Token header.
+  //
+  // If the token has gone stale and the request is rejected for CSRF, refetches
+  // a fresh token and retries once. Other errors propagate untouched.
+  private async withCsrf<T>(
+    run: (csrfToken: string | undefined) => Promise<T>,
+  ): Promise<T> {
+    try {
+      return await run(await this.getCsrfToken())
+    } catch (err) {
+      if (isCsrfRejection(err)) {
+        invalidateCsrfToken()
+        return await run(await this.getCsrfToken())
+      }
+      throw err
+    }
   }
 
   getActivistNames = async (signal?: AbortSignal) => {
@@ -573,15 +610,16 @@ export class ApiClient {
     signal?: AbortSignal,
   ) => {
     try {
-      const csrfToken = await this.getCsrfToken()
-      const resp = await this.client
-        .patch(`${API_PATH.ACTIVIST_GET}/${activistId}`, {
-          json: patch,
-          headers: { 'X-CSRF-Token': csrfToken },
-          signal,
-        })
-        .json()
-      const activist = ActivistGetResp.parse(resp).activist
+      const activist = await this.withCsrf(async (csrfToken) => {
+        const resp = await this.client
+          .patch(`${API_PATH.ACTIVIST_GET}/${activistId}`, {
+            json: patch,
+            headers: { 'X-CSRF-Token': csrfToken },
+            signal,
+          })
+          .json()
+        return ActivistGetResp.parse(resp).activist
+      })
       fillActivistBlankFields(activist)
       return activist
     } catch (err) {
@@ -674,14 +712,15 @@ export class ApiClient {
 
   createUser = async (payload: UserWithoutId) => {
     try {
-      const csrfToken = await this.getCsrfToken()
-      const resp = await this.client
-        .post(API_PATH.USERS, {
-          json: payload,
-          headers: { 'X-CSRF-Token': csrfToken },
-        })
-        .json()
-      return UserSaveResp.parse(resp).user
+      return await this.withCsrf(async (csrfToken) => {
+        const resp = await this.client
+          .post(API_PATH.USERS, {
+            json: payload,
+            headers: { 'X-CSRF-Token': csrfToken },
+          })
+          .json()
+        return UserSaveResp.parse(resp).user
+      })
     } catch (err) {
       return this.handleKyError(err)
     }
@@ -689,14 +728,15 @@ export class ApiClient {
 
   updateUser = async (payload: User) => {
     try {
-      const csrfToken = await this.getCsrfToken()
-      const resp = await this.client
-        .put(`${API_PATH.USERS}/${payload.id}`, {
-          json: payload,
-          headers: { 'X-CSRF-Token': csrfToken },
-        })
-        .json()
-      return UserSaveResp.parse(resp).user
+      return await this.withCsrf(async (csrfToken) => {
+        const resp = await this.client
+          .put(`${API_PATH.USERS}/${payload.id}`, {
+            json: payload,
+            headers: { 'X-CSRF-Token': csrfToken },
+          })
+          .json()
+        return UserSaveResp.parse(resp).user
+      })
     } catch (err) {
       return this.handleKyError(err)
     }
@@ -704,15 +744,16 @@ export class ApiClient {
 
   sendTestEmail = async (email: string) => {
     try {
-      const csrfToken = await this.getCsrfToken()
-      const resp = await this.client
-        .post(API_PATH.ADMIN_SEND_TEST_EMAIL, {
-          json: { email },
-          headers: { 'X-CSRF-Token': csrfToken },
-        })
-        .json()
-      this.throwIfApiError(resp)
-      return SuccessResp.parse(resp)
+      return await this.withCsrf(async (csrfToken) => {
+        const resp = await this.client
+          .post(API_PATH.ADMIN_SEND_TEST_EMAIL, {
+            json: { email },
+            headers: { 'X-CSRF-Token': csrfToken },
+          })
+          .json()
+        this.throwIfApiError(resp)
+        return SuccessResp.parse(resp)
+      })
     } catch (err) {
       return this.handleKyError(err)
     }
@@ -731,15 +772,16 @@ export class ApiClient {
 
   saveEvent = async (payload: SaveEventParams) => {
     try {
-      const csrfToken = await this.getCsrfToken()
-      const resp = await this.client
-        .post(API_PATH.EVENT_SAVE, {
-          json: payload,
-          headers: { 'X-CSRF-Token': csrfToken },
-        })
-        .json()
-      this.throwIfApiError(resp)
-      return EventSaveResp.parse(resp)
+      return await this.withCsrf(async (csrfToken) => {
+        const resp = await this.client
+          .post(API_PATH.EVENT_SAVE, {
+            json: payload,
+            headers: { 'X-CSRF-Token': csrfToken },
+          })
+          .json()
+        this.throwIfApiError(resp)
+        return EventSaveResp.parse(resp)
+      })
     } catch (err) {
       return this.handleKyError(err)
     }
@@ -747,15 +789,16 @@ export class ApiClient {
 
   saveCoaching = async (payload: SaveEventParams) => {
     try {
-      const csrfToken = await this.getCsrfToken()
-      const resp = await this.client
-        .post(API_PATH.COACHING_SAVE, {
-          json: payload,
-          headers: { 'X-CSRF-Token': csrfToken },
-        })
-        .json()
-      this.throwIfApiError(resp)
-      return EventSaveResp.parse(resp)
+      return await this.withCsrf(async (csrfToken) => {
+        const resp = await this.client
+          .post(API_PATH.COACHING_SAVE, {
+            json: payload,
+            headers: { 'X-CSRF-Token': csrfToken },
+          })
+          .json()
+        this.throwIfApiError(resp)
+        return EventSaveResp.parse(resp)
+      })
     } catch (err) {
       return this.handleKyError(err)
     }
@@ -782,16 +825,17 @@ export class ApiClient {
 
   deleteEvent = async (eventId: number) => {
     try {
-      const csrfToken = await this.getCsrfToken()
       const body = new URLSearchParams({ event_id: String(eventId) })
-      const resp = await this.client
-        .post(API_PATH.EVENT_DELETE, {
-          body,
-          headers: { 'X-CSRF-Token': csrfToken },
-        })
-        .json()
-      this.throwIfApiError(resp)
-      return SuccessResp.parse(resp)
+      return await this.withCsrf(async (csrfToken) => {
+        const resp = await this.client
+          .post(API_PATH.EVENT_DELETE, {
+            body,
+            headers: { 'X-CSRF-Token': csrfToken },
+          })
+          .json()
+        this.throwIfApiError(resp)
+        return SuccessResp.parse(resp)
+      })
     } catch (err) {
       return this.handleKyError(err)
     }
