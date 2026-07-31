@@ -108,4 +108,19 @@ describe('ApiClient CSRF handling', () => {
     // No refetch/retry: the request was attempted exactly once.
     expect(postCalls).toBe(1)
   })
+
+  it('surfaces the server error message from a JSON error response', async () => {
+    stubFetch(async () =>
+      jsonResponse({ status: 'error', message: 'boom' }, 400),
+    )
+
+    const { apiClient, HTTPStatusError } = await loadApi()
+    // ky drains the response body onto err.data; handleKyError must read the
+    // message from there rather than re-reading the (consumed) response.
+    await expect(apiClient.getUsers()).rejects.toMatchObject({
+      constructor: HTTPStatusError,
+      status: 400,
+      message: 'boom',
+    })
+  })
 })

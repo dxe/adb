@@ -421,11 +421,11 @@ export class ApiClient {
     })
   }
 
-  private async handleKyError(err: unknown): Promise<never> {
+  private handleKyError(err: unknown): never {
     if (err instanceof HTTPError) {
-      const parsed = ApiErrorResp.safeParse(
-        await err.response.json().catch(() => null),
-      )
+      // ky consumes the response body when it builds the error and exposes the
+      // pre-parsed payload on err.data.
+      const parsed = ApiErrorResp.safeParse(err.data)
       if (parsed.success) {
         throw new HTTPStatusError(err.response.status, parsed.data.message)
       }
