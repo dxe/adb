@@ -17,6 +17,7 @@ const nextConfig: NextConfig = {
     // Turbopack may detect the workspace's pnpm-lock.yaml and thus decide to use the workspace as the root anyway.
     root: path.resolve(__dirname, '..'),
   },
+  allowedDevOrigins: ['[::1]'],
 }
 
 export default nextConfig
