@@ -222,6 +222,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     category: 'Event Attendance',
     blankValue: 0,
     defaultWidth: 50,
+    description: 'Number of events attended in the last 30 days',
   },
   {
     name: 'active',
