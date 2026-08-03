@@ -28,6 +28,8 @@ export const API_PATH = {
   USER_ME: 'user/me',
   CSRF_TOKEN: 'api/csrf-token',
   CHAPTER_LIST: 'chapter/list',
+  CHAPTER_SAVE: 'chapter/save',
+  CHAPTER_DELETE: 'chapter/delete',
   USERS: 'api/users',
   EVENT_GET: 'event/get',
   EVENT_SAVE: 'event/save',
@@ -142,6 +144,58 @@ export function flattenChapterOrganizers(
     })),
   )
 }
+
+// Full `fb_pages` row for the chapters admin page. `.passthrough()` preserves
+// fields the UI never edits (e.g. EmailToken) so saves can't silently wipe them.
+const ChapterOrganizerAdminSchema = z.object({
+  Name: z.string(),
+  Email: z.string(),
+  Phone: z.string(),
+  Facebook: z.string(),
+  Instagram: z.string(),
+  Twitter: z.string(),
+  Website: z.string(),
+})
+export type ChapterOrganizerAdmin = z.infer<typeof ChapterOrganizerAdminSchema>
+
+const ChapterAdminSchema = z
+  .object({
+    ChapterID: z.number(),
+    Name: z.string(),
+    Flag: z.string(),
+    FbURL: z.string(),
+    TwitterURL: z.string(),
+    InstaURL: z.string(),
+    Email: z.string(),
+    Region: z.string(),
+    Country: z.string(),
+    Lat: z.number(),
+    Lng: z.number(),
+    LastFBSync: z.string(),
+    LastFBEvent: z.string(),
+    Mentor: z.string(),
+    Notes: z.string(),
+    LastContact: z.string(),
+    LastAction: z.string(),
+    Organizers: z
+      .array(ChapterOrganizerAdminSchema)
+      .nullable()
+      .transform((v) => v ?? []),
+  })
+  .passthrough()
+export type ChapterAdmin = z.infer<typeof ChapterAdminSchema>
+
+const ChapterAdminListResp = z.object({
+  status: z.literal('success'),
+  chapters: z.array(ChapterAdminSchema),
+})
+
+const ChapterAdminSaveResp = z.object({
+  status: z.literal('success'),
+  chapter: ChapterAdminSchema,
+})
+
+export const CHAPTER_ADMIN_QUERY_KEY = [API_PATH.CHAPTER_LIST, 'admin'] as const
 
 const RolesSchema = z
   .array(Role)
@@ -685,6 +739,52 @@ export class ApiClient {
         .json()
       this.throwIfApiError(resp)
       return ChapterListWithOrganizersResp.parse(resp).chapters
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  getChapterAdminList = async (signal?: AbortSignal) => {
+    try {
+      const resp = await this.client
+        .get(API_PATH.CHAPTER_LIST, { signal })
+        .json()
+      this.throwIfApiError(resp)
+      return ChapterAdminListResp.parse(resp).chapters
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  // Handles both create (no ChapterID) and update; the backend picks the
+  // branch by whether ChapterID is present.
+  saveChapterAdmin = async (payload: Partial<ChapterAdmin>) => {
+    try {
+      const csrfToken = await this.getCsrfToken()
+      const resp = await this.client
+        .post(API_PATH.CHAPTER_SAVE, {
+          json: payload,
+          headers: { 'X-CSRF-Token': csrfToken },
+        })
+        .json()
+      this.throwIfApiError(resp)
+      return ChapterAdminSaveResp.parse(resp).chapter
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  deleteChapterAdmin = async (chapterId: number) => {
+    try {
+      const csrfToken = await this.getCsrfToken()
+      const resp = await this.client
+        .post(API_PATH.CHAPTER_DELETE, {
+          json: { chapter_id: chapterId },
+          headers: { 'X-CSRF-Token': csrfToken },
+        })
+        .json()
+      this.throwIfApiError(resp)
+      return SuccessResp.parse(resp)
     } catch (err) {
       return this.handleKyError(err)
     }
