@@ -35,6 +35,7 @@ export const API_PATH = {
   EVENT_DELETE: 'event/delete',
   COACHING_SAVE: 'connection/save',
   ADMIN_SEND_TEST_EMAIL: 'api/admin/send-test-email',
+  APPLICATION_FORM_SUBMIT: 'apply',
 }
 
 export const StaticResourcesHashResp = z.object({
@@ -342,6 +343,25 @@ export interface EventListParams {
 const SuccessResp = z.object({
   status: z.literal('success'),
 })
+
+// Mirrors ApplicationFormData in server/src/model/forms.go. Like the legacy
+// form, also sends firstName/lastName even though Go only persists `name`.
+export interface ApplicationFormPayload {
+  name: string
+  firstName: string
+  lastName: string
+  pronouns: string
+  email: string
+  address: string
+  city: string
+  zip: string
+  phone: string
+  birthday: string
+  referral: string
+  language: string
+  accessibility: string
+  applicationType: string
+}
 
 const ApiErrorResp = z.object({
   status: z.literal('error'),
@@ -836,6 +856,22 @@ export class ApiClient {
         this.throwIfApiError(resp)
         return SuccessResp.parse(resp)
       })
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  // Public, unauthenticated POST; the /apply Go route has no CSRF middleware.
+  submitApplicationForm = async (
+    payload: ApplicationFormPayload,
+    signal?: AbortSignal,
+  ) => {
+    try {
+      const resp = await this.client
+        .post(API_PATH.APPLICATION_FORM_SUBMIT, { json: payload, signal })
+        .json()
+      this.throwIfApiError(resp)
+      return SuccessResp.parse(resp)
     } catch (err) {
       return this.handleKyError(err)
     }
