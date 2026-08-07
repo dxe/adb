@@ -35,6 +35,7 @@ export const API_PATH = {
   EVENT_DELETE: 'event/delete',
   COACHING_SAVE: 'connection/save',
   ADMIN_SEND_TEST_EMAIL: 'api/admin/send-test-email',
+  INTEREST_FORM_SUBMIT: 'interest',
 }
 
 export const StaticResourcesHashResp = z.object({
@@ -342,6 +343,21 @@ export interface EventListParams {
 const SuccessResp = z.object({
   status: z.literal('success'),
 })
+
+// Public interest form payload. Keys match model.InterestFormData's JSON
+// tags (server/src/model/forms.go) for the fields this form submits.
+export interface InterestFormPayload {
+  chapterId: number
+  form: string
+  name: string
+  email: string
+  zip: string
+  phone: string
+  referralFriends: string
+  referralApply: string
+  referralOutlet: string
+  interests: string
+}
 
 const ApiErrorResp = z.object({
   status: z.literal('error'),
@@ -836,6 +852,19 @@ export class ApiClient {
         this.throwIfApiError(resp)
         return SuccessResp.parse(resp)
       })
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  // Public endpoint; no CSRF token (route is outside the CSRF middleware group).
+  submitInterestForm = async (payload: InterestFormPayload) => {
+    try {
+      const resp = await this.client
+        .post(API_PATH.INTEREST_FORM_SUBMIT, { json: payload })
+        .json()
+      this.throwIfApiError(resp)
+      return SuccessResp.parse(resp)
     } catch (err) {
       return this.handleKyError(err)
     }
