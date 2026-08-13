@@ -228,6 +228,11 @@ const ChapterSwitcher = () => {
   }
 
   const switchChapter = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    // Not a Next.js route: /auth/switch_chapter is a Go server endpoint that
+    // rewrites the chapter on the auth session cookie and 302s back to /. A
+    // full page load is required both to reach it (the Next router can't route
+    // outside the app) and to re-fetch everything under the new chapter.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     window.location.href = `/auth/switch_chapter?chapter_id=${e.target.value}`
   }
 
