@@ -3,12 +3,15 @@
 import { useMemo, useState } from 'react'
 import {
   ColumnDef,
+  columnVisibilityFeature,
+  createSortedRowModel,
   flexRender,
-  getCoreRowModel,
-  getSortedRowModel,
+  rowSortingFeature,
   SortingState,
-  useReactTable,
+  tableFeatures,
+  useTable,
 } from '@tanstack/react-table'
+import { AUTO_SORT_FNS } from '@/lib/table-sort-fns'
 import toast from 'react-hot-toast'
 import { Pencil, Mail, Trash2 } from 'lucide-react'
 import { ChapterAdmin } from '@/lib/api'
@@ -31,6 +34,13 @@ import {
   lastActionTooltip,
   STATUS_COLOR_CLASSES,
 } from './chapter-utils'
+
+const features = tableFeatures({
+  columnVisibilityFeature,
+  rowSortingFeature,
+  sortedRowModel: createSortedRowModel(),
+  sortFns: AUTO_SORT_FNS,
+})
 
 function composeChapterEmail(chapter: ChapterAdmin) {
   const link = buildChapterEmailLink(chapter)
@@ -56,7 +66,7 @@ export function ChapterTable({
     { id: 'Name', desc: false },
   ])
 
-  const columns = useMemo<ColumnDef<ChapterAdmin>[]>(() => {
+  const columns = useMemo<ColumnDef<typeof features, ChapterAdmin>[]>(() => {
     const sortableHeader = (label: string) =>
       function Header({
         column,
@@ -181,19 +191,17 @@ export function ChapterTable({
                 />
               ),
             },
-          ] satisfies ColumnDef<ChapterAdmin>[])
+          ] satisfies ColumnDef<typeof features, ChapterAdmin>[])
         : []),
     ]
   }, [showFacebookColumns, onDelete, isDeleting])
 
-  // eslint-disable-next-line react-hooks/incompatible-library -- Remove once TanStack Table supports React Compiler.
-  const table = useReactTable({
+  const table = useTable({
+    features,
     data: chapters,
     columns,
     state: { sorting },
     onSortingChange: setSorting,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
   })
 
   const rows = table.getRowModel().rows
