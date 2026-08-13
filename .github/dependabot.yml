@@ -19,6 +19,9 @@ updates:
       # Don't bump Tailwind to v4+: it requires a manual migration (v3 -> v4).
       - dependency-name: "tailwindcss"
         update-types: ["version-update:semver-major"]
+      # Stay on the TypeScript v6 line: upgrading to v7 breaks ESLint.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
     groups:
       all-npm:
         patterns:
