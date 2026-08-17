@@ -29,6 +29,7 @@ export const API_PATH = {
   CSRF_TOKEN: 'api/csrf-token',
   CHAPTER_LIST: 'chapter/list',
   USERS: 'api/users',
+  USERS_ASSIGNABLE: 'api/users/assignable',
   EVENT_GET: 'event/get',
   EVENT_SAVE: 'event/save',
   EVENT_LIST: 'event/list',
@@ -161,6 +162,16 @@ export type UserWithoutId = Omit<User, 'id'>
 
 const UserListResp = z.object({
   users: z.array(UserSchema),
+})
+
+const AssignableUserSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+})
+export type AssignableUser = z.infer<typeof AssignableUserSchema>
+
+const AssignableUserListResp = z.object({
+  users: z.array(AssignableUserSchema),
 })
 
 const UserSaveResp = z.object({
@@ -694,6 +705,17 @@ export class ApiClient {
     try {
       const resp = await this.client.get(API_PATH.USERS, { signal }).json()
       return UserListResp.parse(resp).users
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  getAssignableUsers = async (signal?: AbortSignal) => {
+    try {
+      const resp = await this.client
+        .get(API_PATH.USERS_ASSIGNABLE, { signal })
+        .json()
+      return AssignableUserListResp.parse(resp).users
     } catch (err) {
       return this.handleKyError(err)
     }
