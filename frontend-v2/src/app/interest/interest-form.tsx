@@ -162,6 +162,7 @@ export function InterestForm() {
         {header}
         {formOptions.formName === 'Check-in' ? (
           <>
+            {/* Displaying the name helps the attendance taker remember who to record in attendance. */}
             <p>Thank you, {submittedName}!</p>
             <Button
               onClick={() => window.location.reload()}
