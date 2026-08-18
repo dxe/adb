@@ -21,6 +21,7 @@ export const FILTER_NUQS_PARSERS = {
   nameSearch: createFilterNuqsParser('nameSearch'),
   includeHidden: createFilterNuqsParser('includeHidden'),
   lastEvent: createFilterNuqsParser('lastEvent'),
+  lastInteraction: createFilterNuqsParser('lastInteraction'),
   interestDate: createFilterNuqsParser('interestDate'),
   firstEvent: createFilterNuqsParser('firstEvent'),
   totalEvents: createFilterNuqsParser('totalEvents'),

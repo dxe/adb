@@ -347,6 +347,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/api/activists/export/spoke", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistsExportSpokeHandler)).Methods(http.MethodPost)
 	router.Handle("/api/activists/{id:[0-9]+}", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistGetHandler)).Methods(http.MethodGet)
 	router.Handle("/api/activists/{id:[0-9]+}", csrfMiddleware(alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistPatchHandler))).Methods(http.MethodPatch)
+	router.Handle("/api/users/assignable", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.UsersAssignableListHandler)).Methods(http.MethodGet)
 	router.Handle("/activist_names/get", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteActivistsHandler))
 	router.Handle("/activist_names/get_organizers", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteOrganizersHandler))
 	router.Handle("/activist_names/get_chaptermembers", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteChapterMembersHandler))
@@ -1888,6 +1889,9 @@ func (c MainController) ActivistPatchHandler(w http.ResponseWriter, r *http.Requ
 
 func (c MainController) UsersListHandler(w http.ResponseWriter, r *http.Request) {
 	transport.UsersListHandler(w, r, c.userRepo)
+}
+func (c MainController) UsersAssignableListHandler(w http.ResponseWriter, r *http.Request) {
+	transport.UsersAssignableListHandler(w, r, c.userRepo)
 }
 func (c MainController) UserGetHandler(w http.ResponseWriter, r *http.Request) {
 	transport.UserGetHandler(w, r, c.userRepo)

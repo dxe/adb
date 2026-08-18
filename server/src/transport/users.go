@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -73,6 +74,39 @@ func UsersListHandler(w http.ResponseWriter, r *http.Request, repo model.UserRep
 
 	writeJSON(w, map[string]interface{}{
 		"users": usersToJson(users),
+	})
+}
+
+type AssignableUserJson struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+// UsersAssignableListHandler returns a minimal id+name list of active ADB
+// users, allowing organizers to view other ADB users, e.g. to select them in
+// an "assign to" dropdown.
+// It's available at organizer-level access (unlike UsersListHandler, which is
+// admin-only and exposes full user records).
+func UsersAssignableListHandler(w http.ResponseWriter, r *http.Request, repo model.UserRepository) {
+	users, err := repo.GetUsers(model.GetUserOptions{PopulateRoles: true})
+	if err != nil {
+		sendErrorMessage(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	assignable := make([]AssignableUserJson, 0, len(users))
+	for _, u := range users {
+		if u.Disabled {
+			continue
+		}
+		assignable = append(assignable, AssignableUserJson{ID: u.ID, Name: u.Name})
+	}
+	sort.Slice(assignable, func(i, j int) bool {
+		return assignable[i].Name < assignable[j].Name
+	})
+
+	writeJSON(w, map[string]interface{}{
+		"users": assignable,
 	})
 }
 

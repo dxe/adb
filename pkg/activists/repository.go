@@ -250,6 +250,15 @@ func buildFiltersFromShape(shape QueryActivistShape) []filter {
 		})
 	}
 
+	if !f.LastInteraction.IsEmpty() {
+		interactionsJoin := interactionsSubqueryJoin
+		result = append(result, &dateRangeFilter{
+			filter: f.LastInteraction,
+			join:   &interactionsJoin,
+			expr:   fmt.Sprintf("%s.last_interaction_date", interactionsSubqueryJoin.Key),
+		})
+	}
+
 	if !f.IncludeHidden {
 		result = append(result, &hiddenFilter{})
 	}
