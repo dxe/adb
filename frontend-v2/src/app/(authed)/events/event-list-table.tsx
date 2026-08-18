@@ -3,14 +3,18 @@
 import { Fragment, useMemo, useState } from 'react'
 import {
   ColumnDef,
+  columnVisibilityFeature,
+  createExpandedRowModel,
+  createSortedRowModel,
   ExpandedState,
   flexRender,
-  getCoreRowModel,
-  getExpandedRowModel,
-  getSortedRowModel,
+  rowExpandingFeature,
+  rowSortingFeature,
   SortingState,
-  useReactTable,
+  tableFeatures,
+  useTable,
 } from '@tanstack/react-table'
+import { AUTO_SORT_FNS } from '@/lib/table-sort-fns'
 import {
   ChevronDown,
   ChevronRight,
@@ -33,6 +37,15 @@ import { IntentPrefetchLink } from '@/components/intent-prefetch-link'
 import { EventListMode } from './events-page'
 import { SortIndicator } from '@/components/ui/sort-indicator'
 
+const features = tableFeatures({
+  columnVisibilityFeature,
+  rowSortingFeature,
+  sortedRowModel: createSortedRowModel(),
+  sortFns: AUTO_SORT_FNS,
+  rowExpandingFeature,
+  expandedRowModel: createExpandedRowModel(),
+})
+
 export function EventListTable({
   events,
   mode,
@@ -49,8 +62,8 @@ export function EventListTable({
   ])
   const [expanded, setExpanded] = useState<ExpandedState>({})
 
-  const columns = useMemo<ColumnDef<EventListItem>[]>(() => {
-    const cols: ColumnDef<EventListItem>[] = [
+  const columns = useMemo<ColumnDef<typeof features, EventListItem>[]>(() => {
+    const cols: ColumnDef<typeof features, EventListItem>[] = [
       {
         id: 'expand',
         header: '',
@@ -174,13 +187,10 @@ export function EventListTable({
     return cols
   }, [isConnections, onDelete])
 
-  // eslint-disable-next-line react-hooks/incompatible-library -- Remove once TanStack Table supports React Compiler.
-  const table = useReactTable({
+  const table = useTable({
+    features,
     data: events,
     columns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getExpandedRowModel: getExpandedRowModel(),
     getRowCanExpand: () => true,
     onSortingChange: setSorting,
     onExpandedChange: setExpanded,
