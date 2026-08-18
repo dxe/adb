@@ -4,13 +4,18 @@ import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   ColumnDef,
-  VisibilityState,
+  ColumnVisibilityState,
+  columnResizingFeature,
+  columnSizingFeature,
+  columnVisibilityFeature,
+  createSortedRowModel,
   flexRender,
-  getCoreRowModel,
-  getSortedRowModel,
+  rowSortingFeature,
   SortingState,
-  useReactTable,
+  tableFeatures,
+  useTable,
 } from '@tanstack/react-table'
+import { AUTO_SORT_FNS } from '@/lib/table-sort-fns'
 import {
   Table,
   TableBody,
@@ -27,6 +32,15 @@ import {
   flattenChapterOrganizers,
   type InternationalOrganizer,
 } from '@/lib/api'
+
+const features = tableFeatures({
+  columnSizingFeature,
+  columnResizingFeature,
+  columnVisibilityFeature,
+  rowSortingFeature,
+  sortedRowModel: createSortedRowModel(),
+  sortFns: AUTO_SORT_FNS,
+})
 
 const SOCIAL_KEYS: (keyof InternationalOrganizer)[] = [
   'facebook',
@@ -55,7 +69,7 @@ export default function OrganizersPage() {
   const [sorting, setSorting] = useState<SortingState>([])
   const [showSocial, setShowSocial] = useState(false)
 
-  const columnVisibility = useMemo<VisibilityState>(
+  const columnVisibility = useMemo<ColumnVisibilityState>(
     () => Object.fromEntries(SOCIAL_KEYS.map((key) => [key, showSocial])),
     [showSocial],
   )
@@ -75,7 +89,7 @@ export default function OrganizersPage() {
     [chapters],
   )
 
-  const columns = useMemo<ColumnDef<InternationalOrganizer>[]>(
+  const columns = useMemo<ColumnDef<typeof features, InternationalOrganizer>[]>(
     () =>
       COLUMNS.map(({ key, label, size }) => ({
         id: key,
@@ -108,14 +122,12 @@ export default function OrganizersPage() {
     [],
   )
 
-  // eslint-disable-next-line react-hooks/incompatible-library -- Remove once TanStack Table supports React Compiler.
-  const table = useReactTable({
+  const table = useTable({
+    features,
     data: organizers,
     columns,
     state: { sorting, columnVisibility },
     onSortingChange: setSorting,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
     columnResizeMode: 'onChange',
   })
 

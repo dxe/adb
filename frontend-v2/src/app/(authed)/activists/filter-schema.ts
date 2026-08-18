@@ -49,6 +49,13 @@ export const FILTER_SCHEMA = {
     serializeParam: urlCodecs.serializeDateRangeParam,
     toApi: apiTransform.toApiLastEvent,
   },
+  lastInteraction: {
+    paramKey: 'lastInteraction',
+    defaultValue: undefined,
+    parseParam: urlCodecs.parseDateRangeParam,
+    serializeParam: urlCodecs.serializeDateRangeParam,
+    toApi: apiTransform.toApiLastInteraction,
+  },
   interestDate: {
     paramKey: 'interestDate',
     defaultValue: undefined,
