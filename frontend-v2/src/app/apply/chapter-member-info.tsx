@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 
-/** Informational copy (identical to frontend/FormApply.vue) shown before the application fields. */
+/** Informational copy shown before the application fields. */
 export function ChapterMemberInfo({ onApply }: { onApply: () => void }) {
   return (
     <div className="flex flex-col gap-4">

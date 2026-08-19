@@ -11,7 +11,7 @@ import { ThankYou } from '@/app/apply/thank-you'
 
 type Step = 'localCheck' | 'info' | 'fields' | 'thankYou'
 
-/** Orchestrates the multi-step "Apply" flow ported from frontend/FormApply.vue. */
+/** Orchestrates the multi-step "Apply" flow. */
 export function ApplyForm() {
   const [step, setStep] = useState<Step>('localCheck')
 
