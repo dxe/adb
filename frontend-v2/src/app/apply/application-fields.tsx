@@ -85,12 +85,14 @@ function Field({
   id,
   label,
   message,
+  error,
   className,
   children,
 }: {
   id: string
   label: string
   message?: string
+  error?: string
   className?: string
   children: React.ReactNode
 }) {
@@ -98,6 +100,7 @@ function Field({
     <div className={cn('flex flex-col gap-1', className)}>
       <Label htmlFor={id}>{label}</Label>
       {children}
+      {error && <p className="text-xs text-destructive">{error}</p>}
       {message && <p className="text-xs text-muted-foreground">{message}</p>}
     </div>
   )
@@ -107,11 +110,13 @@ function AgreementToggle({
   id,
   checked,
   onCheckedChange,
+  error,
   children,
 }: {
   id: string
   checked: boolean
   onCheckedChange: (checked: boolean) => void
+  error?: string
   children: React.ReactNode
 }) {
   return (
@@ -131,6 +136,7 @@ function AgreementToggle({
         />
         Yes, I agree.
       </label>
+      {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   )
 }
@@ -145,10 +151,13 @@ export function ApplicationFields({
 }) {
   const form = useForm({
     defaultValues,
+    validators: {
+      onSubmit: applicationSchema,
+    },
     onSubmit: async ({ value }) => {
       const parsed = applicationSchema.safeParse(value)
       if (!parsed.success) {
-        toast.error(parsed.error.issues[0].message)
+        toast.error('Please fix the highlighted errors.')
         return
       }
 
@@ -186,7 +195,11 @@ export function ApplicationFields({
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <form.Field name="firstName">
           {(field) => (
-            <Field id="firstName" label="First Name">
+            <Field
+              id="firstName"
+              label="First Name"
+              error={field.state.meta.errors[0]?.message}
+            >
               <Input
                 id="firstName"
                 type="text"
@@ -202,7 +215,11 @@ export function ApplicationFields({
 
         <form.Field name="lastName">
           {(field) => (
-            <Field id="lastName" label="Last Name">
+            <Field
+              id="lastName"
+              label="Last Name"
+              error={field.state.meta.errors[0]?.message}
+            >
               <Input
                 id="lastName"
                 type="text"
@@ -242,6 +259,7 @@ export function ApplicationFields({
               id="mission"
               checked={field.state.value}
               onCheckedChange={(checked) => field.handleChange(checked)}
+              error={field.state.meta.errors[0]?.message}
             >
               I support DxE&rsquo;s{' '}
               <a
@@ -263,6 +281,7 @@ export function ApplicationFields({
               id="conduct"
               checked={field.state.value}
               onCheckedChange={(checked) => field.handleChange(checked)}
+              error={field.state.meta.errors[0]?.message}
             >
               I will uphold DxE&rsquo;s{' '}
               <a
@@ -284,6 +303,7 @@ export function ApplicationFields({
               id="consent"
               checked={field.state.value}
               onCheckedChange={(checked) => field.handleChange(checked)}
+              error={field.state.meta.errors[0]?.message}
             >
               I agree to watch a video and{' '}
               <a
@@ -305,7 +325,12 @@ export function ApplicationFields({
 
         <form.Field name="email">
           {(field) => (
-            <Field id="email" label="Email" className="md:col-span-2">
+            <Field
+              id="email"
+              label="Email"
+              className="md:col-span-2"
+              error={field.state.meta.errors[0]?.message}
+            >
               <Input
                 id="email"
                 type="email"
@@ -325,6 +350,7 @@ export function ApplicationFields({
               id="address"
               label="Street Address"
               className="md:col-span-2"
+              error={field.state.meta.errors[0]?.message}
             >
               <Input
                 id="address"
@@ -341,7 +367,11 @@ export function ApplicationFields({
 
         <form.Field name="city">
           {(field) => (
-            <Field id="city" label="City">
+            <Field
+              id="city"
+              label="City"
+              error={field.state.meta.errors[0]?.message}
+            >
               <Input
                 id="city"
                 type="text"
@@ -357,7 +387,11 @@ export function ApplicationFields({
 
         <form.Field name="zip">
           {(field) => (
-            <Field id="zip" label="Zip Code">
+            <Field
+              id="zip"
+              label="Zip Code"
+              error={field.state.meta.errors[0]?.message}
+            >
               <Input
                 id="zip"
                 type="text"
@@ -374,7 +408,11 @@ export function ApplicationFields({
 
         <form.Field name="phone">
           {(field) => (
-            <Field id="phone" label="Phone">
+            <Field
+              id="phone"
+              label="Phone"
+              error={field.state.meta.errors[0]?.message}
+            >
               <Input
                 id="phone"
                 type="text"
@@ -390,7 +428,11 @@ export function ApplicationFields({
 
         <form.Field name="birthday">
           {(field) => (
-            <Field id="birthday" label="Birthday">
+            <Field
+              id="birthday"
+              label="Birthday"
+              error={field.state.meta.errors[0]?.message}
+            >
               <Input
                 id="birthday"
                 type="date"
@@ -497,6 +539,11 @@ export function ApplicationFields({
                   No (or not sure)
                 </Button>
               </div>
+              {field.state.meta.errors[0] && (
+                <p className="text-xs text-destructive">
+                  {field.state.meta.errors[0]?.message}
+                </p>
+              )}
             </div>
           )}
         </form.Field>
