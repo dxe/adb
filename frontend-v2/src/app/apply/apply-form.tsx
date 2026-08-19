@@ -30,7 +30,9 @@ export function ApplyForm() {
   })
 
   function handleNotLocal() {
-    // The international flow isn't ported yet; go to the legacy Vue-served page.
+    // The international flow isn't ported yet; this is a legacy Vue-served
+    // page, not a Next.js route, so a full page load is required.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     window.location.href = '/international'
   }
 
