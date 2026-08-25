@@ -91,12 +91,6 @@ export function InternationalForm() {
       toast.success('Submitted!')
       setSubmitSuccess(true)
     },
-    onError: () => {
-      // TODO: include error detail from backend
-      toast.error(
-        'Sorry, there was an error submitting your form. Please try again.',
-      )
-    },
   })
 
   const form = useForm({
@@ -352,6 +346,14 @@ export function InternationalForm() {
           </div>
         )}
       </form.Field>
+
+      {mutation.isError && (
+        <p className="text-sm text-destructive">
+          {mutation.error instanceof Error
+            ? mutation.error.message
+            : 'Sorry, there was an error submitting your form. Please try again.'}
+        </p>
+      )}
 
       <div>
         <Button type="submit" disabled={isSubmitting}>
