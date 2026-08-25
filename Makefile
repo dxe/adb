@@ -68,9 +68,9 @@ dev_db:
 # Note: PNPM must be installed separately for each version of NPM used, since it is installed within each NPM installation.
 # Note: `go tool` cannot yet be used to install golang-migrate: https://github.com/golang-migrate/migrate/issues/1232
 deps:
-	# Ensure server/.env exists. Both `make run` and the VS Code "Go Server"
-	# launch config load it unconditionally (layered on server/debug.env) and
-	# error if it's missing, so deps (the required first step) creates it.
+	@# Ensure server/.env exists. Both `make run` and the VS Code "Go Server"
+	@# launch config load it unconditionally (layered on server/debug.env) and
+	@# error if it's missing, so deps (the required first step) creates it.
 	touch server/.env
 	. $(NVM_SCRIPT) && nvm i 22 && npm i -g pnpm@$(PNPM_VERSION) && pnpm i --config.confirmModulesPurge=false
 	. $(NVM_SCRIPT) && cd frontend && nvm i $(VUE_FRONTEND_NODE_VERSION) && npm i --legacy-peer-deps

@@ -78,6 +78,16 @@ const authSessionMaxAgeSeconds = 10 * // days
 	60 * // minutes
 	60 // seconds
 
+// Cookie attributes. The browser identifies cookies by name + path + domain, so
+// these must stay in sync in all places they are used.
+const (
+	csrfCookieName = "_gorilla_csrf"
+	csrfCookiePath = "/"
+
+	authCookieName = "auth-session"
+	authCookiePath = "/"
+)
+
 var sessionStore = func() *sessions.CookieStore {
 	store := sessions.NewCookieStore([]byte(config.CookieSecret))
 	store.MaxAge(authSessionMaxAgeSeconds)
@@ -85,7 +95,7 @@ var sessionStore = func() *sessions.CookieStore {
 }()
 
 func augmentUserWithChapterFromSession(db *sqlx.DB, r *http.Request, adbUser model.ADBUser) (augmentedAdbUser model.ADBUser, err error) {
-	authSession, err := sessionStore.Get(r, "auth-session")
+	authSession, err := sessionStore.Get(r, authCookieName)
 	if err != nil {
 		return adbUser, fmt.Errorf("failed to get auth session: %w", err)
 	}
@@ -125,7 +135,7 @@ func (c MainController) authADBUser(r *http.Request, w http.ResponseWriter) (adb
 
 func (c MainController) getAuthedADBUser(r *http.Request) (adbUser model.ADBUser, authed bool) {
 	// First, check the cookie.
-	authSession, err := sessionStore.Get(r, "auth-session")
+	authSession, err := sessionStore.Get(r, authCookieName)
 	if err != nil {
 		// the cookie secret has changed
 		return model.ADBUser{}, false
@@ -165,14 +175,14 @@ func setAuthSession(w http.ResponseWriter, r *http.Request, adbUser model.ADBUse
 		return nil
 	}
 
-	authSession, err := sessionStore.Get(r, "auth-session")
+	authSession, err := sessionStore.Get(r, authCookieName)
 	if err != nil {
 		// This err represents an issue with decoding an existing session.
 		// sessionStore.Get returns a new session in this case, so no need to return.
 		log.Printf("Warning: creating a new session because the existing session could not be decoded: %v", err)
 	}
 	authSession.Options = &sessions.Options{
-		Path:     "/",
+		Path:     authCookiePath,
 		MaxAge:   authSessionMaxAgeSeconds,
 		HttpOnly: true,
 		Secure:   config.IsProd,
@@ -239,8 +249,9 @@ func router() (*mux.Router, *sqlx.DB) {
 	main := MainController{db: db, userRepo: userRepo, activistRepo: activistRepo}
 	csrfProtect := csrf.Protect(
 		[]byte(config.CsrfAuthKey),
+		csrf.CookieName(csrfCookieName),
 		csrf.Secure(config.IsProd), // disable secure flag in dev
-		csrf.Path("/"),
+		csrf.Path(csrfCookiePath),
 		csrf.ErrorHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			log.Printf("csrfMiddleware: validation failed for %s %s: %v", r.Method, r.URL.Path, csrf.FailureReason(r))
 			http.Error(w, fmt.Sprintf("%s - %s", http.StatusText(http.StatusForbidden), csrf.FailureReason(r)), http.StatusForbidden)
@@ -337,6 +348,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/api/activists/export/spoke", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistsExportSpokeHandler)).Methods(http.MethodPost)
 	router.Handle("/api/activists/{id:[0-9]+}", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistGetHandler)).Methods(http.MethodGet)
 	router.Handle("/api/activists/{id:[0-9]+}", csrfMiddleware(alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistPatchHandler))).Methods(http.MethodPatch)
+	router.Handle("/api/users/assignable", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.UsersAssignableListHandler)).Methods(http.MethodGet)
 	router.Handle("/activist_names/get", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteActivistsHandler))
 	router.Handle("/activist_names/get_organizers", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteOrganizersHandler))
 	router.Handle("/activist_names/get_chaptermembers", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteChapterMembersHandler))
@@ -418,8 +430,8 @@ func (c MainController) authAccessMiddleware(h http.Handler, hasAccess func(mode
 		if !authed {
 			// Delete the cookie if it doesn't auth.
 			c := &http.Cookie{
-				Name:     "auth-session",
-				Path:     "/",
+				Name:     authCookieName,
+				Path:     authCookiePath,
 				MaxAge:   -1,
 				HttpOnly: true,
 				Secure:   config.IsProd,
@@ -639,15 +651,28 @@ func (c MainController) LoginHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c MainController) LogoutHandler(w http.ResponseWriter, r *http.Request) {
-	cookie := &http.Cookie{
-		Name:     "auth-session",
-		Value:    "",
-		Path:     "/",
-		MaxAge:   -1,
-		SameSite: http.SameSiteLaxMode,
-	}
+	// Clear both auth and CSRF cookies for security and to simplify state.
 
-	http.SetCookie(w, cookie)
+	http.SetCookie(w, &http.Cookie{
+		Name:     authCookieName,
+		Value:    "",
+		Path:     authCookiePath,
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   config.IsProd,
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     csrfCookieName,
+		Value:    "",
+		Path:     csrfCookiePath,
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   config.IsProd,
+		SameSite: http.SameSiteLaxMode,
+	})
+
 	renderPage(w, r, "logout", PageData{PageName: "Logout"})
 }
 
@@ -890,7 +915,7 @@ func (c MainController) SwitchActiveChapterHandler(w http.ResponseWriter, r *htt
 		return
 	}
 
-	authSession, err := sessionStore.Get(r, "auth-session")
+	authSession, err := sessionStore.Get(r, authCookieName)
 	if err != nil {
 		log.Printf("Error getting auth session: %v", err)
 		http.Error(w, "Failed to get session", http.StatusInternalServerError)
@@ -1865,6 +1890,9 @@ func (c MainController) ActivistPatchHandler(w http.ResponseWriter, r *http.Requ
 
 func (c MainController) UsersListHandler(w http.ResponseWriter, r *http.Request) {
 	transport.UsersListHandler(w, r, c.userRepo)
+}
+func (c MainController) UsersAssignableListHandler(w http.ResponseWriter, r *http.Request) {
+	transport.UsersAssignableListHandler(w, r, c.userRepo)
 }
 func (c MainController) UserGetHandler(w http.ResponseWriter, r *http.Request) {
 	transport.UserGetHandler(w, r, c.userRepo)

@@ -115,6 +115,13 @@ export const toApiLastEvent = (
   last_event: toApiDateRange(value, context.referenceDate),
 })
 
+export const toApiLastInteraction = (
+  value: FilterState['lastInteraction'],
+  context: FilterApiContext,
+): Partial<ApiFilters> => ({
+  last_interaction: toApiDateRange(value, context.referenceDate),
+})
+
 export const toApiInterestDate = (
   value: FilterState['interestDate'],
   context: FilterApiContext,

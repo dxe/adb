@@ -3,9 +3,12 @@
 import { useMemo } from 'react'
 import {
   ColumnDef,
+  columnResizingFeature,
+  columnSizingFeature,
+  columnVisibilityFeature,
   flexRender,
-  getCoreRowModel,
-  useReactTable,
+  tableFeatures,
+  useTable,
 } from '@tanstack/react-table'
 import {
   TableBody,
@@ -22,6 +25,12 @@ import { COLUMN_DEFINITION_BY_NAME } from './column-definitions'
 import { getActivistDisplayName } from './display-name'
 import { formatValue, COLUMN_TYPE_BY_NAME } from './format-value'
 import type { SortColumn } from './query-state'
+
+const features = tableFeatures({
+  columnSizingFeature,
+  columnResizingFeature,
+  columnVisibilityFeature,
+})
 
 interface ActivistTableProps {
   activists: ActivistJSON[]
@@ -42,7 +51,7 @@ export function ActivistTable({
   isStale = false,
   footer,
 }: ActivistTableProps) {
-  const columns = useMemo<ColumnDef<ActivistJSON>[]>(() => {
+  const columns = useMemo<ColumnDef<typeof features, ActivistJSON>[]>(() => {
     return visibleColumns.map((colName) => {
       const definition = COLUMN_DEFINITION_BY_NAME[colName]
       const label = definition?.label || colName
@@ -131,11 +140,10 @@ export function ActivistTable({
     })
   }, [visibleColumns, sort, onSortChange, onActivistClick, isStale])
 
-  // eslint-disable-next-line react-hooks/incompatible-library -- Remove once TanStack Table supports React Compiler.
-  const table = useReactTable({
+  const table = useTable({
+    features,
     data: activists,
     columns,
-    getCoreRowModel: getCoreRowModel(),
     columnResizeMode: 'onChange',
   })
 
