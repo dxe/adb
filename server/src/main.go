@@ -2251,8 +2251,7 @@ func (c MainController) InterestFormHandler(w http.ResponseWriter, r *http.Reque
 	}
 }
 
-// PlacesAPIKeyHandler serves the referrer-restricted Places key to public pages;
-// the legacy Go-templated /international page already exposed it to anonymous visitors.
+// PlacesAPIKeyHandler serves the referrer-restricted Places key to public pages.
 func (c MainController) PlacesAPIKeyHandler(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]string{
 		"googlePlacesApiKey": config.GooglePlacesAPIKey,

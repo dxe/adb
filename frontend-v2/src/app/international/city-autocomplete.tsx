@@ -20,7 +20,6 @@ const CITY_FIELDS = [
   'formatted_address',
 ]
 
-// Name forms (long vs short) mirror the legacy vue-google-autocomplete parsing.
 function parseCityFromPlace(place: PlaceValue): CityValue | null {
   if (
     !place.address_components ||

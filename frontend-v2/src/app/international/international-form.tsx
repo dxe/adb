@@ -92,7 +92,7 @@ export function InternationalForm() {
       setSubmitSuccess(true)
     },
     onError: () => {
-      // Generic message only — backend error text may leak internal details.
+      // TODO: include error detail from backend
       toast.error(
         'Sorry, there was an error submitting your form. Please try again.',
       )
@@ -230,7 +230,6 @@ export function InternationalForm() {
               apiKey={placesApiKey}
               hasError={!!field.state.meta.errors[0]}
               onSelect={(value) => field.handleChange(value)}
-              // Stricter than the legacy form, which kept stale selections valid.
               onNoResults={() => field.handleChange(null)}
             />
             {!field.state.value && (
