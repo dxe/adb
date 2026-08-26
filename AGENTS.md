@@ -33,6 +33,10 @@ Rules regarding the Next.js app in ./frontend-v2 and legacy Vue app in ./fronten
 - Scope: ./frontend-v2
 - Rule: Do not try to fix devserver issues such as live reloading issues without first running `make clean`, then `make deps` and asking user to restart devcontainer.
 
+### playwright-mcp
+
+- Run `make install_playwright` to install the Playwright MCP browser when needed.
+
 ## backend
 
 Rules regarding Go server in ./server

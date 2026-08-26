@@ -1,4 +1,4 @@
-.PHONY: run_all run watch test test-server test-frontend lint clean prod_build deps dev_db fmt go_mod_sync _go_mod_sync
+.PHONY: run_all run watch test test-server test-frontend lint clean prod_build deps dev_db install_playwright fmt go_mod_sync _go_mod_sync
 
 # When not using devcontainer, NVM initialization script may be located in home
 # directory. In the devcontainer, it is in /usr/local/share/nvm/.
@@ -63,6 +63,10 @@ watch:
 # details.
 dev_db:
 	cd cli && go run . db create --dev-email="${DXE_DEV_EMAIL:-test-dev@directactioneverywhere.com}"
+
+# Install the browser binary and system libraries used by the Playwright MCP.
+install_playwright:
+	. $(NVM_SCRIPT) && nvm i $(REACT_FRONTEND_NODE_VERSION) && bash .devcontainer/install-playwright.sh
 
 # Install all deps for this project.
 # Note: PNPM must be installed separately for each version of NPM used, since it is installed within each NPM installation.
