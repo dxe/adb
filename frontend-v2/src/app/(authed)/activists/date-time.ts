@@ -114,6 +114,20 @@ export function formatYmdForActivists(
     : longDateFormatter.format(date)
 }
 
+export function isDateWithinLastMonths(
+  dateString: string,
+  months: number,
+  referenceDate: Date = new Date(),
+): boolean {
+  const date = parseDateValueForActivists(dateString)
+  if (!date) return false
+
+  const cutoff = toTemporalInstant(referenceDate)
+    .toZonedDateTimeISO(ACTIVISTS_TIME_ZONE)
+    .subtract({ months })
+  return date.getTime() >= cutoff.epochMilliseconds
+}
+
 export function formatDateValueForActivists(dateString: string): string {
   const date = parseDateValueForActivists(dateString)
 
