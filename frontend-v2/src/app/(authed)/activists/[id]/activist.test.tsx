@@ -8,11 +8,11 @@ import {
   type ActivistJSON,
   type AssignableUser,
 } from '@/lib/api'
-import { ActivistDetail } from './activist-detail'
+import { Activist } from './activist'
 
 // HideActivistDialog and MergeActivistDialog and their dependencies are
 // unrelated to the existing tests at this time. Stub them out so this file can
-// focus on ActivistDetail/section-form.
+// focus on Activist/section-form.
 vi.mock('./hide-activist-dialog', () => ({
   HideActivistDialog: () => null,
 }))
@@ -58,13 +58,13 @@ function renderDetail(
     queryClient,
     ...render(
       <QueryClientProvider client={queryClient}>
-        <ActivistDetail activistId={ACTIVIST_ID} />
+        <Activist activistId={ACTIVIST_ID} />
       </QueryClientProvider>,
     ),
   }
 }
 
-describe('ActivistDetail Assigned To field (read-only mode)', () => {
+describe('Activist Assigned To field (read-only mode)', () => {
   it('shows the assigned_to_name value, not the raw assigned_to id', () => {
     renderDetail({
       id: ACTIVIST_ID,
@@ -96,7 +96,7 @@ describe('ActivistDetail Assigned To field (read-only mode)', () => {
   })
 })
 
-describe('ActivistDetail Assigned To field (edit mode)', () => {
+describe('Activist Assigned To field (edit mode)', () => {
   const ASSIGNABLE_USERS: AssignableUser[] = [
     { id: 1, name: 'Alice' },
     { id: 2, name: 'Bob Jones' },

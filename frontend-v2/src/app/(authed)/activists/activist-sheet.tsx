@@ -9,7 +9,7 @@ import * as DialogPrimitive from '@radix-ui/react-dialog'
 import Link from 'next/link'
 import { ExternalLink, X } from 'lucide-react'
 import { useState } from 'react'
-import { ActivistDetail } from './[id]/activist-detail'
+import { Activist } from './[id]/activist'
 
 interface ActivistSheetProps {
   activistId: number | null
@@ -66,7 +66,7 @@ export function ActivistSheet({ activistId, onClose }: ActivistSheetProps) {
 
           <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-6 pb-6 pt-4">
             {displayActivistId !== null && (
-              <ActivistDetail activistId={displayActivistId} />
+              <Activist activistId={displayActivistId} />
             )}
           </div>
         </DialogPrimitive.Content>

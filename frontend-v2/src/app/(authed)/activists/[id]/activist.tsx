@@ -72,7 +72,7 @@ const SECTION_ORDER: ColumnCategory[] = (() => {
   return order
 })()
 
-export function ActivistDetail({ activistId }: { activistId: number }) {
+export function Activist({ activistId }: { activistId: number }) {
   const { data: activist, isError, isLoading } = useActivist(activistId)
   const [editingSection, setEditingSection] = useState<SectionKey | null>(null)
   const [isFormDirty, setIsFormDirty] = useState(false)
