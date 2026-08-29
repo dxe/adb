@@ -469,3 +469,32 @@ func ActivistGetHandler(w http.ResponseWriter, r *http.Request, authedUser model
 		"activist": activist,
 	})
 }
+
+// ActivistTimelineHandler serves GET /api/activists/{id}/timeline: the
+// activist's event attendance and interactions merged into one newest-first
+// timeline.
+func ActivistTimelineHandler(w http.ResponseWriter, r *http.Request, authedUser model.ADBUser, db *sqlx.DB) {
+	vars := mux.Vars(r)
+	rawID := vars["id"]
+	activistID, err := strconv.Atoi(rawID)
+	if err != nil {
+		sendErrorMessage(w, http.StatusBadRequest, fmt.Errorf("invalid activist id %s: %w", rawID, err))
+		return
+	}
+
+	timeline, err := model.GetActivistTimeline(db, authedUser, activistID)
+	if err != nil {
+		if errors.Is(err, model.ErrNotFound) {
+			sendErrorMessage(w, http.StatusNotFound, fmt.Errorf("no activist found with id %d", activistID))
+		} else if errors.Is(err, model.ErrValidation) {
+			sendErrorMessage(w, http.StatusBadRequest, err)
+		} else {
+			sendErrorMessage(w, http.StatusInternalServerError, err)
+		}
+		return
+	}
+
+	// Keep authenticated response data out of the browser cache.
+	w.Header().Set("Cache-Control", "no-store")
+	writeJSON(w, timeline)
+}

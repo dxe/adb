@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  formatDateValueForActivists,
-  isDateWithinLastMonths,
-} from './date-time'
+import { formatDateValueForActivists, isDateAfterNMonthsAgo } from './date-time'
 
 describe('formatDateValueForActivists', () => {
   it('treats date-only strings as activists local dates', () => {
@@ -25,20 +22,20 @@ describe('formatDateValueForActivists', () => {
   })
 })
 
-describe('isDateWithinLastMonths', () => {
+describe('isDateAfterNMonthsAgo', () => {
   const reference = new Date('2026-04-15T12:00:00Z')
 
-  it('accepts dates inside the window', () => {
-    expect(isDateWithinLastMonths('2026-04-15', 3, reference)).toBe(true)
-    expect(isDateWithinLastMonths('2026-01-16', 3, reference)).toBe(true)
+  it('accepts dates', () => {
+    expect(isDateAfterNMonthsAgo('2026-04-15', 3, reference)).toBe(true)
+    expect(isDateAfterNMonthsAgo('2026-01-16', 3, reference)).toBe(true)
   })
 
-  it('rejects dates outside the window', () => {
-    expect(isDateWithinLastMonths('2026-01-14', 3, reference)).toBe(false)
-    expect(isDateWithinLastMonths('2025-04-15', 3, reference)).toBe(false)
+  it('rejects dates too long ago', () => {
+    expect(isDateAfterNMonthsAgo('2026-01-14', 3, reference)).toBe(false)
+    expect(isDateAfterNMonthsAgo('2025-04-15', 3, reference)).toBe(false)
   })
 
   it('rejects unparseable dates', () => {
-    expect(isDateWithinLastMonths('not a date', 3, reference)).toBe(false)
+    expect(isDateAfterNMonthsAgo('not a date', 3, reference)).toBe(false)
   })
 })

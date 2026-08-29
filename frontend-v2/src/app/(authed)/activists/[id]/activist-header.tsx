@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { isDateWithinLastMonths } from '../date-time'
+import { isDateAfterNMonthsAgo } from '../date-time'
 import { getActivistDisplayName } from '../display-name'
 import { LinkedValue } from '../linked-value'
 
@@ -28,7 +28,7 @@ export function ActivistHeader({
   const displayName = getActivistDisplayName(activist)
   const isActive =
     !!activist.last_event &&
-    isDateWithinLastMonths(activist.last_event, ACTIVE_WINDOW_MONTHS)
+    isDateAfterNMonthsAgo(activist.last_event, ACTIVE_WINDOW_MONTHS)
 
   return (
     <header className="flex flex-col gap-3">

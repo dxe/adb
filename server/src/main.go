@@ -347,6 +347,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.Handle("/api/activists/export/spoke", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistsExportSpokeHandler)).Methods(http.MethodPost)
 	router.Handle("/api/activists/{id:[0-9]+}", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistGetHandler)).Methods(http.MethodGet)
 	router.Handle("/api/activists/{id:[0-9]+}", csrfMiddleware(alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistPatchHandler))).Methods(http.MethodPatch)
+	router.Handle("/api/activists/{id:[0-9]+}/timeline", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistTimelineHandler)).Methods(http.MethodGet)
 	router.Handle("/api/users/assignable", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.UsersAssignableListHandler)).Methods(http.MethodGet)
 	router.Handle("/activist_names/get", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteActivistsHandler))
 	router.Handle("/activist_names/get_organizers", alice.New(main.apiAttendanceAuthMiddleware).ThenFunc(main.AutocompleteOrganizersHandler))
@@ -1885,6 +1886,15 @@ func (c MainController) ActivistPatchHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	transport.ActivistPatchHandler(w, r, authedUser, c.db, c.activistRepo, c.userRepo)
+}
+
+func (c MainController) ActivistTimelineHandler(w http.ResponseWriter, r *http.Request) {
+	authedUser, authed := c.getAuthedADBUser(r)
+	if !authed {
+		panic("ActivistTimelineHandler requires authed ADB user")
+	}
+
+	transport.ActivistTimelineHandler(w, r, authedUser, c.db)
 }
 
 func (c MainController) UsersListHandler(w http.ResponseWriter, r *http.Request) {

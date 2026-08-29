@@ -23,6 +23,10 @@ export const API_PATH = {
   ACTIVISTS_EXPORT_SPOKE: 'api/activists/export/spoke',
   ACTIVISTS_DEBUG_QUERY: 'api/activists/debug-query',
   ACTIVIST_GET: 'api/activists',
+  // The real URL puts the activist id in the middle
+  // (api/activists/{id}/timeline); this entry exists to key the query cache.
+  // TODO: avoid conflating query keys and real API paths.
+  ACTIVIST_TIMELINE: 'api/activists/timeline',
   ACTIVIST_HIDE: 'activist/hide',
   ACTIVIST_MERGE: 'activist/merge',
   USER_ME: 'user/me',
@@ -211,6 +215,71 @@ export const ActivistListBasicResp = z.object({
 })
 
 export type ActivistListBasic = z.infer<typeof ActivistListBasicResp>
+
+// One entry in an activist's engagement timeline: either an event they
+// attended or an interaction an organizer logged with them. `date` is the
+// calendar date (YYYY-MM-DD) the server filed the item under and is what both
+// kinds are ordered by; interactions additionally carry the exact instant.
+const TimelineEventPayloadSchema = z.object({
+  name: z.string(),
+  type: z.string(),
+})
+
+const TimelineInteractionPayloadSchema = z.object({
+  method: z.string(),
+  outcome: z.string(),
+  notes: z.string(),
+  user_name: z.string(),
+})
+
+// Fields every timeline item carries, whatever its variant. `date` is the day
+// the server filed the item under and is what the ordering agrees with, so it
+// is rendered as sent rather than re-derived from `timestamp`. `has_time` is
+// false when the server had no real time of day and supplied a placeholder
+// instant just to sort the item (an event with no start time), so `timestamp`
+// is only safe to show as a clock time when it is true.
+const TimelineItemEnvelope = {
+  id: z.number(),
+  date: z.string(),
+  timestamp: z.string(),
+  has_time: z.boolean(),
+}
+
+const TimelineEventItemSchema = z.object({
+  ...TimelineItemEnvelope,
+  type: z.literal('event'),
+  event: TimelineEventPayloadSchema,
+})
+
+const TimelineInteractionItemSchema = z.object({
+  ...TimelineItemEnvelope,
+  type: z.literal('interaction'),
+  interaction: TimelineInteractionPayloadSchema,
+})
+
+export const ActivistTimelineItemSchema = z.discriminatedUnion('type', [
+  TimelineEventItemSchema,
+  TimelineInteractionItemSchema,
+])
+export type ActivistTimelineItem = z.infer<typeof ActivistTimelineItemSchema>
+export type ActivistTimelineEventItem = z.infer<typeof TimelineEventItemSchema>
+export type ActivistTimelineInteractionItem = z.infer<
+  typeof TimelineInteractionItemSchema
+>
+export type ActivistTimelineEventPayload = z.infer<
+  typeof TimelineEventPayloadSchema
+>
+export type ActivistTimelineInteractionPayload = z.infer<
+  typeof TimelineInteractionPayloadSchema
+>
+
+export const ActivistTimelineResp = z.object({
+  items: z.array(ActivistTimelineItemSchema),
+  // The server caps how many items it returns; true means older items exist
+  // that were not sent.
+  truncated: z.boolean(),
+})
+export type ActivistTimeline = z.infer<typeof ActivistTimelineResp>
 
 // Re-export activist search types from dedicated module
 export {
@@ -633,6 +702,17 @@ export class ApiClient {
       })
       fillActivistBlankFields(activist)
       return activist
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  getActivistTimeline = async (activistId: number, signal?: AbortSignal) => {
+    try {
+      const resp = await this.client
+        .get(`${API_PATH.ACTIVIST_GET}/${activistId}/timeline`, { signal })
+        .json()
+      return ActivistTimelineResp.parse(resp)
     } catch (err) {
       return this.handleKyError(err)
     }

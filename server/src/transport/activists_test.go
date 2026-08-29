@@ -93,3 +93,20 @@ func TestActivistPatchHandler_NotFound(t *testing.T) {
 
 	require.Equal(t, http.StatusNotFound, rec.Code)
 }
+
+func TestActivistTimelineHandler_NotFound(t *testing.T) {
+	db := testdb.NewDB()
+	defer func() { _ = db.Close() }()
+
+	userRepo := persistence.NewUserRepository(db)
+	devUser, err := userRepo.GetUser(model.DevTestUserId, "")
+	require.NoError(t, err)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/activists/9999/timeline", nil)
+	req = mux.SetURLVars(req, map[string]string{"id": "9999"})
+	rec := httptest.NewRecorder()
+
+	ActivistTimelineHandler(rec, req, devUser, db)
+
+	require.Equal(t, http.StatusNotFound, rec.Code)
+}

@@ -6,6 +6,7 @@ import { API_PATH, apiClient } from '@/lib/api'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { getActivistDisplayName } from '../display-name'
 import { ActivistDetails } from './activist-details'
+import { ActivistEngagement } from './activist-engagement'
 import { ActivistHeader } from './activist-header'
 import { HideActivistDialog } from './hide-activist-dialog'
 import { MergeActivistDialog } from './merge-activist-dialog'
@@ -96,9 +97,7 @@ export function Activist({ activistId }: { activistId: number }) {
         </TabsContent>
 
         <TabsContent value="engagement" className="mt-6">
-          <p className="text-sm text-muted-foreground italic">
-            Engagement history is not available yet.
-          </p>
+          <ActivistEngagement activistId={activistId} />
         </TabsContent>
       </Tabs>
     </>
