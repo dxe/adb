@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { API_PATH, apiClient } from '@/lib/api'
+import { API_PATH, apiClient, ActivistJSON } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Collapse } from '@/components/ui/collapse'
@@ -26,6 +26,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { getActivistDisplayName } from '../display-name'
+import { ActivistIdentity } from './activist-identity'
 
 // Free-text columns on the server (varchar(16) / varchar(32)), so these lists
 // are the UI's own vocabulary rather than a database enum. Keep values within
@@ -84,17 +86,14 @@ function rememberMethod(method: string): void {
 type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  activistId: number
-  activistName: string
+  activist: ActivistJSON
 }
 
-export function LogInteractionDialog({
-  open,
-  onOpenChange,
-  activistId,
-  activistName,
-}: Props) {
+export function LogInteractionDialog({ open, onOpenChange, activist }: Props) {
   const queryClient = useQueryClient()
+
+  const activistId = activist.id
+  const activistName = getActivistDisplayName(activist).text
 
   const [method, setMethod] = useState(readRememberedMethod)
   const [outcome, setOutcome] = useState('')
@@ -208,7 +207,7 @@ export function LogInteractionDialog({
         <DialogHeader className="shrink-0">
           <DialogTitle>Log interaction</DialogTitle>
           <DialogDescription>
-            Record a conversation or contact attempt with {activistName}.
+            Record a conversation or contact attempt.
           </DialogDescription>
         </DialogHeader>
 
@@ -217,6 +216,10 @@ export function LogInteractionDialog({
             min-h-0 lets this shrink below its content so it, not the dialog,
             is what scrolls. */}
         <div className="-mx-6 -my-1 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-1">
+          <div className="rounded-md border bg-muted/40 p-3">
+            <ActivistIdentity activist={activist} variant="compact" />
+          </div>
+
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="interaction-method">Method</Label>
             <Select value={method} onValueChange={setMethod}>

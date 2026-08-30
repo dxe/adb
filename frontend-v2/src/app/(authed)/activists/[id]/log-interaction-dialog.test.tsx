@@ -44,7 +44,14 @@ afterEach(() => {
 })
 
 const ACTIVIST_ID = 42
-const ACTIVIST: ActivistJSON = { id: ACTIVIST_ID, name: 'Test Activist' }
+const ACTIVIST: ActivistJSON = {
+  id: ACTIVIST_ID,
+  name: 'Test Activist',
+  activist_level: 'Organizer',
+  email: 'test@example.org',
+  phone: '5105550143',
+  hiatus: true,
+}
 
 function renderDetail() {
   // Saving invalidates the activist query, so the refetch needs to resolve or
@@ -80,6 +87,29 @@ describe('Log interaction dialog', () => {
       'Choose one',
     )
     expect(dialog.getByRole('button', { name: 'Save' })).toBeDisabled()
+  })
+
+  it('shows who is being logged, without the page header actions', async () => {
+    const user = userEvent.setup()
+    renderDetail()
+
+    const dialog = await openDialog(user)
+
+    expect(
+      dialog.getByRole('heading', { name: 'Test Activist' }),
+    ).toBeInTheDocument()
+    expect(dialog.getByText('Organizer')).toBeInTheDocument()
+    expect(dialog.getByRole('link', { name: '5105550143' })).toHaveAttribute(
+      'href',
+      'tel:5105550143',
+    )
+    expect(
+      dialog.getByRole('link', { name: 'test@example.org' }),
+    ).toHaveAttribute('href', 'mailto:test@example.org')
+    expect(dialog.getByText('Hiatus')).toBeInTheDocument()
+    expect(
+      dialog.queryByRole('button', { name: 'Activist actions' }),
+    ).not.toBeInTheDocument()
   })
 
   it('offers the messaging-app methods alongside the original three', async () => {

@@ -72,8 +72,7 @@ export function Activist({ activistId }: { activistId: number }) {
       <LogInteractionDialog
         open={isLogInteractionDialogOpen}
         onOpenChange={setIsLogInteractionDialogOpen}
-        activistId={activistId}
-        activistName={displayName.text ?? ''}
+        activist={activist}
       />
 
       <ActivistHeader
