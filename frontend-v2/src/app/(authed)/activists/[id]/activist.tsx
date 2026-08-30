@@ -9,6 +9,7 @@ import { ActivistDetails } from './activist-details'
 import { ActivistEngagement } from './activist-engagement'
 import { ActivistHeader } from './activist-header'
 import { HideActivistDialog } from './hide-activist-dialog'
+import { LogInteractionDialog } from './log-interaction-dialog'
 import { MergeActivistDialog } from './merge-activist-dialog'
 
 function useActivist(activistId: number) {
@@ -22,6 +23,8 @@ export function Activist({ activistId }: { activistId: number }) {
   const { data: activist, isError, isLoading } = useActivist(activistId)
   const [isHideDialogOpen, setIsHideDialogOpen] = useState(false)
   const [isMergeDialogOpen, setIsMergeDialogOpen] = useState(false)
+  const [isLogInteractionDialogOpen, setIsLogInteractionDialogOpen] =
+    useState(false)
   const [tab, setTab] = useState('details')
   const [isDetailsDirty, setIsDetailsDirty] = useState(false)
 
@@ -66,8 +69,15 @@ export function Activist({ activistId }: { activistId: number }) {
         activistName={displayName.text ?? ''}
       />
 
+      <LogInteractionDialog
+        open={isLogInteractionDialogOpen}
+        onOpenChange={setIsLogInteractionDialogOpen}
+        activist={activist}
+      />
+
       <ActivistHeader
         activist={activist}
+        onLogInteraction={() => setIsLogInteractionDialogOpen(true)}
         onMerge={() => setIsMergeDialogOpen(true)}
         onHide={() => setIsHideDialogOpen(true)}
       />
