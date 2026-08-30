@@ -1,6 +1,13 @@
 'use client'
 
-import { EyeOff, GitMerge, Mail, MoreHorizontal, Phone } from 'lucide-react'
+import {
+  EyeOff,
+  GitMerge,
+  Mail,
+  MoreHorizontal,
+  Phone,
+  Plus,
+} from 'lucide-react'
 import { ActivistJSON } from '@/lib/api'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -18,10 +25,12 @@ const ACTIVE_WINDOW_MONTHS = 3
 
 export function ActivistHeader({
   activist,
+  onLogInteraction,
   onMerge,
   onHide,
 }: {
   activist: ActivistJSON
+  onLogInteraction: () => void
   onMerge: () => void
   onHide: () => void
 }) {
@@ -32,8 +41,11 @@ export function ActivistHeader({
 
   return (
     <header className="flex flex-col gap-3">
-      <div className="flex items-start justify-between gap-4">
-        <div>
+      {/* Wraps rather than clipping: on a narrow phone the name plus both
+          actions are wider than the screen, so the actions drop to their own
+          row instead of pushing the overflow menu off the right edge. */}
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+        <div className="min-w-0">
           <h1
             className={`text-3xl font-bold ${
               displayName.isPlaceholder ? 'italic text-muted-foreground' : ''
@@ -47,28 +59,34 @@ export function ActivistHeader({
             </p>
           )}
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              aria-label="Activist actions"
-            >
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onSelect={onMerge}>
-              <GitMerge className="h-4 w-4" />
-              Merge
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={onHide}>
-              <EyeOff className="h-4 w-4" />
-              Hide
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex shrink-0 items-center gap-2">
+          <Button type="button" onClick={onLogInteraction}>
+            <Plus className="h-4 w-4" />
+            Log interaction
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                aria-label="Activist actions"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={onMerge}>
+                <GitMerge className="h-4 w-4" />
+                Merge
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={onHide}>
+                <EyeOff className="h-4 w-4" />
+                Hide
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       {(activist.phone || activist.email) && (

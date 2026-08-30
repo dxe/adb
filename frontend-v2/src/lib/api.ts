@@ -29,6 +29,7 @@ export const API_PATH = {
   ACTIVIST_TIMELINE: 'api/activists/timeline',
   ACTIVIST_HIDE: 'activist/hide',
   ACTIVIST_MERGE: 'activist/merge',
+  INTERACTION_SAVE: 'interaction/save',
   USER_ME: 'user/me',
   CSRF_TOKEN: 'api/csrf-token',
   CHAPTER_LIST: 'chapter/list',
@@ -280,6 +281,27 @@ export const ActivistTimelineResp = z.object({
   truncated: z.boolean(),
 })
 export type ActivistTimeline = z.infer<typeof ActivistTimelineResp>
+
+// Payload accepted by POST /interaction/save when logging a new interaction.
+// Mirrors model.Interaction in server/src/model/interactions.go — keep in sync.
+// `id` is omitted so the server treats this as an insert, and `user_id` is
+// omitted so it attributes the interaction to the authed user.
+//
+// The three follow-up fields act on the activist's followup_date rather than on
+// the interaction row: reset_followup clears it, and set_followup moves it
+// followup_days into the future. The server ignores followup_days unless
+// set_followup is true, and the two flags are mutually exclusive in the UI.
+export const SaveInteractionInput = z.object({
+  activist_id: z.number(),
+  method: z.string(),
+  outcome: z.string(),
+  notes: z.string(),
+  assign_self: z.boolean(),
+  reset_followup: z.boolean(),
+  set_followup: z.boolean(),
+  followup_days: z.number(),
+})
+export type SaveInteractionInput = z.infer<typeof SaveInteractionInput>
 
 // Re-export activist search types from dedicated module
 export {
@@ -752,6 +774,25 @@ export class ApiClient {
         .json()
       this.throwIfApiError(resp)
       return SuccessResp.parse(resp)
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  // The response also carries the updated activist, but callers refetch the
+  // activist and timeline queries instead of trusting a second shape here.
+  saveInteraction = async (payload: SaveInteractionInput) => {
+    try {
+      return await this.withCsrf(async (csrfToken) => {
+        const resp = await this.client
+          .post(API_PATH.INTERACTION_SAVE, {
+            json: payload,
+            headers: { 'X-CSRF-Token': csrfToken },
+          })
+          .json()
+        this.throwIfApiError(resp)
+        return SuccessResp.parse(resp)
+      })
     } catch (err) {
       return this.handleKyError(err)
     }
