@@ -661,6 +661,25 @@ export class ApiClient {
     }
   }
 
+  // Exports the current columns as tab-separated text, for copying to the
+  // clipboard so it pastes into spreadsheet cells.
+  exportActivistsTsvText = async (
+    options: QueryActivistOptions,
+    signal?: AbortSignal,
+  ) => {
+    try {
+      const resp = await this.client.post(API_PATH.ACTIVISTS_EXPORT, {
+        searchParams: { format: 'tsv' },
+        json: options,
+        signal,
+        timeout: false,
+      })
+      return await resp.text()
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
   // Exports activists in the Spoke dialer layout. The server hard-codes the
   // CSV columns; options.shape.columns must be empty.
   exportActivistsSpokeCsv = async (
