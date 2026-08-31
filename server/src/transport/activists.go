@@ -202,7 +202,17 @@ func ActivistsCountHandler(w http.ResponseWriter, r *http.Request, authedUser mo
 // order. Rows are streamed directly from the database; response headers are
 // not written until the first row arrives, so validation/auth errors still
 // surface as JSON.
+//
+// The optional ?format=tsv query param streams tab-separated values instead,
+// which is what clients copy to the clipboard so it pastes into spreadsheet
+// cells.
 func ActivistsExportHandler(w http.ResponseWriter, r *http.Request, authedUser model.ADBUser, repo model.ActivistRepository) {
+	format, err := parseExportFormat(r.URL.Query().Get("format"))
+	if err != nil {
+		sendErrorMessage(w, http.StatusBadRequest, err)
+		return
+	}
+
 	var options model.QueryActivistOptions
 	if err := json.NewDecoder(r.Body).Decode(&options); err != nil && err != io.EOF {
 		sendErrorMessage(w, http.StatusBadRequest, err)
@@ -218,7 +228,7 @@ func ActivistsExportHandler(w http.ResponseWriter, r *http.Request, authedUser m
 		return activistCSVRow(a, cols)
 	}
 
-	streamActivistsCSV(w, authedUser, options, repo, header, buildRow)
+	streamActivistsCSV(w, authedUser, options, repo, format, header, buildRow)
 }
 
 // ActivistsExportSpokeHandler streams a CSV in the Spoke dialer layout
@@ -247,28 +257,98 @@ func ActivistsExportSpokeHandler(w http.ResponseWriter, r *http.Request, authedU
 		options.Shape.Columns = append(options.Shape.Columns, model.ColChapterName)
 	}
 
-	streamActivistsCSV(w, authedUser, options, repo,
+	streamActivistsCSV(w, authedUser, options, repo, exportFormatCSV,
 		[]string{"first_name", "last_name", "cell"},
 		activistCSVRowSpoke,
 	)
 }
 
-// streamActivistsCSV runs the query and writes header + rows as CSV. Response
-// headers are deferred until the first row arrives so validation/auth errors
-// can still surface as JSON.
+// exportFormat is the delimited-text format an export is streamed in.
+type exportFormat string
+
+const (
+	exportFormatCSV exportFormat = "csv"
+	exportFormatTSV exportFormat = "tsv"
+)
+
+// parseExportFormat maps the ?format= query param to an exportFormat. An empty
+// value keeps the historical CSV behavior.
+func parseExportFormat(s string) (exportFormat, error) {
+	switch s {
+	case "", string(exportFormatCSV):
+		return exportFormatCSV, nil
+	case string(exportFormatTSV):
+		return exportFormatTSV, nil
+	default:
+		return "", fmt.Errorf("unsupported export format %q", s)
+	}
+}
+
+// rowWriter is the subset of csv.Writer that streamActivistsCSV needs, so TSV
+// can be written by tsvWriter instead.
+type rowWriter interface {
+	Write(record []string) error
+	Flush()
+	Error() error
+}
+
+// tsvWriter writes tab-separated rows. Unlike CSV there is no quoting:
+// spreadsheets parse pasted tab-separated text literally, so quotes would show
+// up in the pasted cells. Tabs, carriage returns, and newlines inside a value
+// are replaced with spaces instead.
+type tsvWriter struct {
+	w   io.Writer
+	err error
+}
+
+var tsvFieldReplacer = strings.NewReplacer("\t", " ", "\r", " ", "\n", " ")
+
+func (t *tsvWriter) Write(record []string) error {
+	if t.err != nil {
+		return t.err
+	}
+	fields := make([]string, len(record))
+	for i, f := range record {
+		fields[i] = tsvFieldReplacer.Replace(f)
+	}
+	if _, err := io.WriteString(t.w, strings.Join(fields, "\t")+"\n"); err != nil {
+		t.err = err
+		return err
+	}
+	return nil
+}
+
+func (t *tsvWriter) Flush() {
+	if f, ok := t.w.(http.Flusher); ok {
+		f.Flush()
+	}
+}
+
+func (t *tsvWriter) Error() error { return t.err }
+
+// streamActivistsCSV runs the query and writes header + rows as delimited text.
+// Response headers are deferred until the first row arrives so validation/auth
+// errors can still surface as JSON.
 func streamActivistsCSV(
 	w http.ResponseWriter,
 	authedUser model.ADBUser,
 	options model.QueryActivistOptions,
 	repo model.ActivistRepository,
+	format exportFormat,
 	header []string,
 	buildRow func(model.ActivistJSON) []string,
 ) {
-	var cw *csv.Writer
+	var cw rowWriter
 	startCSV := func() error {
-		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
-		w.Header().Set("Content-Disposition", `attachment; filename="activists.csv"`)
-		cw = csv.NewWriter(w)
+		if format == exportFormatTSV {
+			w.Header().Set("Content-Type", "text/tab-separated-values; charset=utf-8")
+			w.Header().Set("Content-Disposition", `attachment; filename="activists.tsv"`)
+			cw = &tsvWriter{w: w}
+		} else {
+			w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+			w.Header().Set("Content-Disposition", `attachment; filename="activists.csv"`)
+			cw = csv.NewWriter(w)
+		}
 		return cw.Write(header)
 	}
 
