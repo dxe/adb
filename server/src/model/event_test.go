@@ -26,25 +26,29 @@ func TestGetEvents(t *testing.T) {
 	d2, err := time.Parse("2006-01-02", "2017-01-16")
 	require.NoError(t, err)
 	var wantEvents = []Event{{
-		ID:             1,
-		EventName:      "event one",
-		EventDate:      d1,
-		EventType:      "Working Group",
-		Attendees:      []string{"Hello"},
-		AttendeeEmails: []string{"test1@example.org"},
-		AttendeePhones: []string{"123-456-7890"},
-		AttendeeIDs:    []int{a1.ID},
-		ChapterID:      1,
+		ID:               1,
+		EventName:        "event one",
+		EventDate:        d1,
+		EventType:        "Working Group",
+		Attendees:        []string{"Hello"},
+		AttendeeEmails:   []string{"test1@example.org"},
+		AttendeePhones:   []string{"123-456-7890"},
+		AttendeeHasEmail: []bool{true},
+		AttendeeHasPhone: []bool{true},
+		AttendeeIDs:      []int{a1.ID},
+		ChapterID:        1,
 	}, {
-		ID:             2,
-		EventName:      "event two",
-		EventDate:      d2,
-		EventType:      "Action",
-		Attendees:      []string{"Hello", "Hi"},
-		AttendeeEmails: []string{"test1@example.org", "test2@example.org"},
-		AttendeePhones: []string{"123-456-7890", "888-888-8888"},
-		AttendeeIDs:    []int{a1.ID, a2.ID},
-		ChapterID:      1,
+		ID:               2,
+		EventName:        "event two",
+		EventDate:        d2,
+		EventType:        "Action",
+		Attendees:        []string{"Hello", "Hi"},
+		AttendeeEmails:   []string{"test1@example.org", "test2@example.org"},
+		AttendeePhones:   []string{"123-456-7890", "888-888-8888"},
+		AttendeeHasEmail: []bool{true, true},
+		AttendeeHasPhone: []bool{true, true},
+		AttendeeIDs:      []int{a1.ID, a2.ID},
+		ChapterID:        1,
 	}}
 
 	for _, e := range wantEvents {
@@ -110,6 +114,8 @@ func TestGetEvents_includeAttendeeEmails(t *testing.T) {
 	require.Equal(t, []string{"Hello"}, withEmails[0].Attendees)
 	require.Equal(t, []string{"test1@example.org"}, withEmails[0].AttendeeEmails)
 	require.Equal(t, []string{"123-456-7890"}, withEmails[0].AttendeePhones)
+	require.Equal(t, []bool{true}, withEmails[0].AttendeeHasEmail)
+	require.Equal(t, []bool{true}, withEmails[0].AttendeeHasPhone)
 
 	withoutEmails, err := GetEvents(db, GetEventOptions{})
 	require.NoError(t, err)
@@ -119,6 +125,41 @@ func TestGetEvents_includeAttendeeEmails(t *testing.T) {
 	require.Equal(t, []string{"Hello"}, withoutEmails[0].Attendees)
 	require.Nil(t, withoutEmails[0].AttendeeEmails)
 	require.Equal(t, []string{"123-456-7890"}, withoutEmails[0].AttendeePhones)
+	// The contact-info presence flags are populated either way, so callers that
+	// aren't authorized to see the addresses can still report what's on file.
+	require.Equal(t, []bool{true}, withoutEmails[0].AttendeeHasEmail)
+	require.Equal(t, []bool{true}, withoutEmails[0].AttendeeHasPhone)
+}
+
+// The contact-info presence flags report what's actually on file, and are
+// populated whether or not the caller opted in to fetching email addresses.
+func TestGetEvents_attendeeContactFlags(t *testing.T) {
+	db := testdb.NewDB()
+	defer func() { _ = db.Close() }()
+
+	a1, err := CreateActivist(db, ActivistExtra{Activist: Activist{
+		Name: "No Contact Info", ChapterID: 1,
+	}})
+	require.NoError(t, err)
+
+	d1, err := time.Parse("2006-01-02", "2017-01-15")
+	require.NoError(t, err)
+	_, err = InsertUpdateEvent(db, Event{
+		EventName:      "event one",
+		EventDate:      d1,
+		EventType:      "Working Group",
+		AddedAttendees: []Activist{{ID: a1, Name: "No Contact Info", ChapterID: 1}},
+		ChapterID:      1,
+	})
+	require.NoError(t, err)
+
+	for _, includeEmails := range []bool{true, false} {
+		events, err := GetEvents(db, GetEventOptions{IncludeAttendeeEmails: includeEmails})
+		require.NoError(t, err)
+		require.Len(t, events, 1)
+		require.Equal(t, []bool{false}, events[0].AttendeeHasEmail)
+		require.Equal(t, []bool{false}, events[0].AttendeeHasPhone)
+	}
 }
 
 func TestGetEvents_orderBy(t *testing.T) {

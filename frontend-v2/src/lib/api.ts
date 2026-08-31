@@ -411,6 +411,16 @@ const EventListItemSchema = z.object({
     .array(z.string())
     .nullable()
     .transform((v) => v ?? []),
+  // Index-aligned with `attendees`. Always sent, even for roles that aren't
+  // allowed to see the addresses themselves in `attendee_emails`.
+  attendee_has_email: z
+    .array(z.boolean())
+    .nullish()
+    .transform((v) => v ?? []),
+  attendee_has_phone: z
+    .array(z.boolean())
+    .nullish()
+    .transform((v) => v ?? []),
 })
 export type EventListItem = z.infer<typeof EventListItemSchema>
 

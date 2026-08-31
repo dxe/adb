@@ -40,13 +40,19 @@ type EventType string
 
 /* TODO Restructure this struct */
 type EventJSON struct {
-	EventID          int      `json:"event_id"`
-	EventName        string   `json:"event_name"`
-	EventDate        string   `json:"event_date"`
-	EventType        string   `json:"event_type"`
-	Attendees        []string `json:"attendees"` // For displaying all event attendees
-	AttendeeEmails   []string `json:"attendee_emails"`
-	AttendeeIDs      []int    `json:"attendee_ids"`
+	EventID        int      `json:"event_id"`
+	EventName      string   `json:"event_name"`
+	EventDate      string   `json:"event_date"`
+	EventType      string   `json:"event_type"`
+	Attendees      []string `json:"attendees"` // For displaying all event attendees
+	AttendeeEmails []string `json:"attendee_emails"`
+	AttendeeIDs    []int    `json:"attendee_ids"`
+	// Contact-info presence flags, index-aligned with Attendees. Unlike
+	// AttendeeEmails these are always populated, so a caller that isn't
+	// authorized to see attendee PII can still tell whether an attendee has an
+	// email address and/or a phone number on file.
+	AttendeeHasEmail []bool   `json:"attendee_has_email"`
+	AttendeeHasPhone []bool   `json:"attendee_has_phone"`
 	AddedAttendees   []string `json:"added_attendees"`   // Used for Updating Events
 	DeletedAttendees []string `json:"deleted_attendees"` // Used for Updating Events
 	SuppressSurvey   bool     `json:"suppress_survey"`
@@ -79,15 +85,19 @@ type LocationJSON struct {
 
 /* TODO Restructure this Struct */
 type Event struct {
-	ID                    int       `db:"id"`
-	EventName             string    `db:"name"`
-	EventDate             time.Time `db:"date"`
-	EventType             EventType `db:"event_type"`
-	SurveySent            int       `db:"survey_sent"` // Used for sending event surveys
-	SuppressSurvey        bool      `db:"suppress_survey"`
-	Attendees             []string  // For retrieving all event attendees
-	AttendeeEmails        []string
-	AttendeePhones        []string
+	ID             int       `db:"id"`
+	EventName      string    `db:"name"`
+	EventDate      time.Time `db:"date"`
+	EventType      EventType `db:"event_type"`
+	SurveySent     int       `db:"survey_sent"` // Used for sending event surveys
+	SuppressSurvey bool      `db:"suppress_survey"`
+	Attendees      []string  // For retrieving all event attendees
+	AttendeeEmails []string
+	AttendeePhones []string
+	// Index-aligned with Attendees; populated regardless of whether the caller
+	// opted in to fetching the attendees' actual email addresses.
+	AttendeeHasEmail      []bool
+	AttendeeHasPhone      []bool
 	AttendeeIDs           []int
 	AttendeeMissingEmails []string   // Used for sending event surveys
 	AddedAttendees        []Activist // Used for Updating Events
@@ -115,16 +125,18 @@ type Event struct {
 
 func (event *Event) ToJSON() EventJSON {
 	j := EventJSON{
-		EventID:        event.ID,
-		EventName:      event.EventName,
-		EventDate:      event.EventDate.Format(EventDateLayout),
-		EventType:      string(event.EventType),
-		Attendees:      event.Attendees,
-		AttendeeEmails: event.AttendeeEmails,
-		AttendeeIDs:    event.AttendeeIDs,
-		SuppressSurvey: event.SuppressSurvey,
-		CircleID:       event.CircleID,
-		ChapterID:      event.ChapterID,
+		EventID:          event.ID,
+		EventName:        event.EventName,
+		EventDate:        event.EventDate.Format(EventDateLayout),
+		EventType:        string(event.EventType),
+		Attendees:        event.Attendees,
+		AttendeeEmails:   event.AttendeeEmails,
+		AttendeeHasEmail: event.AttendeeHasEmail,
+		AttendeeHasPhone: event.AttendeeHasPhone,
+		AttendeeIDs:      event.AttendeeIDs,
+		SuppressSurvey:   event.SuppressSurvey,
+		CircleID:         event.CircleID,
+		ChapterID:        event.ChapterID,
 
 		IsOnline:    event.IsOnline,
 		Description: event.Description.String,
@@ -334,6 +346,8 @@ SELECT
   a.name as activist_name,
   `+emailCol+` as activist_email,
   a.phone as activist_phone,
+  IF(a.email != '', 1, 0) as activist_has_email,
+  IF(a.phone != '', 1, 0) as activist_has_phone,
   a.id as activist_id
 FROM activists a
 JOIN event_attendance ea
@@ -346,11 +360,13 @@ WHERE
 
 	attendanceQuery = db.Rebind(attendanceQuery)
 	type Attendance struct {
-		EventID       int    `db:"event_id"`
-		ActivistName  string `db:"activist_name"`
-		ActivistEmail string `db:"activist_email"`
-		ActivistPhone string `db:"activist_phone"`
-		ActivistID    int    `db:"activist_id"`
+		EventID          int    `db:"event_id"`
+		ActivistName     string `db:"activist_name"`
+		ActivistEmail    string `db:"activist_email"`
+		ActivistPhone    string `db:"activist_phone"`
+		ActivistHasEmail bool   `db:"activist_has_email"`
+		ActivistHasPhone bool   `db:"activist_has_phone"`
+		ActivistID       int    `db:"activist_id"`
 	}
 	var allAttendance []Attendance
 	err = db.Select(&allAttendance, attendanceQuery, attendanceArgs...)
@@ -365,6 +381,8 @@ WHERE
 			events[i].AttendeeEmails = append(events[i].AttendeeEmails, a.ActivistEmail)
 		}
 		events[i].AttendeePhones = append(events[i].AttendeePhones, a.ActivistPhone)
+		events[i].AttendeeHasEmail = append(events[i].AttendeeHasEmail, a.ActivistHasEmail)
+		events[i].AttendeeHasPhone = append(events[i].AttendeeHasPhone, a.ActivistHasPhone)
 		events[i].AttendeeIDs = append(events[i].AttendeeIDs, a.ActivistID)
 	}
 
