@@ -41,6 +41,7 @@ export const API_PATH = {
   EVENT_DELETE: 'event/delete',
   COACHING_SAVE: 'connection/save',
   ADMIN_SEND_TEST_EMAIL: 'api/admin/send-test-email',
+  INTEREST_FORM_SUBMIT: 'interest',
   INTERNATIONAL_FORM_SUBMIT: 'international',
   PLACES_API_KEY: 'places_api_key',
   APPLICATION_FORM_SUBMIT: 'apply',
@@ -457,6 +458,21 @@ export interface EventListParams {
 const SuccessResp = z.object({
   status: z.literal('success'),
 })
+
+// Public interest form payload. Keys match model.InterestFormData's JSON
+// tags for the fields this form submits.
+export interface InterestFormPayload {
+  chapterId: number
+  form: string
+  name: string
+  email: string
+  zip: string
+  phone: string
+  referralFriends: string
+  referralApply: string
+  referralOutlet: string
+  interests: string
+}
 
 // Mirrors ApplicationFormData in server/src/model/forms.go. Like the legacy
 // form, also sends firstName/lastName even though Go only persists `name`.
@@ -1074,6 +1090,18 @@ export class ApiClient {
         this.throwIfApiError(resp)
         return SuccessResp.parse(resp)
       })
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  submitInterestForm = async (payload: InterestFormPayload) => {
+    try {
+      const resp = await this.client
+        .post(API_PATH.INTEREST_FORM_SUBMIT, { json: payload })
+        .json()
+      this.throwIfApiError(resp)
+      return SuccessResp.parse(resp)
     } catch (err) {
       return this.handleKyError(err)
     }
