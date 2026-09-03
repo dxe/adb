@@ -23,8 +23,13 @@ export const API_PATH = {
   ACTIVISTS_EXPORT_SPOKE: 'api/activists/export/spoke',
   ACTIVISTS_DEBUG_QUERY: 'api/activists/debug-query',
   ACTIVIST_GET: 'api/activists',
+  // The real URL puts the activist id in the middle
+  // (api/activists/{id}/timeline); this entry exists to key the query cache.
+  // TODO: avoid conflating query keys and real API paths.
+  ACTIVIST_TIMELINE: 'api/activists/timeline',
   ACTIVIST_HIDE: 'activist/hide',
   ACTIVIST_MERGE: 'activist/merge',
+  INTERACTION_SAVE: 'interaction/save',
   USER_ME: 'user/me',
   CSRF_TOKEN: 'api/csrf-token',
   CHAPTER_LIST: 'chapter/list',
@@ -38,6 +43,7 @@ export const API_PATH = {
   ADMIN_SEND_TEST_EMAIL: 'api/admin/send-test-email',
   INTERNATIONAL_FORM_SUBMIT: 'international',
   PLACES_API_KEY: 'places_api_key',
+  APPLICATION_FORM_SUBMIT: 'apply',
 }
 
 export const StaticResourcesHashResp = z.object({
@@ -214,6 +220,92 @@ export const ActivistListBasicResp = z.object({
 
 export type ActivistListBasic = z.infer<typeof ActivistListBasicResp>
 
+// One entry in an activist's engagement timeline: either an event they
+// attended or an interaction an organizer logged with them. `date` is the
+// calendar date (YYYY-MM-DD) the server filed the item under and is what both
+// kinds are ordered by; interactions additionally carry the exact instant.
+const TimelineEventPayloadSchema = z.object({
+  name: z.string(),
+  type: z.string(),
+})
+
+const TimelineInteractionPayloadSchema = z.object({
+  method: z.string(),
+  outcome: z.string(),
+  notes: z.string(),
+  user_name: z.string(),
+})
+
+// Fields every timeline item carries, whatever its variant. `date` is the day
+// the server filed the item under and is what the ordering agrees with, so it
+// is rendered as sent rather than re-derived from `timestamp`. `has_time` is
+// false when the server had no real time of day and supplied a placeholder
+// instant just to sort the item (an event with no start time), so `timestamp`
+// is only safe to show as a clock time when it is true.
+const TimelineItemEnvelope = {
+  id: z.number(),
+  date: z.string(),
+  timestamp: z.string(),
+  has_time: z.boolean(),
+}
+
+const TimelineEventItemSchema = z.object({
+  ...TimelineItemEnvelope,
+  type: z.literal('event'),
+  event: TimelineEventPayloadSchema,
+})
+
+const TimelineInteractionItemSchema = z.object({
+  ...TimelineItemEnvelope,
+  type: z.literal('interaction'),
+  interaction: TimelineInteractionPayloadSchema,
+})
+
+export const ActivistTimelineItemSchema = z.discriminatedUnion('type', [
+  TimelineEventItemSchema,
+  TimelineInteractionItemSchema,
+])
+export type ActivistTimelineItem = z.infer<typeof ActivistTimelineItemSchema>
+export type ActivistTimelineEventItem = z.infer<typeof TimelineEventItemSchema>
+export type ActivistTimelineInteractionItem = z.infer<
+  typeof TimelineInteractionItemSchema
+>
+export type ActivistTimelineEventPayload = z.infer<
+  typeof TimelineEventPayloadSchema
+>
+export type ActivistTimelineInteractionPayload = z.infer<
+  typeof TimelineInteractionPayloadSchema
+>
+
+export const ActivistTimelineResp = z.object({
+  items: z.array(ActivistTimelineItemSchema),
+  // The server caps how many items it returns; true means older items exist
+  // that were not sent.
+  truncated: z.boolean(),
+})
+export type ActivistTimeline = z.infer<typeof ActivistTimelineResp>
+
+// Payload accepted by POST /interaction/save when logging a new interaction.
+// Mirrors model.Interaction in server/src/model/interactions.go — keep in sync.
+// `id` is omitted so the server treats this as an insert, and `user_id` is
+// omitted so it attributes the interaction to the authed user.
+//
+// The three follow-up fields act on the activist's followup_date rather than on
+// the interaction row: reset_followup clears it, and set_followup moves it
+// followup_days into the future. The server ignores followup_days unless
+// set_followup is true, and the two flags are mutually exclusive in the UI.
+export const SaveInteractionInput = z.object({
+  activist_id: z.number(),
+  method: z.string(),
+  outcome: z.string(),
+  notes: z.string(),
+  assign_self: z.boolean(),
+  reset_followup: z.boolean(),
+  set_followup: z.boolean(),
+  followup_days: z.number(),
+})
+export type SaveInteractionInput = z.infer<typeof SaveInteractionInput>
+
 // Re-export activist search types from dedicated module
 export {
   ActivistJSON,
@@ -322,6 +414,16 @@ const EventListItemSchema = z.object({
     .array(z.string())
     .nullable()
     .transform((v) => v ?? []),
+  // Index-aligned with `attendees`. Always sent, even for roles that aren't
+  // allowed to see the addresses themselves in `attendee_emails`.
+  attendee_has_email: z
+    .array(z.boolean())
+    .nullish()
+    .transform((v) => v ?? []),
+  attendee_has_phone: z
+    .array(z.boolean())
+    .nullish()
+    .transform((v) => v ?? []),
 })
 export type EventListItem = z.infer<typeof EventListItemSchema>
 
@@ -355,6 +457,25 @@ export interface EventListParams {
 const SuccessResp = z.object({
   status: z.literal('success'),
 })
+
+// Mirrors ApplicationFormData in server/src/model/forms.go. Like the legacy
+// form, also sends firstName/lastName even though Go only persists `name`.
+export interface ApplicationFormPayload {
+  name: string
+  firstName: string
+  lastName: string
+  pronouns: string
+  email: string
+  address: string
+  city: string
+  zip: string
+  phone: string
+  birthday: string
+  referral: string
+  language: string
+  accessibility: string
+  applicationType: string
+}
 
 const ApiErrorResp = z.object({
   status: z.literal('error'),
@@ -591,6 +712,25 @@ export class ApiClient {
     }
   }
 
+  // Exports the current columns as tab-separated text, for copying to the
+  // clipboard so it pastes into spreadsheet cells.
+  exportActivistsTsvText = async (
+    options: QueryActivistOptions,
+    signal?: AbortSignal,
+  ) => {
+    try {
+      const resp = await this.client.post(API_PATH.ACTIVISTS_EXPORT, {
+        searchParams: { format: 'tsv' },
+        json: options,
+        signal,
+        timeout: false,
+      })
+      return await resp.text()
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
   // Exports activists in the Spoke dialer layout. The server hard-codes the
   // CSV columns; options.shape.columns must be empty.
   exportActivistsSpokeCsv = async (
@@ -659,6 +799,17 @@ export class ApiClient {
     }
   }
 
+  getActivistTimeline = async (activistId: number, signal?: AbortSignal) => {
+    try {
+      const resp = await this.client
+        .get(`${API_PATH.ACTIVIST_GET}/${activistId}/timeline`, { signal })
+        .json()
+      return ActivistTimelineResp.parse(resp)
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
   hideActivist = async (activistId: number, signal?: AbortSignal) => {
     try {
       // TODO: pass X-CSRF-Token header once the backend requires it for this endpoint.
@@ -693,6 +844,25 @@ export class ApiClient {
         .json()
       this.throwIfApiError(resp)
       return SuccessResp.parse(resp)
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  // The response also carries the updated activist, but callers refetch the
+  // activist and timeline queries instead of trusting a second shape here.
+  saveInteraction = async (payload: SaveInteractionInput) => {
+    try {
+      return await this.withCsrf(async (csrfToken) => {
+        const resp = await this.client
+          .post(API_PATH.INTERACTION_SAVE, {
+            json: payload,
+            headers: { 'X-CSRF-Token': csrfToken },
+          })
+          .json()
+        this.throwIfApiError(resp)
+        return SuccessResp.parse(resp)
+      })
     } catch (err) {
       return this.handleKyError(err)
     }
@@ -904,6 +1074,22 @@ export class ApiClient {
         this.throwIfApiError(resp)
         return SuccessResp.parse(resp)
       })
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  // Public, unauthenticated POST; the /apply Go route has no CSRF middleware.
+  submitApplicationForm = async (
+    payload: ApplicationFormPayload,
+    signal?: AbortSignal,
+  ) => {
+    try {
+      const resp = await this.client
+        .post(API_PATH.APPLICATION_FORM_SUBMIT, { json: payload, signal })
+        .json()
+      this.throwIfApiError(resp)
+      return SuccessResp.parse(resp)
     } catch (err) {
       return this.handleKyError(err)
     }
