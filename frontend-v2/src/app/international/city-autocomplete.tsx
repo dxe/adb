@@ -51,18 +51,21 @@ export function CityAutocomplete({
   hasError,
   onSelect,
   onNoResults,
+  onUnavailable,
 }: {
   id?: string
   placeholder?: string
-  apiKey: string | undefined
+  apiKey: string
   hasError?: boolean
   onSelect: (value: CityValue) => void
   onNoResults?: () => void
+  /** Called when the Places script fails to load, disabling the field. */
+  onUnavailable?: () => void
 }) {
   return (
     <PlacesAutocomplete
       id={id}
-      apiKey={apiKey ?? ''}
+      apiKey={apiKey}
       value=""
       placeholder={placeholder}
       types={['(cities)']}
@@ -79,6 +82,7 @@ export function CityAutocomplete({
       }}
       onClear={() => onNoResults?.()}
       onNoResult={() => onNoResults?.()}
+      onUnavailable={onUnavailable}
     />
   )
 }

@@ -63,14 +63,19 @@ const defaultValues: FormValues = {
 
 export function InternationalForm() {
   const [submitSuccess, setSubmitSuccess] = useState(false)
+  const [placesLoadFailed, setPlacesLoadFailed] = useState(false)
 
-  // On failure the form still works; the city field just has no suggestions.
-  const { data: placesApiKey } = useQuery({
+  const placesApiKeyQuery = useQuery({
     queryKey: [API_PATH.PLACES_API_KEY],
     queryFn: ({ signal }) => apiClient.getPlacesApiKey(signal),
     staleTime: Infinity,
     retry: 1,
   })
+
+  // City is required and can only be set from the Places dropdown, so without
+  // Places there is no way to submit — don't let anyone fill the form out first.
+  const placesUnavailable =
+    placesApiKeyQuery.isError || !placesApiKeyQuery.data || placesLoadFailed
 
   const mutation = useMutation({
     mutationFn: (values: SubmitValues) =>
@@ -112,6 +117,24 @@ export function InternationalForm() {
       <div className="flex flex-col gap-2">
         <h2 className="text-xl font-semibold">Thank you!</h2>
         <p>An organizer will reach out to you shortly.</p>
+      </div>
+    )
+  }
+
+  if (placesApiKeyQuery.isPending) {
+    return <p className="text-muted-foreground">Loading&hellip;</p>
+  }
+
+  if (placesUnavailable) {
+    return (
+      <div className="flex flex-col gap-2">
+        <h2 className="text-xl font-semibold">
+          This form is temporarily unavailable
+        </h2>
+        <p>
+          The city search this form depends on failed to load, and a city is
+          required to sign up. Please try again later.
+        </p>
       </div>
     )
   }
@@ -221,10 +244,11 @@ export function InternationalForm() {
             <CityAutocomplete
               id="citySearch"
               placeholder="Enter your city & country"
-              apiKey={placesApiKey}
+              apiKey={placesApiKeyQuery.data}
               hasError={!!field.state.meta.errors[0]}
               onSelect={(value) => field.handleChange(value)}
               onNoResults={() => field.handleChange(null)}
+              onUnavailable={() => setPlacesLoadFailed(true)}
             />
             {!field.state.value && (
               <p className="text-sm italic text-muted-foreground">

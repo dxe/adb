@@ -101,6 +101,10 @@ type Props = {
   onClear: () => void
   // Called when a selection resolves without a usable place (no place_id).
   onNoResult?: () => void
+  // Called when the Maps script fails to load, leaving the field permanently
+  // disabled. Providing it replaces the load-error toast, so a caller whose form
+  // depends on this field can surface the failure itself instead.
+  onUnavailable?: () => void
   disabled?: boolean
   hasError?: boolean
   id?: string
@@ -123,6 +127,7 @@ export function PlacesAutocomplete({
   onSelect,
   onClear,
   onNoResult,
+  onUnavailable,
   disabled,
   hasError,
   id,
@@ -164,6 +169,10 @@ export function PlacesAutocomplete({
     const reportLoadError = () => {
       if (cancelled) return
       setStatus('error')
+      if (onUnavailable) {
+        onUnavailable()
+        return
+      }
       toast.error(loadErrorMessage, { id: 'places-load-error' })
     }
     loadPlacesLibrary(apiKey)
