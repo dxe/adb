@@ -53,8 +53,6 @@ const REFERRAL_OUTLET_OPTIONS = [
   { value: 'In-person Invite', label: 'Someone invited me in person' },
 ] as const
 
-// Unlike the legacy form (native browser validation bubbles), validation is
-// via zod with the form set to noValidate; `required` attrs are a11y-only.
 const formSchema = z.object({
   firstName: z.string().trim().min(1, 'First Name is required.').max(35),
   lastName: z.string().trim().min(1, 'Last Name is required.').max(35),

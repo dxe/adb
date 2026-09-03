@@ -12,7 +12,6 @@ export interface InterestFormOptions {
   initialReferralApply: string
 }
 
-// Mirrors the query-param parsing in FormInterest.vue's created() hook.
 export function parseInterestFormOptions(
   searchParams: URLSearchParams,
 ): InterestFormOptions {
@@ -23,15 +22,14 @@ export function parseInterestFormOptions(
     ? parsedChapterId
     : SF_BAY_CHAPTER_ID
   const formName = searchParams.get('name') || 'Interest Form'
-  // Vue parity: the default title checks the raw parsed chapterId (NaN
-  // when missing/invalid), not the SF-Bay-defaulted value.
   const formTitle =
     searchParams.get('title') ||
     (parsedChapterId === SF_BAY_CHAPTER_ID
       ? 'DxE SF Bay - Get Involved'
       : 'Direct Action Everywhere - Get Involved')
   const formDescription = searchParams.get('description') || ''
-  // Vue parity: showInterests defaults true; other show* flags default false.
+  // showInterests defaults true to preserve behavior of links generated
+  // before visibility of this section was configurable
   const showInterests = searchParams.get('showInterests') !== 'false'
   const showReferralFriends = searchParams.get('showReferralFriends') === 'true'
   const showReferralApply = searchParams.get('showReferralApply') === 'true'
