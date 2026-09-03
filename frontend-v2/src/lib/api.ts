@@ -147,6 +147,7 @@ export function flattenChapterOrganizers(
 
 // Full `fb_pages` row for the chapters admin page. `.passthrough()` preserves
 // fields the UI never edits (e.g. EmailToken) so saves can't silently wipe them.
+// Note that EmailToken is unused and should be removed anyway.
 const ChapterOrganizerAdminSchema = z.object({
   Name: z.string(),
   Email: z.string(),
@@ -182,6 +183,7 @@ const ChapterAdminSchema = z
       .nullable()
       .transform((v) => v ?? []),
   })
+  // todo: remove when EmailToken is removed
   .passthrough()
 export type ChapterAdmin = z.infer<typeof ChapterAdminSchema>
 

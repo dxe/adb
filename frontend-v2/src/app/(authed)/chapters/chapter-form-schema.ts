@@ -36,8 +36,7 @@ export const chapterFormSchema = z.object({
   organizers: z.array(organizerFormSchema),
 })
 
-// Stricter checks that only apply at submit time, mirroring the legacy Vue
-// page's confirmEditChapterModal validation.
+// Stricter checks that only apply at submit time.
 export const chapterFormSubmitSchema = chapterFormSchema.extend({
   name: z.string().trim().min(1, 'Chapter name is required').max(100),
   region: z.string().min(1, 'Region is required'),
@@ -78,8 +77,9 @@ export function toInitialValues(
   }
 }
 
-// Spreads the original chapter first so fields the form never displays (e.g.
-// EmailToken) round-trip unchanged instead of being wiped on save.
+// Spreads the original chapter first so fields the form never displays
+// round-trip unchanged instead of being wiped on save.
+// TODO: the only such field is EmailToken, which is unused and should be removed.
 export function buildChapterPayload(
   chapter: ChapterAdmin | undefined,
   values: ChapterFormSubmitValues,

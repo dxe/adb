@@ -4,8 +4,7 @@ export interface Country {
   flag: string
 }
 
-// Extracted from frontend/ChapterList.vue's allCountries list (display names
-// only; the persisted value is `code`, so fixing Vue's "SuriName" typo is safe).
+// Extracted from frontend/ChapterList.vue's allCountries list.
 export const COUNTRIES: Country[] = [
   { name: 'Ascension Island', code: 'AC', flag: '🇦🇨' },
   { name: 'Andorra', code: 'AD', flag: '🇦🇩' },

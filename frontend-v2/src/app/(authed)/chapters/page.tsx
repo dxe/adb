@@ -22,7 +22,7 @@ export default async function ChaptersListPage() {
   )
 
   return (
-    <ContentWrapper size="full" className="gap-6">
+    <ContentWrapper size="2xl" className="gap-6">
       <HydrationBoundary state={dehydrate(queryClient)}>
         <ChaptersPage />
       </HydrationBoundary>

@@ -207,44 +207,145 @@ export function ChapterTable({
   const rows = table.getRowModel().rows
 
   return (
-    <div className="rounded-md border overflow-x-auto">
-      <Table>
-        <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <TableHead key={header.id} className="whitespace-nowrap">
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext(),
-                      )}
-                </TableHead>
-              ))}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {rows.length ? (
-            rows.map((row) => (
-              <TableRow key={row.id}>
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
+    <div className="space-y-4">
+      {/* Desktop table */}
+      <div className="rounded-md border hidden md:block">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id} className="whitespace-nowrap">
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
+                  </TableHead>
                 ))}
               </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={columns.length} className="text-center py-6">
-                No chapters found.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {rows.length ? (
+              rows.map((row) => (
+                <TableRow key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="text-center py-6"
+                >
+                  No chapters found.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Mobile cards */}
+      <div className="md:hidden space-y-3">
+        {rows.length ? (
+          rows.map(({ id, original: chapter }) => (
+            <div
+              key={id}
+              className="rounded-lg border bg-card p-4 shadow-sm text-card-foreground"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-base font-semibold">
+                  {chapter.Flag} {chapter.Name}
+                </span>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button asChild variant="outline" size="icon">
+                    <IntentPrefetchLink
+                      href={`/chapters/${chapter.ChapterID}`}
+                      aria-label={`Edit ${chapter.Name}`}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </IntentPrefetchLink>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label={`Email ${chapter.Name}`}
+                    onClick={() => composeChapterEmail(chapter)}
+                  >
+                    <Mail className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label={`Delete ${chapter.Name}`}
+                    disabled={isDeleting}
+                    onClick={() => onDelete(chapter)}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              </div>
+              <dl className="mt-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+                <div className="flex gap-2">
+                  <dt className="text-muted-foreground">Mentor:</dt>
+                  <dd>{chapter.Mentor || 'None'}</dd>
+                </div>
+                <div className="flex gap-2">
+                  <dt className="text-muted-foreground">Last Contact:</dt>
+                  <dd>{chapter.LastContact || 'None'}</dd>
+                </div>
+                <div className="flex gap-2">
+                  <dt className="text-muted-foreground">Last Action:</dt>
+                  <dd
+                    className={cn(
+                      'rounded-full px-2 py-0.5 text-xs',
+                      STATUS_COLOR_CLASSES[colorLastAction(chapter.LastAction)],
+                    )}
+                    title={lastActionTooltip(chapter.LastAction)}
+                  >
+                    {chapter.LastAction || 'None'}
+                  </dd>
+                </div>
+                {showFacebookColumns && (
+                  <>
+                    <div className="flex gap-2">
+                      <dt className="text-muted-foreground">Last FB Event:</dt>
+                      <dd>{chapter.LastFBEvent || 'None'}</dd>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <dt className="text-muted-foreground">FB Sync Status:</dt>
+                      <dd>
+                        <span
+                          className={cn(
+                            'inline-block h-3 w-3 rounded-full',
+                            STATUS_COLOR_CLASSES[
+                              colorFBSyncStatus(chapter.LastFBSync)
+                            ],
+                          )}
+                        />
+                      </dd>
+                    </div>
+                  </>
+                )}
+              </dl>
+            </div>
+          ))
+        ) : (
+          <p className="text-center text-sm text-muted-foreground">
+            No chapters found.
+          </p>
+        )}
+      </div>
     </div>
   )
 }
