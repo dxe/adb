@@ -286,6 +286,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	router.HandleFunc("/apply", main.ApplicationFormHandler)
 	router.HandleFunc("/interest", main.InterestFormHandler)
 	router.HandleFunc("/international", main.InternationalFormHandler)
+	router.HandleFunc("/places_api_key", main.PlacesAPIKeyHandler).Methods(http.MethodGet)
 
 	// Error pages
 	router.HandleFunc("/403", main.ForbiddenHandler)
@@ -2258,6 +2259,13 @@ func (c MainController) InterestFormHandler(w http.ResponseWriter, r *http.Reque
 			"status": "success",
 		})
 	}
+}
+
+// PlacesAPIKeyHandler serves the referrer-restricted Places key to public pages.
+func (c MainController) PlacesAPIKeyHandler(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, map[string]string{
+		"googlePlacesApiKey": config.GooglePlacesAPIKey,
+	})
 }
 
 func (c MainController) InternationalFormHandler(w http.ResponseWriter, r *http.Request) {
