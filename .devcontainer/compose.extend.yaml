@@ -11,6 +11,9 @@ services:
     # Override default command to keep devcontainer alive as default command
     # could exit immediately. Command taken from VS Code devcontainer docs.
     command: /bin/sh -c "while sleep 1000; do :; done"
+    # Cap container RAM with no swap (memswap_limit == mem_limit disables swap).
+    mem_limit: 8g
+    memswap_limit: 8g
     environment:
       - DB_HOST=mysql
       - DB_PROTOCOL=tcp(mysql:3306)

@@ -1,4 +1,4 @@
-.PHONY: run_all run watch test test-server test-frontend lint clean prod_build deps dev_db fmt go_mod_sync _go_mod_sync
+.PHONY: run_all run watch test test-server test-frontend lint clean prod_build deps dev_db install_playwright fmt go_mod_sync _go_mod_sync
 
 # When not using devcontainer, NVM initialization script may be located in home
 # directory. In the devcontainer, it is in /usr/local/share/nvm/.
@@ -64,13 +64,17 @@ watch:
 dev_db:
 	cd cli && go run . db create --dev-email="${DXE_DEV_EMAIL:-test-dev@directactioneverywhere.com}"
 
+# Install the browser binary and system libraries used by the Playwright MCP.
+install_playwright:
+	. $(NVM_SCRIPT) && nvm i $(REACT_FRONTEND_NODE_VERSION) && bash .devcontainer/install-playwright.sh
+
 # Install all deps for this project.
 # Note: PNPM must be installed separately for each version of NPM used, since it is installed within each NPM installation.
 # Note: `go tool` cannot yet be used to install golang-migrate: https://github.com/golang-migrate/migrate/issues/1232
 deps:
-	# Ensure server/.env exists. Both `make run` and the VS Code "Go Server"
-	# launch config load it unconditionally (layered on server/debug.env) and
-	# error if it's missing, so deps (the required first step) creates it.
+	@# Ensure server/.env exists. Both `make run` and the VS Code "Go Server"
+	@# launch config load it unconditionally (layered on server/debug.env) and
+	@# error if it's missing, so deps (the required first step) creates it.
 	touch server/.env
 	. $(NVM_SCRIPT) && nvm i 22 && npm i -g pnpm@$(PNPM_VERSION) && pnpm i --config.confirmModulesPurge=false
 	. $(NVM_SCRIPT) && cd frontend && nvm i $(VUE_FRONTEND_NODE_VERSION) && npm i --legacy-peer-deps

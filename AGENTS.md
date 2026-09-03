@@ -28,6 +28,15 @@ Rules regarding the Next.js app in ./frontend-v2 and legacy Vue app in ./fronten
 - Typecheck: `cd frontend-v2 && pnpm exec tsc --noEmit` (do not use `pnpx tsc` — it hits a shim that refuses to run)
 - Lint: `cd frontend-v2 && pnpm lint` (equivalent to `eslint .`)
 
+### frontend-v2-debugging
+
+- Scope: ./frontend-v2
+- Rule: Do not try to fix devserver issues such as live reloading issues without first running `make clean`, then `make deps` and asking user to restart devcontainer.
+
+### playwright-mcp
+
+- Run `make install_playwright` to install the Playwright MCP browser when needed.
+
 ## backend
 
 Rules regarding Go server in ./server

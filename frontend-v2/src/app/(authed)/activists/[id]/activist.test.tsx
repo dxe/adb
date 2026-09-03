@@ -8,11 +8,11 @@ import {
   type ActivistJSON,
   type AssignableUser,
 } from '@/lib/api'
-import { ActivistDetail } from './activist-detail'
+import { Activist } from './activist'
 
 // HideActivistDialog and MergeActivistDialog and their dependencies are
 // unrelated to the existing tests at this time. Stub them out so this file can
-// focus on ActivistDetail/section-form.
+// focus on Activist/section-form.
 vi.mock('./hide-activist-dialog', () => ({
   HideActivistDialog: () => null,
 }))
@@ -58,13 +58,92 @@ function renderDetail(
     queryClient,
     ...render(
       <QueryClientProvider client={queryClient}>
-        <ActivistDetail activistId={ACTIVIST_ID} />
+        <Activist activistId={ACTIVIST_ID} />
       </QueryClientProvider>,
     ),
   }
 }
 
-describe('ActivistDetail Assigned To field (read-only mode)', () => {
+function ymdMonthsAgo(months: number): string {
+  const date = new Date()
+  date.setMonth(date.getMonth() - months)
+  return date.toISOString().slice(0, 10)
+}
+
+describe('Activist header', () => {
+  it('shows the level, contact links and no chips by default', () => {
+    renderDetail({
+      id: ACTIVIST_ID,
+      name: 'Test Activist',
+      activist_level: 'Organizer',
+      email: 'test@example.org',
+      phone: '5105550143',
+      last_event: ymdMonthsAgo(6),
+    })
+
+    const header = within(screen.getByRole('banner'))
+    expect(header.getByText('Organizer')).toBeInTheDocument()
+    expect(header.getByRole('link', { name: '5105550143' })).toHaveAttribute(
+      'href',
+      'tel:5105550143',
+    )
+    expect(
+      header.getByRole('link', { name: 'test@example.org' }),
+    ).toHaveAttribute('href', 'mailto:test@example.org')
+    expect(header.queryByText('Active')).not.toBeInTheDocument()
+    expect(header.queryByText('Hiatus')).not.toBeInTheDocument()
+  })
+
+  it('shows the Active chip when the last event is within three months', () => {
+    renderDetail({
+      id: ACTIVIST_ID,
+      name: 'Test Activist',
+      last_event: ymdMonthsAgo(1),
+    })
+
+    expect(
+      within(screen.getByRole('banner')).getByText('Active'),
+    ).toBeInTheDocument()
+  })
+
+  it('shows the Hiatus chip when the activist is on hiatus', () => {
+    renderDetail({ id: ACTIVIST_ID, name: 'Test Activist', hiatus: true })
+
+    expect(
+      within(screen.getByRole('banner')).getByText('Hiatus'),
+    ).toBeInTheDocument()
+  })
+
+  it('offers Merge and Hide in the actions menu', async () => {
+    const user = userEvent.setup()
+    renderDetail({ id: ACTIVIST_ID, name: 'Test Activist' })
+
+    await user.click(screen.getByRole('button', { name: 'Activist actions' }))
+
+    const menu = within(screen.getByRole('menu'))
+    expect(menu.getByRole('menuitem', { name: 'Merge' })).toBeInTheDocument()
+    expect(menu.getByRole('menuitem', { name: 'Hide' })).toBeInTheDocument()
+  })
+})
+
+describe('Activist tabs', () => {
+  it('switches between the Details and Engagement tabs', async () => {
+    const user = userEvent.setup()
+    renderDetail({ id: ACTIVIST_ID, name: 'Test Activist' })
+
+    expect(
+      screen.getByRole('heading', { name: 'Basic Info' }),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('tab', { name: 'Engagement' }))
+
+    expect(
+      screen.queryByRole('heading', { name: 'Basic Info' }),
+    ).not.toBeInTheDocument()
+  })
+})
+
+describe('Activist Assigned To field (read-only mode)', () => {
   it('shows the assigned_to_name value, not the raw assigned_to id', () => {
     renderDetail({
       id: ACTIVIST_ID,
@@ -96,7 +175,7 @@ describe('ActivistDetail Assigned To field (read-only mode)', () => {
   })
 })
 
-describe('ActivistDetail Assigned To field (edit mode)', () => {
+describe('Activist Assigned To field (edit mode)', () => {
   const ASSIGNABLE_USERS: AssignableUser[] = [
     { id: 1, name: 'Alice' },
     { id: 2, name: 'Bob Jones' },
