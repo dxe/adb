@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { TimeField } from '@/components/ui/time-field'
-import { PlacesAutocomplete } from './places-autocomplete'
+import { PlacesAutocomplete } from '@/components/places-autocomplete'
 import { AttendeeInputField } from './attendee-input-field'
 import { FieldError } from './field-error'
 import { getCommonTimezones, getZoneAbbreviation } from '@/lib/time'
