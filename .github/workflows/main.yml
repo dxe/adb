@@ -166,12 +166,15 @@ jobs:
         # Required for the gha cache backend below; the default docker driver
         # cannot export a registry/gha build cache.
         uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+      - name: Short sha
+        id: sha
+        run: echo "short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
       - name: Build and push image to ECR (main)
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
         with:
           context: .
           push: true
-          tags: ${{ steps.login-ecr.outputs.registry }}/dxe/adb:${{ github.sha }}
+          tags: ${{ steps.login-ecr.outputs.registry }}/dxe/adb:${{ steps.sha.outputs.short }}
           # Distinct scope so the two images don't clobber each other's cache.
           cache-from: type=gha,scope=server
           cache-to: type=gha,scope=server,mode=max
@@ -192,14 +195,45 @@ jobs:
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2
-      - name: Retag :${{ github.sha }} as :latest
+      - name: Short sha
+        id: sha
+        run: echo "short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+      - name: Retag :${{ steps.sha.outputs.short }} as :latest
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          SHA: ${{ github.sha }}
+          SHA: ${{ steps.sha.outputs.short }}
         run: |
           docker buildx imagetools create \
             --tag "$REGISTRY/dxe/adb:latest" \
             "$REGISTRY/dxe/adb:$SHA"
+
+  # Bumps the image tag in dxe/terraform's ecs.tf, which applies and rolls the
+  # ECS service. Dispatched, not `uses:` — a private reusable workflow cannot be
+  # called by this public repo.
+  deploy-server:
+    needs: [promote-server, changes]
+    if: ${{ github.event_name == 'push' && needs.changes.outputs.server == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mint a token that may dispatch in dxe/terraform
+        id: token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.0.0
+        with:
+          client-id: ${{ secrets.DEPLOY_APP_CLIENT_ID }}
+          private-key: ${{ secrets.DEPLOY_APP_PRIVATE_KEY }}
+          owner: dxe
+          repositories: terraform
+      - name: Short sha
+        id: sha
+        run: echo "short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+      - name: Trigger the deploy
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+        run: |
+          gh workflow run deploy-ecs.yml --repo dxe/terraform \
+            -f service=adb \
+            -f tag="${{ steps.sha.outputs.short }}" \
+            -f caller_run_id=${{ github.run_id }}
 
   # Build and push the Next.js image under an immutable :<sha> tag, in parallel
   # with `test` (see build-server for the rationale).
@@ -220,13 +254,16 @@ jobs:
         uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+      - name: Short sha
+        id: sha
+        run: echo "short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
       - name: Build and push image to ECR (next.js)
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
         with:
           context: .
           file: Dockerfile.frontend-v2
           push: true
-          tags: ${{ steps.login-ecr.outputs.registry }}/dxe/adb-next:${{ github.sha }}
+          tags: ${{ steps.login-ecr.outputs.registry }}/dxe/adb-next:${{ steps.sha.outputs.short }}
           cache-from: type=gha,scope=next
           cache-to: type=gha,scope=next,mode=max
 
@@ -245,14 +282,44 @@ jobs:
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2
-      - name: Retag :${{ github.sha }} as :latest
+      - name: Short sha
+        id: sha
+        run: echo "short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+      - name: Retag :${{ steps.sha.outputs.short }} as :latest
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          SHA: ${{ github.sha }}
+          SHA: ${{ steps.sha.outputs.short }}
         run: |
           docker buildx imagetools create \
             --tag "$REGISTRY/dxe/adb-next:latest" \
             "$REGISTRY/dxe/adb-next:$SHA"
+
+  # As deploy-server. adb-next is the sidecar container, not a service key;
+  # deploy-ecs.yml only uses the name to pick the ECR repo and label the commit.
+  deploy-frontend:
+    needs: [promote-frontend, changes]
+    if: ${{ github.event_name == 'push' && needs.changes.outputs.frontend == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mint a token that may dispatch in dxe/terraform
+        id: token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.0.0
+        with:
+          client-id: ${{ secrets.DEPLOY_APP_CLIENT_ID }}
+          private-key: ${{ secrets.DEPLOY_APP_PRIVATE_KEY }}
+          owner: dxe
+          repositories: terraform
+      - name: Short sha
+        id: sha
+        run: echo "short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+      - name: Trigger the deploy
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+        run: |
+          gh workflow run deploy-ecs.yml --repo dxe/terraform \
+            -f service=adb-next \
+            -f tag="${{ steps.sha.outputs.short }}" \
+            -f caller_run_id=${{ github.run_id }}
 
   # Build and deploy the jobs lambdas via SAM. us-west-2 matches jobs/Makefile.
   deploy-lambdas:
