@@ -207,18 +207,9 @@ jobs:
             --tag "$REGISTRY/dxe/adb:latest" \
             "$REGISTRY/dxe/adb:$SHA"
 
-  # Tell dxe/terraform to deploy the image promote-server just published: it
-  # bumps the tag in ecs.tf and pushes that commit to main, where apply-deploy.yml
-  # applies it. Terraform is the only thing that writes to an ECS service, so
-  # `git log ecs.tf` is the release history and a rollback is `git revert`.
-  #
-  # Dispatched over the API rather than called with `uses:`. A reusable workflow
-  # in a private repo cannot be called by a public one, and this repo is public —
-  # that fails at *parse* time and takes the whole run down with it, silently
-  # stopping image pushes.
-  #
-  # Gated on the promote job, so it inherits `needs: test`: a deploy only happens
-  # once the test suite has passed.
+  # Bumps the image tag in dxe/terraform's ecs.tf, which applies and rolls the
+  # ECS service. Dispatched, not `uses:` — a private reusable workflow cannot be
+  # called by this public repo.
   deploy-server:
     needs: [promote-server, changes]
     if: ${{ github.event_name == 'push' && needs.changes.outputs.server == 'true' }}
@@ -232,13 +223,16 @@ jobs:
           private-key: ${{ secrets.DEPLOY_APP_PRIVATE_KEY }}
           owner: dxe
           repositories: terraform
+      - name: Short sha
+        id: sha
+        run: echo "short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
       - name: Trigger the deploy
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
         run: |
           gh workflow run deploy-ecs.yml --repo dxe/terraform \
             -f service=adb \
-            -f tag="${GITHUB_SHA::7}" \
+            -f tag="${{ steps.sha.outputs.short }}" \
             -f caller_run_id=${{ github.run_id }}
 
   # Build and push the Next.js image under an immutable :<sha> tag, in parallel
@@ -300,23 +294,8 @@ jobs:
             --tag "$REGISTRY/dxe/adb-next:latest" \
             "$REGISTRY/dxe/adb-next:$SHA"
 
-  # Tell dxe/terraform to deploy the image promote-frontend just published: it
-  # bumps the tag in ecs.tf and pushes that commit to main, where apply-deploy.yml
-  # applies it. Terraform is the only thing that writes to an ECS service, so
-  # `git log ecs.tf` is the release history and a rollback is `git revert`.
-  #
-  # Dispatched over the API rather than called with `uses:`. A reusable workflow
-  # in a private repo cannot be called by a public one, and this repo is public —
-  # that fails at *parse* time and takes the whole run down with it, silently
-  # stopping image pushes.
-  #
-  # Gated on the promote job, so it inherits `needs: test`: a deploy only happens
-  # once the test suite has passed.
-  #
-  # `service` here is adb-next, which is a *container* rather than an entry in
-  # local.services — it is the sidecar in the adb task. deploy-ecs.yml only uses
-  # the name to pick the ECR repository (dxe/adb-next) and to label the commit,
-  # so this bumps the sidecar's image line and rolls the adb task.
+  # As deploy-server. adb-next is the sidecar container, not a service key;
+  # deploy-ecs.yml only uses the name to pick the ECR repo and label the commit.
   deploy-frontend:
     needs: [promote-frontend, changes]
     if: ${{ github.event_name == 'push' && needs.changes.outputs.frontend == 'true' }}
@@ -330,13 +309,16 @@ jobs:
           private-key: ${{ secrets.DEPLOY_APP_PRIVATE_KEY }}
           owner: dxe
           repositories: terraform
+      - name: Short sha
+        id: sha
+        run: echo "short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
       - name: Trigger the deploy
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
         run: |
           gh workflow run deploy-ecs.yml --repo dxe/terraform \
             -f service=adb-next \
-            -f tag="${GITHUB_SHA::7}" \
+            -f tag="${{ steps.sha.outputs.short }}" \
             -f caller_run_id=${{ github.run_id }}
 
   # Build and deploy the jobs lambdas via SAM. us-west-2 matches jobs/Makefile.
