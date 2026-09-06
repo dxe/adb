@@ -37,11 +37,15 @@ var (
 	DistDirectory      = mustGetenv("DIST_DIRECTORY", "./dist", false)
 	NextJsProxyUrl     = mustGetenv("NEXT_JS_PROXY_URL", "", false)
 
-	// Path to Google API oauth client_secrets.json file, with
-	// access to the following scope:
+	// Google API oauth service-account key, with access to the following scope:
 	// https://www.googleapis.com/auth/admin.directory.group
 	// And the "Admin" API enabled. More info:
 	//   https://developers.google.com/api-client-library/python/auth/service-accounts
+	//
+	// Give it as either the client_secrets.json contents themselves or a path to
+	// a file holding them; the contents win if both are set. A secret store can
+	// usually inject a value into the environment but not mount it as a file.
+	SyncMailingListsConfigJSON = mustGetenv("SYNC_MAILING_LISTS_CONFIG_JSON", "", false)
 	SyncMailingListsConfigFile = mustGetenv("SYNC_MAILING_LISTS_CONFIG_FILE", "", false)
 
 	// The email for the user that that the oauth account should
