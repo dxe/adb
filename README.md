@@ -153,7 +153,8 @@ Please reach out to tech@dxe.io to get an API key to sign people up.
 
 ### For syncing with a chapter's internal Google Groups (for example, working group lists):
 
-- SYNC_MAILING_LISTS_CONFIG_FILE: relative path to client_secrets.json if syncing with google groups
+- SYNC_MAILING_LISTS_CONFIG_JSON: the contents of client_secrets.json, for a deployment that injects secrets as environment variables rather than files
+- SYNC_MAILING_LISTS_CONFIG_FILE: relative path to client_secrets.json, if the above is not set
 - SYNC_MAILING_LISTS_OAUTH_SUBJECT: google account to use to sync
 
 ### For sending emails via SMTP:
