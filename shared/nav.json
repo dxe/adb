@@ -143,8 +143,8 @@
       "items": [
         {
           "label": "Chapters",
-          "href": "/list_chapters",
-          "page": "ChaptersList",
+          "href": "/v2/chapters",
+          "page": "ChaptersList_beta",
           "roleRequired": ["admin", "intl_coordinator"]
         },
         {
@@ -273,6 +273,13 @@
           "page": "NewActivistsPendingWorkshopList",
           "roleRequired": ["organizer"],
           "visibleForNonSFBay": false
+        },
+        {
+          "label": "Chapters",
+          "href": "/list_chapters",
+          "page": "ChaptersList",
+          "roleRequired": ["admin", "intl_coordinator"],
+          "visibleForNonSFBay": true
         }
       ]
     }
