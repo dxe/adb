@@ -524,6 +524,49 @@ func ActivistPatchHandler(w http.ResponseWriter, r *http.Request, authedUser mod
 	})
 }
 
+// ActivistsAssignInput is the POST /api/activists/assign request body.
+type ActivistsAssignInput struct {
+	ActivistIDs []int `json:"activist_ids"`
+	// AssignedTo is the ADB user to assign the activists to. 0 unassigns them.
+	AssignedTo int `json:"assigned_to"`
+}
+
+// ActivistsAssignHandler serves POST /api/activists/assign: it sets assigned_to
+// on a set of activists in one request.
+//
+// A request may name at most model.MaxBulkAssignActivists activists; a larger
+// set is rejected with 400 rather than silently truncated, so clients that
+// might exceed it need to send batches.
+//
+// "assigned" in the response is the number of activist rows the database
+// matched, which is lower than the number of ids sent if the same id appears
+// more than once.
+func ActivistsAssignHandler(w http.ResponseWriter, r *http.Request, authedUser model.ADBUser, repo model.ActivistRepository, userRepo model.UserRepository) {
+	var input ActivistsAssignInput
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&input); err != nil {
+		sendErrorMessage(w, http.StatusBadRequest, err)
+		return
+	}
+
+	assigned, err := model.AssignActivists(repo, userRepo, authedUser, input.ActivistIDs, input.AssignedTo)
+	if err != nil {
+		if errors.Is(err, model.ErrValidation) {
+			sendErrorMessage(w, http.StatusBadRequest, err)
+		} else if errors.Is(err, model.ErrNotFound) {
+			sendErrorMessage(w, http.StatusNotFound, err)
+		} else {
+			sendErrorMessage(w, http.StatusInternalServerError, err)
+		}
+		return
+	}
+
+	writeJSON(w, map[string]int64{
+		"assigned": assigned,
+	})
+}
+
 func ActivistGetHandler(w http.ResponseWriter, r *http.Request, authedUser model.ADBUser, db *sqlx.DB) {
 	vars := mux.Vars(r)
 	rawID := vars["id"]

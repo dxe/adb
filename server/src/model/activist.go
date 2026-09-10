@@ -1017,18 +1017,28 @@ func validateActivistUpdate(orig, updated ActivistExtra, userRepo UserRepository
 		}
 	}
 	if updated.AssignedTo != orig.AssignedTo {
-		if updated.AssignedTo < 0 {
-			return ValidationErrorf("invalid assigned_to value: %d", updated.AssignedTo)
+		if err := validateAssignedTo(updated.AssignedTo, userRepo); err != nil {
+			return err
 		}
-		if updated.AssignedTo > 0 {
-			users, err := userRepo.GetUsers(GetUserOptions{ID: updated.AssignedTo, PopulateRoles: false})
-			if err != nil {
-				return fmt.Errorf("validating assigned_to user %d: %w", updated.AssignedTo, err)
-			}
-			if len(users) == 0 {
-				return ValidationErrorf("invalid assigned_to value: %d", updated.AssignedTo)
-			}
-		}
+	}
+	return nil
+}
+
+// validateAssignedTo checks that userID is usable as an assigned_to value: it
+// must be 0 (unassigned) or the id of an existing ADB user.
+func validateAssignedTo(userID int, userRepo UserRepository) error {
+	if userID < 0 {
+		return ValidationErrorf("invalid assigned_to value: %d", userID)
+	}
+	if userID == 0 {
+		return nil
+	}
+	users, err := userRepo.GetUsers(GetUserOptions{ID: userID, PopulateRoles: false})
+	if err != nil {
+		return fmt.Errorf("validating assigned_to user %d: %w", userID, err)
+	}
+	if len(users) == 0 {
+		return ValidationErrorf("invalid assigned_to value: %d", userID)
 	}
 	return nil
 }
@@ -2149,6 +2159,72 @@ func assignActivistToUser(db *sqlx.DB, activistID, userID int) error {
 	return nil
 }
 
+// MaxBulkAssignActivists caps how many activists one AssignActivists call may
+// reassign. Every id goes into a single IN (...) clause, so an unbounded list
+// would eventually grow the query beyond what MySQL accepts.
+const MaxBulkAssignActivists = 1000
+
+// AssignActivists sets assigned_to on a set of activists on behalf of an ADB
+// user. A userID of 0 unassigns them. It returns the number of activist rows
+// the database matched.
+//
+// Every activist is checked to exist, to not be hidden, and to belong to a
+// chapter the authed user may access before anything is written, so a request
+// naming even one activist the user cannot touch changes nothing at all.
+//
+// Unlike PatchActivist this records no activists_history rows: that table has
+// no assigned_to column, so a bulk assign would insert a row per activist
+// saying nothing about what changed. The single-activist assign path
+// (assignActivistToUser, used when an interaction is logged) doesn't log
+// history either.
+func AssignActivists(repo ActivistRepository, userRepo UserRepository, authedUser ADBUser, activistIDs []int, userID int) (int64, error) {
+	if !UserHasOrganizerAccess(authedUser) {
+		return 0, ValidationErrorf("lacking permission to update activists")
+	}
+	if len(activistIDs) == 0 {
+		return 0, ValidationErrorf("no activists to assign")
+	}
+	if len(activistIDs) > MaxBulkAssignActivists {
+		return 0, ValidationErrorf("cannot assign more than %d activists at once", MaxBulkAssignActivists)
+	}
+	for _, id := range activistIDs {
+		if id <= 0 {
+			return 0, ValidationErrorf("invalid activist id: %d", id)
+		}
+	}
+	if err := validateAssignedTo(userID, userRepo); err != nil {
+		return 0, err
+	}
+
+	infos, err := repo.GetActivistAssignInfo(activistIDs)
+	if err != nil {
+		return 0, fmt.Errorf("fetching activists to assign: %w", err)
+	}
+	infoByID := make(map[int]ActivistAssignInfo, len(infos))
+	for _, info := range infos {
+		infoByID[info.ID] = info
+	}
+	for _, id := range activistIDs {
+		info, ok := infoByID[id]
+		if !ok {
+			return 0, fmt.Errorf("%w: activist with id %d not found", ErrNotFound, id)
+		}
+		if info.Hidden {
+			return 0, ValidationErrorf("cannot assign hidden activist %d", id)
+		}
+		if err := CheckChapterAccess(authedUser, info.ChapterID); err != nil {
+			return 0, err
+		}
+	}
+
+	rows, err := repo.AssignActivists(activistIDs, userID)
+	if err != nil {
+		return 0, fmt.Errorf("failed to assign activists: %w", err)
+	}
+	log.Printf("Assigned %d activists to user %d", rows, userID)
+	return rows, nil
+}
+
 func QueryActivists(authedUser ADBUser, options QueryActivistOptions, repo ActivistRepository) (QueryActivistResult, error) {
 	if err := authorizeActivistQuery(authedUser, options); err != nil {
 		return QueryActivistResult{}, err
@@ -2224,7 +2300,22 @@ type ActivistRepository interface {
 	StreamActivists(options QueryActivistOptions, fn func(ActivistExtra) error) error
 	CountActivists(filters QueryActivistFilters) (int, error)
 	PatchActivist(id int, patch ActivistPatchData) error
+	// GetActivistAssignInfo returns the data needed to authorize a bulk assign
+	// for each of the given activist ids. Ids matching no activist are omitted
+	// from the result rather than reported as an error.
+	GetActivistAssignInfo(activistIDs []int) ([]ActivistAssignInfo, error)
+	// AssignActivists sets assigned_to on the given activists and returns the
+	// number of activist rows the database matched.
+	AssignActivists(activistIDs []int, userID int) (int64, error)
 	DebugActivistQuery(options QueryActivistOptions, username string) (int64, error)
+}
+
+// ActivistAssignInfo is the subset of an activist row needed to authorize
+// assigning it: the chapter that owns it and whether it has been hidden.
+type ActivistAssignInfo struct {
+	ID        int  `db:"id"`
+	ChapterID int  `db:"chapter_id"`
+	Hidden    bool `db:"hidden"`
 }
 
 // ActivistPatchField is a single field name + value pair for a partial activist update.
