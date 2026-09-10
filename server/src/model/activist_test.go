@@ -37,6 +37,16 @@ func (s *activistPatchRepoSpy) CountActivists(filters QueryActivistFilters) (int
 	return 0, nil
 }
 
+func (s *activistPatchRepoSpy) GetActivistAssignInfo(activistIDs []int) ([]ActivistAssignInfo, error) {
+	s.t.Fatalf("unexpected call to GetActivistAssignInfo")
+	return nil, nil
+}
+
+func (s *activistPatchRepoSpy) AssignActivists(activistIDs []int, userID int) (int64, error) {
+	s.t.Fatalf("unexpected call to AssignActivists")
+	return 0, nil
+}
+
 func (s *activistPatchRepoSpy) PatchActivist(id int, patch ActivistPatchData) error {
 	s.patchCalls++
 	s.lastID = id
@@ -714,6 +724,192 @@ func TestPatchActivist_ValidatesAssignedTo(t *testing.T) {
 				require.NoError(t, err)
 			}
 			require.Equal(t, tc.wantPatchCalls, repo.patchCalls)
+		})
+	}
+}
+
+// TestAssignActivists covers the authorization and validation rules. Related
+// tests may exist in the repository package.
+func TestAssignActivists(t *testing.T) {
+	const (
+		assigneeID     = 42
+		otherChapterID = SFBayChapterIdDevTest + 1
+	)
+
+	knownUsers := []ADBUser{{
+		ID:        assigneeID,
+		Email:     "assignee@example.org",
+		Name:      "Assignee",
+		ChapterID: SFBayChapterIdDevTest,
+	}}
+
+	organizer := ADBUser{
+		ID:        1,
+		Email:     "organizer@example.org",
+		Name:      "Organizer",
+		Roles:     []string{shared.RoleOrganizer},
+		ChapterID: SFBayChapterIdDevTest,
+	}
+
+	// The activists the stub repository knows about.
+	ownChapterIDs := []int{101, 102}
+	const (
+		otherChapterActivistID = 103
+		hiddenActivistID       = 104
+		unknownActivistID      = 999
+	)
+	knownActivists := []ActivistAssignInfo{
+		{ID: ownChapterIDs[0], ChapterID: SFBayChapterIdDevTest},
+		{ID: ownChapterIDs[1], ChapterID: SFBayChapterIdDevTest},
+		{ID: otherChapterActivistID, ChapterID: otherChapterID},
+		{ID: hiddenActivistID, ChapterID: SFBayChapterIdDevTest, Hidden: true},
+	}
+
+	// newRepo returns a stub that reports rows matched for any assign call.
+	newRepo := func(t *testing.T, rows int64) *activistRepoStub {
+		return &activistRepoStub{t: t, assignInfos: knownActivists, assignRows: rows}
+	}
+
+	t.Run("AssignsWholeSet", func(t *testing.T) {
+		repo := newRepo(t, int64(len(ownChapterIDs)))
+
+		assigned, err := AssignActivists(repo, MakeUserRepoStub(t, knownUsers), organizer, ownChapterIDs, assigneeID)
+		require.NoError(t, err)
+		require.Equal(t, int64(len(ownChapterIDs)), assigned)
+		require.Equal(t, 1, repo.assignCalls)
+		require.Equal(t, ownChapterIDs, repo.lastAssignIDs)
+		require.Equal(t, assigneeID, repo.lastAssignUserID)
+	})
+
+	// The count comes from the database, not from the request: a repeated id
+	// matches one row, so the two can legitimately differ.
+	t.Run("ReturnsRowCountFromRepository", func(t *testing.T) {
+		repo := newRepo(t, 1)
+
+		assigned, err := AssignActivists(repo, MakeUserRepoStub(t, knownUsers), organizer,
+			[]int{ownChapterIDs[0], ownChapterIDs[0]}, assigneeID)
+		require.NoError(t, err)
+		require.Equal(t, int64(1), assigned)
+	})
+
+	t.Run("UnassignsWithZero", func(t *testing.T) {
+		repo := newRepo(t, 1)
+
+		assigned, err := AssignActivists(repo, MakeUserRepoStub(t, knownUsers), organizer, ownChapterIDs[:1], 0)
+		require.NoError(t, err)
+		require.Equal(t, int64(1), assigned)
+		require.Equal(t, 0, repo.lastAssignUserID)
+	})
+
+	t.Run("AdminCanAssignAcrossChapters", func(t *testing.T) {
+		repo := newRepo(t, 2)
+		admin := ADBUser{
+			ID:        2,
+			Email:     "admin@example.org",
+			Name:      "Admin",
+			Roles:     []string{shared.RoleAdmin},
+			ChapterID: SFBayChapterIdDevTest,
+		}
+
+		assigned, err := AssignActivists(repo, MakeUserRepoStub(t, knownUsers), admin,
+			[]int{ownChapterIDs[0], otherChapterActivistID}, assigneeID)
+		require.NoError(t, err)
+		require.Equal(t, int64(2), assigned)
+	})
+
+	t.Run("RejectsNonOrganizer", func(t *testing.T) {
+		repo := newRepo(t, 1)
+		attendanceUser := ADBUser{
+			ID:        3,
+			Email:     "attendance@example.org",
+			Name:      "Attendance",
+			Roles:     []string{shared.RoleAttendance},
+			ChapterID: SFBayChapterIdDevTest,
+		}
+
+		_, err := AssignActivists(repo, MakeUserRepoStub(t, knownUsers), attendanceUser, ownChapterIDs, assigneeID)
+		require.ErrorIs(t, err, ErrValidation)
+		require.Contains(t, err.Error(), "lacking permission")
+		require.Equal(t, 0, repo.assignCalls)
+	})
+
+	// A single inaccessible, hidden, or unknown activist must block the whole
+	// request: every id is checked before anything is written.
+	blockedCases := []struct {
+		name        string
+		activistIDs []int
+		wantErr     error
+		wantMsg     string
+	}{
+		{
+			name:        "OtherChapterActivistBlocksWholeSet",
+			activistIDs: append(append([]int{}, ownChapterIDs...), otherChapterActivistID),
+			wantErr:     ErrValidation,
+			wantMsg:     "does not belong to your chapter",
+		},
+		{
+			name:        "HiddenActivistBlocksWholeSet",
+			activistIDs: append(append([]int{}, ownChapterIDs...), hiddenActivistID),
+			wantErr:     ErrValidation,
+			wantMsg:     "cannot assign hidden activist",
+		},
+		{
+			name:        "UnknownActivistBlocksWholeSet",
+			activistIDs: append(append([]int{}, ownChapterIDs...), unknownActivistID),
+			wantErr:     ErrNotFound,
+			wantMsg:     "not found",
+		},
+	}
+	for _, tc := range blockedCases {
+		t.Run(tc.name, func(t *testing.T) {
+			repo := newRepo(t, int64(len(tc.activistIDs)))
+
+			_, err := AssignActivists(repo, MakeUserRepoStub(t, knownUsers), organizer, tc.activistIDs, assigneeID)
+			require.ErrorIs(t, err, tc.wantErr)
+			require.Contains(t, err.Error(), tc.wantMsg)
+			require.Equal(t, 0, repo.assignCalls)
+		})
+	}
+
+	inputCases := []struct {
+		name        string
+		activistIDs []int
+		assignedTo  int
+		wantMsg     string
+	}{
+		{
+			name:        "RejectsUnknownAssignee",
+			activistIDs: ownChapterIDs,
+			assignedTo:  999,
+			wantMsg:     "invalid assigned_to value",
+		},
+		{
+			name:        "RejectsEmptyActivistList",
+			activistIDs: nil,
+			assignedTo:  assigneeID,
+			wantMsg:     "no activists to assign",
+		},
+		{
+			name:        "RejectsInvalidActivistID",
+			activistIDs: []int{0},
+			assignedTo:  assigneeID,
+			wantMsg:     "invalid activist id",
+		},
+		{
+			name:        "RejectsTooManyActivists",
+			activistIDs: make([]int, MaxBulkAssignActivists+1),
+			assignedTo:  assigneeID,
+			wantMsg:     "cannot assign more than",
+		},
+	}
+	for _, tc := range inputCases {
+		t.Run(tc.name, func(t *testing.T) {
+			repo := newRepo(t, 1)
+
+			_, err := AssignActivists(repo, MakeUserRepoStub(t, knownUsers), organizer, tc.activistIDs, tc.assignedTo)
+			require.ErrorIs(t, err, ErrValidation)
+			require.Contains(t, err.Error(), tc.wantMsg)
+			require.Equal(t, 0, repo.assignCalls)
 		})
 	}
 }

@@ -342,6 +342,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	// Authed API
 	router.Handle("/api/csrf-token", csrfMiddleware(alice.New(main.apiAnyADBRoleAuthMiddleware).ThenFunc(main.CSRFTokenHandler))).Methods(http.MethodGet)
 	router.Handle("/api/activists", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistsSearchHandler)).Methods(http.MethodPost)
+	router.Handle("/api/activists/assign", csrfMiddleware(alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistsAssignHandler))).Methods(http.MethodPost)
 	router.Handle("/api/activists/count", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistsCountHandler)).Methods(http.MethodPost)
 	router.Handle("/api/activists/debug-query", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistsDebugQueryHandler)).Methods(http.MethodPost)
 	router.Handle("/api/activists/export", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ActivistsExportHandler)).Methods(http.MethodPost)
@@ -1878,6 +1879,16 @@ func (c MainController) ActivistGetHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	transport.ActivistGetHandler(w, r, authedUser, c.db)
+}
+
+// ActivistsAssignHandler sets assigned_to on a set of activists in one request.
+func (c MainController) ActivistsAssignHandler(w http.ResponseWriter, r *http.Request) {
+	authedUser, authed := c.getAuthedADBUser(r)
+	if !authed {
+		panic("ActivistsAssignHandler requires authed ADB user")
+	}
+
+	transport.ActivistsAssignHandler(w, r, authedUser, c.activistRepo, c.userRepo)
 }
 
 func (c MainController) ActivistPatchHandler(w http.ResponseWriter, r *http.Request) {
