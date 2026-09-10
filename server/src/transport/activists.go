@@ -536,11 +536,11 @@ type ActivistsAssignInput struct {
 //
 // A request may name at most model.MaxBulkAssignActivists activists; a larger
 // set is rejected with 400 rather than silently truncated, so clients that
-// might exceed it need to send batches.
+// might exceed it need to send batches. Repeating an id is likewise rejected
+// with 400 rather than deduplicated.
 //
-// "assigned" in the response is the number of activist rows the database
-// matched, which is lower than the number of ids sent if the same id appears
-// more than once.
+// Either every named activist is reassigned or none is, so "assigned" in the
+// response is always the number of ids sent.
 func ActivistsAssignHandler(w http.ResponseWriter, r *http.Request, authedUser model.ADBUser, repo model.ActivistRepository, userRepo model.UserRepository) {
 	var input ActivistsAssignInput
 	decoder := json.NewDecoder(r.Body)
@@ -550,8 +550,7 @@ func ActivistsAssignHandler(w http.ResponseWriter, r *http.Request, authedUser m
 		return
 	}
 
-	assigned, err := model.AssignActivists(repo, userRepo, authedUser, input.ActivistIDs, input.AssignedTo)
-	if err != nil {
+	if err := model.AssignActivists(repo, userRepo, authedUser, input.ActivistIDs, input.AssignedTo); err != nil {
 		if errors.Is(err, model.ErrValidation) {
 			sendErrorMessage(w, http.StatusBadRequest, err)
 		} else if errors.Is(err, model.ErrNotFound) {
@@ -562,8 +561,8 @@ func ActivistsAssignHandler(w http.ResponseWriter, r *http.Request, authedUser m
 		return
 	}
 
-	writeJSON(w, map[string]int64{
-		"assigned": assigned,
+	writeJSON(w, map[string]int{
+		"assigned": len(input.ActivistIDs),
 	})
 }
 

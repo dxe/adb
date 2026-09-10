@@ -44,26 +44,46 @@ func (r DBActivistRepository) GetActivistAssignInfo(activistIDs []int) ([]model.
 }
 
 // AssignActivists sets assigned_to on the given activists in a single UPDATE,
-// so either all of them are reassigned or none are. It returns the number of
-// rows the database matched (assuming DSN contains `clientFoundRows=true`).
-func (r DBActivistRepository) AssignActivists(activistIDs []int, userID int) (int64, error) {
+// so either all of them are reassigned or none are.
+//
+// The caller passes a distinct set of ids it has already checked to exist and
+// to be visible, so the UPDATE must match every one of them. If it matches
+// fewer — an activist was deleted or hidden since that check — the transaction
+// is rolled back and nothing is reassigned.
+func (r DBActivistRepository) AssignActivists(activistIDs []int, userID int) error {
 	if len(activistIDs) == 0 {
-		return 0, nil
+		return nil
 	}
 	query, args, err := sqlx.In(`UPDATE activists SET assigned_to = ? WHERE id IN (?) AND hidden = 0`,
 		userID, activistIDs)
 	if err != nil {
-		return 0, fmt.Errorf("building bulk assign query for %d activists: %w", len(activistIDs), err)
+		return fmt.Errorf("building bulk assign query for %d activists: %w", len(activistIDs), err)
 	}
-	result, err := r.db.Exec(r.db.Rebind(query), args...)
+
+	tx, err := r.db.Beginx()
 	if err != nil {
-		return 0, fmt.Errorf("executing bulk assign: %w", err)
+		return fmt.Errorf("starting bulk assign transaction: %w", err)
 	}
+	defer func() { _ = tx.Rollback() }()
+
+	result, err := tx.Exec(r.db.Rebind(query), args...)
+	if err != nil {
+		return fmt.Errorf("executing bulk assign: %w", err)
+	}
+	// The DSN sets clientFoundRows=true, so this counts rows matched rather
+	// than rows changed: activists already assigned to userID still count.
 	rows, err := result.RowsAffected()
 	if err != nil {
-		return 0, fmt.Errorf("reading bulk assign affected rows: %w", err)
+		return fmt.Errorf("reading bulk assign affected rows: %w", err)
 	}
-	return rows, nil
+	if rows != int64(len(activistIDs)) {
+		return fmt.Errorf("%w: bulk assign matched %d of %d activists", model.ErrNotFound, rows, len(activistIDs))
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("committing bulk assign: %w", err)
+	}
+	return nil
 }
 
 func (r DBActivistRepository) PatchActivist(id int, patch model.ActivistPatchData) error {
