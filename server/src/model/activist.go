@@ -1017,18 +1017,28 @@ func validateActivistUpdate(orig, updated ActivistExtra, userRepo UserRepository
 		}
 	}
 	if updated.AssignedTo != orig.AssignedTo {
-		if updated.AssignedTo < 0 {
-			return ValidationErrorf("invalid assigned_to value: %d", updated.AssignedTo)
+		if err := validateAssignedTo(updated.AssignedTo, userRepo); err != nil {
+			return err
 		}
-		if updated.AssignedTo > 0 {
-			users, err := userRepo.GetUsers(GetUserOptions{ID: updated.AssignedTo, PopulateRoles: false})
-			if err != nil {
-				return fmt.Errorf("validating assigned_to user %d: %w", updated.AssignedTo, err)
-			}
-			if len(users) == 0 {
-				return ValidationErrorf("invalid assigned_to value: %d", updated.AssignedTo)
-			}
-		}
+	}
+	return nil
+}
+
+// validateAssignedTo checks that userID is usable as an assigned_to value: it
+// must be 0 (unassigned) or the id of an existing ADB user.
+func validateAssignedTo(userID int, userRepo UserRepository) error {
+	if userID < 0 {
+		return ValidationErrorf("invalid assigned_to value: %d", userID)
+	}
+	if userID == 0 {
+		return nil
+	}
+	users, err := userRepo.GetUsers(GetUserOptions{ID: userID, PopulateRoles: false})
+	if err != nil {
+		return fmt.Errorf("validating assigned_to user %d: %w", userID, err)
+	}
+	if len(users) == 0 {
+		return ValidationErrorf("invalid assigned_to value: %d", userID)
 	}
 	return nil
 }
@@ -2149,6 +2159,91 @@ func assignActivistToUser(db *sqlx.DB, activistID, userID int) error {
 	return nil
 }
 
+// MaxBulkAssignActivists caps how many activists one AssignActivists call may
+// reassign. Every id goes into a single IN (...) clause, so an unbounded list
+// would eventually grow the query beyond what MySQL accepts.
+const MaxBulkAssignActivists = 1000
+
+// AssignActivists sets assigned_to on a set of activists on behalf of an ADB
+// user. A userID of 0 unassigns them.
+//
+// The ids must be distinct: a duplicate is rejected rather than deduplicated,
+// so a caller that sends n ids and gets no error has reassigned exactly n
+// activists.
+//
+// Every activist is checked to exist, to not be hidden, and to belong to a
+// chapter the authed user may access before anything is written, so a request
+// naming even one activist the user cannot touch changes nothing at all.
+//
+// Unlike PatchActivist this records no activists_history rows: that table has
+// no assigned_to column, so a bulk assign would insert a row per activist
+// saying nothing about what changed. The single-activist assign path
+// (assignActivistToUser, used when an interaction is logged) doesn't log
+// history either.
+func AssignActivists(repo ActivistRepository, userRepo UserRepository, authedUser ADBUser, activistIDs []int, userID int) error {
+	if !UserHasOrganizerAccess(authedUser) {
+		return ValidationErrorf("lacking permission to update activists")
+	}
+	if len(activistIDs) == 0 {
+		return ValidationErrorf("no activists to assign")
+	}
+	if len(activistIDs) > MaxBulkAssignActivists {
+		return ValidationErrorf("cannot assign more than %d activists at once", MaxBulkAssignActivists)
+	}
+	seen := make(map[int]bool, len(activistIDs))
+	for _, id := range activistIDs {
+		if id <= 0 {
+			return ValidationErrorf("invalid activist id: %d", id)
+		}
+		if seen[id] {
+			return ValidationErrorf("duplicate activist id: %d", id)
+		}
+		seen[id] = true
+	}
+	if err := validateAssignedTo(userID, userRepo); err != nil {
+		return err
+	}
+
+	infos, err := repo.GetActivistAssignInfo(activistIDs)
+	if err != nil {
+		return fmt.Errorf("fetching activists to assign: %w", err)
+	}
+	// The ids are distinct, so each one must have produced exactly one row.
+	if len(infos) != len(activistIDs) {
+		return fmt.Errorf("%w: activists to assign not found: %v", ErrNotFound, missingActivistIDs(activistIDs, infos))
+	}
+	for _, info := range infos {
+		if info.Hidden {
+			return ValidationErrorf("cannot assign hidden activist %d", info.ID)
+		}
+		if err := CheckChapterAccess(authedUser, info.ChapterID); err != nil {
+			return err
+		}
+	}
+
+	if err := repo.AssignActivists(activistIDs, userID); err != nil {
+		return fmt.Errorf("failed to assign activists: %w", err)
+	}
+	log.Printf("Assigned %d activists to user %d", len(activistIDs), userID)
+	return nil
+}
+
+// missingActivistIDs returns the requested ids that infos has no row for, in
+// the order they were requested.
+func missingActivistIDs(activistIDs []int, infos []ActivistAssignInfo) []int {
+	found := make(map[int]bool, len(infos))
+	for _, info := range infos {
+		found[info.ID] = true
+	}
+	var missing []int
+	for _, id := range activistIDs {
+		if !found[id] {
+			missing = append(missing, id)
+		}
+	}
+	return missing
+}
+
 func QueryActivists(authedUser ADBUser, options QueryActivistOptions, repo ActivistRepository) (QueryActivistResult, error) {
 	if err := authorizeActivistQuery(authedUser, options); err != nil {
 		return QueryActivistResult{}, err
@@ -2224,7 +2319,23 @@ type ActivistRepository interface {
 	StreamActivists(options QueryActivistOptions, fn func(ActivistExtra) error) error
 	CountActivists(filters QueryActivistFilters) (int, error)
 	PatchActivist(id int, patch ActivistPatchData) error
+	// GetActivistAssignInfo returns the data needed to authorize a bulk assign
+	// for each of the given activist ids. Ids matching no activist are omitted
+	// from the result rather than reported as an error.
+	GetActivistAssignInfo(activistIDs []int) ([]ActivistAssignInfo, error)
+	// AssignActivists sets assigned_to on the given activists, which must be a
+	// distinct set of ids the caller has already checked to exist and to be
+	// visible. It fails without writing anything unless it matches every one.
+	AssignActivists(activistIDs []int, userID int) error
 	DebugActivistQuery(options QueryActivistOptions, username string) (int64, error)
+}
+
+// ActivistAssignInfo is the subset of an activist row needed to authorize
+// assigning it: the chapter that owns it and whether it has been hidden.
+type ActivistAssignInfo struct {
+	ID        int  `db:"id"`
+	ChapterID int  `db:"chapter_id"`
+	Hidden    bool `db:"hidden"`
 }
 
 // ActivistPatchField is a single field name + value pair for a partial activist update.

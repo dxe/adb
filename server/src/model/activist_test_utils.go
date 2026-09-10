@@ -157,6 +157,16 @@ type activistRepoStub struct {
 	lastID     int
 	lastPatch  ActivistPatchData
 	patchErr   error
+
+	// Bulk assign: assignInfos is the set of activists the stub "knows about";
+	// ids absent from it are reported as missing, exactly as the real
+	// repository does.
+	assignInfos      []ActivistAssignInfo
+	assignInfoErr    error
+	assignCalls      int
+	lastAssignIDs    []int
+	lastAssignUserID int
+	assignErr        error
 }
 
 func (s *activistRepoStub) QueryActivists(options QueryActivistOptions) (QueryActivistResult, error) {
@@ -182,6 +192,30 @@ func (s *activistRepoStub) PatchActivist(id int, patch ActivistPatchData) error 
 	s.lastID = id
 	s.lastPatch = patch
 	return s.patchErr
+}
+
+func (s *activistRepoStub) GetActivistAssignInfo(activistIDs []int) ([]ActivistAssignInfo, error) {
+	if s.assignInfoErr != nil {
+		return nil, s.assignInfoErr
+	}
+	requested := make(map[int]bool, len(activistIDs))
+	for _, id := range activistIDs {
+		requested[id] = true
+	}
+	var found []ActivistAssignInfo
+	for _, info := range s.assignInfos {
+		if requested[info.ID] {
+			found = append(found, info)
+		}
+	}
+	return found, nil
+}
+
+func (s *activistRepoStub) AssignActivists(activistIDs []int, userID int) error {
+	s.assignCalls++
+	s.lastAssignIDs = activistIDs
+	s.lastAssignUserID = userID
+	return s.assignErr
 }
 
 func (s *activistRepoStub) DebugActivistQuery(options QueryActivistOptions, username string) (int64, error) {
