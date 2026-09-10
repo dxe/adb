@@ -166,7 +166,6 @@ type activistRepoStub struct {
 	assignCalls      int
 	lastAssignIDs    []int
 	lastAssignUserID int
-	assignRows       int64
 	assignErr        error
 }
 
@@ -212,11 +211,11 @@ func (s *activistRepoStub) GetActivistAssignInfo(activistIDs []int) ([]ActivistA
 	return found, nil
 }
 
-func (s *activistRepoStub) AssignActivists(activistIDs []int, userID int) (int64, error) {
+func (s *activistRepoStub) AssignActivists(activistIDs []int, userID int) error {
 	s.assignCalls++
 	s.lastAssignIDs = activistIDs
 	s.lastAssignUserID = userID
-	return s.assignRows, s.assignErr
+	return s.assignErr
 }
 
 func (s *activistRepoStub) DebugActivistQuery(options QueryActivistOptions, username string) (int64, error) {

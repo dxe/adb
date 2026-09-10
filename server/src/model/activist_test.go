@@ -2,6 +2,7 @@ package model
 
 import (
 	"database/sql"
+	"fmt"
 	"strconv"
 	"testing"
 	"time"
@@ -42,9 +43,9 @@ func (s *activistPatchRepoSpy) GetActivistAssignInfo(activistIDs []int) ([]Activ
 	return nil, nil
 }
 
-func (s *activistPatchRepoSpy) AssignActivists(activistIDs []int, userID int) (int64, error) {
+func (s *activistPatchRepoSpy) AssignActivists(activistIDs []int, userID int) error {
 	s.t.Fatalf("unexpected call to AssignActivists")
-	return 0, nil
+	return nil
 }
 
 func (s *activistPatchRepoSpy) PatchActivist(id int, patch ActivistPatchData) error {
@@ -765,44 +766,30 @@ func TestAssignActivists(t *testing.T) {
 		{ID: hiddenActivistID, ChapterID: SFBayChapterIdDevTest, Hidden: true},
 	}
 
-	// newRepo returns a stub that reports rows matched for any assign call.
-	newRepo := func(t *testing.T, rows int64) *activistRepoStub {
-		return &activistRepoStub{t: t, assignInfos: knownActivists, assignRows: rows}
+	newRepo := func(t *testing.T) *activistRepoStub {
+		return &activistRepoStub{t: t, assignInfos: knownActivists}
 	}
 
 	t.Run("AssignsWholeSet", func(t *testing.T) {
-		repo := newRepo(t, int64(len(ownChapterIDs)))
+		repo := newRepo(t)
 
-		assigned, err := AssignActivists(repo, MakeUserRepoStub(t, knownUsers), organizer, ownChapterIDs, assigneeID)
+		err := AssignActivists(repo, MakeUserRepoStub(t, knownUsers), organizer, ownChapterIDs, assigneeID)
 		require.NoError(t, err)
-		require.Equal(t, int64(len(ownChapterIDs)), assigned)
 		require.Equal(t, 1, repo.assignCalls)
 		require.Equal(t, ownChapterIDs, repo.lastAssignIDs)
 		require.Equal(t, assigneeID, repo.lastAssignUserID)
 	})
 
-	// The count comes from the database, not from the request: a repeated id
-	// matches one row, so the two can legitimately differ.
-	t.Run("ReturnsRowCountFromRepository", func(t *testing.T) {
-		repo := newRepo(t, 1)
-
-		assigned, err := AssignActivists(repo, MakeUserRepoStub(t, knownUsers), organizer,
-			[]int{ownChapterIDs[0], ownChapterIDs[0]}, assigneeID)
-		require.NoError(t, err)
-		require.Equal(t, int64(1), assigned)
-	})
-
 	t.Run("UnassignsWithZero", func(t *testing.T) {
-		repo := newRepo(t, 1)
+		repo := newRepo(t)
 
-		assigned, err := AssignActivists(repo, MakeUserRepoStub(t, knownUsers), organizer, ownChapterIDs[:1], 0)
+		err := AssignActivists(repo, MakeUserRepoStub(t, knownUsers), organizer, ownChapterIDs[:1], 0)
 		require.NoError(t, err)
-		require.Equal(t, int64(1), assigned)
 		require.Equal(t, 0, repo.lastAssignUserID)
 	})
 
 	t.Run("AdminCanAssignAcrossChapters", func(t *testing.T) {
-		repo := newRepo(t, 2)
+		repo := newRepo(t)
 		admin := ADBUser{
 			ID:        2,
 			Email:     "admin@example.org",
@@ -811,14 +798,14 @@ func TestAssignActivists(t *testing.T) {
 			ChapterID: SFBayChapterIdDevTest,
 		}
 
-		assigned, err := AssignActivists(repo, MakeUserRepoStub(t, knownUsers), admin,
+		err := AssignActivists(repo, MakeUserRepoStub(t, knownUsers), admin,
 			[]int{ownChapterIDs[0], otherChapterActivistID}, assigneeID)
 		require.NoError(t, err)
-		require.Equal(t, int64(2), assigned)
+		require.Equal(t, 1, repo.assignCalls)
 	})
 
 	t.Run("RejectsNonOrganizer", func(t *testing.T) {
-		repo := newRepo(t, 1)
+		repo := newRepo(t)
 		attendanceUser := ADBUser{
 			ID:        3,
 			Email:     "attendance@example.org",
@@ -827,7 +814,7 @@ func TestAssignActivists(t *testing.T) {
 			ChapterID: SFBayChapterIdDevTest,
 		}
 
-		_, err := AssignActivists(repo, MakeUserRepoStub(t, knownUsers), attendanceUser, ownChapterIDs, assigneeID)
+		err := AssignActivists(repo, MakeUserRepoStub(t, knownUsers), attendanceUser, ownChapterIDs, assigneeID)
 		require.ErrorIs(t, err, ErrValidation)
 		require.Contains(t, err.Error(), "lacking permission")
 		require.Equal(t, 0, repo.assignCalls)
@@ -857,14 +844,14 @@ func TestAssignActivists(t *testing.T) {
 			name:        "UnknownActivistBlocksWholeSet",
 			activistIDs: append(append([]int{}, ownChapterIDs...), unknownActivistID),
 			wantErr:     ErrNotFound,
-			wantMsg:     "not found",
+			wantMsg:     fmt.Sprintf("not found: [%d]", unknownActivistID),
 		},
 	}
 	for _, tc := range blockedCases {
 		t.Run(tc.name, func(t *testing.T) {
-			repo := newRepo(t, int64(len(tc.activistIDs)))
+			repo := newRepo(t)
 
-			_, err := AssignActivists(repo, MakeUserRepoStub(t, knownUsers), organizer, tc.activistIDs, assigneeID)
+			err := AssignActivists(repo, MakeUserRepoStub(t, knownUsers), organizer, tc.activistIDs, assigneeID)
 			require.ErrorIs(t, err, tc.wantErr)
 			require.Contains(t, err.Error(), tc.wantMsg)
 			require.Equal(t, 0, repo.assignCalls)
@@ -896,6 +883,14 @@ func TestAssignActivists(t *testing.T) {
 			wantMsg:     "invalid activist id",
 		},
 		{
+			// Duplicates are rejected rather than deduplicated, so a caller
+			// that sends n ids and gets no error assigned exactly n activists.
+			name:        "RejectsDuplicateActivistID",
+			activistIDs: []int{ownChapterIDs[0], ownChapterIDs[1], ownChapterIDs[0]},
+			assignedTo:  assigneeID,
+			wantMsg:     fmt.Sprintf("duplicate activist id: %d", ownChapterIDs[0]),
+		},
+		{
 			name:        "RejectsTooManyActivists",
 			activistIDs: make([]int, MaxBulkAssignActivists+1),
 			assignedTo:  assigneeID,
@@ -904,9 +899,9 @@ func TestAssignActivists(t *testing.T) {
 	}
 	for _, tc := range inputCases {
 		t.Run(tc.name, func(t *testing.T) {
-			repo := newRepo(t, 1)
+			repo := newRepo(t)
 
-			_, err := AssignActivists(repo, MakeUserRepoStub(t, knownUsers), organizer, tc.activistIDs, tc.assignedTo)
+			err := AssignActivists(repo, MakeUserRepoStub(t, knownUsers), organizer, tc.activistIDs, tc.assignedTo)
 			require.ErrorIs(t, err, ErrValidation)
 			require.Contains(t, err.Error(), tc.wantMsg)
 			require.Equal(t, 0, repo.assignCalls)

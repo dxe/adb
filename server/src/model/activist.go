@@ -2165,8 +2165,11 @@ func assignActivistToUser(db *sqlx.DB, activistID, userID int) error {
 const MaxBulkAssignActivists = 1000
 
 // AssignActivists sets assigned_to on a set of activists on behalf of an ADB
-// user. A userID of 0 unassigns them. It returns the number of activist rows
-// the database matched.
+// user. A userID of 0 unassigns them.
+//
+// The ids must be distinct: a duplicate is rejected rather than deduplicated,
+// so a caller that sends n ids and gets no error has reassigned exactly n
+// activists.
 //
 // Every activist is checked to exist, to not be hidden, and to belong to a
 // chapter the authed user may access before anything is written, so a request
@@ -2177,52 +2180,68 @@ const MaxBulkAssignActivists = 1000
 // saying nothing about what changed. The single-activist assign path
 // (assignActivistToUser, used when an interaction is logged) doesn't log
 // history either.
-func AssignActivists(repo ActivistRepository, userRepo UserRepository, authedUser ADBUser, activistIDs []int, userID int) (int64, error) {
+func AssignActivists(repo ActivistRepository, userRepo UserRepository, authedUser ADBUser, activistIDs []int, userID int) error {
 	if !UserHasOrganizerAccess(authedUser) {
-		return 0, ValidationErrorf("lacking permission to update activists")
+		return ValidationErrorf("lacking permission to update activists")
 	}
 	if len(activistIDs) == 0 {
-		return 0, ValidationErrorf("no activists to assign")
+		return ValidationErrorf("no activists to assign")
 	}
 	if len(activistIDs) > MaxBulkAssignActivists {
-		return 0, ValidationErrorf("cannot assign more than %d activists at once", MaxBulkAssignActivists)
+		return ValidationErrorf("cannot assign more than %d activists at once", MaxBulkAssignActivists)
 	}
+	seen := make(map[int]bool, len(activistIDs))
 	for _, id := range activistIDs {
 		if id <= 0 {
-			return 0, ValidationErrorf("invalid activist id: %d", id)
+			return ValidationErrorf("invalid activist id: %d", id)
 		}
+		if seen[id] {
+			return ValidationErrorf("duplicate activist id: %d", id)
+		}
+		seen[id] = true
 	}
 	if err := validateAssignedTo(userID, userRepo); err != nil {
-		return 0, err
+		return err
 	}
 
 	infos, err := repo.GetActivistAssignInfo(activistIDs)
 	if err != nil {
-		return 0, fmt.Errorf("fetching activists to assign: %w", err)
+		return fmt.Errorf("fetching activists to assign: %w", err)
 	}
-	infoByID := make(map[int]ActivistAssignInfo, len(infos))
+	// The ids are distinct, so each one must have produced exactly one row.
+	if len(infos) != len(activistIDs) {
+		return fmt.Errorf("%w: activists to assign not found: %v", ErrNotFound, missingActivistIDs(activistIDs, infos))
+	}
 	for _, info := range infos {
-		infoByID[info.ID] = info
-	}
-	for _, id := range activistIDs {
-		info, ok := infoByID[id]
-		if !ok {
-			return 0, fmt.Errorf("%w: activist with id %d not found", ErrNotFound, id)
-		}
 		if info.Hidden {
-			return 0, ValidationErrorf("cannot assign hidden activist %d", id)
+			return ValidationErrorf("cannot assign hidden activist %d", info.ID)
 		}
 		if err := CheckChapterAccess(authedUser, info.ChapterID); err != nil {
-			return 0, err
+			return err
 		}
 	}
 
-	rows, err := repo.AssignActivists(activistIDs, userID)
-	if err != nil {
-		return 0, fmt.Errorf("failed to assign activists: %w", err)
+	if err := repo.AssignActivists(activistIDs, userID); err != nil {
+		return fmt.Errorf("failed to assign activists: %w", err)
 	}
-	log.Printf("Assigned %d activists to user %d", rows, userID)
-	return rows, nil
+	log.Printf("Assigned %d activists to user %d", len(activistIDs), userID)
+	return nil
+}
+
+// missingActivistIDs returns the requested ids that infos has no row for, in
+// the order they were requested.
+func missingActivistIDs(activistIDs []int, infos []ActivistAssignInfo) []int {
+	found := make(map[int]bool, len(infos))
+	for _, info := range infos {
+		found[info.ID] = true
+	}
+	var missing []int
+	for _, id := range activistIDs {
+		if !found[id] {
+			missing = append(missing, id)
+		}
+	}
+	return missing
 }
 
 func QueryActivists(authedUser ADBUser, options QueryActivistOptions, repo ActivistRepository) (QueryActivistResult, error) {
@@ -2304,9 +2323,10 @@ type ActivistRepository interface {
 	// for each of the given activist ids. Ids matching no activist are omitted
 	// from the result rather than reported as an error.
 	GetActivistAssignInfo(activistIDs []int) ([]ActivistAssignInfo, error)
-	// AssignActivists sets assigned_to on the given activists and returns the
-	// number of activist rows the database matched.
-	AssignActivists(activistIDs []int, userID int) (int64, error)
+	// AssignActivists sets assigned_to on the given activists, which must be a
+	// distinct set of ids the caller has already checked to exist and to be
+	// visible. It fails without writing anything unless it matches every one.
+	AssignActivists(activistIDs []int, userID int) error
 	DebugActivistQuery(options QueryActivistOptions, username string) (int64, error)
 }
 

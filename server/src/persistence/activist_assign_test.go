@@ -62,30 +62,36 @@ func TestAssignActivists_Repository(t *testing.T) {
 		require.True(t, byID[hiddenID].Hidden)
 	})
 
-	t.Run("SkipsHiddenActivistsAndCountsMatchedRows", func(t *testing.T) {
-		rows, err := repo.AssignActivists([]int{visibleID, otherVisibleID, hiddenID}, assignee.ID)
-		require.NoError(t, err)
-		require.Equal(t, int64(2), rows, "hidden activist should not be counted or assigned")
+	t.Run("AssignsWholeSet", func(t *testing.T) {
+		require.NoError(t, repo.AssignActivists([]int{visibleID, otherVisibleID}, assignee.ID))
 
 		require.Equal(t, assignee.ID, assignedTo(t, visibleID))
 		require.Equal(t, assignee.ID, assignedTo(t, otherVisibleID))
+	})
+
+	// The DSN sets clientFoundRows=true, so the row count is rows matched
+	// rather than rows changed: reassigning activists to the user they are
+	// already assigned to still matches every row.
+	t.Run("SucceedsWhenNothingChanges", func(t *testing.T) {
+		require.NoError(t, repo.AssignActivists([]int{visibleID, otherVisibleID}, assignee.ID))
+	})
+
+	// Callers check visibility before assigning, so a hidden activist here
+	// means the row changed underneath them: the whole UPDATE is rolled back.
+	t.Run("RollsBackWhenAnActivistIsHidden", func(t *testing.T) {
+		err := repo.AssignActivists([]int{visibleID, otherVisibleID, hiddenID}, 0)
+		require.ErrorIs(t, err, model.ErrNotFound)
+		require.Contains(t, err.Error(), "matched 2 of 3 activists")
+
+		require.Equal(t, assignee.ID, assignedTo(t, visibleID), "rolled back")
+		require.Equal(t, assignee.ID, assignedTo(t, otherVisibleID), "rolled back")
 		require.Equal(t, 0, assignedTo(t, hiddenID))
 	})
 
-	// The DSN sets clientFoundRows=true, so the count is rows matched rather
-	// than rows changed: assigning the same activists again still reports 2.
-	t.Run("CountsMatchedRowsNotChangedRows", func(t *testing.T) {
-		rows, err := repo.AssignActivists([]int{visibleID, otherVisibleID}, assignee.ID)
-		require.NoError(t, err)
-		require.Equal(t, int64(2), rows)
-	})
+	t.Run("Unassigns", func(t *testing.T) {
+		require.NoError(t, repo.AssignActivists([]int{visibleID, otherVisibleID}, 0))
 
-	// A repeated id matches one row, which is why callers report the database
-	// count instead of the number of ids they sent.
-	t.Run("DeduplicatesRepeatedIDs", func(t *testing.T) {
-		rows, err := repo.AssignActivists([]int{visibleID, visibleID}, 0)
-		require.NoError(t, err)
-		require.Equal(t, int64(1), rows)
 		require.Equal(t, 0, assignedTo(t, visibleID))
+		require.Equal(t, 0, assignedTo(t, otherVisibleID))
 	})
 }
