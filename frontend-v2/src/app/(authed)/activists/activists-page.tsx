@@ -358,7 +358,6 @@ export default function ActivistsPage({
             open={isAssignDialogOpen}
             onOpenChange={setIsAssignDialogOpen}
             activistIds={[...selectedActivistIds]}
-            onAssigned={clearSelection}
           />
         </>
       )}

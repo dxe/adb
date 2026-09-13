@@ -1,9 +1,16 @@
 'use client'
 
 import { useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type InfiniteData,
+  type QueryClient,
+} from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { API_PATH, apiClient } from '@/lib/api'
+import { API_PATH, apiClient, type QueryActivistResult } from '@/lib/api'
+import { activistKeys } from '@/lib/query-keys'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -29,19 +36,60 @@ const UNASSIGNED_USER_ID = 0
 // than truncating it, so catch it here with a message naming the limit.
 const MAX_BULK_ASSIGN = 1000
 
+/**
+ * Writes the new assignee into every cached activist list rather than
+ * refetching them. A refetch would renumber and re-order the rows — and drop
+ * the reassigned ones entirely when the query filters by assignee — which
+ * silently empties the caller's selection. The lists are left marked stale, so
+ * the next mount or window focus still replaces this with server truth.
+ */
+function updateCachedAssignee(
+  queryClient: QueryClient,
+  activistIds: number[],
+  assignedTo: number,
+  assignedToName: string,
+) {
+  const ids = new Set(activistIds)
+  queryClient.setQueriesData<InfiniteData<QueryActivistResult>>(
+    { queryKey: activistKeys.lists() },
+    (data) =>
+      data && {
+        ...data,
+        pages: data.pages.map((page) =>
+          page.activists.some((activist) => ids.has(activist.id))
+            ? {
+                ...page,
+                activists: page.activists.map((activist) =>
+                  ids.has(activist.id)
+                    ? {
+                        ...activist,
+                        assigned_to: assignedTo,
+                        assigned_to_name: assignedToName,
+                      }
+                    : activist,
+                ),
+              }
+            : page,
+        ),
+      },
+  )
+  queryClient.invalidateQueries({
+    queryKey: activistKeys.lists(),
+    refetchType: 'none',
+  })
+  queryClient.invalidateQueries({ queryKey: activistKeys.details() })
+}
+
 interface BulkAssignDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   activistIds: number[]
-  /** Called after every activist has been reassigned. */
-  onAssigned: () => void
 }
 
 export function BulkAssignDialog({
   open,
   onOpenChange,
   activistIds,
-  onAssigned,
 }: BulkAssignDialogProps) {
   const queryClient = useQueryClient()
   const [assignedTo, setAssignedTo] = useState<string>('')
@@ -64,21 +112,17 @@ export function BulkAssignDialog({
   const mutation = useMutation({
     mutationFn: (userId: number) =>
       apiClient.assignActivists(activistIds, userId),
-    onSuccess: ({ assigned }) => {
+    onSuccess: ({ assigned }, userId) => {
+      // Empty for "Unassigned", which no user matches.
       const assigneeName =
-        assignedTo === String(UNASSIGNED_USER_ID)
-          ? 'Unassigned'
-          : (usersQuery.data?.find((u) => String(u.id) === assignedTo)?.name ??
-            'the selected user')
+        usersQuery.data?.find((u) => String(u.id) === assignedTo)?.name ?? ''
       toast.success(
-        assigneeName === 'Unassigned'
+        userId === UNASSIGNED_USER_ID
           ? `Unassigned ${assigned} activist${assigned === 1 ? '' : 's'}`
-          : `Assigned ${assigned} activist${assigned === 1 ? '' : 's'} to ${assigneeName}`,
+          : `Assigned ${assigned} activist${assigned === 1 ? '' : 's'} to ${assigneeName || 'the selected user'}`,
       )
-      queryClient.invalidateQueries({ queryKey: [API_PATH.ACTIVISTS_SEARCH] })
-      queryClient.invalidateQueries({ queryKey: [API_PATH.ACTIVIST_GET] })
+      updateCachedAssignee(queryClient, activistIds, userId, assigneeName)
       onOpenChange(false)
-      onAssigned()
     },
     onError: (err: Error) => {
       toast.error(err.message || 'Failed to assign activists')
