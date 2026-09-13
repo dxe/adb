@@ -210,36 +210,37 @@ export function WorkingGroupTable({
             return (
               <div
                 key={row.id}
-                className="rounded-lg border bg-card p-4 shadow-sm text-card-foreground"
+                className="relative rounded-lg border bg-card p-4 shadow-sm text-card-foreground"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <span className="text-base font-semibold">
-                      {workingGroup.name}
-                    </span>
-                    <span className="block text-sm text-muted-foreground font-mono">
-                      {workingGroup.email}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      aria-label={`Edit working group: ${workingGroup.name}`}
-                      onClick={() => onEdit(workingGroup)}
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-destructive hover:text-destructive"
-                      aria-label={`Delete working group: ${workingGroup.name}`}
-                      onClick={() => onDelete(workingGroup)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
+                <div className="space-y-1">
+                  {/* Padded so the name wraps clear of the floating buttons;
+                      the email is allowed to run underneath them. */}
+                  <span className="block text-base font-semibold pr-24">
+                    {workingGroup.name}
+                  </span>
+                  <span className="block text-sm text-muted-foreground font-mono break-all">
+                    {workingGroup.email}
+                  </span>
+                </div>
+                <div className="absolute right-4 top-4 flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    aria-label={`Edit working group: ${workingGroup.name}`}
+                    onClick={() => onEdit(workingGroup)}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:text-destructive"
+                    aria-label={`Delete working group: ${workingGroup.name}`}
+                    onClick={() => onDelete(workingGroup)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
                 <dl className="mt-3 text-sm space-y-1">
                   <div className="flex gap-2">
