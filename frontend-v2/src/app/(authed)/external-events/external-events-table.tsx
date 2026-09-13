@@ -4,11 +4,13 @@ import { useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ColumnDef,
+  columnVisibilityFeature,
+  createSortedRowModel,
   flexRender,
-  getCoreRowModel,
-  getSortedRowModel,
+  rowSortingFeature,
   SortingState,
-  useReactTable,
+  tableFeatures,
+  useTable,
 } from '@tanstack/react-table'
 import { format } from 'date-fns'
 import { Star, Trash2 } from 'lucide-react'
@@ -25,6 +27,14 @@ import {
 import { Button } from '@/components/ui/button'
 import { SortIndicator } from '@/components/ui/sort-indicator'
 import { CancelEventDialog } from './cancel-event-dialog'
+import { AUTO_SORT_FNS } from '@/lib/table-sort-fns'
+
+const features = tableFeatures({
+  columnVisibilityFeature,
+  rowSortingFeature,
+  sortedRowModel: createSortedRowModel(),
+  sortFns: AUTO_SORT_FNS,
+})
 
 export function ExternalEventsTable({ events }: { events: ExternalEvent[] }) {
   const queryClient = useQueryClient()
@@ -55,7 +65,7 @@ export function ExternalEventsTable({ events }: { events: ExternalEvent[] }) {
     },
   })
 
-  const columns = useMemo<ColumnDef<ExternalEvent>[]>(
+  const columns = useMemo<ColumnDef<typeof features, ExternalEvent>[]>(
     () => [
       {
         id: 'StartTime',
@@ -148,12 +158,10 @@ export function ExternalEventsTable({ events }: { events: ExternalEvent[] }) {
     [featureMutation],
   )
 
-  // eslint-disable-next-line react-hooks/incompatible-library -- Remove once TanStack Table supports React Compiler.
-  const table = useReactTable({
+  const table = useTable({
+    features,
     data: events,
     columns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
     onSortingChange: setSorting,
     state: {
       sorting,
