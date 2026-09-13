@@ -2,7 +2,8 @@
 
 import { useCallback, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { API_PATH, apiClient } from '@/lib/api'
+import { apiClient } from '@/lib/api'
+import { activistKeys } from '@/lib/query-keys'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { getActivistDisplayName } from '../display-name'
 import { ActivistDetails } from './activist-details'
@@ -14,7 +15,7 @@ import { MergeActivistDialog } from './merge-activist-dialog'
 
 function useActivist(activistId: number) {
   return useQuery({
-    queryKey: [API_PATH.ACTIVIST_GET, activistId],
+    queryKey: activistKeys.detail(activistId),
     queryFn: ({ signal }) => apiClient.getActivist(activistId, signal),
   })
 }

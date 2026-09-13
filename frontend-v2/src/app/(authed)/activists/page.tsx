@@ -5,7 +5,8 @@ import {
 } from '@tanstack/react-query'
 import { Suspense } from 'react'
 import { ContentWrapper } from '@/app/content-wrapper'
-import { API_PATH, ApiClient } from '@/lib/api'
+import { ApiClient } from '@/lib/api'
+import { activistKeys } from '@/lib/query-keys'
 import { getCookies } from '@/lib/auth'
 import { getCachedSession } from '@/app/session'
 import { redirectForHttpError } from '@/lib/server-auth'
@@ -52,7 +53,7 @@ export default async function ActivistsListPage({ searchParams }: PageProps) {
   await redirectForHttpError(() =>
     // Intentionally use fetchInfiniteQuery instead of prefetchInfiniteQuery; see redirectForHttpError for details.
     queryClient.fetchInfiniteQuery({
-      queryKey: [API_PATH.ACTIVISTS_SEARCH, initialQueryOptions],
+      queryKey: activistKeys.list(initialQueryOptions),
       queryFn: ({ signal }) =>
         apiClient.searchActivists(initialQueryOptions, signal),
       initialPageParam: undefined as string | undefined,
