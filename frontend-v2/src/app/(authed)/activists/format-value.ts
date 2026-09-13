@@ -72,6 +72,17 @@ export function getReadOnlyFieldDisplay(
   activist: ActivistJSON,
   def: ColumnDefinition,
 ): ReadOnlyFieldDisplay {
+  // assigned_to is a user ID; show the paired assigned_to_name instead.
+  if (def.name === 'assigned_to') {
+    const name = activist.assigned_to_name
+    return {
+      label: def.label,
+      description: def.description,
+      linkType: def.linkType,
+      value: name || '—',
+      isEmpty: !name,
+    }
+  }
   const raw = activist[def.name as keyof ActivistJSON]
   const formatted = formatValue(raw, def.name)
   return {

@@ -2,6 +2,7 @@ package google_groups_sync
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -16,10 +17,23 @@ import (
 	admin "google.golang.org/api/admin/directory/v1"
 )
 
-func getAdminService() (*admin.Service, error) {
+// serviceAccountKey returns the Google service-account key, from the
+// environment when it is set there and from a file otherwise.
+func serviceAccountKey() ([]byte, error) {
+	if config.SyncMailingListsConfigJSON != "" {
+		return []byte(config.SyncMailingListsConfigJSON), nil
+	}
 	key, err := os.ReadFile(config.SyncMailingListsConfigFile)
 	if err != nil {
-		return nil, errors.Wrap(err, "Could not read google auth key")
+		return nil, fmt.Errorf("could not read google auth key: %w", err)
+	}
+	return key, nil
+}
+
+func getAdminService() (*admin.Service, error) {
+	key, err := serviceAccountKey()
+	if err != nil {
+		return nil, err
 	}
 	oauthConfig, err := google.JWTConfigFromJSON(key, "https://www.googleapis.com/auth/admin.directory.group")
 	if err != nil {
@@ -275,7 +289,7 @@ func syncMailingListsWrapper(db *sqlx.DB, adminService *admin.Service) {
 // goroutine.
 func StartMailingListsSync(db *sqlx.DB) {
 
-	if config.SyncMailingListsConfigFile == "" {
+	if config.SyncMailingListsConfigJSON == "" && config.SyncMailingListsConfigFile == "" {
 		log.Println("WARNING: Sync mailing list config invalid.")
 		return
 	}

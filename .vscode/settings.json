@@ -16,6 +16,23 @@
   "prettier.prettierPath": "./node_modules/prettier",
   "files.insertFinalNewline": true,
   "editor.rulers": [80],
+  "remote.portsAttributes": {
+    "3000": {
+      "label": "Next.js dev (use /v2 on 8080 instead)",
+      // The Next.js dev server should be reached through the Go server's /v2
+      // reverse proxy only.
+      "onAutoForward": "silent",
+    },
+    "8080": {
+      "label": "ADB main site",
+      "onAutoForward": "openBrowser",
+    },
+    "8081": {
+      "label": "Members app",
+      // Rarely developed app, but always launches with Go server.
+      "onAutoForward": "silent",
+    },
+  },
   "search.exclude": {
     "**/.next": true,
     "**/tsconfig.tsbuildinfo": true,

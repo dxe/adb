@@ -1,5 +1,6 @@
 *.test
 .claude
+.playwright-mcp
 .DS_Store
 .env
 .idea

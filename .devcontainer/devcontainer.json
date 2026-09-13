@@ -45,7 +45,9 @@
       //     development / debugging purposes (not an app dependeny).
       // bash-completion is useful for entering git commands in the devcontainer
       //     and our .bashrc requires this.
-      "packages": "mariadb-client,bash-completion"
+      // gnupg2 enables gpg signing of git commits:
+      //     https://code.visualstudio.com/remote/advancedcontainers/sharing-git-credentials#_sharing-gpg-keys
+      "packages": "mariadb-client,bash-completion,gnupg2"
     },
     "ghcr.io/devcontainers/features/aws-cli:1": {},
     "ghcr.io/devcontainers/features/python:1": {
@@ -66,7 +68,6 @@
       "extensions": [
         "ms-vscode.makefile-tools",
         "golang.go",
-        "Vue.volar",
         "GitHub.vscode-github-actions",
         "ms-vscode.vscode-typescript-next",
         "esbenp.prettier-vscode",

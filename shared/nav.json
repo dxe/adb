@@ -106,7 +106,7 @@
         },
         {
           "label": "Leaderboard",
-          "href": "/v2/activists?lastEvent=-30..&columns=pronouns,activist_level,total_events,first_event,first_event_name,last_event,last_event_name,total_points,mpi&sort=-total_events",
+          "href": "/v2/activists?columns=pronouns,activist_level,total_events,first_event,first_event_name,last_event,last_event_name,total_points,mpi&lastEvent=-30..&sort=-total_points",
           "page": "ActivistListV2",
           "visibleForNonSFBay": false
         },

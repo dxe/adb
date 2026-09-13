@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "type": "stdio",
+      "command": "pnpx",
+      "args": [
+        "@playwright/mcp@latest",
+        "--browser",
+        "chromium",
+        "--headless",
+        "--isolated",
+        "--no-sandbox"
+      ]
+    }
+  }
+}
