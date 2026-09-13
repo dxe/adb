@@ -9,8 +9,8 @@ import { getCookies } from '@/lib/auth'
 import { redirectForHttpError } from '@/lib/server-auth'
 import CirclesPage from './circles-page'
 
-// Access (SF Bay organizer or any admin) is enforced by the Go middleware on the
-// prefetched endpoints; redirectForHttpError surfaces its 403 as Next's forbidden UI.
+// Access is enforced by the Go middleware on the prefetched endpoints;
+// redirectForHttpError surfaces its 403 as Next's forbidden UI.
 export default async function CircleGroupsPage() {
   const apiClient = new ApiClient(await getCookies())
   const queryClient = new QueryClient()

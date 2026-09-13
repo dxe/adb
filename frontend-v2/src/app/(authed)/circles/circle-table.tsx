@@ -32,7 +32,6 @@ import type { CircleMode } from './search-params'
 const STALE_AFTER_DAYS = 32
 const FRESH_WITHIN_DAYS = 15
 
-// Mirrors the legacy `colorLastMeeting` freshness indicator.
 function lastMeetingTone(text: string): 'stale' | 'warning' | 'fresh' | null {
   if (!text) return null
   const time = parseISO(text)

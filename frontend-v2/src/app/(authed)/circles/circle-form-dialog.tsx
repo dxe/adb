@@ -26,7 +26,6 @@ import { Label } from '@/components/ui/label'
 import { TagInput } from '@/components/tag-input'
 import type { CircleMode } from './search-params'
 
-// Trimming matches the legacy Vue form's `v-model.trim`.
 const circleFormSchema = z.object({
   name: z.string().trim().min(1, 'Circle name must not be blank'),
   description: z.string().trim(),
@@ -93,7 +92,7 @@ export function CircleFormDialog({
 
   const mutation = useMutation({
     mutationFn: (value: z.output<typeof circleFormSchema>) => {
-      // The host wins over a duplicate member entry (legacy parity).
+      // The host wins over a duplicate member entry.
       const hostName = value.host[0]
       const notHost = (name: string) => name !== hostName
       const memberParams: SaveCircleMemberParams[] = [
