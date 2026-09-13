@@ -22,6 +22,7 @@ export const API_PATH = {
   ACTIVISTS_EXPORT: 'api/activists/export',
   ACTIVISTS_EXPORT_SPOKE: 'api/activists/export/spoke',
   ACTIVISTS_DEBUG_QUERY: 'api/activists/debug-query',
+  ACTIVISTS_ASSIGN: 'api/activists/assign',
   ACTIVIST_GET: 'api/activists',
   // The real URL puts the activist id in the middle
   // (api/activists/{id}/timeline); this entry exists to key the query cache.
@@ -331,6 +332,12 @@ export type {
 
 const ActivistGetResp = z.object({
   activist: ActivistJSON,
+})
+
+// Either every named activist is reassigned or none is, so `assigned` always
+// matches the number of ids sent.
+const ActivistsAssignResp = z.object({
+  assigned: z.number(),
 })
 
 // The location attached to an event: a free-text display name plus optional geo
@@ -821,6 +828,29 @@ export class ApiClient {
         .get(`${API_PATH.ACTIVIST_GET}/${activistId}/timeline`, { signal })
         .json()
       return ActivistTimelineResp.parse(resp)
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  // Bulk-sets assigned_to on activists. An assignedTo of 0 unassigns them.
+  // The server rejects duplicate ids and applies the whole set or none of it.
+  assignActivists = async (
+    activistIds: number[],
+    assignedTo: number,
+    signal?: AbortSignal,
+  ) => {
+    try {
+      return await this.withCsrf(async (csrfToken) => {
+        const resp = await this.client
+          .post(API_PATH.ACTIVISTS_ASSIGN, {
+            json: { activist_ids: activistIds, assigned_to: assignedTo },
+            headers: { 'X-CSRF-Token': csrfToken },
+            signal,
+          })
+          .json()
+        return ActivistsAssignResp.parse(resp)
+      })
     } catch (err) {
       return this.handleKyError(err)
     }

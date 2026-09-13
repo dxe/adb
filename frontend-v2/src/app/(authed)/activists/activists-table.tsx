@@ -21,6 +21,9 @@ import { StickyHeaderTable } from '@/components/sticky-header-table'
 import { ArrowDown, ArrowUp, Check, Minus } from 'lucide-react'
 import { ActivistJSON, ActivistColumnName } from '@/lib/api'
 import { IntentPrefetchLink } from '@/components/intent-prefetch-link'
+import { Checkbox } from '@/components/ui/checkbox'
+import { useLongPress } from '@/hooks/use-long-press'
+import { cn } from '@/lib/utils'
 import { COLUMN_DEFINITION_BY_NAME } from './column-definitions'
 import { getActivistDisplayName } from './display-name'
 import { formatValue, COLUMN_TYPE_BY_NAME } from './format-value'
@@ -32,6 +35,18 @@ const features = tableFeatures({
   columnVisibilityFeature,
 })
 
+// Id of the leading checkbox column, which holds no activist data and is not
+// resizable.
+const SELECT_COLUMN_ID = '__select'
+
+export interface ActivistSelection {
+  selectedIds: ReadonlySet<number>
+  /** Flips one activist between selected and not. */
+  onToggle: (id: number) => void
+  /** Selects or deselects every given activist at once. */
+  onSetMany: (ids: number[], selected: boolean) => void
+}
+
 interface ActivistTableProps {
   activists: ActivistJSON[]
   visibleColumns: ActivistColumnName[]
@@ -40,6 +55,8 @@ interface ActivistTableProps {
   onActivistClick?: (id: number) => void
   isStale?: boolean
   footer?: React.ReactNode
+  /** Omit to render the table without any selection affordances. */
+  selection?: ActivistSelection
 }
 
 export function ActivistTable({
@@ -50,95 +67,147 @@ export function ActivistTable({
   onActivistClick,
   isStale = false,
   footer,
+  selection,
 }: ActivistTableProps) {
   const columns = useMemo<ColumnDef<typeof features, ActivistJSON>[]>(() => {
-    return visibleColumns.map((colName) => {
-      const definition = COLUMN_DEFINITION_BY_NAME[colName]
-      const label = definition?.label || colName
-      const sortIndex = sort.findIndex((s) => s.column === colName)
-      const sortEntry = sortIndex !== -1 ? sort[sortIndex] : undefined
-      const SortIcon = sortEntry?.desc ? ArrowDown : ArrowUp
+    const dataColumns = visibleColumns.map(
+      (colName): ColumnDef<typeof features, ActivistJSON> => {
+        const definition = COLUMN_DEFINITION_BY_NAME[colName]
+        const label = definition?.label || colName
+        const sortIndex = sort.findIndex((s) => s.column === colName)
+        const sortEntry = sortIndex !== -1 ? sort[sortIndex] : undefined
+        const SortIcon = sortEntry?.desc ? ArrowDown : ArrowUp
 
-      const handleHeaderClick = () => {
-        if (isStale) return
-        if (sort.length === 1 && sort[0].column === colName) {
-          // Toggle direction on the sole sort column (id is always ASC for cursor pagination)
-          if (colName === 'id') return
-          onSortChange([{ column: colName, desc: !sort[0].desc }])
-        } else {
-          // Replace all sorting with this column ascending
-          onSortChange([{ column: colName, desc: false }])
+        const handleHeaderClick = () => {
+          if (isStale) return
+          if (sort.length === 1 && sort[0].column === colName) {
+            // Toggle direction on the sole sort column (id is always ASC for cursor pagination)
+            if (colName === 'id') return
+            onSortChange([{ column: colName, desc: !sort[0].desc }])
+          } else {
+            // Replace all sorting with this column ascending
+            onSortChange([{ column: colName, desc: false }])
+          }
         }
-      }
 
-      return {
-        id: colName,
-        size: definition?.defaultWidth ?? 150,
-        minSize: definition?.minWidth ?? 60,
-        header: () => (
-          <button
-            type="button"
-            className="flex items-center gap-1 font-medium hover:text-foreground transition-colors truncate"
-            onClick={handleHeaderClick}
-            disabled={isStale}
-          >
-            {label}
-            {sortEntry && (
-              <>
-                <SortIcon className="h-3 w-3 shrink-0 text-muted-foreground" />
-                {sort.length > 1 && (
-                  <span className="flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-muted px-1 text-[10px] font-semibold text-muted-foreground">
-                    {sortIndex + 1}
-                  </span>
-                )}
-              </>
-            )}
-          </button>
-        ),
-        accessorFn: (row) => row[colName as keyof ActivistJSON],
-        cell: ({ row }) => {
-          if (colName === 'name') {
-            const displayName = getActivistDisplayName(row.original)
-            const nameClass = `truncate text-sm text-primary hover:underline ${
-              displayName.isPlaceholder ? 'italic text-muted-foreground' : ''
-            }`
-            return (
-              <a
-                href={`/v2/activists/${row.original.id}`}
-                className={nameClass}
-                onClick={
-                  onActivistClick
-                    ? (e) => {
-                        if (e.ctrlKey || e.metaKey || e.shiftKey) return
-                        e.preventDefault()
-                        onActivistClick(row.original.id)
-                      }
-                    : undefined
-                }
-              >
-                {displayName.text}
-              </a>
-            )
-          }
+        return {
+          id: colName,
+          size: definition?.defaultWidth ?? 150,
+          minSize: definition?.minWidth ?? 60,
+          header: () => (
+            <button
+              type="button"
+              className="flex items-center gap-1 font-medium hover:text-foreground transition-colors truncate"
+              onClick={handleHeaderClick}
+              disabled={isStale}
+            >
+              {label}
+              {sortEntry && (
+                <>
+                  <SortIcon className="h-3 w-3 shrink-0 text-muted-foreground" />
+                  {sort.length > 1 && (
+                    <span className="flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-muted px-1 text-[10px] font-semibold text-muted-foreground">
+                      {sortIndex + 1}
+                    </span>
+                  )}
+                </>
+              )}
+            </button>
+          ),
+          accessorFn: (row) => row[colName as keyof ActivistJSON],
+          cell: ({ row }) => {
+            if (colName === 'name') {
+              const displayName = getActivistDisplayName(row.original)
+              const nameClass = `truncate text-sm text-primary hover:underline ${
+                displayName.isPlaceholder ? 'italic text-muted-foreground' : ''
+              }`
+              return (
+                <a
+                  href={`/v2/activists/${row.original.id}`}
+                  className={nameClass}
+                  onClick={
+                    onActivistClick
+                      ? (e) => {
+                          if (e.ctrlKey || e.metaKey || e.shiftKey) return
+                          e.preventDefault()
+                          onActivistClick(row.original.id)
+                        }
+                      : undefined
+                  }
+                >
+                  {displayName.text}
+                </a>
+              )
+            }
 
-          const value = row.original[colName as keyof ActivistJSON]
-          if (COLUMN_TYPE_BY_NAME[colName] === 'boolean') {
-            return (
-              <div className="flex items-center text-sm">
-                {value ? (
-                  <Check className="h-4 w-4 text-foreground" />
-                ) : (
-                  <Minus className="h-4 w-4 text-muted-foreground" />
-                )}
-              </div>
-            )
+            const value = row.original[colName as keyof ActivistJSON]
+            if (COLUMN_TYPE_BY_NAME[colName] === 'boolean') {
+              return (
+                <div className="flex items-center text-sm">
+                  {value ? (
+                    <Check className="h-4 w-4 text-foreground" />
+                  ) : (
+                    <Minus className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </div>
+              )
+            }
+            const formatted = formatValue(value, colName)
+            return <div className="truncate text-sm">{formatted}</div>
+          },
+        }
+      },
+    )
+
+    if (!selection) return dataColumns
+
+    const rowIds = activists.map((activist) => activist.id)
+    const selectedCount = rowIds.filter((id) =>
+      selection.selectedIds.has(id),
+    ).length
+    const headerState =
+      selectedCount === 0
+        ? false
+        : selectedCount === rowIds.length
+          ? true
+          : 'indeterminate'
+
+    const selectColumn: ColumnDef<typeof features, ActivistJSON> = {
+      id: SELECT_COLUMN_ID,
+      size: 44,
+      minSize: 44,
+      header: () => (
+        <Checkbox
+          checked={headerState}
+          onCheckedChange={(checked) =>
+            selection.onSetMany(rowIds, checked === true)
           }
-          const formatted = formatValue(value, colName)
-          return <div className="truncate text-sm">{formatted}</div>
-        },
-      }
-    })
-  }, [visibleColumns, sort, onSortChange, onActivistClick, isStale])
+          aria-label={
+            headerState === true
+              ? 'Deselect all activists'
+              : 'Select all activists'
+          }
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={selection.selectedIds.has(row.original.id)}
+          onCheckedChange={() => selection.onToggle(row.original.id)}
+          aria-label={`Select ${getActivistDisplayName(row.original).text}`}
+        />
+      ),
+    }
+
+    return [selectColumn, ...dataColumns]
+  }, [
+    visibleColumns,
+    sort,
+    onSortChange,
+    onActivistClick,
+    isStale,
+    selection,
+    activists,
+  ])
 
   const table = useTable({
     features,
@@ -189,110 +258,197 @@ export function ActivistTable({
                           header.column.columnDef.header,
                           header.getContext(),
                         )}
-                    <div
-                      onMouseDown={header.getResizeHandler()}
-                      onTouchStart={header.getResizeHandler()}
-                      onDoubleClick={() => header.column.resetSize()}
-                      className={`absolute right-0 top-0 h-full w-1 cursor-col-resize select-none touch-none hover:bg-primary/50 ${
-                        header.column.getIsResizing() ? 'bg-primary' : ''
-                      }`}
-                    />
+                    {header.column.id !== SELECT_COLUMN_ID && (
+                      <div
+                        onMouseDown={header.getResizeHandler()}
+                        onTouchStart={header.getResizeHandler()}
+                        onDoubleClick={() => header.column.resetSize()}
+                        className={`absolute right-0 top-0 h-full w-1 cursor-col-resize select-none touch-none hover:bg-primary/50 ${
+                          header.column.getIsResizing() ? 'bg-primary' : ''
+                        }`}
+                      />
+                    )}
                   </TableHead>
                 ))}
               </TableRow>
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell
-                    key={cell.id}
-                    className="overflow-hidden"
-                    style={{ width: cell.column.getSize() }}
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
+            {table.getRowModel().rows.map((row) => {
+              const isSelected =
+                selection?.selectedIds.has(row.original.id) ?? false
+              return (
+                <TableRow
+                  key={row.id}
+                  // `cn` merges away the base row's conflicting hover
+                  // background so the highlight survives hovering.
+                  className={
+                    isSelected ? 'bg-primary/20 hover:bg-primary/25' : undefined
+                  }
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell
+                      key={cell.id}
+                      className="overflow-hidden"
+                      style={{ width: cell.column.getSize() }}
+                    >
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              )
+            })}
           </TableBody>
         </StickyHeaderTable>
       </div>
 
       {/* Mobile card layout */}
       <div className="flex flex-col gap-4 md:hidden">
-        {activists.map((activist) => {
-          const displayName = getActivistDisplayName(activist)
-          const cardClass = `block rounded-lg border bg-card p-4 transition-opacity hover:border-primary/50 text-left w-full ${
-            isStale ? 'opacity-60' : ''
-          }`
-          const cardContent = (
-            <div className="flex flex-col gap-2">
-              {visibleColumns.map((colName) => {
-                const definition = COLUMN_DEFINITION_BY_NAME[colName]
-                const label = definition?.label || colName
-                const isBool = COLUMN_TYPE_BY_NAME[colName] === 'boolean'
-                const rawValue = activist[colName as keyof ActivistJSON]
-                const formattedValue = isBool
-                  ? null
-                  : colName === 'name'
-                    ? displayName.text
-                    : formatValue(rawValue, colName)
-
-                return (
-                  <div key={colName} className="flex justify-between gap-2">
-                    <span className="text-sm font-medium text-muted-foreground">
-                      {label}:
-                    </span>
-                    {isBool ? (
-                      rawValue ? (
-                        <Check className="h-4 w-4 text-foreground" />
-                      ) : (
-                        <Minus className="h-4 w-4 text-muted-foreground" />
-                      )
-                    ) : (
-                      <span
-                        className={`text-sm ${
-                          colName === 'name' && displayName.isPlaceholder
-                            ? 'italic text-muted-foreground'
-                            : ''
-                        }`}
-                      >
-                        {formattedValue}
-                      </span>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          )
-
-          return onActivistClick ? (
-            <a
-              key={activist.id}
-              href={`/v2/activists/${activist.id}`}
-              className={cardClass}
-              onClick={(e) => {
-                if (e.ctrlKey || e.metaKey || e.shiftKey) return
-                e.preventDefault()
-                onActivistClick(activist.id)
-              }}
-            >
-              {cardContent}
-            </a>
-          ) : (
-            <IntentPrefetchLink
-              key={activist.id}
-              href={`/activists/${activist.id}`}
-              className={cardClass}
-            >
-              {cardContent}
-            </IntentPrefetchLink>
-          )
-        })}
+        {activists.map((activist) => (
+          <ActivistCard
+            key={activist.id}
+            activist={activist}
+            visibleColumns={visibleColumns}
+            onActivistClick={onActivistClick}
+            isStale={isStale}
+            selection={selection}
+          />
+        ))}
       </div>
       {footer && <div className="md:hidden">{footer}</div>}
     </>
+  )
+}
+
+interface ActivistCardProps {
+  activist: ActivistJSON
+  visibleColumns: ActivistColumnName[]
+  onActivistClick?: (id: number) => void
+  isStale: boolean
+  selection?: ActivistSelection
+}
+
+/**
+ * One activist as a card, for the mobile layout. Long-pressing the card
+ * selects it; while anything is selected, tapping toggles selection instead of
+ * opening the activist.
+ */
+function ActivistCard({
+  activist,
+  visibleColumns,
+  onActivistClick,
+  isStale,
+  selection,
+}: ActivistCardProps) {
+  const isSelected = selection?.selectedIds.has(activist.id) ?? false
+  const isSelectionMode = (selection?.selectedIds.size ?? 0) > 0
+
+  const { handlers, consumeLongPress } = useLongPress(() =>
+    selection?.onToggle(activist.id),
+  )
+
+  const displayName = getActivistDisplayName(activist)
+  const cardClass = cn(
+    'block w-full rounded-lg border bg-card p-4 text-left transition-colors hover:border-primary/50',
+    isStale && 'opacity-60',
+    // Long-pressing a link otherwise starts a text selection and pops the
+    // platform callout menu on top of the gesture.
+    selection && 'select-none [-webkit-touch-callout:none]',
+    isSelected && 'border-primary bg-primary/15 ring-1 ring-primary/40',
+  )
+
+  const cardContent = (
+    <div className="flex flex-col gap-2">
+      {visibleColumns.map((colName) => {
+        const definition = COLUMN_DEFINITION_BY_NAME[colName]
+        const label = definition?.label || colName
+        const isBool = COLUMN_TYPE_BY_NAME[colName] === 'boolean'
+        const rawValue = activist[colName as keyof ActivistJSON]
+        const formattedValue = isBool
+          ? null
+          : colName === 'name'
+            ? displayName.text
+            : formatValue(rawValue, colName)
+
+        return (
+          <div key={colName} className="flex justify-between gap-2">
+            <span className="text-sm font-medium text-muted-foreground">
+              {label}:
+            </span>
+            {isBool ? (
+              rawValue ? (
+                <Check className="h-4 w-4 text-foreground" />
+              ) : (
+                <Minus className="h-4 w-4 text-muted-foreground" />
+              )
+            ) : (
+              <span
+                className={`text-sm ${
+                  colName === 'name' && displayName.isPlaceholder
+                    ? 'italic text-muted-foreground'
+                    : ''
+                }`}
+              >
+                {formattedValue}
+              </span>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+
+  const selectionProps = selection
+    ? {
+        ...handlers,
+        'aria-pressed': isSelectionMode ? isSelected : undefined,
+      }
+    : {}
+
+  // Returns true if the click was consumed by selection and must not navigate.
+  const handleSelectionClick = () => {
+    if (!selection) return false
+    // The long press already toggled this card; swallow its trailing click.
+    if (consumeLongPress()) return true
+    if (isSelectionMode) {
+      selection.onToggle(activist.id)
+      return true
+    }
+    return false
+  }
+
+  return onActivistClick ? (
+    <a
+      data-testid={`activist-card-${activist.id}`}
+      href={`/v2/activists/${activist.id}`}
+      className={cardClass}
+      {...selectionProps}
+      onClick={(e) => {
+        if (handleSelectionClick()) {
+          e.preventDefault()
+          return
+        }
+        if (e.ctrlKey || e.metaKey || e.shiftKey) return
+        e.preventDefault()
+        onActivistClick(activist.id)
+      }}
+    >
+      {cardContent}
+    </a>
+  ) : (
+    <IntentPrefetchLink
+      data-testid={`activist-card-${activist.id}`}
+      href={`/activists/${activist.id}`}
+      className={cardClass}
+      {...selectionProps}
+      onClick={(e) => {
+        if (handleSelectionClick()) e.preventDefault()
+      }}
+    >
+      {cardContent}
+    </IntentPrefetchLink>
   )
 }

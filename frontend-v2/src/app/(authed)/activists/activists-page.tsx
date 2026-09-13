@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'next/navigation'
 import { useQueryState, parseAsInteger } from 'nuqs'
@@ -16,7 +16,9 @@ import { activistKeys } from '@/lib/query-keys'
 import { useDetectHydrationMismatch } from '@/hooks/use-detect-hydration-mismatch'
 import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
 import { InfiniteScrollTrigger } from '@/components/infinite-scroll-trigger'
-import { ActivistTable } from './activists-table'
+import { ActivistTable, type ActivistSelection } from './activists-table'
+import { SelectionBar } from './selection-bar'
+import { BulkAssignDialog } from './bulk-assign-dialog'
 import { ActivistFilters } from './filters/activist-filters'
 import { ColumnSelector } from './column-selector'
 import { SortSelector } from './sort-selector'
@@ -38,6 +40,8 @@ export default function ActivistsPage({
 }: ActivistsPageProps) {
   const { user } = useAuthedPageContext()
   const isAdmin = user.Roles.includes('admin')
+  // Matches the server's organizer access check on POST /api/activists/assign.
+  const canBulkAssign = isAdmin || user.Roles.includes('organizer')
   const searchParams = useSearchParams()
   const isDebug = searchParams.get('debug') === 'true'
 
@@ -181,10 +185,74 @@ export default function ActivistsPage({
     : selectedColumns
   const tableSort = isPlaceholderData ? settledTableState.sort : sort
 
+  const [selectedActivistIds, setSelectedActivistIds] = useState<Set<number>>(
+    () => new Set(),
+  )
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false)
+
+  const clearSelection = useCallback(() => {
+    setSelectedActivistIds((prev) => (prev.size === 0 ? prev : new Set()))
+  }, [])
+
+  // A new query returns a different set of rows, so a selection carried over
+  // from the old one would be invisible and easy to reassign by accident.
+  // Adjusted during render (rather than in an effect) so the dropped selection
+  // is never painted alongside the new query's rows.
+  const [lastSelectionQueryOptions, setLastSelectionQueryOptions] =
+    useState(queryOptions)
+  if (lastSelectionQueryOptions !== queryOptions) {
+    setLastSelectionQueryOptions(queryOptions)
+    clearSelection()
+  }
+
+  const toggleActivistSelected = useCallback((id: number) => {
+    setSelectedActivistIds((prev) => {
+      const next = new Set(prev)
+      if (!next.delete(id)) next.add(id)
+      return next
+    })
+  }, [])
+
+  const setManyActivistsSelected = useCallback(
+    (ids: number[], selected: boolean) => {
+      setSelectedActivistIds((prev) => {
+        const next = new Set(prev)
+        for (const id of ids) {
+          if (selected) next.add(id)
+          else next.delete(id)
+        }
+        return next
+      })
+    },
+    [],
+  )
+
+  const selection = useMemo<ActivistSelection | undefined>(
+    () =>
+      canBulkAssign
+        ? {
+            selectedIds: selectedActivistIds,
+            onToggle: toggleActivistSelected,
+            onSetMany: setManyActivistsSelected,
+          }
+        : undefined,
+    [
+      canBulkAssign,
+      selectedActivistIds,
+      toggleActivistSelected,
+      setManyActivistsSelected,
+    ],
+  )
+
   return (
     <>
       {/* Bounded-height flex chain link (md+) — see frontend-v2/docs/patterns/bounded-height-flex-chain.md */}
-      <div className="md:flex-1 md:min-h-0 flex flex-col gap-6">
+      <div
+        className={`md:flex-1 md:min-h-0 flex flex-col gap-6 ${
+          // Keep the last rows clear of the floating selection bar.
+          selectedActivistIds.size > 0 ? 'pb-20' : ''
+        }`}
+      >
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-semibold">Activists</h1>
         </div>
@@ -263,6 +331,7 @@ export default function ActivistsPage({
               onSortChange={setSort}
               onActivistClick={setSelectedActivistId}
               isStale={isPlaceholderData}
+              selection={selection}
               footer={
                 hasNextPage ? (
                   <InfiniteScrollTrigger
@@ -277,6 +346,22 @@ export default function ActivistsPage({
           </>
         )}
       </div>
+
+      {canBulkAssign && (
+        <>
+          <SelectionBar
+            count={selectedActivistIds.size}
+            onAssign={() => setIsAssignDialogOpen(true)}
+            onClear={clearSelection}
+          />
+          <BulkAssignDialog
+            open={isAssignDialogOpen}
+            onOpenChange={setIsAssignDialogOpen}
+            activistIds={[...selectedActivistIds]}
+            onAssigned={clearSelection}
+          />
+        </>
+      )}
 
       <ActivistSheet
         activistId={selectedActivistId}
