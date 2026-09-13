@@ -3,12 +3,15 @@
 import { useMemo, useState } from 'react'
 import {
   ColumnDef,
+  columnVisibilityFeature,
+  createSortedRowModel,
   flexRender,
-  getCoreRowModel,
-  getSortedRowModel,
+  rowSortingFeature,
   SortingState,
-  useReactTable,
+  tableFeatures,
+  useTable,
 } from '@tanstack/react-table'
+import { AUTO_SORT_FNS } from '@/lib/table-sort-fns'
 import { Pencil, Trash2 } from 'lucide-react'
 import { WorkingGroup } from '@/lib/api'
 import {
@@ -22,6 +25,13 @@ import {
 import { Button } from '@/components/ui/button'
 import { SortIndicator } from '@/components/ui/sort-indicator'
 import { countMailingListMembers, findPointPerson } from '@/lib/members'
+
+const features = tableFeatures({
+  columnVisibilityFeature,
+  rowSortingFeature,
+  sortedRowModel: createSortedRowModel(),
+  sortFns: AUTO_SORT_FNS,
+})
 
 export function WorkingGroupTable({
   workingGroups,
@@ -38,8 +48,8 @@ export function WorkingGroupTable({
     { id: 'name', desc: false },
   ])
 
-  const columns = useMemo<ColumnDef<WorkingGroup>[]>(() => {
-    const cols: ColumnDef<WorkingGroup>[] = [
+  const columns = useMemo<ColumnDef<typeof features, WorkingGroup>[]>(() => {
+    const cols: ColumnDef<typeof features, WorkingGroup>[] = [
       {
         id: 'actions',
         header: '',
@@ -134,12 +144,10 @@ export function WorkingGroupTable({
     return cols
   }, [membersVisible, onEdit, onDelete])
 
-  // eslint-disable-next-line react-hooks/incompatible-library -- Remove once TanStack Table supports React Compiler.
-  const table = useReactTable({
+  const table = useTable({
+    features,
     data: workingGroups,
     columns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
     onSortingChange: setSorting,
     state: { sorting },
   })
