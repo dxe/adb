@@ -56,11 +56,13 @@ export default function WorkingGroupsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold">Working Groups</h1>
-        </div>
-        <div className="flex items-center gap-2">
+      {/* Wraps as a unit: on narrow screens the buttons drop to their own
+          line rather than squeezing the title into two lines. */}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <h1 className="text-2xl font-semibold whitespace-nowrap">
+          Working Groups
+        </h1>
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <Button
             variant="outline"
             onClick={() => setMembersVisible((v) => !v)}
