@@ -4,7 +4,9 @@
 # Keep in sync with "make fmt".
 
 gofiles=$(cd server && gofmt -l .)
-# Pin to same version as root package.json to match `make fmt`.
+# Pin the prettier version so the check matches the project (package.json) and
+# CI, instead of whatever "latest" pnpx would download. Keep in sync with the
+# "prettier" version in package.json.
 webfiles=$(pnpx prettier@3.9.5 -l --cache --cache-strategy metadata .)
 [ -z "$gofiles" -a -z "$webfiles" ] && exit 0
 

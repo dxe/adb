@@ -3,12 +3,15 @@
 import { useMemo, useState } from 'react'
 import {
   ColumnDef,
+  columnVisibilityFeature,
+  createSortedRowModel,
   flexRender,
-  getCoreRowModel,
-  getSortedRowModel,
+  rowSortingFeature,
   SortingState,
-  useReactTable,
+  tableFeatures,
+  useTable,
 } from '@tanstack/react-table'
+import { AUTO_SORT_FNS } from '@/lib/table-sort-fns'
 import { Chapter, User } from '@/lib/api'
 import {
   Table,
@@ -24,6 +27,13 @@ import { Pencil } from 'lucide-react'
 import clsx from 'clsx'
 import { SortIndicator } from '@/components/ui/sort-indicator'
 import { formatRoleLabel } from '@/lib/roles'
+
+const features = tableFeatures({
+  columnVisibilityFeature,
+  rowSortingFeature,
+  sortedRowModel: createSortedRowModel(),
+  sortFns: AUTO_SORT_FNS,
+})
 
 export function UserTable({
   users,
@@ -41,7 +51,7 @@ export function UserTable({
     [chapters],
   )
 
-  const columns = useMemo<ColumnDef<User>[]>(() => {
+  const columns = useMemo<ColumnDef<typeof features, User>[]>(() => {
     return [
       {
         header: ({ column }) => (
@@ -144,12 +154,10 @@ export function UserTable({
     ]
   }, [chapterMap])
 
-  // eslint-disable-next-line react-hooks/incompatible-library -- Remove once TanStack Table supports React Compiler.
-  const table = useReactTable({
+  const table = useTable({
+    features,
     data: users,
     columns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
     onSortingChange: setSorting,
     state: {
       sorting,

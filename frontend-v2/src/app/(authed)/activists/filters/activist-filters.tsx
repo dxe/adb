@@ -38,6 +38,7 @@ const OPTIONAL_FILTERS = [
   { key: 'training', label: 'Training' },
   { key: 'source', label: 'Source' },
   { key: 'interestDate', label: 'Interest date' },
+  { key: 'lastInteraction', label: 'Last interaction' },
   { key: 'totalInteractions', label: 'Total interactions' },
   { key: 'assignedTo', label: 'Assigned to' },
   { key: 'followups', label: 'Follow-ups' },
@@ -222,6 +223,16 @@ export function ActivistFilters({
             onChange={(v) => optionalOnChange('interestDate', v)}
             removable
             nullLabel="Include activists who never submitted the interest form"
+          />
+        )}
+
+        {isFilterVisible('lastInteraction') && (
+          <DateRangeFilter
+            label="Last interaction"
+            value={filters.lastInteraction}
+            onChange={(v) => optionalOnChange('lastInteraction', v)}
+            removable
+            nullLabel="Include activists with no interactions"
           />
         )}
 

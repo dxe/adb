@@ -22,7 +22,6 @@ func (s *server) reminder() {
 	}
 
 	year, month, _ := time.Now().Date()
-	month++ // next month
 	if month == time.December+1 {
 		year, month = year+1, time.January // carry to next year
 	}

@@ -3,22 +3,31 @@
 import { Fragment, useMemo, useState } from 'react'
 import {
   ColumnDef,
+  columnVisibilityFeature,
+  createExpandedRowModel,
+  createSortedRowModel,
   ExpandedState,
   flexRender,
-  getCoreRowModel,
-  getExpandedRowModel,
-  getSortedRowModel,
+  rowExpandingFeature,
+  rowSortingFeature,
   SortingState,
-  useReactTable,
+  tableFeatures,
+  useTable,
 } from '@tanstack/react-table'
+import { AUTO_SORT_FNS } from '@/lib/table-sort-fns'
+import { cn } from '@/lib/utils'
 import {
+  Check,
   ChevronDown,
   ChevronRight,
   Download,
   Mail,
+  MailX,
   Pencil,
+  PhoneMissed,
   Trash2,
 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { EventListItem } from '@/lib/api'
 import {
   Table,
@@ -32,6 +41,15 @@ import { Button } from '@/components/ui/button'
 import { IntentPrefetchLink } from '@/components/intent-prefetch-link'
 import { EventListMode } from './events-page'
 import { SortIndicator } from '@/components/ui/sort-indicator'
+
+const features = tableFeatures({
+  columnVisibilityFeature,
+  rowSortingFeature,
+  sortedRowModel: createSortedRowModel(),
+  sortFns: AUTO_SORT_FNS,
+  rowExpandingFeature,
+  expandedRowModel: createExpandedRowModel(),
+})
 
 export function EventListTable({
   events,
@@ -49,8 +67,8 @@ export function EventListTable({
   ])
   const [expanded, setExpanded] = useState<ExpandedState>({})
 
-  const columns = useMemo<ColumnDef<EventListItem>[]>(() => {
-    const cols: ColumnDef<EventListItem>[] = [
+  const columns = useMemo<ColumnDef<typeof features, EventListItem>[]>(() => {
+    const cols: ColumnDef<typeof features, EventListItem>[] = [
       {
         id: 'expand',
         header: '',
@@ -174,13 +192,10 @@ export function EventListTable({
     return cols
   }, [isConnections, onDelete])
 
-  // eslint-disable-next-line react-hooks/incompatible-library -- Remove once TanStack Table supports React Compiler.
-  const table = useReactTable({
+  const table = useTable({
+    features,
     data: events,
     columns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getExpandedRowModel: getExpandedRowModel(),
     getRowCanExpand: () => true,
     onSortingChange: setSorting,
     onExpandedChange: setExpanded,
@@ -362,9 +377,14 @@ function ExpandedDetail({
       {hasAttendees && (
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-primary mb-1">Attendees</p>
-          <ul className="text-sm space-y-0.5 list-disc list-inside text-muted-foreground">
-            {event.attendees.map((name) => (
-              <li key={name}>{name}</li>
+          <ul className="text-sm space-y-0.5 text-muted-foreground">
+            {event.attendees.map((name, index) => (
+              <AttendeeRow
+                key={name}
+                name={name}
+                hasEmail={event.attendee_has_email[index] ?? false}
+                hasPhone={event.attendee_has_phone[index] ?? false}
+              />
             ))}
           </ul>
         </div>
@@ -387,5 +407,66 @@ function ExpandedDetail({
         </Button>
       </div>
     </div>
+  )
+}
+
+/**
+ * One attendee, with contact-info icons in a fixed-width leading slot so that
+ * the names line up vertically down the list. Mirrors the icon vocabulary of
+ * the attendee inputs on the event form: a single green check when nothing is
+ * missing, otherwise an orange icon per missing field.
+ */
+function AttendeeRow({
+  name,
+  hasEmail,
+  hasPhone,
+}: {
+  name: string
+  hasEmail: boolean
+  hasPhone: boolean
+}) {
+  return (
+    <li className="flex items-center gap-2">
+      <span className="flex w-9 shrink-0 items-center gap-1 opacity-80">
+        {hasEmail && hasPhone && (
+          <ContactIcon
+            Icon={Check}
+            label="Has email and phone number"
+            className="text-green-500"
+          />
+        )}
+        {!hasEmail && (
+          <ContactIcon
+            Icon={MailX}
+            label="Missing email"
+            className="text-orange-500"
+          />
+        )}
+        {!hasPhone && (
+          <ContactIcon
+            Icon={PhoneMissed}
+            label="Missing phone number"
+            className="text-orange-500"
+          />
+        )}
+      </span>
+      <span className="min-w-0 truncate">{name}</span>
+    </li>
+  )
+}
+
+function ContactIcon({
+  Icon,
+  label,
+  className,
+}: {
+  Icon: LucideIcon
+  label: string
+  className: string
+}) {
+  return (
+    <span className="flex" title={label}>
+      <Icon aria-label={label} className={cn('h-4 w-4', className)} />
+    </span>
   )
 }

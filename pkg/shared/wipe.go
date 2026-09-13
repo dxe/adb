@@ -36,6 +36,8 @@ func mustDropAllTables(db *sqlx.DB, isProd bool) {
 		DROP TABLE IF EXISTS activists_history;
 		DROP TABLE IF EXISTS events;
 		DROP TABLE IF EXISTS event_attendance;
+		-- Dropped after events, which has a foreign key referencing it.
+		DROP TABLE IF EXISTS locations;
 		DROP TABLE IF EXISTS users_roles;
 		DROP TABLE IF EXISTS adb_users;
 		DROP TABLE IF EXISTS merged_activist_attendance;

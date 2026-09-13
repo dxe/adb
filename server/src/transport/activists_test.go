@@ -93,3 +93,58 @@ func TestActivistPatchHandler_NotFound(t *testing.T) {
 
 	require.Equal(t, http.StatusNotFound, rec.Code)
 }
+
+func TestActivistTimelineHandler_NotFound(t *testing.T) {
+	db := testdb.NewDB()
+	defer func() { _ = db.Close() }()
+
+	userRepo := persistence.NewUserRepository(db)
+	devUser, err := userRepo.GetUser(model.DevTestUserId, "")
+	require.NoError(t, err)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/activists/9999/timeline", nil)
+	req = mux.SetURLVars(req, map[string]string{"id": "9999"})
+	rec := httptest.NewRecorder()
+
+	ActivistTimelineHandler(rec, req, devUser, db)
+
+	require.Equal(t, http.StatusNotFound, rec.Code)
+}
+
+func TestParseExportFormat(t *testing.T) {
+	for _, tc := range []struct {
+		in      string
+		want    exportFormat
+		wantErr bool
+	}{
+		{in: "", want: exportFormatCSV},
+		{in: "csv", want: exportFormatCSV},
+		{in: "tsv", want: exportFormatTSV},
+		{in: "xlsx", wantErr: true},
+		{in: "TSV", wantErr: true},
+	} {
+		got, err := parseExportFormat(tc.in)
+		if tc.wantErr {
+			require.Error(t, err, "format %q", tc.in)
+			continue
+		}
+		require.NoError(t, err, "format %q", tc.in)
+		require.Equal(t, tc.want, got, "format %q", tc.in)
+	}
+}
+
+// TSV is what clients paste into a spreadsheet, so values must never be quoted
+// and must never contain a tab or newline of their own.
+func TestTSVWriter_SanitizesFieldsWithoutQuoting(t *testing.T) {
+	var buf strings.Builder
+	w := &tsvWriter{w: &buf}
+	require.NoError(t, w.Write([]string{"name", "notes"}))
+	require.NoError(t, w.Write([]string{`Ada "Ace" Lovelace`, "line one\nline two\ttabbed\r"}))
+	w.Flush()
+	require.NoError(t, w.Error())
+
+	require.Equal(t,
+		"name\tnotes\n"+`Ada "Ace" Lovelace`+"\tline one line two tabbed \n",
+		buf.String(),
+	)
+}
