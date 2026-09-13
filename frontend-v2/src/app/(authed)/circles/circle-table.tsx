@@ -3,15 +3,18 @@
 import { useMemo, useState } from 'react'
 import {
   ColumnDef,
+  columnVisibilityFeature,
+  createSortedRowModel,
   flexRender,
-  getCoreRowModel,
-  getSortedRowModel,
+  rowSortingFeature,
   SortingState,
-  useReactTable,
+  tableFeatures,
+  useTable,
 } from '@tanstack/react-table'
 import { isAfter, isValid, parseISO, subDays } from 'date-fns'
 import { Pencil, Trash2 } from 'lucide-react'
 import type { CircleGroup } from '@/lib/api'
+import { AUTO_SORT_FNS } from '@/lib/table-sort-fns'
 import { countMailingListMembers, findPointPerson } from '@/lib/members'
 import { Button } from '@/components/ui/button'
 import {
@@ -47,6 +50,13 @@ const toneClasses: Record<'stale' | 'warning' | 'fresh', string> = {
   fresh: 'bg-emerald-100 text-emerald-700',
 }
 
+const features = tableFeatures({
+  columnVisibilityFeature,
+  rowSortingFeature,
+  sortedRowModel: createSortedRowModel(),
+  sortFns: AUTO_SORT_FNS,
+})
+
 export function CircleTable({
   circles,
   mode,
@@ -64,8 +74,8 @@ export function CircleTable({
     { id: 'name', desc: false },
   ])
 
-  const columns = useMemo<ColumnDef<CircleGroup>[]>(() => {
-    const lastEventColumn: ColumnDef<CircleGroup> = {
+  const columns = useMemo<ColumnDef<typeof features, CircleGroup>[]>(() => {
+    const lastEventColumn: ColumnDef<typeof features, CircleGroup> = {
       id: 'lastMeeting',
       header: ({ column }) => (
         <button
@@ -94,7 +104,7 @@ export function CircleTable({
       },
     }
 
-    const membersColumn: ColumnDef<CircleGroup> = {
+    const membersColumn: ColumnDef<typeof features, CircleGroup> = {
       id: 'members',
       header: 'Members',
       cell: ({ row }) => {
@@ -110,7 +120,7 @@ export function CircleTable({
       },
     }
 
-    const totalMembersColumn: ColumnDef<CircleGroup> = {
+    const totalMembersColumn: ColumnDef<typeof features, CircleGroup> = {
       id: 'totalMembers',
       header: 'Total Members',
       accessorFn: (row) => countMailingListMembers(row.members),
@@ -171,12 +181,10 @@ export function CircleTable({
     ]
   }, [mode, isMembersVisible, onEdit, onDelete])
 
-  // eslint-disable-next-line react-hooks/incompatible-library -- Remove once TanStack Table supports React Compiler.
-  const table = useReactTable({
+  const table = useTable({
+    features,
     data: circles,
     columns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
     onSortingChange: setSorting,
     state: { sorting },
   })
