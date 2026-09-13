@@ -15,7 +15,7 @@ import {
   apiClient,
   ActivistJSON,
   ActivistPatchInput,
-  type User,
+  type AssignableUser,
 } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -119,8 +119,8 @@ export function ActivistSectionForm({
     (f) => inputTypeFor(f) === 'user-select',
   )
   const usersQuery = useQuery({
-    queryKey: [API_PATH.USERS],
-    queryFn: ({ signal }) => apiClient.getUsers(signal),
+    queryKey: [API_PATH.USERS_ASSIGNABLE],
+    queryFn: ({ signal }) => apiClient.getAssignableUsers(signal),
     enabled: hasUserSelect,
   })
 
@@ -368,7 +368,7 @@ function UserSelectField({
   errorMessage,
   usersQuery,
 }: FieldComponentProps & {
-  usersQuery: UseQueryResult<User[]>
+  usersQuery: UseQueryResult<AssignableUser[]>
 }) {
   const numericValue =
     typeof field.state.value === 'number'
@@ -391,7 +391,7 @@ function UserSelectField({
           <SelectItem value={String(UNASSIGNED_USER_ID)}>Unassigned</SelectItem>
           {usersQuery.data?.map((user) => (
             <SelectItem key={user.id} value={String(user.id)}>
-              {user.name || user.email}
+              {user.name}
             </SelectItem>
           ))}
         </SelectContent>

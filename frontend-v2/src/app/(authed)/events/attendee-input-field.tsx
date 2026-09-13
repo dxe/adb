@@ -3,6 +3,7 @@ import { MailX, PhoneMissed, UserRoundPlus, Check } from 'lucide-react'
 import { AnyFieldApi } from '@tanstack/react-form'
 import { ActivistRegistry } from './activist-registry'
 import { SuggestionInput } from './suggestion-input'
+import { FieldError } from './field-error'
 
 type AttendeeInputFieldProps = {
   field: AnyFieldApi
@@ -81,11 +82,10 @@ export const AttendeeInputField = ({
           />
         </div>
       </div>
-      {field.state.meta.errors[0] && (
-        <p className="text-sm text-red-500 mt-1">
-          {field.state.meta.errors[0]?.message}
-        </p>
-      )}
+      <FieldError
+        message={field.state.meta.errors[0]?.message}
+        className="mt-1"
+      />
       {isDuplicate && <p className="text-xs text-red-500">Duplicate entry</p>}
     </div>
   )

@@ -81,6 +81,7 @@ export function useActivistQueryState() {
         nameSearch: newFilters.nameSearch,
         includeHidden: newFilters.includeHidden,
         lastEvent: newFilters.lastEvent ?? null,
+        lastInteraction: newFilters.lastInteraction ?? null,
         interestDate: newFilters.interestDate ?? null,
         firstEvent: newFilters.firstEvent ?? null,
         totalEvents: newFilters.totalEvents ?? null,

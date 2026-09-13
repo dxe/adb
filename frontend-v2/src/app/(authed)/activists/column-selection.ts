@@ -10,6 +10,7 @@ const FILTER_COLUMN_MAP: Partial<
   Record<keyof FilterState, ActivistColumnName>
 > = {
   lastEvent: 'last_event',
+  lastInteraction: 'last_interaction_date',
   firstEvent: 'first_event',
   totalEvents: 'total_events',
   interestDate: 'interest_date',

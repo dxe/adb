@@ -11,7 +11,7 @@ import { API_PATH, ApiClient } from '@/lib/api'
 import { getCookies } from '@/lib/auth'
 import { parseSafeInteger } from '@/lib/number-utils'
 import { redirectForHttpError } from '@/lib/server-auth'
-import { ActivistDetail } from './activist-detail'
+import { Activist } from './activist'
 
 export default async function ActivistPage({
   params,
@@ -47,7 +47,7 @@ export default async function ActivistPage({
         </Link>
       </div>
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <ActivistDetail activistId={activistId} />
+        <Activist activistId={activistId} />
       </HydrationBoundary>
     </ContentWrapper>
   )
