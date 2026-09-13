@@ -106,6 +106,19 @@ export function ColumnSelector({
     setLocalColumns(normalizeColumns(newColumns))
   }
 
+  // Columns the user can turn off here. 'name' is required and 'chapter_name'
+  // is managed outside of this component, so both are always left selected.
+  const isDeselectable = (columnName: ActivistColumnName) =>
+    columnName !== 'name' && columnName !== 'chapter_name'
+
+  const hasDeselectableColumns = localColumns.some(isDeselectable)
+
+  const handleDeselectAll = () => {
+    setLocalColumns(
+      normalizeColumns(localColumns.filter((col) => !isDeselectable(col))),
+    )
+  }
+
   const getCategorySelectionState = (
     category: ColumnCategory,
   ): 'none' | 'partial' | 'full' => {
@@ -169,6 +182,19 @@ export function ColumnSelector({
             </div>
           ) : (
             <div className="columns-1 sm:columns-2 lg:columns-3 gap-6 py-1">
+              {!isSearching && (
+                <div className="break-inside-avoid mb-4">
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="h-auto px-0 py-0 text-xs"
+                    onClick={handleDeselectAll}
+                    disabled={!hasDeselectableColumns}
+                  >
+                    Deselect all
+                  </Button>
+                </div>
+              )}
               {Array.from(filteredGroups.entries()).map(
                 ([category, columns]) => {
                   const selectionState = getCategorySelectionState(category)

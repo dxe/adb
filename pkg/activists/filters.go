@@ -230,10 +230,11 @@ func (f *TrainingFilter) Validate() error {
 type QueryActivistFilters struct {
 	// 0 means search all chapters and requires that the "chapter" column be requested.
 	// Must be set to ID of current chapter if user only has permission for current chapter.
-	ChapterId     int             `json:"chapter_id"`
-	Name          NameFilter      `json:"name"`
-	LastEvent     DateRangeFilter `json:"last_event"`
-	IncludeHidden bool            `json:"include_hidden"`
+	ChapterId       int             `json:"chapter_id"`
+	Name            NameFilter      `json:"name"`
+	LastEvent       DateRangeFilter `json:"last_event"`
+	LastInteraction DateRangeFilter `json:"last_interaction"`
+	IncludeHidden   bool            `json:"include_hidden"`
 
 	ActivistLevel     ActivistLevelFilter `json:"activist_level"`
 	InterestDate      DateRangeFilter     `json:"interest_date"`
@@ -255,6 +256,9 @@ func (f *QueryActivistFilters) Validate() error {
 	}
 	if err := f.LastEvent.Validate(); err != nil {
 		return shared.ValidationErrorf("invalid last event filter: %v", err)
+	}
+	if err := f.LastInteraction.Validate(); err != nil {
+		return shared.ValidationErrorf("invalid last interaction filter: %v", err)
 	}
 	if err := f.ActivistLevel.Validate(); err != nil {
 		return shared.ValidationErrorf("invalid activist level filter: %v", err)

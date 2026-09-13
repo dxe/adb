@@ -18,6 +18,12 @@ const shortDateFormatter = new Intl.DateTimeFormat(ACTIVISTS_DISPLAY_LOCALE, {
   day: 'numeric',
 })
 
+const timeOfDayFormatter = new Intl.DateTimeFormat(ACTIVISTS_DISPLAY_LOCALE, {
+  timeZone: ACTIVISTS_TIME_ZONE,
+  hour: 'numeric',
+  minute: '2-digit',
+})
+
 function toTemporalInstant(date: Date): Temporal.Instant {
   return Temporal.Instant.fromEpochMilliseconds(date.getTime())
 }
@@ -114,10 +120,33 @@ export function formatYmdForActivists(
     : longDateFormatter.format(date)
 }
 
+export function isDateAfterNMonthsAgo(
+  dateString: string,
+  months: number,
+  referenceDate: Date = new Date(),
+): boolean {
+  const date = parseDateValueForActivists(dateString)
+  if (!date) return false
+
+  const cutoff = toTemporalInstant(referenceDate)
+    .toZonedDateTimeISO(ACTIVISTS_TIME_ZONE)
+    .subtract({ months })
+  return date.getTime() >= cutoff.epochMilliseconds
+}
+
 export function formatDateValueForActivists(dateString: string): string {
   const date = parseDateValueForActivists(dateString)
 
   if (!date) return dateString
 
   return longDateFormatter.format(date)
+}
+
+// Time of day for an instant (e.g. an interaction timestamp), rendered in the
+// activists display timezone: "3:04 PM". Returns '' when the value is missing
+// or unparseable, so callers can simply omit it.
+export function formatInstantTimeForActivists(value: string): string {
+  if (!value) return ''
+  const date = parseDateValueForActivists(value)
+  return date ? timeOfDayFormatter.format(date) : ''
 }

@@ -5,6 +5,7 @@ import { type AuthedUser } from '@/lib/api'
 
 export type TAuthedPageContext = {
   user: AuthedUser
+  googlePlacesApiKey: string
 }
 
 export const AuthedPageContext = createContext<TAuthedPageContext | undefined>(

@@ -14,6 +14,7 @@ export type FilterState = {
   nameSearch: string
   includeHidden: boolean
   lastEvent?: DateRangeFilterValue
+  lastInteraction?: DateRangeFilterValue
   interestDate?: DateRangeFilterValue
   firstEvent?: DateRangeFilterValue
   totalEvents?: IntRangeFilterValue

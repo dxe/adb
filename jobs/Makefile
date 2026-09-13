@@ -23,4 +23,4 @@ clean:
 	rm -rf bin .aws-sam
 
 deploy: build
-	sam deploy
+	sam deploy --no-fail-on-empty-changeset

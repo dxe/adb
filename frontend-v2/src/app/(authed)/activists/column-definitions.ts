@@ -222,6 +222,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     category: 'Event Attendance',
     blankValue: 0,
     defaultWidth: 50,
+    description: 'Number of events attended in the last 30 days',
   },
   {
     name: 'active',
@@ -353,7 +354,6 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     label: 'Assigned To',
     category: 'Prospect Info',
     hidden: true,
-    hideOnDetailPage: true,
     editInputType: 'user-select',
   },
   {
@@ -361,6 +361,10 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     label: 'Assigned To',
     category: 'Prospect Info',
     defaultWidth: 200,
+    // The detail page uses 'assigned_to' as the editable field and special
+    // cases it to show the name as well while editing (via selected dropdown
+    // value) and in read-only mode.
+    hideOnDetailPage: true,
   },
   {
     name: 'followup_date',

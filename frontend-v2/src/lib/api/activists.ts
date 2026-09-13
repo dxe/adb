@@ -161,6 +161,7 @@ const QueryActivistFilters = z.object({
   chapter_id: z.number().optional(),
   name: ActivistNameFilter.optional(),
   last_event: DateRangeFilter.optional(),
+  last_interaction: DateRangeFilter.optional(),
   include_hidden: z.boolean().optional(),
   activist_level: ActivistLevelFilter.optional(),
   interest_date: DateRangeFilter.optional(),
