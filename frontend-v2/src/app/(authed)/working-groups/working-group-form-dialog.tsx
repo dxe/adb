@@ -27,7 +27,6 @@ import {
 import { TagInput } from '@/components/tag-input'
 import { findPointPerson } from '@/lib/members'
 
-// Trimming name/email matches the legacy Vue form's `v-model.trim`.
 const workingGroupFormSchema = z.object({
   name: z.string().trim().min(1, 'Working group name must not be blank'),
   email: z
