@@ -37,11 +37,14 @@ const UNASSIGNED_USER_ID = 0
 const MAX_BULK_ASSIGN = 1000
 
 /**
- * Writes the new assignee into every cached activist list rather than
- * refetching them. A refetch would renumber and re-order the rows — and drop
- * the reassigned ones entirely when the query filters by assignee — which
- * silently empties the caller's selection. The lists are left marked stale, so
- * the next mount or window focus still replaces this with server truth.
+ * Writes the new assignee into every cached activist list so that new values
+ * will appear in the table. Related queries are invalidated so they can be
+ * manually refreshed later when the user is ready.
+ *
+ * After a bulk operation, the user may want to perform another bulk operation
+ * on the same selection. Refetching would disorient the user and lose their
+ * selection: rows that no longer match the filters would disappear, and rows
+ * would be reordered if sorting is enabled on the affected column.
  */
 function updateCachedAssignee(
   queryClient: QueryClient,
