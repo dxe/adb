@@ -40,8 +40,6 @@ export default function ActivistsPage({
 }: ActivistsPageProps) {
   const { user } = useAuthedPageContext()
   const isAdmin = user.Roles.includes('admin')
-  // Matches the server's organizer access check on POST /api/activists/assign.
-  const canBulkAssign = isAdmin || user.Roles.includes('organizer')
   const searchParams = useSearchParams()
   const isDebug = searchParams.get('debug') === 'true'
 
@@ -227,21 +225,13 @@ export default function ActivistsPage({
     [],
   )
 
-  const selection = useMemo<ActivistSelection | undefined>(
-    () =>
-      canBulkAssign
-        ? {
-            selectedIds: selectedActivistIds,
-            onToggle: toggleActivistSelected,
-            onSetMany: setManyActivistsSelected,
-          }
-        : undefined,
-    [
-      canBulkAssign,
-      selectedActivistIds,
-      toggleActivistSelected,
-      setManyActivistsSelected,
-    ],
+  const selection = useMemo<ActivistSelection>(
+    () => ({
+      selectedIds: selectedActivistIds,
+      onToggle: toggleActivistSelected,
+      onSetMany: setManyActivistsSelected,
+    }),
+    [selectedActivistIds, toggleActivistSelected, setManyActivistsSelected],
   )
 
   return (
@@ -347,20 +337,16 @@ export default function ActivistsPage({
         )}
       </div>
 
-      {canBulkAssign && (
-        <>
-          <SelectionBar
-            count={selectedActivistIds.size}
-            onAssign={() => setIsAssignDialogOpen(true)}
-            onClear={clearSelection}
-          />
-          <BulkAssignDialog
-            open={isAssignDialogOpen}
-            onOpenChange={setIsAssignDialogOpen}
-            activistIds={[...selectedActivistIds]}
-          />
-        </>
-      )}
+      <SelectionBar
+        count={selectedActivistIds.size}
+        onAssign={() => setIsAssignDialogOpen(true)}
+        onClear={clearSelection}
+      />
+      <BulkAssignDialog
+        open={isAssignDialogOpen}
+        onOpenChange={setIsAssignDialogOpen}
+        activistIds={[...selectedActivistIds]}
+      />
 
       <ActivistSheet
         activistId={selectedActivistId}
