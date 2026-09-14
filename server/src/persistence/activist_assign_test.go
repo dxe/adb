@@ -83,7 +83,7 @@ func TestAssignActivists_Repository(t *testing.T) {
 				return nil
 			})
 		require.ErrorIs(t, err, model.ErrNotFound)
-		require.Contains(t, err.Error(), fmt.Sprintf("not found: [%d]", unknownID))
+		require.Contains(t, err.Error(), fmt.Sprintf("not found: %d", unknownID))
 	})
 
 	t.Run("AssignsWholeSet", func(t *testing.T) {

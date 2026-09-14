@@ -2232,20 +2232,22 @@ func checkActivistsAssignable(authedUser ADBUser, requested int, infos []Activis
 		panic(fmt.Sprintf("assign authorization got %d rows for %d activists", len(infos), requested))
 	}
 	for _, info := range infos {
-		if info.Hidden {
-			return ValidationErrorf("cannot assign hidden activist %d", info.ID)
-		}
+		// An activist the user may not access reads as a missing id: saying it
+		// is off limits would confirm an activist they aren't allowed to see.
 		if err := CheckChapterAccess(authedUser, info.ChapterID); err != nil {
-			return err
+			return fmt.Errorf("%w: activist %d not found", ErrNotFound, info.ID)
+		}
+		if info.Hidden {
+			return fmt.Errorf("%w: cannot assign hidden activist %d", ErrNotFound, info.ID)
 		}
 	}
 	return nil
 }
 
 // CheckActivistsFound reports whether infos holds a row for every requested id,
-// naming the ones it doesn't in an ErrNotFound error. An ActivistRepository
-// calls it on the rows its locking read found, so that the authorize callback
-// only ever sees a complete set.
+// naming the first one it doesn't in an ErrNotFound error. An
+// ActivistRepository calls it on the rows its locking read found, so that the
+// authorize callback only ever sees a complete set.
 func CheckActivistsFound(activistIDs []int, infos []ActivistAssignInfo) error {
 	// The ids are distinct, so each one must have produced exactly one row.
 	if len(infos) == len(activistIDs) {
@@ -2255,13 +2257,12 @@ func CheckActivistsFound(activistIDs []int, infos []ActivistAssignInfo) error {
 	for _, info := range infos {
 		found[info.ID] = true
 	}
-	var missing []int
 	for _, id := range activistIDs {
 		if !found[id] {
-			missing = append(missing, id)
+			return fmt.Errorf("%w: activist not found: %d", ErrNotFound, id)
 		}
 	}
-	return fmt.Errorf("%w: activists to assign not found: %v", ErrNotFound, missing)
+	return nil
 }
 
 func QueryActivists(authedUser ADBUser, options QueryActivistOptions, repo ActivistRepository) (QueryActivistResult, error) {

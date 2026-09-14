@@ -750,15 +750,17 @@ func TestAssignActivists(t *testing.T) {
 	// The activists the stub repository knows about.
 	ownChapterIDs := []int{101, 102}
 	const (
-		otherChapterActivistID = 103
-		hiddenActivistID       = 104
-		unknownActivistID      = 999
+		otherChapterActivistID       = 103
+		hiddenActivistID             = 104
+		otherChapterHiddenActivistID = 105
+		unknownActivistID            = 999
 	)
 	knownActivists := []ActivistAssignInfo{
 		{ID: ownChapterIDs[0], ChapterID: SFBayChapterIdDevTest},
 		{ID: ownChapterIDs[1], ChapterID: SFBayChapterIdDevTest},
 		{ID: otherChapterActivistID, ChapterID: otherChapterID},
 		{ID: hiddenActivistID, ChapterID: SFBayChapterIdDevTest, Hidden: true},
+		{ID: otherChapterHiddenActivistID, ChapterID: otherChapterID, Hidden: true},
 	}
 
 	newRepo := func(t *testing.T) *activistRepoStub {
@@ -824,22 +826,32 @@ func TestAssignActivists(t *testing.T) {
 		wantMsg     string
 	}{
 		{
+			// An activist outside the user's chapter is reported exactly as an
+			// unknown id, so the error says nothing about it existing.
 			name:        "OtherChapterActivistBlocksWholeSet",
 			activistIDs: append(append([]int{}, ownChapterIDs...), otherChapterActivistID),
-			wantErr:     ErrValidation,
-			wantMsg:     "does not belong to your chapter",
+			wantErr:     ErrNotFound,
+			wantMsg:     fmt.Sprintf("activist %d not found", otherChapterActivistID),
 		},
 		{
 			name:        "HiddenActivistBlocksWholeSet",
 			activistIDs: append(append([]int{}, ownChapterIDs...), hiddenActivistID),
-			wantErr:     ErrValidation,
+			wantErr:     ErrNotFound,
 			wantMsg:     "cannot assign hidden activist",
 		},
 		{
 			name:        "UnknownActivistBlocksWholeSet",
 			activistIDs: append(append([]int{}, ownChapterIDs...), unknownActivistID),
 			wantErr:     ErrNotFound,
-			wantMsg:     fmt.Sprintf("not found: [%d]", unknownActivistID),
+			wantMsg:     fmt.Sprintf("not found: %d", unknownActivistID),
+		},
+		{
+			// Hidden is only reported for activists the user may access:
+			// a hidden activist in another chapter reads as an unknown id.
+			name:        "HiddenActivistInOtherChapterReadsAsNotFound",
+			activistIDs: append(append([]int{}, ownChapterIDs...), otherChapterHiddenActivistID),
+			wantErr:     ErrNotFound,
+			wantMsg:     fmt.Sprintf("activist %d not found", otherChapterHiddenActivistID),
 		},
 	}
 	for _, tc := range blockedCases {
