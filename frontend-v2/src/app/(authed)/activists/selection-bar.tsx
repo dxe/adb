@@ -7,22 +7,51 @@ interface SelectionBarProps {
   count: number
   onAssign: () => void
   onClear: () => void
+  /**
+   * Shows a hint that the rows on screen may be out of date — e.g. after a
+   * bulk assign while filtering by assignee.
+   */
+  isFilterStale?: boolean
+  onRefresh?: () => void
 }
 
 /**
  * Floating bar shown while activists are selected. Fixed to the bottom of the
  * viewport so it stays reachable while scrolling a long list.
  */
-export function SelectionBar({ count, onAssign, onClear }: SelectionBarProps) {
+export function SelectionBar({
+  count,
+  onAssign,
+  onClear,
+  isFilterStale = false,
+  onRefresh,
+}: SelectionBarProps) {
   if (count === 0) return null
 
   return (
     // The outer layer spans the viewport but ignores pointer events so it
     // never blocks the rows underneath it.
     <div
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center p-4"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex flex-col items-center gap-2 p-4"
       style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
     >
+      {isFilterStale && (
+        <div
+          className="pointer-events-auto flex max-w-full items-center gap-1 rounded-full border bg-background/95 px-3 py-1 text-xs text-muted-foreground shadow-sm backdrop-blur"
+          role="status"
+        >
+          <span>Some rows may no longer match your filters.</span>
+          <Button
+            type="button"
+            variant="link"
+            size="sm"
+            className="h-auto p-0 text-xs"
+            onClick={onRefresh}
+          >
+            Refresh
+          </Button>
+        </div>
+      )}
       <div className="pointer-events-auto flex items-center gap-3 rounded-full border bg-background/95 py-2 pl-5 pr-2 shadow-lg backdrop-blur">
         <span
           className="text-sm font-medium whitespace-nowrap"

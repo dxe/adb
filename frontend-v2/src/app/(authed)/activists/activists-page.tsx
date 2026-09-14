@@ -1,7 +1,11 @@
 'use client'
 
 import { useCallback, useMemo, useState } from 'react'
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { useSearchParams } from 'next/navigation'
 import { useQueryState, parseAsInteger } from 'nuqs'
 import {
@@ -39,6 +43,7 @@ export default function ActivistsPage({
   initialReferenceDateIso,
 }: ActivistsPageProps) {
   const { user } = useAuthedPageContext()
+  const queryClient = useQueryClient()
   const isAdmin = user.Roles.includes('admin')
   const searchParams = useSearchParams()
   const isDebug = searchParams.get('debug') === 'true'
@@ -188,9 +193,22 @@ export default function ActivistsPage({
   )
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false)
 
+  // A bulk assign edits the cached rows in place rather than refetching (see
+  // bulk-assign-dialog), so rows the assignee filter now excludes stay on
+  // screen until the list is refetched.
+  const [isFilterStale, setIsFilterStale] = useState(false)
+
   const clearSelection = useCallback(() => {
     setSelectedActivistIds((prev) => (prev.size === 0 ? prev : new Set()))
+    setIsFilterStale(false)
   }, [])
+
+  // Dropping the selection too, since the rows it points at are the ones most
+  // likely to disappear from the refetched list.
+  const refreshList = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: activistKeys.lists() })
+    clearSelection()
+  }, [queryClient, clearSelection])
 
   // A new query returns a different set of rows, so a selection carried over
   // from the old one would be invisible and easy to reassign by accident.
@@ -341,11 +359,16 @@ export default function ActivistsPage({
         count={selectedActivistIds.size}
         onAssign={() => setIsAssignDialogOpen(true)}
         onClear={clearSelection}
+        isFilterStale={isFilterStale}
+        onRefresh={refreshList}
       />
       <BulkAssignDialog
         open={isAssignDialogOpen}
         onOpenChange={setIsAssignDialogOpen}
         activistIds={[...selectedActivistIds]}
+        onAssigned={() => {
+          if (filters.assignedTo !== undefined) setIsFilterStale(true)
+        }}
       />
 
       <ActivistSheet
