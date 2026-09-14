@@ -84,8 +84,8 @@ interface BulkAssignDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   activistIds: number[]
-  /** Called after the assignment succeeds and the caches are updated. */
-  onAssigned?: () => void
+  /** Called with the new assignee once the assignment succeeds. */
+  onAssigned?: (assigneeId: number) => void
 }
 
 export function BulkAssignDialog({
@@ -125,7 +125,7 @@ export function BulkAssignDialog({
           : `Assigned ${assigned} activist${assigned === 1 ? '' : 's'} to ${assigneeName || 'the selected user'}`,
       )
       updateCachedAssignee(queryClient, activistIds, userId, assigneeName)
-      onAssigned?.()
+      onAssigned?.(userId)
       onOpenChange(false)
     },
     onError: (err: Error) => {

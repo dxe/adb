@@ -24,10 +24,12 @@ import { ActivistTable, type ActivistSelection } from './activists-table'
 import { SelectionBar } from './selection-bar'
 import { BulkAssignDialog } from './bulk-assign-dialog'
 import { ActivistFilters } from './filters/activist-filters'
+import { StaleResultsNotice } from './filters/stale-results-notice'
 import { ColumnSelector } from './column-selector'
 import { SortSelector } from './sort-selector'
 import { ActivistSheet } from './activist-sheet'
 import { buildQueryOptions } from './filter-api-query'
+import { matchesAssignedToFilter } from './filter-api-transform'
 import type { ActivistsQueryState, SortColumn } from './query-state'
 import { DEFAULT_SORT } from './query-state'
 import { useActivistQueryState } from './use-activist-query-state'
@@ -195,18 +197,21 @@ export default function ActivistsPage({
 
   // A bulk assign edits the cached rows in place rather than refetching (see
   // bulk-assign-dialog), so rows the assignee filter now excludes stay on
-  // screen until the list is refetched.
-  const [isFilterStale, setIsFilterStale] = useState(false)
+  // screen until the list is refetched. Outlives the selection, which the user
+  // may well clear before dealing with the stale rows.
+  const [areResultsStale, setAreResultsStale] = useState(false)
 
   const clearSelection = useCallback(() => {
     setSelectedActivistIds((prev) => (prev.size === 0 ? prev : new Set()))
-    setIsFilterStale(false)
   }, [])
 
   // Dropping the selection too, since the rows it points at are the ones most
   // likely to disappear from the refetched list.
   const refreshList = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: activistKeys.lists() })
+    // Counted by a separate query, so the total goes stale with the rows.
+    queryClient.invalidateQueries({ queryKey: [API_PATH.ACTIVISTS_COUNT] })
+    setAreResultsStale(false)
     clearSelection()
   }, [queryClient, clearSelection])
 
@@ -219,6 +224,8 @@ export default function ActivistsPage({
   if (lastSelectionQueryOptions !== queryOptions) {
     setLastSelectionQueryOptions(queryOptions)
     clearSelection()
+    // A different query fetches its own rows, so nothing carries over as stale.
+    setAreResultsStale(false)
   }
 
   const toggleActivistSelected = useCallback((id: number) => {
@@ -274,6 +281,11 @@ export default function ActivistsPage({
           exportButton={<ExportButton queryOptions={queryOptions} />}
           isDebug={isDebug}
           debugQueryOptions={queryOptions}
+          notice={
+            areResultsStale ? (
+              <StaleResultsNotice onRefresh={refreshList} />
+            ) : undefined
+          }
         >
           <ColumnSelector
             visibleColumns={selectedColumns}
@@ -359,15 +371,14 @@ export default function ActivistsPage({
         count={selectedActivistIds.size}
         onAssign={() => setIsAssignDialogOpen(true)}
         onClear={clearSelection}
-        isFilterStale={isFilterStale}
-        onRefresh={refreshList}
       />
       <BulkAssignDialog
         open={isAssignDialogOpen}
         onOpenChange={setIsAssignDialogOpen}
         activistIds={[...selectedActivistIds]}
-        onAssigned={() => {
-          if (filters.assignedTo !== undefined) setIsFilterStale(true)
+        onAssigned={(assigneeId) => {
+          if (!matchesAssignedToFilter(filters.assignedTo, assigneeId, user.ID))
+            setAreResultsStale(true)
         }}
       />
 
