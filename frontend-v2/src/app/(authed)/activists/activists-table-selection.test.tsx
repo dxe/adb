@@ -11,8 +11,6 @@ const SAMPLE_ACTIVISTS: ActivistJSON[] = [
 
 const DEFAULT_COLUMNS: (keyof ActivistJSON)[] = ['name', 'email']
 
-// This project doesn't enable vitest globals, so RTL's auto-cleanup isn't
-// registered for us.
 afterEach(cleanup)
 
 // Long-press delay in use-long-press, plus a little slack.
