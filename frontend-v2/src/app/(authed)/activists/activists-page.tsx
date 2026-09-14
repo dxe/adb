@@ -10,7 +10,6 @@ import { useSearchParams } from 'next/navigation'
 import { useQueryState, parseAsInteger } from 'nuqs'
 import {
   apiClient,
-  API_PATH,
   QueryActivistOptions,
   QueryActivistCountOptions,
   type ActivistColumnName,
@@ -161,7 +160,7 @@ export default function ActivistsPage({
 
   // Not prefetched because it won't cause layout shift and keeps SSR lean.
   const { data: countData, isError: isCountError } = useQuery({
-    queryKey: [API_PATH.ACTIVISTS_COUNT, countQueryOptions],
+    queryKey: activistKeys.count(countQueryOptions),
     queryFn: ({ signal }) =>
       apiClient.countActivists(countQueryOptions, signal),
   })
@@ -210,7 +209,7 @@ export default function ActivistsPage({
   const refreshList = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: activistKeys.lists() })
     // Counted by a separate query, so the total goes stale with the rows.
-    queryClient.invalidateQueries({ queryKey: [API_PATH.ACTIVISTS_COUNT] })
+    queryClient.invalidateQueries({ queryKey: activistKeys.counts() })
     setAreResultsStale(false)
     clearSelection()
   }, [queryClient, clearSelection])

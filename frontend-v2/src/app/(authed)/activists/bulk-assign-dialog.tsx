@@ -77,6 +77,10 @@ function updateCachedAssignee(
     queryKey: activistKeys.lists(),
     refetchType: 'none',
   })
+  queryClient.invalidateQueries({
+    queryKey: activistKeys.counts(),
+    refetchType: 'none',
+  })
   queryClient.invalidateQueries({ queryKey: activistKeys.details() })
 }
 
