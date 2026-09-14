@@ -2173,10 +2173,7 @@ const MaxBulkAssignActivists = 1000
 //
 // Every activist is checked to exist, to not be hidden, and to belong to a
 // chapter the authed user may access before anything is written, so a request
-// naming even one activist the user cannot touch changes nothing at all. That
-// check runs inside the same transaction as the update, against rows locked
-// for it, so an activist cannot be moved into another chapter in the window
-// between being authorized and being reassigned.
+// naming even one activist the user cannot touch changes nothing at all.
 //
 // Unlike PatchActivist this records no activists_history rows: that table has
 // no assigned_to column, so a bulk assign would insert a row per activist
