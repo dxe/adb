@@ -23,8 +23,11 @@ export interface ActivistSelectionState {
   /** True once an edit has left the visible rows out of step with the query. */
   areResultsStale: boolean
   markResultsStale: () => void
-  /** Refetches the list and clears both the selection and the stale flag. */
-  refreshList: () => void
+  /**
+   * Refetches the list and clears the selection, resolving once the new rows
+   * have arrived. Leaves the stale flag set if the refetch fails.
+   */
+  refreshList: () => Promise<void>
 }
 
 /**
@@ -57,12 +60,21 @@ export function useActivistSelection(
 
   // Dropping the selection too, since the rows it points at are the ones most
   // likely to disappear from the refetched list.
-  const refreshList = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: activistKeys.lists() })
-    // Counted by a separate query, so the total goes stale with the rows.
-    queryClient.invalidateQueries({ queryKey: activistKeys.counts() })
-    setAreResultsStale(false)
+  const refreshList = useCallback(async () => {
     clearSelection()
+    void queryClient.invalidateQueries({ queryKey: activistKeys.counts() })
+
+    // The stale rows stay on screen until the refetch lands, so the notice has
+    // to outlive the invalidation rather than be cleared alongside it.
+    try {
+      await queryClient.invalidateQueries(
+        { queryKey: activistKeys.lists() },
+        { throwOnError: true },
+      )
+      setAreResultsStale(false)
+    } catch {
+      // Keep the notice visible so the user can retry.
+    }
   }, [queryClient, clearSelection])
 
   // A new query returns a different set of rows, so a selection carried over
