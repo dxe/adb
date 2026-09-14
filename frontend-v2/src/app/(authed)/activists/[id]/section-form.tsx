@@ -17,6 +17,7 @@ import {
   ActivistPatchInput,
   type AssignableUser,
 } from '@/lib/api'
+import { activistKeys } from '@/lib/query-keys'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -134,8 +135,8 @@ export function ActivistSectionForm({
     mutationFn: (patch: ActivistPatchInput) =>
       apiClient.patchActivist(activistId, patch),
     onSuccess: (updated) => {
-      queryClient.setQueryData([API_PATH.ACTIVIST_GET, activistId], updated)
-      queryClient.invalidateQueries({ queryKey: [API_PATH.ACTIVISTS_SEARCH] })
+      queryClient.setQueryData(activistKeys.detail(activistId), updated)
+      queryClient.invalidateQueries({ queryKey: activistKeys.lists() })
       toast.success('Saved')
       onSaved()
     },

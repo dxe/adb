@@ -12,6 +12,7 @@ import {
   type ActivistColumnName,
   type ActivistJSON,
 } from '@/lib/api'
+import { activistKeys } from '@/lib/query-keys'
 import { useDetectHydrationMismatch } from '@/hooks/use-detect-hydration-mismatch'
 import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
 import { InfiniteScrollTrigger } from '@/components/infinite-scroll-trigger'
@@ -110,7 +111,7 @@ export default function ActivistsPage({
     isFetchingNextPage,
     isPlaceholderData,
   } = useInfiniteQuery({
-    queryKey: [API_PATH.ACTIVISTS_SEARCH, queryOptions],
+    queryKey: activistKeys.list(queryOptions),
     queryFn: ({ pageParam, signal }) =>
       apiClient.searchActivists(
         {

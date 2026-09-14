@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { API_PATH, apiClient } from '@/lib/api'
+import { activistKeys } from '@/lib/query-keys'
 import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
 import { useActivistRegistry } from '../../events/useActivistRegistry'
 import { SuggestionInput } from '../../events/suggestion-input'
@@ -46,7 +47,7 @@ export function MergeActivistDialog({
       apiClient.mergeActivist(activistId, targetName),
     onSuccess: (_data, targetName) => {
       toast.success(`${activistName} was merged into ${targetName}`)
-      queryClient.invalidateQueries({ queryKey: [API_PATH.ACTIVISTS_SEARCH] })
+      queryClient.invalidateQueries({ queryKey: activistKeys.lists() })
       queryClient.invalidateQueries({
         queryKey: [API_PATH.ACTIVIST_LIST_BASIC],
       })

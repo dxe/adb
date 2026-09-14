@@ -1,0 +1,13 @@
+import type { QueryActivistOptions } from '@/lib/api'
+
+// Query keys for TanStack Query.
+
+export const activistKeys = {
+  /** Every activist list query, whatever its filters. */
+  lists: () => ['activists', 'list'] as const,
+  list: (options: QueryActivistOptions) =>
+    ['activists', 'list', options] as const,
+  /** Every cached activist detail, whichever activist. */
+  details: () => ['activists', 'detail'] as const,
+  detail: (activistId: number) => ['activists', 'detail', activistId] as const,
+}

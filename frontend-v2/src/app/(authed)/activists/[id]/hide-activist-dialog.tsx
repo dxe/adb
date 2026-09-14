@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { API_PATH, apiClient } from '@/lib/api'
+import { activistKeys } from '@/lib/query-keys'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -33,7 +34,7 @@ export function HideActivistDialog({
     mutationFn: () => apiClient.hideActivist(activistId),
     onSuccess: () => {
       toast.success(`${activistName} was hidden`)
-      queryClient.invalidateQueries({ queryKey: [API_PATH.ACTIVISTS_SEARCH] })
+      queryClient.invalidateQueries({ queryKey: activistKeys.lists() })
       queryClient.invalidateQueries({
         queryKey: [API_PATH.ACTIVIST_LIST_BASIC],
       })
