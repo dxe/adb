@@ -1,11 +1,7 @@
 'use client'
 
-import { useCallback, useMemo, useState } from 'react'
-import {
-  useInfiniteQuery,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query'
+import { useMemo, useState } from 'react'
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'next/navigation'
 import { useQueryState, parseAsInteger } from 'nuqs'
 import {
@@ -19,7 +15,7 @@ import { activistKeys } from '@/lib/query-keys'
 import { useDetectHydrationMismatch } from '@/hooks/use-detect-hydration-mismatch'
 import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
 import { InfiniteScrollTrigger } from '@/components/infinite-scroll-trigger'
-import { ActivistTable, type ActivistSelection } from './activists-table'
+import { ActivistTable } from './activists-table'
 import { SelectionBar } from './selection-bar'
 import { BulkAssignDialog } from './bulk-assign-dialog'
 import { ActivistFilters } from './filters/activist-filters'
@@ -32,6 +28,7 @@ import { matchesAssignedToFilter } from './filter-api-transform'
 import type { ActivistsQueryState, SortColumn } from './query-state'
 import { DEFAULT_SORT } from './query-state'
 import { useActivistQueryState } from './use-activist-query-state'
+import { useActivistSelection } from './use-activist-selection'
 import { ExportButton } from './export-button'
 
 interface ActivistsPageProps {
@@ -44,7 +41,6 @@ export default function ActivistsPage({
   initialReferenceDateIso,
 }: ActivistsPageProps) {
   const { user } = useAuthedPageContext()
-  const queryClient = useQueryClient()
   const isAdmin = user.Roles.includes('admin')
   const searchParams = useSearchParams()
   const isDebug = searchParams.get('debug') === 'true'
@@ -189,74 +185,16 @@ export default function ActivistsPage({
     : selectedColumns
   const tableSort = isPlaceholderData ? settledTableState.sort : sort
 
-  const [selectedActivistIds, setSelectedActivistIds] = useState<Set<number>>(
-    () => new Set(),
-  )
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false)
 
-  // A bulk assign edits the cached rows in place rather than refetching (see
-  // bulk-assign-dialog), so rows the assignee filter now excludes stay on
-  // screen until the list is refetched. Outlives the selection, which the user
-  // may well clear before dealing with the stale rows.
-  const [areResultsStale, setAreResultsStale] = useState(false)
-
-  const clearSelection = useCallback(() => {
-    setSelectedActivistIds((prev) => (prev.size === 0 ? prev : new Set()))
-  }, [])
-
-  // Dropping the selection too, since the rows it points at are the ones most
-  // likely to disappear from the refetched list.
-  const refreshList = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: activistKeys.lists() })
-    // Counted by a separate query, so the total goes stale with the rows.
-    queryClient.invalidateQueries({ queryKey: activistKeys.counts() })
-    setAreResultsStale(false)
-    clearSelection()
-  }, [queryClient, clearSelection])
-
-  // A new query returns a different set of rows, so a selection carried over
-  // from the old one would be invisible and easy to reassign by accident.
-  // Adjusted during render (rather than in an effect) so the dropped selection
-  // is never painted alongside the new query's rows.
-  const [lastSelectionQueryOptions, setLastSelectionQueryOptions] =
-    useState(queryOptions)
-  if (lastSelectionQueryOptions !== queryOptions) {
-    setLastSelectionQueryOptions(queryOptions)
-    clearSelection()
-    // A different query fetches its own rows, so nothing carries over as stale.
-    setAreResultsStale(false)
-  }
-
-  const toggleActivistSelected = useCallback((id: number) => {
-    setSelectedActivistIds((prev) => {
-      const next = new Set(prev)
-      if (!next.delete(id)) next.add(id)
-      return next
-    })
-  }, [])
-
-  const setManyActivistsSelected = useCallback(
-    (ids: number[], selected: boolean) => {
-      setSelectedActivistIds((prev) => {
-        const next = new Set(prev)
-        for (const id of ids) {
-          if (selected) next.add(id)
-          else next.delete(id)
-        }
-        return next
-      })
-    },
-    [],
-  )
-
-  const selection = useMemo<ActivistSelection>(
-    () => ({
-      selectedIds: selectedActivistIds,
-      onToggle: toggleActivistSelected,
-      onSetMany: setManyActivistsSelected,
-    }),
-    [selectedActivistIds, toggleActivistSelected, setManyActivistsSelected],
-  )
+  const {
+    selectedIds,
+    selection,
+    clearSelection,
+    areResultsStale,
+    markResultsStale,
+    refreshList,
+  } = useActivistSelection(queryOptions)
 
   return (
     <>
@@ -264,7 +202,7 @@ export default function ActivistsPage({
       <div
         className={`md:flex-1 md:min-h-0 flex flex-col gap-6 ${
           // Keep the last rows clear of the floating selection bar.
-          selectedActivistIds.size > 0 ? 'pb-20' : ''
+          selectedIds.size > 0 ? 'pb-20' : ''
         }`}
       >
         <div className="flex flex-col gap-1">
@@ -367,17 +305,17 @@ export default function ActivistsPage({
       </div>
 
       <SelectionBar
-        count={selectedActivistIds.size}
+        count={selectedIds.size}
         onAssign={() => setIsAssignDialogOpen(true)}
         onClear={clearSelection}
       />
       <BulkAssignDialog
         open={isAssignDialogOpen}
         onOpenChange={setIsAssignDialogOpen}
-        activistIds={[...selectedActivistIds]}
+        activistIds={[...selectedIds]}
         onAssigned={(assigneeId) => {
           if (!matchesAssignedToFilter(filters.assignedTo, assigneeId, user.ID))
-            setAreResultsStale(true)
+            markResultsStale()
         }}
       />
 
