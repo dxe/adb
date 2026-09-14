@@ -1,4 +1,4 @@
 # Activist pages
 
-`activists-page.tsx` is complex. After adding code to it, consider if what you
-added can be extracted into another file.
+`activists-page.tsx` and `activists-table.tsx` are complex. Consider if what you
+add can be extracted into another file.

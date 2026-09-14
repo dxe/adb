@@ -2,7 +2,8 @@ import { act, cleanup, fireEvent, render, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ActivistJSON } from '@/lib/api'
-import { ActivistTable, type ActivistSelection } from './activists-table'
+import { ActivistTable } from './activists-table'
+import type { ActivistSelection } from './use-activist-selection'
 
 const SAMPLE_ACTIVISTS: ActivistJSON[] = [
   { id: 1, name: 'Alice', email: 'alice@example.com' },

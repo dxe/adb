@@ -4,7 +4,15 @@ import { useCallback, useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { QueryActivistOptions } from '@/lib/api'
 import { activistKeys } from '@/lib/query-keys'
-import type { ActivistSelection } from './activists-table'
+
+/** What a table needs to draw its checkboxes and report clicks on them. */
+export interface ActivistSelection {
+  selectedIds: ReadonlySet<number>
+  /** Flips one activist between selected and not. */
+  onToggle: (id: number) => void
+  /** Selects or deselects every given activist at once. */
+  onSetMany: (ids: number[], selected: boolean) => void
+}
 
 export interface ActivistSelectionState {
   /** The selected activists, for callers that need the ids or the count. */
