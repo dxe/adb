@@ -27,16 +27,6 @@ func NewActivistRepository(db *sqlx.DB) *DBActivistRepository {
 
 // AssignActivists sets assigned_to on the given activists in a single
 // transaction, so either all of them are reassigned or none are.
-//
-// The rows are read FOR UPDATE first and authorize is given what that locking
-// read found, so the chapter an activist belongs to cannot change between the
-// authorization check and the UPDATE. An error from authorize rolls the
-// transaction back and is returned unchanged.
-//
-// The caller passes a distinct set of ids, so the UPDATE must match every one
-// of them. Holding the locks makes that the expected case; if it matches fewer
-// anyway — authorize let a hidden row through — the transaction is rolled back
-// and nothing is reassigned.
 func (r DBActivistRepository) AssignActivists(activistIDs []int, userID int, authorize func([]model.ActivistAssignInfo) error) error {
 	if len(activistIDs) == 0 {
 		return nil

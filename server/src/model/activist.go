@@ -2336,11 +2336,7 @@ type ActivistRepository interface {
 	CountActivists(filters QueryActivistFilters) (int, error)
 	PatchActivist(id int, patch ActivistPatchData) error
 	// AssignActivists sets assigned_to on the given activists, which must be a
-	// distinct set of ids, in a single transaction: it locks their rows, hands
-	// authorize the chapter and hidden state read from those locked rows, and
-	// writes only if authorize returns nil. An error from authorize aborts the
-	// transaction and is returned unchanged. It also fails without writing
-	// anything unless the update matches every id.
+	// distinct set of ids.
 	AssignActivists(activistIDs []int, userID int, authorize func([]ActivistAssignInfo) error) error
 	DebugActivistQuery(options QueryActivistOptions, username string) (int64, error)
 }
