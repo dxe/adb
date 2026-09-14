@@ -11,6 +11,8 @@ export const activistKeys = {
   lists: () => ['activists', 'list'] as const,
   list: (options: QueryActivistOptions) =>
     ['activists', 'list', options] as const,
+  /** The name/id-only activist list used for autocomplete. */
+  listBasic: () => [API_PATH.ACTIVIST_LIST_BASIC] as const,
   /** Every activist count query, whatever its filters. */
   counts: () => [API_PATH.ACTIVISTS_COUNT] as const,
   count: (options: QueryActivistCountOptions) =>

@@ -26,6 +26,12 @@ export const buildQueryOptions = ({
     columnsToRequest = ['id', ...columnsToRequest]
   }
 
+  // Always requested, never user-selectable: the table shades hidden rows
+  // regardless of which columns are shown.
+  if (!columnsToRequest.includes('hidden')) {
+    columnsToRequest = ['hidden', ...columnsToRequest]
+  }
+
   return {
     shape: {
       columns: columnsToRequest,

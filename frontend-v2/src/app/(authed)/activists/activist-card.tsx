@@ -44,6 +44,8 @@ export function ActivistCard({
     // Long-pressing a link otherwise starts a text selection and pops the
     // platform callout menu on top of the gesture.
     selection && 'select-none [-webkit-touch-callout:none]',
+    activist.hidden && 'bg-muted/60',
+    // Listed last so selection wins over the hidden shading.
     isSelected && 'border-primary bg-primary/15 ring-1 ring-primary/40',
   )
 

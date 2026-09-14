@@ -126,6 +126,7 @@ const (
 	ColNotes                 = activists.ColNotes
 	ColVisionWall            = activists.ColVisionWall
 	ColVotingAgreement       = activists.ColVotingAgreement
+	ColHidden                = activists.ColHidden
 	ColChapterName           = activists.ColChapterName
 	ColFirstEvent            = activists.ColFirstEvent
 	ColFirstEventName        = activists.ColFirstEventName

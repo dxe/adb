@@ -1,9 +1,8 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { API_PATH, apiClient } from '@/lib/api'
+import { apiClient } from '@/lib/api'
 import { activistKeys } from '@/lib/query-keys'
 import { Button } from '@/components/ui/button'
 import {
@@ -27,19 +26,21 @@ export function HideActivistDialog({
   activistId,
   activistName,
 }: Props) {
-  const router = useRouter()
   const queryClient = useQueryClient()
 
   const mutation = useMutation({
     mutationFn: () => apiClient.hideActivist(activistId),
     onSuccess: () => {
       toast.success(`${activistName} was hidden`)
+      // The activist drops out of the default (non-hidden) lists and counts,
+      // and the detail page has to show the Hidden chip when it is revisited.
       queryClient.invalidateQueries({ queryKey: activistKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: activistKeys.counts() })
+      queryClient.invalidateQueries({ queryKey: activistKeys.listBasic() })
       queryClient.invalidateQueries({
-        queryKey: [API_PATH.ACTIVIST_LIST_BASIC],
+        queryKey: activistKeys.detail(activistId),
       })
       onOpenChange(false)
-      router.push('/activists')
     },
     onError: (err: Error) => {
       toast.error(err.message || 'Failed to hide activist')

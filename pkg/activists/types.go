@@ -91,6 +91,10 @@ const (
 	ColTotalInteractions     ActivistColumnName = "total_interactions"
 	ColLastInteractionDate   ActivistColumnName = "last_interaction_date"
 	ColMPPRequirements       ActivistColumnName = "mpp_requirements"
+
+	// ColHidden is a real column on `activists` rather than a computed one,
+	// but it is read-only to the API: only the hide endpoint writes it.
+	ColHidden ActivistColumnName = "hidden"
 )
 
 type Activist struct {

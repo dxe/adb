@@ -510,6 +510,18 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
 
   // Developer
   {
+    name: 'hidden',
+    label: 'Hidden',
+    description: 'Whether the activist has been hidden',
+    category: 'Advanced',
+    // Not offered in the column selector: the table shades hidden rows and the
+    // detail page shows a chip, and it is only ever set by the hide button.
+    hidden: true,
+    hideOnDetailPage: true,
+    blankValue: false,
+    defaultWidth: 50,
+  },
+  {
     name: 'id',
     label: 'ID',
     category: 'Advanced',

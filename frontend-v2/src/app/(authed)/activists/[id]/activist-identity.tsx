@@ -70,8 +70,13 @@ export function ActivistIdentity({
         </div>
       )}
 
-      {(isActive || activist.hiatus) && (
+      {(isActive || activist.hiatus || activist.hidden) && (
         <div className="flex flex-wrap items-center gap-2">
+          {activist.hidden && (
+            <Badge className="border-transparent bg-slate-200 text-slate-700 hover:bg-slate-200">
+              Hidden
+            </Badge>
+          )}
           {isActive && (
             <Badge className="border-transparent bg-green-100 text-green-700 hover:bg-green-100">
               Active

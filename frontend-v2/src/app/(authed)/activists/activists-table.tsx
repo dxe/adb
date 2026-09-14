@@ -21,6 +21,7 @@ import { StickyHeaderTable } from '@/components/sticky-header-table'
 import { ArrowDown, ArrowUp, Check, Minus } from 'lucide-react'
 import { ActivistJSON, ActivistColumnName } from '@/lib/api'
 import { Checkbox } from '@/components/ui/checkbox'
+import { cn } from '@/lib/utils'
 import { ActivistCard } from './activist-card'
 import { COLUMN_DEFINITION_BY_NAME } from './column-definitions'
 import { getActivistDisplayName } from './display-name'
@@ -281,10 +282,12 @@ export function ActivistTable({
                 <TableRow
                   key={row.id}
                   // `cn` merges away the base row's conflicting hover
-                  // background so the highlight survives hovering.
-                  className={
-                    isSelected ? 'bg-primary/20 hover:bg-primary/25' : undefined
-                  }
+                  // background so the highlight survives hovering. Selection
+                  // is listed last so it wins over the hidden shading.
+                  className={cn(
+                    row.original.hidden && 'bg-muted/60 hover:bg-muted/80',
+                    isSelected && 'bg-primary/20 hover:bg-primary/25',
+                  )}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
