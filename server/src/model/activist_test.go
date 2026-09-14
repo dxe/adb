@@ -38,12 +38,7 @@ func (s *activistPatchRepoSpy) CountActivists(filters QueryActivistFilters) (int
 	return 0, nil
 }
 
-func (s *activistPatchRepoSpy) GetActivistAssignInfo(activistIDs []int) ([]ActivistAssignInfo, error) {
-	s.t.Fatalf("unexpected call to GetActivistAssignInfo")
-	return nil, nil
-}
-
-func (s *activistPatchRepoSpy) AssignActivists(activistIDs []int, userID int) error {
+func (s *activistPatchRepoSpy) AssignActivists(activistIDs []int, userID int, authorize func([]ActivistAssignInfo) error) error {
 	s.t.Fatalf("unexpected call to AssignActivists")
 	return nil
 }

@@ -159,8 +159,8 @@ type activistRepoStub struct {
 	patchErr   error
 
 	// Bulk assign: assignInfos is the set of activists the stub "knows about";
-	// ids absent from it are reported as missing, exactly as the real
-	// repository does.
+	// ids absent from it are omitted from what authorize sees, exactly as the
+	// real repository's locking read does.
 	assignInfos      []ActivistAssignInfo
 	assignInfoErr    error
 	assignCalls      int
@@ -194,9 +194,12 @@ func (s *activistRepoStub) PatchActivist(id int, patch ActivistPatchData) error 
 	return s.patchErr
 }
 
-func (s *activistRepoStub) GetActivistAssignInfo(activistIDs []int) ([]ActivistAssignInfo, error) {
+// AssignActivists mirrors the real repository: it looks up the rows it would
+// have locked, lets authorize veto the write, and only then records the
+// assignment. assignCalls therefore counts writes, not calls.
+func (s *activistRepoStub) AssignActivists(activistIDs []int, userID int, authorize func([]ActivistAssignInfo) error) error {
 	if s.assignInfoErr != nil {
-		return nil, s.assignInfoErr
+		return s.assignInfoErr
 	}
 	requested := make(map[int]bool, len(activistIDs))
 	for _, id := range activistIDs {
@@ -208,10 +211,10 @@ func (s *activistRepoStub) GetActivistAssignInfo(activistIDs []int) ([]ActivistA
 			found = append(found, info)
 		}
 	}
-	return found, nil
-}
+	if err := authorize(found); err != nil {
+		return err
+	}
 
-func (s *activistRepoStub) AssignActivists(activistIDs []int, userID int) error {
 	s.assignCalls++
 	s.lastAssignIDs = activistIDs
 	s.lastAssignUserID = userID

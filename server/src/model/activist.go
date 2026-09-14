@@ -2173,7 +2173,10 @@ const MaxBulkAssignActivists = 1000
 //
 // Every activist is checked to exist, to not be hidden, and to belong to a
 // chapter the authed user may access before anything is written, so a request
-// naming even one activist the user cannot touch changes nothing at all.
+// naming even one activist the user cannot touch changes nothing at all. That
+// check runs inside the same transaction as the update, against rows locked
+// for it, so an activist cannot be moved into another chapter in the window
+// between being authorized and being reassigned.
 //
 // Unlike PatchActivist this records no activists_history rows: that table has
 // no assigned_to column, so a bulk assign would insert a row per activist
@@ -2204,10 +2207,31 @@ func AssignActivists(repo ActivistRepository, userRepo UserRepository, authedUse
 		return err
 	}
 
-	infos, err := repo.GetActivistAssignInfo(activistIDs)
-	if err != nil {
-		return fmt.Errorf("fetching activists to assign: %w", err)
+	// The repository runs this against the activist rows it has locked,
+	// immediately before the update, so the chapter an activist belongs to
+	// cannot change between being authorized and being reassigned.
+	var authErr error
+	authorize := func(infos []ActivistAssignInfo) error {
+		authErr = checkActivistsAssignable(authedUser, activistIDs, infos)
+		return authErr
 	}
+
+	if err := repo.AssignActivists(activistIDs, userID, authorize); err != nil {
+		if authErr != nil {
+			// The caller isn't allowed to make this change; nothing was
+			// written. Report it as-is rather than as a failure to write.
+			return authErr
+		}
+		return fmt.Errorf("failed to assign activists: %w", err)
+	}
+	log.Printf("Assigned %d activists to user %d", len(activistIDs), userID)
+	return nil
+}
+
+// checkActivistsAssignable reports whether authedUser may assign exactly the
+// activists named by activistIDs, given the rows infos was read for them. It
+// is run inside the assigning transaction, against locked rows.
+func checkActivistsAssignable(authedUser ADBUser, activistIDs []int, infos []ActivistAssignInfo) error {
 	// The ids are distinct, so each one must have produced exactly one row.
 	if len(infos) != len(activistIDs) {
 		return fmt.Errorf("%w: activists to assign not found: %v", ErrNotFound, missingActivistIDs(activistIDs, infos))
@@ -2220,11 +2244,6 @@ func AssignActivists(repo ActivistRepository, userRepo UserRepository, authedUse
 			return err
 		}
 	}
-
-	if err := repo.AssignActivists(activistIDs, userID); err != nil {
-		return fmt.Errorf("failed to assign activists: %w", err)
-	}
-	log.Printf("Assigned %d activists to user %d", len(activistIDs), userID)
 	return nil
 }
 
@@ -2319,19 +2338,19 @@ type ActivistRepository interface {
 	StreamActivists(options QueryActivistOptions, fn func(ActivistExtra) error) error
 	CountActivists(filters QueryActivistFilters) (int, error)
 	PatchActivist(id int, patch ActivistPatchData) error
-	// GetActivistAssignInfo returns the data needed to authorize a bulk assign
-	// for each of the given activist ids. Ids matching no activist are omitted
-	// from the result rather than reported as an error.
-	GetActivistAssignInfo(activistIDs []int) ([]ActivistAssignInfo, error)
 	// AssignActivists sets assigned_to on the given activists, which must be a
-	// distinct set of ids the caller has already checked to exist and to be
-	// visible. It fails without writing anything unless it matches every one.
-	AssignActivists(activistIDs []int, userID int) error
+	// distinct set of ids, in a single transaction: it locks their rows, hands
+	// authorize the chapter and hidden state read from those locked rows, and
+	// writes only if authorize returns nil. An error from authorize aborts the
+	// transaction and is returned unchanged. It also fails without writing
+	// anything unless the update matches every id.
+	AssignActivists(activistIDs []int, userID int, authorize func([]ActivistAssignInfo) error) error
 	DebugActivistQuery(options QueryActivistOptions, username string) (int64, error)
 }
 
 // ActivistAssignInfo is the subset of an activist row needed to authorize
-// assigning it: the chapter that owns it and whether it has been hidden.
+// assigning it: the chapter that owns it and whether it has been hidden. Ids
+// matching no activist produce no ActivistAssignInfo at all.
 type ActivistAssignInfo struct {
 	ID        int  `db:"id"`
 	ChapterID int  `db:"chapter_id"`

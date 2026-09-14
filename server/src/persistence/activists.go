@@ -25,36 +25,28 @@ func NewActivistRepository(db *sqlx.DB) *DBActivistRepository {
 	}
 }
 
-// GetActivistAssignInfo fetches the chapter and hidden flag for each of the
-// given activist ids in one query. Ids matching no activist are simply absent
-// from the result.
-func (r DBActivistRepository) GetActivistAssignInfo(activistIDs []int) ([]model.ActivistAssignInfo, error) {
-	if len(activistIDs) == 0 {
-		return nil, nil
-	}
-	query, args, err := sqlx.In(`SELECT id, chapter_id, hidden FROM activists WHERE id IN (?)`, activistIDs)
-	if err != nil {
-		return nil, fmt.Errorf("building assign info query for %d activists: %w", len(activistIDs), err)
-	}
-	var infos []model.ActivistAssignInfo
-	if err := r.db.Select(&infos, r.db.Rebind(query), args...); err != nil {
-		return nil, fmt.Errorf("fetching activist assign info: %w", err)
-	}
-	return infos, nil
-}
-
-// AssignActivists sets assigned_to on the given activists in a single UPDATE,
-// so either all of them are reassigned or none are.
+// AssignActivists sets assigned_to on the given activists in a single
+// transaction, so either all of them are reassigned or none are.
 //
-// The caller passes a distinct set of ids it has already checked to exist and
-// to be visible, so the UPDATE must match every one of them. If it matches
-// fewer — an activist was deleted or hidden since that check — the transaction
-// is rolled back and nothing is reassigned.
-func (r DBActivistRepository) AssignActivists(activistIDs []int, userID int) error {
+// The rows are read FOR UPDATE first and authorize is given what that locking
+// read found, so the chapter an activist belongs to cannot change between the
+// authorization check and the UPDATE. An error from authorize rolls the
+// transaction back and is returned unchanged.
+//
+// The caller passes a distinct set of ids, so the UPDATE must match every one
+// of them. Holding the locks makes that the expected case; if it matches fewer
+// anyway — authorize let a hidden row through — the transaction is rolled back
+// and nothing is reassigned.
+func (r DBActivistRepository) AssignActivists(activistIDs []int, userID int, authorize func([]model.ActivistAssignInfo) error) error {
 	if len(activistIDs) == 0 {
 		return nil
 	}
-	query, args, err := sqlx.In(`UPDATE activists SET assigned_to = ? WHERE id IN (?) AND hidden = 0`,
+	selectQuery, selectArgs, err := sqlx.In(`SELECT id, chapter_id, hidden FROM activists WHERE id IN (?) FOR UPDATE`,
+		activistIDs)
+	if err != nil {
+		return fmt.Errorf("building assign info query for %d activists: %w", len(activistIDs), err)
+	}
+	updateQuery, updateArgs, err := sqlx.In(`UPDATE activists SET assigned_to = ? WHERE id IN (?) AND hidden = 0`,
 		userID, activistIDs)
 	if err != nil {
 		return fmt.Errorf("building bulk assign query for %d activists: %w", len(activistIDs), err)
@@ -66,7 +58,17 @@ func (r DBActivistRepository) AssignActivists(activistIDs []int, userID int) err
 	}
 	defer func() { _ = tx.Rollback() }()
 
-	result, err := tx.Exec(r.db.Rebind(query), args...)
+	// Ids matching no activist are simply absent from the result; it is
+	// authorize that decides what a missing row means.
+	var infos []model.ActivistAssignInfo
+	if err := tx.Select(&infos, r.db.Rebind(selectQuery), selectArgs...); err != nil {
+		return fmt.Errorf("fetching activist assign info: %w", err)
+	}
+	if err := authorize(infos); err != nil {
+		return err
+	}
+
+	result, err := tx.Exec(r.db.Rebind(updateQuery), updateArgs...)
 	if err != nil {
 		return fmt.Errorf("executing bulk assign: %w", err)
 	}
