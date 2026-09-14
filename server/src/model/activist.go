@@ -2167,13 +2167,7 @@ const MaxBulkAssignActivists = 1000
 // AssignActivists sets assigned_to on a set of activists on behalf of an ADB
 // user. A userID of 0 unassigns them.
 //
-// The ids must be distinct: a duplicate is rejected rather than deduplicated,
-// so a caller that sends n ids and gets no error has reassigned exactly n
-// activists.
-//
-// Every activist is checked to exist, to not be hidden, and to belong to a
-// chapter the authed user may access before anything is written, so a request
-// naming even one activist the user cannot touch changes nothing at all.
+// The ids must be distinct. Hidden activists cannot be assigned.
 //
 // Unlike PatchActivist this records no activists_history rows: that table has
 // no assigned_to column, so a bulk assign would insert a row per activist
@@ -2204,21 +2198,11 @@ func AssignActivists(repo ActivistRepository, userRepo UserRepository, authedUse
 		return err
 	}
 
-	// The repository runs this against the activist rows it has locked,
-	// immediately before the update, so the chapter an activist belongs to
-	// cannot change between being authorized and being reassigned.
-	var authErr error
 	authorize := func(infos []ActivistAssignInfo) error {
-		authErr = checkActivistsAssignable(authedUser, len(activistIDs), infos)
-		return authErr
+		return checkActivistsAssignable(authedUser, len(activistIDs), infos)
 	}
 
 	if err := repo.AssignActivists(activistIDs, userID, authorize); err != nil {
-		if authErr != nil {
-			// The caller isn't allowed to make this change; nothing was
-			// written. Report it as-is rather than as a failure to write.
-			return authErr
-		}
 		return fmt.Errorf("failed to assign activists: %w", err)
 	}
 	log.Printf("Assigned %d activists to user %d", len(activistIDs), userID)
@@ -2232,8 +2216,7 @@ func checkActivistsAssignable(authedUser ADBUser, requested int, infos []Activis
 		panic(fmt.Sprintf("assign authorization got %d rows for %d activists", len(infos), requested))
 	}
 	for _, info := range infos {
-		// An activist the user may not access reads as a missing id: saying it
-		// is off limits would confirm an activist they aren't allowed to see.
+		// An activist the user may not access reads as a missing id.
 		if err := CheckChapterAccess(authedUser, info.ChapterID); err != nil {
 			return fmt.Errorf("%w: activist %d not found", ErrNotFound, info.ID)
 		}
