@@ -148,3 +148,39 @@ func TestTSVWriter_SanitizesFieldsWithoutQuoting(t *testing.T) {
 		buf.String(),
 	)
 }
+
+// assignBody builds a bulk assign request body naming n activists.
+func assignBody(n int) string {
+	ids := make([]string, n)
+	for i := range ids {
+		ids[i] = strconv.Itoa(i + 1)
+	}
+	return `{"activist_ids": [` + strings.Join(ids, ",") + `], "assigned_to": 1}`
+}
+
+func TestActivistsAssignHandler_RejectsOversizedBody(t *testing.T) {
+	body := assignBody(model.MaxBulkAssignActivists * 10)
+	req := httptest.NewRequest(http.MethodPost, "/api/activists/assign", strings.NewReader(body))
+	rec := httptest.NewRecorder()
+
+	// Pass nil for the repos because the body is rejected as it is read,
+	// before the handler reaches the model.
+	ActivistsAssignHandler(rec, req, model.ADBUser{}, nil, nil)
+
+	require.Equal(t, http.StatusRequestEntityTooLarge, rec.Code)
+	require.Contains(t, rec.Body.String(), "too large")
+}
+
+func TestActivistsAssignHandler_AcceptsBodyAtActivistLimit(t *testing.T) {
+	body := assignBody(model.MaxBulkAssignActivists)
+	req := httptest.NewRequest(http.MethodPost, "/api/activists/assign", strings.NewReader(body))
+	rec := httptest.NewRecorder()
+
+	// The zero ADBUser lacks organizer access, so the model rejects the
+	// request without touching the repos. What matters here is that the body
+	// itself made it through the reader intact.
+	ActivistsAssignHandler(rec, req, model.ADBUser{}, nil, nil)
+
+	require.Equal(t, http.StatusBadRequest, rec.Code)
+	require.Contains(t, rec.Body.String(), "lacking permission")
+}

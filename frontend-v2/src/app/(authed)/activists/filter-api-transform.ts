@@ -65,14 +65,35 @@ export function toApiIntRange(
 }
 
 /** Convert assignedTo URL value ("me"|"any"|id) to backend integer. */
+// Sentinels in the assigned_to filter: -1 matches any assignee at all, and an
+// activist with nobody assigned has an assigned_to of 0.
+const ANY_ASSIGNEE = -1
+const NO_ASSIGNEE = 0
+
 export function toApiAssignedTo(
   value: FilterState['assignedTo'],
   userId: number,
 ): number | undefined {
   if (!value) return undefined
   if (value === 'me') return userId
-  if (value === 'any') return -1
+  if (value === 'any') return ANY_ASSIGNEE
   return parseSafeInteger(value)
+}
+
+/**
+ * Whether an activist assigned to `assigneeId` still satisfies the "Assigned
+ * to" filter — i.e. whether a bulk assign to that user leaves the rows it
+ * touched where they are, or strands rows the filter now excludes.
+ */
+export function matchesAssignedToFilter(
+  value: FilterState['assignedTo'],
+  assigneeId: number,
+  userId: number,
+): boolean {
+  const filterAssignee = toApiAssignedTo(value, userId)
+  if (filterAssignee === undefined) return true
+  if (filterAssignee === ANY_ASSIGNEE) return assigneeId !== NO_ASSIGNEE
+  return assigneeId === filterAssignee
 }
 
 const toApiSourceOrTraining = (value?: IncludeExcludeFilterValue) =>

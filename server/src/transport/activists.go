@@ -524,6 +524,67 @@ func ActivistPatchHandler(w http.ResponseWriter, r *http.Request, authedUser mod
 	})
 }
 
+// ActivistsAssignInput is the POST /api/activists/assign request body.
+type ActivistsAssignInput struct {
+	ActivistIDs []int `json:"activist_ids"`
+	// AssignedTo is the ADB user to assign the activists to. 0 unassigns them.
+	AssignedTo int `json:"assigned_to"`
+}
+
+// maxBulkAssignBodyBytes bounds the request body of a bulk assign so an
+// oversized one is rejected as it is read, rather than after being decoded
+// into an arbitrarily large slice of ids.
+//
+// A request at the model's limit needs at most 11 bytes per id (the widest
+// int32 plus its separator), so 12 leaves room for whitespace between them,
+// and the remainder covers the enclosing object and the assigned_to field
+// many times over.
+const maxBulkAssignBodyBytes = model.MaxBulkAssignActivists*12 + 1024
+
+// ActivistsAssignHandler serves POST /api/activists/assign: it sets assigned_to
+// on a set of activists in one request.
+//
+// A request may name at most model.MaxBulkAssignActivists activists; a larger
+// set is rejected with 400 rather than silently truncated, so clients that
+// might exceed it need to send batches. Repeating an id is likewise rejected
+// with 400 rather than deduplicated. A body too big to hold that many ids is
+// rejected with 413 while it is being read, without buffering the whole of it.
+//
+// Either every named activist is reassigned or none is, so "assigned" in the
+// response is always the number of ids sent.
+func ActivistsAssignHandler(w http.ResponseWriter, r *http.Request, authedUser model.ADBUser, repo model.ActivistRepository, userRepo model.UserRepository) {
+	r.Body = http.MaxBytesReader(w, r.Body, maxBulkAssignBodyBytes)
+
+	var input ActivistsAssignInput
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&input); err != nil {
+		var tooLarge *http.MaxBytesError
+		if errors.As(err, &tooLarge) {
+			sendErrorMessage(w, http.StatusRequestEntityTooLarge,
+				fmt.Errorf("request body too large: cannot assign more than %d activists at once", model.MaxBulkAssignActivists))
+			return
+		}
+		sendErrorMessage(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if err := model.AssignActivists(repo, userRepo, authedUser, input.ActivistIDs, input.AssignedTo); err != nil {
+		if errors.Is(err, model.ErrValidation) {
+			sendErrorMessage(w, http.StatusBadRequest, err)
+		} else if errors.Is(err, model.ErrNotFound) {
+			sendErrorMessage(w, http.StatusNotFound, err)
+		} else {
+			sendErrorMessage(w, http.StatusInternalServerError, err)
+		}
+		return
+	}
+
+	writeJSON(w, map[string]int{
+		"assigned": len(input.ActivistIDs),
+	})
+}
+
 func ActivistGetHandler(w http.ResponseWriter, r *http.Request, authedUser model.ADBUser, db *sqlx.DB) {
 	vars := mux.Vars(r)
 	rawID := vars["id"]

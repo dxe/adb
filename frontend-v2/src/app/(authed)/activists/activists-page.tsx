@@ -6,7 +6,6 @@ import { useSearchParams } from 'next/navigation'
 import { useQueryState, parseAsInteger } from 'nuqs'
 import {
   apiClient,
-  API_PATH,
   QueryActivistOptions,
   QueryActivistCountOptions,
   type ActivistColumnName,
@@ -17,14 +16,19 @@ import { useDetectHydrationMismatch } from '@/hooks/use-detect-hydration-mismatc
 import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
 import { InfiniteScrollTrigger } from '@/components/infinite-scroll-trigger'
 import { ActivistTable } from './activists-table'
+import { SelectionBar } from './selection-bar'
+import { BulkAssignDialog } from './bulk-assign-dialog'
 import { ActivistFilters } from './filters/activist-filters'
+import { StaleResultsNotice } from './filters/stale-results-notice'
 import { ColumnSelector } from './column-selector'
 import { SortSelector } from './sort-selector'
 import { ActivistSheet } from './activist-sheet'
 import { buildQueryOptions } from './filter-api-query'
+import { matchesAssignedToFilter } from './filter-api-transform'
 import type { ActivistsQueryState, SortColumn } from './query-state'
 import { DEFAULT_SORT } from './query-state'
 import { useActivistQueryState } from './use-activist-query-state'
+import { useActivistSelection } from './use-activist-selection'
 import { ExportButton } from './export-button'
 
 interface ActivistsPageProps {
@@ -152,7 +156,7 @@ export default function ActivistsPage({
 
   // Not prefetched because it won't cause layout shift and keeps SSR lean.
   const { data: countData, isError: isCountError } = useQuery({
-    queryKey: [API_PATH.ACTIVISTS_COUNT, countQueryOptions],
+    queryKey: activistKeys.count(countQueryOptions),
     queryFn: ({ signal }) =>
       apiClient.countActivists(countQueryOptions, signal),
   })
@@ -181,10 +185,26 @@ export default function ActivistsPage({
     : selectedColumns
   const tableSort = isPlaceholderData ? settledTableState.sort : sort
 
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false)
+
+  const {
+    selectedIds,
+    selection,
+    clearSelection,
+    areResultsStale,
+    markResultsStale,
+    refreshList,
+  } = useActivistSelection(queryOptions)
+
   return (
     <>
       {/* Bounded-height flex chain link (md+) — see frontend-v2/docs/patterns/bounded-height-flex-chain.md */}
-      <div className="md:flex-1 md:min-h-0 flex flex-col gap-6">
+      <div
+        className={`md:flex-1 md:min-h-0 flex flex-col gap-6 ${
+          // Keep the last rows clear of the floating selection bar.
+          selectedIds.size > 0 ? 'pb-20' : ''
+        }`}
+      >
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-semibold">Activists</h1>
         </div>
@@ -198,6 +218,11 @@ export default function ActivistsPage({
           exportButton={<ExportButton queryOptions={queryOptions} />}
           isDebug={isDebug}
           debugQueryOptions={queryOptions}
+          notice={
+            areResultsStale ? (
+              <StaleResultsNotice onRefresh={refreshList} />
+            ) : undefined
+          }
         >
           <ColumnSelector
             visibleColumns={selectedColumns}
@@ -263,6 +288,7 @@ export default function ActivistsPage({
               onSortChange={setSort}
               onActivistClick={setSelectedActivistId}
               isStale={isPlaceholderData}
+              selection={selection}
               footer={
                 hasNextPage ? (
                   <InfiniteScrollTrigger
@@ -277,6 +303,21 @@ export default function ActivistsPage({
           </>
         )}
       </div>
+
+      <SelectionBar
+        count={selectedIds.size}
+        onAssign={() => setIsAssignDialogOpen(true)}
+        onClear={clearSelection}
+      />
+      <BulkAssignDialog
+        open={isAssignDialogOpen}
+        onOpenChange={setIsAssignDialogOpen}
+        activistIds={[...selectedIds]}
+        onAssigned={(assigneeId) => {
+          if (!matchesAssignedToFilter(filters.assignedTo, assigneeId, user.ID))
+            markResultsStale()
+        }}
+      />
 
       <ActivistSheet
         activistId={selectedActivistId}
