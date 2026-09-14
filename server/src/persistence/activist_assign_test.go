@@ -2,6 +2,7 @@ package persistence
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/dxe/adb/model"
@@ -10,9 +11,10 @@ import (
 )
 
 // TestAssignActivists_Repository exercises the bulk assign SQL against a real
-// database: the authorize callback must see the rows the locking read found and
-// be able to veto the write, hidden activists must be left alone, and the
-// returned count must be the rows the database matched.
+// database: ids matching no activist must be rejected before authorize runs,
+// the authorize callback must see the rows the locking read found and be able
+// to veto the write, hidden activists must be left alone, and the returned
+// count must be the rows the database matched.
 func TestAssignActivists_Repository(t *testing.T) {
 	db := testdb.NewDB()
 	defer func() { _ = db.Close() }()
@@ -51,11 +53,10 @@ func TestAssignActivists_Repository(t *testing.T) {
 	allow := func([]model.ActivistAssignInfo) error { return nil }
 
 	// The locked rows handed to authorize are what the caller gets to check:
-	// unknown ids are omitted rather than reported, and hidden is included.
+	// one row per requested id, hidden included.
 	t.Run("AuthorizeSeesLockedRows", func(t *testing.T) {
-		const unknownID = 99999999
 		var infos []model.ActivistAssignInfo
-		err := repo.AssignActivists([]int{visibleID, hiddenID, unknownID}, assignee.ID,
+		err := repo.AssignActivists([]int{visibleID, hiddenID}, assignee.ID,
 			func(locked []model.ActivistAssignInfo) error {
 				infos = locked
 				return errStopAssign
@@ -70,6 +71,19 @@ func TestAssignActivists_Repository(t *testing.T) {
 		require.Equal(t, model.SFBayChapterIdDevTest, byID[visibleID].ChapterID)
 		require.False(t, byID[visibleID].Hidden)
 		require.True(t, byID[hiddenID].Hidden)
+	})
+
+	// An id matching no activist is reported by the repository itself, before
+	// authorize is given a set of rows with a hole in it.
+	t.Run("RejectsUnknownIDBeforeAuthorize", func(t *testing.T) {
+		const unknownID = 99999999
+		err := repo.AssignActivists([]int{visibleID, unknownID}, assignee.ID,
+			func([]model.ActivistAssignInfo) error {
+				t.Fatalf("authorize called for an unknown activist id")
+				return nil
+			})
+		require.ErrorIs(t, err, model.ErrNotFound)
+		require.Contains(t, err.Error(), fmt.Sprintf("not found: [%d]", unknownID))
 	})
 
 	t.Run("AssignsWholeSet", func(t *testing.T) {

@@ -2209,7 +2209,7 @@ func AssignActivists(repo ActivistRepository, userRepo UserRepository, authedUse
 	// cannot change between being authorized and being reassigned.
 	var authErr error
 	authorize := func(infos []ActivistAssignInfo) error {
-		authErr = checkActivistsAssignable(authedUser, activistIDs, infos)
+		authErr = checkActivistsAssignable(authedUser, len(activistIDs), infos)
 		return authErr
 	}
 
@@ -2225,13 +2225,11 @@ func AssignActivists(repo ActivistRepository, userRepo UserRepository, authedUse
 	return nil
 }
 
-// checkActivistsAssignable reports whether authedUser may assign exactly the
-// activists named by activistIDs, given the rows infos was read for them. It
-// is run inside the assigning transaction, against locked rows.
-func checkActivistsAssignable(authedUser ADBUser, activistIDs []int, infos []ActivistAssignInfo) error {
-	// The ids are distinct, so each one must have produced exactly one row.
-	if len(infos) != len(activistIDs) {
-		return fmt.Errorf("%w: activists to assign not found: %v", ErrNotFound, missingActivistIDs(activistIDs, infos))
+// checkActivistsAssignable reports whether authedUser may assign the activists
+// infos was read for.
+func checkActivistsAssignable(authedUser ADBUser, requested int, infos []ActivistAssignInfo) error {
+	if len(infos) != requested {
+		panic(fmt.Sprintf("assign authorization got %d rows for %d activists", len(infos), requested))
 	}
 	for _, info := range infos {
 		if info.Hidden {
@@ -2244,9 +2242,15 @@ func checkActivistsAssignable(authedUser ADBUser, activistIDs []int, infos []Act
 	return nil
 }
 
-// missingActivistIDs returns the requested ids that infos has no row for, in
-// the order they were requested.
-func missingActivistIDs(activistIDs []int, infos []ActivistAssignInfo) []int {
+// CheckActivistsFound reports whether infos holds a row for every requested id,
+// naming the ones it doesn't in an ErrNotFound error. An ActivistRepository
+// calls it on the rows its locking read found, so that the authorize callback
+// only ever sees a complete set.
+func CheckActivistsFound(activistIDs []int, infos []ActivistAssignInfo) error {
+	// The ids are distinct, so each one must have produced exactly one row.
+	if len(infos) == len(activistIDs) {
+		return nil
+	}
 	found := make(map[int]bool, len(infos))
 	for _, info := range infos {
 		found[info.ID] = true
@@ -2257,7 +2261,7 @@ func missingActivistIDs(activistIDs []int, infos []ActivistAssignInfo) []int {
 			missing = append(missing, id)
 		}
 	}
-	return missing
+	return fmt.Errorf("%w: activists to assign not found: %v", ErrNotFound, missing)
 }
 
 func QueryActivists(authedUser ADBUser, options QueryActivistOptions, repo ActivistRepository) (QueryActivistResult, error) {
@@ -2336,14 +2340,13 @@ type ActivistRepository interface {
 	CountActivists(filters QueryActivistFilters) (int, error)
 	PatchActivist(id int, patch ActivistPatchData) error
 	// AssignActivists sets assigned_to on the given activists, which must be a
-	// distinct set of ids.
+	// distinct set of ids. An id matching no activist is an ErrNotFound.
 	AssignActivists(activistIDs []int, userID int, authorize func([]ActivistAssignInfo) error) error
 	DebugActivistQuery(options QueryActivistOptions, username string) (int64, error)
 }
 
 // ActivistAssignInfo is the subset of an activist row needed to authorize
-// assigning it: the chapter that owns it and whether it has been hidden. Ids
-// matching no activist produce no ActivistAssignInfo at all.
+// assigning it: the chapter that owns it and whether it has been hidden.
 type ActivistAssignInfo struct {
 	ID        int  `db:"id"`
 	ChapterID int  `db:"chapter_id"`

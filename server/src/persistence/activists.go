@@ -26,7 +26,8 @@ func NewActivistRepository(db *sqlx.DB) *DBActivistRepository {
 }
 
 // AssignActivists sets assigned_to on the given activists in a single
-// transaction, so either all of them are reassigned or none are.
+// transaction, so either all of them are reassigned or none are. An id
+// matching no activist is an ErrNotFound.
 func (r DBActivistRepository) AssignActivists(activistIDs []int, userID int, authorize func([]model.ActivistAssignInfo) error) error {
 	if len(activistIDs) == 0 {
 		return nil
@@ -48,11 +49,14 @@ func (r DBActivistRepository) AssignActivists(activistIDs []int, userID int, aut
 	}
 	defer func() { _ = tx.Rollback() }()
 
-	// Ids matching no activist are simply absent from the result; it is
-	// authorize that decides what a missing row means.
+	// Ids matching no activist are simply absent from the result, so the rows
+	// are checked to cover every id before.
 	var infos []model.ActivistAssignInfo
 	if err := tx.Select(&infos, r.db.Rebind(selectQuery), selectArgs...); err != nil {
 		return fmt.Errorf("fetching activist assign info: %w", err)
+	}
+	if err := model.CheckActivistsFound(activistIDs, infos); err != nil {
+		return err
 	}
 	if err := authorize(infos); err != nil {
 		return err
