@@ -226,11 +226,19 @@ func (f *TrainingFilter) Validate() error {
 	return nil
 }
 
+// MaxActivistIDsFilter caps how many ids the Ids filter may name for
+// performance / server stability purposes.
+const MaxActivistIDsFilter = 1000
+
 // QueryActivistFilters contains all filter parameters for querying activists.
 type QueryActivistFilters struct {
 	// 0 means search all chapters and requires that the "chapter" column be requested.
 	// Must be set to ID of current chapter if user only has permission for current chapter.
-	ChapterId       int             `json:"chapter_id"`
+	ChapterId int `json:"chapter_id"`
+	// Restricts the query to these activists, e.g. the rows a user has selected
+	// in the table. Empty means no restriction. Applied on top of the other
+	// filters.
+	Ids             []int           `json:"ids,omitempty"`
 	Name            NameFilter      `json:"name"`
 	LastEvent       DateRangeFilter `json:"last_event"`
 	LastInteraction DateRangeFilter `json:"last_interaction"`
@@ -253,6 +261,14 @@ type QueryActivistFilters struct {
 func (f *QueryActivistFilters) Validate() error {
 	if f.ChapterId < 0 {
 		return shared.ValidationErrorf("invalid chapter_id value: %d", f.ChapterId)
+	}
+	if len(f.Ids) > MaxActivistIDsFilter {
+		return shared.ValidationErrorf("cannot filter by more than %d activist ids at once", MaxActivistIDsFilter)
+	}
+	for _, id := range f.Ids {
+		if id <= 0 {
+			return shared.ValidationErrorf("invalid activist id: %d", id)
+		}
 	}
 	if err := f.LastEvent.Validate(); err != nil {
 		return shared.ValidationErrorf("invalid last event filter: %v", err)

@@ -76,6 +76,7 @@ var (
 const (
 	ProspectFilterChapterMember = activists.ProspectFilterChapterMember
 	ProspectFilterOrganizer     = activists.ProspectFilterOrganizer
+	MaxActivistIDsFilter        = activists.MaxActivistIDsFilter
 )
 
 // Activist API column-name constants.
