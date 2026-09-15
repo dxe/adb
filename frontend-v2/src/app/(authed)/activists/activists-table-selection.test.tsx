@@ -1,5 +1,6 @@
 import { act, cleanup, fireEvent, render, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import type { UserEvent } from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ActivistJSON } from '@/lib/api'
 import { ActivistTable } from './activists-table'
@@ -20,12 +21,13 @@ const LONG_PRESS_MS = 500
 function renderTable(
   selection?: Partial<ActivistSelection> & { selectedIds?: Set<number> },
   onActivistClick?: (id: number) => void,
+  activists: ActivistJSON[] = SAMPLE_ACTIVISTS,
 ) {
   const onToggle = vi.fn()
   const onSetMany = vi.fn()
   const result = render(
     <ActivistTable
-      activists={SAMPLE_ACTIVISTS}
+      activists={activists}
       visibleColumns={DEFAULT_COLUMNS}
       sort={[]}
       onSortChange={() => {}}
@@ -151,5 +153,82 @@ describe('ActivistTable mobile card long press', () => {
 
     expect(onActivistClick).toHaveBeenCalledWith(2)
     expect(onToggle).not.toHaveBeenCalled()
+  })
+})
+
+describe('ActivistTable shift-click range selection', () => {
+  const THREE_ACTIVISTS: ActivistJSON[] = [
+    ...SAMPLE_ACTIVISTS,
+    { id: 3, name: 'Carol', email: 'carol@example.com' },
+  ]
+
+  function renderThreeRows(selectedIds?: Set<number>) {
+    const rendered = renderTable({ selectedIds }, undefined, THREE_ACTIVISTS)
+    return {
+      ...rendered,
+      checkbox: (name: string) =>
+        rendered.table.getByRole('checkbox', { name: `Select ${name}` }),
+    }
+  }
+
+  async function shiftClick(user: UserEvent, element: Element) {
+    await user.keyboard('{Shift>}')
+    await user.click(element)
+    await user.keyboard('{/Shift}')
+  }
+
+  it('checks every row between the last clicked row and the shift-clicked one', async () => {
+    const user = userEvent.setup()
+    const { checkbox, onSetMany } = renderThreeRows()
+
+    await user.click(checkbox('Alice'))
+    await shiftClick(user, checkbox('Carol'))
+
+    expect(onSetMany).toHaveBeenCalledWith([1, 2, 3], true)
+  })
+
+  it('unchecks the range when the shift-clicked row is being unchecked', async () => {
+    const user = userEvent.setup()
+    const { checkbox, onSetMany } = renderThreeRows(new Set([1, 2, 3]))
+
+    await user.click(checkbox('Alice'))
+    await shiftClick(user, checkbox('Carol'))
+
+    expect(onSetMany).toHaveBeenCalledWith([1, 2, 3], false)
+  })
+
+  it('extends upwards when the shift-clicked row is above the last clicked one', async () => {
+    const user = userEvent.setup()
+    const { checkbox, onSetMany } = renderThreeRows()
+
+    await user.click(checkbox('Carol'))
+    await shiftClick(user, checkbox('Bob'))
+
+    expect(onSetMany).toHaveBeenCalledWith([2, 3], true)
+  })
+
+  it('toggles only the clicked row when nothing was clicked before it', async () => {
+    const user = userEvent.setup()
+    const { checkbox, onToggle, onSetMany } = renderThreeRows()
+
+    await shiftClick(user, checkbox('Carol'))
+
+    expect(onToggle).toHaveBeenCalledWith(3)
+    expect(onSetMany).not.toHaveBeenCalled()
+  })
+
+  it('starts a fresh range after the header checkbox is used', async () => {
+    const user = userEvent.setup()
+    const { table, checkbox, onToggle, onSetMany } = renderThreeRows()
+
+    await user.click(checkbox('Alice'))
+    await user.click(
+      table.getByRole('checkbox', { name: 'Select all activists' }),
+    )
+    onSetMany.mockClear()
+    await shiftClick(user, checkbox('Carol'))
+
+    expect(onToggle).toHaveBeenCalledWith(3)
+    expect(onSetMany).not.toHaveBeenCalled()
   })
 })
