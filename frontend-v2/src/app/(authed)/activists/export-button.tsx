@@ -9,13 +9,36 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { apiClient, QueryActivistOptions } from '@/lib/api'
+import {
+  apiClient,
+  QueryActivistOptions,
+  type ActivistColumnName,
+} from '@/lib/api'
+import { MAX_ACTIVIST_IDS_FILTER } from '@/lib/api/activists'
+import {
+  buildSelectionQueryOptions,
+  withVisibleColumns,
+} from './filter-api-query'
+
+const menuItemClassName =
+  'flex w-full items-center rounded px-2 py-1.5 text-sm hover:bg-muted transition-colors text-left disabled:pointer-events-none disabled:opacity-50'
 
 interface ExportButtonProps {
   queryOptions: QueryActivistOptions
+  /** The columns the table shows. An export carries exactly these. */
+  visibleColumns: ActivistColumnName[]
+  /**
+   * The selected activists. While any are selected, exports cover only those
+   * rows instead of everything the filters match.
+   */
+  selectedIds?: ReadonlySet<number>
 }
 
-export function ExportButton({ queryOptions }: ExportButtonProps) {
+export function ExportButton({
+  queryOptions,
+  visibleColumns,
+  selectedIds,
+}: ExportButtonProps) {
   const [isExporting, setIsExporting] = useState(false)
   const [isCopying, setIsCopying] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -30,21 +53,35 @@ export function ExportButton({ queryOptions }: ExportButtonProps) {
     }
   }, [])
 
+  const selectedCount = selectedIds?.size ?? 0
+  const isSelectionExport = selectedCount > 0
+  const tooManySelected = selectedCount > MAX_ACTIVIST_IDS_FILTER
+  const exportFilenamePrefix = isSelectionExport
+    ? 'activists-selected'
+    : 'activists'
+
+  const exportQueryOptions = useMemo<QueryActivistOptions>(() => {
+    const options = withVisibleColumns(queryOptions, visibleColumns)
+    return selectedIds && selectedIds.size > 0
+      ? buildSelectionQueryOptions(options, [...selectedIds])
+      : options
+  }, [queryOptions, visibleColumns, selectedIds])
+
   // The spoke export uses the current filters but a server-selected column
   // set, so we send an empty columns array. The server hard-codes the spoke
   // columns and rejects a non-empty list.
   const spokeQueryOptions = useMemo<QueryActivistOptions>(
     () => ({
-      ...queryOptions,
-      shape: { ...queryOptions.shape, columns: [] },
+      ...exportQueryOptions,
+      shape: { ...exportQueryOptions.shape, columns: [] },
     }),
-    [queryOptions],
+    [exportQueryOptions],
   )
 
   const isBusy = isExporting || isCopying
 
   const runCopy = async () => {
-    if (isBusy) return
+    if (isBusy || tooManySelected) return
     const controller = abortControllerRef.current
     if (!controller) return
     const { signal } = controller
@@ -52,7 +89,10 @@ export function ExportButton({ queryOptions }: ExportButtonProps) {
     // Start the request synchronously and hand the pending text to the
     // clipboard, rather than awaiting the export first: browsers only honor a
     // clipboard write while the click's user-activation grant is still live.
-    const tsvPromise = apiClient.exportActivistsTsvText(queryOptions, signal)
+    const tsvPromise = apiClient.exportActivistsTsvText(
+      exportQueryOptions,
+      signal,
+    )
     try {
       const [, tsv] = await Promise.all([
         writeToClipboard(tsvPromise),
@@ -80,7 +120,7 @@ export function ExportButton({ queryOptions }: ExportButtonProps) {
     fetchBlob: (signal: AbortSignal) => Promise<Blob>,
     filenamePrefix: string,
   ) => {
-    if (isBusy) return
+    if (isBusy || tooManySelected) return
     const controller = abortControllerRef.current
     if (!controller) return
     const { signal } = controller
@@ -120,15 +160,29 @@ export function ExportButton({ queryOptions }: ExportButtonProps) {
           disabled={isBusy}
         >
           <Download className="h-4 w-4" />
-          {isCopying ? 'Copying…' : isExporting ? 'Exporting…' : 'Export'}
+          {isCopying
+            ? 'Copying…'
+            : isExporting
+              ? 'Exporting…'
+              : isSelectionExport
+                ? 'Export selected'
+                : 'Export'}
           <ChevronDown className="h-4 w-4" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-44 p-2" align="start">
+      <PopoverContent className="w-56 p-2" align="start">
         <div className="flex flex-col">
+          {isSelectionExport && (
+            <p className="px-2 pb-1.5 text-xs text-muted-foreground">
+              {tooManySelected
+                ? `At most ${MAX_ACTIVIST_IDS_FILTER.toLocaleString()} selected activists can be exported at once.`
+                : `Exporting ${selectedCount.toLocaleString()} selected activist${selectedCount === 1 ? '' : 's'}.`}
+            </p>
+          )}
           <button
             type="button"
-            className="flex w-full items-center rounded px-2 py-1.5 text-sm hover:bg-muted transition-colors text-left"
+            className={menuItemClassName}
+            disabled={tooManySelected}
             onClick={() => {
               setIsMenuOpen(false)
               runCopy()
@@ -138,12 +192,14 @@ export function ExportButton({ queryOptions }: ExportButtonProps) {
           </button>
           <button
             type="button"
-            className="flex w-full items-center rounded px-2 py-1.5 text-sm hover:bg-muted transition-colors text-left"
+            className={menuItemClassName}
+            disabled={tooManySelected}
             onClick={() => {
               setIsMenuOpen(false)
               runExport(
-                (signal) => apiClient.exportActivistsCsv(queryOptions, signal),
-                'activists',
+                (signal) =>
+                  apiClient.exportActivistsCsv(exportQueryOptions, signal),
+                exportFilenamePrefix,
               )
             }}
           >
@@ -151,13 +207,14 @@ export function ExportButton({ queryOptions }: ExportButtonProps) {
           </button>
           <button
             type="button"
-            className="flex w-full items-center rounded px-2 py-1.5 text-sm hover:bg-muted transition-colors text-left"
+            className={menuItemClassName}
+            disabled={tooManySelected}
             onClick={() => {
               setIsMenuOpen(false)
               runExport(
                 (signal) =>
                   apiClient.exportActivistsSpokeCsv(spokeQueryOptions, signal),
-                'activists-spoke',
+                `${exportFilenamePrefix}-spoke`,
               )
             }}
           >

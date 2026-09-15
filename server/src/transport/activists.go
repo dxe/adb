@@ -150,10 +150,39 @@ func (p ActivistPatchInput) ToPatchData() model.ActivistPatchData {
 	return d
 }
 
+// maxActivistQueryBodyBytes bounds the request body of an activist query so an
+// oversized one is rejected as it is read, rather than after being decoded into
+// an arbitrarily large ids filter.
+//
+// The ids filter is the only part of a query that scales with what the user
+// picked: at the model's limit it needs at most 11 bytes per id (the widest
+// int32 plus its separator), so 12 leaves room for whitespace between them, and
+// the remainder covers the columns, sort, and other filters many times over.
+const maxActivistQueryBodyBytes = model.MaxActivistIDsFilter*12 + 8*1024
+
+// newActivistQueryDecoder decodes a query body no larger than
+// maxActivistQueryBodyBytes.
+func newActivistQueryDecoder(w http.ResponseWriter, r *http.Request) *json.Decoder {
+	r.Body = http.MaxBytesReader(w, r.Body, maxActivistQueryBodyBytes)
+	return json.NewDecoder(r.Body)
+}
+
+// sendActivistQueryDecodeError replies to a body that could not be decoded,
+// reporting one rejected for its size as 413 rather than 400.
+func sendActivistQueryDecodeError(w http.ResponseWriter, err error) {
+	var tooLarge *http.MaxBytesError
+	if errors.As(err, &tooLarge) {
+		sendErrorMessage(w, http.StatusRequestEntityTooLarge,
+			fmt.Errorf("request body too large: cannot filter by more than %d activist ids at once", model.MaxActivistIDsFilter))
+		return
+	}
+	sendErrorMessage(w, http.StatusBadRequest, err)
+}
+
 func ActivistsSearchHandler(w http.ResponseWriter, r *http.Request, authedUser model.ADBUser, repo model.ActivistRepository) {
 	var options model.QueryActivistOptions
-	if err := json.NewDecoder(r.Body).Decode(&options); err != nil && err != io.EOF {
-		sendErrorMessage(w, http.StatusBadRequest, err)
+	if err := newActivistQueryDecoder(w, r).Decode(&options); err != nil && err != io.EOF {
+		sendActivistQueryDecodeError(w, err)
 		return
 	}
 
@@ -177,10 +206,10 @@ func ActivistsSearchHandler(w http.ResponseWriter, r *http.Request, authedUser m
 
 func ActivistsCountHandler(w http.ResponseWriter, r *http.Request, authedUser model.ADBUser, repo model.ActivistRepository) {
 	var options model.QueryActivistCountOptions
-	decoder := json.NewDecoder(r.Body)
+	decoder := newActivistQueryDecoder(w, r)
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&options); err != nil && err != io.EOF {
-		sendErrorMessage(w, http.StatusBadRequest, err)
+		sendActivistQueryDecodeError(w, err)
 		return
 	}
 
@@ -214,8 +243,8 @@ func ActivistsExportHandler(w http.ResponseWriter, r *http.Request, authedUser m
 	}
 
 	var options model.QueryActivistOptions
-	if err := json.NewDecoder(r.Body).Decode(&options); err != nil && err != io.EOF {
-		sendErrorMessage(w, http.StatusBadRequest, err)
+	if err := newActivistQueryDecoder(w, r).Decode(&options); err != nil && err != io.EOF {
+		sendActivistQueryDecodeError(w, err)
 		return
 	}
 
@@ -237,8 +266,8 @@ func ActivistsExportHandler(w http.ResponseWriter, r *http.Request, authedUser m
 // and the filters/sort in the request body are applied as usual.
 func ActivistsExportSpokeHandler(w http.ResponseWriter, r *http.Request, authedUser model.ADBUser, repo model.ActivistRepository) {
 	var options model.QueryActivistOptions
-	if err := json.NewDecoder(r.Body).Decode(&options); err != nil && err != io.EOF {
-		sendErrorMessage(w, http.StatusBadRequest, err)
+	if err := newActivistQueryDecoder(w, r).Decode(&options); err != nil && err != io.EOF {
+		sendActivistQueryDecodeError(w, err)
 		return
 	}
 
@@ -464,10 +493,10 @@ func formatCSVValue(v reflect.Value) string {
 // of the inserted row.
 func ActivistsDebugQueryHandler(w http.ResponseWriter, r *http.Request, authedUser model.ADBUser, repo model.ActivistRepository) {
 	var options model.QueryActivistOptions
-	decoder := json.NewDecoder(r.Body)
+	decoder := newActivistQueryDecoder(w, r)
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&options); err != nil && err != io.EOF {
-		sendErrorMessage(w, http.StatusBadRequest, err)
+		sendActivistQueryDecodeError(w, err)
 		return
 	}
 

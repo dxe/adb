@@ -215,7 +215,13 @@ export default function ActivistsPage({
           isAdmin={isAdmin}
           isDirty={isDirty}
           onReset={resetAll}
-          exportButton={<ExportButton queryOptions={queryOptions} />}
+          exportButton={
+            <ExportButton
+              queryOptions={queryOptions}
+              visibleColumns={selectedColumns}
+              selectedIds={selectedIds}
+            />
+          }
           isDebug={isDebug}
           debugQueryOptions={queryOptions}
           notice={

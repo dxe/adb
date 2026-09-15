@@ -29,6 +29,31 @@ func (f *chapterFilter) buildWhere() []queryClause {
 	}}
 }
 
+// idFilter restricts the query to an explicit set of activist ids.
+type idFilter struct {
+	Ids []int
+}
+
+func (f *idFilter) getJoins() []joinSpec {
+	return nil
+}
+
+func (f *idFilter) buildWhere() []queryClause {
+	if len(f.Ids) == 0 {
+		return nil
+	}
+	placeholders := make([]string, len(f.Ids))
+	args := make([]any, len(f.Ids))
+	for i, id := range f.Ids {
+		placeholders[i] = "?"
+		args[i] = id
+	}
+	return []queryClause{{
+		sql:  fmt.Sprintf("%s.id IN (%s)", activistTableAlias, strings.Join(placeholders, ",")),
+		args: args,
+	}}
+}
+
 // nameFilter filters activists by name using LIKE.
 type nameFilter struct {
 	NameContains string

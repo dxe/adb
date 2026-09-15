@@ -158,8 +158,16 @@ const TrainingFilter = z.object({
   not_completed: z.array(z.string()).optional(),
 })
 
+// Mirrors activists.MaxActivistIDsFilter: the server rejects a longer ids
+// filter rather than truncating it.
+export const MAX_ACTIVIST_IDS_FILTER = 1000
+
 const QueryActivistFilters = z.object({
   chapter_id: z.number().optional(),
+  // Restricts the query to these activists, e.g. the rows the user selected.
+  // Applied on top of the other filters, so an id excluded by one of them
+  // still doesn't match.
+  ids: z.array(z.number()).optional(),
   name: ActivistNameFilter.optional(),
   last_event: DateRangeFilter.optional(),
   last_interaction: DateRangeFilter.optional(),
