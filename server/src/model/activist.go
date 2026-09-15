@@ -56,6 +56,7 @@ SELECT
   a.id,
   a.chapter_id,
   IFNULL(fp.name, '') AS chapter_name,
+  a.hidden,
   a.mpi,
   a.notes,
   a.vision_wall,
@@ -366,6 +367,8 @@ type ActivistJSON struct {
 	Birthday      string `json:"dob,omitempty"`
 	ChapterID     int    `json:"chapter_id,omitempty"`
 	ChapterName   string `json:"chapter_name,omitempty"`
+	// Hidden is set by the hide endpoint only; it is not patchable.
+	Hidden bool `json:"hidden,omitempty"`
 
 	FirstEvent            string `json:"first_event,omitempty"`
 	LastEvent             string `json:"last_event,omitempty"`
@@ -601,6 +604,7 @@ func BuildActivistJSON(a ActivistExtra) ActivistJSON {
 		ID:            a.ID,
 		ChapterID:     a.ChapterID,
 		ChapterName:   a.ChapterName,
+		Hidden:        a.Hidden,
 		Location:      location,
 		Name:          a.Name,
 		PreferredName: a.PreferredName,

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { apiClient, API_PATH } from '@/lib/api'
+import { apiClient } from '@/lib/api'
+import { activistKeys } from '@/lib/query-keys'
 import { ActivistRegistry, type ActivistRecord } from './activist-registry'
 import { getActivistStorage } from './activist-storage'
 import toast from 'react-hot-toast'
@@ -66,7 +67,7 @@ export function useActivistRegistry(chapterId: number) {
   }, [chapterId, registry])
 
   const query = useQuery({
-    queryKey: [API_PATH.ACTIVIST_LIST_BASIC],
+    queryKey: activistKeys.listBasic(),
     queryFn: async ({ signal }) => {
       // Get last sync time from registry (returns null if storage is unavailable)
       const lastSyncTime = await registry.getLastSyncTime()

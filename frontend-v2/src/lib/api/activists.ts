@@ -20,6 +20,7 @@ export const ActivistJSON = z.object({
   lng: z.number().optional(),
   chapter_id: z.number().optional(),
   chapter_name: z.string().optional(),
+  hidden: z.boolean().optional(),
   activist_level: z.string().optional(),
   source: z.string().optional(),
   hiatus: z.boolean().optional(),

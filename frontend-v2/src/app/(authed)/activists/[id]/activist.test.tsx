@@ -115,6 +115,14 @@ describe('Activist header', () => {
     ).toBeInTheDocument()
   })
 
+  it('shows the Hidden chip when the activist is hidden', () => {
+    renderDetail({ id: ACTIVIST_ID, name: 'Test Activist', hidden: true })
+
+    expect(
+      within(screen.getByRole('banner')).getByText('Hidden'),
+    ).toBeInTheDocument()
+  })
+
   it('offers Merge and Hide in the actions menu', async () => {
     const user = userEvent.setup()
     renderDetail({ id: ACTIVIST_ID, name: 'Test Activist' })

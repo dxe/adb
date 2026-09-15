@@ -27,6 +27,7 @@ func (c *activistColumn) selectExpr() string {
 var simpleColumns = map[ActivistColumnName]activistColumn{
 	ColChapterID: {expr: fmt.Sprintf("%s.chapter_id", activistTableAlias)},
 	ColID:        {expr: fmt.Sprintf("%s.id", activistTableAlias)},
+	ColHidden:    {expr: fmt.Sprintf("%s.hidden", activistTableAlias)},
 
 	ColName:          {expr: fmt.Sprintf("%s.name", activistTableAlias)},
 	ColPreferredName: {expr: fmt.Sprintf("%s.preferred_name", activistTableAlias)},
