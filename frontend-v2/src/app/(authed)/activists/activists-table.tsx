@@ -28,6 +28,7 @@ import { getActivistDisplayName } from './display-name'
 import { formatValue, COLUMN_TYPE_BY_NAME } from './format-value'
 import type { SortColumn } from './query-state'
 import type { ActivistSelection } from './use-activist-selection'
+import { useSelectionRange, type SelectionRange } from './use-selection-range'
 
 const features = tableFeatures({
   columnSizingFeature,
@@ -44,10 +45,10 @@ const SELECT_COLUMN_ID = '__select'
  * which is all "select all" can reach — later pages are not fetched yet.
  */
 function buildSelectColumn(
-  activists: ActivistJSON[],
+  rowIds: number[],
   selection: ActivistSelection,
+  range: SelectionRange,
 ): ColumnDef<typeof features, ActivistJSON> {
-  const rowIds = activists.map((activist) => activist.id)
   const selectedCount = rowIds.filter((id) =>
     selection.selectedIds.has(id),
   ).length
@@ -65,9 +66,7 @@ function buildSelectColumn(
     header: () => (
       <Checkbox
         checked={headerState}
-        onCheckedChange={(checked) =>
-          selection.onSetMany(rowIds, checked === true)
-        }
+        onCheckedChange={range.onAllCheckedChange}
         aria-label={
           headerState === true
             ? 'Deselect all activists'
@@ -78,7 +77,7 @@ function buildSelectColumn(
     cell: ({ row }) => (
       <Checkbox
         checked={selection.selectedIds.has(row.original.id)}
-        onCheckedChange={() => selection.onToggle(row.original.id)}
+        {...range.rowCheckboxProps(row.original.id)}
         aria-label={`Select ${getActivistDisplayName(row.original).text}`}
       />
     ),
@@ -107,6 +106,9 @@ export function ActivistTable({
   footer,
   selection,
 }: ActivistTableProps) {
+  const rowIds = useMemo(() => activists.map((a) => a.id), [activists])
+  const range = useSelectionRange(rowIds, selection)
+
   const columns = useMemo<ColumnDef<typeof features, ActivistJSON>[]>(() => {
     const dataColumns = visibleColumns.map(
       (colName): ColumnDef<typeof features, ActivistJSON> => {
@@ -199,7 +201,7 @@ export function ActivistTable({
 
     if (!selection) return dataColumns
 
-    return [buildSelectColumn(activists, selection), ...dataColumns]
+    return [buildSelectColumn(rowIds, selection, range), ...dataColumns]
   }, [
     visibleColumns,
     sort,
@@ -207,7 +209,8 @@ export function ActivistTable({
     onActivistClick,
     isStale,
     selection,
-    activists,
+    rowIds,
+    range,
   ])
 
   const table = useTable({
