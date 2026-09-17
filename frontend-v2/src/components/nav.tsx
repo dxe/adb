@@ -20,6 +20,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useQueryStates } from 'nuqs'
 import { API_PATH, apiClient } from '@/lib/api'
 import { SF_BAY_CHAPTER_ID } from '@/lib/constants'
+import { withoutTrailingDotGuard } from '@/lib/trailing-dot-guard'
 import {
   ACTIVIST_QUERY_STATE_PARSERS,
   ACTIVIST_QUERY_URL_KEYS,
@@ -39,7 +40,7 @@ function isExactParamsMatch(
     qIndex >= 0 ? navHref.substring(qIndex + 1) : '',
   )
   const sortEntries = (params: URLSearchParams) =>
-    Array.from(params.entries())
+    Array.from(withoutTrailingDotGuard(params).entries())
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([k, v]) => `${k}=${v}`)
       .join('&')
