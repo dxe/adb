@@ -81,53 +81,74 @@ const (
 
 // Activist API column-name constants.
 const (
-	ColChapterID             = activists.ColChapterID
-	ColID                    = activists.ColID
-	ColName                  = activists.ColName
-	ColPreferredName         = activists.ColPreferredName
-	ColPronouns              = activists.ColPronouns
-	ColDOB                   = activists.ColDOB
-	ColEmail                 = activists.ColEmail
-	ColPhone                 = activists.ColPhone
-	ColFacebook              = activists.ColFacebook
-	ColLanguage              = activists.ColLanguage
-	ColAccessibility         = activists.ColAccessibility
-	ColLocation              = activists.ColLocation
-	ColStreetAddress         = activists.ColStreetAddress
-	ColCity                  = activists.ColCity
-	ColState                 = activists.ColState
-	ColLat                   = activists.ColLat
-	ColLng                   = activists.ColLng
-	ColActivistLevel         = activists.ColActivistLevel
-	ColSource                = activists.ColSource
-	ColHiatus                = activists.ColHiatus
-	ColConnector             = activists.ColConnector
-	ColTraining0             = activists.ColTraining0
-	ColTraining1             = activists.ColTraining1
-	ColTraining4             = activists.ColTraining4
-	ColTraining5             = activists.ColTraining5
-	ColTraining6             = activists.ColTraining6
-	ColConsentQuiz           = activists.ColConsentQuiz
-	ColTrainingProtest       = activists.ColTrainingProtest
-	ColDevAppDate            = activists.ColDevAppDate
-	ColDevAppType            = activists.ColDevAppType
-	ColDevQuiz               = activists.ColDevQuiz
-	ColDevInterest           = activists.ColDevInterest
-	ColCMFirstEmail          = activists.ColCMFirstEmail
-	ColCMApprovalEmail       = activists.ColCMApprovalEmail
-	ColProspectOrganizer     = activists.ColProspectOrganizer
-	ColProspectChapterMbr    = activists.ColProspectChapterMbr
-	ColReferralFriends       = activists.ColReferralFriends
-	ColReferralApply         = activists.ColReferralApply
-	ColReferralOutlet        = activists.ColReferralOutlet
-	ColInterestDate          = activists.ColInterestDate
-	ColAssignedTo            = activists.ColAssignedTo
-	ColFollowupDate          = activists.ColFollowupDate
-	ColMPI                   = activists.ColMPI
-	ColNotes                 = activists.ColNotes
-	ColVisionWall            = activists.ColVisionWall
-	ColVotingAgreement       = activists.ColVotingAgreement
-	ColHidden                = activists.ColHidden
+	ColChapterID = activists.ColChapterID
+	ColID        = activists.ColID
+
+	ColName          = activists.ColName
+	ColPreferredName = activists.ColPreferredName
+	ColPronouns      = activists.ColPronouns
+	ColDOB           = activists.ColDOB
+
+	ColEmail    = activists.ColEmail
+	ColPhone    = activists.ColPhone
+	ColFacebook = activists.ColFacebook
+
+	ColPreferredContactMethod = activists.ColPreferredContactMethod
+	ColAlternateContactMethod = activists.ColAlternateContactMethod
+	ColLanguage               = activists.ColLanguage
+	ColAccessibility          = activists.ColAccessibility
+
+	ColLocation      = activists.ColLocation
+	ColStreetAddress = activists.ColStreetAddress
+	ColCity          = activists.ColCity
+	ColState         = activists.ColState
+	ColLat           = activists.ColLat
+	ColLng           = activists.ColLng
+
+	ColActivistLevel = activists.ColActivistLevel
+
+	ColSource = activists.ColSource
+
+	ColHiatus = activists.ColHiatus
+
+	ColConnector = activists.ColConnector
+
+	ColTraining0       = activists.ColTraining0
+	ColTraining1       = activists.ColTraining1
+	ColTraining4       = activists.ColTraining4
+	ColTraining5       = activists.ColTraining5
+	ColTraining6       = activists.ColTraining6
+	ColConsentQuiz     = activists.ColConsentQuiz
+	ColTrainingProtest = activists.ColTrainingProtest
+
+	ColDevAppDate  = activists.ColDevAppDate
+	ColDevAppType  = activists.ColDevAppType
+	ColDevQuiz     = activists.ColDevQuiz
+	ColDevInterest = activists.ColDevInterest
+
+	ColCMFirstEmail    = activists.ColCMFirstEmail
+	ColCMApprovalEmail = activists.ColCMApprovalEmail
+
+	ColProspectOrganizer  = activists.ColProspectOrganizer
+	ColProspectChapterMbr = activists.ColProspectChapterMbr
+	ColReferralFriends    = activists.ColReferralFriends
+	ColReferralApply      = activists.ColReferralApply
+	ColReferralOutlet     = activists.ColReferralOutlet
+	ColInterestDate       = activists.ColInterestDate
+	ColAssignedTo         = activists.ColAssignedTo
+	ColFollowupDate       = activists.ColFollowupDate
+
+	ColMPI = activists.ColMPI
+
+	ColNotes = activists.ColNotes
+
+	ColVisionWall = activists.ColVisionWall
+
+	ColVotingAgreement = activists.ColVotingAgreement
+
+	ColHidden = activists.ColHidden
+
+	// Computed columns
 	ColChapterName           = activists.ColChapterName
 	ColFirstEvent            = activists.ColFirstEvent
 	ColFirstEventName        = activists.ColFirstEventName

@@ -81,6 +81,16 @@ var ActivistColumns = map[ActivistColumnName]ActivistColumnInfo{
 		BumpTimestamps: []string{"phone_updated"},
 		UserPatchable:  true,
 	},
+	ColPreferredContactMethod: {
+		Setter:        setField(func(a *ActivistExtra, v string) { a.PreferredContactMethod = v }),
+		DbCol:         "preferred_contact_method",
+		UserPatchable: true,
+	},
+	ColAlternateContactMethod: {
+		Setter:        setField(func(a *ActivistExtra, v string) { a.AlternateContactMethod = v }),
+		DbCol:         "alternate_contact_method",
+		UserPatchable: true,
+	},
 	ColPronouns: {
 		Setter:        setField(func(a *ActivistExtra, v string) { a.Pronouns = v }),
 		DbCol:         "pronouns",

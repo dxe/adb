@@ -29,6 +29,9 @@ const (
 	ColPhone    ActivistColumnName = "phone"
 	ColFacebook ActivistColumnName = "facebook"
 
+	ColPreferredContactMethod ActivistColumnName = "preferred_contact_method"
+	ColAlternateContactMethod ActivistColumnName = "alternate_contact_method"
+
 	ColLanguage      ActivistColumnName = "language"
 	ColAccessibility ActivistColumnName = "accessibility"
 
@@ -112,9 +115,13 @@ type Activist struct {
 	Phone           string         `db:"phone"`
 	PhoneUpdated    time.Time      `db:"phone_updated"`
 	Pronouns        string         `db:"pronouns"`
-	Language        string         `db:"language"`
-	Accessibility   string         `db:"accessibility"`
-	Birthday        sql.NullString `db:"dob"`
+	// PreferredContactMethod and AlternateContactMethod hold one of the
+	// values in `ValidContactMethods`, or "" when unset.
+	PreferredContactMethod string         `db:"preferred_contact_method"`
+	AlternateContactMethod string         `db:"alternate_contact_method"`
+	Language               string         `db:"language"`
+	Accessibility          string         `db:"accessibility"`
+	Birthday               sql.NullString `db:"dob"`
 	Coords
 	ChapterID   int    `db:"chapter_id"`
 	ChapterName string `db:"chapter_name"`

@@ -40,6 +40,10 @@ type ActivistPatchInput struct {
 	PreferredName *string `json:"preferred_name"`
 	Phone         *string `json:"phone"`
 	Pronouns      *string `json:"pronouns"`
+
+	PreferredContactMethod *string `json:"preferred_contact_method"`
+	AlternateContactMethod *string `json:"alternate_contact_method"`
+
 	Language      *string `json:"language"`
 	Accessibility *string `json:"accessibility"`
 	Birthday      *string `json:"dob"`
@@ -111,6 +115,8 @@ func (p ActivistPatchInput) ToPatchData() model.ActivistPatchData {
 	addString(model.ColPreferredName, p.PreferredName)
 	addString(model.ColPhone, p.Phone)
 	addString(model.ColPronouns, p.Pronouns)
+	addString(model.ColPreferredContactMethod, p.PreferredContactMethod)
+	addString(model.ColAlternateContactMethod, p.AlternateContactMethod)
 	addString(model.ColLanguage, p.Language)
 	addString(model.ColAccessibility, p.Accessibility)
 	addNullableString(model.ColDOB, p.Birthday)
