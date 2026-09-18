@@ -1603,7 +1603,7 @@ ORDER BY MAX(e.date) DESC`, chapterID)
 		panic(err)
 	}
 
-	var ret []string
+	ret := make([]string, 0, len(names))
 	for _, n := range names {
 		ret = append(ret, n.Name)
 	}
@@ -1625,7 +1625,7 @@ GROUP BY a.name`, chapterID)
 		panic(err)
 	}
 
-	var ret []string
+	ret := make([]string, 0, len(names))
 	for _, n := range names {
 		ret = append(ret, n.Name)
 	}
@@ -1646,7 +1646,7 @@ GROUP BY a.name`, chapterID)
 		panic(err)
 	}
 
-	var ret []string
+	ret := make([]string, 0, len(names))
 	for _, n := range names {
 		ret = append(ret, n.Name)
 	}
