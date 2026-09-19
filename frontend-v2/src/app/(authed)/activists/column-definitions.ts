@@ -3,7 +3,7 @@ import {
   type ActivistColumnName,
   type ActivistEditableField,
 } from '@/lib/api/activists'
-import { ACTIVIST_LEVELS } from './filter-types'
+import { ACTIVIST_LEVELS, CONTACT_METHODS } from './filter-types'
 
 export type ColumnCategory =
   | 'Basic Info'
@@ -100,6 +100,24 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     category: 'Basic Info',
     defaultWidth: 150,
     linkType: 'tel',
+  },
+  {
+    name: 'preferred_contact_method',
+    label: 'Preferred Contact Method',
+    category: 'Basic Info',
+    description: 'How the activist prefers to be contacted',
+    defaultWidth: 150,
+    editInputType: 'enum-select',
+    editOptions: ['', ...CONTACT_METHODS],
+  },
+  {
+    name: 'alternate_contact_method',
+    label: 'Alternate Contact Method',
+    category: 'Basic Info',
+    description: 'How to contact the activist if the preferred method fails',
+    defaultWidth: 150,
+    editInputType: 'enum-select',
+    editOptions: ['', ...CONTACT_METHODS],
   },
   {
     name: 'facebook',

@@ -38,6 +38,9 @@ var simpleColumns = map[ActivistColumnName]activistColumn{
 	ColPhone:    {expr: fmt.Sprintf("%s.phone", activistTableAlias)},
 	ColFacebook: {expr: fmt.Sprintf("%s.facebook", activistTableAlias)},
 
+	ColPreferredContactMethod: {expr: fmt.Sprintf("%s.preferred_contact_method", activistTableAlias)},
+	ColAlternateContactMethod: {expr: fmt.Sprintf("%s.alternate_contact_method", activistTableAlias)},
+
 	ColLanguage:      {expr: fmt.Sprintf("%s.language", activistTableAlias)},
 	ColAccessibility: {expr: fmt.Sprintf("%s.accessibility", activistTableAlias)},
 

@@ -29,6 +29,9 @@ const (
 	ColPhone    ActivistColumnName = "phone"
 	ColFacebook ActivistColumnName = "facebook"
 
+	ColPreferredContactMethod ActivistColumnName = "preferred_contact_method"
+	ColAlternateContactMethod ActivistColumnName = "alternate_contact_method"
+
 	ColLanguage      ActivistColumnName = "language"
 	ColAccessibility ActivistColumnName = "accessibility"
 
@@ -98,25 +101,39 @@ const (
 )
 
 type Activist struct {
-	Email           string         `db:"email"`
-	EmailUpdated    time.Time      `db:"email_updated"`
-	Facebook        string         `db:"facebook"`
-	Hidden          bool           `db:"hidden"`
-	HiddenUpdated   mysql.NullTime `db:"hidden_updated"`
-	ID              int            `db:"id"`
+	Email        string    `db:"email"`
+	EmailUpdated time.Time `db:"email_updated"`
+
+	Facebook string `db:"facebook"`
+
+	Hidden        bool           `db:"hidden"`
+	HiddenUpdated mysql.NullTime `db:"hidden_updated"`
+
+	ID int `db:"id"`
+
 	Location        sql.NullString `db:"location"`
 	LocationUpdated time.Time      `db:"location_updated"`
-	Name            string         `db:"name"`
-	NameUpdated     time.Time      `db:"name_updated"`
-	PreferredName   string         `db:"preferred_name"`
-	Phone           string         `db:"phone"`
-	PhoneUpdated    time.Time      `db:"phone_updated"`
-	Pronouns        string         `db:"pronouns"`
-	Language        string         `db:"language"`
-	Accessibility   string         `db:"accessibility"`
-	Birthday        sql.NullString `db:"dob"`
+
+	Name          string    `db:"name"`
+	NameUpdated   time.Time `db:"name_updated"`
+	PreferredName string    `db:"preferred_name"`
+
+	Phone        string    `db:"phone"`
+	PhoneUpdated time.Time `db:"phone_updated"`
+
+	Pronouns string `db:"pronouns"`
+
+	PreferredContactMethod ContactMethod `db:"preferred_contact_method"`
+	AlternateContactMethod ContactMethod `db:"alternate_contact_method"`
+
+	Language      string         `db:"language"`
+	Accessibility string         `db:"accessibility"`
+	Birthday      sql.NullString `db:"dob"`
+
 	Coords
-	ChapterID   int    `db:"chapter_id"`
+
+	ChapterID int `db:"chapter_id"`
+
 	ChapterName string `db:"chapter_name"`
 }
 
