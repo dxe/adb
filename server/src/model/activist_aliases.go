@@ -57,6 +57,25 @@ type (
 	QueryActivistResultPagination = activists.QueryActivistResultPagination
 )
 
+type ContactMethod = activists.ContactMethod
+
+const (
+	ContactMethodUnset     = activists.ContactMethodUnset
+	ContactMethodSignal    = activists.ContactMethodSignal
+	ContactMethodSMS       = activists.ContactMethodSMS
+	ContactMethodPhoneCall = activists.ContactMethodPhoneCall
+	ContactMethodEmail     = activists.ContactMethodEmail
+	ContactMethodWhatsApp  = activists.ContactMethodWhatsApp
+	ContactMethodTelegram  = activists.ContactMethodTelegram
+	ContactMethodInstagram = activists.ContactMethodInstagram
+	ContactMethodFacebook  = activists.ContactMethodFacebook
+)
+
+var (
+	ValidContactMethods = activists.ValidContactMethods
+	ParseContactMethod  = activists.ParseContactMethod
+)
+
 // Filter types and helpers.
 type (
 	DateOnly            = activists.DateOnly

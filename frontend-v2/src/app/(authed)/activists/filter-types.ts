@@ -40,7 +40,7 @@ export const ACTIVIST_LEVELS = [
 export type ActivistLevelValue = (typeof ACTIVIST_LEVELS)[number]
 
 // Ways an activist may ask to be contacted. Keep in sync with
-// `ValidContactMethods` in the server.
+// `contactMethods` in pkg/activists/contact_method.go.
 export const CONTACT_METHODS = [
   'Signal',
   'Text / SMS',

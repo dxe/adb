@@ -8,7 +8,6 @@ import (
 	"log"
 
 	"regexp"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -367,8 +366,9 @@ type ActivistJSON struct {
 	PreferredName string `json:"preferred_name,omitempty"`
 	Phone         string `json:"phone,omitempty"`
 	Pronouns      string `json:"pronouns,omitempty"`
-	// PreferredContactMethod and AlternateContactMethod hold one of
-	// ValidContactMethods, or "" when unset.
+	// PreferredContactMethod and AlternateContactMethod hold one of the
+	// labels in ValidContactMethods, or "" when unset. They are stored as an
+	// enum (see ContactMethod), so these are converted on the way in and out.
 	PreferredContactMethod string `json:"preferred_contact_method,omitempty"`
 	AlternateContactMethod string `json:"alternate_contact_method,omitempty"`
 	Language               string `json:"language,omitempty"`
@@ -619,8 +619,8 @@ func BuildActivistJSON(a ActivistExtra) ActivistJSON {
 		PreferredName:          a.PreferredName,
 		Phone:                  a.Phone,
 		Pronouns:               a.Pronouns,
-		PreferredContactMethod: a.PreferredContactMethod,
-		AlternateContactMethod: a.AlternateContactMethod,
+		PreferredContactMethod: a.PreferredContactMethod.String(),
+		AlternateContactMethod: a.AlternateContactMethod.String(),
 		Language:               a.Language,
 		Accessibility:          a.Accessibility,
 		Birthday:               dob,
@@ -1032,12 +1032,12 @@ func validateActivistUpdate(orig, updated ActivistExtra, userRepo UserRepository
 		}
 	}
 	if updated.PreferredContactMethod != orig.PreferredContactMethod {
-		if !isValidContactMethod(updated.PreferredContactMethod) {
+		if !updated.PreferredContactMethod.IsValid() {
 			return ValidationErrorf("invalid preferred contact method")
 		}
 	}
 	if updated.AlternateContactMethod != orig.AlternateContactMethod {
-		if !isValidContactMethod(updated.AlternateContactMethod) {
+		if !updated.AlternateContactMethod.IsValid() {
 			return ValidationErrorf("invalid alternate contact method")
 		}
 	}
@@ -1468,8 +1468,8 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra, mergeN
 	}
 	target.PreferredName = stringMerge(original.PreferredName, target.PreferredName)
 	target.Pronouns = stringMerge(original.Pronouns, target.Pronouns)
-	target.PreferredContactMethod = stringMerge(original.PreferredContactMethod, target.PreferredContactMethod)
-	target.AlternateContactMethod = stringMerge(original.AlternateContactMethod, target.AlternateContactMethod)
+	target.PreferredContactMethod = contactMethodMerge(original.PreferredContactMethod, target.PreferredContactMethod)
+	target.AlternateContactMethod = contactMethodMerge(original.AlternateContactMethod, target.AlternateContactMethod)
 	target.Language = stringMerge(original.Language, target.Language)
 	target.Accessibility = stringMerge(original.Accessibility, target.Accessibility)
 	target.Birthday = stringMergeSqlNullString(original.Birthday, target.Birthday)
@@ -1520,6 +1520,14 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra, mergeN
 
 func boolMerge(original bool, target bool) bool {
 	return target || original
+}
+
+func contactMethodMerge(original ContactMethod, target ContactMethod) ContactMethod {
+	if target == ContactMethodUnset {
+		return original
+	}
+
+	return target
 }
 
 func stringMerge(original string, target string) string {
@@ -1986,6 +1994,15 @@ func CleanActivistData(body io.Reader, db *sqlx.DB, userRepo UserRepository) (Ac
 		applicationDateValid = true
 	}
 
+	preferredContactMethod, err := ParseContactMethod(activistJSON.PreferredContactMethod)
+	if err != nil {
+		return ActivistExtra{}, fmt.Errorf("preferred contact method: %w", err)
+	}
+	alternateContactMethod, err := ParseContactMethod(activistJSON.AlternateContactMethod)
+	if err != nil {
+		return ActivistExtra{}, fmt.Errorf("alternate contact method: %w", err)
+	}
+
 	var assignedToInt int
 	assignedToName := strings.TrimSpace(activistJSON.AssignedToName)
 	if assignedToName != "" {
@@ -2001,20 +2018,28 @@ func CleanActivistData(body io.Reader, db *sqlx.DB, userRepo UserRepository) (Ac
 
 	activistExtra := ActivistExtra{
 		Activist: Activist{
-			Email:                  strings.TrimSpace(activistJSON.Email),
-			Facebook:               strings.TrimSpace(activistJSON.Facebook),
-			ID:                     activistJSON.ID,
-			ChapterID:              activistJSON.ChapterID,
-			Location:               sql.NullString{String: strings.TrimSpace(activistJSON.Location), Valid: validLoc},
-			Name:                   strings.TrimSpace(activistJSON.Name),
-			PreferredName:          strings.TrimSpace(activistJSON.PreferredName),
-			Phone:                  strings.TrimSpace(activistJSON.Phone),
-			Pronouns:               strings.TrimSpace(activistJSON.Pronouns),
-			PreferredContactMethod: strings.TrimSpace(activistJSON.PreferredContactMethod),
-			AlternateContactMethod: strings.TrimSpace(activistJSON.AlternateContactMethod),
+			Email:    strings.TrimSpace(activistJSON.Email),
+			Facebook: strings.TrimSpace(activistJSON.Facebook),
+
+			ID:        activistJSON.ID,
+			ChapterID: activistJSON.ChapterID,
+
+			Location: sql.NullString{String: strings.TrimSpace(activistJSON.Location), Valid: validLoc},
+
+			Name:          strings.TrimSpace(activistJSON.Name),
+			PreferredName: strings.TrimSpace(activistJSON.PreferredName),
+
+			Phone: strings.TrimSpace(activistJSON.Phone),
+
+			Pronouns: strings.TrimSpace(activistJSON.Pronouns),
+
+			PreferredContactMethod: preferredContactMethod,
+			AlternateContactMethod: alternateContactMethod,
 			Language:               strings.TrimSpace(activistJSON.Language),
 			Accessibility:          strings.TrimSpace(activistJSON.Accessibility),
-			Birthday:               sql.NullString{String: strings.TrimSpace(activistJSON.Birthday), Valid: validBirthday},
+
+			Birthday: sql.NullString{String: strings.TrimSpace(activistJSON.Birthday), Valid: validBirthday},
+
 			Coords: Coords{
 				Lat: activistJSON.Lat,
 				Lng: activistJSON.Lng,
@@ -2069,26 +2094,6 @@ func CleanActivistData(body io.Reader, db *sqlx.DB, userRepo UserRepository) (Ac
 
 	return activistExtra, nil
 
-}
-
-// ValidContactMethods are the ways an activist may ask to be contacted, used
-// by the preferred_contact_method and alternate_contact_method columns.
-// Keep in sync with CONTACT_METHODS in the frontend's filter-types.ts.
-var ValidContactMethods = []string{
-	"Signal",
-	"Text / SMS",
-	"Phone (Call)",
-	"Email",
-	"WhatsApp",
-	"Telegram",
-	"Instagram",
-	"Facebook",
-}
-
-// isValidContactMethod reports whether m is a known contact method. The empty
-// string is valid and means the activist has no contact method recorded.
-func isValidContactMethod(m string) bool {
-	return m == "" || slices.Contains(ValidContactMethods, m)
 }
 
 var validActivistLevels = map[string]bool{

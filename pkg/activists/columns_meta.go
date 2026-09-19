@@ -82,12 +82,12 @@ var ActivistColumns = map[ActivistColumnName]ActivistColumnInfo{
 		UserPatchable:  true,
 	},
 	ColPreferredContactMethod: {
-		Setter:        setField(func(a *ActivistExtra, v string) { a.PreferredContactMethod = v }),
+		Setter:        setField(func(a *ActivistExtra, v ContactMethod) { a.PreferredContactMethod = v }),
 		DbCol:         "preferred_contact_method",
 		UserPatchable: true,
 	},
 	ColAlternateContactMethod: {
-		Setter:        setField(func(a *ActivistExtra, v string) { a.AlternateContactMethod = v }),
+		Setter:        setField(func(a *ActivistExtra, v ContactMethod) { a.AlternateContactMethod = v }),
 		DbCol:         "alternate_contact_method",
 		UserPatchable: true,
 	},

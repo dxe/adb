@@ -84,8 +84,9 @@ type ActivistPatchInput struct {
 }
 
 // ToPatchData converts transport PATCH input into model patch fields.
-func (p ActivistPatchInput) ToPatchData() model.ActivistPatchData {
+func (p ActivistPatchInput) ToPatchData() (model.ActivistPatchData, error) {
 	var d model.ActivistPatchData
+	var parseErr error
 
 	addString := func(name model.ActivistColumnName, ptr *string) {
 		if ptr != nil {
@@ -108,6 +109,18 @@ func (p ActivistPatchInput) ToPatchData() model.ActivistPatchData {
 			d.Append(name, *ptr)
 		}
 	}
+	// Adds contact method, translating label to database enum value.
+	addContactMethod := func(name model.ActivistColumnName, ptr *string) {
+		if ptr == nil || parseErr != nil {
+			return
+		}
+		method, err := model.ParseContactMethod(*ptr)
+		if err != nil {
+			parseErr = fmt.Errorf("%s: %w", name, err)
+			return
+		}
+		d.Append(name, method)
+	}
 
 	addString(model.ColEmail, p.Email)
 	addString(model.ColFacebook, p.Facebook)
@@ -115,8 +128,8 @@ func (p ActivistPatchInput) ToPatchData() model.ActivistPatchData {
 	addString(model.ColPreferredName, p.PreferredName)
 	addString(model.ColPhone, p.Phone)
 	addString(model.ColPronouns, p.Pronouns)
-	addString(model.ColPreferredContactMethod, p.PreferredContactMethod)
-	addString(model.ColAlternateContactMethod, p.AlternateContactMethod)
+	addContactMethod(model.ColPreferredContactMethod, p.PreferredContactMethod)
+	addContactMethod(model.ColAlternateContactMethod, p.AlternateContactMethod)
 	addString(model.ColLanguage, p.Language)
 	addString(model.ColAccessibility, p.Accessibility)
 	addNullableString(model.ColDOB, p.Birthday)
@@ -153,7 +166,10 @@ func (p ActivistPatchInput) ToPatchData() model.ActivistPatchData {
 	addInt(model.ColAssignedTo, p.AssignedTo)
 	addNullableString(model.ColFollowupDate, p.FollowupDate)
 
-	return d
+	if parseErr != nil {
+		return model.ActivistPatchData{}, parseErr
+	}
+	return d, nil
 }
 
 // maxActivistQueryBodyBytes bounds the request body of an activist query so an
@@ -536,7 +552,13 @@ func ActivistPatchHandler(w http.ResponseWriter, r *http.Request, authedUser mod
 		return
 	}
 
-	if err := model.PatchActivist(db, repo, userRepo, authedUser, activistID, input.ToPatchData()); err != nil {
+	patch, err := input.ToPatchData()
+	if err != nil {
+		sendErrorMessage(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if err := model.PatchActivist(db, repo, userRepo, authedUser, activistID, patch); err != nil {
 		if errors.Is(err, model.ErrValidation) {
 			sendErrorMessage(w, http.StatusBadRequest, err)
 		} else if errors.Is(err, model.ErrNotFound) {
