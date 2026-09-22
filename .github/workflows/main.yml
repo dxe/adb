@@ -16,6 +16,13 @@ on:
       - ".vscode/**"
   workflow_dispatch:
 
+# Cancel a stale run for this ref when a newer push arrives, so a slower build
+# for an older commit can never finish (and deploy) after a newer one already
+# has. See dxe/terraform's deploy-ecs.yml for why that alone isn't enough.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 # Restrict GITHUB_TOKEN to the minimum these jobs need rather than inheriting
 # the repo/org default scopes. Write scopes are not needed here.
 permissions:
