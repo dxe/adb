@@ -151,6 +151,14 @@ jobs:
     needs: [changes]
     if: ${{ github.event_name == 'push' && needs.changes.outputs.server == 'true' }}
     runs-on: ubuntu-latest
+    # Scoped to this pipeline (not the whole workflow) so an unrelated push
+    # touching only frontend-v2/** or jobs/** can't cancel a server deploy
+    # in flight, and vice versa. Shared with promote-server/deploy-server
+    # below so a newer server-touching push cancels the whole stale chain,
+    # not just whichever stage happens to be running.
+    concurrency:
+      group: ${{ github.workflow }}-server-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Configure AWS credentials
@@ -185,6 +193,9 @@ jobs:
     needs: [test, build-server, changes]
     if: ${{ github.event_name == 'push' && needs.changes.outputs.server == 'true' }}
     runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}-server-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c # v6
@@ -214,6 +225,9 @@ jobs:
     needs: [promote-server, changes]
     if: ${{ github.event_name == 'push' && needs.changes.outputs.server == 'true' }}
     runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}-server-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - name: Mint a token that may dispatch in dxe/terraform
         id: token
@@ -241,6 +255,11 @@ jobs:
     needs: [changes]
     if: ${{ github.event_name == 'push' && needs.changes.outputs.frontend == 'true' }}
     runs-on: ubuntu-latest
+    # See build-server's comment; same reasoning, kept independent from the
+    # server and lambdas pipelines so they can't cancel each other.
+    concurrency:
+      group: ${{ github.workflow }}-frontend-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Configure AWS credentials
@@ -272,6 +291,9 @@ jobs:
     needs: [test, build-frontend, changes]
     if: ${{ github.event_name == 'push' && needs.changes.outputs.frontend == 'true' }}
     runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}-frontend-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c # v6
@@ -300,6 +322,9 @@ jobs:
     needs: [promote-frontend, changes]
     if: ${{ github.event_name == 'push' && needs.changes.outputs.frontend == 'true' }}
     runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}-frontend-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - name: Mint a token that may dispatch in dxe/terraform
         id: token
@@ -326,6 +351,12 @@ jobs:
     needs: [test, changes]
     if: ${{ github.event_name == 'push' && needs.changes.outputs.lambdas == 'true' }}
     runs-on: ubuntu-latest
+    # Own group so a slow `sam deploy` for an older commit can't finish (and
+    # overwrite) after a newer one, without touching the server/frontend
+    # pipelines above.
+    concurrency:
+      group: ${{ github.workflow }}-lambdas-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
