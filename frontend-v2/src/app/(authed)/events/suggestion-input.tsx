@@ -3,6 +3,7 @@ import {
   KeyboardEvent,
   ReactNode,
   useId,
+  useRef,
   useState,
 } from 'react'
 import { Input } from '@/components/ui/input'
@@ -87,6 +88,11 @@ export function SuggestionInput({
     if (event.defaultPrevented) return
 
     if (event.key === 'ArrowDown') {
+      if (!isOpen) {
+        event.preventDefault()
+        setIsOpen(true)
+        return
+      }
       if (!suggestions.length) return
       event.preventDefault()
       setSelection((prev) => {
@@ -139,9 +145,9 @@ export function SuggestionInput({
     clearSuggestions()
   }
 
+  // Don't open on focus; wait for the user to type (or press ArrowDown).
   const handleFocus = () => {
     setFocused(true)
-    setIsOpen(true)
     onFocus?.()
   }
 
@@ -152,6 +158,7 @@ export function SuggestionInput({
     onBlur?.()
   }
 
+  const anchorRef = useRef<HTMLDivElement>(null)
   const fallbackId = useId()
   const inputId = inputProps.id ?? fallbackId
   const listboxId = `${inputId}-listbox`
@@ -166,7 +173,7 @@ export function SuggestionInput({
       }}
     >
       <PopoverAnchor asChild>
-        <div className="relative">
+        <div ref={anchorRef} className="relative">
           <Input
             id={inputId}
             role="combobox"
@@ -191,6 +198,7 @@ export function SuggestionInput({
       </PopoverAnchor>
       <SuggestionList
         listboxId={listboxId}
+        anchorRef={anchorRef}
         suggestions={suggestions}
         selectedIndex={selectedIndex}
         onSelect={handleSuggestionSelect}
