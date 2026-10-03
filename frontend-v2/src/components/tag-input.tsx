@@ -158,7 +158,7 @@ export function TagInput({
               aria-expanded={dropdownOpen}
               aria-controls={listboxId}
               aria-activedescendant={activeOptionId}
-              className="min-w-[8rem] flex-1 border-0 bg-transparent p-1 text-sm outline-none placeholder:text-muted-foreground"
+              className="min-w-[8rem] flex-1 border-0 bg-transparent p-1 text-sm outline-none focus:ring-0 placeholder:text-muted-foreground"
               value={text}
               placeholder={value.length === 0 ? placeholder : undefined}
               onChange={(e) => {
