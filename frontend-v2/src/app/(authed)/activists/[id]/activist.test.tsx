@@ -8,6 +8,7 @@ import {
   type ActivistJSON,
   type AssignableUser,
 } from '@/lib/api'
+import { activistKeys } from '@/lib/query-keys'
 import { Activist } from './activist'
 
 // HideActivistDialog and MergeActivistDialog and their dependencies are
@@ -50,7 +51,7 @@ function renderDetail(
       queries: { retry: false, staleTime: Infinity },
     },
   })
-  queryClient.setQueryData([API_PATH.ACTIVIST_GET, ACTIVIST_ID], activist)
+  queryClient.setQueryData(activistKeys.detail(ACTIVIST_ID), activist)
   if (assignableUsers) {
     queryClient.setQueryData([API_PATH.USERS_ASSIGNABLE], assignableUsers)
   }
@@ -111,6 +112,14 @@ describe('Activist header', () => {
 
     expect(
       within(screen.getByRole('banner')).getByText('Hiatus'),
+    ).toBeInTheDocument()
+  })
+
+  it('shows the Hidden chip when the activist is hidden', () => {
+    renderDetail({ id: ACTIVIST_ID, name: 'Test Activist', hidden: true })
+
+    expect(
+      within(screen.getByRole('banner')).getByText('Hidden'),
     ).toBeInTheDocument()
   })
 

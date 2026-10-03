@@ -237,6 +237,10 @@ func buildFiltersFromShape(shape QueryActivistShape) []filter {
 		result = append(result, &chapterFilter{ChapterId: f.ChapterId})
 	}
 
+	if len(f.Ids) > 0 {
+		result = append(result, &idFilter{Ids: f.Ids})
+	}
+
 	if !f.Name.IsEmpty() {
 		result = append(result, &nameFilter{NameContains: f.Name.NameContains})
 	}

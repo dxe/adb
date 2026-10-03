@@ -7,7 +7,8 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { ContentWrapper } from '@/app/content-wrapper'
-import { API_PATH, ApiClient } from '@/lib/api'
+import { ApiClient } from '@/lib/api'
+import { activistKeys } from '@/lib/query-keys'
 import { getCookies } from '@/lib/auth'
 import { parseSafeInteger } from '@/lib/number-utils'
 import { redirectForHttpError } from '@/lib/server-auth'
@@ -30,7 +31,7 @@ export default async function ActivistPage({
   await redirectForHttpError(() =>
     // Intentionally use fetchQuery instead of prefetchQuery; see redirectForHttpError for details.
     queryClient.fetchQuery({
-      queryKey: [API_PATH.ACTIVIST_GET, activistId],
+      queryKey: activistKeys.detail(activistId),
       queryFn: ({ signal }) => apiClient.getActivist(activistId, signal),
     }),
   )

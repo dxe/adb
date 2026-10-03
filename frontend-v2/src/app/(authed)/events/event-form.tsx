@@ -273,7 +273,8 @@ export const EventForm = ({
         e.stopPropagation()
         await form.handleSubmit()
       }}
-      className="flex flex-col gap-4"
+      // Extra room on mobile so the attendee suggestion list fits below the last input.
+      className={cn('flex flex-col gap-4', showAttendees && 'max-md:pb-16')}
     >
       {/* Detail fields. Rendered directly for a new event; for a saved event
           they collapse into a card whose header doubles as the toggle, so

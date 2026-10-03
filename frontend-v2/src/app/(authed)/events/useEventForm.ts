@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect, useMemo } from 'react'
 import { useForm, useStore } from '@tanstack/react-form'
 import { API_PATH, apiClient } from '@/lib/api'
+import { activistKeys } from '@/lib/query-keys'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { useParams, useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
@@ -164,7 +165,7 @@ export const useEventForm = ({
       // Refresh activist list to include newly created activists.
       // This ensures they appear in autocomplete suggestions.
       queryClient.invalidateQueries({
-        queryKey: [API_PATH.ACTIVIST_LIST_BASIC],
+        queryKey: activistKeys.listBasic(),
       })
       queryClient.invalidateQueries({
         queryKey: [API_PATH.EVENT_GET, eventId],

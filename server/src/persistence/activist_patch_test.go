@@ -45,6 +45,8 @@ func TestPatchActivist_UpdatesAllPatchableFields(t *testing.T) {
 		{Name: model.ColPreferredName, Value: "Patchy"},
 		{Name: model.ColPhone, Value: "555-0100"},
 		{Name: model.ColPronouns, Value: "they/them"},
+		{Name: model.ColPreferredContactMethod, Value: model.ContactMethodSignal},
+		{Name: model.ColAlternateContactMethod, Value: model.ContactMethodSMS},
 		{Name: model.ColLanguage, Value: "Spanish"},
 		{Name: model.ColAccessibility, Value: "wheelchair access"},
 		{Name: model.ColDOB, Value: sql.NullString{String: "1990-01-01", Valid: true}},
@@ -94,6 +96,8 @@ func TestPatchActivist_UpdatesAllPatchableFields(t *testing.T) {
 	require.Equal(t, "Patchy", a.PreferredName)
 	require.Equal(t, "555-0100", a.Phone)
 	require.Equal(t, "they/them", a.Pronouns)
+	require.Equal(t, model.ContactMethodSignal, a.PreferredContactMethod)
+	require.Equal(t, model.ContactMethodSMS, a.AlternateContactMethod)
 	require.Equal(t, "Spanish", a.Language)
 	require.Equal(t, "wheelchair access", a.Accessibility)
 	require.Equal(t, sql.NullString{String: "1990-01-01", Valid: true}, a.Birthday)

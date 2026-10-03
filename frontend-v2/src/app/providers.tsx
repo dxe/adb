@@ -14,6 +14,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import { useEffect } from 'react'
 import { HTTPStatusError, preloadCsrfToken } from '@/lib/api'
+import { guardTrailingDot } from '@/lib/trailing-dot-guard'
 
 function makeQueryClient() {
   return new QueryClient({
@@ -63,7 +64,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   }, [])
 
   return (
-    <NuqsAdapter>
+    <NuqsAdapter processUrlSearchParams={guardTrailingDot}>
       <QueryClientProvider client={queryClient}>
         {children}
         <ReactQueryDevtools

@@ -39,6 +39,19 @@ export const ACTIVIST_LEVELS = [
 
 export type ActivistLevelValue = (typeof ACTIVIST_LEVELS)[number]
 
+// Ways an activist may ask to be contacted. Keep in sync with
+// `contactMethods` in pkg/activists/contact_method.go.
+export const CONTACT_METHODS = [
+  'Signal',
+  'Text / SMS',
+  'Phone (Call)',
+  'Email',
+  'WhatsApp',
+  'Telegram',
+  'Instagram',
+  'Facebook',
+] as const
+
 export type ActivistLevelFilterValue = {
   mode: 'include' | 'exclude'
   values: ActivistLevelValue[]
