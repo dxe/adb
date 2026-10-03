@@ -27,6 +27,7 @@ func (c *activistColumn) selectExpr() string {
 var simpleColumns = map[ActivistColumnName]activistColumn{
 	ColChapterID: {expr: fmt.Sprintf("%s.chapter_id", activistTableAlias)},
 	ColID:        {expr: fmt.Sprintf("%s.id", activistTableAlias)},
+	ColHidden:    {expr: fmt.Sprintf("%s.hidden", activistTableAlias)},
 
 	ColName:          {expr: fmt.Sprintf("%s.name", activistTableAlias)},
 	ColPreferredName: {expr: fmt.Sprintf("%s.preferred_name", activistTableAlias)},
@@ -36,6 +37,9 @@ var simpleColumns = map[ActivistColumnName]activistColumn{
 	ColEmail:    {expr: fmt.Sprintf("LOWER(%s.email)", activistTableAlias), alias: "email"},
 	ColPhone:    {expr: fmt.Sprintf("%s.phone", activistTableAlias)},
 	ColFacebook: {expr: fmt.Sprintf("%s.facebook", activistTableAlias)},
+
+	ColPreferredContactMethod: {expr: fmt.Sprintf("%s.preferred_contact_method", activistTableAlias)},
+	ColAlternateContactMethod: {expr: fmt.Sprintf("%s.alternate_contact_method", activistTableAlias)},
 
 	ColLanguage:      {expr: fmt.Sprintf("%s.language", activistTableAlias)},
 	ColAccessibility: {expr: fmt.Sprintf("%s.accessibility", activistTableAlias)},

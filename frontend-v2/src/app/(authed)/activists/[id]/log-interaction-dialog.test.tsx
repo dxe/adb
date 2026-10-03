@@ -10,7 +10,8 @@ import {
   it,
   vi,
 } from 'vitest'
-import { API_PATH, apiClient, type ActivistJSON } from '@/lib/api'
+import { apiClient, type ActivistJSON } from '@/lib/api'
+import { activistKeys } from '@/lib/query-keys'
 import { Activist } from './activist'
 
 vi.mock('./hide-activist-dialog', () => ({
@@ -60,7 +61,7 @@ function renderDetail() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: Infinity } },
   })
-  queryClient.setQueryData([API_PATH.ACTIVIST_GET, ACTIVIST_ID], ACTIVIST)
+  queryClient.setQueryData(activistKeys.detail(ACTIVIST_ID), ACTIVIST)
   return render(
     <QueryClientProvider client={queryClient}>
       <Activist activistId={ACTIVIST_ID} />

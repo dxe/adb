@@ -40,6 +40,10 @@ type ActivistPatchInput struct {
 	PreferredName *string `json:"preferred_name"`
 	Phone         *string `json:"phone"`
 	Pronouns      *string `json:"pronouns"`
+
+	PreferredContactMethod *string `json:"preferred_contact_method"`
+	AlternateContactMethod *string `json:"alternate_contact_method"`
+
 	Language      *string `json:"language"`
 	Accessibility *string `json:"accessibility"`
 	Birthday      *string `json:"dob"`
@@ -80,8 +84,9 @@ type ActivistPatchInput struct {
 }
 
 // ToPatchData converts transport PATCH input into model patch fields.
-func (p ActivistPatchInput) ToPatchData() model.ActivistPatchData {
+func (p ActivistPatchInput) ToPatchData() (model.ActivistPatchData, error) {
 	var d model.ActivistPatchData
+	var parseErr error
 
 	addString := func(name model.ActivistColumnName, ptr *string) {
 		if ptr != nil {
@@ -104,6 +109,18 @@ func (p ActivistPatchInput) ToPatchData() model.ActivistPatchData {
 			d.Append(name, *ptr)
 		}
 	}
+	// Adds contact method, translating label to database enum value.
+	addContactMethod := func(name model.ActivistColumnName, ptr *string) {
+		if ptr == nil || parseErr != nil {
+			return
+		}
+		method, err := model.ParseContactMethod(*ptr)
+		if err != nil {
+			parseErr = fmt.Errorf("%s: %w", name, err)
+			return
+		}
+		d.Append(name, method)
+	}
 
 	addString(model.ColEmail, p.Email)
 	addString(model.ColFacebook, p.Facebook)
@@ -111,6 +128,8 @@ func (p ActivistPatchInput) ToPatchData() model.ActivistPatchData {
 	addString(model.ColPreferredName, p.PreferredName)
 	addString(model.ColPhone, p.Phone)
 	addString(model.ColPronouns, p.Pronouns)
+	addContactMethod(model.ColPreferredContactMethod, p.PreferredContactMethod)
+	addContactMethod(model.ColAlternateContactMethod, p.AlternateContactMethod)
 	addString(model.ColLanguage, p.Language)
 	addString(model.ColAccessibility, p.Accessibility)
 	addNullableString(model.ColDOB, p.Birthday)
@@ -147,13 +166,45 @@ func (p ActivistPatchInput) ToPatchData() model.ActivistPatchData {
 	addInt(model.ColAssignedTo, p.AssignedTo)
 	addNullableString(model.ColFollowupDate, p.FollowupDate)
 
-	return d
+	if parseErr != nil {
+		return model.ActivistPatchData{}, parseErr
+	}
+	return d, nil
+}
+
+// maxActivistQueryBodyBytes bounds the request body of an activist query so an
+// oversized one is rejected as it is read, rather than after being decoded into
+// an arbitrarily large ids filter.
+//
+// The ids filter is the only part of a query that scales with what the user
+// picked: at the model's limit it needs at most 11 bytes per id (the widest
+// int32 plus its separator), so 12 leaves room for whitespace between them, and
+// the remainder covers the columns, sort, and other filters many times over.
+const maxActivistQueryBodyBytes = model.MaxActivistIDsFilter*12 + 8*1024
+
+// newActivistQueryDecoder decodes a query body no larger than
+// maxActivistQueryBodyBytes.
+func newActivistQueryDecoder(w http.ResponseWriter, r *http.Request) *json.Decoder {
+	r.Body = http.MaxBytesReader(w, r.Body, maxActivistQueryBodyBytes)
+	return json.NewDecoder(r.Body)
+}
+
+// sendActivistQueryDecodeError replies to a body that could not be decoded,
+// reporting one rejected for its size as 413 rather than 400.
+func sendActivistQueryDecodeError(w http.ResponseWriter, err error) {
+	var tooLarge *http.MaxBytesError
+	if errors.As(err, &tooLarge) {
+		sendErrorMessage(w, http.StatusRequestEntityTooLarge,
+			fmt.Errorf("request body too large: cannot filter by more than %d activist ids at once", model.MaxActivistIDsFilter))
+		return
+	}
+	sendErrorMessage(w, http.StatusBadRequest, err)
 }
 
 func ActivistsSearchHandler(w http.ResponseWriter, r *http.Request, authedUser model.ADBUser, repo model.ActivistRepository) {
 	var options model.QueryActivistOptions
-	if err := json.NewDecoder(r.Body).Decode(&options); err != nil && err != io.EOF {
-		sendErrorMessage(w, http.StatusBadRequest, err)
+	if err := newActivistQueryDecoder(w, r).Decode(&options); err != nil && err != io.EOF {
+		sendActivistQueryDecodeError(w, err)
 		return
 	}
 
@@ -177,10 +228,10 @@ func ActivistsSearchHandler(w http.ResponseWriter, r *http.Request, authedUser m
 
 func ActivistsCountHandler(w http.ResponseWriter, r *http.Request, authedUser model.ADBUser, repo model.ActivistRepository) {
 	var options model.QueryActivistCountOptions
-	decoder := json.NewDecoder(r.Body)
+	decoder := newActivistQueryDecoder(w, r)
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&options); err != nil && err != io.EOF {
-		sendErrorMessage(w, http.StatusBadRequest, err)
+		sendActivistQueryDecodeError(w, err)
 		return
 	}
 
@@ -214,8 +265,8 @@ func ActivistsExportHandler(w http.ResponseWriter, r *http.Request, authedUser m
 	}
 
 	var options model.QueryActivistOptions
-	if err := json.NewDecoder(r.Body).Decode(&options); err != nil && err != io.EOF {
-		sendErrorMessage(w, http.StatusBadRequest, err)
+	if err := newActivistQueryDecoder(w, r).Decode(&options); err != nil && err != io.EOF {
+		sendActivistQueryDecodeError(w, err)
 		return
 	}
 
@@ -237,8 +288,8 @@ func ActivistsExportHandler(w http.ResponseWriter, r *http.Request, authedUser m
 // and the filters/sort in the request body are applied as usual.
 func ActivistsExportSpokeHandler(w http.ResponseWriter, r *http.Request, authedUser model.ADBUser, repo model.ActivistRepository) {
 	var options model.QueryActivistOptions
-	if err := json.NewDecoder(r.Body).Decode(&options); err != nil && err != io.EOF {
-		sendErrorMessage(w, http.StatusBadRequest, err)
+	if err := newActivistQueryDecoder(w, r).Decode(&options); err != nil && err != io.EOF {
+		sendActivistQueryDecodeError(w, err)
 		return
 	}
 
@@ -464,10 +515,10 @@ func formatCSVValue(v reflect.Value) string {
 // of the inserted row.
 func ActivistsDebugQueryHandler(w http.ResponseWriter, r *http.Request, authedUser model.ADBUser, repo model.ActivistRepository) {
 	var options model.QueryActivistOptions
-	decoder := json.NewDecoder(r.Body)
+	decoder := newActivistQueryDecoder(w, r)
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&options); err != nil && err != io.EOF {
-		sendErrorMessage(w, http.StatusBadRequest, err)
+		sendActivistQueryDecodeError(w, err)
 		return
 	}
 
@@ -501,7 +552,13 @@ func ActivistPatchHandler(w http.ResponseWriter, r *http.Request, authedUser mod
 		return
 	}
 
-	if err := model.PatchActivist(db, repo, userRepo, authedUser, activistID, input.ToPatchData()); err != nil {
+	patch, err := input.ToPatchData()
+	if err != nil {
+		sendErrorMessage(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if err := model.PatchActivist(db, repo, userRepo, authedUser, activistID, patch); err != nil {
 		if errors.Is(err, model.ErrValidation) {
 			sendErrorMessage(w, http.StatusBadRequest, err)
 		} else if errors.Is(err, model.ErrNotFound) {
@@ -521,6 +578,67 @@ func ActivistPatchHandler(w http.ResponseWriter, r *http.Request, authedUser mod
 
 	writeJSON(w, map[string]any{
 		"activist": activist,
+	})
+}
+
+// ActivistsAssignInput is the POST /api/activists/assign request body.
+type ActivistsAssignInput struct {
+	ActivistIDs []int `json:"activist_ids"`
+	// AssignedTo is the ADB user to assign the activists to. 0 unassigns them.
+	AssignedTo int `json:"assigned_to"`
+}
+
+// maxBulkAssignBodyBytes bounds the request body of a bulk assign so an
+// oversized one is rejected as it is read, rather than after being decoded
+// into an arbitrarily large slice of ids.
+//
+// A request at the model's limit needs at most 11 bytes per id (the widest
+// int32 plus its separator), so 12 leaves room for whitespace between them,
+// and the remainder covers the enclosing object and the assigned_to field
+// many times over.
+const maxBulkAssignBodyBytes = model.MaxBulkAssignActivists*12 + 1024
+
+// ActivistsAssignHandler serves POST /api/activists/assign: it sets assigned_to
+// on a set of activists in one request.
+//
+// A request may name at most model.MaxBulkAssignActivists activists; a larger
+// set is rejected with 400 rather than silently truncated, so clients that
+// might exceed it need to send batches. Repeating an id is likewise rejected
+// with 400 rather than deduplicated. A body too big to hold that many ids is
+// rejected with 413 while it is being read, without buffering the whole of it.
+//
+// Either every named activist is reassigned or none is, so "assigned" in the
+// response is always the number of ids sent.
+func ActivistsAssignHandler(w http.ResponseWriter, r *http.Request, authedUser model.ADBUser, repo model.ActivistRepository, userRepo model.UserRepository) {
+	r.Body = http.MaxBytesReader(w, r.Body, maxBulkAssignBodyBytes)
+
+	var input ActivistsAssignInput
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&input); err != nil {
+		var tooLarge *http.MaxBytesError
+		if errors.As(err, &tooLarge) {
+			sendErrorMessage(w, http.StatusRequestEntityTooLarge,
+				fmt.Errorf("request body too large: cannot assign more than %d activists at once", model.MaxBulkAssignActivists))
+			return
+		}
+		sendErrorMessage(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if err := model.AssignActivists(repo, userRepo, authedUser, input.ActivistIDs, input.AssignedTo); err != nil {
+		if errors.Is(err, model.ErrValidation) {
+			sendErrorMessage(w, http.StatusBadRequest, err)
+		} else if errors.Is(err, model.ErrNotFound) {
+			sendErrorMessage(w, http.StatusNotFound, err)
+		} else {
+			sendErrorMessage(w, http.StatusInternalServerError, err)
+		}
+		return
+	}
+
+	writeJSON(w, map[string]int{
+		"assigned": len(input.ActivistIDs),
 	})
 }
 

@@ -56,6 +56,7 @@ SELECT
   a.id,
   a.chapter_id,
   IFNULL(fp.name, '') AS chapter_name,
+  a.hidden,
   a.mpi,
   a.notes,
   a.vision_wall,
@@ -75,6 +76,8 @@ SELECT
   a.phone,
   a.phone_updated,
   a.pronouns,
+  a.preferred_contact_method,
+  a.alternate_contact_method,
   a.language,
   a.accessibility,
   a.dob,
@@ -300,6 +303,8 @@ const ActivistUserEditableDataFieldAssignments = `
   preferred_name = :preferred_name,
   phone = :phone,
   pronouns = :pronouns,
+  preferred_contact_method = :preferred_contact_method,
+  alternate_contact_method = :alternate_contact_method,
   language = :language,
   accessibility = :accessibility,
   dob = :dob,
@@ -361,11 +366,18 @@ type ActivistJSON struct {
 	PreferredName string `json:"preferred_name,omitempty"`
 	Phone         string `json:"phone,omitempty"`
 	Pronouns      string `json:"pronouns,omitempty"`
-	Language      string `json:"language,omitempty"`
-	Accessibility string `json:"accessibility,omitempty"`
-	Birthday      string `json:"dob,omitempty"`
-	ChapterID     int    `json:"chapter_id,omitempty"`
-	ChapterName   string `json:"chapter_name,omitempty"`
+	// PreferredContactMethod and AlternateContactMethod hold one of the
+	// labels in ValidContactMethods, or "" when unset. They are stored as an
+	// enum (see ContactMethod), so these are converted on the way in and out.
+	PreferredContactMethod string `json:"preferred_contact_method,omitempty"`
+	AlternateContactMethod string `json:"alternate_contact_method,omitempty"`
+	Language               string `json:"language,omitempty"`
+	Accessibility          string `json:"accessibility,omitempty"`
+	Birthday               string `json:"dob,omitempty"`
+	ChapterID              int    `json:"chapter_id,omitempty"`
+	ChapterName            string `json:"chapter_name,omitempty"`
+	// Hidden is set by the hide endpoint only; it is not patchable.
+	Hidden bool `json:"hidden,omitempty"`
 
 	FirstEvent            string `json:"first_event,omitempty"`
 	LastEvent             string `json:"last_event,omitempty"`
@@ -596,19 +608,22 @@ func BuildActivistJSON(a ActivistExtra) ActivistJSON {
 	}
 
 	return ActivistJSON{
-		Email:         a.Email,
-		Facebook:      a.Facebook,
-		ID:            a.ID,
-		ChapterID:     a.ChapterID,
-		ChapterName:   a.ChapterName,
-		Location:      location,
-		Name:          a.Name,
-		PreferredName: a.PreferredName,
-		Phone:         a.Phone,
-		Pronouns:      a.Pronouns,
-		Language:      a.Language,
-		Accessibility: a.Accessibility,
-		Birthday:      dob,
+		Email:                  a.Email,
+		Facebook:               a.Facebook,
+		ID:                     a.ID,
+		ChapterID:              a.ChapterID,
+		ChapterName:            a.ChapterName,
+		Hidden:                 a.Hidden,
+		Location:               location,
+		Name:                   a.Name,
+		PreferredName:          a.PreferredName,
+		Phone:                  a.Phone,
+		Pronouns:               a.Pronouns,
+		PreferredContactMethod: a.PreferredContactMethod.String(),
+		AlternateContactMethod: a.AlternateContactMethod.String(),
+		Language:               a.Language,
+		Accessibility:          a.Accessibility,
+		Birthday:               dob,
 
 		FirstEvent:            firstEvent,
 		LastEvent:             lastEvent,
@@ -1016,19 +1031,39 @@ func validateActivistUpdate(orig, updated ActivistExtra, userRepo UserRepository
 			return ValidationErrorf("invalid activist level")
 		}
 	}
+	if updated.PreferredContactMethod != orig.PreferredContactMethod {
+		if !updated.PreferredContactMethod.IsValid() {
+			return ValidationErrorf("invalid preferred contact method")
+		}
+	}
+	if updated.AlternateContactMethod != orig.AlternateContactMethod {
+		if !updated.AlternateContactMethod.IsValid() {
+			return ValidationErrorf("invalid alternate contact method")
+		}
+	}
 	if updated.AssignedTo != orig.AssignedTo {
-		if updated.AssignedTo < 0 {
-			return ValidationErrorf("invalid assigned_to value: %d", updated.AssignedTo)
+		if err := validateAssignedTo(updated.AssignedTo, userRepo); err != nil {
+			return err
 		}
-		if updated.AssignedTo > 0 {
-			users, err := userRepo.GetUsers(GetUserOptions{ID: updated.AssignedTo, PopulateRoles: false})
-			if err != nil {
-				return fmt.Errorf("validating assigned_to user %d: %w", updated.AssignedTo, err)
-			}
-			if len(users) == 0 {
-				return ValidationErrorf("invalid assigned_to value: %d", updated.AssignedTo)
-			}
-		}
+	}
+	return nil
+}
+
+// validateAssignedTo checks that userID is usable as an assigned_to value: it
+// must be 0 (unassigned) or the id of an existing ADB user.
+func validateAssignedTo(userID int, userRepo UserRepository) error {
+	if userID < 0 {
+		return ValidationErrorf("invalid assigned_to value: %d", userID)
+	}
+	if userID == 0 {
+		return nil
+	}
+	users, err := userRepo.GetUsers(GetUserOptions{ID: userID, PopulateRoles: false})
+	if err != nil {
+		return fmt.Errorf("validating assigned_to user %d: %w", userID, err)
+	}
+	if len(users) == 0 {
+		return ValidationErrorf("invalid assigned_to value: %d", userID)
 	}
 	return nil
 }
@@ -1433,6 +1468,8 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra, mergeN
 	}
 	target.PreferredName = stringMerge(original.PreferredName, target.PreferredName)
 	target.Pronouns = stringMerge(original.Pronouns, target.Pronouns)
+	target.PreferredContactMethod = contactMethodMerge(original.PreferredContactMethod, target.PreferredContactMethod)
+	target.AlternateContactMethod = contactMethodMerge(original.AlternateContactMethod, target.AlternateContactMethod)
 	target.Language = stringMerge(original.Language, target.Language)
 	target.Accessibility = stringMerge(original.Accessibility, target.Accessibility)
 	target.Birthday = stringMergeSqlNullString(original.Birthday, target.Birthday)
@@ -1483,6 +1520,14 @@ func getMergeActivistWinner(original ActivistExtra, target ActivistExtra, mergeN
 
 func boolMerge(original bool, target bool) bool {
 	return target || original
+}
+
+func contactMethodMerge(original ContactMethod, target ContactMethod) ContactMethod {
+	if target == ContactMethodUnset {
+		return original
+	}
+
+	return target
 }
 
 func stringMerge(original string, target string) string {
@@ -1949,6 +1994,15 @@ func CleanActivistData(body io.Reader, db *sqlx.DB, userRepo UserRepository) (Ac
 		applicationDateValid = true
 	}
 
+	preferredContactMethod, err := ParseContactMethod(activistJSON.PreferredContactMethod)
+	if err != nil {
+		return ActivistExtra{}, fmt.Errorf("preferred contact method: %w", err)
+	}
+	alternateContactMethod, err := ParseContactMethod(activistJSON.AlternateContactMethod)
+	if err != nil {
+		return ActivistExtra{}, fmt.Errorf("alternate contact method: %w", err)
+	}
+
 	var assignedToInt int
 	assignedToName := strings.TrimSpace(activistJSON.AssignedToName)
 	if assignedToName != "" {
@@ -1964,18 +2018,28 @@ func CleanActivistData(body io.Reader, db *sqlx.DB, userRepo UserRepository) (Ac
 
 	activistExtra := ActivistExtra{
 		Activist: Activist{
-			Email:         strings.TrimSpace(activistJSON.Email),
-			Facebook:      strings.TrimSpace(activistJSON.Facebook),
-			ID:            activistJSON.ID,
-			ChapterID:     activistJSON.ChapterID,
-			Location:      sql.NullString{String: strings.TrimSpace(activistJSON.Location), Valid: validLoc},
+			Email:    strings.TrimSpace(activistJSON.Email),
+			Facebook: strings.TrimSpace(activistJSON.Facebook),
+
+			ID:        activistJSON.ID,
+			ChapterID: activistJSON.ChapterID,
+
+			Location: sql.NullString{String: strings.TrimSpace(activistJSON.Location), Valid: validLoc},
+
 			Name:          strings.TrimSpace(activistJSON.Name),
 			PreferredName: strings.TrimSpace(activistJSON.PreferredName),
-			Phone:         strings.TrimSpace(activistJSON.Phone),
-			Pronouns:      strings.TrimSpace(activistJSON.Pronouns),
-			Language:      strings.TrimSpace(activistJSON.Language),
-			Accessibility: strings.TrimSpace(activistJSON.Accessibility),
-			Birthday:      sql.NullString{String: strings.TrimSpace(activistJSON.Birthday), Valid: validBirthday},
+
+			Phone: strings.TrimSpace(activistJSON.Phone),
+
+			Pronouns: strings.TrimSpace(activistJSON.Pronouns),
+
+			PreferredContactMethod: preferredContactMethod,
+			AlternateContactMethod: alternateContactMethod,
+			Language:               strings.TrimSpace(activistJSON.Language),
+			Accessibility:          strings.TrimSpace(activistJSON.Accessibility),
+
+			Birthday: sql.NullString{String: strings.TrimSpace(activistJSON.Birthday), Valid: validBirthday},
+
 			Coords: Coords{
 				Lat: activistJSON.Lat,
 				Lng: activistJSON.Lng,
@@ -2149,6 +2213,95 @@ func assignActivistToUser(db *sqlx.DB, activistID, userID int) error {
 	return nil
 }
 
+// MaxBulkAssignActivists caps how many activists one AssignActivists call may
+// reassign. Every id goes into a single IN (...) clause, so an unbounded list
+// would eventually grow the query beyond what MySQL accepts.
+const MaxBulkAssignActivists = 1000
+
+// AssignActivists sets assigned_to on a set of activists on behalf of an ADB
+// user. A userID of 0 unassigns them.
+//
+// The ids must be distinct. Hidden activists cannot be assigned.
+//
+// Unlike PatchActivist this records no activists_history rows: that table has
+// no assigned_to column, so a bulk assign would insert a row per activist
+// saying nothing about what changed. The single-activist assign path
+// (assignActivistToUser, used when an interaction is logged) doesn't log
+// history either.
+func AssignActivists(repo ActivistRepository, userRepo UserRepository, authedUser ADBUser, activistIDs []int, userID int) error {
+	if !UserHasOrganizerAccess(authedUser) {
+		return ValidationErrorf("lacking permission to update activists")
+	}
+	if len(activistIDs) == 0 {
+		return ValidationErrorf("no activists to assign")
+	}
+	if len(activistIDs) > MaxBulkAssignActivists {
+		return ValidationErrorf("cannot assign more than %d activists at once", MaxBulkAssignActivists)
+	}
+	seen := make(map[int]bool, len(activistIDs))
+	for _, id := range activistIDs {
+		if id <= 0 {
+			return ValidationErrorf("invalid activist id: %d", id)
+		}
+		if seen[id] {
+			return ValidationErrorf("duplicate activist id: %d", id)
+		}
+		seen[id] = true
+	}
+	if err := validateAssignedTo(userID, userRepo); err != nil {
+		return err
+	}
+
+	authorize := func(infos []ActivistAssignInfo) error {
+		return checkActivistsAssignable(authedUser, len(activistIDs), infos)
+	}
+
+	if err := repo.AssignActivists(activistIDs, userID, authorize); err != nil {
+		return fmt.Errorf("failed to assign activists: %w", err)
+	}
+	log.Printf("Assigned %d activists to user %d", len(activistIDs), userID)
+	return nil
+}
+
+// checkActivistsAssignable reports whether authedUser may assign the activists
+// infos was read for.
+func checkActivistsAssignable(authedUser ADBUser, requested int, infos []ActivistAssignInfo) error {
+	if len(infos) != requested {
+		panic(fmt.Sprintf("assign authorization got %d rows for %d activists", len(infos), requested))
+	}
+	for _, info := range infos {
+		// An activist the user may not access reads as a missing id.
+		if err := CheckChapterAccess(authedUser, info.ChapterID); err != nil {
+			return fmt.Errorf("%w: activist %d not found", ErrNotFound, info.ID)
+		}
+		if info.Hidden {
+			return fmt.Errorf("%w: cannot assign hidden activist %d", ErrNotFound, info.ID)
+		}
+	}
+	return nil
+}
+
+// CheckActivistsFound reports whether infos holds a row for every requested id,
+// naming the first one it doesn't in an ErrNotFound error. An
+// ActivistRepository calls it on the rows its locking read found, so that the
+// authorize callback only ever sees a complete set.
+func CheckActivistsFound(activistIDs []int, infos []ActivistAssignInfo) error {
+	// The ids are distinct, so each one must have produced exactly one row.
+	if len(infos) == len(activistIDs) {
+		return nil
+	}
+	found := make(map[int]bool, len(infos))
+	for _, info := range infos {
+		found[info.ID] = true
+	}
+	for _, id := range activistIDs {
+		if !found[id] {
+			return fmt.Errorf("%w: activist not found: %d", ErrNotFound, id)
+		}
+	}
+	return nil
+}
+
 func QueryActivists(authedUser ADBUser, options QueryActivistOptions, repo ActivistRepository) (QueryActivistResult, error) {
 	if err := authorizeActivistQuery(authedUser, options); err != nil {
 		return QueryActivistResult{}, err
@@ -2224,7 +2377,18 @@ type ActivistRepository interface {
 	StreamActivists(options QueryActivistOptions, fn func(ActivistExtra) error) error
 	CountActivists(filters QueryActivistFilters) (int, error)
 	PatchActivist(id int, patch ActivistPatchData) error
+	// AssignActivists sets assigned_to on the given activists, which must be a
+	// distinct set of ids. An id matching no activist is an ErrNotFound.
+	AssignActivists(activistIDs []int, userID int, authorize func([]ActivistAssignInfo) error) error
 	DebugActivistQuery(options QueryActivistOptions, username string) (int64, error)
+}
+
+// ActivistAssignInfo is the subset of an activist row needed to authorize
+// assigning it: the chapter that owns it and whether it has been hidden.
+type ActivistAssignInfo struct {
+	ID        int  `db:"id"`
+	ChapterID int  `db:"chapter_id"`
+	Hidden    bool `db:"hidden"`
 }
 
 // ActivistPatchField is a single field name + value pair for a partial activist update.

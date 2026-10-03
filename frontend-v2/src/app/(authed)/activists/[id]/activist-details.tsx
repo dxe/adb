@@ -158,7 +158,7 @@ export function ActivistDetails({
                   ({ label, value, description, linkType, isEmpty }) => (
                     <div
                       key={label}
-                      className="flex justify-between gap-2 py-1"
+                      className="flex min-w-0 justify-between gap-2 py-1"
                     >
                       <dt
                         className={`flex items-center gap-1 text-sm font-medium text-muted-foreground ${
@@ -173,8 +173,10 @@ export function ActivistDetails({
                           />
                         )}
                       </dt>
+                      {/* min-w-0 + break-words so long values (emails, URLs)
+                          wrap instead of overflowing into the next column. */}
                       <dd
-                        className={`text-sm text-right ${
+                        className={`min-w-0 text-sm text-right break-words ${
                           isEmpty ? 'text-muted-foreground opacity-50' : ''
                         }`}
                       >
@@ -211,7 +213,9 @@ export function ActivistDetails({
             onDirtyChange={setDirty}
           />
         ) : notesValue ? (
-          <p className="text-sm whitespace-pre-wrap">{notesValue}</p>
+          <p className="text-sm whitespace-pre-wrap break-words">
+            {notesValue}
+          </p>
         ) : (
           <p className="text-sm text-muted-foreground italic">No notes</p>
         )}
