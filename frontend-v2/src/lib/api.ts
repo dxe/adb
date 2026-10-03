@@ -56,6 +56,9 @@ export const API_PATH = {
   WORKING_GROUP_LIST: 'working_group/list',
   WORKING_GROUP_SAVE: 'working_group/save',
   WORKING_GROUP_DELETE: 'working_group/delete',
+  EXTERNAL_EVENTS_LIST: 'external_events',
+  EXTERNAL_EVENT_FEATURE: 'admin/external_events/feature',
+  EXTERNAL_EVENT_CANCEL: 'admin/external_events/cancel',
 }
 
 export const StaticResourcesHashResp = z.object({
@@ -576,6 +579,25 @@ export interface EventListParams {
   event_date_end: string
   event_type: EventType
 }
+
+// The external events admin page is only used for SF Bay (parity with the
+// legacy Vue page), so the page ID is hardcoded.
+const SF_BAY_FACEBOOK_PAGE_ID = '1377014279263790'
+
+const ExternalEventSchema = z.object({
+  ID: z.string(),
+  Name: z.string(),
+  StartTime: z.string(),
+  Featured: z.boolean(),
+})
+export type ExternalEvent = z.infer<typeof ExternalEventSchema>
+
+const ExternalEventsListResp = z.object({
+  events: z
+    .array(ExternalEventSchema)
+    .nullable()
+    .transform((v) => v ?? []),
+})
 
 const SuccessResp = z.object({
   status: z.literal('success'),
@@ -1477,6 +1499,54 @@ export class ApiClient {
       const resp = await this.client
         .post(API_PATH.CIRCLE_DELETE, {
           json: { circle_id: circleId },
+          headers: { 'X-CSRF-Token': csrfToken },
+        })
+        .json()
+      this.throwIfApiError(resp)
+      return SuccessResp.parse(resp)
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  getExternalEvents = async (signal?: AbortSignal) => {
+    try {
+      // UTC date so SSR prefetch and client refetch agree on the "today" boundary.
+      const startOfTodayUtc = `${new Date().toISOString().slice(0, 10)}T00:00:00Z`
+      const resp = await this.client
+        .get(`${API_PATH.EXTERNAL_EVENTS_LIST}/${SF_BAY_FACEBOOK_PAGE_ID}`, {
+          searchParams: { start_time: startOfTodayUtc },
+          signal,
+        })
+        .json()
+      return ExternalEventsListResp.parse(resp).events
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  featureExternalEvent = async (id: string, featured: boolean) => {
+    try {
+      const csrfToken = await this.getCsrfToken()
+      const resp = await this.client
+        .post(API_PATH.EXTERNAL_EVENT_FEATURE, {
+          json: { id, featured },
+          headers: { 'X-CSRF-Token': csrfToken },
+        })
+        .json()
+      this.throwIfApiError(resp)
+      return SuccessResp.parse(resp)
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  cancelExternalEvent = async (id: string) => {
+    try {
+      const csrfToken = await this.getCsrfToken()
+      const resp = await this.client
+        .post(API_PATH.EXTERNAL_EVENT_CANCEL, {
+          json: { id },
           headers: { 'X-CSRF-Token': csrfToken },
         })
         .json()
