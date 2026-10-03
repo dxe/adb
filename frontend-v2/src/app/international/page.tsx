@@ -9,7 +9,9 @@ export const metadata: Metadata = {
 export default function InternationalPage() {
   return (
     <ContentWrapper size="md" className="gap-6">
-      <h1 className="text-lg">Sign up to join our International Network</h1>
+      <h1 className="text-2xl font-bold">
+        Sign up to join our International Network
+      </h1>
       <InternationalForm />
     </ContentWrapper>
   )

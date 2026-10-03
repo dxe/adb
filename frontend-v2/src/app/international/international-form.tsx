@@ -5,6 +5,7 @@ import { useForm } from '@tanstack/react-form'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 import toast from 'react-hot-toast'
+import { AgreementCheckbox } from '@/components/agreement-checkbox'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
@@ -148,7 +149,7 @@ export function InternationalForm() {
       }}
       className="flex flex-col gap-6"
     >
-      <p>
+      <p className="text-muted-foreground">
         Interested in getting involved with Direct Action Everywhere? Fill out
         this form and we&apos;ll contact you with opportunities!
       </p>
@@ -302,55 +303,39 @@ export function InternationalForm() {
         )}
       </form.Field>
 
-      <div className="space-y-3">
-        <p>
-          I am not law enforcement and my motive for expressing interest is a
-          desire to help end animal exploitation. From this point forward, I
-          commit to upholding DxE&apos;s{' '}
-          <a
-            href="https://dxe.io/values"
-            target="_blank"
-            rel="noreferrer"
-            className="underline"
+      <form.Field name="termsAgreed">
+        {(field) => (
+          <AgreementCheckbox
+            id="termsAgreed"
+            checked={field.state.value}
+            onCheckedChange={(checked) => field.handleChange(checked)}
+            error={field.state.meta.errors[0]?.message}
+            label="Yes, I agree with the above statement."
           >
-            values
-          </a>{' '}
-          and{' '}
-          <a
-            href="https://dxe.io/conduct"
-            target="_blank"
-            rel="noreferrer"
-            className="underline"
-          >
-            code of conduct
-          </a>{' '}
-          and understand that I may be removed if I fail to do so.
-        </p>
-
-        <form.Field name="termsAgreed">
-          {(field) => (
-            <div className="space-y-1">
-              <button
-                type="button"
-                onClick={() => field.handleChange(!field.state.value)}
-                aria-pressed={field.state.value}
-                className={`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
-                  field.state.value
-                    ? 'border-primary bg-primary text-primary-foreground'
-                    : 'border-input bg-background hover:bg-accent'
-                }`}
-              >
-                Yes, I agree with the above statement.
-              </button>
-              {field.state.meta.errors[0] && (
-                <p className="text-sm text-destructive">
-                  {field.state.meta.errors[0]?.message}
-                </p>
-              )}
-            </div>
-          )}
-        </form.Field>
-      </div>
+            I am not law enforcement and my motive for expressing interest is a
+            desire to help end animal exploitation. From this point forward, I
+            commit to upholding DxE&apos;s{' '}
+            <a
+              href="https://dxe.io/values"
+              target="_blank"
+              rel="noreferrer"
+              className="underline"
+            >
+              values
+            </a>{' '}
+            and{' '}
+            <a
+              href="https://dxe.io/conduct"
+              target="_blank"
+              rel="noreferrer"
+              className="underline"
+            >
+              code of conduct
+            </a>{' '}
+            and understand that I may be removed if I fail to do so.
+          </AgreementCheckbox>
+        )}
+      </form.Field>
 
       <form.Field name="involvement">
         {(field) => (
