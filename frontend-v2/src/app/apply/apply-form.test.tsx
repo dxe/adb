@@ -1,10 +1,18 @@
 import { render, screen, cleanup } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ApplyForm } from '@/app/apply/apply-form'
 
-afterEach(cleanup)
+const mockPush = vi.hoisted(() => vi.fn())
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: mockPush }),
+}))
+
+afterEach(() => {
+  cleanup()
+  mockPush.mockClear()
+})
 
 function renderForm() {
   const queryClient = new QueryClient({
@@ -35,5 +43,14 @@ describe('ApplyForm', () => {
     expect(
       screen.getByText('Take direct action for animals'),
     ).toBeInTheDocument()
+  })
+
+  it('sends non-local applicants to the international form', async () => {
+    const user = userEvent.setup()
+    renderForm()
+
+    await user.click(screen.getByRole('button', { name: 'No' }))
+
+    expect(mockPush).toHaveBeenCalledWith('/international')
   })
 })
