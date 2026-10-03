@@ -2,15 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { AlertTriangle, Loader2 } from 'lucide-react'
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import { API_PATH, apiClient, WorkingGroup } from '@/lib/api'
 
 export function DeleteWorkingGroupDialog({
@@ -43,40 +35,22 @@ export function DeleteWorkingGroupDialog({
   })
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Delete working group</DialogTitle>
-        </DialogHeader>
-        <p className="text-sm">
-          Are you sure you want to delete <strong>{workingGroup.name}</strong>?
-        </p>
-        <div className="flex items-start gap-2 rounded-md border border-yellow-300 bg-yellow-50 p-3 text-sm text-yellow-900">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>
-            {hasMembers
-              ? 'This working group still has members (including non-members on its mailing list). Remove them all before it can be deleted.'
-              : 'Before deleting a working group, be sure to remove all members of that group.'}
-          </span>
-        </div>
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={onClose}
-            disabled={mutation.isPending}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={() => mutation.mutate()}
-            disabled={mutation.isPending || hasMembers}
-          >
-            {mutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-            Delete
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <ConfirmDialog
+      open
+      onOpenChange={(open) => !open && onClose()}
+      title="Delete working group"
+      warning={
+        hasMembers
+          ? 'This working group still has members (including non-members on its mailing list). Remove them all before it can be deleted.'
+          : 'Before deleting a working group, be sure to remove all members of that group.'
+      }
+      confirmLabel="Delete"
+      pendingLabel="Deleting..."
+      onConfirm={() => mutation.mutate()}
+      isPending={mutation.isPending}
+      confirmDisabled={hasMembers}
+    >
+      Are you sure you want to delete <strong>{workingGroup.name}</strong>?
+    </ConfirmDialog>
   )
 }
