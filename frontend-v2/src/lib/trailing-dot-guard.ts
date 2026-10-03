@@ -21,10 +21,10 @@
  * with the filter UI. Loading an already-dotted link leaves the address bar
  * untouched until the next filter change.
  *
- * Keep in sync with `src/components/nav-hrefs.test.ts`, which enforces the same
- * rule on the hrefs in `src/components/nav-data.ts` — those bypass this
- * function entirely, so a change to what counts as a safe ending here needs the
- * matching change there.
+ * Activist hrefs in `src/components/nav-data.ts` go through this function via
+ * `buildActivistsHref`. The other hrefs there are hand-written and bypass it, so
+ * `src/components/nav-hrefs.test.ts` enforces the same rule on all of them. Keep
+ * that test in sync with what counts as a safe ending here.
  */
 export const TRAILING_DOT_GUARD_KEY = ''
 
