@@ -148,9 +148,11 @@ export function InterestForm() {
   })
 
   const header = (
-    <div className="flex flex-col gap-1">
-      <h1 className="text-lg">{formOptions.formTitle}</h1>
-      {formOptions.formDescription && <p>{formOptions.formDescription}</p>}
+    <div className="flex flex-col gap-2">
+      <h1 className="text-2xl font-bold">{formOptions.formTitle}</h1>
+      {formOptions.formDescription && (
+        <p className="text-muted-foreground">{formOptions.formDescription}</p>
+      )}
     </div>
   )
 

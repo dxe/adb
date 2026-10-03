@@ -4,8 +4,8 @@ import { useForm } from '@tanstack/react-form'
 import { Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { z } from 'zod'
+import { AgreementCheckbox } from '@/components/agreement-checkbox'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
@@ -102,41 +102,6 @@ function Field({
       {children}
       {error && <p className="text-xs text-destructive">{error}</p>}
       {message && <p className="text-xs text-muted-foreground">{message}</p>}
-    </div>
-  )
-}
-
-function AgreementToggle({
-  id,
-  checked,
-  onCheckedChange,
-  error,
-  children,
-}: {
-  id: string
-  checked: boolean
-  onCheckedChange: (checked: boolean) => void
-  error?: string
-  children: React.ReactNode
-}) {
-  return (
-    <div className="flex flex-col gap-2">
-      <p id={`${id}-statement`} className="text-sm">
-        {children}
-      </p>
-      <label
-        htmlFor={id}
-        className="flex w-fit cursor-pointer items-center gap-2 rounded-md border p-2 text-sm"
-      >
-        <Checkbox
-          id={id}
-          aria-describedby={`${id}-statement`}
-          checked={checked}
-          onCheckedChange={(value) => onCheckedChange(Boolean(value))}
-        />
-        Yes, I agree.
-      </label>
-      {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   )
 }
@@ -255,7 +220,7 @@ export function ApplicationFields({
 
         <form.Field name="mission">
           {(field) => (
-            <AgreementToggle
+            <AgreementCheckbox
               id="mission"
               checked={field.state.value}
               onCheckedChange={(checked) => field.handleChange(checked)}
@@ -271,13 +236,13 @@ export function ApplicationFields({
                 mission and values
               </a>
               .
-            </AgreementToggle>
+            </AgreementCheckbox>
           )}
         </form.Field>
 
         <form.Field name="conduct">
           {(field) => (
-            <AgreementToggle
+            <AgreementCheckbox
               id="conduct"
               checked={field.state.value}
               onCheckedChange={(checked) => field.handleChange(checked)}
@@ -293,13 +258,13 @@ export function ApplicationFields({
                 code of conduct
               </a>
               .
-            </AgreementToggle>
+            </AgreementCheckbox>
           )}
         </form.Field>
 
         <form.Field name="consent">
           {(field) => (
-            <AgreementToggle
+            <AgreementCheckbox
               id="consent"
               checked={field.state.value}
               onCheckedChange={(checked) => field.handleChange(checked)}
@@ -315,7 +280,7 @@ export function ApplicationFields({
                 take a quiz
               </a>{' '}
               on consent.
-            </AgreementToggle>
+            </AgreementCheckbox>
           )}
         </form.Field>
 
