@@ -1,8 +1,5 @@
 .devcontainer/devcontainer-lock.json
-frontend/external/**
-frontend/dist/**
-frontend/static/external/**
-frontend/package-lock.json
+server/static/external/**
 frontend-v2/.next/**
 frontend-v2/pnpm-lock.yaml
 frontend-v2/next-env.d.ts

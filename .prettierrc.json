@@ -8,14 +8,6 @@
       }
     },
     {
-      "files": "frontend/**",
-      "options": {
-        "arrowParens": "always",
-        "printWidth": 100,
-        "singleQuote": true
-      }
-    },
-    {
       "files": "frontend-v2/**",
       "options": {
         "printWidth": 80,

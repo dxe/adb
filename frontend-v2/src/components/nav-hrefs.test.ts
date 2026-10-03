@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import navbarData from '$shared/nav.json'
-import type { NavbarData } from '$shared/nav-access'
+import { navbarData } from './nav-data'
 
 /**
  * These hrefs are hand-maintained and never pass through `guardTrailingDot`,
@@ -8,13 +7,13 @@ import type { NavbarData } from '$shared/nav-access'
  * must not end in `.`. See `src/lib/trailing-dot-guard.ts` for why, and for the
  * `&=` fix. Keep the two in sync.
  */
-const hrefs = (navbarData as NavbarData).items.flatMap((group) =>
+const hrefs = navbarData.items.flatMap((group) =>
   group.items.map((item) => item.href),
 )
 
-describe('nav.json hrefs', () => {
+describe('nav-data hrefs', () => {
   it('finds hrefs to check', () => {
-    // Guards against the traversal silently matching nothing if nav.json's
+    // Guards against the traversal silently matching nothing if nav-data's
     // shape changes, which would make the assertions below vacuous.
     expect(hrefs.length).toBeGreaterThan(20)
     expect(hrefs.every((href) => href.startsWith('/'))).toBe(true)

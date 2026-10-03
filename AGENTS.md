@@ -13,11 +13,11 @@ Background context on how the stack fits together.
 
 ## frontend
 
-Rules regarding the Next.js app in ./frontend-v2 and legacy Vue app in ./frontend
+Rules regarding the Next.js app in ./frontend-v2
 
 ### frontend-file-formatting
 
-- Scope: ./frontend and ./frontend-v2
+- Scope: ./frontend-v2
 - Rule: After modifying files, run `pnpx prettier <filename> --write`
 - Example: `pnpx prettier 'frontend-v2/src/app/login/page.tsx' --write`
 

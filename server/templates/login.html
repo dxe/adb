@@ -3,12 +3,15 @@
 <script src="https://apis.google.com/js/platform.js" onerror="onScriptLoadError()" async defer></script>
 
 <div class="body-wrapper">
-  <p id="login-text" class="mb-5">Please log in.</p>
+  <p id="login-text">Please log in.</p>
   <div id="message"></div>
   <div class="g-signin2" data-onsuccess="onSignIn"></div>
   <script>
+    function setText(id, text) {
+      document.getElementById(id).textContent = text;
+    }
     function onScriptLoadError() {
-      $("#login-text").text("The Google login API failed to load. If you are using an ad blocker, please disable it and refresh this page. If it still fails to load, please contact tech@dxe.io.")
+      setText('login-text', "The Google login API failed to load. If you are using an ad blocker, please disable it and refresh this page. If it still fails to load, please contact tech@dxe.io.");
     }
     function onSignIn(googleUser) {
       var id_token = googleUser.getAuthResponse().id_token;
@@ -17,14 +20,14 @@
       xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
       xhr.onload = function() {
         if (xhr.status !== 200) {
-          $("#message").text("Error status code from server: " + xhr.status)
+          setText('message', "Error status code from server: " + xhr.status);
           return;
         }
 
         try {
           var data = JSON.parse(xhr.responseText);
         } catch(err) {
-          $('#message').text("Could not parse message from server: " + xhr.responseText);
+          setText('message', "Could not parse message from server: " + xhr.responseText);
           return;
         }
 
@@ -35,9 +38,9 @@
         } else {
           // Print the message if it exists
           if (data['message']) {
-            $('#message').text(data['message']);
+            setText('message', data['message']);
           } else {
-            $('#message').text("Server could not authenticate you for some reason");
+            setText('message', "Server could not authenticate you for some reason");
           }
         }
       };

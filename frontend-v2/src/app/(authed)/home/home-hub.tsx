@@ -14,7 +14,7 @@ import {
 import { API_PATH, apiClient, EventListItem, EventListParams } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
-import { userHasNavRole } from '$shared/nav-access'
+import { userHasNavRole } from '@/lib/nav-access'
 import {
   formatEventTimeRange,
   getBrowserTimezone,

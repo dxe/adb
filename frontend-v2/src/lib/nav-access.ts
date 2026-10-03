@@ -1,39 +1,39 @@
 export type NavAccessRules = {
-  roleRequired?: string[];
-  visibleForNonSFBay?: boolean;
-};
+  roleRequired?: string[]
+  visibleForNonSFBay?: boolean
+}
 
 export type NavItem = NavAccessRules & {
-  label: string;
-  href: string;
-  page: string;
-  separatorBelow?: boolean;
-};
+  label: string
+  href: string
+  page: string
+  separatorBelow?: boolean
+}
 
 export type NavDropdownItem = NavAccessRules & {
-  label: string;
-  items: NavItem[];
-};
+  label: string
+  items: NavItem[]
+}
 
 export type NavbarData = {
-  items: NavDropdownItem[];
-};
+  items: NavDropdownItem[]
+}
 
 export function userHasNavRole(userRoles: string[], role: string): boolean {
-  if (role === "admin") {
-    return userRoles.includes("admin");
+  if (role === 'admin') {
+    return userRoles.includes('admin')
   }
-  if (role === "organizer") {
-    return userRoles.includes("admin") || userRoles.includes("organizer");
+  if (role === 'organizer') {
+    return userRoles.includes('admin') || userRoles.includes('organizer')
   }
-  if (role === "attendance") {
+  if (role === 'attendance') {
     return (
-      userRoles.includes("admin") ||
-      userRoles.includes("organizer") ||
-      userRoles.includes("attendance")
-    );
+      userRoles.includes('admin') ||
+      userRoles.includes('organizer') ||
+      userRoles.includes('attendance')
+    )
   }
-  return userRoles.includes(role);
+  return userRoles.includes(role)
 }
 
 export function evaluateNavAccess(
@@ -48,19 +48,19 @@ export function evaluateNavAccess(
       ? item.visibleForNonSFBay
       : parentItem && parentItem.visibleForNonSFBay !== undefined
         ? parentItem.visibleForNonSFBay
-        : false;
+        : false
 
   if (chapterId !== sfBayChapterId && !visibleForNonSFBay) {
-    return false;
+    return false
   }
 
   if (!item.roleRequired) {
-    return true;
+    return true
   }
 
   if (!userRoles.length) {
-    return false;
+    return false
   }
 
-  return item.roleRequired.some((role) => userHasNavRole(userRoles, role));
+  return item.roleRequired.some((role) => userHasNavRole(userRoles, role))
 }

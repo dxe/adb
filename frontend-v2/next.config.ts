@@ -13,8 +13,8 @@ const nextConfig: NextConfig = {
   basePath: '/v2',
   output: 'standalone',
   turbopack: {
-    // Ensure the repo root includes the ../shared directory. Required in the Dockerfile environment. Locally,
-    // Turbopack may detect the workspace's pnpm-lock.yaml and thus decide to use the workspace as the root anyway.
+    // Keep the repo root: Dockerfile.frontend-v2 relies on the standalone
+    // output nesting under .next/standalone/frontend-v2/.
     root: path.resolve(__dirname, '..'),
   },
   allowedDevOrigins: ['[::1]'],

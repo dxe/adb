@@ -46,13 +46,11 @@ jobs:
               - 'server/**'
               - 'cli/**'
               - 'pkg/**'
-              - 'frontend/**'
               - 'go.work'
               - 'go.work.sum'
             frontend:
               - 'Dockerfile.frontend-v2'
               - 'frontend-v2/**'
-              - 'shared/**'
             lambdas:
               - 'jobs/**'
               - 'pkg/**'
@@ -98,11 +96,7 @@ jobs:
           npm --version
           go version
       - name: Install deps
-        run: |
-          cd ./frontend
-          npm ci --legacy-peer-deps
-          cd ../server/src
-          go mod download
+        run: cd ./server/src && go mod download
       - name: Install frontend-v2 deps
         run: cd ./frontend-v2 && pnpm install --frozen-lockfile
       - name: Lint frontend-v2

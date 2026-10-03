@@ -4,7 +4,6 @@ export interface Country {
   flag: string
 }
 
-// Extracted from frontend/ChapterList.vue's allCountries list.
 export const COUNTRIES: Country[] = [
   { name: 'Ascension Island', code: 'AC', flag: '🇦🇨' },
   { name: 'Andorra', code: 'AD', flag: '🇦🇩' },

@@ -41,7 +41,7 @@ export function isDateInLastThreeMonths(value: string): boolean {
 }
 
 // Quadrimesters: Feb-May, Jun-Sep, Oct-Jan. Returns the first day of the
-// quadrimester containing today. Ported from frontend/ChapterList.vue.
+// quadrimester containing today.
 function currentQuadrimesterStart(now: Date): Date {
   const month = now.getMonth()
   const year = now.getFullYear()

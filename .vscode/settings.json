@@ -36,6 +36,5 @@
   "search.exclude": {
     "**/.next": true,
     "**/tsconfig.tsbuildinfo": true,
-    "frontend/dist/**": true,
   },
 }

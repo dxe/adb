@@ -34,7 +34,6 @@ var (
 
 	TemplatesDirectory = mustGetenv("TEMPLATES_DIRECTORY", "./templates", false)
 	StaticDirectory    = mustGetenv("STATIC_DIRECTORY", "./static", false)
-	DistDirectory      = mustGetenv("DIST_DIRECTORY", "./dist", false)
 	NextJsProxyUrl     = mustGetenv("NEXT_JS_PROXY_URL", "", false)
 
 	// Google API oauth service-account key, with access to the following scope:
