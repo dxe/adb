@@ -1,16 +1,10 @@
 'use client'
 
-import { useCallback, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import toast from 'react-hot-toast'
+import { useQuery } from '@tanstack/react-query'
 import { Download, Loader2, Plus } from 'lucide-react'
-import {
-  API_PATH,
-  apiClient,
-  CHAPTER_ADMIN_QUERY_KEY,
-  ChapterAdmin,
-} from '@/lib/api'
+import { apiClient, CHAPTER_ADMIN_QUERY_KEY, ChapterAdmin } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -22,6 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { ChapterTable } from './chapter-table'
+import { DeleteChapterDialog } from './delete-chapter-dialog'
 import { isDateInLastThreeMonths } from './chapter-utils'
 
 function useMentorOptions(chapters: ChapterAdmin[]): string[] {
@@ -35,7 +30,6 @@ function useMentorOptions(chapters: ChapterAdmin[]): string[] {
 }
 
 export default function ChaptersPage() {
-  const queryClient = useQueryClient()
   const {
     data: chapters,
     isLoading,
@@ -49,6 +43,9 @@ export default function ChaptersPage() {
   const [mentorFilter, setMentorFilter] = useState('All')
   const [filterName, setFilterName] = useState('')
   const [showFacebookColumns, setShowFacebookColumns] = useState(false)
+  const [deletingChapter, setDeletingChapter] = useState<ChapterAdmin | null>(
+    null,
+  )
 
   const mentorOptions = useMentorOptions(chapters ?? [])
 
@@ -69,37 +66,6 @@ export default function ChaptersPage() {
   const activeChapters = filteredChapters.filter(
     (c) => c.Region !== 'Online' && isDateInLastThreeMonths(c.LastAction),
   ).length
-
-  const deleteMutation = useMutation({
-    mutationFn: (chapterId: number) => apiClient.deleteChapterAdmin(chapterId),
-    onSuccess: (_, chapterId) => {
-      // Prefix match also refreshes the chapter-picker and intl-organizers caches.
-      queryClient.invalidateQueries({ queryKey: [API_PATH.CHAPTER_LIST] })
-      queryClient.setQueryData<ChapterAdmin[]>(CHAPTER_ADMIN_QUERY_KEY, (old) =>
-        old?.filter((c) => c.ChapterID !== chapterId),
-      )
-    },
-    onError: (error: Error) => {
-      toast.error(
-        error.message || 'Failed to delete chapter. Please try again.',
-      )
-    },
-  })
-
-  const { mutate: deleteChapter } = deleteMutation
-  const handleDelete = useCallback(
-    (chapter: ChapterAdmin) => {
-      const confirmed = window.confirm(
-        `Are you sure you want to delete ${chapter.Flag} ${chapter.Name}?`,
-      )
-      if (confirmed) {
-        deleteChapter(chapter.ChapterID, {
-          onSuccess: () => toast.success(`${chapter.Name} deleted`),
-        })
-      }
-    },
-    [deleteChapter],
-  )
 
   return (
     <div className="flex flex-col gap-6">
@@ -205,8 +171,17 @@ export default function ChaptersPage() {
         <ChapterTable
           chapters={filteredChapters}
           showFacebookColumns={showFacebookColumns}
-          onDelete={handleDelete}
-          isDeleting={deleteMutation.isPending}
+          onDelete={setDeletingChapter}
+        />
+      )}
+
+      {deletingChapter && (
+        <DeleteChapterDialog
+          open={!!deletingChapter}
+          onOpenChange={(open) => {
+            if (!open) setDeletingChapter(null)
+          }}
+          chapter={deletingChapter}
         />
       )}
     </div>
