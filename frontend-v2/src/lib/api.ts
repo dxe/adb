@@ -41,6 +41,10 @@ export const API_PATH = {
   EVENT_DELETE: 'event/delete',
   COACHING_SAVE: 'connection/save',
   ADMIN_SEND_TEST_EMAIL: 'api/admin/send-test-email',
+  ACTIVIST_NAMES_CHAPTER_MEMBERS: 'activist_names/get_chaptermembers',
+  CIRCLE_LIST: 'circle/list',
+  CIRCLE_SAVE: 'circle/save',
+  CIRCLE_DELETE: 'circle/delete',
   INTEREST_FORM_SUBMIT: 'interest',
   INTERNATIONAL_FORM_SUBMIT: 'international',
   PLACES_API_KEY: 'places_api_key',
@@ -458,6 +462,62 @@ export interface EventListParams {
 const SuccessResp = z.object({
   status: z.literal('success'),
 })
+
+export const CIRCLE_TYPE_VALUES = ['circle', 'geo-circle'] as const
+export type CircleType = (typeof CIRCLE_TYPE_VALUES)[number]
+
+export const CircleMemberSchema = z.object({
+  name: z.string(),
+  email: z.string().optional(),
+  point_person: z.boolean().optional().default(false),
+  non_member_on_mailing_list: z.boolean().optional().default(false),
+})
+export type CircleMember = z.infer<typeof CircleMemberSchema>
+
+export const CircleGroupSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  type: z.enum(CIRCLE_TYPE_VALUES),
+  members: z
+    .array(CircleMemberSchema)
+    .nullable()
+    .transform((v) => v ?? []),
+  visible: z.boolean(),
+  description: z.string(),
+  meeting_time: z.string(),
+  meeting_location: z.string(),
+  coords: z.string(),
+  last_meeting: z.string(),
+})
+export type CircleGroup = z.infer<typeof CircleGroupSchema>
+
+const CircleListResp = z.object({
+  circle_groups: z
+    .array(CircleGroupSchema)
+    .nullable()
+    .transform((v) => v ?? []),
+})
+
+const CircleSaveResp = z.object({
+  circle: CircleGroupSchema,
+})
+
+export interface SaveCircleMemberParams {
+  name: string
+  point_person: boolean
+}
+
+export interface SaveCircleParams {
+  id: number
+  name: string
+  type: CircleType
+  description: string
+  meeting_time: string
+  meeting_location: string
+  coords: string
+  visible: boolean
+  members: SaveCircleMemberParams[]
+}
 
 // Public interest form payload. Keys match model.InterestFormData's JSON
 // tags for the fields this form submits.
@@ -1115,6 +1175,64 @@ export class ApiClient {
     try {
       const resp = await this.client
         .post(API_PATH.APPLICATION_FORM_SUBMIT, { json: payload, signal })
+        .json()
+      this.throwIfApiError(resp)
+      return SuccessResp.parse(resp)
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  // Chapter-member/organizer names in the caller's chapter (SF Bay organizer or any admin).
+  getChapterMemberActivistNames = async (signal?: AbortSignal) => {
+    try {
+      const resp = await this.client
+        .get(API_PATH.ACTIVIST_NAMES_CHAPTER_MEMBERS, { signal })
+        .json()
+      this.throwIfApiError(resp)
+      return ActivistNamesResp.parse(resp).activist_names
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  getCircles = async (signal?: AbortSignal) => {
+    try {
+      const resp = await this.client
+        .post(API_PATH.CIRCLE_LIST, { signal })
+        .json()
+      this.throwIfApiError(resp)
+      return CircleListResp.parse(resp).circle_groups
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  saveCircle = async (payload: SaveCircleParams, signal?: AbortSignal) => {
+    try {
+      const csrfToken = await this.getCsrfToken()
+      const resp = await this.client
+        .post(API_PATH.CIRCLE_SAVE, {
+          json: payload,
+          headers: { 'X-CSRF-Token': csrfToken },
+          signal,
+        })
+        .json()
+      this.throwIfApiError(resp)
+      return CircleSaveResp.parse(resp).circle
+    } catch (err) {
+      return this.handleKyError(err)
+    }
+  }
+
+  deleteCircle = async (circleId: number) => {
+    try {
+      const csrfToken = await this.getCsrfToken()
+      const resp = await this.client
+        .post(API_PATH.CIRCLE_DELETE, {
+          json: { circle_id: circleId },
+          headers: { 'X-CSRF-Token': csrfToken },
+        })
         .json()
       this.throwIfApiError(resp)
       return SuccessResp.parse(resp)
