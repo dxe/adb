@@ -33,6 +33,7 @@ import {
   colorLastAction,
   lastActionTooltip,
   STATUS_COLOR_CLASSES,
+  STATUS_DOT_CLASSES,
 } from './chapter-utils'
 
 const features = tableFeatures({
@@ -186,7 +187,7 @@ export function ChapterTable({
                 <span
                   className={cn(
                     'inline-block h-3 w-3 rounded-full',
-                    STATUS_COLOR_CLASSES[colorFBSyncStatus(getValue<string>())],
+                    STATUS_DOT_CLASSES[colorFBSyncStatus(getValue<string>())],
                   )}
                 />
               ),
@@ -328,7 +329,7 @@ export function ChapterTable({
                         <span
                           className={cn(
                             'inline-block h-3 w-3 rounded-full',
-                            STATUS_COLOR_CLASSES[
+                            STATUS_DOT_CLASSES[
                               colorFBSyncStatus(chapter.LastFBSync)
                             ],
                           )}
