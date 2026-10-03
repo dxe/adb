@@ -2167,8 +2167,7 @@ func CleanGetActivistOptions(body io.Reader) (GetActivistOptions, error) {
 //   - Former
 //   - No attendance
 //
-// Must be kept in sync with the "status" column CASE expression in persistence/activist_columns.go
-// and the list in frontend/ActivistList.vue.
+// Must be kept in sync with the "status" column CASE expression in persistence/activist_columns.go.
 func getStatus(firstEvent mysql.NullTime, lastEvent mysql.NullTime, totalEvents int) string {
 	if !firstEvent.Valid || !lastEvent.Valid {
 		return "No attendance"

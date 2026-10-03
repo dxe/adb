@@ -1,8 +1,3 @@
-/* When making changes to this file, be
-   sure to implement the same changes in
-   `frontend/AdbNav.vue`.
-*/
-
 'use client'
 
 import navbarData from '$shared/nav.json'
