@@ -127,3 +127,11 @@ export const STATUS_COLOR_CLASSES: Record<StatusColor, string> = {
   gray: 'bg-gray-100 text-muted-foreground',
   black: 'bg-gray-800 text-white',
 }
+
+export const STATUS_DOT_CLASSES: Record<StatusColor, string> = {
+  green: 'bg-emerald-500',
+  yellow: 'bg-amber-400',
+  red: 'bg-red-500',
+  gray: 'bg-gray-400',
+  black: 'bg-gray-800',
+}
