@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useMutation } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { apiClient, ApplicationFormPayload } from '@/lib/api'
@@ -13,6 +14,7 @@ type Step = 'localCheck' | 'info' | 'fields' | 'thankYou'
 
 /** Orchestrates the multi-step "Apply" flow. */
 export function ApplyForm() {
+  const router = useRouter()
   const [step, setStep] = useState<Step>('localCheck')
 
   const mutation = useMutation({
@@ -30,10 +32,7 @@ export function ApplyForm() {
   })
 
   function handleNotLocal() {
-    // The international flow isn't ported yet; this is a legacy Vue-served
-    // page, not a Next.js route, so a full page load is required.
-    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-    window.location.href = '/international'
+    router.push('/international')
   }
 
   function handleApply() {
