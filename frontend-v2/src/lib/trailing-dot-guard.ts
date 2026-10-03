@@ -22,7 +22,7 @@
  * untouched until the next filter change.
  *
  * Keep in sync with `src/components/nav-hrefs.test.ts`, which enforces the same
- * rule on the hand-maintained hrefs in `src/components/nav-data.ts` — those bypass this
+ * rule on the hrefs in `src/components/nav-data.ts` — those bypass this
  * function entirely, so a change to what counts as a safe ending here needs the
  * matching change there.
  */
