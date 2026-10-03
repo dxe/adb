@@ -293,30 +293,8 @@ func router() (*mux.Router, *sqlx.DB) {
 
 	// Authed pages
 	router.Handle("/", alice.New(main.authAnyADBRoleMiddleware).ThenFunc(main.HomeHandler))
-	router.Handle("/new_event", alice.New(main.authAttendanceMiddleware).ThenFunc(main.UpdateEventHandler))
-	router.Handle("/update_event/{event_id:[0-9]+}", alice.New(main.authAttendanceMiddleware).ThenFunc(main.UpdateEventHandler))
-	router.Handle("/new_connection", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.UpdateConnectionHandler))
-	router.Handle("/update_connection/{event_id:[0-9]+}", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.UpdateConnectionHandler))
-	router.Handle("/update_event/{event_id:[0-9]+}", alice.New(main.authAttendanceMiddleware).ThenFunc(main.UpdateEventHandler))
-	router.Handle("/list_events", alice.New(main.authAttendanceMiddleware).ThenFunc(main.ListEventsHandler))
-	router.Handle("/list_connections", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.ListConnectionsHandler))
-	router.Handle("/list_activists", alice.New(main.authOrganizerAccessMiddleware).ThenFunc(main.ListActivistsHandler))
-	router.Handle("/new_activists", alice.New(main.authOrganizerAccessMiddleware).ThenFunc(main.NewActivistsHandler))
-	router.Handle("/new_activists_pending_workshop", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.NewActivistsPendingWorkshopHandler))
-	router.Handle("/community_prospects", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.ListCommunityProspectsHandler))
-	router.Handle("/community_prospects_followup", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.ListCommunityProspectsFollowupHandler))
-	router.Handle("/activist_development", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.ListActivistsDevelopmentHandler))
-	router.Handle("/organizer_prospects", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.ListOrganizerProspectsHandler))
-	router.Handle("/chapter_member_prospects", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.ListChapterMemberProspectsHandler))
-	router.Handle("/chapter_member_development", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.ListChapterMemberDevelopmentHandler))
-	router.Handle("/leaderboard", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.LeaderboardHandler))
-	router.Handle("/list_working_groups", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.ListWorkingGroupsHandler))
-	router.Handle("/list_circles", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.ListCirclesHandler))
-	router.Handle("/list_geocircles", alice.New(main.authSFBayOrganizerMiddleware).ThenFunc(main.ListGeoCirclesHandler))
 
 	// Authed Admin pages
-	admin.Handle("/list_chapters", alice.New(main.authIntlCoordinatorAccessMiddleware).ThenFunc(main.ListChaptersHandler))
-	admin.Handle("/admin/external_events", alice.New(main.authAdminMiddleware).ThenFunc(main.ListAdminExternalEventsHandler))
 
 	// Unauthed API (internal)
 	router.HandleFunc("/tokensignin", main.TokenSignInHandler)
@@ -694,155 +672,11 @@ func (c MainController) HomeHandler(w http.ResponseWriter, r *http.Request) {
 	// If attendance access is missing, redirect to another page the user has
 	// access to.
 	if model.UserHasIntlCoordinatorAccess(user) {
-		http.Redirect(w, r, "/list_chapters", http.StatusFound)
+		http.Redirect(w, r, "/v2/chapters", http.StatusFound)
 		return
 	}
 
 	http.Redirect(w, r, "/403", http.StatusFound)
-}
-
-func (c MainController) ListEventsHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, r, "event_list", PageData{PageName: "EventList"})
-}
-
-func (c MainController) ListConnectionsHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, r, "connection_list", PageData{PageName: "ConnectionsList"})
-}
-
-type ActivistListData struct {
-	Title       string
-	Description string
-	View        string
-}
-
-func (c MainController) ListActivistsHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, r, "activist_list", PageData{
-		PageName: "ActivistList",
-		Data: ActivistListData{
-			Title:       "All Activists",
-			Description: "Everyone who has attended an event within the filtered range",
-			View:        "all_activists",
-		},
-	})
-}
-
-func (c MainController) NewActivistsHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, r, "activist_list", PageData{
-		PageName: "NewActivistsList",
-		Data: ActivistListData{
-			Title:       "New Activists",
-			Description: "Everyone who has attended 3 or fewer events in total, with their most recent event within the given range (last 6 months by default)",
-			View:        "new_activists",
-		},
-	})
-}
-
-func (c MainController) NewActivistsPendingWorkshopHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, r, "activist_list", PageData{
-		PageName: "NewActivistsPendingWorkshopList",
-		Data: ActivistListData{
-			Title:       "New Activists Pending Workshop",
-			Description: "Supporters whose first event was within the given range (last 6 months by default) AND have not yet attended the Intro Workshop.",
-			View:        "new_activists_pending_workshop",
-		},
-	})
-}
-
-func (c MainController) ListCommunityProspectsHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, r, "activist_list", PageData{
-		PageName: "CommunityProspects",
-		Data: ActivistListData{
-			Title:       "Community Prospects",
-			Description: "Everyone whose Level is Supporter and whose Source is a petition, a form (excluding application forms) or Eventbrite, whose interest date (form submission date) falls within the given date range, and who has not had an interaction, and has not attended an event within the past year",
-			View:        "community_prospects",
-		},
-	})
-}
-
-func (c MainController) ListCommunityProspectsFollowupHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, r, "activist_list", PageData{
-		PageName: "CommunityProspectsFollowup",
-		Data: ActivistListData{
-			Title:       "Community Prospects Follow-up",
-			Description: "Everyone who is assigned to someone and has a follow-up date",
-			View:        "community_prospects_followup",
-		},
-	})
-}
-
-func (c MainController) ListActivistsDevelopmentHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, r, "activist_list", PageData{
-		PageName: "OrganizerDevelopment",
-		Data: ActivistListData{
-			Title:       "Organizer Development",
-			Description: "Everyone who is an Organizer",
-			View:        "development",
-		},
-	})
-}
-
-func (c MainController) ListChapterMemberDevelopmentHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, r, "activist_list", PageData{
-		PageName: "ChapterMemberDevelopment",
-		Data: ActivistListData{
-			Title:       "Chapter Members",
-			Description: "Everyone who is a Chapter Member (including Organizers)",
-			View:        "chapter_member_development",
-		},
-	})
-}
-
-func (c MainController) ListOrganizerProspectsHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, r, "activist_list", PageData{
-		PageName: "OrganizerProspects",
-		Data: ActivistListData{
-			Title:       "Organizer Prospects",
-			Description: "Everyone who is a Prospective Organizer who is not an Organizer",
-			View:        "organizer_prospects",
-		},
-	})
-}
-
-func (c MainController) ListChapterMemberProspectsHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, r, "activist_list", PageData{
-		PageName: "ChapterMemberProspects",
-		Data: ActivistListData{
-			Title:       "Chapter Member Prospects",
-			Description: "Everyone who is a Chapter Member Prospect who is not a Chapter Member or Organizer",
-			View:        "chapter_member_prospects",
-		},
-	})
-}
-
-func (c MainController) LeaderboardHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, r, "activist_list", PageData{
-		PageName: "Leaderboard",
-		Data: ActivistListData{
-			Title:       "Leaderboard",
-			Description: "Everyone who has attended an event in the last 30 days",
-			View:        "leaderboard",
-		},
-	})
-}
-
-func (c MainController) ListWorkingGroupsHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, r, "working_group_list", PageData{PageName: "WorkingGroupList"})
-}
-
-func (c MainController) ListCirclesHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, r, "circles_list", PageData{PageName: "CirclesList"})
-}
-
-func (c MainController) ListGeoCirclesHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, r, "circles_list", PageData{PageName: "GeoCirclesList"})
-}
-
-func (c MainController) ListChaptersHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, r, "chapters_list", PageData{PageName: "ChaptersList"})
-}
-
-func (c MainController) ListAdminExternalEventsHandler(w http.ResponseWriter, r *http.Request) {
-	renderPage(w, r, "facebook_events", PageData{PageName: "FacebookEvents"})
 }
 
 func (c MainController) ChapterListHandler(w http.ResponseWriter, r *http.Request) {
@@ -988,12 +822,6 @@ type PageData struct {
 	// Filled in by renderPage.
 	StaticResourcesHash string
 
-	// Used on International Form
-	GooglePlacesAPIKey string
-
-	// Used on Int'l Actions form page
-	Chapter model.ChapterWithToken
-
 	IsDev bool
 }
 
@@ -1040,44 +868,6 @@ func sendErrorMessage(w io.Writer, err error) {
 	writeJSON(w, map[string]string{
 		"status":  "error",
 		"message": err.Error(),
-	})
-}
-
-func (c MainController) UpdateEventHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	var eventID int
-	if eventIDStr, ok := vars["event_id"]; ok {
-		var err error
-		eventID, err = strconv.Atoi(eventIDStr)
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	renderPage(w, r, "event_new", PageData{
-		PageName: "NewEvent",
-		Data: map[string]interface{}{
-			"EventID": eventID,
-		},
-	})
-}
-
-func (c MainController) UpdateConnectionHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	var eventID int
-	if eventIDStr, ok := vars["event_id"]; ok {
-		var err error
-		eventID, err = strconv.Atoi(eventIDStr)
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	renderPage(w, r, "connection_new", PageData{
-		PageName: "NewConnection",
-		Data: map[string]interface{}{
-			"EventID": eventID,
-		},
 	})
 }
 
@@ -1256,9 +1046,6 @@ func (c MainController) EventSaveHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Events with no event ID are new events.
-	isNewEvent := event.ID == 0
-
 	eventID, err := model.InsertUpdateEvent(c.db, event)
 	if err != nil {
 		sendErrorMessage(w, err)
@@ -1275,9 +1062,6 @@ func (c MainController) EventSaveHandler(w http.ResponseWriter, r *http.Request)
 		"status":    "success",
 		"event_id":  eventID,
 		"attendees": attendees,
-	}
-	if r.URL.Query().Get("legacy_redirect") == "1" && isNewEvent {
-		out["redirect"] = fmt.Sprintf("/update_event/%d", eventID)
 	}
 	writeJSON(w, out)
 }
@@ -1291,9 +1075,6 @@ func (c MainController) ConnectionSaveHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	// Events with no event ID are new events.
-	isNewEvent := event.ID == 0
-
 	eventID, err := model.InsertUpdateEvent(c.db, event)
 	if err != nil {
 		sendErrorMessage(w, err)
@@ -1310,9 +1091,6 @@ func (c MainController) ConnectionSaveHandler(w http.ResponseWriter, r *http.Req
 		"status":    "success",
 		"event_id":  eventID,
 		"attendees": attendees,
-	}
-	if r.URL.Query().Get("legacy_redirect") == "1" && isNewEvent {
-		out["redirect"] = fmt.Sprintf("/update_connection/%d", eventID)
 	}
 	writeJSON(w, out)
 }
@@ -2199,11 +1977,18 @@ func (c MainController) ListAllChapters(w http.ResponseWriter, r *http.Request) 
 	writeJSON(w, chapters)
 }
 
+// redirectToV2 sends legacy public form URLs to their Next.js replacements, preserving the query string.
+func redirectToV2(w http.ResponseWriter, r *http.Request, path string) {
+	if r.URL.RawQuery != "" {
+		path += "?" + r.URL.RawQuery
+	}
+	http.Redirect(w, r, path, http.StatusFound)
+}
+
 func (c MainController) ApplicationFormHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
-		renderPage(w, r, "form_application", PageData{
-			PageName: "FormApplication",
-		})
+		redirectToV2(w, r, "/v2/apply")
+		return
 	}
 	if r.Method == "POST" {
 
@@ -2237,9 +2022,8 @@ func (c MainController) ApplicationFormHandler(w http.ResponseWriter, r *http.Re
 
 func (c MainController) InterestFormHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
-		renderPage(w, r, "form_interest", PageData{
-			PageName: "FormInterest",
-		})
+		redirectToV2(w, r, "/v2/interest")
+		return
 	}
 	if r.Method == "POST" {
 
@@ -2281,10 +2065,8 @@ func (c MainController) PlacesAPIKeyHandler(w http.ResponseWriter, r *http.Reque
 
 func (c MainController) InternationalFormHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
-		renderPage(w, r, "form_international", PageData{
-			PageName:           "FormInternational",
-			GooglePlacesAPIKey: config.GooglePlacesAPIKey,
-		})
+		redirectToV2(w, r, "/v2/international")
+		return
 	}
 	if r.Method == "POST" {
 
