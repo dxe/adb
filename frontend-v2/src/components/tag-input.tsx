@@ -1,6 +1,6 @@
 'use client'
 
-import { useId, useMemo, useState } from 'react'
+import { KeyboardEvent, useEffect, useId, useMemo, useState } from 'react'
 import { X } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover'
@@ -41,6 +41,7 @@ export function TagInput({
 }: TagInputProps) {
   const [text, setText] = useState('')
   const [isOpen, setIsOpen] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(-1)
   const inputId = useId()
   const listboxId = `${inputId}-listbox`
 
@@ -65,14 +66,58 @@ export function TagInput({
     if (!name.trim() || selectedSet.has(name) || atLimit) return
     onChange([...value, name])
     setText('')
-    setIsOpen(false)
+    closeDropdown()
   }
 
   const removeValue = (name: string) => {
     onChange(value.filter((v) => v !== name))
   }
 
+  const closeDropdown = () => {
+    setIsOpen(false)
+    setActiveIndex(-1)
+  }
+
   const dropdownOpen = isOpen && suggestions.length > 0
+  // Guard against a stale index when suggestions shrink (e.g. a chip is removed).
+  const highlighted =
+    dropdownOpen && activeIndex < suggestions.length ? activeIndex : -1
+  const optionId = (i: number) => `${listboxId}-option-${i}`
+  const activeOptionId = highlighted >= 0 ? optionId(highlighted) : undefined
+
+  useEffect(() => {
+    if (activeOptionId) {
+      document
+        .getElementById(activeOptionId)
+        ?.scrollIntoView({ block: 'nearest' })
+    }
+  }, [activeOptionId])
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      if (!dropdownOpen) {
+        if (e.key === 'ArrowDown' && suggestions.length > 0) {
+          e.preventDefault()
+          setIsOpen(true)
+        }
+        return
+      }
+      e.preventDefault()
+      const last = suggestions.length - 1
+      if (e.key === 'ArrowDown') {
+        setActiveIndex(highlighted >= last ? 0 : highlighted + 1)
+      } else {
+        setActiveIndex(highlighted <= 0 ? last : highlighted - 1)
+      }
+    } else if (e.key === 'Escape') {
+      closeDropdown()
+    } else if (e.key === 'Enter') {
+      e.preventDefault()
+      if (dropdownOpen) addValue(suggestions[Math.max(highlighted, 0)])
+    } else if (e.key === 'Backspace' && text === '' && value.length > 0) {
+      removeValue(value[value.length - 1])
+    }
+  }
 
   const control = (
     <div
@@ -101,7 +146,10 @@ export function TagInput({
         </span>
       ))}
       {showInput && (
-        <Popover open={dropdownOpen} onOpenChange={setIsOpen}>
+        <Popover
+          open={dropdownOpen}
+          onOpenChange={(open) => (open ? setIsOpen(true) : closeDropdown())}
+        >
           <PopoverAnchor asChild>
             <input
               id={inputId}
@@ -109,27 +157,18 @@ export function TagInput({
               aria-autocomplete="list"
               aria-expanded={dropdownOpen}
               aria-controls={listboxId}
+              aria-activedescendant={activeOptionId}
               className="min-w-[8rem] flex-1 border-0 bg-transparent p-1 text-sm outline-none placeholder:text-muted-foreground"
               value={text}
               placeholder={value.length === 0 ? placeholder : undefined}
               onChange={(e) => {
                 setText(e.target.value)
                 setIsOpen(true)
+                setActiveIndex(-1)
               }}
               onFocus={() => setIsOpen(true)}
-              onBlur={() => setIsOpen(false)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault()
-                  if (suggestions.length > 0) addValue(suggestions[0])
-                } else if (
-                  e.key === 'Backspace' &&
-                  text === '' &&
-                  value.length > 0
-                ) {
-                  removeValue(value[value.length - 1])
-                }
-              }}
+              onBlur={closeDropdown}
+              onKeyDown={handleKeyDown}
             />
           </PopoverAnchor>
           <PopoverContent
@@ -144,12 +183,16 @@ export function TagInput({
               role="listbox"
               className="max-h-[240px] overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg"
             >
-              {suggestions.map((s) => (
+              {suggestions.map((s, i) => (
                 <li
                   key={s}
+                  id={optionId(i)}
                   role="option"
-                  aria-selected={false}
-                  className="cursor-pointer px-3 py-1 text-sm hover:bg-gray-100"
+                  aria-selected={i === highlighted}
+                  className={cn(
+                    'cursor-pointer px-3 py-1 text-sm hover:bg-gray-100',
+                    i === highlighted && 'bg-gray-100',
+                  )}
                   onMouseDown={(e) => {
                     // Fires before the input's onBlur closes the popover.
                     e.preventDefault()
