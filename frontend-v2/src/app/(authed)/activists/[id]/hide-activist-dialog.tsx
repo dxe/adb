@@ -4,14 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { apiClient } from '@/lib/api'
 import { activistKeys } from '@/lib/query-keys'
-import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 
 type Props = {
   open: boolean
@@ -47,40 +40,18 @@ export function HideActivistDialog({
     },
   })
 
-  const handleOpenChange = (next: boolean) => {
-    if (mutation.isPending) return
-    onOpenChange(next)
-  }
-
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Hide activist</DialogTitle>
-        </DialogHeader>
-        <p className="text-sm">
-          WARNING: Hiding this activist will make them inaccessible unless they
-          are unhidden by Tech. Are you sure you want to hide this activist?
-        </p>
-        <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => handleOpenChange(false)}
-            disabled={mutation.isPending}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            variant="destructive"
-            onClick={() => mutation.mutate()}
-            disabled={mutation.isPending}
-          >
-            {mutation.isPending ? 'Hiding...' : 'Hide activist'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <ConfirmDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Hide activist"
+      confirmLabel="Hide activist"
+      pendingLabel="Hiding..."
+      onConfirm={() => mutation.mutate()}
+      isPending={mutation.isPending}
+    >
+      WARNING: Hiding this activist will make them inaccessible unless they are
+      unhidden by Tech. Are you sure you want to hide this activist?
+    </ConfirmDialog>
   )
 }

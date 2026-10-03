@@ -3,14 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { API_PATH, apiClient } from '@/lib/api'
-import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 
 type Props = {
   open: boolean
@@ -41,40 +34,19 @@ export function CancelEventDialog({
     },
   })
 
-  const handleOpenChange = (next: boolean) => {
-    if (mutation.isPending) return
-    onOpenChange(next)
-  }
-
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Delete event</DialogTitle>
-        </DialogHeader>
-        <p className="text-sm">
-          Are you sure you want to delete &ldquo;{eventName}&rdquo;? It will no
-          longer be displayed on the public events page.
-        </p>
-        <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => handleOpenChange(false)}
-            disabled={mutation.isPending}
-          >
-            Keep event
-          </Button>
-          <Button
-            type="button"
-            variant="destructive"
-            onClick={() => mutation.mutate()}
-            disabled={mutation.isPending}
-          >
-            {mutation.isPending ? 'Deleting...' : 'Delete event'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <ConfirmDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Delete event"
+      confirmLabel="Delete event"
+      pendingLabel="Deleting..."
+      cancelLabel="Keep event"
+      onConfirm={() => mutation.mutate()}
+      isPending={mutation.isPending}
+    >
+      Are you sure you want to delete &ldquo;{eventName}&rdquo;? It will no
+      longer be displayed on the public events page.
+    </ConfirmDialog>
   )
 }
