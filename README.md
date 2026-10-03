@@ -76,7 +76,7 @@ purposes or taking screenshots.
 Note: The react app can technically be accessed directly on port 3000 locally,
 but it won't have access to the cookies from :8080 which could cause issues.
 
-Access the Go API server and old frontend (Vue app) at http://localhost:8080/
+Access the Go API server at http://localhost:8080/
 
 Access the Members app at members.dxesf.org at http://localhost:8081/
 
@@ -100,31 +100,9 @@ in serial.
 
 ### JS
 
-The frontend is being migrated from Vue to React and is split into two
-applications: the Vue app in /frontend and the React app in /frontend-v2.
-
-#### Vue app
-
-This project uses webpack to compile our frontend files. Frontend
-files that need to be compiled are in `frontend/`, and the compiled
-outputs are in `frontend/dist/`.
-
-- package.json: file with all frontend dependencies
-
-- webpack.config.js: configuration file for webpack, which builds the js
-
-- `make watch`: watch the frontend folder for changes and
-  automatically build the file if anything changes.
-
-The most convenient workflow is to run `make watch` in one terminal
-and `make run` in another one. Then your JS changes will automatically
-be built as you edit them.
-
-#### React app
-
-See frontend-v2/README.md for more information on the React app. See above for
-instructions on building and running the React app along with other components
-of ADB.
+The frontend is a Next.js (React) app in `frontend-v2/`. See
+frontend-v2/README.md for more information. See above for instructions on
+building and running it along with other components of ADB.
 
 ## Environment variables
 

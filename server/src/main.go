@@ -381,14 +381,11 @@ func router() (*mux.Router, *sqlx.DB) {
 	}
 
 	var staticHandler = http.StripPrefix("/static/", http.FileServer(http.Dir(config.StaticDirectory)))
-	var distHandler = http.StripPrefix("/dist/", http.FileServer(http.Dir(config.DistDirectory)))
 	var jsV2Handler = proxyHandler(config.NextJsProxyUrl)
 	if !config.IsProd {
 		staticHandler = noCacheHandler(staticHandler)
-		distHandler = noCacheHandler(distHandler)
 	}
 	router.PathPrefix("/static").Handler(staticHandler)
-	router.PathPrefix("/dist").Handler(distHandler)
 	router.PathPrefix("/v2").Handler(jsV2Handler)
 	router.PathPrefix("/_next").Handler(jsV2Handler)
 	// Workaround for Nextjs bug which ignores our /v2 basePath

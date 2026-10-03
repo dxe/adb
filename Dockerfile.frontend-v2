@@ -19,15 +19,11 @@ WORKDIR /app
 WORKDIR /app/frontend-v2
 # Copy package.json and lock file
 COPY frontend-v2/package.json frontend-v2/pnpm-lock.yaml* ./
-# Copy shared directory at the correct relative path
-COPY shared /app/shared/
 RUN pnpm i --frozen-lockfile
 
 # Rebuild the source code only when needed
 FROM build-base AS builder
 WORKDIR /app
-# Copy the shared directory
-COPY shared ./shared/
 # Copy frontend-v2 and its node_modules
 WORKDIR /app/frontend-v2
 COPY --exclude=node_modules --exclude=.next frontend-v2 ./

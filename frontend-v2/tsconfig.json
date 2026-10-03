@@ -15,8 +15,7 @@
     "incremental": true,
     "paths": {
       "@/*": ["./src/*"],
-      "$public/*": ["./public/*"],
-      "$shared/*": ["../shared/*"]
+      "$public/*": ["./public/*"]
     },
     "plugins": [
       {

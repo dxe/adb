@@ -1,4 +1,4 @@
-.PHONY: run_all run watch test test-server test-frontend lint clean prod_build deps dev_db install_playwright fmt go_mod_sync _go_mod_sync
+.PHONY: run_all run test test-server test-frontend lint clean prod_build deps dev_db install_playwright fmt go_mod_sync _go_mod_sync
 
 # When not using devcontainer, NVM initialization script may be located in home
 # directory. In the devcontainer, it is in /usr/local/share/nvm/.
@@ -17,7 +17,6 @@ NVM_SCRIPT := $(shell \
 # * all Dockerfiles
 # * .github/workflows/main.yml
 # * devcontainer.json `ghcr.io/devcontainers/features/node` feature
-VUE_FRONTEND_NODE_VERSION := 16
 REACT_FRONTEND_NODE_VERSION := 25
 PNPM_VERSION := 10.32.1
 
@@ -27,16 +26,14 @@ PNPM_VERSION := 10.32.1
 # server-side rendering reads NEXT_PUBLIC_API_BASE_URL.
 PORT ?= 8080
 
-# Runs the application (builds Vue.js files, starts Next.js dev server, starts Go server).
-# As of January 2025, upgrading past Node 16 breaks old Vue dependencies.
+# Runs the application (starts Next.js dev server, starts Go server).
 run_all:
 	. $(NVM_SCRIPT) && \
 	export NEXT_PUBLIC_API_BASE_URL=http://localhost:$(PORT); \
-    (cd frontend && nvm use $(VUE_FRONTEND_NODE_VERSION) && npm run dev-build); \
 	(cd frontend-v2 && nvm use $(REACT_FRONTEND_NODE_VERSION) && env -u PORT pnpm dev) &
 	$(MAKE) run
 
-# Just start the go program without recompiling the JS.
+# Just start the go program.
 run:
 	@[ -f server/.env ] || { echo "Error: server/.env not found. Run 'make deps' first."; exit 1; }
 
@@ -48,16 +45,6 @@ run:
 	set +a && \
 	cd server/src && \
 	PORT=$(PORT) go run main.go
-
-# Builds the frontend Vue JS files.
-js:
-	. $(NVM_SCRIPT) && nvm use $(VUE_FRONTEND_NODE_VERSION) && cd frontend && npm run dev-build
-
-# Automatically rebuilds the Vue JS app when you edit a file. This is
-# more convenient then manually running `make run_all` every time you
-# update the JS. You'll need to do this in a separate terminal.
-watch:
-	cd frontend && npm run watch
 
 # Wipe and re-create the dev databases. See the readme for more
 # details.
@@ -77,7 +64,6 @@ deps:
 	@# error if it's missing, so deps (the required first step) creates it.
 	touch server/.env
 	. $(NVM_SCRIPT) && nvm i 22 && npm i -g pnpm@$(PNPM_VERSION) && pnpm i --config.confirmModulesPurge=false
-	. $(NVM_SCRIPT) && cd frontend && nvm i $(VUE_FRONTEND_NODE_VERSION) && npm i --legacy-peer-deps
 	. $(NVM_SCRIPT) && cd frontend-v2 && nvm i $(REACT_FRONTEND_NODE_VERSION) && npm i -g pnpm@$(PNPM_VERSION) && pnpm i --config.confirmModulesPurge=false
 	cd pkg && go mod download
 	cd server/src && go mod download
@@ -131,7 +117,6 @@ lint:
 clean:
 	rm -f cli/adb
 	rm -f server/adb-server
-	rm -rf frontend/dist
 	rm -rf frontend-v2/out
 	rm -rf frontend-v2/.next
 

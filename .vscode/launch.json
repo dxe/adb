@@ -5,22 +5,6 @@
   "version": "0.2.0",
   "configurations": [
     {
-      // Note: This configuration does not serve the front-end app, but
-      // compiles, watches for changes and recompiles it. The app is
-      // served via the Go server.
-      "name": "Vue Frontend build watcher",
-      "request": "launch",
-      "runtimeArgs": ["run-script", "watch"],
-      "cwd": "${workspaceFolder}/frontend",
-      "runtimeExecutable": "npm",
-      "skipFiles": ["<node_internals>/**"],
-      "type": "node",
-      // Please keep in sync with Makefile
-      "runtimeVersion": "16",
-      // Webpack watch only shows build status when TTY is detected
-      "console": "integratedTerminal",
-    },
-    {
       "name": "React Frontend",
       "request": "launch",
       "runtimeArgs": ["run-script", "dev"],
@@ -44,10 +28,6 @@
       "console": "integratedTerminal",
     },
     {
-      // Warning: The Go server serves the Vue frontend files from the
-      // filesystem, but this launch configuration does not wait for
-      // the Vue frontend build watcher to finish the initial build.
-      // There may be a delay before the latest changes take effect.
       "name": "Go Server",
       "type": "go",
       "request": "launch",
@@ -92,11 +72,7 @@
   "compounds": [
     {
       "name": "All servers",
-      "configurations": [
-        "Go Server",
-        "Vue Frontend build watcher",
-        "React Frontend",
-      ],
+      "configurations": ["Go Server", "React Frontend"],
     },
   ],
   "inputs": [
