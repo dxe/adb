@@ -30,6 +30,8 @@ interface ActivistFiltersProps {
   isDebug?: boolean
   debugQueryOptions?: QueryActivistOptions
   children?: React.ReactNode
+  /** Rendered under the chip bar — e.g. a notice that results are stale. */
+  notice?: React.ReactNode
 }
 
 const OPTIONAL_FILTERS = [
@@ -68,6 +70,7 @@ export function ActivistFilters({
   isDebug,
   debugQueryOptions,
   children,
+  notice,
 }: ActivistFiltersProps) {
   // Tracks optional filters added from the menu that may not yet have values.
   const [visibleFilters, setVisibleFilters] = useState<Set<OptionalFilterKey>>(
@@ -396,6 +399,8 @@ export function ActivistFilters({
           </Popover>
         )}
       </div>
+
+      {notice}
     </div>
   )
 }

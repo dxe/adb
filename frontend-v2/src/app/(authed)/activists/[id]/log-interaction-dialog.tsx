@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { API_PATH, apiClient, ActivistJSON } from '@/lib/api'
+import { activistKeys } from '@/lib/query-keys'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Collapse } from '@/components/ui/collapse'
@@ -152,7 +153,7 @@ export function LogInteractionDialog({ open, onOpenChange, activist }: Props) {
         queryKey: [API_PATH.ACTIVIST_TIMELINE, activistId],
       })
       queryClient.invalidateQueries({
-        queryKey: [API_PATH.ACTIVIST_GET, activistId],
+        queryKey: activistKeys.detail(activistId),
       })
       resetForm()
       onOpenChange(false)

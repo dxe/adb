@@ -65,6 +65,49 @@ func TestQueryActivists_NameFilter(t *testing.T) {
 	require.Equal(t, "Alice", result.Activists[0].Name)
 }
 
+func TestQueryActivists_IdsFilter(t *testing.T) {
+	db := testdb.NewDB()
+	defer func() { _ = db.Close() }()
+	repo := NewActivistRepository(db)
+
+	alice, err := model.GetOrCreateActivist(db, "Alice", model.SFBayChapterIdDevTest)
+	require.NoError(t, err)
+	_, err = model.GetOrCreateActivist(db, "Bob", model.SFBayChapterIdDevTest)
+	require.NoError(t, err)
+
+	result, err := repo.QueryActivists(model.QueryActivistOptions{
+		Shape: model.QueryActivistShape{
+			Columns: []model.ActivistColumnName{model.ColName, model.ColID},
+			Filters: model.QueryActivistFilters{Ids: []int{alice.ID}},
+		},
+	})
+	require.NoError(t, err)
+	require.Len(t, result.Activists, 1)
+	require.Equal(t, "Alice", result.Activists[0].Name)
+}
+
+// The ids filter narrows the other filters rather than overriding them.
+func TestQueryActivists_IdsFilterCombinedWithOtherFilters(t *testing.T) {
+	db := testdb.NewDB()
+	defer func() { _ = db.Close() }()
+	repo := NewActivistRepository(db)
+
+	alice, err := model.GetOrCreateActivist(db, "Alice", model.SFBayChapterIdDevTest)
+	require.NoError(t, err)
+
+	result, err := repo.QueryActivists(model.QueryActivistOptions{
+		Shape: model.QueryActivistShape{
+			Columns: []model.ActivistColumnName{model.ColName, model.ColID},
+			Filters: model.QueryActivistFilters{
+				Ids:  []int{alice.ID},
+				Name: model.NameFilter{NameContains: "Bob"},
+			},
+		},
+	})
+	require.NoError(t, err)
+	require.Empty(t, result.Activists)
+}
+
 func TestQueryActivists_InvalidColumn(t *testing.T) {
 	db := testdb.NewDB()
 	defer func() { _ = db.Close() }()
