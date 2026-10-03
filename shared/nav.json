@@ -39,13 +39,13 @@
       "items": [
         {
           "label": "Geo-Circles",
-          "href": "/list_geocircles",
-          "page": "GeoCirclesList"
+          "href": "/v2/circles?type=geo",
+          "page": "CirclesList_beta"
         },
         {
           "label": "Interest Circles",
-          "href": "/list_circles",
-          "page": "CirclesList"
+          "href": "/v2/circles?type=interest",
+          "page": "CirclesList_beta"
         },
         {
           "label": "Working Groups",
@@ -278,6 +278,20 @@
           "label": "Working Groups",
           "href": "/list_working_groups",
           "page": "WorkingGroupList",
+          "roleRequired": ["organizer"],
+          "visibleForNonSFBay": false
+        },
+        {
+          "label": "Geo-Circles",
+          "href": "/list_geocircles",
+          "page": "GeoCirclesList",
+          "roleRequired": ["organizer"],
+          "visibleForNonSFBay": false
+        },
+        {
+          "label": "Interest Circles",
+          "href": "/list_circles",
+          "page": "CirclesList",
           "roleRequired": ["organizer"],
           "visibleForNonSFBay": false
         }
