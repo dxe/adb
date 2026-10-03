@@ -16,7 +16,7 @@ export default function ExternalEventsPage() {
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold">Facebook Events</h1>
         <p className="text-muted-foreground text-sm">
-          Feature or cancel upcoming Facebook/Eventbrite events displayed on the
+          Feature or delete upcoming Facebook/Eventbrite events displayed on the
           public events page.
         </p>
       </div>

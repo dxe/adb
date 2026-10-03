@@ -30,14 +30,14 @@ export function CancelEventDialog({
   const mutation = useMutation({
     mutationFn: () => apiClient.cancelExternalEvent(eventId),
     onSuccess: () => {
-      toast.success('Successfully cancelled event.')
+      toast.success('Successfully deleted event.')
       queryClient.invalidateQueries({
         queryKey: [API_PATH.EXTERNAL_EVENTS_LIST],
       })
       onOpenChange(false)
     },
     onError: (err: Error) => {
-      toast.error(err.message || 'Failed to cancel event')
+      toast.error(err.message || 'Failed to delete event')
     },
   })
 
@@ -50,10 +50,10 @@ export function CancelEventDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Cancel event</DialogTitle>
+          <DialogTitle>Delete event</DialogTitle>
         </DialogHeader>
         <p className="text-sm">
-          Are you sure you want to cancel &ldquo;{eventName}&rdquo;? It will no
+          Are you sure you want to delete &ldquo;{eventName}&rdquo;? It will no
           longer be displayed on the public events page.
         </p>
         <DialogFooter>
@@ -71,7 +71,7 @@ export function CancelEventDialog({
             onClick={() => mutation.mutate()}
             disabled={mutation.isPending}
           >
-            {mutation.isPending ? 'Cancelling...' : 'Cancel event'}
+            {mutation.isPending ? 'Deleting...' : 'Delete event'}
           </Button>
         </DialogFooter>
       </DialogContent>
