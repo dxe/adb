@@ -1,13 +1,8 @@
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  keepPreviousData,
-} from '@tanstack/react-query'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { CalendarPlus, Filter, Loader2, RotateCcw } from 'lucide-react'
 import { format, subMonths, startOfMonth } from 'date-fns'
 import {
@@ -39,8 +34,8 @@ import { useActivistRegistry } from './useActivistRegistry'
 import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
 import { SuggestionInput } from './suggestion-input'
 import { EventListTable } from './event-list-table'
+import { DeleteEventDialog } from './delete-event-dialog'
 import { cn } from '@/lib/utils'
-import toast from 'react-hot-toast'
 import { useDebouncedState } from '@/hooks/use-debounced-state'
 import { ActivistRegistry } from './activist-registry'
 
@@ -119,7 +114,6 @@ type Props = {
 export default function EventsPage({ mode = 'events' }: Props) {
   const defaultParams = useMemo(() => buildDefaultParams(mode), [mode])
   const isConnections = mode === 'connections'
-  const queryClient = useQueryClient()
   const { user } = useAuthedPageContext()
   const { registry } = useActivistRegistry(user.ChapterID)
 
@@ -158,6 +152,7 @@ export default function EventsPage({ mode = 'events' }: Props) {
   }
 
   const [showFilters, setShowFilters] = useState(false)
+  const [deletingEvent, setDeletingEvent] = useState<EventListItem | null>(null)
 
   // Dirty = committed filters differ from defaults (controls Reset button)
   const isDirty =
@@ -196,32 +191,6 @@ export default function EventsPage({ mode = 'events' }: Props) {
     queryFn: ({ signal }) => apiClient.getEventList(committedParams, signal),
     placeholderData: keepPreviousData,
   })
-
-  const deleteMutation = useMutation({
-    mutationFn: (eventId: number) => apiClient.deleteEvent(eventId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [API_PATH.EVENT_LIST] })
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Failed to delete event. Please try again.')
-    },
-  })
-
-  // deleteMutation.mutate is stable across renders (TanStack Query guarantee).
-  // Destructuring it lets useCallback hold a stable dep so handleDelete doesn't
-  // change every render and needlessly bust the columns useMemo in EventListTable.
-  const { mutate: deleteEvent } = deleteMutation
-  const handleDelete = useCallback(
-    (event: EventListItem) => {
-      const confirmed = window.confirm(
-        `Are you sure you want to delete "${event.event_name}"?`,
-      )
-      if (confirmed) {
-        deleteEvent(event.event_id)
-      }
-    },
-    [deleteEvent],
-  )
 
   const title = isConnections ? 'All Coachings' : 'All Events'
   const newHref = isConnections ? '/coachings/new' : '/events/new'
@@ -377,8 +346,22 @@ export default function EventsPage({ mode = 'events' }: Props) {
             {events.length} {isConnections ? 'coaching' : 'event'}
             {events.length !== 1 ? 's' : ''} found
           </div>
-          <EventListTable events={events} mode={mode} onDelete={handleDelete} />
+          <EventListTable
+            events={events}
+            mode={mode}
+            onDelete={setDeletingEvent}
+          />
         </div>
+      )}
+
+      {deletingEvent && (
+        <DeleteEventDialog
+          open={!!deletingEvent}
+          onOpenChange={(open) => {
+            if (!open) setDeletingEvent(null)
+          }}
+          event={deletingEvent}
+        />
       )}
     </div>
   )
