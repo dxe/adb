@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { navbarData } from './nav-data'
 
 /**
- * These hrefs are hand-maintained and never pass through `guardTrailingDot`,
- * so the rule it applies to app-written URLs is asserted here instead: a URL
- * must not end in `.`. See `src/lib/trailing-dot-guard.ts` for why, and for the
+ * These hrefs don't pass through `guardTrailingDot` (activist ones are guarded
+ * by `buildActivistsHref`, the rest are hand-written), so the rule it applies to
+ * app-written URLs is asserted here instead: a URL must not end in `.`. See `src/lib/trailing-dot-guard.ts` for why, and for the
  * `&=` fix. Keep the two in sync.
  */
 const hrefs = navbarData.items.flatMap((group) =>

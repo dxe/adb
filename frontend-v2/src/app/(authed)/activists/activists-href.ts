@@ -1,5 +1,5 @@
 import { createSerializer } from 'nuqs/server'
-import { guardTrailingDot } from '@/lib/trailing-dot-guard'
+import { TRAILING_DOT_GUARD_KEY } from '@/lib/trailing-dot-guard'
 import {
   ACTIVIST_QUERY_STATE_PARSERS,
   ACTIVIST_QUERY_URL_KEYS,
@@ -14,9 +14,8 @@ const serializeActivistQuery = createSerializer(ACTIVIST_QUERY_STATE_PARSERS, {
 export function buildActivistsHref(
   query: Partial<ParsedActivistQueryParams>,
 ): string {
-  const [path, search = ''] = serializeActivistQuery('/activists', query).split(
-    '?',
-  )
-  const guarded = guardTrailingDot(new URLSearchParams(search)).toString()
-  return guarded ? `${path}?${guarded}` : path
+  // Appends the guard directly: a URLSearchParams round-trip would percent-encode
+  // the `,`, `~` and `|` that nuqs leaves readable.
+  const href = serializeActivistQuery('/activists', query)
+  return href.endsWith('.') ? `${href}&${TRAILING_DOT_GUARD_KEY}=` : href
 }
