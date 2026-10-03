@@ -76,7 +76,7 @@ export default function GeneratorForm(props: { adbRootUrl?: string }) {
       params.append('showReferralApply', value.referralApply.toString())
       params.append('showReferralOutlet', value.referralOutlet.toString())
 
-      const url = `${adbRootUrl}/interest?${params.toString()}`
+      const url = `${adbRootUrl}/v2/interest?${params.toString()}`
       setOutput(url)
     },
   })
