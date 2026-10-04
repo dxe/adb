@@ -39,7 +39,8 @@ Rules regarding the Next.js app in ./frontend-v2
 
 ### playwright-mcp
 
-- In Linux environments, `make install_playwright` before invoking Playwright MCP to install the browser.
+- In the devcontainer, `make install_playwright` before invoking Playwright MCP to install the browser.
+- In the Claude Code cloud VM, do not run `make install_playwright`. `.mcp.json` launches via `scripts/shell/playwright-mcp.sh`, which points the MCP at the image's preinstalled Chromium (`/opt/pw-browsers/chromium`).
 
 ## backend
 

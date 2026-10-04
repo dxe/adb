@@ -2,9 +2,8 @@
   "mcpServers": {
     "playwright": {
       "type": "stdio",
-      "command": "pnpx",
+      "command": "scripts/shell/playwright-mcp.sh",
       "args": [
-        "@playwright/mcp@latest",
         "--browser",
         "chromium",
         "--headless",
