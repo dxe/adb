@@ -7,6 +7,5 @@ db() {
 }
 
 adb() {
-  # ADB_REPO_ROOT is set in the Claude Code cloud VM, where the repo is not at /workspace.
-  go run "${ADB_REPO_ROOT:-/workspace}/cli" "$@"
+  go run "$ADB_REPO_ROOT/cli" "$@"
 }

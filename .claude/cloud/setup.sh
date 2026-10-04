@@ -11,7 +11,7 @@ apt-get install -y -qq mysql-client
 
 make deps
 
-# `db` and `adb` shell functions.
+# Shell helper functions (e.g. `db`, `adb`).
 cp scripts/shell/adb_functions.bash ~/.bash_adb_functions
 grep -qF '.bash_adb_functions' ~/.bash_profile 2>/dev/null ||
   cat scripts/shell/profile.bash >> ~/.bash_profile
