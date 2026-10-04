@@ -1,10 +1,15 @@
-.PHONY: run_all run test test-server test-frontend lint clean prod_build deps dev_db install_playwright fmt go_mod_sync _go_mod_sync
+.PHONY: run_all run test test-server test-frontend lint clean prod_build deps dev_db install_playwright fmt go_mod_sync _go_mod_sync cloud_setup cloud_start
 
 # When not using devcontainer, NVM initialization script may be located in home
-# directory. In the devcontainer, it is in /usr/local/share/nvm/.
+# directory. In the devcontainer, it is in /usr/local/share/nvm/. In the Claude
+# Code cloud VM, it is in /opt/nvm/. $NVM_DIR takes precedence if set.
 NVM_SCRIPT := $(shell \
-    if [ -s "$(HOME)/.nvm/nvm.sh" ]; then \
+    if [ -n "$(NVM_DIR)" ] && [ -s "$(NVM_DIR)/nvm.sh" ]; then \
+      echo "$(NVM_DIR)/nvm.sh"; \
+    elif [ -s "$(HOME)/.nvm/nvm.sh" ]; then \
       echo "$(HOME)/.nvm/nvm.sh"; \
+    elif [ -s "/opt/nvm/nvm.sh" ]; then \
+      echo "/opt/nvm/nvm.sh"; \
     elif [ -s "/usr/local/share/nvm/nvm.sh" ]; then \
       echo "/usr/local/share/nvm/nvm.sh"; \
     else \
@@ -54,6 +59,16 @@ dev_db:
 # Install the browser binary and system libraries used by the Playwright MCP.
 install_playwright:
 	. $(NVM_SCRIPT) && nvm i $(REACT_FRONTEND_NODE_VERSION) && bash .devcontainer/install-playwright.sh
+
+# One-time setup for the Claude Code cloud VM (no devcontainer). Call from the
+# environment's setup script. See .claude/cloud/.
+cloud_setup:
+	.claude/cloud/setup.sh
+
+# Per-session startup for the Claude Code cloud VM: dockerd + MySQL + dev data.
+# Run automatically by the SessionStart hook in .claude/settings.json.
+cloud_start:
+	.claude/cloud/start.sh
 
 # Install all deps for this project.
 # Note: PNPM must be installed separately for each version of NPM used, since it is installed within each NPM installation.
