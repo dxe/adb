@@ -2,6 +2,7 @@
 
 import {
   KeyboardEvent,
+  ReactNode,
   useCallback,
   useEffect,
   useId,
@@ -22,6 +23,8 @@ export interface TagInputProps {
   options: string[]
   /** Optional label rendered above the control, wired to the input via `htmlFor`. */
   label?: string
+  /** Optional content rendered right after the label (e.g. an info popover). */
+  labelAccessory?: ReactNode
   /** Placeholder shown in the text input while no chips are selected. */
   placeholder?: string
   /** Allow only one selection — the input hides while a value is picked. */
@@ -41,6 +44,7 @@ export function TagInput({
   onChange,
   options,
   label,
+  labelAccessory,
   placeholder = 'Search by name...',
   single = false,
   maxSuggestions = 20,
@@ -232,7 +236,10 @@ export function TagInput({
 
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={labelFor}>{label}</Label>
+      <div className="flex items-center gap-1.5">
+        <Label htmlFor={labelFor}>{label}</Label>
+        {labelAccessory}
+      </div>
       {control}
     </div>
   )

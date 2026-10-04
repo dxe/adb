@@ -25,6 +25,7 @@ import {
   WorkingGroupSavePayload,
 } from '@/lib/api'
 import { TagInput } from '@/components/tag-input'
+import { FieldDescriptionPopover } from '@/app/(authed)/activists/field-description-popover'
 import { findPointPerson } from '@/lib/members'
 
 const workingGroupFormSchema = z.object({
@@ -279,6 +280,12 @@ export function WorkingGroupFormDialog({
             {(field) => (
               <TagInput
                 label="Point Person"
+                labelAccessory={
+                  <FieldDescriptionPopover
+                    label="Point Person"
+                    description="The organizer who leads this working group. Must be an organizer."
+                  />
+                }
                 options={organizerNames}
                 value={field.state.value}
                 onChange={field.handleChange}
@@ -291,6 +298,12 @@ export function WorkingGroupFormDialog({
             {(field) => (
               <TagInput
                 label="Members"
+                labelAccessory={
+                  <FieldDescriptionPopover
+                    label="Members"
+                    description="Organizers who are part of this working group."
+                  />
+                }
                 options={organizerNames}
                 value={field.state.value}
                 onChange={field.handleChange}
@@ -302,6 +315,12 @@ export function WorkingGroupFormDialog({
             {(field) => (
               <TagInput
                 label="Non-members on Mailing List"
+                labelAccessory={
+                  <FieldDescriptionPopover
+                    label="Non-members on Mailing List"
+                    description="Any activist who should receive the working group's emails but is not an official member."
+                  />
+                }
                 options={activistNames}
                 value={field.state.value}
                 onChange={field.handleChange}
