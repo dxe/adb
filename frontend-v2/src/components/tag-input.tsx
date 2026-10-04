@@ -1,6 +1,13 @@
 'use client'
 
-import { KeyboardEvent, useEffect, useId, useMemo, useState } from 'react'
+import {
+  KeyboardEvent,
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useState,
+} from 'react'
 import { X } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover'
@@ -42,6 +49,14 @@ export function TagInput({
   const [text, setText] = useState('')
   const [isOpen, setIsOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
+  // A modal Dialog blocks wheel/touch scrolling on content portaled outside it, so
+  // render the dropdown inside the enclosing dialog (if any) instead of <body>.
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(
+    null,
+  )
+  const inputRef = useCallback((el: HTMLInputElement | null) => {
+    setPortalContainer(el?.closest<HTMLElement>('[role="dialog"]') ?? null)
+  }, [])
   const inputId = useId()
   const listboxId = `${inputId}-listbox`
 
@@ -152,6 +167,7 @@ export function TagInput({
         >
           <PopoverAnchor asChild>
             <input
+              ref={inputRef}
               id={inputId}
               role="combobox"
               aria-autocomplete="list"
@@ -175,12 +191,15 @@ export function TagInput({
             className="w-[var(--radix-popover-trigger-width)] p-0"
             align="start"
             sideOffset={4}
+            container={portalContainer}
             onOpenAutoFocus={(e) => e.preventDefault()}
             onCloseAutoFocus={(e) => e.preventDefault()}
           >
             <ul
               id={listboxId}
               role="listbox"
+              // Keep input focus when grabbing the scrollbar so the list stays open.
+              onMouseDown={(e) => e.preventDefault()}
               className="max-h-[240px] overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg"
             >
               {suggestions.map((s, i) => (
