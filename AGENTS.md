@@ -39,7 +39,7 @@ Rules regarding the Next.js app in ./frontend-v2
 
 ### playwright-mcp
 
-- Run `make install_playwright` to install the Playwright MCP browser when needed.
+- In Linux environments, `make install_playwright` before invoking Playwright MCP to install the browser.
 
 ## backend
 
