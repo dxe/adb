@@ -11,10 +11,10 @@ apt-get install -y -qq mysql-client
 
 make deps
 
-# Same shell functions the devcontainer's post-create.sh installs.
-cp .devcontainer/.bash_adb_functions ~/.bash_adb_functions
+# `db` and `adb` shell functions.
+cp scripts/shell/adb_functions.bash ~/.bash_adb_functions
 grep -qF '.bash_adb_functions' ~/.bash_profile 2>/dev/null ||
-  cat .devcontainer/.bash_profile >> ~/.bash_profile
+  cat scripts/shell/profile.bash >> ~/.bash_profile
 
 # Best effort: pre-pull so session start is fast.
 .claude/cloud/start-docker.sh && docker pull mysql:8.4 || true

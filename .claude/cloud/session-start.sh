@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# SessionStart hook. No-op outside the Claude Code cloud VM so the devcontainer
-# (which has its own DB and env) is unaffected.
+# SessionStart hook. No-op outside the Claude Code cloud VM.
 [ "${CLAUDE_CODE_REMOTE:-}" = true ] || exit 0
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."

@@ -60,13 +60,12 @@ dev_db:
 install_playwright:
 	. $(NVM_SCRIPT) && nvm i $(REACT_FRONTEND_NODE_VERSION) && bash .devcontainer/install-playwright.sh
 
-# One-time setup for the Claude Code cloud VM (no devcontainer). Call from the
-# environment's setup script. See .claude/cloud/.
+# One-time setup for the Claude Code cloud VM. Call from the environment's setup
+# script. See .claude/cloud/README.md.
 cloud_setup:
 	.claude/cloud/setup.sh
 
 # Per-session startup for the Claude Code cloud VM: dockerd + MySQL + dev data.
-# Run automatically by the SessionStart hook in .claude/settings.json.
 cloud_start:
 	.claude/cloud/start.sh
 

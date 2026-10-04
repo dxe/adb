@@ -4,11 +4,7 @@ Note: CLAUDE.md is a symlink to this file.
 
 ## environments
 
-The same repo is used in two environments. Check which you are in (`$CLAUDE_CODE_REMOTE` is `true` in the cloud VM) before following environment-specific instructions below.
-
-- **Devcontainer** (local dev machine): repo at `/workspace`, MySQL is the `mysql` compose service, DB env vars come from `.devcontainer/compose.extend.yaml`, and `~/.bash_profile` is set up by `.devcontainer/post-create.sh`.
-- **Claude Code cloud VM** (no devcontainer): repo at `$ADB_REPO_ROOT` (e.g. `/home/user/adb`). The environment's setup script only runs `make cloud_setup`. A SessionStart hook (`.claude/settings.json` → `.claude/cloud/session-start.sh`) exports the DB env vars from `.claude/cloud/env.sh`, then runs `make cloud_start`, which starts `dockerd` and a `mysql:8.4` container on `127.0.0.1:3306` and runs `make dev_db` on first start. Change cloud setup in `.claude/cloud/`, not in the Claude UI.
-- In both, the Go tests need a running Docker daemon (testcontainers). The `db` and `adb` shell functions work the same way in both.
+This repo runs in the devcontainer (local dev machine) and in the Claude Code cloud VM (no devcontainer; `$CLAUDE_CODE_REMOTE` is `true`). Cloud VM setup is managed in the repo, not in the Claude UI. If you are in the cloud VM and the database, Docker, or the `db`/`adb` functions are not working, or you need to change that setup, see [.claude/cloud/README.md](.claude/cloud/README.md).
 
 ## architecture
 

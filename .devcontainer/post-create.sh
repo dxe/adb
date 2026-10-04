@@ -5,6 +5,6 @@ set -euo pipefail
 sudo chown -R vscode:vscode /home/vscode/.claude
 
 # Make bash functions available in both interactive and non-interactive shells.
-cp /workspace/.devcontainer/.bash_adb_functions ~/.bash_adb_functions
+cp /workspace/scripts/shell/adb_functions.bash ~/.bash_adb_functions
 cat /workspace/.devcontainer/.bashrc >> ~/.bashrc
-cat /workspace/.devcontainer/.bash_profile >> ~/.bash_profile
+cat /workspace/scripts/shell/profile.bash >> ~/.bash_profile
