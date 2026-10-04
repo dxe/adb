@@ -58,7 +58,7 @@ dev_db:
 
 # Install the browser binary and system libraries used by the Playwright MCP.
 install_playwright:
-	. $(NVM_SCRIPT) && nvm i $(REACT_FRONTEND_NODE_VERSION) && bash .devcontainer/install-playwright.sh
+	. $(NVM_SCRIPT) && nvm i $(REACT_FRONTEND_NODE_VERSION) && bash scripts/shell/install-playwright.sh
 
 # Install all deps for this project.
 # Note: PNPM must be installed separately for each version of NPM used, since it is installed within each NPM installation.
