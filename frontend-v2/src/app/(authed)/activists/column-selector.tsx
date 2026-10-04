@@ -21,7 +21,7 @@ import {
   ColumnDefinition,
 } from './column-definitions'
 import { normalizeColumns } from './column-selection'
-import { FieldDescriptionPopover } from './field-description-popover'
+import { FieldDescriptionPopover } from '@/components/field-description-popover'
 
 interface ColumnSelectorProps {
   visibleColumns: ActivistColumnName[]

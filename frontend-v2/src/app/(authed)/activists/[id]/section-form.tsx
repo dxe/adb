@@ -37,7 +37,7 @@ import {
   type ColumnDefinition,
 } from '../column-definitions'
 import { datePickerValueToYmd, ymdToDatePickerValue } from '../date-time'
-import { FieldDescriptionPopover } from '../field-description-popover'
+import { FieldDescriptionPopover } from '@/components/field-description-popover'
 import { getReadOnlyFieldDisplay } from '../format-value'
 import { LinkedValue } from '../linked-value'
 

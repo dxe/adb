@@ -25,7 +25,7 @@ import {
   WorkingGroupSavePayload,
 } from '@/lib/api'
 import { TagInput } from '@/components/tag-input'
-import { FieldDescriptionPopover } from '@/app/(authed)/activists/field-description-popover'
+import { FieldDescriptionPopover } from '@/components/field-description-popover'
 import { findPointPerson } from '@/lib/members'
 
 const workingGroupFormSchema = z.object({

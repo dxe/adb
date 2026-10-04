@@ -10,7 +10,7 @@ import {
   type ColumnCategory,
   type ColumnDefinition,
 } from '../column-definitions'
-import { FieldDescriptionPopover } from '../field-description-popover'
+import { FieldDescriptionPopover } from '@/components/field-description-popover'
 import {
   formatValue,
   getReadOnlyFieldDisplay,
