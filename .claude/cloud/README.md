@@ -9,6 +9,3 @@ needs no environment variables set in the Claude UI.
   for development.
 - `session-start.sh`: SessionStart hook (registered in `../settings.json`) that
   exports `env.sh` and runs `start.sh`.
-
-The repo lives at `$ADB_REPO_ROOT` rather than `/workspace`. Go tests need the
-Docker daemon (they start MySQL with testcontainers).
