@@ -11,4 +11,6 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   printf 'source %q\n' "$PWD/.claude/cloud/env.sh" >> "$CLAUDE_ENV_FILE"
 fi
 
+# Stdout from a SessionStart hook is added to the session context by Claude
+# Code, so send start.sh's output to stderr.
 .claude/cloud/start.sh >&2
