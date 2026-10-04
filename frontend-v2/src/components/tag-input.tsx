@@ -33,6 +33,50 @@ export interface TagInputProps {
   maxSuggestions?: number
   /** Disables the control: hides the text input and chip-remove buttons. */
   disabled?: boolean
+  /** Called whenever the typed (not yet selected) text changes, so callers can block submitting it. */
+  onTextChange?: (text: string) => void
+  /** Error message rendered below the control. */
+  error?: string
+}
+
+/**
+ * Tracks unselected text typed into TagInputs so a form can refuse to submit while
+ * any is pending (otherwise users assume typed text was saved). Pass
+ * `onTextChange={setPending(key)}` and `error={errors[key]}` to each TagInput, and
+ * call `validate(labels)` on submit — it returns false (and sets errors) if any
+ * keyed input still has text.
+ */
+export function usePendingTagText() {
+  const [pending, setPending] = useState<Record<string, string>>({})
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  const onTextChange = (key: string) => (text: string) => {
+    setPending((p) => (p[key] === text ? p : { ...p, [key]: text }))
+    if (text.trim() === '') {
+      setErrors((e) => {
+        if (!(key in e)) return e
+        const rest = { ...e }
+        delete rest[key]
+        return rest
+      })
+    }
+  }
+
+  /** `labels` maps field key -> display label. Returns true when nothing is pending. */
+  const validate = (labels: Record<string, string>) => {
+    const next: Record<string, string> = {}
+    for (const [key, label] of Object.entries(labels)) {
+      const text = pending[key]?.trim()
+      if (text) {
+        next[key] =
+          `"${text}" has not been selected. Choose an option from the list for ${label}, or clear the text.`
+      }
+    }
+    setErrors(next)
+    return Object.keys(next).length === 0
+  }
+
+  return { onTextChange, errors, validate }
 }
 
 /**
@@ -49,6 +93,8 @@ export function TagInput({
   single = false,
   maxSuggestions = 20,
   disabled = false,
+  onTextChange,
+  error,
 }: TagInputProps) {
   const [text, setText] = useState('')
   const [isOpen, setIsOpen] = useState(false)
@@ -85,6 +131,7 @@ export function TagInput({
     if (!name.trim() || selectedSet.has(name) || atLimit) return
     onChange([...value, name])
     setText('')
+    onTextChange?.('')
     closeDropdown()
   }
 
@@ -143,6 +190,7 @@ export function TagInput({
       className={cn(
         'flex min-h-9 flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent px-2 py-1 text-sm',
         'focus-within:border-primary focus-within:ring-1 focus-within:ring-ring',
+        error && 'border-destructive',
         disabled && 'cursor-not-allowed opacity-50',
       )}
     >
@@ -183,6 +231,7 @@ export function TagInput({
               placeholder={value.length === 0 ? placeholder : undefined}
               onChange={(e) => {
                 setText(e.target.value)
+                onTextChange?.(e.target.value)
                 setIsOpen(true)
                 setActiveIndex(-1)
               }}
@@ -232,7 +281,19 @@ export function TagInput({
     </div>
   )
 
-  if (!label) return control
+  const errorMessage = error && (
+    <p role="alert" className="text-sm text-destructive">
+      {error}
+    </p>
+  )
+
+  if (!label)
+    return (
+      <div className="space-y-1.5">
+        {control}
+        {errorMessage}
+      </div>
+    )
 
   return (
     <div className="space-y-1.5">
@@ -241,6 +302,7 @@ export function TagInput({
         {labelAccessory}
       </div>
       {control}
+      {errorMessage}
     </div>
   )
 }

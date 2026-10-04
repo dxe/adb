@@ -24,7 +24,7 @@ import {
   WorkingGroupMemberInput,
   WorkingGroupSavePayload,
 } from '@/lib/api'
-import { TagInput } from '@/components/tag-input'
+import { TagInput, usePendingTagText } from '@/components/tag-input'
 import { FieldDescriptionPopover } from '@/components/field-description-popover'
 import { findPointPerson } from '@/lib/members'
 
@@ -160,9 +160,21 @@ export function WorkingGroupFormDialog({
     [workingGroup],
   )
 
+  const pendingText = usePendingTagText()
+
   const form = useForm({
     defaultValues: initialValues,
     onSubmit: async ({ value }) => {
+      if (
+        !pendingText.validate({
+          pointPerson: 'Point Person',
+          members: 'Members',
+          nonMembers: 'Non-members on Mailing List',
+        })
+      ) {
+        toast.error('Select a name from the list or clear the typed text')
+        return
+      }
       const parsed = workingGroupFormSchema.safeParse(value)
       if (!parsed.success) {
         toast.error(
@@ -279,6 +291,8 @@ export function WorkingGroupFormDialog({
           <form.Field name="pointPerson">
             {(field) => (
               <TagInput
+                onTextChange={pendingText.onTextChange('pointPerson')}
+                error={pendingText.errors['pointPerson']}
                 label="Point Person"
                 labelAccessory={
                   <FieldDescriptionPopover
@@ -297,6 +311,8 @@ export function WorkingGroupFormDialog({
           <form.Field name="members">
             {(field) => (
               <TagInput
+                onTextChange={pendingText.onTextChange('members')}
+                error={pendingText.errors['members']}
                 label="Members"
                 labelAccessory={
                   <FieldDescriptionPopover
@@ -314,6 +330,8 @@ export function WorkingGroupFormDialog({
           <form.Field name="nonMembers">
             {(field) => (
               <TagInput
+                onTextChange={pendingText.onTextChange('nonMembers')}
+                error={pendingText.errors['nonMembers']}
                 label="Non-members on Mailing List"
                 labelAccessory={
                   <FieldDescriptionPopover

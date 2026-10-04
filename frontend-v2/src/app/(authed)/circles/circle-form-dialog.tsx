@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { TagInput } from '@/components/tag-input'
+import { TagInput, usePendingTagText } from '@/components/tag-input'
 import type { CircleMode } from './search-params'
 
 const circleFormSchema = z.object({
@@ -126,9 +126,15 @@ export function CircleFormDialog({
 
   const initialValues = useMemo(() => buildInitialValues(circle), [circle])
 
+  const pendingText = usePendingTagText()
+
   const form = useForm({
     defaultValues: initialValues,
     onSubmit: async ({ value }) => {
+      if (!pendingText.validate({ host: 'Host', members: 'Members' })) {
+        toast.error('Select a name from the list or clear the typed text')
+        return
+      }
       const parsed = circleFormSchema.safeParse(value)
       if (!parsed.success) {
         toast.error(
@@ -268,6 +274,8 @@ export function CircleFormDialog({
           <form.Field name="host">
             {(field) => (
               <TagInput
+                onTextChange={pendingText.onTextChange('host')}
+                error={pendingText.errors['host']}
                 label="Host"
                 value={field.state.value}
                 onChange={field.handleChange}
@@ -282,6 +290,8 @@ export function CircleFormDialog({
             <form.Field name="members">
               {(field) => (
                 <TagInput
+                  onTextChange={pendingText.onTextChange('members')}
+                  error={pendingText.errors['members']}
                   label="Members"
                   value={field.state.value}
                   onChange={field.handleChange}
