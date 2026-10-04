@@ -5,11 +5,10 @@ set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 source .claude/cloud/env.sh
 
-# Make the env visible to every Bash command Claude runs.
+# Make the env visible to every Bash command Claude runs. Source env.sh itself
+# rather than copying variables, so new ones are picked up automatically.
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
-  for v in ADB_REPO_ROOT NVM_DIR DB_HOST DB_PROTOCOL DB_USER DB_PASSWORD DB_NAME; do
-    printf 'export %s=%q\n' "$v" "${!v}" >> "$CLAUDE_ENV_FILE"
-  done
+  printf 'source %q\n' "$PWD/.claude/cloud/env.sh" >> "$CLAUDE_ENV_FILE"
 fi
 
 make cloud_start >&2

@@ -14,6 +14,7 @@ services:
     # Cap container RAM with no swap (memswap_limit == mem_limit disables swap).
     mem_limit: 8g
     memswap_limit: 8g
+    # Keep in sync with .claude/cloud/env.sh
     environment:
       - DB_HOST=mysql
       - DB_PROTOCOL=tcp(mysql:3306)
