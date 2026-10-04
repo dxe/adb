@@ -1,7 +1,7 @@
 module github.com/dxe/adb/cli
 
 // Keep in sync with server/src/go.mod.
-go 1.25.8
+go 1.26.0
 
 require (
 	github.com/dxe/adb/pkg v0.0.0-00010101000000-000000000000

@@ -1,7 +1,7 @@
 module github.com/dxe/adb/pkg
 
 // Keep in sync with server/src/go.mod.
-go 1.25.8
+go 1.26.0
 
 require (
 	github.com/go-sql-driver/mysql v1.10.0
