@@ -2,6 +2,10 @@
 
 Note: CLAUDE.md is a symlink to this file.
 
+## environments
+
+This repo runs in the devcontainer (local dev machine) and in the Claude Code cloud VM (no devcontainer; `$CLAUDE_CODE_REMOTE` is `true`). Cloud VM setup is managed in the repo, not in the Claude UI. See [.claude/cloud/README.md](.claude/cloud/README.md) for Cloud VM setup info.
+
 ## architecture
 
 Background context on how the stack fits together.

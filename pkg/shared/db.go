@@ -3,7 +3,7 @@ package shared
 import "fmt"
 
 // DBConnParams are the MySQL connection parameters shared by all environments.
-// Please keep relevant options in sync with the db() function in .devcontainer/.bash_adb_functions.
+// Please keep relevant options in sync with the db() function in scripts/shell/adb_functions.bash.
 const DBConnParams = "parseTime=true&charset=utf8mb4&clientFoundRows=true"
 
 // BuildDBDataSource constructs a MySQL DSN from the given connection components.

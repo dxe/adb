@@ -1,10 +1,15 @@
 .PHONY: run_all run test test-server test-frontend lint clean prod_build deps dev_db install_playwright fmt go_mod_sync _go_mod_sync
 
 # When not using devcontainer, NVM initialization script may be located in home
-# directory. In the devcontainer, it is in /usr/local/share/nvm/.
+# directory. In the devcontainer, it is in /usr/local/share/nvm/. In the Claude
+# Code cloud VM, it is in /opt/nvm/. $NVM_DIR takes precedence if set.
 NVM_SCRIPT := $(shell \
-    if [ -s "$(HOME)/.nvm/nvm.sh" ]; then \
+    if [ -n "$(NVM_DIR)" ] && [ -s "$(NVM_DIR)/nvm.sh" ]; then \
+      echo "$(NVM_DIR)/nvm.sh"; \
+    elif [ -s "$(HOME)/.nvm/nvm.sh" ]; then \
       echo "$(HOME)/.nvm/nvm.sh"; \
+    elif [ -s "/opt/nvm/nvm.sh" ]; then \
+      echo "/opt/nvm/nvm.sh"; \
     elif [ -s "/usr/local/share/nvm/nvm.sh" ]; then \
       echo "/usr/local/share/nvm/nvm.sh"; \
     else \

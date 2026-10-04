@@ -7,5 +7,5 @@ db() {
 }
 
 adb() {
-  go run /workspace/cli "$@"
+  go run "$ADB_REPO_ROOT/cli" "$@"
 }
