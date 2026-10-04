@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Per-session startup for the Claude Code cloud VM: dockerd + MySQL 8.4 with a
-# migrated, seeded dev database. Run via `make cloud_start`. Idempotent.
+# migrated, seeded dev database. Idempotent.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 source .claude/cloud/env.sh

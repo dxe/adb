@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# One-time setup for the Claude Code cloud VM. Run via `make cloud_setup` from
-# the environment's setup script. Safe to re-run.
+# One-time setup for the Claude Code cloud VM. Run from the environment's
+# setup script. Safe to re-run.
 set -euxo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 source .claude/cloud/env.sh

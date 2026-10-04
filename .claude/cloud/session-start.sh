@@ -11,4 +11,4 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   printf 'source %q\n' "$PWD/.claude/cloud/env.sh" >> "$CLAUDE_ENV_FILE"
 fi
 
-make cloud_start >&2
+.claude/cloud/start.sh >&2
