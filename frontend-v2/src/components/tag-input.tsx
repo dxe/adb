@@ -1,6 +1,14 @@
 'use client'
 
-import { KeyboardEvent, useEffect, useId, useMemo, useState } from 'react'
+import {
+  KeyboardEvent,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useState,
+} from 'react'
 import { X } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover'
@@ -15,6 +23,8 @@ export interface TagInputProps {
   options: string[]
   /** Optional label rendered above the control, wired to the input via `htmlFor`. */
   label?: string
+  /** Optional content rendered right after the label (e.g. an info popover). */
+  labelAccessory?: ReactNode
   /** Placeholder shown in the text input while no chips are selected. */
   placeholder?: string
   /** Allow only one selection — the input hides while a value is picked. */
@@ -23,6 +33,50 @@ export interface TagInputProps {
   maxSuggestions?: number
   /** Disables the control: hides the text input and chip-remove buttons. */
   disabled?: boolean
+  /** Called whenever the typed (not yet selected) text changes, so callers can block submitting it. */
+  onTextChange?: (text: string) => void
+  /** Error message rendered below the control. */
+  error?: string
+}
+
+/**
+ * Tracks unselected text typed into TagInputs so a form can refuse to submit while
+ * any is pending (otherwise users assume typed text was saved). Pass
+ * `onTextChange={setPending(key)}` and `error={errors[key]}` to each TagInput, and
+ * call `validate(labels)` on submit — it returns false (and sets errors) if any
+ * keyed input still has text.
+ */
+export function usePendingTagText() {
+  const [pending, setPending] = useState<Record<string, string>>({})
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  const onTextChange = (key: string) => (text: string) => {
+    setPending((p) => (p[key] === text ? p : { ...p, [key]: text }))
+    if (text.trim() === '') {
+      setErrors((e) => {
+        if (!(key in e)) return e
+        const rest = { ...e }
+        delete rest[key]
+        return rest
+      })
+    }
+  }
+
+  /** `labels` maps field key -> display label. Returns true when nothing is pending. */
+  const validate = (labels: Record<string, string>) => {
+    const next: Record<string, string> = {}
+    for (const [key, label] of Object.entries(labels)) {
+      const text = pending[key]?.trim()
+      if (text) {
+        next[key] =
+          `"${text}" has not been selected. Choose an option from the list for ${label}, or clear the text.`
+      }
+    }
+    setErrors(next)
+    return Object.keys(next).length === 0
+  }
+
+  return { onTextChange, errors, validate }
 }
 
 /**
@@ -34,14 +88,25 @@ export function TagInput({
   onChange,
   options,
   label,
+  labelAccessory,
   placeholder = 'Search by name...',
   single = false,
   maxSuggestions = 20,
   disabled = false,
+  onTextChange,
+  error,
 }: TagInputProps) {
   const [text, setText] = useState('')
   const [isOpen, setIsOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
+  // A modal Dialog blocks wheel/touch scrolling on content portaled outside it, so
+  // render the dropdown inside the enclosing dialog (if any) instead of <body>.
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(
+    null,
+  )
+  const inputRef = useCallback((el: HTMLInputElement | null) => {
+    setPortalContainer(el?.closest<HTMLElement>('[role="dialog"]') ?? null)
+  }, [])
   const inputId = useId()
   const listboxId = `${inputId}-listbox`
 
@@ -66,6 +131,7 @@ export function TagInput({
     if (!name.trim() || selectedSet.has(name) || atLimit) return
     onChange([...value, name])
     setText('')
+    onTextChange?.('')
     closeDropdown()
   }
 
@@ -124,6 +190,7 @@ export function TagInput({
       className={cn(
         'flex min-h-9 flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent px-2 py-1 text-sm',
         'focus-within:border-primary focus-within:ring-1 focus-within:ring-ring',
+        error && 'border-destructive',
         disabled && 'cursor-not-allowed opacity-50',
       )}
     >
@@ -152,6 +219,7 @@ export function TagInput({
         >
           <PopoverAnchor asChild>
             <input
+              ref={inputRef}
               id={inputId}
               role="combobox"
               aria-autocomplete="list"
@@ -163,6 +231,7 @@ export function TagInput({
               placeholder={value.length === 0 ? placeholder : undefined}
               onChange={(e) => {
                 setText(e.target.value)
+                onTextChange?.(e.target.value)
                 setIsOpen(true)
                 setActiveIndex(-1)
               }}
@@ -175,12 +244,15 @@ export function TagInput({
             className="w-[var(--radix-popover-trigger-width)] p-0"
             align="start"
             sideOffset={4}
+            container={portalContainer}
             onOpenAutoFocus={(e) => e.preventDefault()}
             onCloseAutoFocus={(e) => e.preventDefault()}
           >
             <ul
               id={listboxId}
               role="listbox"
+              // Keep input focus when grabbing the scrollbar so the list stays open.
+              onMouseDown={(e) => e.preventDefault()}
               className="max-h-[240px] overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg"
             >
               {suggestions.map((s, i) => (
@@ -209,12 +281,28 @@ export function TagInput({
     </div>
   )
 
-  if (!label) return control
+  const errorMessage = error && (
+    <p role="alert" className="text-sm text-destructive">
+      {error}
+    </p>
+  )
+
+  if (!label)
+    return (
+      <div className="space-y-1.5">
+        {control}
+        {errorMessage}
+      </div>
+    )
 
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={labelFor}>{label}</Label>
+      <div className="flex items-center gap-1.5">
+        <Label htmlFor={labelFor}>{label}</Label>
+        {labelAccessory}
+      </div>
       {control}
+      {errorMessage}
     </div>
   )
 }

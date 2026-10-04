@@ -24,7 +24,8 @@ import {
   WorkingGroupMemberInput,
   WorkingGroupSavePayload,
 } from '@/lib/api'
-import { TagInput } from '@/components/tag-input'
+import { TagInput, usePendingTagText } from '@/components/tag-input'
+import { FieldDescriptionPopover } from '@/components/field-description-popover'
 import { findPointPerson } from '@/lib/members'
 
 const workingGroupFormSchema = z.object({
@@ -159,9 +160,21 @@ export function WorkingGroupFormDialog({
     [workingGroup],
   )
 
+  const pendingText = usePendingTagText()
+
   const form = useForm({
     defaultValues: initialValues,
     onSubmit: async ({ value }) => {
+      if (
+        !pendingText.validate({
+          pointPerson: 'Point Person',
+          members: 'Members',
+          nonMembers: 'Non-members on Mailing List',
+        })
+      ) {
+        toast.error('Select a name from the list or clear the typed text')
+        return
+      }
       const parsed = workingGroupFormSchema.safeParse(value)
       if (!parsed.success) {
         toast.error(
@@ -278,7 +291,15 @@ export function WorkingGroupFormDialog({
           <form.Field name="pointPerson">
             {(field) => (
               <TagInput
+                onTextChange={pendingText.onTextChange('pointPerson')}
+                error={pendingText.errors['pointPerson']}
                 label="Point Person"
+                labelAccessory={
+                  <FieldDescriptionPopover
+                    label="Point Person"
+                    description="The organizer who leads this working group. Must be an organizer."
+                  />
+                }
                 options={organizerNames}
                 value={field.state.value}
                 onChange={field.handleChange}
@@ -290,7 +311,15 @@ export function WorkingGroupFormDialog({
           <form.Field name="members">
             {(field) => (
               <TagInput
+                onTextChange={pendingText.onTextChange('members')}
+                error={pendingText.errors['members']}
                 label="Members"
+                labelAccessory={
+                  <FieldDescriptionPopover
+                    label="Members"
+                    description="Organizers who are part of this working group."
+                  />
+                }
                 options={organizerNames}
                 value={field.state.value}
                 onChange={field.handleChange}
@@ -301,7 +330,15 @@ export function WorkingGroupFormDialog({
           <form.Field name="nonMembers">
             {(field) => (
               <TagInput
+                onTextChange={pendingText.onTextChange('nonMembers')}
+                error={pendingText.errors['nonMembers']}
                 label="Non-members on Mailing List"
+                labelAccessory={
+                  <FieldDescriptionPopover
+                    label="Non-members on Mailing List"
+                    description="Any activist who should receive the working group's emails but is not an official member."
+                  />
+                }
                 options={activistNames}
                 value={field.state.value}
                 onChange={field.handleChange}
