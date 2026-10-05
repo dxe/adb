@@ -383,10 +383,10 @@ function ExpandedDetail({
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-primary mb-1">Attendees</p>
           <ul className="text-sm space-y-0.5 text-muted-foreground">
-            {event.attendees.map((name, index) => (
+            {sortedAttendeeIndexes(event).map((index) => (
               <AttendeeRow
-                key={name}
-                name={name}
+                key={event.attendees[index]}
+                name={event.attendees[index]}
                 level={event.attendee_levels[index] ?? ''}
                 hasEmail={event.attendee_has_email[index] ?? false}
                 hasPhone={event.attendee_has_phone[index] ?? false}
@@ -465,6 +465,26 @@ function AttendeeRow({
       <span className="min-w-0 truncate">{name}</span>
     </li>
   )
+}
+
+// Order attendees are listed in: organizers first, unknown levels last.
+const LEVEL_ORDER = [
+  'Organizer',
+  'Chapter Member',
+  'Supporter',
+  'Non-Local',
+  'Global Network Member',
+]
+
+/** Indexes into the event's index-aligned attendee arrays, sorted by level. */
+function sortedAttendeeIndexes(event: EventListItem): number[] {
+  const rank = (i: number) => {
+    const r = LEVEL_ORDER.indexOf(event.attendee_levels[i] ?? '')
+    return r === -1 ? LEVEL_ORDER.length : r
+  }
+  return event.attendees
+    .map((_, i) => i)
+    .sort((a, b) => rank(a) - rank(b) || a - b)
 }
 
 const LEVEL_ICONS: Record<string, LucideIcon> = {
