@@ -1,4 +1,4 @@
-.PHONY: run_all run test test-server test-frontend lint clean prod_build deps dev_db install_playwright fmt go_mod_sync _go_mod_sync
+.PHONY: run_all run test test-server test-frontend lint clean prod_build deps node_toolchain dev_db install_playwright fmt go_mod_sync _go_mod_sync
 
 # When not using devcontainer, NVM initialization script may be located in home
 # directory. In the devcontainer, it is in /usr/local/share/nvm/. In the Claude
@@ -60,16 +60,22 @@ dev_db:
 install_playwright:
 	. $(NVM_SCRIPT) && nvm i $(REACT_FRONTEND_NODE_VERSION) && bash scripts/shell/install-playwright.sh
 
+# Install the Node versions used by this project, plus pnpm within each.
+node_toolchain:
+	. $(NVM_SCRIPT) && for v in 22 $(REACT_FRONTEND_NODE_VERSION); do \
+	  nvm i $$v && \
+	  { [ "$$("$$NVM_BIN/pnpm" --version 2>/dev/null)" = "$(PNPM_VERSION)" ] || npm i -g pnpm@$(PNPM_VERSION); } || exit $$?; \
+	done
+
 # Install all deps for this project.
-# Note: PNPM must be installed separately for each version of NPM used, since it is installed within each NPM installation.
 # Note: `go tool` cannot yet be used to install golang-migrate: https://github.com/golang-migrate/migrate/issues/1232
-deps:
+deps: node_toolchain
 	@# Ensure server/.env exists. Both `make run` and the VS Code "Go Server"
 	@# launch config load it unconditionally (layered on server/debug.env) and
 	@# error if it's missing, so deps (the required first step) creates it.
 	touch server/.env
-	. $(NVM_SCRIPT) && nvm i 22 && npm i -g pnpm@$(PNPM_VERSION) && pnpm i --config.confirmModulesPurge=false
-	. $(NVM_SCRIPT) && cd frontend-v2 && nvm i $(REACT_FRONTEND_NODE_VERSION) && npm i -g pnpm@$(PNPM_VERSION) && pnpm i --config.confirmModulesPurge=false
+	. $(NVM_SCRIPT) && nvm use 22 && pnpm i --config.confirmModulesPurge=false
+	. $(NVM_SCRIPT) && cd frontend-v2 && nvm use $(REACT_FRONTEND_NODE_VERSION) && pnpm i --config.confirmModulesPurge=false
 	cd pkg && go mod download
 	cd server/src && go mod download
 	cd cli && go mod download
