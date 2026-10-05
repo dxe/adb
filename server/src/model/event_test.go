@@ -14,9 +14,9 @@ func TestGetEvents(t *testing.T) {
 
 	a1 := Activist{Name: "Hello", ChapterID: 1, Email: "test1@example.org", Phone: "123-456-7890"}
 	a2 := Activist{Name: "Hi", ChapterID: 1, Email: "test2@example.org", Phone: "888-888-8888"}
-	a1ID, err := CreateActivist(db, ActivistExtra{Activist: a1})
+	a1ID, err := CreateActivist(db, ActivistExtra{Activist: a1, ActivistMembershipData: ActivistMembershipData{ActivistLevel: "Organizer"}})
 	require.NoError(t, err)
-	a2ID, err := CreateActivist(db, ActivistExtra{Activist: a2})
+	a2ID, err := CreateActivist(db, ActivistExtra{Activist: a2, ActivistMembershipData: ActivistMembershipData{ActivistLevel: "Chapter Member"}})
 	require.NoError(t, err)
 	a1.ID = a1ID
 	a2.ID = a2ID
@@ -35,6 +35,7 @@ func TestGetEvents(t *testing.T) {
 		AttendeePhones:   []string{"123-456-7890"},
 		AttendeeHasEmail: []bool{true},
 		AttendeeHasPhone: []bool{true},
+		AttendeeLevels:   []string{"Organizer"},
 		AttendeeIDs:      []int{a1.ID},
 		ChapterID:        1,
 	}, {
@@ -47,6 +48,7 @@ func TestGetEvents(t *testing.T) {
 		AttendeePhones:   []string{"123-456-7890", "888-888-8888"},
 		AttendeeHasEmail: []bool{true, true},
 		AttendeeHasPhone: []bool{true, true},
+		AttendeeLevels:   []string{"Organizer", "Chapter Member"},
 		AttendeeIDs:      []int{a1.ID, a2.ID},
 		ChapterID:        1,
 	}}

@@ -51,8 +51,11 @@ type EventJSON struct {
 	// AttendeeEmails these are always populated, so a caller that isn't
 	// authorized to see attendee PII can still tell whether an attendee has an
 	// email address and/or a phone number on file.
-	AttendeeHasEmail []bool   `json:"attendee_has_email"`
-	AttendeeHasPhone []bool   `json:"attendee_has_phone"`
+	AttendeeHasEmail []bool `json:"attendee_has_email"`
+	AttendeeHasPhone []bool `json:"attendee_has_phone"`
+	// Activist level (e.g. "Organizer", "Chapter Member"), index-aligned with
+	// Attendees.
+	AttendeeLevels   []string `json:"attendee_levels"`
 	AddedAttendees   []string `json:"added_attendees"`   // Used for Updating Events
 	DeletedAttendees []string `json:"deleted_attendees"` // Used for Updating Events
 	SuppressSurvey   bool     `json:"suppress_survey"`
@@ -98,6 +101,7 @@ type Event struct {
 	// opted in to fetching the attendees' actual email addresses.
 	AttendeeHasEmail      []bool
 	AttendeeHasPhone      []bool
+	AttendeeLevels        []string
 	AttendeeIDs           []int
 	AttendeeMissingEmails []string   // Used for sending event surveys
 	AddedAttendees        []Activist // Used for Updating Events
@@ -133,6 +137,7 @@ func (event *Event) ToJSON() EventJSON {
 		AttendeeEmails:   event.AttendeeEmails,
 		AttendeeHasEmail: event.AttendeeHasEmail,
 		AttendeeHasPhone: event.AttendeeHasPhone,
+		AttendeeLevels:   event.AttendeeLevels,
 		AttendeeIDs:      event.AttendeeIDs,
 		SuppressSurvey:   event.SuppressSurvey,
 		CircleID:         event.CircleID,
@@ -348,7 +353,8 @@ SELECT
   a.phone as activist_phone,
   IF(a.email != '', 1, 0) as activist_has_email,
   IF(a.phone != '', 1, 0) as activist_has_phone,
-  a.id as activist_id
+  a.id as activist_id,
+  a.activist_level as activist_level
 FROM activists a
 JOIN event_attendance ea
   ON a.id = ea.activist_id
@@ -367,6 +373,7 @@ WHERE
 		ActivistHasEmail bool   `db:"activist_has_email"`
 		ActivistHasPhone bool   `db:"activist_has_phone"`
 		ActivistID       int    `db:"activist_id"`
+		ActivistLevel    string `db:"activist_level"`
 	}
 	var allAttendance []Attendance
 	err = db.Select(&allAttendance, attendanceQuery, attendanceArgs...)
@@ -383,6 +390,7 @@ WHERE
 		events[i].AttendeePhones = append(events[i].AttendeePhones, a.ActivistPhone)
 		events[i].AttendeeHasEmail = append(events[i].AttendeeHasEmail, a.ActivistHasEmail)
 		events[i].AttendeeHasPhone = append(events[i].AttendeeHasPhone, a.ActivistHasPhone)
+		events[i].AttendeeLevels = append(events[i].AttendeeLevels, a.ActivistLevel)
 		events[i].AttendeeIDs = append(events[i].AttendeeIDs, a.ActivistID)
 	}
 
