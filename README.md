@@ -201,6 +201,26 @@ the login page then redirects to the homepage.
 For local testing, you may need to add an ngrok authorized origin in GCP console. The origin `http://localhost:8080`
 does not seem to work as of December 2025.
 
+## Use with Claude
+
+We make use of skills and CLAUDE.md files at the repo root and in subdirectories.
+
+### Claude cloud environments
+
+In Claude Code cloud environments, typically Anthropic hosted VMs, it is recommended
+to add a [setup script](https://code.claude.com/docs/en/cloud-environments#setup-scripts)
+that invokes `.claude/cloud/setup.sh`.
+DxE-provisioned Claude accounts already have access to an cloud environment that
+does this, and it can be selected when starting a new Claude Code conversation
+via Claude web UI.
+We also have a script that runs only in cloud sessions, on Claude's session
+start hook. The script runs the database and builds the app so Claude can start
+working right away.
+
+In other environments, developers might typically set up the database and
+build the app in advance of invoking Claude. However, in devcontainer
+environment incl GitHub codespaces, some steps may be done for you already.
+
 ## More documentation
 
 More documentation is available in [Tech team's Coda doc](https://coda.io/d/Tech-Team_dR-UIgVShEf/Activist-Database-ADB_suydmBkX#_luDOewMC).
