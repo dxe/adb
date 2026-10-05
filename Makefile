@@ -107,6 +107,7 @@ _go_mod_sync:
 	cd pkg && GOWORK=off go mod tidy
 	cd cli && GOWORK=off go mod tidy
 	cd server/src && GOWORK=off go mod tidy
+	cd jobs && GOWORK=off go mod tidy
 	go work sync
 	cd server/src && go list -m all >/dev/null
 
