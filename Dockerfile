@@ -5,6 +5,7 @@ WORKDIR /workspace/server/src
 COPY go.work /workspace/
 COPY go.work.sum /workspace/
 COPY cli/ /workspace/cli/
+COPY jobs/ /workspace/jobs/
 COPY server/src ./
 COPY pkg/ /workspace/pkg/
 RUN GOFLAGS=-mod=readonly GOPROXY=https://proxy.golang.org go mod download
