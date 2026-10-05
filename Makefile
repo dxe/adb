@@ -1,4 +1,4 @@
-.PHONY: run_all run test test-server test-frontend lint clean prod_build deps dev_db install_playwright fmt go_mod_sync _go_mod_sync
+.PHONY: run_all run test test-server test-frontend lint clean prod_build deps node_toolchain dev_db install_playwright fmt go_mod_sync _go_mod_sync
 
 # When not using devcontainer, NVM initialization script may be located in home
 # directory. In the devcontainer, it is in /usr/local/share/nvm/. In the Claude
@@ -23,6 +23,8 @@ NVM_SCRIPT := $(shell \
 # * .github/workflows/main.yml
 # * devcontainer.json `ghcr.io/devcontainers/features/node` feature
 REACT_FRONTEND_NODE_VERSION := 25
+# Node version for repo-root tooling (e.g. prettier).
+ROOT_NODE_VERSION := 22
 PNPM_VERSION := 10.32.1
 
 # Port the Go server listens on. Defaults to 8080; override with `make run_all
@@ -60,16 +62,22 @@ dev_db:
 install_playwright:
 	. $(NVM_SCRIPT) && nvm i $(REACT_FRONTEND_NODE_VERSION) && bash scripts/shell/install-playwright.sh
 
+# Install the Node versions used by this project, plus pnpm within each.
+node_toolchain:
+	. $(NVM_SCRIPT) && for v in $(ROOT_NODE_VERSION) $(REACT_FRONTEND_NODE_VERSION); do \
+	  nvm i $$v && \
+	  { [ "$$("$$NVM_BIN/pnpm" --version 2>/dev/null)" = "$(PNPM_VERSION)" ] || npm i -g pnpm@$(PNPM_VERSION); } || exit $$?; \
+	done
+
 # Install all deps for this project.
-# Note: PNPM must be installed separately for each version of NPM used, since it is installed within each NPM installation.
 # Note: `go tool` cannot yet be used to install golang-migrate: https://github.com/golang-migrate/migrate/issues/1232
-deps:
+deps: node_toolchain
 	@# Ensure server/.env exists. Both `make run` and the VS Code "Go Server"
 	@# launch config load it unconditionally (layered on server/debug.env) and
 	@# error if it's missing, so deps (the required first step) creates it.
 	touch server/.env
-	. $(NVM_SCRIPT) && nvm i 22 && npm i -g pnpm@$(PNPM_VERSION) && pnpm i --config.confirmModulesPurge=false
-	. $(NVM_SCRIPT) && cd frontend-v2 && nvm i $(REACT_FRONTEND_NODE_VERSION) && npm i -g pnpm@$(PNPM_VERSION) && pnpm i --config.confirmModulesPurge=false
+	. $(NVM_SCRIPT) && nvm use $(ROOT_NODE_VERSION) && pnpm i --config.confirmModulesPurge=false
+	. $(NVM_SCRIPT) && cd frontend-v2 && nvm use $(REACT_FRONTEND_NODE_VERSION) && pnpm i --config.confirmModulesPurge=false
 	cd pkg && go mod download
 	cd server/src && go mod download
 	cd cli && go mod download
@@ -151,4 +159,4 @@ prod_build:
 # Keep in sync with .githooks/pre-commit.
 fmt:
 	cd server && gofmt -w .
-	. $(NVM_SCRIPT) && nvm use 22 && pnpm exec prettier --write --cache --cache-strategy metadata .
+	. $(NVM_SCRIPT) && nvm use $(ROOT_NODE_VERSION) && pnpm exec prettier --write --cache --cache-strategy metadata .

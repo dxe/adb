@@ -1,9 +1,20 @@
 #!/usr/bin/env bash
-# Per-session startup for the Claude Code cloud VM: dockerd + MySQL 8.4 with a
-# migrated, seeded dev database. Idempotent.
+# Per-session startup for the Claude Code cloud VM: project dependencies, shell
+# helper functions, and dockerd + MySQL with a migrated, seeded dev
+# database. Idempotent.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 source .claude/cloud/env.sh
+
+# Project dependencies (node, go, `migrate`), kept in sync with the checked-out
+# branch. Must precede `make dev_db` below, which uses `migrate`.
+make deps
+
+# Shell helper functions (e.g. `db`, `adb`). Re-copied each session so edits to
+# the repo's functions are picked up.
+cp scripts/shell/adb_functions.bash ~/.bash_adb_functions
+grep -qF '.bash_adb_functions' ~/.bash_profile 2>/dev/null ||
+  cat scripts/shell/profile.bash >> ~/.bash_profile
 
 .claude/cloud/start-docker.sh
 
