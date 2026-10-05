@@ -550,6 +550,11 @@ const EventListItemSchema = z.object({
     .array(z.boolean())
     .nullish()
     .transform((v) => v ?? []),
+  // Activist level of each attendee, index-aligned with `attendees`.
+  attendee_levels: z
+    .array(z.string())
+    .nullish()
+    .transform((v) => v ?? []),
 })
 export type EventListItem = z.infer<typeof EventListItemSchema>
 

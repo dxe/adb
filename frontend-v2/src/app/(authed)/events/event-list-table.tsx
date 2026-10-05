@@ -21,11 +21,16 @@ import {
   ChevronDown,
   ChevronRight,
   Download,
+  Globe,
+  IdCard,
   Mail,
   MailX,
   Pencil,
+  Plane,
   PhoneMissed,
   Trash2,
+  User,
+  UserRoundCog,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { EventListItem } from '@/lib/api'
@@ -378,10 +383,11 @@ function ExpandedDetail({
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-primary mb-1">Attendees</p>
           <ul className="text-sm space-y-0.5 text-muted-foreground">
-            {event.attendees.map((name, index) => (
+            {sortedAttendeeIndexes(event).map((index) => (
               <AttendeeRow
-                key={name}
-                name={name}
+                key={event.attendees[index]}
+                name={event.attendees[index]}
+                level={event.attendee_levels[index] ?? ''}
                 hasEmail={event.attendee_has_email[index] ?? false}
                 hasPhone={event.attendee_has_phone[index] ?? false}
               />
@@ -414,19 +420,25 @@ function ExpandedDetail({
  * One attendee, with contact-info icons in a fixed-width leading slot so that
  * the names line up vertically down the list. Mirrors the icon vocabulary of
  * the attendee inputs on the event form: a single green check when nothing is
- * missing, otherwise an orange icon per missing field.
+ * missing, otherwise an orange icon per missing field. A level icon (tooltip
+ * names the level) sits to the left of those.
  */
 function AttendeeRow({
   name,
+  level,
   hasEmail,
   hasPhone,
 }: {
   name: string
+  level: string
   hasEmail: boolean
   hasPhone: boolean
 }) {
   return (
     <li className="flex items-center gap-2">
+      <span className="flex w-4 shrink-0 items-center opacity-80">
+        <LevelIcon level={level} />
+      </span>
       <span className="flex w-9 shrink-0 items-center gap-1 opacity-80">
         {hasEmail && hasPhone && (
           <ContactIcon
@@ -453,6 +465,41 @@ function AttendeeRow({
       <span className="min-w-0 truncate">{name}</span>
     </li>
   )
+}
+
+// Order attendees are listed in: organizers first, unknown levels last.
+const LEVEL_ORDER = [
+  'Organizer',
+  'Chapter Member',
+  'Supporter',
+  'Non-Local',
+  'Global Network Member',
+]
+
+/** Indexes into the event's index-aligned attendee arrays, sorted by level. */
+function sortedAttendeeIndexes(event: EventListItem): number[] {
+  const rank = (i: number) => {
+    const r = LEVEL_ORDER.indexOf(event.attendee_levels[i] ?? '')
+    return r === -1 ? LEVEL_ORDER.length : r
+  }
+  return event.attendees
+    .map((_, i) => i)
+    .sort((a, b) => rank(a) - rank(b) || a - b)
+}
+
+const LEVEL_ICONS: Record<string, LucideIcon> = {
+  Organizer: UserRoundCog,
+  'Chapter Member': IdCard,
+  Supporter: User,
+  'Non-Local': Plane,
+  'Global Network Member': Globe,
+}
+
+/** Icon for an attendee's activist level; the level name is its tooltip. */
+function LevelIcon({ level }: { level: string }) {
+  const Icon = LEVEL_ICONS[level]
+  if (!Icon) return null
+  return <ContactIcon Icon={Icon} label={level} className="" />
 }
 
 function ContactIcon({
