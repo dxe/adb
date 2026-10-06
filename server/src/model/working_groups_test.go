@@ -198,6 +198,49 @@ func validateReturnedWorkingGroup(t *testing.T, inserted WorkingGroup, returned 
 	}
 }
 
+func TestDeleteWorkingGroup_zeroID_returnsError(t *testing.T) {
+	db := testdb.NewDB()
+	defer func() { _ = db.Close() }()
+
+	require.Error(t, DeleteWorkingGroup(db, 0))
+}
+
+func TestDeleteWorkingGroup_noMembers_deletesOnlyThatGroup(t *testing.T) {
+	db := testdb.NewDB()
+	defer func() { _ = db.Close() }()
+
+	keepID, err := CreateWorkingGroup(db, WorkingGroup{Name: "Keep"})
+	require.NoError(t, err)
+	deleteID, err := CreateWorkingGroup(db, WorkingGroup{Name: "Delete"})
+	require.NoError(t, err)
+
+	require.NoError(t, DeleteWorkingGroup(db, deleteID))
+
+	groups, err := GetWorkingGroups(db, WorkingGroupQueryOptions{})
+	require.NoError(t, err)
+	require.Len(t, groups, 1)
+	require.Equal(t, keepID, groups[0].ID)
+}
+
+func TestDeleteWorkingGroup_withMembers_returnsErrorAndKeepsGroup(t *testing.T) {
+	db := testdb.NewDB()
+	defer func() { _ = db.Close() }()
+
+	workingGroup := WorkingGroup{
+		Name:    "Has Members",
+		Members: insertActivists(t, db, []string{"A", "B"}),
+	}
+	id, err := CreateWorkingGroup(db, workingGroup)
+	require.NoError(t, err)
+
+	require.ErrorContains(t, DeleteWorkingGroup(db, id), "has members")
+
+	fetchedGroup, err := GetWorkingGroup(db, WorkingGroupQueryOptions{GroupID: id})
+	require.NoError(t, err)
+	require.Equal(t, id, fetchedGroup.ID)
+	require.Len(t, fetchedGroup.Members, 2)
+}
+
 func insertActivists(t *testing.T, db *sqlx.DB, names []string) []WorkingGroupMember {
 	members := make([]WorkingGroupMember, len(names))
 	for idx, a := range names {
