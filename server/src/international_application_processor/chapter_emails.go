@@ -15,7 +15,7 @@ var (
 	sfBayCoordinator = coordinator{
 		Name:    "Antonelle Racelis",
 		Role:    "Organizer",
-		Address: "antonelle@directactioneverywhere.com",
+		Address: "kristina@directactioneverywhere.com",
 	}
 	californiaCoordinator = coordinator{
 		Name:     "Almira Tanner",
