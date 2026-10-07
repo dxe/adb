@@ -34,16 +34,20 @@ import (
 var seedChapterID int
 
 const (
-	seedActivistCount       = 200
-	seedProspectCount       = 125
-	seedMonthsBack          = 36
-	seedMinEventsPerMonth   = 1
-	seedMaxEventsPerMonth   = 2
-	seedBlankRate           = 0.10
-	seedMinActivenessRate   = 0.10
-	seedMaxActivenessRate   = 0.95
-	seedRecentEventExponent = 2.0
+	seedActivistCount        = 200
+	seedProspectCount        = 125
+	seedMonthsBack           = 36
+	seedMinEventsPerMonth    = 1
+	seedMaxEventsPerMonth    = 2
+	seedBlankRate            = 0.10
+	seedMinActivenessRate    = 0.10
+	seedMaxActivenessRate    = 0.95
+	seedRecentEventExponent  = 2.0
+	seedWorkingGroupJoinRate = 0.40
 )
+
+// seedWorkingGroupNames are the default working groups created (if missing) for seeded activists to join.
+var seedWorkingGroupNames = []string{"Outreach", "Tech", "Media", "Retention"}
 
 func init() {
 	rootCmd.AddCommand(seedCmd)
@@ -80,8 +84,13 @@ var seedActivistsCmd = &cobra.Command{
 			return err
 		}
 
-		eventInserted, attendanceInserted, err := seedActivistsWithEvents(
-			conn, eventNames, sharedEvents, seedChapterID, now,
+		workingGroupIDs, err := seedWorkingGroups(conn)
+		if err != nil {
+			return err
+		}
+
+		eventInserted, attendanceInserted, workingGroupMembershipsInserted, err := seedActivistsWithEvents(
+			conn, eventNames, sharedEvents, seedChapterID, now, workingGroupIDs,
 		)
 		if err != nil {
 			return err
@@ -93,8 +102,8 @@ var seedActivistsCmd = &cobra.Command{
 		}
 
 		fmt.Printf(
-			"Seeded %d activists with events, %d prospect activists, %d events, and %d attendance rows in chapter %d\n",
-			eventInserted, prospectInserted, len(sharedEvents.All), attendanceInserted, seedChapterID,
+			"Seeded %d activists with events, %d prospect activists, %d events, %d attendance rows, and %d working group memberships in chapter %d\n",
+			eventInserted, prospectInserted, len(sharedEvents.All), attendanceInserted, workingGroupMembershipsInserted, seedChapterID,
 		)
 		return nil
 	},
@@ -212,6 +221,31 @@ func seedSharedEvents(conn *sqlx.DB, chapterID int, months []time.Time) (seededE
 	}, nil
 }
 
+// seedWorkingGroups ensures the default working groups exist, creating any that are missing, and returns the IDs of
+// all of them (existing or newly created). Working groups are shared across chapters, so this is safe to call for
+// every seed run.
+func seedWorkingGroups(conn *sqlx.DB) ([]int64, error) {
+	ids := make([]int64, 0, len(seedWorkingGroupNames))
+	for _, name := range seedWorkingGroupNames {
+		if _, err := conn.Exec(
+			`INSERT IGNORE INTO working_groups (name, group_email, visible, description, meeting_time, meeting_location, coords)
+			 VALUES (?, ?, 1, ?, 'TBD', 'TBD', '')`,
+			name,
+			fmt.Sprintf("%s@seed.example", strings.ToLower(name)),
+			fmt.Sprintf("Seed working group: %s", name),
+		); err != nil {
+			return nil, fmt.Errorf("failed to insert working group %q: %w", name, err)
+		}
+
+		var id int64
+		if err := conn.Get(&id, `SELECT id FROM working_groups WHERE name = ?`, name); err != nil {
+			return nil, fmt.Errorf("failed to look up working group %q: %w", name, err)
+		}
+		ids = append(ids, id)
+	}
+	return ids, nil
+}
+
 // buildSeedProfiles returns one profile per name containing all randomized fields used to insert activists and
 // determine attendance.
 func buildSeedProfiles(names []string, allEvents []seededEvent, chapterID int, now time.Time) []seedProfile {
@@ -244,21 +278,23 @@ func buildSeedProspectProfiles(names []string, months []time.Time, chapterID int
 	return profiles
 }
 
-// seedActivistsWithEvents inserts activists and their event attendance using the original shared-event seeding flow.
+// seedActivistsWithEvents inserts activists and their event attendance using the original shared-event seeding flow,
+// then assigns some of them to working groups.
 func seedActivistsWithEvents(
-	conn *sqlx.DB, names []string, sharedEvents seededEvents, chapterID int, now time.Time,
-) (int, int, error) {
+	conn *sqlx.DB, names []string, sharedEvents seededEvents, chapterID int, now time.Time, workingGroupIDs []int64,
+) (int, int, int, error) {
 	profiles := buildSeedProfiles(names, sharedEvents.All, chapterID, now)
 
 	inserted := 0
 	attendanceInserted := 0
+	workingGroupMembershipsInserted := 0
 	for _, profile := range profiles {
 		res, err := conn.Exec(
 			`INSERT IGNORE INTO activists (name, email, phone, chapter_id, activist_level) VALUES (?, ?, ?, ?, ?)`,
 			profile.Name, profile.Email, profile.Phone, chapterID, profile.ActivistLevel,
 		)
 		if err != nil {
-			return 0, 0, fmt.Errorf("failed to insert activist %q: %w", profile.Name, err)
+			return 0, 0, 0, fmt.Errorf("failed to insert activist %q: %w", profile.Name, err)
 		}
 		if n, _ := res.RowsAffected(); n == 0 {
 			continue // duplicate name in this chapter — skip
@@ -271,14 +307,71 @@ func seedActivistsWithEvents(
 				`INSERT INTO event_attendance (activist_id, event_id) VALUES (?, ?)`,
 				activistID, event.ID,
 			); err != nil {
-				return 0, 0, fmt.Errorf("failed to insert attendance for activist %q: %w", profile.Name, err)
+				return 0, 0, 0, fmt.Errorf("failed to insert attendance for activist %q: %w", profile.Name, err)
 			}
 		}
 		attendanceInserted += len(attendance)
+
+		memberships, err := seedActivistWorkingGroups(conn, activistID, workingGroupIDs)
+		if err != nil {
+			return 0, 0, 0, fmt.Errorf("failed to assign working groups for activist %q: %w", profile.Name, err)
+		}
+		workingGroupMembershipsInserted += memberships
+
 		inserted++
 	}
 
-	return inserted, attendanceInserted, nil
+	return inserted, attendanceInserted, workingGroupMembershipsInserted, nil
+}
+
+// seedActivistWorkingGroups randomly joins an activist to 1-2 working groups (~40% chance) and returns the number of
+// memberships inserted.
+func seedActivistWorkingGroups(conn *sqlx.DB, activistID int64, workingGroupIDs []int64) (int, error) {
+	if len(workingGroupIDs) == 0 || rand.Float64() >= seedWorkingGroupJoinRate {
+		return 0, nil
+	}
+
+	groupCount := 1 + rand.Intn(2)
+	if groupCount > len(workingGroupIDs) {
+		groupCount = len(workingGroupIDs)
+	}
+
+	inserted := 0
+	for _, idx := range randomDistinctInts(len(workingGroupIDs), groupCount) {
+		res, err := conn.Exec(
+			`INSERT IGNORE INTO working_group_members (working_group_id, activist_id, point_person, non_member_on_mailing_list)
+			 VALUES (?, ?, 0, 0)`,
+			workingGroupIDs[idx], activistID,
+		)
+		if err != nil {
+			return 0, err
+		}
+		if n, _ := res.RowsAffected(); n > 0 {
+			inserted++
+		}
+	}
+	return inserted, nil
+}
+
+// randomDistinctInts returns up to count unique indices in [0, max).
+func randomDistinctInts(max, count int) []int {
+	if count <= 0 || max <= 0 {
+		return []int{}
+	}
+	if count > max {
+		count = max
+	}
+	seen := make(map[int]struct{}, count)
+	indices := make([]int, 0, count)
+	for len(indices) < count {
+		idx := rand.Intn(max)
+		if _, exists := seen[idx]; exists {
+			continue
+		}
+		seen[idx] = struct{}{}
+		indices = append(indices, idx)
+	}
+	return indices
 }
 
 // seedProspectActivists inserts source="form" activists with interest_date values spread across `months` and no
