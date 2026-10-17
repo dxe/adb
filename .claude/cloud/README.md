@@ -4,7 +4,8 @@ The cloud VM has no devcontainer, so the repo provides the equivalent setup here
 The Claude environment's setup script should only run `.claude/cloud/setup.sh`, and
 needs no environment variables set in the Claude UI.
 
-- `setup.sh`: one-time environment setup.
+- `setup.sh`: one-time environment setup, including installing project
+  dependencies to warm the caches baked into the environment snapshot.
 - `start.sh`: per-session startup: installs project dependencies, shell
   helper functions (e.g. `adb`), and starts the services needed for development.
 - `session-start.sh`: SessionStart hook (registered in `../settings.json`) that

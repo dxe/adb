@@ -27,6 +27,8 @@ REACT_FRONTEND_NODE_VERSION := 25
 ROOT_NODE_VERSION := 22
 PNPM_VERSION := 10.32.1
 
+GO_MIGRATE_VERSION := v4.20.1
+
 # Port the Go server listens on. Defaults to 8080; override with `make run_all
 # PORT=NNNN` or a PORT environment variable so parallel checkouts can use
 # distinct ports. The frontend's browser code uses relative URLs, so only
@@ -81,8 +83,7 @@ deps: node_toolchain
 	cd pkg && go mod download
 	cd server/src && go mod download
 	cd cli && go mod download
-	go install -tags 'mysql' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
-	$(MAKE) go_mod_sync
+	go install -tags 'mysql' github.com/golang-migrate/migrate/v4/cmd/migrate@$(GO_MIGRATE_VERSION)
 
 # Normalize module/workspace metadata across all Go modules. Runs twice
 # because workspace-level resolution can surface new transitive deps that
