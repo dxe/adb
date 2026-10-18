@@ -317,10 +317,10 @@ export function WorkingGroupFormDialog({
                 labelAccessory={
                   <FieldDescriptionPopover
                     label="Members"
-                    description="Organizers who are part of this working group."
+                    description="Activists who are part of this working group."
                   />
                 }
-                options={organizerNames}
+                options={activistNames}
                 value={field.state.value}
                 onChange={field.handleChange}
               />
