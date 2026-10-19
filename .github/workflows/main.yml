@@ -8,12 +8,10 @@ on:
       - "CODEOWNERS"
       - ".devcontainer/**"
       - ".vscode/**"
+  # No paths-ignore here: a workflow that never triggers reports no checks, which
+  # leaves required checks stuck as "Expected". Rely on the `changes` job below instead.
   pull_request:
     branches: [main]
-    paths-ignore:
-      - "**/*.md"
-      - "CODEOWNERS"
-      - ".vscode/**"
   workflow_dispatch:
 
 # Restrict GITHUB_TOKEN to the minimum these jobs need rather than inheriting
@@ -29,6 +27,7 @@ jobs:
   changes:
     runs-on: ubuntu-latest
     outputs:
+      code: ${{ steps.code.outputs.code }}
       server: ${{ steps.filter.outputs.server }}
       frontend: ${{ steps.filter.outputs.frontend }}
       lambdas: ${{ steps.filter.outputs.lambdas }}
@@ -54,10 +53,24 @@ jobs:
             lambdas:
               - 'jobs/**'
               - 'pkg/**'
+      # Separate step because predicate-quantifier applies to every filter in a
+      # step, and the filters above need the default `some` semantics.
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: code
+        with:
+          predicate-quantifier: every
+          filters: |
+            code:
+              - '**'
+              - '!**/*.md'
+              - '!CODEOWNERS'
+              - '!.vscode/**'
 
   # Single shared test + lint run. Image builds run in parallel with this (see
   # build-server for the rationale); the promote jobs gate on it via `needs: test`.
   test:
+    needs: [changes]
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
     services:
       mysql:
