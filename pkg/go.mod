@@ -23,7 +23,8 @@ require (
 	github.com/opencontainers/image-spec v1.1.1 // indirect
 	github.com/stretchr/testify v1.12.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.69.0 // indirect
-	go.opentelemetry.io/otel/trace v1.44.0 // indirect
+	go.opentelemetry.io/otel/metric v1.45.0 // indirect
+	go.opentelemetry.io/otel/trace v1.45.0 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
 )
