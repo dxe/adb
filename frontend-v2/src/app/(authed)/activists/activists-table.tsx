@@ -164,6 +164,7 @@ export function ActivistTable({
               return (
                 <a
                   href={`/v2/activists/${row.original.id}`}
+                  data-activist-link
                   className={nameClass}
                   onClick={
                     onActivistClick

@@ -40,7 +40,19 @@ export function ActivistSheet({ activistId, onClose }: ActivistSheetProps) {
       }}
     >
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Content className="fixed inset-y-0 right-0 z-50 flex h-full w-full flex-col overflow-hidden border-l bg-background shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-2xl">
+        <DialogPrimitive.Content
+          // Clicking another activist swaps the sheet's content instead of
+          // closing it; anything else outside still dismisses it.
+          onInteractOutside={(e) => {
+            if (
+              e.target instanceof Element &&
+              e.target.closest('[data-activist-link]')
+            ) {
+              e.preventDefault()
+            }
+          }}
+          className="fixed inset-y-0 right-0 z-50 flex h-full w-full flex-col overflow-hidden border-l bg-background shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-2xl"
+        >
           <DialogPrimitive.Title className="sr-only">
             Activist Details
           </DialogPrimitive.Title>
