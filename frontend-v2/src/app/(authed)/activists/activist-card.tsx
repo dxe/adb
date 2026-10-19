@@ -113,6 +113,7 @@ export function ActivistCard({
     <a
       data-testid={`activist-card-${activist.id}`}
       href={`/v2/activists/${activist.id}`}
+      data-activist-link
       className={cardClass}
       {...selectionProps}
       onClick={(e) => {
