@@ -19,7 +19,8 @@ WORKDIR /app
 WORKDIR /app/frontend-v2
 # Copy package.json and lock file
 COPY frontend-v2/package.json frontend-v2/pnpm-lock.yaml* ./
-RUN pnpm i --frozen-lockfile
+# Skip the postinstall hook (next typegen): it needs the app source, which is only copied in the builder stage
+RUN pnpm i --frozen-lockfile --ignore-scripts
 
 # Rebuild the source code only when needed
 FROM build-base AS builder
