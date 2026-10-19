@@ -23,6 +23,8 @@ Background context on how the stack fits together.
 
 Rules regarding the Next.js app in ./frontend-v2
 
+Most routes are implemented in `frontend-v2/src/app/(authed)/`, e.g. `activists`, `chapters`, `users`.
+
 ### frontend-file-formatting
 
 - Scope: ./frontend-v2
