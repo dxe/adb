@@ -7,6 +7,9 @@ Note: CLAUDE.md is a symlink to this file.
 This repo runs in the devcontainer (local dev machine) and in the Claude Code cloud VM (no devcontainer; `$CLAUDE_CODE_REMOTE` is `true`).
 Cloud VM setup is managed in the repo; see [.claude/cloud/README.md](.claude/cloud/README.md) for details.
 
+- The default branch is `main`.
+- To test in a browser: start `make run_all` in the background, then open `localhost:8080/v2/...`. Dev login is automatic.
+
 ## architecture
 
 Background context on how the stack fits together.
@@ -19,6 +22,8 @@ Background context on how the stack fits together.
 ## frontend
 
 Rules regarding the Next.js app in ./frontend-v2
+
+Most routes are implemented in `frontend-v2/src/app/(authed)/`, e.g. `activists`, `chapters`, `users`.
 
 ### frontend-file-formatting
 
