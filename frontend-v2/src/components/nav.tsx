@@ -3,7 +3,7 @@
 import { navbarData } from './nav-data'
 import { evaluateNavAccess, type NavDropdownItem } from '@/lib/nav-access'
 import { CircleUser } from 'lucide-react'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import logo1 from '$public/logo.png'
 import Link from 'next/link'
@@ -256,10 +256,24 @@ export const Navbar = () => {
   const [isMobileExpanded, setMobileExpanded] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
 
+  const dropdownsRef = useRef<HTMLDivElement>(null)
+
   const closeNav = () => {
     setMobileExpanded(false)
     setActiveDropdown(null)
   }
+
+  // Close the open dropdown when clicking anywhere outside the dropdown items.
+  useEffect(() => {
+    if (activeDropdown === null) return
+    const onPointerDown = (e: PointerEvent) => {
+      if (!dropdownsRef.current?.contains(e.target as Node)) {
+        setActiveDropdown(null)
+      }
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    return () => document.removeEventListener('pointerdown', onPointerDown)
+  }, [activeDropdown])
 
   // Note that this navbar currently uses the Vue stylesheet. Once we
   // are no longer using Vue, we should update this using tailwind.
@@ -309,7 +323,7 @@ export const Navbar = () => {
           [buefyStyles['is-active']]: isMobileExpanded,
         })}
       >
-        <div className={buefyStyles['navbar-start']}>
+        <div ref={dropdownsRef} className={buefyStyles['navbar-start']}>
           {navbarData.items.map((item) => (
             <DropdownItem
               key={item.label}
