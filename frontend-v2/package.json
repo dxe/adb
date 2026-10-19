@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "vitest"
+    "test": "vitest",
+    "postinstall": "next typegen"
   },
   "dependencies": {
     "@ebay/nice-modal-react": "^1.2.13",
