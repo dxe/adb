@@ -1,5 +1,5 @@
 import { ContentWrapper } from '@/app/content-wrapper'
-import { EventsPageLoader } from './events-page-loader'
+import { EventsPageLoader } from '../events-page-loader'
 
 export default function EventsListPage() {
   return (

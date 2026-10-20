@@ -1,5 +1,5 @@
 import { ContentWrapper } from '@/app/content-wrapper'
-import { CoachingListPageLoader } from './coaching-list-page-loader'
+import { CoachingListPageLoader } from '../coaching-list-page-loader'
 
 export default function CoachingPage() {
   return (
