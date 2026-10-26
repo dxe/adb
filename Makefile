@@ -22,7 +22,7 @@ NVM_SCRIPT := $(shell \
 # * all Dockerfiles
 # * .github/workflows/main.yml
 # * devcontainer.json `ghcr.io/devcontainers/features/node` feature
-REACT_FRONTEND_NODE_VERSION := 25
+REACT_FRONTEND_NODE_VERSION := 26
 # Node version for repo-root tooling (e.g. prettier).
 ROOT_NODE_VERSION := 22
 PNPM_VERSION := 10.32.1
