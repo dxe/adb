@@ -22,9 +22,7 @@ NVM_SCRIPT := $(shell \
 # * all Dockerfiles
 # * .github/workflows/main.yml
 # * devcontainer.json `ghcr.io/devcontainers/features/node` feature
-REACT_FRONTEND_NODE_VERSION := 26
-# Node version for repo-root tooling (e.g. prettier).
-ROOT_NODE_VERSION := 22
+NODE_VERSION := 26
 PNPM_VERSION := 10.32.1
 
 GO_MIGRATE_VERSION := v4.20.1
@@ -39,7 +37,7 @@ PORT ?= 8080
 run_all:
 	. $(NVM_SCRIPT) && \
 	export NEXT_PUBLIC_API_BASE_URL=http://localhost:$(PORT); \
-	(cd frontend-v2 && nvm use $(REACT_FRONTEND_NODE_VERSION) && env -u PORT pnpm dev) &
+	(cd frontend-v2 && nvm use $(NODE_VERSION) && env -u PORT pnpm dev) &
 	$(MAKE) run
 
 # Just start the go program.
@@ -62,14 +60,12 @@ dev_db:
 
 # Install the browser binary and system libraries used by the Playwright MCP.
 install_playwright:
-	. $(NVM_SCRIPT) && nvm i $(REACT_FRONTEND_NODE_VERSION) && bash scripts/shell/install-playwright.sh
+	. $(NVM_SCRIPT) && nvm i $(NODE_VERSION) && bash scripts/shell/install-playwright.sh
 
-# Install the Node versions used by this project, plus pnpm within each.
+# Install the Node version used by this project, plus pnpm.
 node_toolchain:
-	. $(NVM_SCRIPT) && for v in $(ROOT_NODE_VERSION) $(REACT_FRONTEND_NODE_VERSION); do \
-	  nvm i $$v && \
-	  { [ "$$("$$NVM_BIN/pnpm" --version 2>/dev/null)" = "$(PNPM_VERSION)" ] || npm i -g pnpm@$(PNPM_VERSION); } || exit $$?; \
-	done
+	. $(NVM_SCRIPT) && nvm i $(NODE_VERSION) && \
+	  { [ "$$("$$NVM_BIN/pnpm" --version 2>/dev/null)" = "$(PNPM_VERSION)" ] || npm i -g pnpm@$(PNPM_VERSION); }
 
 # Install all deps for this project.
 # Note: `go tool` cannot yet be used to install golang-migrate: https://github.com/golang-migrate/migrate/issues/1232
@@ -78,8 +74,8 @@ deps: node_toolchain
 	@# launch config load it unconditionally (layered on server/debug.env) and
 	@# error if it's missing, so deps (the required first step) creates it.
 	touch server/.env
-	. $(NVM_SCRIPT) && nvm use $(ROOT_NODE_VERSION) && pnpm i --config.confirmModulesPurge=false
-	. $(NVM_SCRIPT) && cd frontend-v2 && nvm use $(REACT_FRONTEND_NODE_VERSION) && pnpm i --config.confirmModulesPurge=false
+	. $(NVM_SCRIPT) && nvm use $(NODE_VERSION) && pnpm i --config.confirmModulesPurge=false
+	. $(NVM_SCRIPT) && cd frontend-v2 && nvm use $(NODE_VERSION) && pnpm i --config.confirmModulesPurge=false
 	cd pkg && go mod download
 	cd server/src && go mod download
 	cd cli && go mod download
@@ -119,7 +115,7 @@ test-server:
 	cd server/src && go test ./...
 
 test-frontend:
-	. $(NVM_SCRIPT) && cd frontend-v2 && nvm use $(REACT_FRONTEND_NODE_VERSION) && pnpm test --run
+	. $(NVM_SCRIPT) && cd frontend-v2 && nvm use $(NODE_VERSION) && pnpm test --run
 
 # Run golangci-lint on all Go modules.
 # TODO: Run linter automatically once existing lint errors are fixed.
@@ -161,4 +157,4 @@ prod_build:
 # Keep in sync with .githooks/pre-commit.
 fmt:
 	cd server && gofmt -w .
-	. $(NVM_SCRIPT) && nvm use $(ROOT_NODE_VERSION) && pnpm exec prettier --write --cache --cache-strategy metadata .
+	. $(NVM_SCRIPT) && nvm use $(NODE_VERSION) && pnpm exec prettier --write --cache --cache-strategy metadata .
