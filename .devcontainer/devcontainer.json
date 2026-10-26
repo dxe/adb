@@ -37,7 +37,7 @@
     },
     "ghcr.io/devcontainers/features/node:2": {
       "nodeGypDependencies": true,
-      "version": "26" // Match version from Makefile REACT_FRONTEND_NODE_VERSION
+      "version": "26" // Match version from Makefile NODE_VERSION
     },
     "ghcr.io/jungaretti/features/make:1": {},
     "ghcr.io/rocker-org/devcontainer-features/apt-packages:1": {
