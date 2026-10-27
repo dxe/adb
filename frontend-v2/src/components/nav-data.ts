@@ -189,6 +189,26 @@ export const navbarData: NavbarData = {
           page: 'ActivistListV2',
         },
         {
+          label: 'Supporters assigned to me',
+          href: activistsHref({
+            assignedTo: 'me',
+            activistLevel: { mode: 'include', values: ['Supporter'] },
+            columns: [
+              'pronouns',
+              'email',
+              'phone',
+              'location',
+              'city',
+              'total_events',
+              'last_event',
+              'last_event_name',
+              'last_interaction_date',
+            ],
+            sort: [{ column: 'last_event', desc: true }],
+          }),
+          page: 'ActivistListV2',
+        },
+        {
           label: 'Interest Form Generator',
           href: '/v2/interest/generator',
           page: 'InterestFormGenerator',
