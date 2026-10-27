@@ -289,7 +289,7 @@ export const navbarData: NavbarData = {
           visibleForNonSFBay: true,
         },
         {
-          label: 'New Activists',
+          label: 'New in the last 6 months',
           href: activistsHref({
             columns: [
               'pronouns',
@@ -306,6 +306,62 @@ export const navbarData: NavbarData = {
             lastEvent: { gte: daysAgo(180) },
             totalEvents: { lt: 4 },
             sort: [{ column: 'last_event', desc: true }],
+          }),
+          page: 'ActivistListV2',
+          visibleForNonSFBay: true,
+        },
+        {
+          label: 'New in the last week',
+          href: activistsHref({
+            columns: [
+              'email',
+              'phone',
+              'activist_level',
+              'total_events',
+              'first_event',
+              'first_event_name',
+              'last_event',
+            ],
+            firstEvent: { gte: daysAgo(7) },
+            sort: [{ column: 'first_event', desc: false }],
+          }),
+          page: 'ActivistListV2',
+          visibleForNonSFBay: true,
+        },
+        {
+          label: "New and haven't come back",
+          href: activistsHref({
+            columns: [
+              'email',
+              'phone',
+              'activist_level',
+              'total_events',
+              'first_event',
+            ],
+            firstEvent: { gte: daysAgo(90), lt: daysAgo(30) },
+            totalEvents: { gte: 1, lt: 3 },
+            sort: [{ column: 'first_event', desc: true }],
+          }),
+          page: 'ActivistListV2',
+          visibleForNonSFBay: true,
+        },
+        {
+          label: 'New in 2026 with 4+ events',
+          href: activistsHref({
+            columns: [
+              'activist_level',
+              'location',
+              'city',
+              'total_events',
+              'first_event',
+            ],
+            firstEvent: { gte: { mode: 'absolute', date: '2026-01-01' } },
+            totalEvents: { gte: 4 },
+            activistLevel: {
+              mode: 'exclude',
+              values: ['Non-Local', 'Global Network Member'],
+            },
+            sort: [{ column: 'total_events', desc: true }],
           }),
           page: 'ActivistListV2',
           visibleForNonSFBay: true,
