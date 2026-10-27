@@ -72,7 +72,7 @@ export const navbarData: NavbarData = {
       visibleForNonSFBay: false,
       items: [
         {
-          label: 'Community Prospects',
+          label: 'Online Sign-ups',
           href: activistsHref({
             lastEvent: { lt: daysAgo(360), orNull: true },
             totalInteractions: { lt: 1 },
