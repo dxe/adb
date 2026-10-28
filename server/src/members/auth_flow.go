@@ -2,9 +2,8 @@ package members
 
 import (
 	"context"
-	"crypto/subtle"
-	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
 	"io"
@@ -24,14 +23,13 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// Website member auth: Google sign-in or an emailed magic link, yielding a
+// Website member auth: Google sign-in (Identity Services) or an emailed magic link, yielding a
 // session cookie on members.directactioneverywhere.com that the website calls
 // cross-origin. This is separate from the members.dxesf.org flow in auth.go.
 
 const (
 	fallbackNextURL = "https://www.directactioneverywhere.com/account"
 	maxNextURLLen   = 512
-	oauthCookieName = "dxe_member_oauth"
 
 	emailsPerAddressPerHour = 5
 	emailsPerIPPerHour      = 30
@@ -197,6 +195,7 @@ type authServer struct {
 	emailLimiter, ipLimiter *rateLimiter
 	now                     func() time.Time
 	sendEmail               func(to, link string) error
+	verifyGoogle            func(ctx context.Context, credential string) (email string, emailVerified bool, err error)
 }
 
 // routeAuth registers the website member auth and API endpoints.
@@ -207,9 +206,9 @@ func routeAuth(r *mux.Router, db *sqlx.DB) {
 		ipLimiter:    newRateLimiter(),
 		now:          time.Now,
 		sendEmail:    sendLoginEmail,
+		verifyGoogle: verifyGoogleCredential,
 	}
-	r.HandleFunc("/auth/google", a.googleStart).Methods(http.MethodGet)
-	r.HandleFunc("/auth/google/callback", a.googleCallback).Methods(http.MethodGet)
+	r.HandleFunc("/auth/google/token", corsHandler(a.googleToken)).Methods(http.MethodPost, http.MethodOptions)
 	r.HandleFunc("/auth/email", corsHandler(a.emailStart)).Methods(http.MethodPost, http.MethodOptions)
 	r.HandleFunc("/auth/email/confirm", a.emailConfirmPage).Methods(http.MethodGet)
 	r.HandleFunc("/auth/email/confirm", a.emailConfirm).Methods(http.MethodPost)
@@ -244,101 +243,94 @@ func (a *authServer) startSession(w http.ResponseWriter, r *http.Request, email,
 	http.Redirect(w, r, next, status)
 }
 
-// --- Google ---
+// --- Google (Google Identity Services ID token) ---
 
-func (a *authServer) googleStart(w http.ResponseWriter, r *http.Request) {
-	next := validateNext(r.URL.Query().Get("next"))
-	noStore(w)
+// googleClientID is the main ADB OAuth client (same as TokenSignInHandler in
+// main.go). The website renders Google's button and POSTs the credential here.
+const googleClientID = "975059814880-lfffftbpt7fdl14cevtve8sjvh015udc.apps.googleusercontent.com"
 
-	if !config.IsProd {
-		// Mirror the existing members flow, which fakes Google in dev.
-		a.startSession(w, r, "test-dev@directactioneverywhere.com", next, http.StatusFound)
-		return
-	}
-	if conf == nil {
-		http.Error(w, "Google sign-in is unavailable", http.StatusServiceUnavailable)
-		return
-	}
-	state, err := nonce()
-	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-	nonceVal, err := nonce()
-	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-	http.SetCookie(w, &http.Cookie{
-		Name:     oauthCookieName,
-		Value:    state + ":" + nonceVal,
-		Path:     "/auth/google",
-		MaxAge:   600,
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteLaxMode, // Callback is a top-level GET from Google.
-	})
-	c := *conf
-	c.RedirectURL = authBaseURL() + "/auth/google/callback"
-	stateParam := state + "." + base64.RawURLEncoding.EncodeToString([]byte(next))
-	http.Redirect(w, r, c.AuthCodeURL(stateParam, oidc.Nonce(nonceVal)), http.StatusFound)
-}
+const devCredential = "dev"
 
-func (a *authServer) googleCallback(w http.ResponseWriter, r *http.Request) {
-	noStore(w)
-	cookie, err := r.Cookie(oauthCookieName)
+var googleVerifier = func() *oidc.IDTokenVerifier {
+	provider, err := oidc.NewProvider(context.Background(), "https://accounts.google.com")
 	if err != nil {
-		http.Error(w, "missing sign-in state; please try again", http.StatusBadRequest)
-		return
+		log.Println(
+			"WARNING: failed to construct OIDC provider (no Internet connection?). Some features may not work. Error:",
+			err,
+		)
+		return nil
 	}
-	clearCookie(w, oauthCookieName, "/auth/google")
-	cookieState, cookieNonce, ok := strings.Cut(cookie.Value, ":")
-	stateParam := r.FormValue("state")
-	state, nextEnc, ok2 := strings.Cut(stateParam, ".")
-	if !ok || !ok2 || subtle.ConstantTimeCompare([]byte(cookieState), []byte(state)) != 1 {
-		http.Error(w, "state mismatch; please try again", http.StatusBadRequest)
-		return
-	}
-	nextBytes, _ := base64.RawURLEncoding.DecodeString(nextEnc)
-	next := validateNext(string(nextBytes))
+	return provider.Verifier(&oidc.Config{ClientID: googleClientID})
+}()
 
-	if conf == nil || verifier == nil {
-		http.Error(w, "Google sign-in is unavailable", http.StatusServiceUnavailable)
-		return
+// verifyGoogleCredential verifies a Google ID token and returns its email.
+func verifyGoogleCredential(ctx context.Context, credential string) (email string, emailVerified bool, err error) {
+	if googleVerifier == nil {
+		return "", false, errors.New("google verifier unavailable")
 	}
-	c := *conf
-	c.RedirectURL = authBaseURL() + "/auth/google/callback"
-	token, err := c.Exchange(r.Context(), r.FormValue("code"))
+	idToken, err := googleVerifier.Verify(ctx, credential)
 	if err != nil {
-		log.Println("member auth: google exchange:", err)
-		http.Error(w, "sign-in failed; please try again", http.StatusBadRequest)
-		return
-	}
-	rawID, _ := token.Extra("id_token").(string)
-	idToken, err := verifier.Verify(r.Context(), rawID)
-	if err != nil {
-		log.Println("member auth: verify id token:", err)
-		http.Error(w, "sign-in failed; please try again", http.StatusBadRequest)
-		return
-	}
-	if subtle.ConstantTimeCompare([]byte(idToken.Nonce), []byte(cookieNonce)) != 1 {
-		http.Error(w, "nonce mismatch; please try again", http.StatusBadRequest)
-		return
+		return "", false, err
 	}
 	var claims struct {
 		Email         string `json:"email"`
 		EmailVerified bool   `json:"email_verified"`
 	}
-	if err := idToken.Claims(&claims); err != nil || !claims.EmailVerified {
-		http.Error(w, "your Google email address is not verified", http.StatusForbidden)
+	if err := idToken.Claims(&claims); err != nil {
+		return "", false, err
+	}
+	return claims.Email, claims.EmailVerified, nil
+}
+
+// googleToken signs in with a Google ID token ("credential") from Google
+// Identity Services and responds with the same JSON as /api/me.
+func (a *authServer) googleToken(w http.ResponseWriter, r *http.Request) {
+	noStore(w)
+	// Always a browser call, so an Origin is required (corsHandler already
+	// rejected non-allowlisted ones).
+	if r.Header.Get("Origin") == "" {
+		http.Error(w, "origin required", http.StatusForbidden)
 		return
 	}
-	email, valid := normalizeEmail(claims.Email)
-	if !valid {
+	if !strings.HasPrefix(r.Header.Get("Content-Type"), "application/json") {
+		http.Error(w, "expected application/json", http.StatusUnsupportedMediaType)
+		return
+	}
+	var body struct {
+		Credential string `json:"credential"`
+	}
+	if err := json.NewDecoder(io.LimitReader(r.Body, 16384)).Decode(&body); err != nil || body.Credential == "" {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	var rawEmail string
+	if !config.IsProd && body.Credential == devCredential {
+		// Mirror the existing members flow, which fakes Google in dev.
+		rawEmail = "test-dev@directactioneverywhere.com"
+	} else {
+		email, verified, err := a.verifyGoogle(r.Context(), body.Credential)
+		if err != nil {
+			http.Error(w, "invalid or expired credential", http.StatusUnauthorized)
+			return
+		}
+		if !verified {
+			http.Error(w, "your Google email address is not verified", http.StatusUnauthorized)
+			return
+		}
+		rawEmail = email
+	}
+	email, ok := normalizeEmail(rawEmail)
+	if !ok {
 		http.Error(w, "invalid email address", http.StatusBadRequest)
 		return
 	}
-	a.startSession(w, r, email, next, http.StatusFound)
+	if err := saveSession(w, r, email, a.now()); err != nil {
+		log.Println("member auth: save session:", err)
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	a.writeMe(w, r, email)
 }
 
 // --- Email magic link ---

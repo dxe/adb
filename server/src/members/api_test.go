@@ -1,6 +1,8 @@
 package members
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -110,4 +112,69 @@ func TestMagicLinkFlow(t *testing.T) {
 	require.Len(t, cleared, 1)
 	assert.Equal(t, sessionCookieName, cleared[0].Name)
 	assert.Equal(t, -1, cleared[0].MaxAge) // Stateless: logout only clears the cookie.
+}
+
+func TestGoogleToken(t *testing.T) {
+	db := testdb.NewDB()
+	defer func() { _ = db.Close() }()
+	_, err := db.Exec(`INSERT INTO activists (name, email, chapter_id, hidden) VALUES ('Gina Google', 'gina@example.org', 1, 0)`)
+	require.NoError(t, err)
+
+	a := &authServer{
+		store: memberStore{db},
+		now:   time.Now,
+		verifyGoogle: func(_ context.Context, cred string) (string, bool, error) {
+			switch cred {
+			case "good":
+				return "Gina@Example.org", true, nil
+			case "unverified":
+				return "gina@example.org", false, nil
+			}
+			return "", false, errors.New("bad token")
+		},
+	}
+	h := corsHandler(a.googleToken)
+	post := func(origin, contentType, body string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodPost, "/auth/google/token", strings.NewReader(body))
+		if origin != "" {
+			req.Header.Set("Origin", origin)
+		}
+		if contentType != "" {
+			req.Header.Set("Content-Type", contentType)
+		}
+		rec := httptest.NewRecorder()
+		h(rec, req)
+		return rec
+	}
+	const site = "https://www.directactioneverywhere.com"
+	const j = "application/json"
+
+	assert.Equal(t, http.StatusForbidden, post("https://evil.com", j, `{"credential":"good"}`).Code)
+	assert.Equal(t, http.StatusForbidden, post("", j, `{"credential":"good"}`).Code, "missing Origin")
+	assert.Equal(t, http.StatusUnsupportedMediaType, post(site, "", `{"credential":"good"}`).Code)
+	assert.Equal(t, http.StatusUnsupportedMediaType, post(site, "text/plain", `{"credential":"good"}`).Code)
+	assert.Equal(t, http.StatusBadRequest, post(site, j, `not json`).Code)
+	assert.Equal(t, http.StatusBadRequest, post(site, j, `{}`).Code)
+
+	rec := post(site, j, `{"credential":"garbage"}`)
+	assert.Equal(t, http.StatusUnauthorized, rec.Code)
+	assert.Empty(t, rec.Result().Cookies())
+	assert.Equal(t, http.StatusUnauthorized, post(site, j, `{"credential":"unverified"}`).Code)
+
+	// Happy path with a fake verified token: cookie set, /api/me-shaped body.
+	rec = post(site, j, `{"credential":"good"}`)
+	require.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, site, rec.Header().Get("Access-Control-Allow-Origin"))
+	assert.JSONEq(t, `{"email":"gina@example.org","name":"Gina Google","activistId":1}`, rec.Body.String())
+	cs := rec.Result().Cookies()
+	require.Len(t, cs, 1)
+	email, _, ok := readSession(reqWith(cs[0]), time.Now())
+	assert.True(t, ok)
+	assert.Equal(t, "gina@example.org", email)
+
+	// Dev credential (tests run with PROD unset).
+	rec = post("http://localhost:3000", j, `{"credential":"dev"}`)
+	require.Equal(t, http.StatusOK, rec.Code)
+	assert.Contains(t, rec.Body.String(), "test-dev@directactioneverywhere.com")
+	require.Len(t, rec.Result().Cookies(), 1)
 }

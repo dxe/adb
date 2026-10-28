@@ -35,6 +35,13 @@ func (a *authServer) me(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	a.writeMe(w, r, email)
+}
+
+// writeMe writes the /api/me JSON for a signed-in email, matching it to an
+// activist if possible.
+func (a *authServer) writeMe(w http.ResponseWriter, r *http.Request, email string) {
+	w.Header().Set("Content-Type", "application/json")
 	resp := meResponse{Email: email}
 	// Hidden activists are merged-away duplicates; skip them. The email column
 	// uses a case-insensitive collation.
