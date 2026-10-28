@@ -23,12 +23,20 @@ import (
 // revoked server-side.
 
 const (
-	sessionCookieName = "dxe_member_session"
-	sessionLifetime   = 30 * 24 * time.Hour
+	sessionLifetime = 30 * 24 * time.Hour
 	// The cookie is re-issued (sliding expiry) when older than this.
 	sessionRefreshAfter = 24 * time.Hour
 	loginTokenLifetime  = 15 * time.Minute
 )
+
+// sessionCookieName is __Host- prefixed in prod (Secure, Path=/, no Domain, as
+// the prefix requires); dev runs over http, where __Host- cookies are refused.
+func sessionCookieName() string {
+	if config.IsProd {
+		return "__Host-dxe_member_session"
+	}
+	return "dxe_member_session"
+}
 
 // errInvalidToken is returned when a login token is unknown, expired, or
 // already used.
@@ -122,7 +130,7 @@ var memberSessions = func() *sessions.CookieStore {
 // saveSession writes a signed session cookie for email, issued at now.
 func saveSession(w http.ResponseWriter, r *http.Request, email string, now time.Time) error {
 	// A decode error means a bad old cookie; Get returns a fresh session then.
-	sess, _ := memberSessions.Get(r, sessionCookieName)
+	sess, _ := memberSessions.Get(r, sessionCookieName())
 	sess.Options = &sessions.Options{
 		Path:     "/",
 		MaxAge:   int(sessionLifetime / time.Second),
@@ -138,10 +146,10 @@ func saveSession(w http.ResponseWriter, r *http.Request, email string, now time.
 // readSession returns the signed-in email and when the cookie was issued, or
 // ok=false if the cookie is missing, tampered with, or older than 30 days.
 func readSession(r *http.Request, now time.Time) (email string, issuedAt time.Time, ok bool) {
-	if _, err := r.Cookie(sessionCookieName); err != nil {
+	if _, err := r.Cookie(sessionCookieName()); err != nil {
 		return "", time.Time{}, false
 	}
-	sess, err := memberSessions.Get(r, sessionCookieName)
+	sess, err := memberSessions.Get(r, sessionCookieName())
 	if err != nil {
 		return "", time.Time{}, false
 	}

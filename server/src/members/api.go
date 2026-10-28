@@ -21,8 +21,8 @@ func (a *authServer) me(w http.ResponseWriter, r *http.Request) {
 	now := a.now()
 	email, issuedAt, ok := readSession(r, now)
 	if !ok {
-		if _, err := r.Cookie(sessionCookieName); err == nil {
-			clearCookie(w, sessionCookieName, "/")
+		if _, err := r.Cookie(sessionCookieName()); err == nil {
+			clearCookie(w, sessionCookieName(), "/")
 		}
 		w.WriteHeader(http.StatusUnauthorized)
 		_, _ = w.Write([]byte("{}"))
@@ -43,14 +43,18 @@ func (a *authServer) me(w http.ResponseWriter, r *http.Request) {
 func (a *authServer) writeMe(w http.ResponseWriter, r *http.Request, email string) {
 	w.Header().Set("Content-Type", "application/json")
 	resp := meResponse{Email: email}
-	// Hidden activists are merged-away duplicates; skip them. The email column
-	// uses a case-insensitive collation.
+	// Hidden activists are merged-away duplicates; skip them. The first
+	// predicate uses the email index (accent- and case-insensitive collation);
+	// the second makes the match exact, so "jane@acmé.org" cannot match
+	// "jane@acme.org". The session email is already lowercase ASCII.
 	var row struct {
 		ID   int    `db:"id"`
 		Name string `db:"name"`
 	}
 	err := a.store.db.GetContext(r.Context(), &row,
-		`SELECT id, name FROM activists WHERE email = ? AND hidden = 0 ORDER BY id LIMIT 1`, email)
+		`SELECT id, name FROM activists
+		 WHERE email = ? AND LOWER(TRIM(email)) COLLATE utf8mb4_bin = ? AND hidden = 0
+		 ORDER BY id LIMIT 1`, email, email)
 	switch {
 	case err == nil:
 		resp.Name, resp.ActivistID = &row.Name, &row.ID

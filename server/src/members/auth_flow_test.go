@@ -1,12 +1,20 @@
 package members
 
 import (
+	"bytes"
+	"context"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/dxe/adb/config"
+	"github.com/dxe/adb/testdb"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestValidateNext(t *testing.T) {
@@ -100,13 +108,19 @@ func TestClientIP(t *testing.T) {
 	assert.Equal(t, "10.0.0.5", clientIP(req))
 	req.Header.Set("X-Forwarded-For", "6.6.6.6, 203.0.113.9")
 	assert.Equal(t, "203.0.113.9", clientIP(req), "ALB appends the real client; earlier hops are spoofable")
+
+	// A client-sent duplicate header line cannot win: the ALB's line is last.
+	req.Header = http.Header{}
+	req.Header.Add("X-Forwarded-For", "6.6.6.6")
+	req.Header.Add("X-Forwarded-For", "1.1.1.1, 203.0.113.9")
+	assert.Equal(t, "203.0.113.9", clientIP(req))
 }
 
 func TestNormalizeEmail(t *testing.T) {
 	got, ok := normalizeEmail("  Jane@Example.ORG ")
 	assert.True(t, ok)
 	assert.Equal(t, "jane@example.org", got)
-	for _, bad := range []string{"", "nope", "Jane <jane@example.org>", "a@b.c, d@e.f"} {
+	for _, bad := range []string{"jane@acmé.org", "jané@acme.org", "jane@acme\u200b.org", "ｊane@acme.org", "", "nope", "Jane <jane@example.org>", "a@b.c, d@e.f"} {
 		_, ok := normalizeEmail(bad)
 		assert.False(t, ok, bad)
 	}
@@ -121,4 +135,79 @@ func TestRateLimiter(t *testing.T) {
 	assert.False(t, l.allow("a", 5, time.Hour, now.Add(time.Minute)))
 	assert.True(t, l.allow("b", 5, time.Hour, now))
 	assert.True(t, l.allow("a", 5, time.Hour, now.Add(61*time.Minute)))
+}
+
+func setProd(t *testing.T, prod bool) {
+	t.Helper()
+	old := config.IsProd
+	config.IsProd = prod
+	t.Cleanup(func() { config.IsProd = old })
+}
+
+func TestLocalhostOriginsOnlyOutsideProd(t *testing.T) {
+	setProd(t, false)
+	assert.True(t, isAllowedOrigin("http://localhost:3000"))
+	assert.Equal(t, "http://localhost:4173/account", validateNext("http://localhost:4173/account"))
+
+	setProd(t, true)
+	assert.True(t, isAllowedOrigin("https://www.directactioneverywhere.com"))
+	assert.False(t, isAllowedOrigin("http://localhost:3000"))
+	assert.False(t, isAllowedOrigin("http://localhost:4173"))
+	assert.False(t, originAllowed("http://localhost:3000"))
+	assert.Equal(t, fallbackNextURL, validateNext("http://localhost:3000/account"))
+}
+
+func TestSessionCookieName(t *testing.T) {
+	setProd(t, false)
+	assert.Equal(t, "dxe_member_session", sessionCookieName())
+	setProd(t, true)
+	assert.Equal(t, "__Host-dxe_member_session", sessionCookieName())
+}
+
+func TestSendLoginEmail_ProdWithoutSMTPErrorsAndDoesNotLogLink(t *testing.T) {
+	setProd(t, true)
+	oldHost := config.SMTPHost
+	config.SMTPHost = ""
+	t.Cleanup(func() { config.SMTPHost = oldHost })
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+	t.Cleanup(func() { log.SetOutput(os.Stderr) })
+
+	err := sendLoginEmail("a@example.org", "https://members.example/auth/email/confirm?token=SECRET")
+	assert.Error(t, err)
+	assert.NotContains(t, buf.String(), "SECRET")
+
+	setProd(t, false)
+	assert.NoError(t, sendLoginEmail("a@example.org", "https://x/?token=DEVLINK"))
+	assert.Contains(t, buf.String(), "DEVLINK")
+}
+
+func TestConfirmPagesDenyFraming(t *testing.T) {
+	check := func(rec *httptest.ResponseRecorder) {
+		assert.Equal(t, "DENY", rec.Header().Get("X-Frame-Options"))
+		assert.Equal(t, "frame-ancestors 'none'", rec.Header().Get("Content-Security-Policy"))
+	}
+	// Invalid-token paths need no DB rows, only a store that finds nothing.
+	db := testdb.NewDB()
+	defer func() { _ = db.Close() }()
+	a := &authServer{store: memberStore{db}, now: time.Now}
+
+	rec := httptest.NewRecorder()
+	a.emailConfirmPage(rec, httptest.NewRequest(http.MethodGet, "/auth/email/confirm?token=nope", nil))
+	assert.Equal(t, http.StatusGone, rec.Code)
+	check(rec)
+
+	raw, err := a.store.createLoginToken(context.Background(), "a@example.org", fallbackNextURL, time.Now())
+	require.NoError(t, err)
+	rec = httptest.NewRecorder()
+	a.emailConfirmPage(rec, httptest.NewRequest(http.MethodGet, "/auth/email/confirm?token="+raw, nil))
+	assert.Equal(t, http.StatusOK, rec.Code)
+	check(rec)
+
+	req := httptest.NewRequest(http.MethodPost, "/auth/email/confirm", strings.NewReader("token=nope"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec = httptest.NewRecorder()
+	a.emailConfirm(rec, req)
+	assert.Equal(t, http.StatusGone, rec.Code)
+	check(rec)
 }

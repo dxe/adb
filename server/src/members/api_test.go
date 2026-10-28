@@ -84,7 +84,7 @@ func TestMagicLinkFlow(t *testing.T) {
 	cookies := rec.Result().Cookies()
 	require.Len(t, cookies, 1)
 	c := cookies[0]
-	assert.Equal(t, sessionCookieName, c.Name)
+	assert.Equal(t, sessionCookieName(), c.Name)
 	assert.True(t, c.HttpOnly)
 	assert.Equal(t, http.SameSiteLaxMode, c.SameSite)
 	assert.Equal(t, "/", c.Path)
@@ -110,7 +110,7 @@ func TestMagicLinkFlow(t *testing.T) {
 	assert.Equal(t, http.StatusNoContent, rec.Code)
 	cleared := rec.Result().Cookies()
 	require.Len(t, cleared, 1)
-	assert.Equal(t, sessionCookieName, cleared[0].Name)
+	assert.Equal(t, sessionCookieName(), cleared[0].Name)
 	assert.Equal(t, -1, cleared[0].MaxAge) // Stateless: logout only clears the cookie.
 }
 
@@ -177,4 +177,23 @@ func TestGoogleToken(t *testing.T) {
 	require.Equal(t, http.StatusOK, rec.Code)
 	assert.Contains(t, rec.Body.String(), "test-dev@directactioneverywhere.com")
 	require.Len(t, rec.Result().Cookies(), 1)
+}
+
+func TestMe_ActivistLookupIsExact(t *testing.T) {
+	db := testdb.NewDB()
+	defer func() { _ = db.Close() }()
+	_, err := db.Exec(`INSERT INTO activists (name, email, chapter_id, hidden) VALUES
+		('Accent Person', 'jane@acmé.org', 1, 0), ('Plain Person', 'sam@acme.org', 1, 0)`)
+	require.NoError(t, err)
+	a := &authServer{store: memberStore{db}, now: time.Now}
+
+	me := func(email string) string {
+		rec := httptest.NewRecorder()
+		a.writeMe(rec, httptest.NewRequest(http.MethodGet, "/api/me", nil), email)
+		return rec.Body.String()
+	}
+	// The unaccented session email must not match the accented activist.
+	assert.JSONEq(t, `{"email":"jane@acme.org","name":null,"activistId":null}`, me("jane@acme.org"))
+	// An exact (case-insensitive) match still works.
+	assert.JSONEq(t, `{"email":"sam@acme.org","name":"Plain Person","activistId":2}`, me("sam@acme.org"))
 }

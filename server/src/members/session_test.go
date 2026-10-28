@@ -100,7 +100,7 @@ func reqWith(c *http.Cookie) *http.Request {
 func TestSessionCookie_RoundTrip(t *testing.T) {
 	now := time.Now()
 	c := cookieFor(t, "a@example.org", now)
-	assert.Equal(t, sessionCookieName, c.Name)
+	assert.Equal(t, sessionCookieName(), c.Name)
 	assert.True(t, c.HttpOnly)
 	assert.Equal(t, http.SameSiteLaxMode, c.SameSite)
 	assert.Equal(t, "/", c.Path)
@@ -125,7 +125,7 @@ func TestSessionCookie_TamperedRejected(t *testing.T) {
 
 	// A cookie signed with another key is rejected too.
 	other := sessions.NewCookieStore([]byte("a-different-secret"))
-	sess, _ := other.Get(httptest.NewRequest(http.MethodGet, "/", nil), sessionCookieName)
+	sess, _ := other.Get(httptest.NewRequest(http.MethodGet, "/", nil), sessionCookieName())
 	sess.Values["email"] = "a@example.org"
 	sess.Values["issued"] = now.Unix()
 	rec := httptest.NewRecorder()

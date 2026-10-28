@@ -35,14 +35,21 @@ const (
 	emailsPerIPPerHour      = 30
 )
 
-// allowedOrigins are the web origins that may be redirected to after sign-in
-// and may call the API cross-origin.
-var allowedOrigins = map[string]bool{
+// siteOrigins are the web origins that may be redirected to after sign-in and
+// may call the API cross-origin. Localhost origins are added outside prod only.
+var siteOrigins = map[string]bool{
 	"https://www.directactioneverywhere.com":     true,
 	"https://directactioneverywhere.com":         true,
 	"https://staging.directactioneverywhere.com": true,
-	"http://localhost:3000":                      true,
-	"http://localhost:4173":                      true,
+}
+
+var devOrigins = map[string]bool{
+	"http://localhost:3000": true,
+	"http://localhost:4173": true,
+}
+
+func isAllowedOrigin(origin string) bool {
+	return siteOrigins[origin] || (!config.IsProd && devOrigins[origin])
 }
 
 // authBaseURL is this server's public origin for the website auth flow.
@@ -73,7 +80,7 @@ func validateNext(raw string) string {
 	if u.Scheme != "http" && u.Scheme != "https" {
 		return fallbackNextURL
 	}
-	if !allowedOrigins[u.Scheme+"://"+u.Host] {
+	if !isAllowedOrigin(u.Scheme + "://" + u.Host) {
 		return fallbackNextURL
 	}
 	return raw
@@ -82,7 +89,7 @@ func validateNext(raw string) string {
 // originAllowed reports whether a request's Origin header is acceptable: absent
 // (non-browser client) or in the allowlist.
 func originAllowed(origin string) bool {
-	return origin == "" || allowedOrigins[origin]
+	return origin == "" || isAllowedOrigin(origin)
 }
 
 // setCORS echoes an allowlisted Origin with credentials allowed. It returns
@@ -93,7 +100,7 @@ func setCORS(w http.ResponseWriter, r *http.Request) bool {
 	if origin == "" {
 		return true
 	}
-	if !allowedOrigins[origin] {
+	if !isAllowedOrigin(origin) {
 		return false
 	}
 	w.Header().Set("Access-Control-Allow-Origin", origin)
@@ -129,8 +136,10 @@ func corsHandler(h http.HandlerFunc) http.HandlerFunc {
 // connecting client's address to X-Forwarded-For, so the last entry is the one
 // a client cannot spoof.
 func clientIP(r *http.Request) string {
-	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-		parts := strings.Split(xff, ",")
+	// Use the last entry of the last header line, so a client-sent X-Forwarded-For
+	// (even a duplicated header) cannot win over the entry the ALB appended.
+	if lines := r.Header.Values("X-Forwarded-For"); len(lines) > 0 {
+		parts := strings.Split(lines[len(lines)-1], ",")
 		if ip := strings.TrimSpace(parts[len(parts)-1]); ip != "" {
 			return ip
 		}
@@ -182,6 +191,13 @@ func normalizeEmail(s string) (string, bool) {
 	if s == "" || len(s) > 254 {
 		return "", false
 	}
+	// ASCII only: non-ASCII (accents, zero-width characters) can collide with
+	// other addresses under the database's accent-insensitive collation.
+	for i := 0; i < len(s); i++ {
+		if s[i] >= 0x80 {
+			return "", false
+		}
+	}
 	addr, err := mail.ParseAddress(s)
 	if err != nil || addr.Address != s || addr.Name != "" {
 		return "", false
@@ -226,6 +242,11 @@ func clearCookie(w http.ResponseWriter, name, path string) {
 		Secure:   config.IsProd,
 		SameSite: http.SameSiteLaxMode,
 	})
+}
+
+func denyFraming(w http.ResponseWriter) {
+	w.Header().Set("X-Frame-Options", "DENY")
+	w.Header().Set("Content-Security-Policy", "frame-ancestors 'none'")
 }
 
 func noStore(w http.ResponseWriter) {
@@ -387,9 +408,13 @@ func (a *authServer) emailStart(w http.ResponseWriter, r *http.Request) {
 }
 
 func sendLoginEmail(to, link string) error {
-	if !config.IsProd || config.SMTPHost == "" {
+	if !config.IsProd {
 		log.Printf("member auth: sign-in link for %s: %s", to, link)
 		return nil
+	}
+	if config.SMTPHost == "" {
+		// Never log the link in prod: it is a login credential.
+		return errors.New("SMTP is not configured")
 	}
 	body := fmt.Sprintf(
 		`<p>Click the link below to sign in to Direct Action Everywhere. It expires in 15 minutes and can only be used once.</p><p><a href="%s">Sign in</a></p><p>If you didn't request this, you can ignore this email.</p>`,
@@ -434,6 +459,7 @@ func (a *authServer) emailConfirmPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	noStore(w)
+	denyFraming(w)
 	w.Header().Set("Referrer-Policy", "no-referrer")
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
@@ -450,6 +476,7 @@ func (a *authServer) emailConfirm(w http.ResponseWriter, r *http.Request) {
 	email, next, err := a.store.consumeLoginToken(r.Context(), r.PostFormValue("token"), a.now())
 	if err == errInvalidToken {
 		noStore(w)
+		denyFraming(w)
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusGone)
 		_ = confirmTmpl.Execute(w, struct{ Email, Token string }{})
@@ -466,6 +493,6 @@ func (a *authServer) emailConfirm(w http.ResponseWriter, r *http.Request) {
 // --- Logout ---
 
 func (a *authServer) logout(w http.ResponseWriter, r *http.Request) {
-	clearCookie(w, sessionCookieName, "/")
+	clearCookie(w, sessionCookieName(), "/")
 	w.WriteHeader(http.StatusNoContent)
 }
