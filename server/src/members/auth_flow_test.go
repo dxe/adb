@@ -1,0 +1,124 @@
+package members
+
+import (
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestValidateNext(t *testing.T) {
+	cases := []struct{ in, want string }{
+		{"https://www.directactioneverywhere.com/account", "https://www.directactioneverywhere.com/account"},
+		{"https://directactioneverywhere.com/", "https://directactioneverywhere.com/"},
+		{"https://staging.directactioneverywhere.com/account?x=1#y", "https://staging.directactioneverywhere.com/account?x=1#y"},
+		{"http://localhost:3000/account", "http://localhost:3000/account"},
+		{"http://localhost:4173/account", "http://localhost:4173/account"},
+		{"", fallbackNextURL},
+		{"/account", fallbackNextURL},
+		{"//www.directactioneverywhere.com/account", fallbackNextURL},
+		{"https://evil.com/", fallbackNextURL},
+		{"http://www.directactioneverywhere.com/account", fallbackNextURL}, // wrong scheme for origin
+		{"https://www.directactioneverywhere.com.evil.com/", fallbackNextURL},
+		{"https://evil.com/https://www.directactioneverywhere.com", fallbackNextURL},
+		{"https://www.directactioneverywhere.com@evil.com/", fallbackNextURL},
+		{"https://evil.com@www.directactioneverywhere.com/", fallbackNextURL}, // userinfo
+		{"https://www.directactioneverywhere.com:evil@evil.com/", fallbackNextURL},
+		{"https://www.directactioneverywhere.com\\@evil.com/", fallbackNextURL},
+		{"https://www.directactioneverywhere.com:8443/", fallbackNextURL},
+		{"http://localhost:3001/", fallbackNextURL},
+		{"javascript:alert(1)", fallbackNextURL},
+		{"data:text/html,hi", fallbackNextURL},
+		{"ftp://www.directactioneverywhere.com/", fallbackNextURL},
+		{" https://www.directactioneverywhere.com/", fallbackNextURL},
+		{"https://www.directactioneverywhere.com/\r\nX: y", fallbackNextURL},
+		{"https://www.DirectActionEverywhere.com/", fallbackNextURL},
+		{"https://www.directactioneverywhere.com/" + string(make([]byte, 600)), fallbackNextURL},
+	}
+	for _, c := range cases {
+		assert.Equal(t, c.want, validateNext(c.in), "input %q", c.in)
+	}
+}
+
+func TestOriginAllowed(t *testing.T) {
+	assert.True(t, originAllowed(""))
+	assert.True(t, originAllowed("https://www.directactioneverywhere.com"))
+	assert.True(t, originAllowed("http://localhost:3000"))
+	assert.False(t, originAllowed("https://evil.com"))
+	assert.False(t, originAllowed("null"))
+	assert.False(t, originAllowed("https://www.directactioneverywhere.com.evil.com"))
+	assert.False(t, originAllowed("https://www.directactioneverywhere.com/"))
+}
+
+func TestCORSHandler(t *testing.T) {
+	called := 0
+	h := corsHandler(func(w http.ResponseWriter, r *http.Request) {
+		called++
+		w.WriteHeader(http.StatusNoContent)
+	})
+	do := func(method, origin string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(method, "/api/me", nil)
+		if origin != "" {
+			req.Header.Set("Origin", origin)
+		}
+		rec := httptest.NewRecorder()
+		h(rec, req)
+		return rec
+	}
+
+	rec := do(http.MethodOptions, "https://www.directactioneverywhere.com")
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+	assert.Equal(t, "https://www.directactioneverywhere.com", rec.Header().Get("Access-Control-Allow-Origin"))
+	assert.Equal(t, "true", rec.Header().Get("Access-Control-Allow-Credentials"))
+	assert.Contains(t, rec.Header().Get("Access-Control-Allow-Headers"), "Content-Type")
+	assert.Equal(t, 0, called)
+
+	rec = do(http.MethodOptions, "https://evil.com")
+	assert.Equal(t, http.StatusForbidden, rec.Code)
+	assert.Empty(t, rec.Header().Get("Access-Control-Allow-Origin"))
+
+	rec = do(http.MethodPost, "https://evil.com")
+	assert.Equal(t, http.StatusForbidden, rec.Code)
+	assert.Empty(t, rec.Header().Get("Access-Control-Allow-Origin"))
+	assert.Equal(t, 0, called)
+
+	rec = do(http.MethodPost, "http://localhost:4173")
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+	assert.Equal(t, "http://localhost:4173", rec.Header().Get("Access-Control-Allow-Origin"))
+
+	rec = do(http.MethodPost, "") // Non-browser client.
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+	assert.Empty(t, rec.Header().Get("Access-Control-Allow-Origin"))
+	assert.Equal(t, 2, called)
+}
+
+func TestClientIP(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.RemoteAddr = "10.0.0.5:1234"
+	assert.Equal(t, "10.0.0.5", clientIP(req))
+	req.Header.Set("X-Forwarded-For", "6.6.6.6, 203.0.113.9")
+	assert.Equal(t, "203.0.113.9", clientIP(req), "ALB appends the real client; earlier hops are spoofable")
+}
+
+func TestNormalizeEmail(t *testing.T) {
+	got, ok := normalizeEmail("  Jane@Example.ORG ")
+	assert.True(t, ok)
+	assert.Equal(t, "jane@example.org", got)
+	for _, bad := range []string{"", "nope", "Jane <jane@example.org>", "a@b.c, d@e.f"} {
+		_, ok := normalizeEmail(bad)
+		assert.False(t, ok, bad)
+	}
+}
+
+func TestRateLimiter(t *testing.T) {
+	l := newRateLimiter()
+	now := time.Now()
+	for i := 0; i < 5; i++ {
+		assert.True(t, l.allow("a", 5, time.Hour, now))
+	}
+	assert.False(t, l.allow("a", 5, time.Hour, now.Add(time.Minute)))
+	assert.True(t, l.allow("b", 5, time.Hour, now))
+	assert.True(t, l.allow("a", 5, time.Hour, now.Add(61*time.Minute)))
+}
