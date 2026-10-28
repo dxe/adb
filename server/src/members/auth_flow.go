@@ -245,9 +245,11 @@ func (a *authServer) startSession(w http.ResponseWriter, r *http.Request, email,
 
 // --- Google (Google Identity Services ID token) ---
 
-// googleClientID is the main ADB OAuth client (same as TokenSignInHandler in
-// main.go). The website renders Google's button and POSTs the credential here.
-const googleClientID = "975059814880-lfffftbpt7fdl14cevtve8sjvh015udc.apps.googleusercontent.com"
+// googleClientID is the website's own OAuth client ("DxE website sign-in", in
+// the ADB Google Cloud project), separate from the ADB admin login's client so
+// tokens issued for one aren't accepted by the other. The website renders
+// Google's button and POSTs the credential here.
+const googleClientID = "975059814880-aacjqeiq14ng4288bom3put59m2u6nd6.apps.googleusercontent.com"
 
 const devCredential = "dev"
 
