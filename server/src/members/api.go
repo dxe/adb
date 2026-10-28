@@ -46,14 +46,16 @@ func (a *authServer) writeMe(w http.ResponseWriter, r *http.Request, email strin
 	// Hidden activists are merged-away duplicates; skip them. The first
 	// predicate uses the email index (accent- and case-insensitive collation);
 	// the second makes the match exact, so "jane@acmé.org" cannot match
-	// "jane@acme.org". The session email is already lowercase ASCII.
+	// "jane@acme.org". It compares bytes, which works whatever the column's
+	// charset (the table predates the migrations), because the session email
+	// is lowercase ASCII.
 	var row struct {
 		ID   int    `db:"id"`
 		Name string `db:"name"`
 	}
 	err := a.store.db.GetContext(r.Context(), &row,
 		`SELECT id, name FROM activists
-		 WHERE email = ? AND LOWER(TRIM(email)) COLLATE utf8mb4_bin = ? AND hidden = 0
+		 WHERE email = ? AND CAST(LOWER(TRIM(email)) AS BINARY) = ? AND hidden = 0
 		 ORDER BY id LIMIT 1`, email, email)
 	switch {
 	case err == nil:
