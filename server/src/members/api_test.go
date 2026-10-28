@@ -104,8 +104,10 @@ func TestMagicLinkFlow(t *testing.T) {
 	// Logout.
 	out := httptest.NewRequest(http.MethodPost, "/auth/logout", nil)
 	out.AddCookie(c)
-	assert.Equal(t, http.StatusNoContent, do(out).Code)
-	me = httptest.NewRequest(http.MethodGet, "/api/me", nil)
-	me.AddCookie(c)
-	assert.Equal(t, http.StatusUnauthorized, do(me).Code)
+	rec = do(out)
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+	cleared := rec.Result().Cookies()
+	require.Len(t, cleared, 1)
+	assert.Equal(t, sessionCookieName, cleared[0].Name)
+	assert.Equal(t, -1, cleared[0].MaxAge) // Stateless: logout only clears the cookie.
 }

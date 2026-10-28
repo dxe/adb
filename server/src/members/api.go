@@ -18,27 +18,21 @@ type meResponse struct {
 func (a *authServer) me(w http.ResponseWriter, r *http.Request) {
 	noStore(w)
 	w.Header().Set("Content-Type", "application/json")
-	c, err := r.Cookie(sessionCookieName)
-	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		_, _ = w.Write([]byte("{}"))
-		return
-	}
 	now := a.now()
-	email, refreshed, err := a.store.lookupSession(r.Context(), c.Value, now)
-	if err != nil {
-		log.Println("member auth: lookup session:", err)
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-	if email == "" {
-		clearCookie(w, sessionCookieName, "/")
+	email, issuedAt, ok := readSession(r, now)
+	if !ok {
+		if _, err := r.Cookie(sessionCookieName); err == nil {
+			clearCookie(w, sessionCookieName, "/")
+		}
 		w.WriteHeader(http.StatusUnauthorized)
 		_, _ = w.Write([]byte("{}"))
 		return
 	}
-	if refreshed {
-		a.setSessionCookie(w, c.Value, now)
+	// Sliding expiry: re-issue the cookie once it is more than a day old.
+	if now.Sub(issuedAt) > sessionRefreshAfter {
+		if err := saveSession(w, r, email, now); err != nil {
+			log.Println("member auth: refresh session:", err)
+		}
 	}
 
 	resp := meResponse{Email: email}
@@ -48,7 +42,7 @@ func (a *authServer) me(w http.ResponseWriter, r *http.Request) {
 		ID   int    `db:"id"`
 		Name string `db:"name"`
 	}
-	err = a.store.db.GetContext(r.Context(), &row,
+	err := a.store.db.GetContext(r.Context(), &row,
 		`SELECT id, name FROM activists WHERE email = ? AND hidden = 0 ORDER BY id LIMIT 1`, email)
 	switch {
 	case err == nil:

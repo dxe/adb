@@ -2,10 +2,13 @@ package members
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
 	"github.com/dxe/adb/testdb"
+	"github.com/gorilla/sessions"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -79,45 +82,96 @@ func TestLoginToken_Expired(t *testing.T) {
 	assert.ErrorIs(t, err, errInvalidToken)
 }
 
-func TestSession_LookupExpiryRefreshDelete(t *testing.T) {
-	db := testdb.NewDB()
-	defer func() { _ = db.Close() }()
-	st := memberStore{db}
-	ctx := context.Background()
+func cookieFor(t *testing.T, email string, issued time.Time) *http.Cookie {
+	t.Helper()
+	rec := httptest.NewRecorder()
+	require.NoError(t, saveSession(rec, httptest.NewRequest(http.MethodGet, "/", nil), email, issued))
+	cs := rec.Result().Cookies()
+	require.Len(t, cs, 1)
+	return cs[0]
+}
+
+func reqWith(c *http.Cookie) *http.Request {
+	r := httptest.NewRequest(http.MethodGet, "/api/me", nil)
+	r.AddCookie(c)
+	return r
+}
+
+func TestSessionCookie_RoundTrip(t *testing.T) {
 	now := time.Now()
+	c := cookieFor(t, "a@example.org", now)
+	assert.Equal(t, sessionCookieName, c.Name)
+	assert.True(t, c.HttpOnly)
+	assert.Equal(t, http.SameSiteLaxMode, c.SameSite)
+	assert.Equal(t, "/", c.Path)
+	assert.Empty(t, c.Domain)
+	assert.Equal(t, int(sessionLifetime/time.Second), c.MaxAge)
 
-	raw, err := st.createSession(ctx, "a@example.org", now)
-	require.NoError(t, err)
-
-	email, refreshed, err := st.lookupSession(ctx, raw, now.Add(time.Hour))
-	require.NoError(t, err)
+	email, issued, ok := readSession(reqWith(c), now.Add(time.Hour))
+	require.True(t, ok)
 	assert.Equal(t, "a@example.org", email)
-	assert.False(t, refreshed)
+	assert.Equal(t, now.Unix(), issued.Unix())
 
-	// After a day the expiry slides forward.
-	email, refreshed, err = st.lookupSession(ctx, raw, now.Add(25*time.Hour))
-	require.NoError(t, err)
-	assert.Equal(t, "a@example.org", email)
-	assert.True(t, refreshed)
+	_, _, ok = readSession(httptest.NewRequest(http.MethodGet, "/", nil), now)
+	assert.False(t, ok)
+}
 
-	// Past the original 30 days but within the extended window.
-	email, _, err = st.lookupSession(ctx, raw, now.Add(sessionLifetime+time.Hour))
-	require.NoError(t, err)
-	assert.Equal(t, "a@example.org", email)
+func TestSessionCookie_TamperedRejected(t *testing.T) {
+	now := time.Now()
+	c := cookieFor(t, "a@example.org", now)
+	c.Value = c.Value[:len(c.Value)-3] + "AAA"
+	_, _, ok := readSession(reqWith(c), now)
+	assert.False(t, ok)
 
-	// Fully expired (a fresh session that is never refreshed).
-	raw2, err := st.createSession(ctx, "b@example.org", now)
-	require.NoError(t, err)
-	email, _, err = st.lookupSession(ctx, raw2, now.Add(sessionLifetime+time.Second))
-	require.NoError(t, err)
-	assert.Empty(t, email)
+	// A cookie signed with another key is rejected too.
+	other := sessions.NewCookieStore([]byte("a-different-secret"))
+	sess, _ := other.Get(httptest.NewRequest(http.MethodGet, "/", nil), sessionCookieName)
+	sess.Values["email"] = "a@example.org"
+	sess.Values["issued"] = now.Unix()
+	rec := httptest.NewRecorder()
+	require.NoError(t, other.Save(httptest.NewRequest(http.MethodGet, "/", nil), rec, sess))
+	_, _, ok = readSession(reqWith(rec.Result().Cookies()[0]), now)
+	assert.False(t, ok)
+}
 
-	// Unknown, and deleted.
-	email, _, err = st.lookupSession(ctx, "nope", now)
-	require.NoError(t, err)
-	assert.Empty(t, email)
-	require.NoError(t, st.deleteSession(ctx, raw))
-	email, _, err = st.lookupSession(ctx, raw, now.Add(time.Hour))
-	require.NoError(t, err)
-	assert.Empty(t, email)
+func TestSessionCookie_Expired(t *testing.T) {
+	now := time.Now()
+	c := cookieFor(t, "a@example.org", now.Add(-sessionLifetime-time.Hour))
+	_, _, ok := readSession(reqWith(c), now)
+	assert.False(t, ok)
+
+	c = cookieFor(t, "a@example.org", now.Add(-sessionLifetime+time.Hour))
+	_, _, ok = readSession(reqWith(c), now)
+	assert.True(t, ok)
+}
+
+func TestSessionCookie_SlidingRefresh(t *testing.T) {
+	a := &authServer{now: time.Now}
+	me := func(c *http.Cookie) *httptest.ResponseRecorder {
+		rec := httptest.NewRecorder()
+		a.store = memberStore{testdb.NewDB()}
+		defer func() { _ = a.store.db.Close() }()
+		a.me(rec, reqWith(c))
+		return rec
+	}
+
+	// Fresh cookie: not re-issued.
+	rec := me(cookieFor(t, "a@example.org", time.Now().Add(-time.Hour)))
+	require.Equal(t, http.StatusOK, rec.Code)
+	assert.Empty(t, rec.Result().Cookies())
+
+	// Older than a day: re-issued with a fresh issued-at.
+	rec = me(cookieFor(t, "a@example.org", time.Now().Add(-48*time.Hour)))
+	require.Equal(t, http.StatusOK, rec.Code)
+	cs := rec.Result().Cookies()
+	require.Len(t, cs, 1)
+	_, issued, ok := readSession(reqWith(cs[0]), time.Now())
+	require.True(t, ok)
+	assert.WithinDuration(t, time.Now(), issued, time.Minute)
+
+	// Tampered: 401 and cookie cleared.
+	bad := cookieFor(t, "a@example.org", time.Now())
+	bad.Value += "x"
+	rec = me(bad)
+	assert.Equal(t, http.StatusUnauthorized, rec.Code)
 }

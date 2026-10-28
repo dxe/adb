@@ -217,19 +217,6 @@ func routeAuth(r *mux.Router, db *sqlx.DB) {
 	r.HandleFunc("/api/me", corsHandler(a.me)).Methods(http.MethodGet, http.MethodOptions)
 }
 
-func (a *authServer) setSessionCookie(w http.ResponseWriter, raw string, now time.Time) {
-	http.SetCookie(w, &http.Cookie{
-		Name:     sessionCookieName,
-		Value:    raw,
-		Path:     "/",
-		Expires:  now.Add(sessionLifetime),
-		MaxAge:   int(sessionLifetime / time.Second),
-		HttpOnly: true,
-		Secure:   config.IsProd,
-		SameSite: http.SameSiteLaxMode,
-	})
-}
-
 func clearCookie(w http.ResponseWriter, name, path string) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     name,
@@ -248,14 +235,11 @@ func noStore(w http.ResponseWriter) {
 
 // startSession creates a session for email and redirects to next.
 func (a *authServer) startSession(w http.ResponseWriter, r *http.Request, email, next string, status int) {
-	now := a.now()
-	raw, err := a.store.createSession(r.Context(), email, now)
-	if err != nil {
-		log.Println("member auth: create session:", err)
+	if err := saveSession(w, r, email, a.now()); err != nil {
+		log.Println("member auth: save session:", err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	a.setSessionCookie(w, raw, now)
 	noStore(w)
 	http.Redirect(w, r, next, status)
 }
@@ -486,11 +470,6 @@ func (a *authServer) emailConfirm(w http.ResponseWriter, r *http.Request) {
 // --- Logout ---
 
 func (a *authServer) logout(w http.ResponseWriter, r *http.Request) {
-	if c, err := r.Cookie(sessionCookieName); err == nil {
-		if err := a.store.deleteSession(r.Context(), c.Value); err != nil {
-			log.Println("member auth: delete session:", err)
-		}
-	}
 	clearCookie(w, sessionCookieName, "/")
 	w.WriteHeader(http.StatusNoContent)
 }

@@ -8,19 +8,24 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"net/http"
 	"time"
 
+	"github.com/dxe/adb/config"
+	"github.com/gorilla/sessions"
 	"github.com/jmoiron/sqlx"
 )
 
-// Session and login-token storage for the website member auth flow
-// (see auth_flow.go). Raw tokens are 256-bit crypto/rand values; only their
-// SHA-256 hashes are stored.
+// Login-token storage and stateless signed-cookie sessions for the website
+// member auth flow (see auth_flow.go). Login tokens are 256-bit crypto/rand
+// values; only their SHA-256 hashes are stored. Sessions are not stored: they
+// are signed gorilla/sessions cookies, like ADB admin auth, and are never
+// revoked server-side.
 
 const (
 	sessionCookieName = "dxe_member_session"
 	sessionLifetime   = 30 * 24 * time.Hour
-	// Sessions are extended (sliding expiry) at most this often.
+	// The cookie is re-issued (sliding expiry) when older than this.
 	sessionRefreshAfter = 24 * time.Hour
 	loginTokenLifetime  = 15 * time.Minute
 )
@@ -106,61 +111,54 @@ func (st memberStore) consumeLoginToken(ctx context.Context, raw string, now tim
 	return row.Email, row.NextURL, nil
 }
 
-// createSession stores a new session for email and returns the raw cookie value.
-func (st memberStore) createSession(ctx context.Context, email string, now time.Time) (string, error) {
-	raw, hash, err := newToken()
-	if err != nil {
-		return "", err
+// memberSessions is the members store, separate from admin auth's, signed with
+// the same secret. Its codec MaxAge also rejects old cookies by signed timestamp.
+var memberSessions = func() *sessions.CookieStore {
+	store := sessions.NewCookieStore([]byte(config.CookieSecret))
+	store.MaxAge(int(sessionLifetime / time.Second))
+	return store
+}()
+
+// saveSession writes a signed session cookie for email, issued at now.
+func saveSession(w http.ResponseWriter, r *http.Request, email string, now time.Time) error {
+	// A decode error means a bad old cookie; Get returns a fresh session then.
+	sess, _ := memberSessions.Get(r, sessionCookieName)
+	sess.Options = &sessions.Options{
+		Path:     "/",
+		MaxAge:   int(sessionLifetime / time.Second),
+		HttpOnly: true,
+		Secure:   config.IsProd,
+		SameSite: http.SameSiteLaxMode,
 	}
-	_, err = st.db.ExecContext(ctx,
-		`INSERT INTO member_sessions (id_hash, email, created_at, expires_at, last_seen_at)
-		 VALUES (?, ?, ?, ?, ?)`,
-		hash, email, now.UTC(), now.Add(sessionLifetime).UTC(), now.UTC())
-	if err != nil {
-		return "", fmt.Errorf("insert session: %w", err)
-	}
-	return raw, nil
+	sess.Values["email"] = email
+	sess.Values["issued"] = now.Unix()
+	return memberSessions.Save(r, w, sess)
 }
 
-// lookupSession returns the session's email, or ("", nil) if the session is
-// unknown or expired. refreshed is true when the expiry was extended, in which
-// case the caller should re-issue the cookie.
-func (st memberStore) lookupSession(ctx context.Context, raw string, now time.Time) (email string, refreshed bool, err error) {
-	hash := hashToken(raw)
-	var row struct {
-		Email      string    `db:"email"`
-		LastSeenAt time.Time `db:"last_seen_at"`
+// readSession returns the signed-in email and when the cookie was issued, or
+// ok=false if the cookie is missing, tampered with, or older than 30 days.
+func readSession(r *http.Request, now time.Time) (email string, issuedAt time.Time, ok bool) {
+	if _, err := r.Cookie(sessionCookieName); err != nil {
+		return "", time.Time{}, false
 	}
-	err = st.db.GetContext(ctx, &row,
-		`SELECT email, last_seen_at FROM member_sessions WHERE id_hash = ? AND expires_at > ?`,
-		hash, now.UTC())
-	if errors.Is(err, sql.ErrNoRows) {
-		return "", false, nil
-	}
+	sess, err := memberSessions.Get(r, sessionCookieName)
 	if err != nil {
-		return "", false, err
+		return "", time.Time{}, false
 	}
-	if now.Sub(row.LastSeenAt) >= sessionRefreshAfter {
-		if _, err := st.db.ExecContext(ctx,
-			`UPDATE member_sessions SET last_seen_at = ?, expires_at = ? WHERE id_hash = ?`,
-			now.UTC(), now.Add(sessionLifetime).UTC(), hash); err != nil {
-			return "", false, err
-		}
-		refreshed = true
+	email, _ = sess.Values["email"].(string)
+	issued, _ := sess.Values["issued"].(int64)
+	if email == "" || issued == 0 {
+		return "", time.Time{}, false
 	}
-	return row.Email, refreshed, nil
+	issuedAt = time.Unix(issued, 0)
+	if age := now.Sub(issuedAt); age >= sessionLifetime || age < -time.Minute {
+		return "", time.Time{}, false
+	}
+	return email, issuedAt, true
 }
 
-func (st memberStore) deleteSession(ctx context.Context, raw string) error {
-	_, err := st.db.ExecContext(ctx, `DELETE FROM member_sessions WHERE id_hash = ?`, hashToken(raw))
-	return err
-}
-
-// deleteExpired removes expired sessions and login tokens.
-func (st memberStore) deleteExpired(ctx context.Context, now time.Time) error {
-	if _, err := st.db.ExecContext(ctx, `DELETE FROM member_sessions WHERE expires_at <= ?`, now.UTC()); err != nil {
-		return err
-	}
-	_, err := st.db.ExecContext(ctx, `DELETE FROM member_login_tokens WHERE expires_at <= ?`, now.UTC())
+// deleteExpired removes login tokens that expired before cutoff.
+func (st memberStore) deleteExpired(ctx context.Context, cutoff time.Time) error {
+	_, err := st.db.ExecContext(ctx, `DELETE FROM member_login_tokens WHERE expires_at <= ?`, cutoff.UTC())
 	return err
 }
