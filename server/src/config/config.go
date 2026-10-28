@@ -68,6 +68,10 @@ var (
 	MembersClientID     = mustGetenv("MEMBERS_CLIENT_ID", "", false)
 	MembersClientSecret = mustGetenv("MEMBERS_CLIENT_SECRET", "", false)
 
+	// For website member sign-in on members.directactioneverywhere.com: the
+	// "DxE website sign-in" OAuth client (public; not the ADB admin client).
+	WebsiteGoogleClientID = mustGetenv("WEBSITE_GOOGLE_CLIENT_ID", "", false)
+
 	// For mailing list signups
 	SignupURI    = mustGetenv("SIGNUP_ENDPOINT", "", false)
 	SignupAPIKey = mustGetenv("SIGNUP_KEY", "", false)

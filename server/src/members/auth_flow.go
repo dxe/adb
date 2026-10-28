@@ -245,15 +245,17 @@ func (a *authServer) startSession(w http.ResponseWriter, r *http.Request, email,
 
 // --- Google (Google Identity Services ID token) ---
 
-// googleClientID is the website's own OAuth client ("DxE website sign-in", in
-// the ADB Google Cloud project), separate from the ADB admin login's client so
-// tokens issued for one aren't accepted by the other. The website renders
-// Google's button and POSTs the credential here.
-const googleClientID = "975059814880-aacjqeiq14ng4288bom3put59m2u6nd6.apps.googleusercontent.com"
-
 const devCredential = "dev"
 
+// googleVerifier checks ID tokens against the website's own OAuth client
+// (config.WebsiteGoogleClientID, "DxE website sign-in"), separate from the ADB
+// admin login's client so tokens issued for one aren't accepted by the other.
+// The website renders Google's button and POSTs the credential here.
 var googleVerifier = func() *oidc.IDTokenVerifier {
+	if config.WebsiteGoogleClientID == "" {
+		log.Println("WARNING: WEBSITE_GOOGLE_CLIENT_ID is not set; website Google sign-in is disabled.")
+		return nil
+	}
 	provider, err := oidc.NewProvider(context.Background(), "https://accounts.google.com")
 	if err != nil {
 		log.Println(
@@ -262,7 +264,7 @@ var googleVerifier = func() *oidc.IDTokenVerifier {
 		)
 		return nil
 	}
-	return provider.Verifier(&oidc.Config{ClientID: googleClientID})
+	return provider.Verifier(&oidc.Config{ClientID: config.WebsiteGoogleClientID})
 }()
 
 // verifyGoogleCredential verifies a Google ID token and returns its email.
