@@ -220,11 +220,13 @@ type authServer struct {
 	emailLimiter, ipLimiter *rateLimiter
 	now                     func() time.Time
 	sendEmail               func(to, link string) error
-	verifyGoogle            func(ctx context.Context, credential string) (email string, emailVerified bool, err error)
+	verifyGoogle            func(ctx context.Context, credential string) (email string, emailVerified bool, nonce string, err error)
 }
 
-// routeAuth registers the website member auth and API endpoints.
-func routeAuth(r *mux.Router, db *sqlx.DB) {
+// routeAuth registers the website member auth and API endpoints. legacyLogin
+// serves GET /login for the members.dxesf.org flow when the request isn't for
+// the website sign-in page (see isWebsiteLoginRequest).
+func routeAuth(r *mux.Router, db *sqlx.DB, legacyLogin http.HandlerFunc) {
 	a := &authServer{
 		store:        memberStore{db},
 		emailLimiter: newRateLimiter(),
@@ -233,8 +235,23 @@ func routeAuth(r *mux.Router, db *sqlx.DB) {
 		sendEmail:    sendLoginEmail,
 		verifyGoogle: verifyGoogleCredential,
 	}
-	r.HandleFunc("/auth/google/token", corsHandler(a.googleToken)).Methods(http.MethodPost, http.MethodOptions)
-	r.HandleFunc("/auth/email", corsHandler(a.emailStart)).Methods(http.MethodPost, http.MethodOptions)
+	r.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+		if isWebsiteLoginRequest(r) {
+			a.loginPage(w, r)
+		} else {
+			legacyLogin(w, r)
+		}
+	}).Methods(http.MethodGet, http.MethodHead)
+	r.PathPrefix("/login/assets/").Handler(loginAssetsHandler()).Methods(http.MethodGet, http.MethodHead)
+	routeAuthHandlers(r, a)
+}
+
+// routeAuthHandlers registers everything but /login.
+func routeAuthHandlers(r *mux.Router, a *authServer) {
+	// Same-origin only (the sign-in page): no CORS, so scripts on other sites
+	// can't redeem tokens or trigger sign-in emails.
+	r.HandleFunc("/auth/google/token", a.googleToken).Methods(http.MethodPost)
+	r.HandleFunc("/auth/email", a.emailStart).Methods(http.MethodPost)
 	r.HandleFunc("/auth/email/confirm", a.emailConfirmPage).Methods(http.MethodGet)
 	r.HandleFunc("/auth/email/confirm", a.emailConfirm).Methods(http.MethodPost)
 	r.HandleFunc("/auth/logout", corsHandler(a.logout)).Methods(http.MethodPost, http.MethodOptions)
@@ -280,7 +297,7 @@ const devCredential = "dev"
 // googleVerifier checks ID tokens against the website's own OAuth client
 // (config.WebsiteGoogleClientID, "DxE website sign-in"), separate from the ADB
 // admin login's client so tokens issued for one aren't accepted by the other.
-// The website renders Google's button and POSTs the credential here.
+// The sign-in page renders Google's button and POSTs the credential here.
 var googleVerifier = func() *oidc.IDTokenVerifier {
 	if config.WebsiteGoogleClientID == "" {
 		log.Println("WARNING: WEBSITE_GOOGLE_CLIENT_ID is not set; website Google sign-in is disabled.")
@@ -297,35 +314,36 @@ var googleVerifier = func() *oidc.IDTokenVerifier {
 	return provider.Verifier(&oidc.Config{ClientID: config.WebsiteGoogleClientID})
 }()
 
-// verifyGoogleCredential verifies a Google ID token and returns its email.
-func verifyGoogleCredential(ctx context.Context, credential string) (email string, emailVerified bool, err error) {
+// verifyGoogleCredential verifies a Google ID token and returns its email and
+// nonce claim.
+func verifyGoogleCredential(ctx context.Context, credential string) (email string, emailVerified bool, nonce string, err error) {
 	if googleVerifier == nil {
-		return "", false, errors.New("google verifier unavailable")
+		return "", false, "", errors.New("google verifier unavailable")
 	}
 	idToken, err := googleVerifier.Verify(ctx, credential)
 	if err != nil {
-		return "", false, err
+		return "", false, "", err
 	}
 	var claims struct {
 		Email         string `json:"email"`
 		EmailVerified bool   `json:"email_verified"`
+		Nonce         string `json:"nonce"`
 	}
 	if err := idToken.Claims(&claims); err != nil {
-		return "", false, err
+		return "", false, "", err
 	}
-	return claims.Email, claims.EmailVerified, nil
+	return claims.Email, claims.EmailVerified, claims.Nonce, nil
 }
 
 // googleToken signs in with a Google ID token ("credential") from Google
 // Identity Services and responds with the same JSON as /api/me.
 func (a *authServer) googleToken(w http.ResponseWriter, r *http.Request) {
 	noStore(w)
-	// Always a browser call, so an Origin is required (corsHandler already
-	// rejected non-allowlisted ones).
-	if r.Header.Get("Origin") == "" {
-		http.Error(w, "origin required", http.StatusForbidden)
+	if !sameOrigin(w, r) {
 		return
 	}
+	// The nonce cookie is single-use: cleared whatever happens next.
+	clearCookie(w, nonceCookieName(), "/")
 	if !strings.HasPrefix(r.Header.Get("Content-Type"), "application/json") {
 		http.Error(w, "expected application/json", http.StatusUnsupportedMediaType)
 		return
@@ -343,13 +361,18 @@ func (a *authServer) googleToken(w http.ResponseWriter, r *http.Request) {
 		// Mirror the existing members flow, which fakes Google in dev.
 		rawEmail = "test-dev@directactioneverywhere.com"
 	} else {
-		email, verified, err := a.verifyGoogle(r.Context(), body.Credential)
+		email, verified, nonce, err := a.verifyGoogle(r.Context(), body.Credential)
 		if err != nil {
 			http.Error(w, "invalid or expired credential", http.StatusUnauthorized)
 			return
 		}
 		if !verified {
 			http.Error(w, "your Google email address is not verified", http.StatusUnauthorized)
+			return
+		}
+		// Binds the token to the browser that loaded the sign-in page.
+		if !checkNonce(r, nonce) {
+			http.Error(w, "sign-in expired; reload the page and try again", http.StatusUnauthorized)
 			return
 		}
 		rawEmail = email
@@ -370,6 +393,9 @@ func (a *authServer) googleToken(w http.ResponseWriter, r *http.Request) {
 // --- Email magic link ---
 
 func (a *authServer) emailStart(w http.ResponseWriter, r *http.Request) {
+	if !sameOrigin(w, r) {
+		return
+	}
 	if !strings.HasPrefix(r.Header.Get("Content-Type"), "application/json") {
 		http.Error(w, "expected application/json", http.StatusUnsupportedMediaType)
 		return

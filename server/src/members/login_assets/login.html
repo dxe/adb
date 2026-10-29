@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="light dark">
+<title>Sign in | Direct Action Everywhere</title>
+<link rel="icon" href="/login/assets/logo.png">
+<link rel="stylesheet" href="/login/assets/login.css">
+</head>
+<body>
+<main class="card" id="login" data-client-id="{{.ClientID}}" data-nonce="{{.Nonce}}" data-next="{{.Next}}">
+  <img class="logo" src="/login/assets/logo.png" width="59" height="47" alt="Direct Action Everywhere">
+  <h1>Sign in to Direct Action Everywhere</h1>
+  <p class="lede">Use the email address you share with DxE.</p>
+
+  <div id="google-button" class="google" aria-label="Sign in with Google"></div>
+  <p id="google-error" class="msg error" role="alert" hidden></p>
+
+  <p class="divider"><span>or</span></p>
+
+  <form id="email-form" novalidate>
+    <label for="email">Email address</label>
+    <input id="email" name="email" type="email" autocomplete="email" inputmode="email" required>
+    <button type="submit" class="primary" id="email-submit">Email me a sign-in link</button>
+  </form>
+  <p id="email-status" class="msg" role="status" hidden></p>
+  <p id="email-error" class="msg error" role="alert" hidden></p>
+
+  {{if .Dev}}<button type="button" class="secondary" id="dev-signin">Dev sign-in</button>{{end}}
+  <noscript><p class="msg error">JavaScript is required to sign in.</p></noscript>
+</main>
+<script src="/login/assets/login.js"></script>
+</body>
+</html>

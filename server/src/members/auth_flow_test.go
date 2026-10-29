@@ -183,16 +183,16 @@ func TestNoDevLoginWithoutExplicitFlag(t *testing.T) {
 	assert.Error(t, sendLoginEmail("a@example.org", "https://x/?token=SECRET"))
 	assert.NotContains(t, buf.String(), "SECRET")
 
-	a := &authServer{now: time.Now, verifyGoogle: func(context.Context, string) (string, bool, error) {
-		return "", false, errors.New("invalid")
+	a := &authServer{now: time.Now, verifyGoogle: func(context.Context, string) (string, bool, string, error) {
+		return "", false, "", errors.New("invalid")
 	}}
 	req := httptest.NewRequest(http.MethodPost, "/auth/google/token", strings.NewReader(`{"credential":"dev"}`))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Origin", "https://www.directactioneverywhere.com")
+	req.Header.Set("Origin", authBaseURL())
 	rec := httptest.NewRecorder()
-	corsHandler(a.googleToken)(rec, req)
+	a.googleToken(rec, req)
 	assert.Equal(t, http.StatusUnauthorized, rec.Code)
-	assert.Empty(t, rec.Result().Cookies())
+	assert.False(t, hasSession(rec))
 }
 
 func TestSessionCookieName(t *testing.T) {

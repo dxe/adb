@@ -20,13 +20,14 @@ func Route(r *mux.Router, db *sqlx.DB) {
 	}
 
 	handle("/", (*server).index)
-	handle("/login", (*server).login)
 	handle("/auth", (*server).auth)
 	handle("/roster", (*server).roster)
 	handle("/reminder", (*server).reminder)
 	handle("/health", (*server).health)
 
-	routeAuth(r, db)
+	routeAuth(r, db, func(w http.ResponseWriter, r *http.Request) {
+		(&server{db, w, r}).login()
+	})
 }
 
 type server struct {
