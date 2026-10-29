@@ -223,7 +223,8 @@ func TestSendLoginEmail_ProdWithoutSMTPErrorsAndDoesNotLogLink(t *testing.T) {
 func TestConfirmPagesDenyFraming(t *testing.T) {
 	check := func(rec *httptest.ResponseRecorder) {
 		assert.Equal(t, "DENY", rec.Header().Get("X-Frame-Options"))
-		assert.Equal(t, "frame-ancestors 'none'", rec.Header().Get("Content-Security-Policy"))
+		assert.Equal(t, confirmCSP, rec.Header().Get("Content-Security-Policy"))
+		assert.Equal(t, "same-origin", rec.Header().Get("Referrer-Policy"))
 	}
 	// Invalid-token paths need no DB rows, only a store that finds nothing.
 	db := testdb.NewDB()

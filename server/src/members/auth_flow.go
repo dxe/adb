@@ -272,11 +272,6 @@ func clearCookie(w http.ResponseWriter, name, path string) {
 	})
 }
 
-func denyFraming(w http.ResponseWriter) {
-	w.Header().Set("X-Frame-Options", "DENY")
-	w.Header().Set("Content-Security-Policy", "frame-ancestors 'none'")
-}
-
 func noStore(w http.ResponseWriter) {
 	w.Header().Set("Cache-Control", "no-store")
 }
@@ -465,21 +460,27 @@ func sendLoginEmail(to, link string) error {
 	})
 }
 
-var confirmTmpl = template.Must(template.New("confirm").Parse(`<!doctype html>
-<html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex">
-<title>Sign in to DxE</title>
-<style>body{font:16px/1.5 system-ui,sans-serif;max-width:28rem;margin:4rem auto;padding:0 1rem}
-button{font:inherit;padding:.6rem 1.2rem;cursor:pointer}</style></head><body>
-{{if .Email}}<h1>Sign in</h1>
-<p>Sign in as <strong>{{.Email}}</strong>?</p>
-<form method="post" action="/auth/email/confirm">
-<input type="hidden" name="token" value="{{.Token}}">
-<button type="submit">Sign in</button></form>
-{{else}}<h1>Link expired</h1>
-<p>This sign-in link is invalid, expired, or has already been used. Please request a new one.</p>{{end}}
-</body></html>`))
+// confirmTmpl is the magic-link confirm page (login_assets/confirm.html),
+// styled like the sign-in page. It has no scripts: a plain form POSTs the
+// token, so link scanners that prefetch GETs don't consume it.
+var confirmTmpl = template.Must(template.ParseFS(loginAssets, "confirm.html"))
+
+// confirmCSP: the confirm page is HTML, our stylesheet and logo, and a form
+// that posts to this origin. Nothing else may load or run.
+const confirmCSP = "default-src 'none'; style-src 'self'; img-src 'self'; " +
+	"form-action 'self'; base-uri 'none'; frame-ancestors 'none'"
+
+// confirmHeaders: like loginHeaders but with confirmCSP. Referrer-Policy must
+// stay same-origin (not no-referrer): with no-referrer, browsers send
+// `Origin: null` on the form's own POST, which emailConfirm rejects.
+func confirmHeaders(w http.ResponseWriter) {
+	h := w.Header()
+	h.Set("Content-Security-Policy", confirmCSP)
+	h.Set("X-Frame-Options", "DENY")
+	h.Set("Referrer-Policy", "same-origin")
+	h.Set("X-Content-Type-Options", "nosniff")
+	h.Set("Content-Type", "text/html; charset=utf-8")
+}
 
 func (a *authServer) emailConfirmPage(w http.ResponseWriter, r *http.Request) {
 	token := r.URL.Query().Get("token")
@@ -496,12 +497,7 @@ func (a *authServer) emailConfirmPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	noStore(w)
-	denyFraming(w)
-	// Keeps the token in this URL from leaking to other sites. Not
-	// "no-referrer": with that, browsers send `Origin: null` on the form's own
-	// POST, which emailConfirm's origin check rejects.
-	w.Header().Set("Referrer-Policy", "same-origin")
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	confirmHeaders(w)
 	w.WriteHeader(status)
 	_ = confirmTmpl.Execute(w, data)
 }
@@ -516,8 +512,7 @@ func (a *authServer) emailConfirm(w http.ResponseWriter, r *http.Request) {
 	email, next, err := a.store.consumeLoginToken(r.Context(), r.PostFormValue("token"), a.now())
 	if err == errInvalidToken {
 		noStore(w)
-		denyFraming(w)
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		confirmHeaders(w)
 		w.WriteHeader(http.StatusGone)
 		_ = confirmTmpl.Execute(w, struct{ Email, Token string }{})
 		return
