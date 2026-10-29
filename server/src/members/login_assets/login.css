@@ -179,3 +179,28 @@ button:disabled {
 [hidden] {
   display: none !important;
 }
+
+/* Link styled as a button (confirm page's "get a new link"). */
+a.button {
+  display: block;
+  margin-top: 12px;
+  padding: 11px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+}
+
+a.button.primary {
+  background: #225dd6;
+  color: #fff;
+}
+
+a.button.primary:hover {
+  background: #1b4bb0;
+}
+
+a.button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

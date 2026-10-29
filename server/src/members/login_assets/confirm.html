@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="light dark">
+<title>Sign in | Direct Action Everywhere</title>
+<link rel="icon" href="/login/assets/logo.png">
+<link rel="stylesheet" href="/login/assets/login.css">
+</head>
+<body>
+<main class="card">
+  <img class="logo" src="/login/assets/logo.png" width="59" height="47" alt="Direct Action Everywhere">
+  {{if .Email}}
+  <h1>Sign in to Direct Action Everywhere</h1>
+  <p class="lede">You're signing in as <strong>{{.Email}}</strong>.</p>
+  <form method="post" action="/auth/email/confirm">
+    <input type="hidden" name="token" value="{{.Token}}">
+    <button type="submit" class="primary">Sign in</button>
+  </form>
+  {{else}}
+  <h1>This link has expired</h1>
+  <p class="lede">Sign-in links work once and expire after 15 minutes. Request a new one to continue.</p>
+  <a class="button primary" href="/login">Get a new sign-in link</a>
+  {{end}}
+</main>
+</body>
+</html>
