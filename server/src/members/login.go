@@ -65,7 +65,7 @@ func loginHeaders(w http.ResponseWriter) {
 // flow is reached with ?legacy (or ?force, which its own links use).
 func isWebsiteLoginRequest(r *http.Request) bool {
 	if config.IsProd {
-		return r.Host == "members.directactioneverywhere.com"
+		return isWebsiteHost(r)
 	}
 	q := r.URL.Query()
 	return !q.Has("legacy") && !q.Has("force")
@@ -106,11 +106,30 @@ func nonceFor(secret []byte) string {
 	return base64.RawURLEncoding.EncodeToString(sum[:])
 }
 
-// setNonceCookie mints S, sets its cookie and returns N for the page.
-func setNonceCookie(w http.ResponseWriter) (string, error) {
-	secret := make([]byte, 32)
-	if _, err := rand.Read(secret); err != nil {
-		return "", err
+// nonceSecret returns the S in the request's signed nonce cookie, if valid.
+func nonceSecret(r *http.Request) ([]byte, bool) {
+	c, err := r.Cookie(nonceCookieName())
+	if err != nil {
+		return nil, false
+	}
+	var secret []byte
+	if err := nonceCodec.Decode(nonceCookieName(), c.Value, &secret); err != nil || len(secret) == 0 {
+		return nil, false
+	}
+	return secret, true
+}
+
+// setNonceCookie sets the nonce cookie and returns N for the page. A valid
+// cookie's S is reused (and re-issued with a fresh timestamp), so a second tab
+// doesn't invalidate the first tab's pending sign-in; S is minted only when the
+// cookie is missing or invalid.
+func setNonceCookie(w http.ResponseWriter, r *http.Request) (string, error) {
+	secret, ok := nonceSecret(r)
+	if !ok {
+		secret = make([]byte, 32)
+		if _, err := rand.Read(secret); err != nil {
+			return "", err
+		}
 	}
 	enc, err := nonceCodec.Encode(nonceCookieName(), secret)
 	if err != nil {
@@ -131,12 +150,8 @@ func setNonceCookie(w http.ResponseWriter) (string, error) {
 // checkNonce reports whether claim equals the nonce for the S in the request's
 // signed cookie. Missing, tampered or expired cookies fail.
 func checkNonce(r *http.Request, claim string) bool {
-	c, err := r.Cookie(nonceCookieName())
-	if err != nil || claim == "" {
-		return false
-	}
-	var secret []byte
-	if err := nonceCodec.Decode(nonceCookieName(), c.Value, &secret); err != nil || len(secret) == 0 {
+	secret, ok := nonceSecret(r)
+	if !ok || claim == "" {
 		return false
 	}
 	return subtle.ConstantTimeCompare([]byte(nonceFor(secret)), []byte(claim)) == 1
@@ -157,7 +172,7 @@ func (a *authServer) loginPage(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, next, http.StatusSeeOther)
 		return
 	}
-	nonce, err := setNonceCookie(w)
+	nonce, err := setNonceCookie(w, r)
 	if err != nil {
 		log.Println("member auth: nonce:", err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
@@ -196,4 +211,40 @@ func sameOrigin(w http.ResponseWriter, r *http.Request) bool {
 		return false
 	}
 	return true
+}
+
+// isWebsiteHost reports whether the request is for the website members origin.
+// Only meaningful in prod; locally every request shares one host.
+func isWebsiteHost(r *http.Request) bool {
+	return config.IsProd && r.Host == "members.directactioneverywhere.com"
+}
+
+// websiteHostAllows lists what members.directactioneverywhere.com serves. The
+// legacy members.dxesf.org pages (roster, reminder, the OAuth callback at
+// /auth, ...) don't carry our CSP, so they must not exist on this origin.
+func websiteHostAllows(path string) bool {
+	return path == "/login" || strings.HasPrefix(path, "/login/assets/") ||
+		strings.HasPrefix(path, "/auth/") || strings.HasPrefix(path, "/api/") ||
+		path == "/health"
+}
+
+// websiteHostMiddleware scopes the website host to the sign-in surface (404
+// for everything else, "/" redirects to /login) and sets HSTS there. Other
+// hosts, and local development, are untouched.
+func websiteHostMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !isWebsiteHost(r) {
+			next.ServeHTTP(w, r)
+			return
+		}
+		w.Header().Set("Strict-Transport-Security", "max-age=31536000")
+		switch {
+		case r.URL.Path == "/":
+			http.Redirect(w, r, "/login", http.StatusFound)
+		case websiteHostAllows(r.URL.Path):
+			next.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }

@@ -107,6 +107,10 @@
   // --- Email link ---
 
   var emailForm = $("email-form");
+  // Hidden in the HTML so that, without this script, nothing can submit the
+  // form as a GET with the address in the URL.
+  emailForm.hidden = false;
+  $("divider").hidden = false;
   var emailInput = $("email");
   var emailSubmit = $("email-submit");
   var emailStatus = $("email-status");
@@ -148,10 +152,14 @@
   var devButton = $("dev-signin");
   if (devButton) {
     devButton.addEventListener("click", function () {
-      post("/auth/google/token", { credential: "dev" }).then(function (res) {
-        if (res.ok) signedIn();
-        else show(googleError, "Dev sign-in failed.");
-      });
+      post("/auth/google/token", { credential: "dev" })
+        .then(function (res) {
+          if (res.ok) signedIn();
+          else show(googleError, "Dev sign-in failed.");
+        })
+        .catch(function () {
+          show(googleError, "Couldn't reach the server.");
+        });
     });
   }
 })();

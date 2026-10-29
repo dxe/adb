@@ -12,6 +12,7 @@ import (
 	"github.com/dxe/adb/config"
 	"github.com/dxe/adb/testdb"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/securecookie"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -155,7 +156,7 @@ func newNonceFixture(t *testing.T) *nonceFixture {
 	f := &nonceFixture{t: t}
 	rec := httptest.NewRecorder()
 	var err error
-	f.nonce, err = setNonceCookie(rec)
+	f.nonce, err = setNonceCookie(rec, httptest.NewRequest(http.MethodGet, "/login", nil))
 	require.NoError(t, err)
 	f.cookie = rec.Result().Cookies()[0]
 	f.claim = f.nonce
@@ -254,9 +255,11 @@ func TestNonce_Expired(t *testing.T) {
 
 	// securecookie rejects by its signed timestamp; use a codec that treats it
 	// as already older than its max age.
+	// Swap in a separate short-lived codec; MaxAge mutates its receiver, so
+	// never call it on the shared one.
 	saved := nonceCodec
 	t.Cleanup(func() { nonceCodec = saved })
-	nonceCodec = nonceCodec.MaxAge(1)
+	nonceCodec = securecookie.New([]byte(config.CookieSecret), nil).MaxAge(1)
 	time.Sleep(2100 * time.Millisecond)
 	rec := f.post(&old)
 	assert.Equal(t, http.StatusUnauthorized, rec.Code)
@@ -345,4 +348,70 @@ func TestSameOriginOnlyEndpoints(t *testing.T) {
 		assert.Equal(t, http.StatusNoContent, rec.Code, c.path)
 		assert.Equal(t, www, rec.Header().Get("Access-Control-Allow-Origin"), c.path)
 	}
+}
+
+func TestNonce_ReusedAcrossTabs(t *testing.T) {
+	a := &authServer{now: time.Now}
+	render := func(cs ...*http.Cookie) (string, []*http.Cookie) {
+		req := httptest.NewRequest(http.MethodGet, "/login", nil)
+		for _, c := range cs {
+			req.AddCookie(c)
+		}
+		rec := httptest.NewRecorder()
+		a.loginPage(rec, req)
+		return between(rec.Body.String(), `data-nonce="`, `"`), rec.Result().Cookies()
+	}
+	n1, c1 := render()
+	// Second tab, sending the first tab's cookie: same nonce, so the first
+	// tab's token still verifies against the (re-issued) cookie.
+	n2, c2 := render(c1[0])
+	assert.Equal(t, n1, n2)
+	require.Len(t, c2, 1)
+	assert.True(t, checkNonce(reqWith(c2[0]), n1))
+	assert.True(t, checkNonce(reqWith(c1[0]), n1))
+
+	// Invalid cookie: a fresh nonce.
+	bad := *c1[0]
+	bad.Value = "garbage"
+	n3, _ := render(&bad)
+	assert.NotEqual(t, n1, n3)
+}
+
+func TestWebsiteHostScope(t *testing.T) {
+	db := testdb.NewDB()
+	defer func() { _ = db.Close() }()
+	r := mux.NewRouter()
+	Route(r, db)
+	do := func(path, host string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		req.Host = host
+		rec := httptest.NewRecorder()
+		r.ServeHTTP(rec, req)
+		return rec
+	}
+	setProd(t, true)
+	const web, legacy = "members.directactioneverywhere.com", "members.dxesf.org"
+
+	for _, p := range []string{"/login", "/login/assets/login.js", "/health", "/api/me", "/auth/email/confirm"} {
+		rec := do(p, web)
+		assert.NotEqual(t, http.StatusNotFound, rec.Code, p)
+		assert.Equal(t, "max-age=31536000", rec.Header().Get("Strict-Transport-Security"), p)
+	}
+	rec := do("/", web)
+	assert.Equal(t, http.StatusFound, rec.Code)
+	assert.Equal(t, "/login", rec.Header().Get("Location"))
+	for _, p := range []string{"/roster", "/reminder", "/auth", "/roster/x", "/nope"} {
+		rec := do(p, web)
+		assert.Equal(t, http.StatusNotFound, rec.Code, p)
+		assert.Equal(t, "max-age=31536000", rec.Header().Get("Strict-Transport-Security"), p)
+	}
+
+	// The legacy host is unchanged: no HSTS from us, legacy pages still routed.
+	for _, p := range []string{"/", "/roster", "/reminder", "/auth", "/health"} {
+		rec := do(p, legacy)
+		assert.NotEqual(t, http.StatusNotFound, rec.Code, p)
+		assert.Empty(t, rec.Header().Get("Strict-Transport-Security"), p)
+	}
+	assert.Equal(t, http.StatusOK, do("/health", legacy).Code)
+	assert.NotContains(t, do("/login", legacy).Header().Get("Content-Security-Policy"), "gsi")
 }

@@ -13,6 +13,9 @@ import (
 )
 
 func Route(r *mux.Router, db *sqlx.DB) {
+	r.Use(websiteHostMiddleware)
+	// Middleware only runs for matched routes; unmatched paths still get HSTS.
+	r.NotFoundHandler = websiteHostMiddleware(http.NotFoundHandler())
 	handle := func(path string, method func(*server)) {
 		r.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 			method(&server{db, w, r})

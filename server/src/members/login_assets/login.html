@@ -18,9 +18,9 @@
   <div id="google-button" class="google" aria-label="Sign in with Google"></div>
   <p id="google-error" class="msg error" role="alert" hidden></p>
 
-  <p class="divider"><span>or</span></p>
+  <p class="divider" id="divider" hidden><span>or</span></p>
 
-  <form id="email-form" novalidate>
+  <form id="email-form" novalidate hidden>
     <label for="email">Email address</label>
     <input id="email" name="email" type="email" autocomplete="email" inputmode="email" required>
     <button type="submit" class="primary" id="email-submit">Email me a sign-in link</button>

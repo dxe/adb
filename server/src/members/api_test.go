@@ -122,7 +122,7 @@ func TestGoogleToken(t *testing.T) {
 
 	// The page's nonce, and the cookie that backs it.
 	nonceRec := httptest.NewRecorder()
-	claimNonce, err := setNonceCookie(nonceRec)
+	claimNonce, err := setNonceCookie(nonceRec, httptest.NewRequest(http.MethodGet, "/login", nil))
 	require.NoError(t, err)
 	nonceCookie := nonceRec.Result().Cookies()[0]
 

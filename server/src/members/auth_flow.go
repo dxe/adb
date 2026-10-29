@@ -248,8 +248,10 @@ func routeAuth(r *mux.Router, db *sqlx.DB, legacyLogin http.HandlerFunc) {
 
 // routeAuthHandlers registers everything but /login.
 func routeAuthHandlers(r *mux.Router, a *authServer) {
-	// Same-origin only (the sign-in page): no CORS, so scripts on other sites
-	// can't redeem tokens or trigger sign-in emails.
+	// Same-origin only (the sign-in page): no CORS, so browser scripts on other
+	// sites can't redeem tokens or trigger sign-in emails. Non-browser clients
+	// can forge Origin; tokens are protected by the nonce and by only this
+	// origin being authorized on the Google client.
 	r.HandleFunc("/auth/google/token", a.googleToken).Methods(http.MethodPost)
 	r.HandleFunc("/auth/email", a.emailStart).Methods(http.MethodPost)
 	r.HandleFunc("/auth/email/confirm", a.emailConfirmPage).Methods(http.MethodGet)
