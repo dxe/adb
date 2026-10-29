@@ -49,7 +49,16 @@ var devOrigins = map[string]bool{
 }
 
 func isAllowedOrigin(origin string) bool {
-	return siteOrigins[origin] || (!config.IsProd && devOrigins[origin])
+	return siteOrigins[origin] || (devLogin() && devOrigins[origin])
+}
+
+// devLogin enables the local-development conveniences: the fake Google
+// credential, logging magic links instead of emailing them, and localhost
+// origins. It needs an explicit MEMBERS_DEV_LOGIN=true (server/debug.env) as
+// well as !IsProd, so a production task that lost PROD=true (IsProd defaults
+// to false) doesn't hand out sessions or log sign-in links.
+func devLogin() bool {
+	return !config.IsProd && config.MembersDevLogin
 }
 
 // authBaseURL is this server's public origin for the website auth flow.
@@ -330,7 +339,7 @@ func (a *authServer) googleToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var rawEmail string
-	if !config.IsProd && body.Credential == devCredential {
+	if devLogin() && body.Credential == devCredential {
 		// Mirror the existing members flow, which fakes Google in dev.
 		rawEmail = "test-dev@directactioneverywhere.com"
 	} else {
@@ -408,7 +417,7 @@ func (a *authServer) emailStart(w http.ResponseWriter, r *http.Request) {
 }
 
 func sendLoginEmail(to, link string) error {
-	if !config.IsProd {
+	if devLogin() {
 		log.Printf("member auth: sign-in link for %s: %s", to, link)
 		return nil
 	}

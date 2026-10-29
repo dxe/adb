@@ -155,6 +155,7 @@ Please reach out to tech@dxe.io to get an API key to sign people up.
 ### Google OAuth client ID for website member sign-in (members.directactioneverywhere.com):
 
 - WEBSITE_GOOGLE_CLIENT_ID: the "DxE website sign-in" client (public; set in dxe/terraform). Unset disables Google sign-in there; locally, POST `{"credential": "dev"}` to `/auth/google/token` instead.
+- MEMBERS_DEV_LOGIN: `true` only for local development (set in `server/debug.env`): enables the fake `{"credential": "dev"}` sign-in, logs magic links instead of emailing them, and allows localhost origins. Ignored when PROD is true.
 
 ### ipgeolocation.io key for finding nearby upcoming events based on a user's IP address (used w/ public-facing API):
 

@@ -72,6 +72,11 @@ var (
 	// "DxE website sign-in" OAuth client (public; not the ADB admin client).
 	WebsiteGoogleClientID = mustGetenv("WEBSITE_GOOGLE_CLIENT_ID", "", false)
 
+	// Local development only (set in server/debug.env): website member auth's
+	// fake Google sign-in, magic links logged instead of emailed, and localhost
+	// origins. Has no effect when IsProd; see members.devLogin.
+	MembersDevLogin = mustGetenvAsBool("MEMBERS_DEV_LOGIN")
+
 	// For mailing list signups
 	SignupURI    = mustGetenv("SIGNUP_ENDPOINT", "", false)
 	SignupAPIKey = mustGetenv("SIGNUP_KEY", "", false)
