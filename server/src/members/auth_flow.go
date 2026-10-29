@@ -460,7 +460,10 @@ func (a *authServer) emailConfirmPage(w http.ResponseWriter, r *http.Request) {
 	}
 	noStore(w)
 	denyFraming(w)
-	w.Header().Set("Referrer-Policy", "no-referrer")
+	// Keeps the token in this URL from leaking to other sites. Not
+	// "no-referrer": with that, browsers send `Origin: null` on the form's own
+	// POST, which emailConfirm's origin check rejects.
+	w.Header().Set("Referrer-Policy", "same-origin")
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
 	_ = confirmTmpl.Execute(w, data)
