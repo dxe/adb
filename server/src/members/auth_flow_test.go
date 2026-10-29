@@ -203,6 +203,17 @@ func TestConfirmPagesDenyFraming(t *testing.T) {
 	a.emailConfirmPage(rec, httptest.NewRequest(http.MethodGet, "/auth/email/confirm?token="+raw, nil))
 	assert.Equal(t, http.StatusOK, rec.Code)
 	check(rec)
+	// Not no-referrer: that makes browsers send `Origin: null` on the form's
+	// own POST, which emailConfirm rejects.
+	assert.Equal(t, "same-origin", rec.Header().Get("Referrer-Policy"))
+
+	// The form's POST carries this host's own origin and must be accepted.
+	req0 := httptest.NewRequest(http.MethodPost, "/auth/email/confirm", strings.NewReader("token="+raw))
+	req0.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req0.Header.Set("Origin", authBaseURL())
+	rec = httptest.NewRecorder()
+	a.emailConfirm(rec, req0)
+	assert.Equal(t, http.StatusSeeOther, rec.Code)
 
 	req := httptest.NewRequest(http.MethodPost, "/auth/email/confirm", strings.NewReader("token=nope"))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
