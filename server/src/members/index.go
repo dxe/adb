@@ -23,7 +23,7 @@ func isAdmin(email string) bool {
 func (s *server) index() {
 	email, err := s.googleEmail()
 	if err != nil {
-		s.redirect(absURL("/login"))
+		s.redirect(legacyLoginURL())
 		return
 	}
 

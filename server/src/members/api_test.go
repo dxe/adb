@@ -32,7 +32,7 @@ func TestMagicLinkFlow(t *testing.T) {
 		sendEmail:    func(to, link string) error { links <- link; return nil },
 	}
 	r := mux.NewRouter()
-	r.HandleFunc("/auth/email", corsHandler(a.emailStart)).Methods(http.MethodPost, http.MethodOptions)
+	r.HandleFunc("/auth/email", a.emailStart).Methods(http.MethodPost)
 	r.HandleFunc("/auth/email/confirm", a.emailConfirmPage).Methods(http.MethodGet)
 	r.HandleFunc("/auth/email/confirm", a.emailConfirm).Methods(http.MethodPost)
 	r.HandleFunc("/auth/logout", corsHandler(a.logout)).Methods(http.MethodPost, http.MethodOptions)
@@ -52,7 +52,7 @@ func TestMagicLinkFlow(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/auth/email",
 		strings.NewReader(`{"email":"Jane@Example.org","next":"https://evil.com/"}`))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Origin", "http://localhost:3000")
+	req.Header.Set("Origin", authBaseURL())
 	rec = do(req)
 	require.Equal(t, http.StatusNoContent, rec.Code)
 	link := <-links
@@ -120,22 +120,29 @@ func TestGoogleToken(t *testing.T) {
 	_, err := db.Exec(`INSERT INTO activists (name, email, chapter_id, hidden) VALUES ('Gina Google', 'gina@example.org', 1, 0)`)
 	require.NoError(t, err)
 
+	// The page's nonce, and the cookie that backs it.
+	nonceRec := httptest.NewRecorder()
+	claimNonce, err := setNonceCookie(nonceRec, httptest.NewRequest(http.MethodGet, "/login", nil))
+	require.NoError(t, err)
+	nonceCookie := nonceRec.Result().Cookies()[0]
+
 	a := &authServer{
 		store: memberStore{db},
 		now:   time.Now,
-		verifyGoogle: func(_ context.Context, cred string) (string, bool, error) {
+		verifyGoogle: func(_ context.Context, cred string) (string, bool, string, error) {
 			switch cred {
 			case "good":
-				return "Gina@Example.org", true, nil
+				return "Gina@Example.org", true, claimNonce, nil
 			case "unverified":
-				return "gina@example.org", false, nil
+				return "gina@example.org", false, claimNonce, nil
 			}
-			return "", false, errors.New("bad token")
+			return "", false, "", errors.New("bad token")
 		},
 	}
-	h := corsHandler(a.googleToken)
+	h := a.googleToken
 	post := func(origin, contentType, body string) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodPost, "/auth/google/token", strings.NewReader(body))
+		req.AddCookie(nonceCookie)
 		if origin != "" {
 			req.Header.Set("Origin", origin)
 		}
@@ -146,10 +153,11 @@ func TestGoogleToken(t *testing.T) {
 		h(rec, req)
 		return rec
 	}
-	const site = "https://www.directactioneverywhere.com"
+	site := authBaseURL()
 	const j = "application/json"
 
 	assert.Equal(t, http.StatusForbidden, post("https://evil.com", j, `{"credential":"good"}`).Code)
+	assert.Equal(t, http.StatusForbidden, post("https://www.directactioneverywhere.com", j, `{"credential":"good"}`).Code, "website origin")
 	assert.Equal(t, http.StatusForbidden, post("", j, `{"credential":"good"}`).Code, "missing Origin")
 	assert.Equal(t, http.StatusUnsupportedMediaType, post(site, "", `{"credential":"good"}`).Code)
 	assert.Equal(t, http.StatusUnsupportedMediaType, post(site, "text/plain", `{"credential":"good"}`).Code)
@@ -158,25 +166,34 @@ func TestGoogleToken(t *testing.T) {
 
 	rec := post(site, j, `{"credential":"garbage"}`)
 	assert.Equal(t, http.StatusUnauthorized, rec.Code)
-	assert.Empty(t, rec.Result().Cookies())
+	assert.False(t, hasSession(rec))
+	assert.True(t, clearedNonce(rec))
 	assert.Equal(t, http.StatusUnauthorized, post(site, j, `{"credential":"unverified"}`).Code)
 
 	// Happy path with a fake verified token: cookie set, /api/me-shaped body.
 	rec = post(site, j, `{"credential":"good"}`)
 	require.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, site, rec.Header().Get("Access-Control-Allow-Origin"))
+	assert.Empty(t, rec.Header().Get("Access-Control-Allow-Origin"))
 	assert.JSONEq(t, `{"email":"gina@example.org","name":"Gina Google","activistId":1}`, rec.Body.String())
 	cs := rec.Result().Cookies()
-	require.Len(t, cs, 1)
-	email, _, ok := readSession(reqWith(cs[0]), time.Now())
+	require.Len(t, cs, 2) // Session, and the cleared nonce.
+	assert.True(t, clearedNonce(rec))
+	var sess *http.Cookie
+	for _, c := range cs {
+		if c.Name == sessionCookieName() {
+			sess = c
+		}
+	}
+	require.NotNil(t, sess)
+	email, _, ok := readSession(reqWith(sess), time.Now())
 	assert.True(t, ok)
 	assert.Equal(t, "gina@example.org", email)
 
 	// Dev credential (tests run with PROD unset).
-	rec = post("http://localhost:3000", j, `{"credential":"dev"}`)
+	rec = post(site, j, `{"credential":"dev"}`)
 	require.Equal(t, http.StatusOK, rec.Code)
 	assert.Contains(t, rec.Body.String(), "test-dev@directactioneverywhere.com")
-	require.Len(t, rec.Result().Cookies(), 1)
+	require.Len(t, rec.Result().Cookies(), 2)
 }
 
 func TestMe_ActivistLookupIsExact(t *testing.T) {
