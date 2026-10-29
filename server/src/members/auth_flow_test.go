@@ -3,6 +3,7 @@ package members
 import (
 	"bytes"
 	"context"
+	"errors"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -155,6 +156,43 @@ func TestLocalhostOriginsOnlyOutsideProd(t *testing.T) {
 	assert.False(t, isAllowedOrigin("http://localhost:4173"))
 	assert.False(t, originAllowed("http://localhost:3000"))
 	assert.Equal(t, fallbackNextURL, validateNext("http://localhost:3000/account"))
+}
+
+func setDevLogin(t *testing.T, on bool) {
+	t.Helper()
+	old := config.MembersDevLogin
+	config.MembersDevLogin = on
+	t.Cleanup(func() { config.MembersDevLogin = old })
+}
+
+// A server that isn't prod but lacks MEMBERS_DEV_LOGIN (e.g. a production task
+// that lost PROD=true) gets none of the dev conveniences.
+func TestNoDevLoginWithoutExplicitFlag(t *testing.T) {
+	setProd(t, false)
+	setDevLogin(t, false)
+	assert.False(t, devLogin())
+	assert.False(t, isAllowedOrigin("http://localhost:3000"))
+	assert.Equal(t, fallbackNextURL, validateNext("http://localhost:3000/account"))
+
+	oldHost := config.SMTPHost
+	config.SMTPHost = ""
+	t.Cleanup(func() { config.SMTPHost = oldHost })
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+	t.Cleanup(func() { log.SetOutput(os.Stderr) })
+	assert.Error(t, sendLoginEmail("a@example.org", "https://x/?token=SECRET"))
+	assert.NotContains(t, buf.String(), "SECRET")
+
+	a := &authServer{now: time.Now, verifyGoogle: func(context.Context, string) (string, bool, error) {
+		return "", false, errors.New("invalid")
+	}}
+	req := httptest.NewRequest(http.MethodPost, "/auth/google/token", strings.NewReader(`{"credential":"dev"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Origin", "https://www.directactioneverywhere.com")
+	rec := httptest.NewRecorder()
+	corsHandler(a.googleToken)(rec, req)
+	assert.Equal(t, http.StatusUnauthorized, rec.Code)
+	assert.Empty(t, rec.Result().Cookies())
 }
 
 func TestSessionCookieName(t *testing.T) {
