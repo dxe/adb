@@ -299,7 +299,7 @@ func TestNonce_SessionCookieIsNotANonce(t *testing.T) {
 func TestSameOriginOnlyEndpoints(t *testing.T) {
 	db := testdb.NewDB()
 	defer func() { _ = db.Close() }()
-	a := &authServer{store: memberStore{db}, emailLimiter: newRateLimiter(), ipLimiter: newRateLimiter(), now: time.Now,
+	a := &authServer{store: memberStore{db}, emailCooldown: newRateLimiter(), emailLimiter: newRateLimiter(), ipLimiter: newRateLimiter(), now: time.Now,
 		sendEmail: func(string, string) error { return nil }}
 	r := mux.NewRouter()
 	routeAuthHandlers(r, a)

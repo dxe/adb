@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/mail"
 	"net/url"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -32,6 +33,7 @@ const (
 	maxNextURLLen   = 512
 
 	emailsPerAddressPerHour = 5
+	emailCooldownPeriod     = time.Minute
 	emailsPerIPPerHour      = 30
 )
 
@@ -216,11 +218,11 @@ func normalizeEmail(s string) (string, bool) {
 
 type authServer struct {
 	store memberStore
-	// emailLimiter limits per address, ipLimiter per client IP.
-	emailLimiter, ipLimiter *rateLimiter
-	now                     func() time.Time
-	sendEmail               func(to, link string) error
-	verifyGoogle            func(ctx context.Context, credential string) (email string, emailVerified bool, nonce string, err error)
+	// emailCooldown and emailLimiter limit per address, ipLimiter per client IP.
+	emailCooldown, emailLimiter, ipLimiter *rateLimiter
+	now                                    func() time.Time
+	sendEmail                              func(to, link string) error
+	verifyGoogle                           func(ctx context.Context, credential string) (email string, emailVerified bool, nonce string, err error)
 }
 
 // routeAuth registers the website member auth and API endpoints. legacyLogin
@@ -228,12 +230,13 @@ type authServer struct {
 // the website sign-in page (see isWebsiteLoginRequest).
 func routeAuth(r *mux.Router, db *sqlx.DB, legacyLogin http.HandlerFunc) {
 	a := &authServer{
-		store:        memberStore{db},
-		emailLimiter: newRateLimiter(),
-		ipLimiter:    newRateLimiter(),
-		now:          time.Now,
-		sendEmail:    sendLoginEmail,
-		verifyGoogle: verifyGoogleCredential,
+		store:         memberStore{db},
+		emailCooldown: newRateLimiter(),
+		emailLimiter:  newRateLimiter(),
+		ipLimiter:     newRateLimiter(),
+		now:           time.Now,
+		sendEmail:     sendLoginEmail,
+		verifyGoogle:  verifyGoogleCredential,
 	}
 	r.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
 		if isWebsiteLoginRequest(r) {
@@ -415,8 +418,11 @@ func (a *authServer) emailStart(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "too many requests", http.StatusTooManyRequests)
 		return
 	}
-	// Over the per-address limit: silently do nothing, same response.
-	if a.emailLimiter.allow(email, emailsPerAddressPerHour, time.Hour, now) {
+	// Over a per-address limit (one per minute, a few per hour): silently do
+	// nothing, same response, so it reveals nothing about the address. The
+	// page also disables the button for a minute after each send.
+	if a.emailCooldown.allow(email, 1, emailCooldownPeriod, now) &&
+		a.emailLimiter.allow(email, emailsPerAddressPerHour, time.Hour, now) {
 		next := validateNext(body.Next)
 		raw, err := a.store.createLoginToken(r.Context(), email, next, now)
 		if err != nil {
@@ -466,16 +472,34 @@ func sendLoginEmail(to, link string) error {
 var confirmTmpl = template.Must(template.ParseFS(loginAssets, "confirm.html"))
 
 // confirmCSP: the confirm page is HTML, our stylesheet and logo, and a form
-// that posts to this origin. Nothing else may load or run.
-const confirmCSP = "default-src 'none'; style-src 'self'; img-src 'self'; " +
-	"form-action 'self'; base-uri 'none'; frame-ancestors 'none'"
+// that posts to this origin. Nothing else may load or run. form-action also
+// governs where the POST may redirect, so it lists the sites `next` can point
+// to; with only 'self', browsers silently blocked the 303 back to the website
+// after the token had been used up.
+func confirmCSP() string {
+	targets := append([]string{"'self'"}, sortedKeys(siteOrigins)...)
+	if devLogin() {
+		targets = append(targets, sortedKeys(devOrigins)...)
+	}
+	return "default-src 'none'; style-src 'self'; img-src 'self'; " +
+		"form-action " + strings.Join(targets, " ") + "; base-uri 'none'; frame-ancestors 'none'"
+}
+
+func sortedKeys(m map[string]bool) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
 
 // confirmHeaders: like loginHeaders but with confirmCSP. Referrer-Policy must
 // stay same-origin (not no-referrer): with no-referrer, browsers send
 // `Origin: null` on the form's own POST, which emailConfirm rejects.
 func confirmHeaders(w http.ResponseWriter) {
 	h := w.Header()
-	h.Set("Content-Security-Policy", confirmCSP)
+	h.Set("Content-Security-Policy", confirmCSP())
 	h.Set("X-Frame-Options", "DENY")
 	h.Set("Referrer-Policy", "same-origin")
 	h.Set("X-Content-Type-Options", "nosniff")
@@ -490,6 +514,9 @@ func (a *authServer) emailConfirmPage(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		data.Email, data.Token = email, token
 	} else if err == errInvalidToken {
+		if a.continueIfSignedIn(w, r, token) {
+			return
+		}
 		status = http.StatusGone
 	} else {
 		log.Println("member auth: peek token:", err)
@@ -509,8 +536,12 @@ func (a *authServer) emailConfirm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	r.Body = http.MaxBytesReader(w, r.Body, 4096)
-	email, next, err := a.store.consumeLoginToken(r.Context(), r.PostFormValue("token"), a.now())
+	token := r.PostFormValue("token")
+	email, next, err := a.store.consumeLoginToken(r.Context(), token, a.now())
 	if err == errInvalidToken {
+		if a.continueIfSignedIn(w, r, token) {
+			return
+		}
 		noStore(w)
 		confirmHeaders(w)
 		w.WriteHeader(http.StatusGone)
@@ -523,6 +554,22 @@ func (a *authServer) emailConfirm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a.startSession(w, r, email, validateNext(next), http.StatusSeeOther)
+}
+
+// continueIfSignedIn handles a used or expired link opened by someone who is
+// already signed in (e.g. a second click, or the link reopened from the
+// email): send them on to where the link was going instead of an error page.
+func (a *authServer) continueIfSignedIn(w http.ResponseWriter, r *http.Request, token string) bool {
+	if _, _, ok := readSession(r, a.now()); !ok {
+		return false
+	}
+	next, err := a.store.loginTokenNext(r.Context(), token)
+	if err != nil {
+		next = fallbackNextURL
+	}
+	noStore(w)
+	http.Redirect(w, r, validateNext(next), http.StatusSeeOther)
+	return true
 }
 
 // --- Logout ---

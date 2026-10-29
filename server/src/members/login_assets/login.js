@@ -127,9 +127,11 @@
       return;
     }
     emailSubmit.disabled = true;
+    var sent = false;
     post("/auth/email", { email: email, next: next })
       .then(function (res) {
         if (res.ok) {
+          sent = true;
           show(emailStatus, "Check your email for a sign-in link.");
         } else if (res.status === 429) {
           show(emailError, "Too many requests. Please wait a while and try again.");
@@ -143,9 +145,29 @@
         show(emailError, "Couldn't reach the server. Check your connection and try again.");
       })
       .then(function () {
-        emailSubmit.disabled = false;
+        if (sent) cooldown(COOLDOWN_SECONDS);
+        else emailSubmit.disabled = false;
       });
   });
+
+  // One link per minute (the server ignores repeats within a minute anyway):
+  // keep the button disabled and show when it can be used again.
+  var COOLDOWN_SECONDS = 60;
+  function cooldown(seconds) {
+    emailSubmit.disabled = true;
+    var left = seconds;
+    function tick() {
+      if (left <= 0) {
+        emailSubmit.disabled = false;
+        emailSubmit.textContent = "Resend sign-in link";
+        return;
+      }
+      emailSubmit.textContent = "Resend in " + left + "s";
+      left -= 1;
+      setTimeout(tick, 1000);
+    }
+    tick();
+  }
 
   // --- Dev ---
 
