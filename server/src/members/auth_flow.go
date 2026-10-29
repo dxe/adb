@@ -2,6 +2,9 @@ package members
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/subtle"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -211,7 +214,7 @@ type authServer struct {
 	emailLimiter, ipLimiter *rateLimiter
 	now                     func() time.Time
 	sendEmail               func(to, link string) error
-	verifyGoogle            func(ctx context.Context, credential string) (email string, emailVerified bool, err error)
+	verifyGoogle            func(ctx context.Context, credential string) (email string, emailVerified bool, nonce string, err error)
 }
 
 // routeAuth registers the website member auth and API endpoints.
@@ -224,6 +227,7 @@ func routeAuth(r *mux.Router, db *sqlx.DB) {
 		sendEmail:    sendLoginEmail,
 		verifyGoogle: verifyGoogleCredential,
 	}
+	r.HandleFunc("/auth/google/nonce", corsHandler(a.googleNonce)).Methods(http.MethodGet, http.MethodOptions)
 	r.HandleFunc("/auth/google/token", corsHandler(a.googleToken)).Methods(http.MethodPost, http.MethodOptions)
 	r.HandleFunc("/auth/email", corsHandler(a.emailStart)).Methods(http.MethodPost, http.MethodOptions)
 	r.HandleFunc("/auth/email/confirm", a.emailConfirmPage).Methods(http.MethodGet)
@@ -288,23 +292,69 @@ var googleVerifier = func() *oidc.IDTokenVerifier {
 	return provider.Verifier(&oidc.Config{ClientID: config.WebsiteGoogleClientID})
 }()
 
-// verifyGoogleCredential verifies a Google ID token and returns its email.
-func verifyGoogleCredential(ctx context.Context, credential string) (email string, emailVerified bool, err error) {
+// verifyGoogleCredential verifies a Google ID token and returns its email and
+// nonce claim. go-oidc does not check the nonce; googleToken does.
+func verifyGoogleCredential(ctx context.Context, credential string) (email string, emailVerified bool, nonce string, err error) {
 	if googleVerifier == nil {
-		return "", false, errors.New("google verifier unavailable")
+		return "", false, "", errors.New("google verifier unavailable")
 	}
 	idToken, err := googleVerifier.Verify(ctx, credential)
 	if err != nil {
-		return "", false, err
+		return "", false, "", err
 	}
 	var claims struct {
 		Email         string `json:"email"`
 		EmailVerified bool   `json:"email_verified"`
 	}
 	if err := idToken.Claims(&claims); err != nil {
-		return "", false, err
+		return "", false, "", err
 	}
-	return claims.Email, claims.EmailVerified, nil
+	return claims.Email, claims.EmailVerified, idToken.Nonce, nil
+}
+
+const nonceLifetime = 10 * time.Minute
+
+// nonceCookieName follows sessionCookieName: __Host- prefixed in prod.
+func nonceCookieName() string {
+	if config.IsProd {
+		return "__Host-dxe_gis_nonce"
+	}
+	return "dxe_gis_nonce"
+}
+
+// googleNonce starts a Google sign-in: it returns a random nonce and binds it
+// to this browser with a short-lived cookie. The website passes the nonce to
+// Google Identity Services, which puts it in the ID token; googleToken then
+// requires the token's nonce to match the cookie, so a stolen ID token is
+// useless without the browser that started sign-in.
+func (a *authServer) googleNonce(w http.ResponseWriter, r *http.Request) {
+	noStore(w)
+	// corsHandler lets GETs from other origins through (they just get no CORS
+	// headers), so check the allowlist here: don't mint nonces for strangers.
+	if origin := r.Header.Get("Origin"); origin == "" || !isAllowedOrigin(origin) {
+		http.Error(w, "origin required", http.StatusForbidden)
+		return
+	}
+	var buf [32]byte
+	if _, err := rand.Read(buf[:]); err != nil {
+		log.Println("member auth: generate nonce:", err)
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	nonce := base64.RawURLEncoding.EncodeToString(buf[:])
+	http.SetCookie(w, &http.Cookie{
+		Name:     nonceCookieName(),
+		Value:    nonce,
+		Path:     "/",
+		MaxAge:   int(nonceLifetime / time.Second),
+		HttpOnly: true,
+		Secure:   config.IsProd,
+		SameSite: http.SameSiteLaxMode,
+	})
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(struct {
+		Nonce string `json:"nonce"`
+	}{nonce})
 }
 
 // googleToken signs in with a Google ID token ("credential") from Google
@@ -317,6 +367,12 @@ func (a *authServer) googleToken(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "origin required", http.StatusForbidden)
 		return
 	}
+	// Nonces are single-use: read the cookie, then clear it whatever happens.
+	var nonceCookie string
+	if c, err := r.Cookie(nonceCookieName()); err == nil {
+		nonceCookie = c.Value
+	}
+	clearCookie(w, nonceCookieName(), "/")
 	if !strings.HasPrefix(r.Header.Get("Content-Type"), "application/json") {
 		http.Error(w, "expected application/json", http.StatusUnsupportedMediaType)
 		return
@@ -334,13 +390,18 @@ func (a *authServer) googleToken(w http.ResponseWriter, r *http.Request) {
 		// Mirror the existing members flow, which fakes Google in dev.
 		rawEmail = "test-dev@directactioneverywhere.com"
 	} else {
-		email, verified, err := a.verifyGoogle(r.Context(), body.Credential)
+		email, verified, nonce, err := a.verifyGoogle(r.Context(), body.Credential)
 		if err != nil {
 			http.Error(w, "invalid or expired credential", http.StatusUnauthorized)
 			return
 		}
 		if !verified {
 			http.Error(w, "your Google email address is not verified", http.StatusUnauthorized)
+			return
+		}
+		if nonceCookie == "" || nonce == "" ||
+			subtle.ConstantTimeCompare([]byte(nonce), []byte(nonceCookie)) != 1 {
+			http.Error(w, "sign-in expired or was not started in this browser; try again", http.StatusUnauthorized)
 			return
 		}
 		rawEmail = email

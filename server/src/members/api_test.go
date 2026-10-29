@@ -2,6 +2,8 @@ package members
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -123,19 +125,28 @@ func TestGoogleToken(t *testing.T) {
 	a := &authServer{
 		store: memberStore{db},
 		now:   time.Now,
-		verifyGoogle: func(_ context.Context, cred string) (string, bool, error) {
+		verifyGoogle: func(_ context.Context, cred string) (string, bool, string, error) {
 			switch cred {
 			case "good":
-				return "Gina@Example.org", true, nil
+				return "Gina@Example.org", true, "n0nce", nil
+			case "nonce-missing":
+				return "gina@example.org", true, "", nil
 			case "unverified":
-				return "gina@example.org", false, nil
+				return "gina@example.org", false, "n0nce", nil
 			}
-			return "", false, errors.New("bad token")
+			return "", false, "", errors.New("bad token")
 		},
 	}
 	h := corsHandler(a.googleToken)
+	var postNonce func(origin, contentType, body, nonceCookie string) *httptest.ResponseRecorder
 	post := func(origin, contentType, body string) *httptest.ResponseRecorder {
+		return postNonce(origin, contentType, body, "n0nce")
+	}
+	postNonce = func(origin, contentType, body, nonceCookie string) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodPost, "/auth/google/token", strings.NewReader(body))
+		if nonceCookie != "" {
+			req.AddCookie(&http.Cookie{Name: nonceCookieName(), Value: nonceCookie})
+		}
 		if origin != "" {
 			req.Header.Set("Origin", origin)
 		}
@@ -158,8 +169,19 @@ func TestGoogleToken(t *testing.T) {
 
 	rec := post(site, j, `{"credential":"garbage"}`)
 	assert.Equal(t, http.StatusUnauthorized, rec.Code)
-	assert.Empty(t, rec.Result().Cookies())
+	assertOnlyNonceCleared(t, rec)
 	assert.Equal(t, http.StatusUnauthorized, post(site, j, `{"credential":"unverified"}`).Code)
+
+	// Nonce binding: missing cookie, missing claim, mismatch -> 401, nonce
+	// cookie cleared, no session.
+	for name, rec := range map[string]*httptest.ResponseRecorder{
+		"missing cookie": postNonce(site, j, `{"credential":"good"}`, ""),
+		"missing claim":  postNonce(site, j, `{"credential":"nonce-missing"}`, "n0nce"),
+		"mismatch":       postNonce(site, j, `{"credential":"good"}`, "other"),
+	} {
+		assert.Equal(t, http.StatusUnauthorized, rec.Code, name)
+		assertOnlyNonceCleared(t, rec)
+	}
 
 	// Happy path with a fake verified token: cookie set, /api/me-shaped body.
 	rec = post(site, j, `{"credential":"good"}`)
@@ -167,8 +189,18 @@ func TestGoogleToken(t *testing.T) {
 	assert.Equal(t, site, rec.Header().Get("Access-Control-Allow-Origin"))
 	assert.JSONEq(t, `{"email":"gina@example.org","name":"Gina Google","activistId":1}`, rec.Body.String())
 	cs := rec.Result().Cookies()
-	require.Len(t, cs, 1)
-	email, _, ok := readSession(reqWith(cs[0]), time.Now())
+	require.Len(t, cs, 2)
+	var sess *http.Cookie
+	for _, c := range cs {
+		switch c.Name {
+		case sessionCookieName():
+			sess = c
+		case nonceCookieName():
+			assert.Equal(t, -1, c.MaxAge, "nonce cookie cleared on success")
+		}
+	}
+	require.NotNil(t, sess)
+	email, _, ok := readSession(reqWith(sess), time.Now())
 	assert.True(t, ok)
 	assert.Equal(t, "gina@example.org", email)
 
@@ -176,7 +208,81 @@ func TestGoogleToken(t *testing.T) {
 	rec = post("http://localhost:3000", j, `{"credential":"dev"}`)
 	require.Equal(t, http.StatusOK, rec.Code)
 	assert.Contains(t, rec.Body.String(), "test-dev@directactioneverywhere.com")
-	require.Len(t, rec.Result().Cookies(), 1)
+	require.Len(t, rec.Result().Cookies(), 2) // session + cleared nonce
+}
+
+// assertOnlyNonceCleared checks the response sets exactly one cookie: the
+// nonce cookie, expired.
+func assertOnlyNonceCleared(t *testing.T, rec *httptest.ResponseRecorder) {
+	t.Helper()
+	cs := rec.Result().Cookies()
+	require.Len(t, cs, 1)
+	assert.Equal(t, nonceCookieName(), cs[0].Name)
+	assert.Equal(t, -1, cs[0].MaxAge)
+}
+
+func TestGoogleNonce(t *testing.T) {
+	a := &authServer{now: time.Now}
+	h := corsHandler(a.googleNonce)
+	const site = "https://www.directactioneverywhere.com"
+	get := func(origin string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodGet, "/auth/google/nonce", nil)
+		if origin != "" {
+			req.Header.Set("Origin", origin)
+		}
+		rec := httptest.NewRecorder()
+		h(rec, req)
+		return rec
+	}
+
+	// Origin is required and must be allowlisted; nothing is set otherwise.
+	for _, origin := range []string{"", "https://evil.com"} {
+		rec := get(origin)
+		assert.Equal(t, http.StatusForbidden, rec.Code, "origin %q", origin)
+		assert.Empty(t, rec.Result().Cookies())
+	}
+
+	for _, prod := range []bool{false, true} {
+		setProd(t, prod)
+		rec := get(site)
+		require.Equal(t, http.StatusOK, rec.Code)
+		assert.Equal(t, "no-store", rec.Header().Get("Cache-Control"))
+		assert.Equal(t, site, rec.Header().Get("Access-Control-Allow-Origin"))
+		assert.Equal(t, "true", rec.Header().Get("Access-Control-Allow-Credentials"))
+
+		var body map[string]string
+		require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
+		require.Len(t, body, 1)
+		raw, err := base64.RawURLEncoding.DecodeString(body["nonce"])
+		require.NoError(t, err)
+		assert.Len(t, raw, 32)
+		assert.NotContains(t, body["nonce"], "=")
+
+		cs := rec.Result().Cookies()
+		require.Len(t, cs, 1)
+		c := cs[0]
+		wantName := "dxe_gis_nonce"
+		if prod {
+			wantName = "__Host-dxe_gis_nonce"
+		}
+		assert.Equal(t, wantName, c.Name)
+		assert.Equal(t, body["nonce"], c.Value)
+		assert.True(t, c.HttpOnly)
+		assert.Equal(t, prod, c.Secure)
+		assert.Equal(t, http.SameSiteLaxMode, c.SameSite)
+		assert.Equal(t, "/", c.Path)
+		assert.Empty(t, c.Domain)
+		assert.Equal(t, 600, c.MaxAge)
+
+		assert.NotEqual(t, body["nonce"], decodeNonce(t, get(site)), "nonces are random")
+	}
+}
+
+func decodeNonce(t *testing.T, rec *httptest.ResponseRecorder) string {
+	t.Helper()
+	var body struct{ Nonce string }
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
+	return body.Nonce
 }
 
 func TestMe_ActivistLookupIsExact(t *testing.T) {
