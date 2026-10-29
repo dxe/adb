@@ -223,7 +223,10 @@ func TestSendLoginEmail_ProdWithoutSMTPErrorsAndDoesNotLogLink(t *testing.T) {
 func TestConfirmPagesDenyFraming(t *testing.T) {
 	check := func(rec *httptest.ResponseRecorder) {
 		assert.Equal(t, "DENY", rec.Header().Get("X-Frame-Options"))
-		assert.Equal(t, confirmCSP, rec.Header().Get("Content-Security-Policy"))
+		csp := rec.Header().Get("Content-Security-Policy")
+		assert.Equal(t, confirmCSP(), csp)
+		// form-action must allow the redirect back to the website after sign-in.
+		assert.Contains(t, csp, "form-action 'self' https://directactioneverywhere.com https://staging.directactioneverywhere.com https://www.directactioneverywhere.com")
 		assert.Equal(t, "same-origin", rec.Header().Get("Referrer-Policy"))
 	}
 	// Invalid-token paths need no DB rows, only a store that finds nothing.

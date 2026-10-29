@@ -91,6 +91,15 @@ func (st memberStore) peekLoginToken(ctx context.Context, raw string, now time.T
 	return email, err
 }
 
+// loginTokenNext returns where a token's link was going, whether or not it has
+// been used or has expired (rows are deleted a day after expiry).
+func (st memberStore) loginTokenNext(ctx context.Context, raw string) (string, error) {
+	var next string
+	err := st.db.GetContext(ctx, &next,
+		`SELECT next_url FROM member_login_tokens WHERE token_hash = ?`, hashToken(raw))
+	return next, err
+}
+
 // consumeLoginToken atomically marks the token used and returns its email and
 // next URL. A second call with the same token, or a call after expiry,
 // returns errInvalidToken.

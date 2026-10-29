@@ -25,11 +25,12 @@ func TestMagicLinkFlow(t *testing.T) {
 
 	links := make(chan string, 1)
 	a := &authServer{
-		store:        memberStore{db},
-		emailLimiter: newRateLimiter(),
-		ipLimiter:    newRateLimiter(),
-		now:          time.Now,
-		sendEmail:    func(to, link string) error { links <- link; return nil },
+		store:         memberStore{db},
+		emailCooldown: newRateLimiter(),
+		emailLimiter:  newRateLimiter(),
+		ipLimiter:     newRateLimiter(),
+		now:           time.Now,
+		sendEmail:     func(to, link string) error { links <- link; return nil },
 	}
 	r := mux.NewRouter()
 	r.HandleFunc("/auth/email", a.emailStart).Methods(http.MethodPost)
@@ -89,10 +90,35 @@ func TestMagicLinkFlow(t *testing.T) {
 	assert.Equal(t, http.SameSiteLaxMode, c.SameSite)
 	assert.Equal(t, "/", c.Path)
 
-	// Reuse fails.
+	// Reuse fails...
 	post = httptest.NewRequest(http.MethodPost, "/auth/email/confirm", strings.NewReader(form))
 	post.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	assert.Equal(t, http.StatusGone, do(post).Code)
+	// ...unless already signed in (e.g. a second click): then it continues to
+	// where the link was going, for both the POST and reopening the link.
+	post = httptest.NewRequest(http.MethodPost, "/auth/email/confirm", strings.NewReader(form))
+	post.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	post.AddCookie(c)
+	rec = do(post)
+	assert.Equal(t, http.StatusSeeOther, rec.Code)
+	assert.Equal(t, fallbackNextURL, rec.Header().Get("Location"))
+	reopen := httptest.NewRequest(http.MethodGet, "/auth/email/confirm?token="+token, nil)
+	reopen.AddCookie(c)
+	rec = do(reopen)
+	assert.Equal(t, http.StatusSeeOther, rec.Code)
+	assert.Equal(t, fallbackNextURL, rec.Header().Get("Location"))
+
+	// A second request for the same address within a minute sends nothing.
+	again := httptest.NewRequest(http.MethodPost, "/auth/email",
+		strings.NewReader(`{"email":"jane@example.org"}`))
+	again.Header.Set("Content-Type", "application/json")
+	again.Header.Set("Origin", authBaseURL())
+	assert.Equal(t, http.StatusNoContent, do(again).Code)
+	select {
+	case l := <-links:
+		t.Fatalf("sent a second email within the cooldown: %s", l)
+	default:
+	}
 
 	// /api/me matches the visible activist case-insensitively.
 	me := httptest.NewRequest(http.MethodGet, "/api/me", nil)
