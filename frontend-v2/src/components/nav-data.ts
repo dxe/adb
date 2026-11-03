@@ -69,7 +69,7 @@ export const navbarData: NavbarData = {
     {
       label: 'Prospects',
       roleRequired: ['organizer'],
-      visibleForNonSFBay: false,
+      visibleForNonSFBay: true,
       items: [
         {
           label: 'Online Sign-ups',
