@@ -30,6 +30,9 @@ export function Activist({ activistId }: { activistId: number }) {
   const [isDetailsDirty, setIsDetailsDirty] = useState(false)
 
   // Switching tabs unmounts the details form, so confirm before discarding.
+  // Tabs use manual activation: with automatic activation, Radix also fires
+  // onValueChange on focus, so cancelling the confirm re-focuses the trigger
+  // and re-prompts in an endless loop.
   const handleTabChange = useCallback(
     (nextTab: string) => {
       if (
@@ -83,7 +86,7 @@ export function Activist({ activistId }: { activistId: number }) {
         onHide={() => setIsHideDialogOpen(true)}
       />
 
-      <Tabs value={tab} onValueChange={handleTabChange}>
+      <Tabs value={tab} onValueChange={handleTabChange} activationMode="manual">
         <TabsList className="h-auto w-full justify-start gap-4 rounded-none border-b bg-transparent p-0">
           <TabsTrigger
             value="details"
