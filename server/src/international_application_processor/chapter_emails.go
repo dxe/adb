@@ -13,7 +13,7 @@ type coordinator struct {
 
 var (
 	sfBayCoordinator = coordinator{
-		Name:    "Antonelle Racelis",
+		Name:    "Kristina Garfinkel",
 		Role:    "Organizer",
 		Address: "kristina@directactioneverywhere.com",
 	}
