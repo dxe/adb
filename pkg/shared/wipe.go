@@ -1,7 +1,9 @@
 package shared
 
 import (
+	"context"
 	"log"
+	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
@@ -29,34 +31,36 @@ func mustDropAllTables(db *sqlx.DB, isProd bool) {
 		panic("Cannot drop tables in prod")
 	}
 
-	_, err := db.Exec(`
-		DROP TABLE IF EXISTS schema_migrations;
-
-		DROP TABLE IF EXISTS activists;
-		DROP TABLE IF EXISTS activists_history;
-		DROP TABLE IF EXISTS events;
-		DROP TABLE IF EXISTS event_attendance;
-		-- Dropped after events, which has a foreign key referencing it.
-		DROP TABLE IF EXISTS locations;
-		DROP TABLE IF EXISTS users_roles;
-		DROP TABLE IF EXISTS adb_users;
-		DROP TABLE IF EXISTS merged_activist_attendance;
-		DROP TABLE IF EXISTS working_groups;
-		DROP TABLE IF EXISTS working_group_members;
-		DROP TABLE IF EXISTS circles;
-		DROP TABLE IF EXISTS circle_members;
-		DROP TABLE IF EXISTS fb_pages;
-		DROP TABLE IF EXISTS fb_events;
-		DROP TABLE IF EXISTS discord_users;
-		DROP TABLE IF EXISTS discord_messages;
-		DROP TABLE IF EXISTS form_application;
-		DROP TABLE IF EXISTS form_interest;
-		DROP TABLE IF EXISTS form_international;
-		DROP TABLE IF EXISTS form_discord;
-		DROP TABLE IF EXISTS form_international_actions;
-		DROP TABLE IF EXISTS interactions;
-	`)
+	var tables []string
+	err := db.Select(&tables, `
+		SELECT table_name FROM information_schema.tables
+		WHERE table_schema = DATABASE() AND table_type = 'BASE TABLE'`)
 	if err != nil {
+		log.Panicf("error listing tables: %v", err)
+	}
+	if len(tables) == 0 {
+		return
+	}
+
+	// FOREIGN_KEY_CHECKS is per-connection, so pin one connection for the
+	// whole operation and restore the setting before returning it to the pool.
+	ctx := context.Background()
+	conn, err := db.Connx(ctx)
+	if err != nil {
+		log.Panicf("error getting connection: %v", err)
+	}
+	defer func() { _ = conn.Close() }()
+
+	if _, err := conn.ExecContext(ctx, "SET FOREIGN_KEY_CHECKS = 0"); err != nil {
+		log.Panicf("error disabling foreign key checks: %v", err)
+	}
+	defer func() { _, _ = conn.ExecContext(ctx, "SET FOREIGN_KEY_CHECKS = 1") }()
+
+	quoted := make([]string, len(tables))
+	for i, t := range tables {
+		quoted[i] = "`" + strings.ReplaceAll(t, "`", "``") + "`"
+	}
+	if _, err := conn.ExecContext(ctx, "DROP TABLE IF EXISTS "+strings.Join(quoted, ", ")); err != nil {
 		log.Panicf("error dropping tables: %v", err)
 	}
 }
