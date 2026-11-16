@@ -56,6 +56,10 @@ in the background and then runs the Go server.
 ```bash
 # Convenient but does not allow viewing server output separately.
 make run_all
+
+# Or run each server in its own terminal:
+make run_frontend
+make run_backend
 ```
 
 The other way is using VS Code launch configurations. This allows you to see

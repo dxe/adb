@@ -1,4 +1,4 @@
-.PHONY: run_all run test test-server test-frontend lint clean prod_build deps node_toolchain dev_db install_playwright fmt go_mod_sync _go_mod_sync
+.PHONY: run_all run_frontend run_backend test test-server test-frontend lint clean prod_build deps node_toolchain dev_db install_playwright fmt go_mod_sync _go_mod_sync
 
 # When not using devcontainer, NVM initialization script may be located in home
 # directory. In the devcontainer, it is in /usr/local/share/nvm/. In the Claude
@@ -34,15 +34,19 @@ GO_MIGRATE_VERSION := v4.20.1
 # server-side rendering reads NEXT_PUBLIC_API_BASE_URL.
 PORT ?= 8080
 
-# Runs the application (starts Next.js dev server, starts Go server).
+# Runs the application (starts Next.js dev server in the background, then the Go server).
 run_all:
+	$(MAKE) run_frontend &
+	$(MAKE) run_backend
+
+# Run Next.js dev server (foreground).
+run_frontend:
 	. $(NVM_SCRIPT) && \
 	export NEXT_PUBLIC_API_BASE_URL=http://localhost:$(PORT); \
-	(cd frontend-v2 && nvm use $(NODE_VERSION) && env -u PORT pnpm dev) &
-	$(MAKE) run
+	cd frontend-v2 && nvm use $(NODE_VERSION) && env -u PORT pnpm dev
 
-# Just start the go program.
-run:
+# Run Go server (foreground).
+run_backend:
 	@[ -f server/.env ] || { echo "Error: server/.env not found. Run 'make deps' first."; exit 1; }
 
 	cd server/src && go install # Install first so that we keep cached build objects around.
@@ -71,7 +75,7 @@ node_toolchain:
 # Install all deps for this project.
 # Note: `go tool` cannot yet be used to install golang-migrate: https://github.com/golang-migrate/migrate/issues/1232
 deps: node_toolchain
-	@# Ensure server/.env exists. Both `make run` and the VS Code "Go Server"
+	@# Ensure server/.env exists. Both `make run_backend` and the VS Code "Go Server"
 	@# launch config load it unconditionally (layered on server/debug.env) and
 	@# error if it's missing, so deps (the required first step) creates it.
 	touch server/.env

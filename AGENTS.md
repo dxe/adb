@@ -8,7 +8,21 @@ This repo runs in the devcontainer (local dev machine) and in the Claude Code cl
 Cloud VM setup is managed in the repo; see [.claude/cloud/README.md](.claude/cloud/README.md) for details.
 
 - The default branch is `main`.
-- To test in a browser: start `make run_all` in the background, then open `localhost:8080/v2/...`. Dev login is automatic.
+
+### first-time setup and running
+
+Run these in order on a fresh checkout (the cloud VM does this for you; see the cloud README):
+
+1. `make deps` — installs Node/pnpm, creates `server/.env`, downloads Go and node deps.
+2. MySQL must be running. In the devcontainer it already is; elsewhere: `( cd server && docker compose up -d --wait )`.
+3. `make dev_db` — wipes and re-creates the dev database and dev user.
+
+To run the app:
+
+- `make run_backend` — Go server (port 8080)
+- `make run_frontend` — Next.js dev server, proxied by Go server
+
+Then access in browser at `http://localhost:8080/v2/`.
 
 ## architecture
 
