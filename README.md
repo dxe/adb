@@ -9,9 +9,11 @@ Activist Database Project
 The following dependencies are required to run this project and will be already
 installed if using the devcontainer:
 
-- go
-- nvm
+- Make
+- Go and Delve (Go debugger)
+- NVM (node version manager)
 - docker
+- mysql (CLI for database)
 
 Running this command is required to download all the go and node dependencies:
 
@@ -25,7 +27,7 @@ If you are not using the devcontainer, you can use our Docker Compose configurat
 to run MySQL locally:
 
 ```bash
-( cd server/ && docker compose up -d )
+( cd server/ && docker compose up -d --wait )
 make dev_db
 ```
 
