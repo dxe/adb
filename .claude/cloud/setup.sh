@@ -7,7 +7,7 @@ source .claude/cloud/env.sh
 
 # `mysql` client for the `db` shell function (the server runs in Docker).
 apt-get update -qq
-apt-get install -y -qq mysql-client
+apt-get install -y -qq default-mysql-client
 
 # Warm the caches baked into the environment snapshot. This command should be
 # re-run in each session so deps still match the checked-out branch; with warm

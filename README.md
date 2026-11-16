@@ -12,8 +12,8 @@ installed if using the devcontainer:
 - Make
 - Go and Delve (Go debugger)
 - NVM (node version manager)
-- docker
-- mysql (CLI for database)
+- Docker
+- MySql client
 
 Running this command is required to download all the go and node dependencies:
 

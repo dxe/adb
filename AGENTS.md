@@ -37,7 +37,11 @@ Background context on how the stack fits together.
 
 Rules regarding the Next.js app in ./frontend-v2
 
-Most routes are implemented in `frontend-v2/src/app/(authed)/`, e.g. `activists`, `chapters`, `users`.
+### UI vocabulary
+
+- "The X page": most pages are found under `frontend-v2/src/app/(authed)/`, e.g. `activists`, `chapters`, `users`.
+- "The navigation" is defined in `frontend-v2/src/components/nav-data.ts`.
+- "The member portal" is a separate server-rendered Go app in `server/src/members/` (own port), not part of `frontend-v2`.
 
 ### frontend-file-formatting
 
