@@ -47,23 +47,16 @@ run:
 	cd server/src && go install # Install first so that we keep cached build objects around.
 
 	set -a && \
-	. server/dev-db.env && \
 	. server/debug.env && \
 	. server/.env && \
 	set +a && \
 	cd server/src && \
-	DB_PROTOCOL="$${DB_PROTOCOL:-tcp(127.0.0.1:3306)}" \
 	PORT=$(PORT) go run main.go
 
 # Wipe and re-create the dev databases. See the readme for more
 # details.
 dev_db:
-	set -a && \
-	. server/dev-db.env && \
-	set +a && \
-	cd cli && \
-	DB_PROTOCOL="$${DB_PROTOCOL:-tcp(127.0.0.1:3306)}" \
-	go run . db create --dev-email="${DXE_DEV_EMAIL:-test-dev@directactioneverywhere.com}"
+	cd cli && go run . db create --dev-email="${DXE_DEV_EMAIL:-test-dev@directactioneverywhere.com}"
 
 # Install the browser binary and system libraries used by the Playwright MCP.
 install_playwright:
