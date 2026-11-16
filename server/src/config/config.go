@@ -15,10 +15,10 @@ import (
 const TestDBName = "adb_test_db"
 
 var (
-	DBUser         = mustGetenv("DB_USER", "adb_user", true)
-	DBPassword     = mustGetenv("DB_PASSWORD", "adbpassword", true)
-	DBName         = mustGetenv("DB_NAME", "adb_db", true)
-	DBProtocol     = mustGetenv("DB_PROTOCOL", "", true)
+	DBUser         = mustGetenv("DB_USER", shared.DevDBUser, true)
+	DBPassword     = mustGetenv("DB_PASSWORD", shared.DevDBPassword, true)
+	DBName         = mustGetenv("DB_NAME", shared.DevDBName, true)
+	DBProtocol     = mustGetenv("DB_PROTOCOL", shared.DevDBProtocol, true)
 	DataSourceBase = DBUser + ":" + DBPassword + "@" + DBProtocol
 
 	Port        = mustGetenv("PORT", "8080", true)

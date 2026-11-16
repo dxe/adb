@@ -14,13 +14,10 @@ services:
     # Cap container RAM with no swap (memswap_limit == mem_limit disables swap).
     mem_limit: 8g
     memswap_limit: 8g
-    # Keep in sync with .claude/cloud/env.sh
+    env_file: ../server/dev-db.env
     environment:
       - DB_HOST=mysql
       - DB_PROTOCOL=tcp(mysql:3306)
-      - DB_USER=adb_user
-      - DB_PASSWORD=adbpassword
-      - DB_NAME=adb_db
       - ADB_REPO_ROOT=/workspace
   mysql: # extending server/compose.yaml
     # The devcontainer reaches MySQL over the Compose network, so do not bind

@@ -15,6 +15,11 @@ services:
       - mysql-data:/var/lib/mysql
       - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
     mem_limit: 1g
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-plocaldev", "--silent"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
 
 volumes:
   mysql-data: {}

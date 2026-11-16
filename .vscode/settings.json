@@ -11,6 +11,7 @@
     "editor.defaultFormatter": "ms-azuretools.vscode-containers",
   },
   "go.toolsManagement.autoUpdate": true,
+  "go.testEnvFile": "${workspaceFolder}/server/dev-db.env",
   // Ensures same settings are used by VS Code extension and CLI.
   "prettier.requireConfig": true,
   "prettier.prettierPath": "./node_modules/prettier",

@@ -13,7 +13,7 @@
       "skipFiles": ["<node_internals>/**"],
       "type": "node",
       // Please keep in sync with Makefile
-      "runtimeVersion": "25",
+      "runtimeVersion": "26",
       "env": {
         "NEXT_PUBLIC_API_BASE_URL": "http://localhost:8080",
       },
@@ -25,6 +25,7 @@
       "mode": "debug",
       "program": "${workspaceFolder}/cli",
       "args": "${input:adbCliArgs}",
+      "envFile": "${workspaceFolder}/server/dev-db.env",
       "console": "integratedTerminal",
     },
     {
@@ -38,6 +39,7 @@
       // errors if a listed file is missing, so `make deps` creates server/.env
       // to guarantee it exists.
       "envFile": [
+        "${workspaceFolder}/server/dev-db.env",
         "${workspaceFolder}/server/debug.env",
         "${workspaceFolder}/server/.env",
       ],
@@ -65,7 +67,7 @@
       "skipFiles": ["<node_internals>/**"],
       "type": "node",
       // Please keep in sync with Makefile
-      "runtimeVersion": "25",
+      "runtimeVersion": "26",
       "console": "integratedTerminal",
     },
   ],

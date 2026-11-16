@@ -1,4 +1,4 @@
-.PHONY: run_all run test test-server test-frontend lint clean prod_build deps node_toolchain dev_db install_playwright fmt go_mod_sync _go_mod_sync
+.PHONY: run_all run_frontend run_backend test test-server test-frontend lint clean prod_build deps node_toolchain dev_db install_playwright fmt go_mod_sync _go_mod_sync
 
 # When not using devcontainer, NVM initialization script may be located in home
 # directory. In the devcontainer, it is in /usr/local/share/nvm/. In the Claude
@@ -22,6 +22,7 @@ NVM_SCRIPT := $(shell \
 # * all Dockerfiles
 # * .github/workflows/main.yml
 # * devcontainer.json `ghcr.io/devcontainers/features/node` feature
+# * .vscode/launch.json
 NODE_VERSION := 26
 PNPM_VERSION := 10.32.1
 
@@ -33,15 +34,19 @@ GO_MIGRATE_VERSION := v4.20.1
 # server-side rendering reads NEXT_PUBLIC_API_BASE_URL.
 PORT ?= 8080
 
-# Runs the application (starts Next.js dev server, starts Go server).
+# Runs the application (starts Next.js dev server in the background, then the Go server).
 run_all:
+	$(MAKE) run_frontend &
+	$(MAKE) run_backend
+
+# Run Next.js dev server (foreground).
+run_frontend:
 	. $(NVM_SCRIPT) && \
 	export NEXT_PUBLIC_API_BASE_URL=http://localhost:$(PORT); \
-	(cd frontend-v2 && nvm use $(NODE_VERSION) && env -u PORT pnpm dev) &
-	$(MAKE) run
+	cd frontend-v2 && nvm use $(NODE_VERSION) && env -u PORT pnpm dev
 
-# Just start the go program.
-run:
+# Run Go server (foreground).
+run_backend:
 	@[ -f server/.env ] || { echo "Error: server/.env not found. Run 'make deps' first."; exit 1; }
 
 	cd server/src && go install # Install first so that we keep cached build objects around.
@@ -70,7 +75,7 @@ node_toolchain:
 # Install all deps for this project.
 # Note: `go tool` cannot yet be used to install golang-migrate: https://github.com/golang-migrate/migrate/issues/1232
 deps: node_toolchain
-	@# Ensure server/.env exists. Both `make run` and the VS Code "Go Server"
+	@# Ensure server/.env exists. Both `make run_backend` and the VS Code "Go Server"
 	@# launch config load it unconditionally (layered on server/debug.env) and
 	@# error if it's missing, so deps (the required first step) creates it.
 	touch server/.env
@@ -141,7 +146,7 @@ set_git_hooks:
 # (Note, --net=host runs the container in the same network as the devcontainer created by the devcontainer's docker-compose config)
 docker_run:
 	docker build . -t dxe/adb
-	docker container run --rm -p 8080:8080 --net=host -it --name adbtest --env-file docker-debug.env dxe/adb
+	docker container run --rm -p 8080:8080 --net=host -it --name adbtest --env-file server/dev-db.env -e DB_PROTOCOL='tcp(mysql:3306)' dxe/adb
 
 # Open shell inside docker container while it's running
 docker_shell:

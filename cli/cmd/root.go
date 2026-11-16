@@ -18,6 +18,9 @@ Database connection is configured via environment variables:
   DB_NAME
   DB_PROTOCOL
 
+Unset variables default to the local dev database (see server/compose.yaml)
+unless PROD=true.
+
 Set PROD=true to indicate a production environment. Commands that could cause
 harm will refuse to run when PROD=true is detected.`,
 }
