@@ -22,6 +22,7 @@ NVM_SCRIPT := $(shell \
 # * all Dockerfiles
 # * .github/workflows/main.yml
 # * devcontainer.json `ghcr.io/devcontainers/features/node` feature
+# * .vscode/launch.json
 NODE_VERSION := 26
 PNPM_VERSION := 10.32.1
 
