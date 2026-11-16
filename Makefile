@@ -47,16 +47,23 @@ run:
 	cd server/src && go install # Install first so that we keep cached build objects around.
 
 	set -a && \
+	. server/dev-db.env && \
 	. server/debug.env && \
 	. server/.env && \
 	set +a && \
 	cd server/src && \
+	DB_PROTOCOL="$${DB_PROTOCOL:-tcp(127.0.0.1:3306)}" \
 	PORT=$(PORT) go run main.go
 
 # Wipe and re-create the dev databases. See the readme for more
 # details.
 dev_db:
-	cd cli && go run . db create --dev-email="${DXE_DEV_EMAIL:-test-dev@directactioneverywhere.com}"
+	set -a && \
+	. server/dev-db.env && \
+	set +a && \
+	cd cli && \
+	DB_PROTOCOL="$${DB_PROTOCOL:-tcp(127.0.0.1:3306)}" \
+	go run . db create --dev-email="${DXE_DEV_EMAIL:-test-dev@directactioneverywhere.com}"
 
 # Install the browser binary and system libraries used by the Playwright MCP.
 install_playwright:
@@ -141,7 +148,7 @@ set_git_hooks:
 # (Note, --net=host runs the container in the same network as the devcontainer created by the devcontainer's docker-compose config)
 docker_run:
 	docker build . -t dxe/adb
-	docker container run --rm -p 8080:8080 --net=host -it --name adbtest --env-file docker-debug.env dxe/adb
+	docker container run --rm -p 8080:8080 --net=host -it --name adbtest --env-file server/dev-db.env -e DB_PROTOCOL='tcp(mysql:3306)' dxe/adb
 
 # Open shell inside docker container while it's running
 docker_shell:
