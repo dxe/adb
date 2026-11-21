@@ -50,6 +50,14 @@ DB_PROTOCOL = "{{ get_env(name='DB_PROTOCOL', default='tcp(127.0.0.1:3306)') }}"
 # Setup
 # ---------------------------------------------------------------------------
 
+# The Claude Code cloud VM doesn't start dockerd on boot. Tasks that need Docker
+# depend on this; it does nothing elsewhere, where Docker is managed outside
+# this repo (Docker Desktop, the devcontainer's docker-in-docker feature).
+[tasks."cloud:dockerd"]
+description = "Start dockerd if in the Claude Code cloud VM"
+hide = true
+run = '[ "${CLAUDE_CODE_REMOTE:-}" != true ] || .claude/cloud/start-docker.sh'
+
 [tasks.deps]
 description = "Install all deps for this project"
 run = [
@@ -70,6 +78,7 @@ run = [
 # is set by VS Code.
 [tasks."db:up"]
 description = "Start the local MySQL server in Docker and wait until it's healthy"
+depends = ["cloud:dockerd"]
 dir = "server"
 run = '''
 if [ "${DEVCONTAINER:-}" = true ] || [ "${REMOTE_CONTAINERS:-}" = true ]; then
@@ -83,6 +92,20 @@ docker compose up -d --wait
 description = "Wipe and re-create the dev databases (see README)"
 dir = "cli"
 run = 'go run . db create --dev-email="${DXE_DEV_EMAIL:-test-dev@directactioneverywhere.com}"'
+
+# Safe to run repeatedly, unlike db:reset. Fails (rather than resetting) if
+# MySQL isn't reachable.
+[tasks."db:init"]
+description = "Create the dev databases with db:reset, unless they already have tables"
+run = '''
+tables=$(MYSQL_PWD="$DB_PASSWORD" mysql -u "$DB_USER" -h "$DB_HOST" -N -e \
+  "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$DB_NAME'")
+if [ "$tables" = 0 ]; then
+  mise run db:reset
+else
+  echo "Database $DB_NAME already has $tables tables; leaving it alone."
+fi
+'''
 
 # Shell helpers. Extra args are passed through, e.g.
 #   mise db -e "SHOW COLUMNS FROM activists"
@@ -161,7 +184,9 @@ PORT="${PORT:-8080}" go run main.go
 description = "Run all tests"
 depends = ["test:server", "test:frontend"]
 
+# Needs Docker for the testcontainers MySQL.
 [tasks."test:server"]
+depends = ["cloud:dockerd"]
 dir = "server/src"
 run = "go test ./..."
 

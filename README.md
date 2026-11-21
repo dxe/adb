@@ -28,14 +28,19 @@ to run MySQL locally:
 
 ```bash
 mise run db:up
-mise run db:reset
+mise run db:init
 ```
 
 If you are using the devcontainer, just run this command in the container:
 
 ```bash
-mise run db:reset
+mise run db:init
 ```
+
+`db:init` sets up the database only if it has no tables yet, so it's safe to
+re-run. To start over, run `mise run db:reset`. It deletes everything in your
+local dev database, then re-creates it with the current schema, some fake data,
+and a dev user for logging in.
 
 You can log into the database by running `mise db` (or just `db` in a shell where mise is activated; see the `[shell_alias]` section of `mise.toml`).
 

@@ -13,11 +13,14 @@ Cloud VM setup is managed in the repo; see [.claude/cloud/README.md](.claude/clo
 
 Tool versions (Go, Node, pnpm, golangci-lint, Delve, `migrate`) and dev tasks are defined in [mise.toml](mise.toml). Run `mise tasks` to list tasks.
 
-Run these in order on a fresh checkout (the cloud VM does this for you; see the cloud README):
+Run these in order on a fresh checkout.
 
 1. `mise run deps` — installs Go/Node/pnpm and other tools, creates `server/.env`, downloads Go and node deps.
 2. MySQL must be running. In the devcontainer it already is; elsewhere: `mise run db:up`.
-3. `mise run db:reset` — wipes and re-creates the dev database and dev user.
+3. `mise run db:init` — creates the dev database and dev user if the database has no tables yet. To wipe and re-create them, run `mise run db:reset`; ask first, as it deletes all dev data.
+
+In the cloud VM, the SessionStart hook runs `.claude/cloud/start.sh` to do this instead (note hooks are disabled in multi-repo environments)
+and tasks that need the docker engine will start it automatically.
 
 To run the app:
 
