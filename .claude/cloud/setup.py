@@ -43,11 +43,8 @@ if not shutil.which("mise"):
 #   interfere with python calls made outside mise projects.
 # - go: the VM already ships one, and go manages its own toolchain version (it downloads the
 #   version from the `go`/`toolchain` lines in go.mod as needed).
-# - gopls: it's slow to install (built from source), which isn't worth it for ephemeral cloud
-#   sessions; it's only in mise.toml for VS Code's Go extension.
-# - delve (dlv): Claude usually wouldn't use an interactive debugger (it debugs via logs and
-#   tests), and it's built from source, so it's not worth the install time.
-for tool in ("go", "python", "go:golang.org/x/tools/gopls", "go:github.com/go-delve/delve/cmd/dlv"):
+# (gopls and delve aren't installed in the cloud VM either; see the postinstall hook in mise.toml.)
+for tool in ("go", "python"):
     run("mise", "settings", "add", "disable_tools", tool)
 
 run("mise", "trust", "--yes", "mise.toml")

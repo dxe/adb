@@ -43,7 +43,7 @@
       "dockerDashComposeVersion": "v2"
     },
     // Go, golangci-lint, Delve, Node, pnpm, Python and the mysql client are
-    // installed by mise (see mise.toml) in post-create.sh.
+    // installed by mise (see mise.toml) in on-create.sh.
     "ghcr.io/rocker-org/devcontainer-features/apt-packages:1": {
       // bash-completion is useful for entering git commands in the devcontainer
       //     and our .bashrc requires this.
@@ -84,7 +84,9 @@
   // Configure tool-specific properties.
   // "customizations": {},
 
-  "postCreateCommand": "bash /workspace/.devcontainer/post-create.sh",
+  // onCreateCommand (not postCreateCommand) so the tools are installed before
+  // VS Code extensions (e.g. the Go extension) start looking for them.
+  "onCreateCommand": "bash /workspace/.devcontainer/on-create.sh",
 
   // Persist Claude Code config (settings, credentials) across container rebuilds.
   // Using ${devcontainerId} in the volume name scopes it to this project — each

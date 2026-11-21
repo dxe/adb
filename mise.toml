@@ -12,11 +12,7 @@
 node = "26"
 pnpm = "10.32.1"
 go = "1.26.0"
-# Go debugger, used by VS Code's Go launch configs.
-"go:github.com/go-delve/delve/cmd/dlv" = "1.27.2"
-# Go language server for VS Code's Go extension. Installed here so the
-# extension finds it on PATH instead of building it on first launch.
-"go:golang.org/x/tools/gopls" = "0.24.0"
+# gopls and delve are installed by the postinstall hook below, not here.
 # Pinned to avoid broken upstream "latest" releases (e.g. v2.12.1 had a
 # checksum mismatch on 2026-05-02).
 golangci-lint = "2.11.4"
@@ -27,6 +23,21 @@ golangci-lint = "2.11.4"
 mysql-client = "9.7.4"
 # Runs aws-sam-cli for deploying jobs/ (see jobs/README.md).
 python = "3.12"
+
+# Keep gopls (Go language server, for VS Code's Go extension) and delve (Go
+# debugger, for VS Code's Go launch configs) installed and at their latest
+# releases, so VS Code finds them on PATH instead of building them on first
+# launch. They're editor tools, so they go in mise's *global* config and work
+# in any directory. This sets them to "latest" there, replacing any version
+# pinned in that config. It's quick when they're already up to date.
+# Skipped in the Claude Code cloud VM, where they're slow to build (from
+# source) and rarely needed; agents install them there on demand.
+[hooks]
+postinstall = """
+[ "${CLAUDE_CODE_REMOTE:-}" = true ] && exit 0
+mise use -g go:golang.org/x/tools/gopls@latest go:github.com/go-delve/delve/cmd/dlv@latest \
+  || echo "warning: couldn't install or update gopls and delve" >&2
+"""
 
 # Set in shells where mise is activated (`mise activate`), inside this repo.
 # The `--` passes flags like -h through to mysql/the CLI instead of mise.

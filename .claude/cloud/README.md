@@ -18,8 +18,9 @@ Sessions do get it, and Claude Code sources the file before every Bash command.
 When the SessionStart hook runs `setup.py`, it uses the session's own
 `CLAUDE_ENV_FILE` from Claude Code instead.
 
-`setup.py` also adds go, python, gopls and delve to `disable_tools` in mise's global
-config (see comments in setup.py for details).
+`setup.py` also adds go and python to `disable_tools` in mise's global config
+(see comments in setup.py for details). gopls and delve are skipped in the cloud VM by
+the postinstall hook in `mise.toml`.
 
 - `setup.py`: one-time environment setup, including installing project
   dependencies to warm the caches baked into the environment snapshot.

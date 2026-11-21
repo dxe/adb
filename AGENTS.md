@@ -80,6 +80,11 @@ Rules regarding Go server in ./server
 - Scope: `server/**/*.go`
 - Rule: Build the Go server with `cd server/src && go build ./...`
 
+### gopls-in-cloud-vm
+
+- Scope: Go tasks in the cloud VM
+- Rule: gopls isn't installed in the cloud VM. If you need it, install it with `mise use -g go:golang.org/x/tools/gopls` (~1 min).
+
 ### go-deps-sync
 
 - Scope: `**/go.mod`, `**/go.sum`, `go.work`, `go.work.sum`
