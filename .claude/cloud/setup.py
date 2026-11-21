@@ -43,7 +43,9 @@ if not shutil.which("mise"):
 #   interfere with python calls made outside mise projects.
 # - go: the VM already ships one, and go manages its own toolchain version (it downloads the
 #   version from the `go`/`toolchain` lines in go.mod as needed).
-for tool in ("go", "python"):
+# - gopls: it's slow to install (built from source), which isn't worth it for ephemeral cloud
+#   sessions; it's only in mise.toml for VS Code's Go extension.
+for tool in ("go", "python", "go:golang.org/x/tools/gopls"):
     run("mise", "settings", "add", "disable_tools", tool)
 
 run("mise", "trust", "--yes", "mise.toml")
