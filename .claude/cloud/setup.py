@@ -27,7 +27,8 @@ def run(*cmd, **kwargs):
 
 
 repo_root = Path(__file__).resolve().parents[2]
-local_bin = Path.home() / ".local" / "bin"  # already on PATH in the cloud VM
+# Keep in sync with session-start.sh.
+SETUP_DONE_MARKER = Path.home() / ".local/state/adb/cloud-setup.done"
 os.chdir(repo_root)
 
 # --- Install mise, unless it's already installed ---------------------------------------------
@@ -36,12 +37,14 @@ if not shutil.which("mise"):
     run("bash", "-c", "curl -fsSL https://mise.run | sh", env=env)
 
 # --- Install the tools in mise.toml ----------------------------------------------------------
-# Don't let mise install/shim these:
-# - python: the VM already ships one, and linking mise's python into ~/.local/bin below would
+# Disable these in mise's global config (~/.config/mise/config.toml), so mise doesn't install
+# or shim them, here or in any later session, in this repo or any other:
+# - python: the VM already ships one, and mise's python shim (on PATH, see below) would
 #   interfere with python calls made outside mise projects.
 # - go: the VM already ships one, and go manages its own toolchain version (it downloads the
 #   version from the `go`/`toolchain` lines in go.mod as needed).
-os.environ["MISE_DISABLE_TOOLS"] = "go,python"
+for tool in ("go", "python"):
+    run("mise", "settings", "add", "disable_tools", tool)
 
 run("mise", "trust", "--yes", "mise.toml")
 # Installs the tools and warms the dependency caches baked into the environment snapshot.
@@ -51,24 +54,30 @@ run("mise", "run", "deps")
 
 # --- Make every mise-managed tool available to Claude's tool calls ---------------------------
 # Their shell is non-interactive and non-login, so it never reads ~/.bashrc or ~/.profile
-# (PATH edits there don't work) and can't see the mise shims. Instead, for each executable in
-# the installed tools' bin dirs, create a symlink to mise itself under that name in
-# ~/.local/bin, which is already on its PATH. Invoked under a tool's name, mise acts as a
-# shim: it checks the current directory and loads the environment accordingly.
-# `mise bin-paths` lists those dirs for every tool in mise.toml (skipping anything in
-# MISE_DISABLE_TOOLS), so tools added to mise.toml later are linked automatically.
-# These links are identical across repos, so in multi-repo environments another repo's setup
-# script overwriting them is harmless.
-mise_bin = shutil.which("mise")
-bin_dirs = run("mise", "bin-paths", capture_output=True).stdout.split("\n")
+# (PATH edits there don't work). It does source $CLAUDE_ENV_FILE before each command, so put
+# mise's shims dir on PATH there. Invoked under a tool's name, a shim checks the current
+# directory and loads the environment accordingly; tools added to mise.toml later get shims
+# automatically. CLAUDE_ENV_FILE must be set in the Claude environment's env vars (see
+# README.md). In multi-repo environments, another repo's setup script may already have added
+# the shims, so only add them if the file doesn't mention them yet.
+def add_mise_shims_to_env_file():
+    """Return False if CLAUDE_ENV_FILE isn't set (reported as an error at the end)."""
+    env_file = os.environ.get("CLAUDE_ENV_FILE")
+    if not env_file:
+        return False
+    env_path = Path(env_file)
+    existing = env_path.read_text() if env_path.exists() else ""
+    if "mise/shims" in existing:
+        return True
+    env_path.parent.mkdir(parents=True, exist_ok=True)
+    with env_path.open("a") as f:
+        if existing and not existing.endswith("\n"):
+            f.write("\n")
+        f.write('export PATH="$HOME/.local/share/mise/shims:$PATH"\n')
+    return True
 
-local_bin.mkdir(parents=True, exist_ok=True)
-for bin_dir in filter(None, bin_dirs):
-    for exe in sorted(Path(bin_dir).iterdir()):
-        if exe.is_file() and os.access(exe, os.X_OK):
-            link = local_bin / exe.name
-            link.unlink(missing_ok=True)
-            link.symlink_to(mise_bin)
+
+env_file_ok = add_mise_shims_to_env_file()
 
 # --- Pre-pull the MySQL image so session start is fast (best effort) -------------------------
 try:
@@ -77,3 +86,17 @@ try:
     run("docker", "pull", "mysql:8.4")
 except subprocess.CalledProcessError as e:
     print(f"Skipping MySQL image pre-pull: {e}", file=sys.stderr)
+
+# --- Report problems that shouldn't stop the rest of setup -----------------------------------
+# Fail last, so everything above still runs and the errors are the final thing shown.
+errors = []
+if not env_file_ok:
+    errors.append("CLAUDE_ENV_FILE is not set, so mise tools won't be on PATH.")
+if errors:
+    for error in errors:
+        print(f"ERROR: {error}", file=sys.stderr)
+    sys.exit("Fix the Claude environment's env vars; see .claude/cloud/README.md.")
+
+# Tells session-start.sh that setup already ran (e.g. as the environment's setup script).
+SETUP_DONE_MARKER.parent.mkdir(parents=True, exist_ok=True)
+SETUP_DONE_MARKER.touch()
