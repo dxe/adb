@@ -5,11 +5,8 @@ set -euxo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 source .claude/cloud/env.sh
 
-# `mysql` client for the `db` mise task (the server runs in Docker).
-apt-get update -qq
-apt-get install -y -qq default-mysql-client
-
-# mise installs pinned tool versions (see mise.toml) and runs project tasks.
+# mise installs pinned tool versions (see mise.toml), including the `mysql`
+# client, and runs project tasks.
 command -v mise >/dev/null 2>&1 || curl -fsSL https://mise.run | sh
 
 # Warm the caches baked into the environment snapshot. This command should be

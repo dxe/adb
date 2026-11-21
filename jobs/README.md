@@ -4,8 +4,7 @@ AWS Lambda jobs for ADB, deployed with [AWS SAM](https://docs.aws.amazon.com/ser
 
 ## Prerequisites
 
-- Go (preinstalled in the devcontainer)
-- Python + pip (preinstalled in the devcontainer)
+- Go and Python (installed by `mise run deps`; see the repo's `mise.toml`)
 - AWS credentials with deploy permissions for `us-west-2`
 - SSM parameters `smtp_user` and `smtp_pass` set in `us-west-2`
 - SSM parameters `mysql_lambda_host`, `mysql_lambda_user`, and

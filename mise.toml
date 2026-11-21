@@ -5,6 +5,7 @@
 # sync with:
 # * Node, pnpm: package.json (`packageManager`, `engines`), Dockerfile.frontend-v2
 # * Go: the `go` line in each go.mod, Dockerfile, Dockerfile.cli
+# * Python: the deploy-lambdas job in .github/workflows/main.yml
 # CI reads the Node and pnpm versions from here and Go from server/src/go.mod.
 
 [tools]
@@ -18,6 +19,11 @@ go = "1.26.0"
 golangci-lint = "2.11.4"
 # Prebuilt release binaries include the MySQL driver.
 "aqua:golang-migrate/migrate" = "4.20.1"
+# `mysql` and `mysqladmin` clients, used by the `db` task and the cloud VM
+# scripts (development / debugging only; not an app dependency).
+mysql-client = "9.7.4"
+# Runs aws-sam-cli for deploying jobs/ (see jobs/README.md).
+python = "3.12"
 
 # Set in shells where mise is activated (`mise activate`), inside this repo.
 # The `--` passes flags like -h through to mysql/the CLI instead of mise.
@@ -87,7 +93,8 @@ description = "Open a mysql client on the dev database"
 dir = "{{cwd}}"
 raw = true
 quiet = true
-run = 'mysql -u "$DB_USER" -h "$DB_HOST" -D "$DB_NAME" --password="$DB_PASSWORD" --default-character-set=utf8mb4'
+# MYSQL_PWD avoids MySQL's "password on the command line" warning.
+run = 'MYSQL_PWD="$DB_PASSWORD" mysql -u "$DB_USER" -h "$DB_HOST" -D "$DB_NAME" --default-character-set=utf8mb4'
 
 [tasks.adb]
 description = "Run the ADB CLI from source"

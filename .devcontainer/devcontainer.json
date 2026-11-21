@@ -28,24 +28,18 @@
       "version": "latest",
       "dockerDashComposeVersion": "v2"
     },
-    // Go, golangci-lint, Delve, Node and pnpm are installed by mise (see
-    // mise.toml) in post-create.sh.
+    // Go, golangci-lint, Delve, Node, pnpm, Python and the mysql client are
+    // installed by mise (see mise.toml) in post-create.sh.
     "ghcr.io/rocker-org/devcontainer-features/apt-packages:1": {
-      // mariadb-client package provides the `mysql` command for
-      //     development / debugging purposes (not an app dependeny).
       // bash-completion is useful for entering git commands in the devcontainer
       //     and our .bashrc requires this.
       // gnupg2 enables gpg signing of git commits:
       //     https://code.visualstudio.com/remote/advancedcontainers/sharing-git-credentials#_sharing-gpg-keys
       // build-essential provides make (used by jobs/Makefile) and lets
       //     node-gyp build native npm modules.
-      "packages": "mariadb-client,bash-completion,gnupg2,build-essential"
+      "packages": "bash-completion,gnupg2,build-essential"
     },
-    "ghcr.io/devcontainers/features/aws-cli:1": {},
-    "ghcr.io/devcontainers/features/python:1": {
-      "version": "3.12",
-      "installTools": false
-    }
+    "ghcr.io/devcontainers/features/aws-cli:1": {}
   },
   "customizations": {
     "vscode": {
