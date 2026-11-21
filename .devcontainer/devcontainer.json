@@ -26,8 +26,9 @@
   // Delve, debug sessions), which doesn't run through an activated shell. Each
   // shim runs its tool via mise, so versions and [env] from mise.toml apply.
   // The mise binary itself comes from the mise feature (/usr/local/bin).
+  // ~/.local/bin holds Claude Code, installed by on-create.sh.
   "remoteEnv": {
-    "PATH": "/mnt/mise-data/shims:${containerEnv:PATH}"
+    "PATH": "/mnt/mise-data/shims:/home/vscode/.local/bin:${containerEnv:PATH}"
   },
   // Generate a per-worktree Compose override for the project name and mounts.
   "initializeCommand": "bash .devcontainer/write-workspace-compose.sh '${localWorkspaceFolder}'",

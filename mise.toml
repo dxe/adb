@@ -36,7 +36,9 @@ python = "3.12"
 #
 # Then, if Claude Code is installed, install the gopls-lsp plugin enabled in
 # .claude/settings.json, which gives Claude Code's LSP tool gopls. Enabling it
-# there doesn't download it; each clone has to install it once.
+# there doesn't download it; each clone has to install it once. The
+# devcontainer installs Claude Code (in on-create.sh); elsewhere it's up to
+# the developer, so print a hint if it's missing.
 #
 # Skipped in the Claude Code cloud VM, where gopls and delve are slow to build
 # (from source) and rarely needed (agents install gopls on demand), and cloud
@@ -52,6 +54,8 @@ if command -v claude >/dev/null; then
   { claude plugin marketplace add anthropics/claude-plugins-official \
     && claude plugin install gopls-lsp@claude-plugins-official --scope project; } >/dev/null \
     || echo "warning: couldn't install the gopls-lsp Claude Code plugin" >&2
+else
+  echo "note: if you use Claude Code, install it and run 'mise install' again to set up its gopls plugin" >&2
 fi
 """
 
