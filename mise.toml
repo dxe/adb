@@ -24,6 +24,19 @@ golangci-lint = "2.11.4"
 [shell_alias]
 db = "mise run db --"
 adb = "mise run adb --"
+
+# Local dev database defaults, used by every task (and by shells where mise is
+# activated). Values already in the environment win, e.g. the devcontainer's
+# DB_HOST/DB_PROTOCOL (.devcontainer/compose.extend.yaml) or the cloud VM's
+# (.claude/cloud/env.sh). Credentials match server/dev-db.env and
+# server/scripts/init.sql; the host and port match server/compose.yaml.
+[env]
+DB_USER = "{{ get_env(name='DB_USER', default='adb_user') }}"
+DB_PASSWORD = "{{ get_env(name='DB_PASSWORD', default='adbpassword') }}"
+DB_NAME = "{{ get_env(name='DB_NAME', default='adb_db') }}"
+DB_HOST = "{{ get_env(name='DB_HOST', default='127.0.0.1') }}"
+DB_PROTOCOL = "{{ get_env(name='DB_PROTOCOL', default='tcp(127.0.0.1:3306)') }}"
+
 # ---------------------------------------------------------------------------
 # Setup
 # ---------------------------------------------------------------------------
@@ -68,15 +81,13 @@ run = 'go run . db create --dev-email="${DXE_DEV_EMAIL:-test-dev@directactioneve
 # Put flags mise itself understands (-h, --help) after `--`: `mise adb -- -h`.
 # Both run in the caller's directory so relative paths in args work.
 
-# Falls back to the same dev defaults as the Go server and CLI (the Dev*
-# constants in pkg/shared/db.go) when the DB_* variables are unset. Please keep
-# options in sync with DBConnParams in pkg/shared/db.go.
+# Please keep options in sync with DBConnParams in pkg/shared/db.go.
 [tasks.db]
 description = "Open a mysql client on the dev database"
 dir = "{{cwd}}"
 raw = true
 quiet = true
-run = 'mysql -u "${DB_USER:-adb_user}" -h "${DB_HOST:-127.0.0.1}" -D "${DB_NAME:-adb_db}" --password="${DB_PASSWORD:-adbpassword}" --default-character-set=utf8mb4'
+run = 'mysql -u "$DB_USER" -h "$DB_HOST" -D "$DB_NAME" --password="$DB_PASSWORD" --default-character-set=utf8mb4'
 
 [tasks.adb]
 description = "Run the ADB CLI from source"

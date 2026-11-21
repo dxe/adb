@@ -13,32 +13,31 @@ func IsProd() bool {
 	return val
 }
 
-// DBDataSource builds the MySQL DSN from environment variables. Unset
-// variables fall back to local development values unless PROD is true.
+// DBDataSource builds the MySQL DSN from environment variables.
 func DBDataSource() string {
-	return DBDataSourceForDB(devEnv("DB_NAME", shared.DevDBName))
+	return shared.BuildDBDataSource(
+		getEnv("DB_USER", ""),
+		getEnv("DB_PASSWORD", ""),
+		getEnv("DB_PROTOCOL", ""),
+		getEnv("DB_NAME", ""),
+		IsProd(),
+	)
 }
 
 // DBDataSourceForDB builds a MySQL DSN for a specific database name.
 func DBDataSourceForDB(dbName string) string {
 	return shared.BuildDBDataSource(
-		devEnv("DB_USER", shared.DevDBUser),
-		devEnv("DB_PASSWORD", shared.DevDBPassword),
-		devEnv("DB_PROTOCOL", shared.DevDBProtocol),
+		getEnv("DB_USER", ""),
+		getEnv("DB_PASSWORD", ""),
+		getEnv("DB_PROTOCOL", ""),
 		dbName,
 		IsProd(),
 	)
 }
 
-// devEnv returns the environment variable, or the local development default
-// when it is unset and PROD is not true. In prod there is no fallback, so a
-// missing value fails to connect rather than silently using dev settings.
-func devEnv(key, devDefault string) string {
+func getEnv(key, fallback string) string {
 	if v := os.Getenv(key); v != "" {
 		return v
 	}
-	if IsProd() {
-		return ""
-	}
-	return devDefault
+	return fallback
 }
