@@ -54,7 +54,7 @@ project_name="dxe-adb-${sanitized_workspace_name}"
 if [[ -n "${ADB_HOST_PORT:-}" ]]; then
   host_port="${ADB_HOST_PORT}"
   # When a host port is pinned via ADB_HOST_PORT, the app is expected to run with
-  # PORT set to the same value, so publish host->container 1:1. This keeps the
+  # ADB_PORT set to the same value, so publish host->container 1:1. This keeps the
   # port the Go server logs identical to the reachable host port (some tools pick
   # the URL to open by parsing the server's stdout).
   container_port="${ADB_HOST_PORT}"

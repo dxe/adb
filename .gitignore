@@ -1,6 +1,7 @@
 *.test
 .claude/settings.local.json
 CLAUDE.local.md
+mise.local.toml
 .playwright-mcp
 .DS_Store
 .env

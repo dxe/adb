@@ -46,6 +46,20 @@ DB_NAME = "{{ get_env(name='DB_NAME', default='adb_db') }}"
 DB_HOST = "{{ get_env(name='DB_HOST', default='127.0.0.1') }}"
 DB_PROTOCOL = "{{ get_env(name='DB_PROTOCOL', default='tcp(127.0.0.1:3306)') }}"
 
+# Dev server ports. To run several checkouts or worktrees side by side, give
+# each its own ports in a gitignored mise.local.toml next to this file, e.g.
+#
+#   [env]
+#   ADB_PORT = "8090"
+#   ADB_MEMBERS_PORT = "8091"
+#   ADB_NEXT_PORT = "3010"
+#
+# or set them in the environment for one run (`ADB_PORT=8090 mise run dev`).
+# They're prefixed rather than plain PORT because Next.js also reads PORT.
+ADB_PORT = "{{ get_env(name='ADB_PORT', default='8080') }}"
+ADB_MEMBERS_PORT = "{{ get_env(name='ADB_MEMBERS_PORT', default='8081') }}"
+ADB_NEXT_PORT = "{{ get_env(name='ADB_NEXT_PORT', default='3000') }}"
+
 # ---------------------------------------------------------------------------
 # Setup
 # ---------------------------------------------------------------------------
@@ -120,10 +134,10 @@ run = [
 # ---------------------------------------------------------------------------
 # Run
 #
-# The Go server listens on $PORT, defaulting to 8080, so parallel checkouts can
-# use distinct ports (e.g. `PORT=8090 mise run dev`). The frontend's browser
-# code uses relative URLs, so only server-side rendering reads
-# NEXT_PUBLIC_API_BASE_URL.
+# Ports come from ADB_PORT, ADB_MEMBERS_PORT and ADB_NEXT_PORT in [env] above.
+# The Go server proxies /v2/ to the Next.js dev server on ADB_NEXT_PORT. The
+# frontend's browser code uses relative URLs, so only server-side rendering
+# reads NEXT_PUBLIC_API_BASE_URL.
 # ---------------------------------------------------------------------------
 
 [tasks.dev]
@@ -133,10 +147,9 @@ run = "mise run dev:frontend ::: dev:backend"
 [tasks."dev:frontend"]
 description = "Run Next.js dev server (foreground)"
 dir = "frontend-v2"
-run = '''
-export NEXT_PUBLIC_API_BASE_URL="http://localhost:${PORT:-8080}"
-env -u PORT pnpm dev
-'''
+# An explicit --port makes Next fail if the port is taken, instead of silently
+# moving to another port the Go server isn't proxying to.
+run = 'NEXT_PUBLIC_API_BASE_URL="http://localhost:$ADB_PORT" pnpm dev --port "$ADB_NEXT_PORT"'
 
 [tasks."dev:backend"]
 description = "Run Go server (foreground)"
@@ -149,8 +162,11 @@ set -a
 . server/debug.env
 . server/.env
 set +a
+# Set after sourcing debug.env so these win over its defaults.
+export PORT="$ADB_PORT" MEMBERS_PORT="$ADB_MEMBERS_PORT" \
+  NEXT_JS_PROXY_URL="http://localhost:$ADB_NEXT_PORT"
 cd server/src
-PORT="${PORT:-8080}" go run main.go
+go run main.go
 '''
 
 # ---------------------------------------------------------------------------
