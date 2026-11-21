@@ -140,6 +140,7 @@ env -u PORT pnpm dev
 
 [tasks."dev:backend"]
 description = "Run Go server (foreground)"
+quiet = true
 run = '''
 [ -f server/.env ] || { echo "Error: server/.env not found. Run 'mise run deps' first."; exit 1; }
 # Install first so that we keep cached build objects around.
