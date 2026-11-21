@@ -27,6 +27,8 @@ def run(*cmd, **kwargs):
 
 
 repo_root = Path(__file__).resolve().parents[2]
+# Keep in sync with session-start.sh.
+SETUP_DONE_MARKER = Path.home() / ".local/state/adb/cloud-setup.done"
 os.chdir(repo_root)
 
 # --- Install mise, unless it's already installed ---------------------------------------------
@@ -35,13 +37,14 @@ if not shutil.which("mise"):
     run("bash", "-c", "curl -fsSL https://mise.run | sh", env=env)
 
 # --- Install the tools in mise.toml ----------------------------------------------------------
-# MISE_DISABLE_TOOLS=go,python must be set in the Claude environment's env vars (see
-# README.md), so mise doesn't install/shim these, here or in any later session:
+# Disable these in mise's global config (~/.config/mise/config.toml), so mise doesn't install
+# or shim them, here or in any later session, in this repo or any other:
 # - python: the VM already ships one, and mise's python shim (on PATH, see below) would
 #   interfere with python calls made outside mise projects.
 # - go: the VM already ships one, and go manages its own toolchain version (it downloads the
 #   version from the `go`/`toolchain` lines in go.mod as needed).
-disabled_tools = set(filter(None, os.environ.get("MISE_DISABLE_TOOLS", "").split(",")))
+for tool in ("go", "python"):
+    run("mise", "settings", "add", "disable_tools", tool)
 
 run("mise", "trust", "--yes", "mise.toml")
 # Installs the tools and warms the dependency caches baked into the environment snapshot.
@@ -89,9 +92,11 @@ except subprocess.CalledProcessError as e:
 errors = []
 if not env_file_ok:
     errors.append("CLAUDE_ENV_FILE is not set, so mise tools won't be on PATH.")
-if not {"go", "python"} <= disabled_tools:
-    errors.append("MISE_DISABLE_TOOLS must include go and python.")
 if errors:
     for error in errors:
         print(f"ERROR: {error}", file=sys.stderr)
     sys.exit("Fix the Claude environment's env vars; see .claude/cloud/README.md.")
+
+# Tells session-start.sh that setup already ran (e.g. as the environment's setup script).
+SETUP_DONE_MARKER.parent.mkdir(parents=True, exist_ok=True)
+SETUP_DONE_MARKER.touch()
