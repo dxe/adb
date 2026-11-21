@@ -14,6 +14,9 @@ pnpm = "10.32.1"
 go = "1.26.0"
 # Go debugger, used by VS Code's Go launch configs.
 "go:github.com/go-delve/delve/cmd/dlv" = "1.27.2"
+# Go language server for VS Code's Go extension. Installed here so the
+# extension finds it on PATH instead of building it on first launch.
+"go:golang.org/x/tools/gopls" = "0.24.0"
 # Pinned to avoid broken upstream "latest" releases (e.g. v2.12.1 had a
 # checksum mismatch on 2026-05-02).
 golangci-lint = "2.11.4"

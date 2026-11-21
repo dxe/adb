@@ -16,11 +16,25 @@
   "workspaceFolder": "/workspace",
   "shutdownAction": "stopCompose",
   "remoteUser": "vscode",
+  // Keep mise's installed tools in a named volume (mounted below) so rebuilds
+  // and other worktrees reuse them instead of re-downloading everything.
+  // Generated with `mise generate devcontainer --mount-mise-data`.
+  "containerEnv": {
+    "MISE_DATA_DIR": "/mnt/mise-data"
+  },
+  // Put mise's shims on PATH for everything VS Code launches (Go extension,
+  // Delve, debug sessions), which doesn't run through an activated shell. Each
+  // shim runs its tool via mise, so versions and [env] from mise.toml apply.
+  // The mise binary itself comes from the mise feature (/usr/local/bin).
+  "remoteEnv": {
+    "PATH": "/mnt/mise-data/shims:${containerEnv:PATH}"
+  },
   // Generate a per-worktree Compose override for the project name and mounts.
   "initializeCommand": "bash .devcontainer/write-workspace-compose.sh '${localWorkspaceFolder}'",
 
   // Features to add to the dev container. More info: https://containers.dev/features.
   "features": {
+    "ghcr.io/devcontainers-extra/features/mise:1": {},
     "ghcr.io/devcontainers/features/docker-in-docker:2": {
       "moby": true,
       "azureDnsAutoDetection": true,
@@ -58,7 +72,8 @@
         "ms-vscode.vscode-typescript-next",
         "esbenp.prettier-vscode",
         "GitHub.vscode-pull-request-github",
-        "vitest.explorer"
+        "vitest.explorer",
+        "hverlin.mise-vscode"
       ]
     }
   },
@@ -76,6 +91,9 @@
   // project gets its own isolated volume rather than sharing one across all devcontainers
   // on the same Docker host.
   "mounts": [
-    "source=claude-code-config-${devcontainerId},target=/home/vscode/.claude,type=volume"
+    "source=claude-code-config-${devcontainerId},target=/home/vscode/.claude,type=volume",
+    // Shared across projects and worktrees on purpose: it's only a cache of
+    // tool installs, keyed by tool and version.
+    "source=mise-data-volume,target=/mnt/mise-data,type=volume"
   ]
 }
