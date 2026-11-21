@@ -16,6 +16,9 @@ services:
     memswap_limit: 8g
     env_file: ../server/dev-db.env
     environment:
+      # No standard variable marks a devcontainer (VS Code's REMOTE_CONTAINERS
+      # isn't set under `devcontainer exec`), so set one. Read by mise.toml.
+      - DEVCONTAINER=true
       - DB_HOST=mysql
       - DB_PROTOCOL=tcp(mysql:3306)
       - ADB_REPO_ROOT=/workspace

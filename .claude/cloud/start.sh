@@ -7,14 +7,8 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 source .claude/cloud/env.sh
 
 # Project dependencies (node, go, `migrate`), kept in sync with the checked-out
-# branch. Must precede `make dev_db` below, which uses `migrate`.
-make deps
-
-# Shell helper functions (e.g. `db`, `adb`). Re-copied each session so edits to
-# the repo's functions are picked up.
-cp scripts/shell/adb_functions.bash ~/.bash_adb_functions
-grep -qF '.bash_adb_functions' ~/.bash_profile 2>/dev/null ||
-  cat scripts/shell/profile.bash >> ~/.bash_profile
+# branch. Must precede `mise run db:reset` below.
+mise run deps
 
 .claude/cloud/start-docker.sh
 
@@ -38,5 +32,5 @@ mysqladmin ping -h127.0.0.1 -u"$DB_USER" -p"$DB_PASSWORD" --silent
 tables=$(mysql -h127.0.0.1 -u"$DB_USER" -p"$DB_PASSWORD" -N -e \
   "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$DB_NAME'" 2>/dev/null)
 if [ "$tables" = 0 ]; then
-  make dev_db
+  mise run db:reset
 fi

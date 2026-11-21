@@ -9,16 +9,17 @@ Activist Database Project
 The following dependencies are required to run this project and will be already
 installed if using the devcontainer:
 
-- Make
-- Go and Delve (Go debugger)
-- NVM (node version manager)
+- [mise](https://mise.jdx.dev/) (installs the pinned Go, Delve (Go debugger),
+  golangci-lint, Node, pnpm and `migrate` versions from `mise.toml`, and runs
+  project tasks; `mise tasks` lists them)
+- make (only for `jobs/`)
 - Docker
 - MySql client
 
 Running this command is required to download all the go and node dependencies:
 
 ```bash
-make deps
+mise run deps
 ```
 
 #### Set up mysql locally for development
@@ -27,17 +28,17 @@ If you are not using the devcontainer, you can use our Docker Compose configurat
 to run MySQL locally:
 
 ```bash
-( cd server/ && docker compose up -d --wait )
-make dev_db
+mise run db:up
+mise run db:reset
 ```
 
 If you are using the devcontainer, just run this command in the container:
 
 ```bash
-make dev_db
+mise run db:reset
 ```
 
-You can log into the database from the devcontainer by just typing `db` in the shell.
+You can log into the database by running `mise db` (or just `db` in a shell where mise is activated; see the `[shell_alias]` section of `mise.toml`).
 
 To seed data into the database for various testing scenarios, check out the [ADB CLI](./cli/README.md) "seed" command.
 
@@ -50,16 +51,15 @@ clicking the "Debug" button.
 After downloading the dependencies, start the development servers. There are two
 ways to do this.
 
-The first way is using the configuration in Makefile. This runs the React app
-in the background and then runs the Go server.
+The first way is using the tasks in `mise.toml`. This runs the React app and
+the Go server in parallel, with each line of output prefixed by its task name.
 
 ```bash
-# Convenient but does not allow viewing server output separately.
-make run_all
+mise run dev
 
 # Or run each server in its own terminal:
-make run_frontend
-make run_backend
+mise run dev:frontend
+mise run dev:backend
 ```
 
 The other way is using VS Code launch configurations. This allows you to see
@@ -88,7 +88,7 @@ Access the Members app at members.dxesf.org at http://localhost:8081/
 
 ### Code formatting
 
-Please run `make fmt` before sending a pull request.
+Please run `mise run fmt` before sending a pull request.
 
 Note that `prettier` is configured at the root of the repo and not within individual projects, although project-specifc
 configuration can be applied in the configuration file. This allows formatting the repo with one invocation of prettier,
@@ -97,11 +97,11 @@ versions or configurations of prettier.
 
 ### Test
 
-Please run `make test` before sending a pull request.
+Please run `mise run test` before sending a pull request.
 
 Note the tests take several minutes to run, even though some of them
 finish quickly. To check if any tests are hanging, you can add "-v -p 1" after
-"go test" args in the Makefile to show individual test names and to run them
+"go test" args in the "test:server" task in mise.toml to show individual test names and to run them
 in serial.
 
 ### JS
@@ -173,7 +173,7 @@ Please reach out to tech@dxe.io to get an API key to sign people up.
 - GOOGLE_PLACES_API_KEY
 
 This key is not in `server/debug.env`. To use the location picker locally, add
-it to `server/.env` (created empty by `make deps`, loaded on top of
+it to `server/.env` (created empty by `mise run deps`, loaded on top of
 `server/debug.env`). See `server/.env.example` for the available keys:
 
 ```

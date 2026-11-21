@@ -1,13 +1,10 @@
-# Load shared shell functions
-[ -f "$HOME/.bash_adb_functions" ] && source "$HOME/.bash_adb_functions"
-
 # Add git support for bash-completion. Assumes bash-completion apt package is
 # installed. devcontainer.json should install it automatically.
 source /usr/share/bash-completion/completions/git
 
 ### Useful aliases for development ###
 
-# Load ADB bash completion for the adb shell helper in interactive shells.
+# Load ADB bash completion for the `adb` mise shell alias in interactive shells.
 if [[ $- == *i* ]]; then
   # Store the generated completion script in a persistent cache so new shells
   # can source a file directly instead of running `go run` every time.

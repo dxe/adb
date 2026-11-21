@@ -11,16 +11,18 @@ Cloud VM setup is managed in the repo; see [.claude/cloud/README.md](.claude/clo
 
 ### first-time setup and running
 
+Tool versions (Go, Node, pnpm, golangci-lint, Delve, `migrate`) and dev tasks are defined in [mise.toml](mise.toml). Run `mise tasks` to list tasks.
+
 Run these in order on a fresh checkout (the cloud VM does this for you; see the cloud README):
 
-1. `make deps` — installs Node/pnpm, creates `server/.env`, downloads Go and node deps.
-2. MySQL must be running. In the devcontainer it already is; elsewhere: `( cd server && docker compose up -d --wait )`.
-3. `make dev_db` — wipes and re-creates the dev database and dev user.
+1. `mise run deps` — installs Go/Node/pnpm and other tools, creates `server/.env`, downloads Go and node deps.
+2. MySQL must be running. In the devcontainer it already is; elsewhere: `mise run db:up`.
+3. `mise run db:reset` — wipes and re-creates the dev database and dev user.
 
 To run the app:
 
-- `make run_backend` — Go server (port 8080)
-- `make run_frontend` — Next.js dev server, proxied by Go server
+- `mise run dev:backend` — Go server (port 8080)
+- `mise run dev:frontend` — Next.js dev server, proxied by Go server
 
 Then access in browser at `http://localhost:8080/v2/`.
 
@@ -59,11 +61,11 @@ Rules regarding the Next.js app in ./frontend-v2
 ### frontend-v2-debugging
 
 - Scope: ./frontend-v2
-- Rule: Do not try to fix devserver issues such as live reloading issues without first running `make clean`, then `make deps` and asking user to restart devcontainer.
+- Rule: Do not try to fix devserver issues such as live reloading issues without first running `mise run clean`, then `mise run deps` and asking user to restart devcontainer.
 
 ### playwright-mcp
 
-- If running in the devcontainer, `make install_playwright` before invoking Playwright MCP to install the browser.
+- If running in the devcontainer, `mise run install-playwright` before invoking Playwright MCP to install the browser.
 - In the Claude Code cloud VM, Playwright is already set up.
 
 ## backend
@@ -78,7 +80,7 @@ Rules regarding Go server in ./server
 ### go-deps-sync
 
 - Scope: `**/go.mod`, `**/go.sum`, `go.work`, `go.work.sum`
-- Rule: After adding or updating Go dependencies in any module (`pkg`, `cli`, `server/src`), run `make go_mod_sync`. This ensures all transitive dependency hashes are fully resolved at both the individual module and workspace levels.
+- Rule: After adding or updating Go dependencies in any module (`pkg`, `cli`, `server/src`), run `mise run go-mod-sync`. This ensures all transitive dependency hashes are fully resolved at both the individual module and workspace levels.
 
 ### go-backend-error-wrapping
 
@@ -97,8 +99,8 @@ Rules regarding the MySql database.
 ### connect-to-mysql
 
 - Scope: database schema questions and live database manipulation
-- Rule: query the live MySQL schema via the `db` shell function which wraps the `mysql` with the correct database and dev credentials. It is already sourced for you from `~/.bash_profile`. Fall back to migration files only as needed.
-- Example: `db -e "SHOW COLUMNS FROM activists"`.
+- Rule: query the live MySQL schema via the `db` mise task which wraps `mysql` with the correct database and dev credentials. Fall back to migration files only as needed.
+- Example: `mise db -e "SHOW COLUMNS FROM activists"`.
 
 ### db-migrations
 
@@ -111,8 +113,8 @@ Context for using the CLI, located in ./cli
 
 ### cli-usage
 
-- The CLI is available to you as a shell function called `adb`. It is already sourced for you from `~/.bash_profile` and environment variables are already configured to connect to the dev database.
-- You can run `adb -h` for usage instructions.
+- The CLI is available to you as a mise task called `adb` (e.g. `mise adb activists count`), which runs the CLI from source. Environment variables are already configured to connect to the dev database.
+- You can run `mise adb -- -h` for usage instructions. Flags mise itself understands (`-h`, `--help`) must come after `--`.
 
 ## preferences
 

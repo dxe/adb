@@ -3,7 +3,7 @@ package shared
 import "fmt"
 
 // DBConnParams are the MySQL connection parameters shared by all environments.
-// Please keep relevant options in sync with the db() function in scripts/shell/adb_functions.bash.
+// Please keep relevant options in sync with the "db" task in mise.toml.
 const DBConnParams = "parseTime=true&charset=utf8mb4&clientFoundRows=true"
 
 // Local development database settings, used as fallbacks by the server and CLI

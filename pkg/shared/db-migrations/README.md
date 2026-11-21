@@ -2,7 +2,7 @@
 
 This project uses [`golang-migrate`](https://github.com/golang-migrate/migrate) for migrations.
 
-The `make deps` command installs the CLI and makes the `migrate` command available.
+`mise run deps` installs the CLI (version pinned in `mise.toml`) and makes the `migrate` command available.
 
 ## Executing migrations
 
