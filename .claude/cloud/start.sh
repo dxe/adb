@@ -12,6 +12,14 @@ mise run deps
 
 .claude/cloud/start-docker.sh
 
+# The mysql clients come from mise; their shims are put on PATH by setup.py via
+# $CLAUDE_ENV_FILE. Fail fast if that didn't reach this shell, rather than
+# retrying the ping below for minutes with its errors hidden.
+command -v mysqladmin >/dev/null || {
+  echo "mysqladmin not on PATH; are mise's shims on PATH? See .claude/cloud/README.md." >&2
+  exit 1
+}
+
 if docker ps -a --format '{{.Names}}' | grep -qx adb-mysql; then
   docker start adb-mysql >/dev/null
 else
