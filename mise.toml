@@ -27,15 +27,20 @@ python = "3.12"
 # Keep gopls (Go language server, for VS Code's Go extension) and delve (Go
 # debugger, for VS Code's Go launch configs) installed and at their latest
 # releases, so VS Code finds them on PATH instead of building them on first
-# launch. They're editor tools, so they go in mise's *global* config and work
-# in any directory. This sets them to "latest" there, replacing any version
-# pinned in that config. It's quick when they're already up to date.
+# launch. This uses `go install` rather than mise's go: backend so they're
+# rebuilt with the current Go when it's upgraded (mise keys its installs on
+# the gopls/delve version only, keeping a gopls built with the old Go), and so
+# the hook doesn't rewrite the user's global mise config. mise sets GOBIN to
+# its Go install's bin dir, so `mise reshim` gives them shims. It's quick
+# when they're already up to date.
 # Skipped in the Claude Code cloud VM, where they're slow to build (from
 # source) and rarely needed; agents install them there on demand.
 [hooks]
 postinstall = """
 [ "${CLAUDE_CODE_REMOTE:-}" = true ] && exit 0
-mise use -g go:golang.org/x/tools/gopls@latest go:github.com/go-delve/delve/cmd/dlv@latest \
+{ mise exec -- go install golang.org/x/tools/gopls@latest \
+  && mise exec -- go install github.com/go-delve/delve/cmd/dlv@latest \
+  && mise reshim; } \
   || echo "warning: couldn't install or update gopls and delve" >&2
 """
 

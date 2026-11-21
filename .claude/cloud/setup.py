@@ -43,7 +43,8 @@ if not shutil.which("mise"):
 #   interfere with python calls made outside mise projects.
 # - go: the VM already ships one, and go manages its own toolchain version (it downloads the
 #   version from the `go`/`toolchain` lines in go.mod as needed).
-# (gopls and delve aren't installed in the cloud VM either; see the postinstall hook in mise.toml.)
+# (gopls and delve aren't installed in the cloud VM either; see the postinstall hook in mise.toml
+# and the gopls-in-cloud-vm rule in AGENTS.md.)
 for tool in ("go", "python"):
     run("mise", "settings", "add", "disable_tools", tool)
 
@@ -63,16 +64,23 @@ run("mise", "run", "deps")
 # The environment's setup script doesn't get CLAUDE_ENV_FILE, so use the path the Claude
 # environment's env vars set it to for sessions (see README.md). When the SessionStart hook runs
 # this instead, Claude Code sets CLAUDE_ENV_FILE to the session's own env file, so use that.
-# In multi-repo environments, another repo's setup script may already have added the shims, so
-# only add them if the file doesn't mention them yet.
+#
+# Also put Go's GOBIN on PATH, so tools Claude installs on demand with `go install` (e.g. gopls,
+# see AGENTS.md) are found. The VM's go (mise's is disabled above) leaves GOBIN unset, so they go
+# to $(go env GOPATH)/bin, i.e. ~/go/bin.
+#
+# In multi-repo environments, another repo's setup script may already have added these, so only
+# add each one if the file doesn't mention it yet.
 env_path = Path(os.environ.get("CLAUDE_ENV_FILE") or "/root/.dxe-claude-env.sh")
 existing = env_path.read_text() if env_path.exists() else ""
-if "mise/shims" not in existing:
+missing = [d for d in ("$HOME/.local/share/mise/shims", "$HOME/go/bin") if d not in existing]
+if missing:
     env_path.parent.mkdir(parents=True, exist_ok=True)
     with env_path.open("a") as f:
         if existing and not existing.endswith("\n"):
             f.write("\n")
-        f.write('export PATH="$HOME/.local/share/mise/shims:$PATH"\n')
+        for d in missing:
+            f.write(f'export PATH="{d}:$PATH"\n')
 
 # --- Pre-pull the MySQL image so session start is fast (best effort) -------------------------
 try:

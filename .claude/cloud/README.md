@@ -13,7 +13,8 @@ The cloud VM has no devcontainer, so the repo provides the equivalent setup here
 When `setup.py` is the environment's setup script, set
 `CLAUDE_ENV_FILE=/root/.dxe-claude-env.sh` in the Claude environment's env vars.
 The setup script doesn't get that env var, so `setup.py` uses that path directly
-to add mise's shims to `PATH` (unless another repo's setup script already did).
+to add mise's shims and `~/go/bin` (for tools installed with `go install`) to
+`PATH` (unless another repo's setup script already did).
 Sessions do get it, and Claude Code sources the file before every Bash command.
 When the SessionStart hook runs `setup.py`, it uses the session's own
 `CLAUDE_ENV_FILE` from Claude Code instead.

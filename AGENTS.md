@@ -83,7 +83,7 @@ Rules regarding Go server in ./server
 ### gopls-in-cloud-vm
 
 - Scope: Go tasks in the cloud VM
-- Rule: gopls isn't installed in the cloud VM. If you need it, install it with `mise use -g go:golang.org/x/tools/gopls` (~1 min).
+- Rule: gopls isn't installed in the cloud VM. If you need it, install it with `go install golang.org/x/tools/gopls@latest` (~1 min).
 
 ### go-deps-sync
 
