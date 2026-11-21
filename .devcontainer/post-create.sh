@@ -2,9 +2,10 @@
 set -euo pipefail
 
 # Fresh named volumes mount as root:root; chown so vscode can write.
-sudo chown -R vscode:vscode /home/vscode/.claude
+sudo chown -R vscode:vscode /home/vscode/.claude /mnt/mise-data
 
-# Make bash functions available in both interactive and non-interactive shells.
-cp /workspace/scripts/shell/adb_functions.bash ~/.bash_adb_functions
+# Install the tools pinned in /workspace/mise.toml. mise itself comes from the
+# devcontainer feature; installs land in the mise-data volume (MISE_DATA_DIR).
+mise -C /workspace install
+
 cat /workspace/.devcontainer/.bashrc >> ~/.bashrc
-cat /workspace/scripts/shell/profile.bash >> ~/.bash_profile

@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7-labs
 # Based off of Next.js Docker example
 # https://github.com/vercel/next.js/tree/canary/examples/with-docker
-# Please keep Node and pnpm version in sync with Makefile
+# Please keep Node and pnpm version in sync with mise.toml
 ARG PNPM_VERSION=10.32.1
 FROM node:26-alpine AS build-base
 ARG PNPM_VERSION

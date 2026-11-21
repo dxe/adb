@@ -1,0 +1,241 @@
+# Tool versions and dev tasks for this repo. Run `mise tasks` to list tasks and
+# `mise run <task>` to run one (e.g. `mise run deps`).
+#
+# This file is the source of truth for dev tool versions. Please keep them in
+# sync with:
+# * Node, pnpm: package.json (`packageManager`, `engines`), Dockerfile.frontend-v2
+# * Go: the `go` line in each go.mod, Dockerfile, Dockerfile.cli
+# * Python: the deploy-lambdas job in .github/workflows/main.yml
+# CI reads the Node and pnpm versions from here and Go from server/src/go.mod.
+
+[tools]
+node = "26"
+pnpm = "10.32.1"
+go = "1.26.0"
+# Go debugger, used by VS Code's Go launch configs.
+"go:github.com/go-delve/delve/cmd/dlv" = "1.27.2"
+# Go language server for VS Code's Go extension. Installed here so the
+# extension finds it on PATH instead of building it on first launch.
+"go:golang.org/x/tools/gopls" = "0.24.0"
+# Pinned to avoid broken upstream "latest" releases (e.g. v2.12.1 had a
+# checksum mismatch on 2026-05-02).
+golangci-lint = "2.11.4"
+# Prebuilt release binaries include the MySQL driver.
+"aqua:golang-migrate/migrate" = "4.20.1"
+# `mysql` and `mysqladmin` clients, used by the `db` task and the cloud VM
+# scripts (development / debugging only; not an app dependency).
+mysql-client = "9.7.4"
+# Runs aws-sam-cli for deploying jobs/ (see jobs/README.md).
+python = "3.12"
+
+# Set in shells where mise is activated (`mise activate`), inside this repo.
+# The `--` passes flags like -h through to mysql/the CLI instead of mise.
+[shell_alias]
+db = "mise run db --"
+adb = "mise run adb --"
+
+# Local dev database defaults, used by every task (and by shells where mise is
+# activated). Values already in the environment win, e.g. the devcontainer's
+# DB_HOST/DB_PROTOCOL (.devcontainer/compose.extend.yaml) or the cloud VM's
+# (.claude/cloud/env.sh). Credentials match server/dev-db.env and
+# server/scripts/init.sql; the host and port match server/compose.yaml.
+[env]
+DB_USER = "{{ get_env(name='DB_USER', default='adb_user') }}"
+DB_PASSWORD = "{{ get_env(name='DB_PASSWORD', default='adbpassword') }}"
+DB_NAME = "{{ get_env(name='DB_NAME', default='adb_db') }}"
+DB_HOST = "{{ get_env(name='DB_HOST', default='127.0.0.1') }}"
+DB_PROTOCOL = "{{ get_env(name='DB_PROTOCOL', default='tcp(127.0.0.1:3306)') }}"
+
+# ---------------------------------------------------------------------------
+# Setup
+# ---------------------------------------------------------------------------
+
+[tasks.deps]
+description = "Install all deps for this project"
+run = [
+  # Both `mise run dev:backend` and the VS Code "Go Server" launch config load
+  # server/.env unconditionally (layered on server/debug.env) and error if it's
+  # missing, so deps (the required first step) creates it.
+  "touch server/.env",
+  "mise install",
+  "pnpm i --config.confirmModulesPurge=false",
+  "cd frontend-v2 && pnpm i --config.confirmModulesPurge=false",
+  "cd pkg && go mod download",
+  "cd server/src && go mod download",
+  "cd cli && go mod download",
+]
+
+# Skipped in the devcontainer, whose Compose config already runs MySQL.
+# DEVCONTAINER is set in .devcontainer/compose.extend.yaml; REMOTE_CONTAINERS
+# is set by VS Code.
+[tasks."db:up"]
+description = "Start the local MySQL server in Docker and wait until it's healthy"
+dir = "server"
+run = '''
+if [ "${DEVCONTAINER:-}" = true ] || [ "${REMOTE_CONTAINERS:-}" = true ]; then
+  echo "In the devcontainer; MySQL is already running from its Compose config."
+  exit 0
+fi
+docker compose up -d --wait
+'''
+
+[tasks."db:reset"]
+description = "Wipe and re-create the dev databases (see README)"
+dir = "cli"
+run = 'go run . db create --dev-email="${DXE_DEV_EMAIL:-test-dev@directactioneverywhere.com}"'
+
+# Shell helpers. Extra args are passed through, e.g.
+#   mise db -e "SHOW COLUMNS FROM activists"
+#   mise adb seed activists
+# Put flags mise itself understands (-h, --help) after `--`: `mise adb -- -h`.
+# Both run in the caller's directory so relative paths in args work.
+
+# Please keep options in sync with DBConnParams in pkg/shared/db.go.
+[tasks.db]
+description = "Open a mysql client on the dev database"
+dir = "{{cwd}}"
+raw = true
+quiet = true
+# MYSQL_PWD avoids MySQL's "password on the command line" warning.
+run = 'MYSQL_PWD="$DB_PASSWORD" mysql -u "$DB_USER" -h "$DB_HOST" -D "$DB_NAME" --default-character-set=utf8mb4'
+
+[tasks.adb]
+description = "Run the ADB CLI from source"
+dir = "{{cwd}}"
+raw = true
+quiet = true
+run = 'go run "{{config_root}}/cli"'
+
+[tasks.install-playwright]
+description = "Install the browser binary and system libraries used by the Playwright MCP"
+run = "bash scripts/shell/install-playwright.sh"
+
+[tasks.git-hooks]
+description = "Install git hooks"
+run = [
+  "[ -h .git/hooks/pre-commit ] || ln -s ../../.githooks/pre-commit .git/hooks/pre-commit",
+  "[ -h .git/hooks/pre-push ] || ln -s ../../.githooks/pre-push .git/hooks/pre-push",
+]
+
+# ---------------------------------------------------------------------------
+# Run
+#
+# The Go server listens on $PORT, defaulting to 8080, so parallel checkouts can
+# use distinct ports (e.g. `PORT=8090 mise run dev`). The frontend's browser
+# code uses relative URLs, so only server-side rendering reads
+# NEXT_PUBLIC_API_BASE_URL.
+# ---------------------------------------------------------------------------
+
+[tasks.dev]
+description = "Run the Next.js dev server and the Go server together"
+run = "mise run dev:frontend ::: dev:backend"
+
+[tasks."dev:frontend"]
+description = "Run Next.js dev server (foreground)"
+dir = "frontend-v2"
+run = '''
+export NEXT_PUBLIC_API_BASE_URL="http://localhost:${PORT:-8080}"
+env -u PORT pnpm dev
+'''
+
+[tasks."dev:backend"]
+description = "Run Go server (foreground)"
+quiet = true
+run = '''
+[ -f server/.env ] || { echo "Error: server/.env not found. Run 'mise run deps' first."; exit 1; }
+# Install first so that we keep cached build objects around.
+(cd server/src && go install)
+set -a
+. server/debug.env
+. server/.env
+set +a
+cd server/src
+PORT="${PORT:-8080}" go run main.go
+'''
+
+# ---------------------------------------------------------------------------
+# Test, lint, format
+# ---------------------------------------------------------------------------
+
+[tasks.test]
+description = "Run all tests"
+depends = ["test:server", "test:frontend"]
+
+[tasks."test:server"]
+dir = "server/src"
+run = "go test ./..."
+
+[tasks."test:frontend"]
+dir = "frontend-v2"
+run = "pnpm test --run"
+
+[tasks.lint]
+description = "Run golangci-lint on all Go modules"
+# TODO: Run linter automatically once existing lint errors are fixed.
+run = '''
+for mod in pkg cli server/src; do
+  (cd "$mod" && golangci-lint run ./...) || exit $?
+done
+'''
+
+[tasks.fmt]
+description = "Reformat source files"
+# Keep in sync with .githooks/pre-commit.
+run = [
+  "cd server && gofmt -w .",
+  "pnpm exec prettier --write --cache --cache-strategy metadata .",
+]
+
+# Normalize module/workspace metadata across all Go modules. Runs twice
+# because workspace-level resolution can surface new transitive deps that
+# require a second pass to stabilize go.mod/go.sum.
+#
+# Each pass tidies each module with GOWORK=off so each go.mod/go.sum reflects
+# only its own dependency graph (independent of the workspace), then `go work
+# sync` reconciles selected versions across the workspace.
+#
+# The trailing `go list -m all` resolves the workspace module graph so
+# go.work.sum picks up the /go.mod hashes Go's lazy loader records for
+# transitive deps it had to consider but didn't select. Without it, the first
+# workspace-mode invocation afterward (another `go list -m all`, gopls in the
+# IDE, etc.) writes those entries and leaves go.work.sum dirty.
+[tasks.go-mod-sync]
+description = "Normalize Go module metadata across the workspace"
+run = '''
+for pass in 1 2; do
+  for mod in pkg cli server/src jobs; do
+    (cd "$mod" && GOWORK=off go mod tidy)
+  done
+  go work sync
+  (cd server/src && go list -m all >/dev/null)
+done
+'''
+
+[tasks.clean]
+description = "Clean all built outputs"
+run = "rm -rf cli/adb server/adb-server frontend-v2/out frontend-v2/.next"
+
+# ---------------------------------------------------------------------------
+# Docker
+# ---------------------------------------------------------------------------
+
+[tasks."docker:build"]
+description = "Build the production Docker images"
+run = [
+  "docker build . -t dxe/adb",
+  "docker build . -f Dockerfile.frontend-v2 -t dxe/adb-next",
+  "docker build . -f Dockerfile.cli -t dxe/adb-cli",
+]
+
+# --net=host runs the container in the same network as the devcontainer created
+# by the devcontainer's docker-compose config.
+[tasks."docker:run"]
+description = "Build and run the server Docker image locally"
+run = [
+  "docker build . -t dxe/adb",
+  "docker container run --rm -p 8080:8080 --net=host -it --name adbtest --env-file server/dev-db.env -e DB_PROTOCOL='tcp(mysql:3306)' dxe/adb",
+]
+
+[tasks."docker:shell"]
+description = "Open a shell inside the running docker:run container"
+run = "docker exec -it adbtest /bin/ash"

@@ -13,7 +13,7 @@ Run `adb --help`, or any subcommand with `--help`, to see available commands.
 If not using the devcontainer, be sure to set environment variables defined in `adb --help`. The devcontainer already
 defines all the required variables.
 
-Note that the devcontainer provides a bash alias to run `adb` without explicitly building any binary file.
+During development, run the CLI from source without building a binary with `mise adb [command]` (put `-h`/`--help` after `--`, e.g. `mise adb -- -h`). In a shell where mise is activated, the `adb` shell alias (see `mise.toml`) does this, so `adb -h` works directly.
 
 ## Docker image
 
@@ -26,10 +26,10 @@ locally may be useful to test the docker image before deploying it for productio
 docker build . -f Dockerfile.cli -t dxe/adb-cli
 ```
 
-Or via the Makefile:
+Or build all production images via mise:
 
 ```sh
-make prod_build
+mise run docker:build
 ```
 
 ### Running dockerized CLI locally

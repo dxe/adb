@@ -16,11 +16,25 @@
   "workspaceFolder": "/workspace",
   "shutdownAction": "stopCompose",
   "remoteUser": "vscode",
+  // Keep mise's installed tools in a named volume (mounted below) so rebuilds
+  // and other worktrees reuse them instead of re-downloading everything.
+  // Generated with `mise generate devcontainer --mount-mise-data`.
+  "containerEnv": {
+    "MISE_DATA_DIR": "/mnt/mise-data"
+  },
+  // Put mise's shims on PATH for everything VS Code launches (Go extension,
+  // Delve, debug sessions), which doesn't run through an activated shell. Each
+  // shim runs its tool via mise, so versions and [env] from mise.toml apply.
+  // The mise binary itself comes from the mise feature (/usr/local/bin).
+  "remoteEnv": {
+    "PATH": "/mnt/mise-data/shims:${containerEnv:PATH}"
+  },
   // Generate a per-worktree Compose override for the project name and mounts.
   "initializeCommand": "bash .devcontainer/write-workspace-compose.sh '${localWorkspaceFolder}'",
 
   // Features to add to the dev container. More info: https://containers.dev/features.
   "features": {
+    "ghcr.io/devcontainers-extra/features/mise:1": {},
     "ghcr.io/devcontainers/features/docker-in-docker:2": {
       "moby": true,
       "azureDnsAutoDetection": true,
@@ -28,32 +42,18 @@
       "version": "latest",
       "dockerDashComposeVersion": "v2"
     },
-    "ghcr.io/devcontainers/features/go:1": {
-      // Please keep in sync with server/src/go.mod
-      "version": "1.26.0",
-      // Pin to avoid broken upstream "latest" releases (e.g. v2.12.1 had a
-      // checksum mismatch on 2026-05-02).
-      "golangciLintVersion": "2.11.4"
-    },
-    "ghcr.io/devcontainers/features/node:2": {
-      "nodeGypDependencies": true,
-      "version": "26" // Match version from Makefile NODE_VERSION
-    },
-    "ghcr.io/jungaretti/features/make:1": {},
+    // Go, golangci-lint, Delve, Node, pnpm, Python and the mysql client are
+    // installed by mise (see mise.toml) in post-create.sh.
     "ghcr.io/rocker-org/devcontainer-features/apt-packages:1": {
-      // mariadb-client package provides the `mysql` command for
-      //     development / debugging purposes (not an app dependeny).
       // bash-completion is useful for entering git commands in the devcontainer
       //     and our .bashrc requires this.
       // gnupg2 enables gpg signing of git commits:
       //     https://code.visualstudio.com/remote/advancedcontainers/sharing-git-credentials#_sharing-gpg-keys
-      "packages": "mariadb-client,bash-completion,gnupg2"
+      // build-essential provides make (used by jobs/Makefile) and lets
+      //     node-gyp build native npm modules.
+      "packages": "bash-completion,gnupg2,build-essential"
     },
-    "ghcr.io/devcontainers/features/aws-cli:1": {},
-    "ghcr.io/devcontainers/features/python:1": {
-      "version": "3.12",
-      "installTools": false
-    }
+    "ghcr.io/devcontainers/features/aws-cli:1": {}
   },
   "customizations": {
     "vscode": {
@@ -72,7 +72,8 @@
         "ms-vscode.vscode-typescript-next",
         "esbenp.prettier-vscode",
         "GitHub.vscode-pull-request-github",
-        "vitest.explorer"
+        "vitest.explorer",
+        "hverlin.mise-vscode"
       ]
     }
   },
@@ -90,6 +91,9 @@
   // project gets its own isolated volume rather than sharing one across all devcontainers
   // on the same Docker host.
   "mounts": [
-    "source=claude-code-config-${devcontainerId},target=/home/vscode/.claude,type=volume"
+    "source=claude-code-config-${devcontainerId},target=/home/vscode/.claude,type=volume",
+    // Shared across projects and worktrees on purpose: it's only a cache of
+    // tool installs, keyed by tool and version.
+    "source=mise-data-volume,target=/mnt/mise-data,type=volume"
   ]
 }

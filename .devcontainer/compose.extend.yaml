@@ -16,9 +16,14 @@ services:
     memswap_limit: 8g
     env_file: ../server/dev-db.env
     environment:
+      # No standard variable marks a devcontainer (VS Code's REMOTE_CONTAINERS
+      # isn't set under `devcontainer exec`), so set one. Read by mise.toml.
+      - DEVCONTAINER=true
       - DB_HOST=mysql
       - DB_PROTOCOL=tcp(mysql:3306)
       - ADB_REPO_ROOT=/workspace
+      # Trust the repo's mise.toml without a `mise trust` prompt.
+      - MISE_TRUSTED_CONFIG_PATHS=/workspace
   mysql: # extending server/compose.yaml
     # The devcontainer reaches MySQL over the Compose network, so do not bind
     # the database to the host where parallel worktrees would fight over 3306.

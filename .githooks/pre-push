@@ -11,7 +11,7 @@ fi
 DIR="$( cd "$( dirname "$( readlink -f "${BASH_SOURCE[0]}" )" )" && pwd )"
 cd "$DIR/.."
 
-CMD="make test"
+CMD="mise run test"
 protected_branch='main'
 current_branch=$(git symbolic-ref HEAD | sed -e 's,.*/\(.*\),\1,')
 

@@ -7,13 +7,12 @@
     {
       "name": "React Frontend",
       "request": "launch",
-      "runtimeArgs": ["run-script", "dev"],
+      // mise picks the Node and pnpm versions from mise.toml.
+      "runtimeExecutable": "mise",
+      "runtimeArgs": ["exec", "--", "pnpm", "dev"],
       "cwd": "${workspaceFolder}/frontend-v2",
-      "runtimeExecutable": "npm",
       "skipFiles": ["<node_internals>/**"],
       "type": "node",
-      // Please keep in sync with Makefile
-      "runtimeVersion": "26",
       "env": {
         "NEXT_PUBLIC_API_BASE_URL": "http://localhost:8080",
       },
@@ -34,9 +33,10 @@
       "request": "launch",
       "mode": "debug",
       "program": "${workspaceFolder}/server/src/main.go",
-      // Please keep in sync with Makefile `run`. server/.env layers local
-      // secrets (e.g. GOOGLE_PLACES_API_KEY) on top of debug.env. The debugger
-      // errors if a listed file is missing, so `make deps` creates server/.env
+      // Please keep in sync with the "dev:backend" task in mise.toml. server/.env
+      // layers local secrets (e.g. GOOGLE_PLACES_API_KEY) on top of debug.env.
+      // The debugger errors if a listed file is missing, so `mise run deps`
+      // creates server/.env
       // to guarantee it exists.
       "envFile": [
         "${workspaceFolder}/server/dev-db.env",
@@ -48,26 +48,25 @@
       // Runs all Go tests across all packages. For debugging individual
       // test files with breakpoints, use the "run test" CodeLens above
       // each test function instead.
-      // Intentionally uses a Node launch config only to expose a Make-based
+      // Intentionally uses a Node launch config only to expose a mise-based
       // test command in the Run/Debug UI; no Node debugging occurs here.
       "name": "Tests: Server",
       "type": "node",
       "request": "launch",
-      "runtimeExecutable": "make",
-      "runtimeArgs": ["test-server"],
+      "runtimeExecutable": "mise",
+      "runtimeArgs": ["run", "test:server"],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
     },
     {
       "name": "Tests: React Frontend",
       "request": "launch",
-      "runtimeArgs": ["test", "--run"],
+      // mise picks the Node and pnpm versions from mise.toml.
+      "runtimeExecutable": "mise",
+      "runtimeArgs": ["exec", "--", "pnpm", "test", "--run"],
       "cwd": "${workspaceFolder}/frontend-v2",
-      "runtimeExecutable": "pnpm",
       "skipFiles": ["<node_internals>/**"],
       "type": "node",
-      // Please keep in sync with Makefile
-      "runtimeVersion": "26",
       "console": "integratedTerminal",
     },
   ],
