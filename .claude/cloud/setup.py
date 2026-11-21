@@ -57,27 +57,21 @@ run("mise", "run", "deps")
 # (PATH edits there don't work). It does source $CLAUDE_ENV_FILE before each command, so put
 # mise's shims dir on PATH there. Invoked under a tool's name, a shim checks the current
 # directory and loads the environment accordingly; tools added to mise.toml later get shims
-# automatically. CLAUDE_ENV_FILE must be set in the Claude environment's env vars (see
-# README.md). In multi-repo environments, another repo's setup script may already have added
-# the shims, so only add them if the file doesn't mention them yet.
-def add_mise_shims_to_env_file():
-    """Return False if CLAUDE_ENV_FILE isn't set (reported as an error at the end)."""
-    env_file = os.environ.get("CLAUDE_ENV_FILE")
-    if not env_file:
-        return False
-    env_path = Path(env_file)
-    existing = env_path.read_text() if env_path.exists() else ""
-    if "mise/shims" in existing:
-        return True
+# automatically.
+#
+# The environment's setup script doesn't get CLAUDE_ENV_FILE, so use the path the Claude
+# environment's env vars set it to for sessions (see README.md). When the SessionStart hook runs
+# this instead, Claude Code sets CLAUDE_ENV_FILE to the session's own env file, so use that.
+# In multi-repo environments, another repo's setup script may already have added the shims, so
+# only add them if the file doesn't mention them yet.
+env_path = Path(os.environ.get("CLAUDE_ENV_FILE") or "/root/.dxe-claude-env.sh")
+existing = env_path.read_text() if env_path.exists() else ""
+if "mise/shims" not in existing:
     env_path.parent.mkdir(parents=True, exist_ok=True)
     with env_path.open("a") as f:
         if existing and not existing.endswith("\n"):
             f.write("\n")
         f.write('export PATH="$HOME/.local/share/mise/shims:$PATH"\n')
-    return True
-
-
-env_file_ok = add_mise_shims_to_env_file()
 
 # --- Pre-pull the MySQL image so session start is fast (best effort) -------------------------
 try:
@@ -86,16 +80,6 @@ try:
     run("docker", "pull", "mysql:8.4")
 except subprocess.CalledProcessError as e:
     print(f"Skipping MySQL image pre-pull: {e}", file=sys.stderr)
-
-# --- Report problems that shouldn't stop the rest of setup -----------------------------------
-# Fail last, so everything above still runs and the errors are the final thing shown.
-errors = []
-if not env_file_ok:
-    errors.append("CLAUDE_ENV_FILE is not set, so mise tools won't be on PATH.")
-if errors:
-    for error in errors:
-        print(f"ERROR: {error}", file=sys.stderr)
-    sys.exit("Fix the Claude environment's env vars; see .claude/cloud/README.md.")
 
 # Tells session-start.sh that setup already ran (e.g. as the environment's setup script).
 SETUP_DONE_MARKER.parent.mkdir(parents=True, exist_ok=True)

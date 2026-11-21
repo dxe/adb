@@ -4,18 +4,19 @@ The cloud VM has no devcontainer, so the repo provides the equivalent setup here
 `setup.py` runs in one of two ways:
 
 - From the SessionStart hook, on the first session start in an environment that
-  didn't already run it (e.g. the default one). That first start is slower.
+  didn't already run it (e.g. the default one), for single-repo sessions.
 - From the Claude environment's setup script, which should only run
   `.claude/cloud/setup.py`. This is required when sessions have several repos,
   because hooks don't fire then. It also bakes the setup into the environment
   snapshot, so session starts stay fast.
 
-When `setup.py` is the environment's setup script, set `CLAUDE_ENV_FILE` in the
-Claude environment's env vars to an absolute path, e.g. `/root/.claude-env.sh`
-(`setup.py` fails if it's missing). `setup.py` adds mise's shims to `PATH` in
-that file (unless another repo's setup script already did), and Claude Code
-sources it before every Bash command. The SessionStart hook gets its own
-`CLAUDE_ENV_FILE` from Claude Code.
+When `setup.py` is the environment's setup script, set
+`CLAUDE_ENV_FILE=/root/.dxe-claude-env.sh` in the Claude environment's env vars.
+The setup script doesn't get that env var, so `setup.py` uses that path directly
+to add mise's shims to `PATH` (unless another repo's setup script already did).
+Sessions do get it, and Claude Code sources the file before every Bash command.
+When the SessionStart hook runs `setup.py`, it uses the session's own
+`CLAUDE_ENV_FILE` from Claude Code instead.
 
 `setup.py` also sets `disable_tools = ["go", "python"]` in mise's global config:
 the VM ships its own go and python, and this keeps mise from installing them or
