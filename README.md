@@ -221,7 +221,7 @@ We make use of skills and CLAUDE.md files at the repo root and in subdirectories
 
 In Claude Code cloud environments, typically Anthropic hosted VMs, it is recommended
 to add a [setup script](https://code.claude.com/docs/en/cloud-environments#setup-scripts)
-that invokes `.claude/cloud/setup.sh`.
+that invokes `.claude/cloud/setup.py`.
 DxE-provisioned Claude accounts already have access to an cloud environment that
 does this, and it can be selected when starting a new Claude Code conversation
 via Claude web UI.
