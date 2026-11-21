@@ -1,7 +1,4 @@
 {
-  "remote": {
-    "defaultEnvironmentId": "env_01JLqV4p79MP1KSm18NdWedC"
-  },
   "hooks": {
     "SessionStart": [
       {
@@ -14,5 +11,11 @@
         ]
       }
     ]
+  },
+  "enabledPlugins": {
+    "gopls-lsp@claude-plugins-official": true
+  },
+  "remote": {
+    "defaultEnvironmentId": "env_01JLqV4p79MP1KSm18NdWedC"
   }
 }
