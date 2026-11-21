@@ -6,17 +6,16 @@ Activist Database Project
 
 ### Dependencies
 
-The following dependencies are required to run this project and will be already
-installed if using the devcontainer:
+This project uses mise to install tool dependencies. The only dependency mise
+can't install for you is Docker. If you are running the devcontainer, both mise
+and Docker are installed for you, and you can skip to `mise run deps`.
 
-- [mise](https://mise.jdx.dev/) (installs the pinned Go, Delve (Go debugger),
-  golangci-lint, Node, pnpm and `migrate` versions from `mise.toml`, and runs
-  project tasks; `mise tasks` lists them)
-- make (only for `jobs/`)
-- Docker
-- MySql client
+Please install [Docker](https://www.docker.com/get-started/) and
+[mise](https://mise.jdx.dev/), and optionally
+["activate" mise](https://mise.jdx.dev/getting-started.html#activate-mise).
 
-Running this command is required to download all the go and node dependencies:
+Finally, download all the tools and dependencies of this project (for the main
+server and frontend, at least) in one command:
 
 ```bash
 mise run deps
