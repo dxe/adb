@@ -95,7 +95,7 @@ jobs:
       - name: Set up Node.js and pnpm (versions from mise.toml)
         uses: jdx/mise-action@90f833d396d0cc3674b631d2d225e306476c303a # v5.2.10
         with:
-          # Only what this job needs; skips migrate.
+          # Only what this job needs.
           install_args: node pnpm
       - name: Cache pnpm store
         # No node-version: uses the mise-installed Node on PATH, only for caching.
