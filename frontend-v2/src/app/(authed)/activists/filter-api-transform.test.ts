@@ -3,6 +3,7 @@ import {
   matchesAssignedToFilter,
   resolveDateBound,
   toApiDateRange,
+  toApiFirstEvent,
 } from './filter-api-transform'
 
 describe('matchesAssignedToFilter', () => {
@@ -67,5 +68,31 @@ describe('filter-api-transform', () => {
       lt: '2026-03-16',
       or_null: true,
     })
+  })
+
+  it('nests the first event date range and types', () => {
+    const context = {
+      chapterId: 1,
+      userId: 1,
+      referenceDate: new Date('2026-03-16T23:30:00-07:00'),
+    }
+
+    expect(
+      toApiFirstEvent(
+        {
+          date: { gte: { mode: 'relative', daysOffset: -1 }, orNull: true },
+          types: { mode: 'exclude', values: ['Meeting'] },
+        },
+        context,
+      ),
+    ).toEqual({
+      first_event: {
+        date: { gte: '2026-03-15', lt: undefined, or_null: true },
+        types: { mode: 'exclude', values: ['Meeting'] },
+      },
+    })
+    expect(
+      toApiFirstEvent({ types: { mode: 'include', values: [] } }, context),
+    ).toEqual({ first_event: undefined })
   })
 })

@@ -30,8 +30,10 @@ func newFirstEventLastWeekSection(now time.Time) reportSection {
 				Filters: activists.QueryActivistFilters{
 					ChapterId:     reportChapterID,
 					IncludeHidden: false,
-					FirstEvent: activists.DateRangeFilter{
-						Gte: dateOnly(now.AddDate(0, 0, -7)),
+					FirstEvent: activists.FirstEventFilter{
+						Date: activists.DateRangeFilter{
+							Gte: dateOnly(now.AddDate(0, 0, -7)),
+						},
 					},
 				},
 				Sort: sortByFirstEventAsc(),

@@ -31,6 +31,16 @@ describe('buildActivistsHref', () => {
     expect(href).toContain('columns=email,notes')
   })
 
+  it('keeps first event types readable', () => {
+    const href = buildActivistsHref({
+      firstEvent: {
+        date: { gte: { mode: 'relative', daysOffset: -30 } },
+        types: { mode: 'include', values: ['Campaign Action', 'Outreach'] },
+      },
+    })
+    expect(href).toContain('firstEvent=-30..;campaign-action,outreach')
+  })
+
   it('guards a trailing open-ended range so link detectors keep the dots', () => {
     const href = buildActivistsHref({ totalEvents: { gte: 1 } })
     expect(href.endsWith('..&=')).toBe(true)

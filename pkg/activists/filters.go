@@ -76,6 +76,58 @@ func (f *DateRangeFilter) Validate() error {
 	return nil
 }
 
+// EventTypeFilter filters by event type values using one mode.
+// mode="include" means match any listed values.
+// mode="exclude" means exclude any listed values.
+//
+// Values aren't restricted to the current event types, since older events may
+// have types that are no longer offered.
+type EventTypeFilter struct {
+	Mode   string   `json:"mode,omitempty"`
+	Values []string `json:"values,omitempty"`
+}
+
+func (f *EventTypeFilter) IsEmpty() bool {
+	return len(f.Values) == 0
+}
+
+func (f *EventTypeFilter) Validate() error {
+	if len(f.Values) == 0 {
+		return nil
+	}
+	if f.Mode != "include" && f.Mode != "exclude" {
+		return shared.ValidationErrorf("invalid event type mode: %q", f.Mode)
+	}
+	for i, v := range f.Values {
+		if strings.TrimSpace(v) == "" {
+			return shared.ValidationErrorf("values[%d] cannot be empty", i)
+		}
+	}
+	return nil
+}
+
+// FirstEventFilter filters by the date and type of each activist's first event.
+// Both parts must match the same event. Date.OrNull also matches activists who
+// have no events.
+type FirstEventFilter struct {
+	Date  DateRangeFilter `json:"date"`
+	Types EventTypeFilter `json:"types"`
+}
+
+func (f *FirstEventFilter) IsEmpty() bool {
+	return f.Date.IsEmpty() && f.Types.IsEmpty()
+}
+
+func (f *FirstEventFilter) Validate() error {
+	if err := f.Date.Validate(); err != nil {
+		return err
+	}
+	if err := f.Types.Validate(); err != nil {
+		return shared.ValidationErrorf("invalid types: %v", err)
+	}
+	return nil
+}
+
 // IntRangeFilter filters by an integer column.
 type IntRangeFilter struct {
 	Gte *int `json:"gte,omitempty"` // Greater than or equal to (inclusive)
@@ -246,7 +298,7 @@ type QueryActivistFilters struct {
 
 	ActivistLevel     ActivistLevelFilter `json:"activist_level"`
 	InterestDate      DateRangeFilter     `json:"interest_date"`
-	FirstEvent        DateRangeFilter     `json:"first_event"`
+	FirstEvent        FirstEventFilter    `json:"first_event"`
 	TotalEvents       IntRangeFilter      `json:"total_events"`
 	TotalInteractions IntRangeFilter      `json:"total_interactions"`
 	Source            SourceFilter        `json:"source"`

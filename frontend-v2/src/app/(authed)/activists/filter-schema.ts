@@ -66,8 +66,8 @@ export const FILTER_SCHEMA = {
   firstEvent: {
     paramKey: 'firstEvent',
     defaultValue: undefined,
-    parseParam: urlCodecs.parseDateRangeParam,
-    serializeParam: urlCodecs.serializeDateRangeParam,
+    parseParam: urlCodecs.parseFirstEventParam,
+    serializeParam: urlCodecs.serializeFirstEventParam,
     toApi: apiTransform.toApiFirstEvent,
   },
   totalEvents: {

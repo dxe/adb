@@ -1,4 +1,5 @@
 import type { LocalDateYmd } from './date-time'
+import { EVENT_TYPES } from '../events/event-form-schema'
 
 export type AbsoluteDateBound = {
   mode: 'absolute'
@@ -17,6 +18,22 @@ export type DateRangeFilterValue = {
   gte?: DateRangeBoundValue
   lt?: DateRangeBoundValue
   orNull?: boolean
+}
+
+// Event types the first event filter offers. Unlike the event form, includes
+// connections, since they count as attended events.
+export const FIRST_EVENT_TYPES = [...EVENT_TYPES, 'Connection'] as const
+
+export type FirstEventTypeValue = (typeof FIRST_EVENT_TYPES)[number]
+
+export type EventTypeFilterValue = {
+  mode: 'include' | 'exclude'
+  values: FirstEventTypeValue[]
+}
+
+export type FirstEventFilterValue = {
+  date?: DateRangeFilterValue
+  types?: EventTypeFilterValue
 }
 
 export type IntRangeFilterValue = {

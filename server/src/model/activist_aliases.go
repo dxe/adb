@@ -83,6 +83,8 @@ type (
 	IntRangeFilter      = activists.IntRangeFilter
 	NameFilter          = activists.NameFilter
 	ActivistLevelFilter = activists.ActivistLevelFilter
+	FirstEventFilter    = activists.FirstEventFilter
+	EventTypeFilter     = activists.EventTypeFilter
 	SourceFilter        = activists.SourceFilter
 	TrainingFilter      = activists.TrainingFilter
 )

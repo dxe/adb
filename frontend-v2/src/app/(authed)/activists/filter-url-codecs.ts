@@ -3,7 +3,11 @@ import type {
   ActivistLevelFilterValue,
   DateRangeBoundValue,
   DateRangeFilterValue,
+  EventTypeFilterValue,
+  FirstEventFilterValue,
+  FirstEventTypeValue,
 } from './filter-types'
+import { FIRST_EVENT_TYPES } from './filter-types'
 import type { FilterState } from './query-state'
 import { parseOptionalSafeInteger, parseSafeInteger } from '@/lib/number-utils'
 
@@ -94,6 +98,58 @@ export function encodeDateRange(
   if (!gteToken && !ltToken && effectiveOrNull) return 'null'
   const range = `${gteToken || ''}..${ltToken || ''}`
   return effectiveOrNull ? `${range}|null` : range
+}
+
+const eventTypeSlug = (value: string) => value.toLowerCase().replace(/ /g, '-')
+
+const EVENT_TYPE_FROM_SLUG = new Map<string, FirstEventTypeValue>(
+  FIRST_EVENT_TYPES.map((value) => [eventTypeSlug(value), value]),
+)
+
+/**
+ * Syntax: [date range][;[~]type,type]
+ *   "-30.."                  -> first event in the last 30 days
+ *   "-30..;outreach,action"  -> ... and it was an Outreach or Action
+ *   ";~meeting"              -> first event wasn't a Meeting
+ * The date range uses the decodeDateRange syntax. Types are slugs of
+ * FIRST_EVENT_TYPES; "~" excludes them.
+ */
+export function decodeFirstEvent(
+  value?: string,
+): FirstEventFilterValue | undefined {
+  if (!value) return undefined
+  const sep = value.indexOf(';')
+  const dateRaw = sep === -1 ? value : value.slice(0, sep)
+  const typesRaw = sep === -1 ? '' : value.slice(sep + 1)
+
+  const date = decodeDateRange(dateRaw)
+  let types: EventTypeFilterValue | undefined
+  if (typesRaw) {
+    const mode = typesRaw.startsWith('~') ? 'exclude' : 'include'
+    const values = (mode === 'exclude' ? typesRaw.slice(1) : typesRaw)
+      .split(',')
+      .map((slug) => EVENT_TYPE_FROM_SLUG.get(slug.trim()))
+      .filter((v): v is FirstEventTypeValue => !!v)
+    if (values.length > 0) types = { mode, values }
+  }
+
+  if (!date && !types) return undefined
+  return {
+    date: date ? { ...date, orNull: date.orNull || undefined } : undefined,
+    types,
+  }
+}
+
+/** Build [date range][;[~]type,type]. */
+export function encodeFirstEvent(
+  value?: FirstEventFilterValue,
+): string | undefined {
+  const date = value?.date
+  const dateToken = encodeDateRange(date?.gte, date?.lt, date?.orNull)
+  const types = value?.types
+  if (!types || types.values.length === 0) return dateToken
+  const typesToken = `${types.mode === 'exclude' ? '~' : ''}${types.values.map(eventTypeSlug).join(',')}`
+  return `${dateToken ?? ''};${typesToken}`
 }
 
 /** Parse "1..4" into string parts. */
@@ -225,6 +281,14 @@ export const parseDateRangeParam = (
 export const serializeDateRangeParam = (
   value?: FilterState['lastEvent'],
 ): string | undefined => encodeDateRange(value?.gte, value?.lt, value?.orNull)
+
+export const parseFirstEventParam = (
+  value?: string,
+): FilterState['firstEvent'] => decodeFirstEvent(value)
+
+export const serializeFirstEventParam = (
+  value?: FilterState['firstEvent'],
+): string | undefined => encodeFirstEvent(value)
 
 export const parseIntRangeParam = (
   value?: string,

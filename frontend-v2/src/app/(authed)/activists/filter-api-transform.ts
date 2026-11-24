@@ -154,8 +154,18 @@ export const toApiFirstEvent = (
   value: FilterState['firstEvent'],
   context: FilterApiContext,
 ): Partial<ApiFilters> => ({
-  first_event: toApiDateRange(value, context.referenceDate),
+  first_event: toApiFirstEventValue(value, context.referenceDate),
 })
+
+function toApiFirstEventValue(
+  value: FilterState['firstEvent'],
+  referenceDate: Date,
+): ApiFilters['first_event'] {
+  const date = toApiDateRange(value?.date, referenceDate)
+  const types =
+    value?.types && value.types.values.length > 0 ? value.types : undefined
+  return date || types ? { date, types } : undefined
+}
 
 export const toApiTotalEvents = (
   value: FilterState['totalEvents'],

@@ -282,12 +282,7 @@ func buildFiltersFromShape(shape QueryActivistShape) []filter {
 	}
 
 	if !f.FirstEvent.IsEmpty() {
-		firstEventJoin := firstEventSubqueryJoin
-		result = append(result, &dateRangeFilter{
-			filter: f.FirstEvent,
-			join:   &firstEventJoin,
-			expr:   fmt.Sprintf("%s.first_event_date", firstEventSubqueryJoin.Key),
-		})
+		result = append(result, &firstEventFilter{filter: f.FirstEvent})
 	}
 
 	if !f.TotalEvents.IsEmpty() {

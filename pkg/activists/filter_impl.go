@@ -104,41 +104,74 @@ func (f *dateRangeFilter) getJoins() []joinSpec {
 }
 
 func (f *dateRangeFilter) buildWhere() []queryClause {
-	hasGte := !f.filter.Gte.IsZero()
-	hasLt := !f.filter.Lt.IsZero()
+	conds, args := dateRangeConds(f.filter, f.expr)
+	return orNullClause(conds, args, f.filter.OrNull, f.expr)
+}
 
-	rangeParts := make([]string, 0, 2)
-	args := make([]any, 0, 2)
-	if hasGte {
-		rangeParts = append(rangeParts, fmt.Sprintf("%s >= ?", f.expr))
-		args = append(args, f.filter.Gte.Format("2006-01-02"))
+// dateRangeConds returns the SQL conditions for a date range's bounds,
+// ignoring OrNull.
+func dateRangeConds(f DateRangeFilter, expr string) ([]string, []any) {
+	var conds []string
+	var args []any
+	if !f.Gte.IsZero() {
+		conds = append(conds, fmt.Sprintf("%s >= ?", expr))
+		args = append(args, f.Gte.Format("2006-01-02"))
 	}
-	if hasLt {
-		rangeParts = append(rangeParts, fmt.Sprintf("%s < ?", f.expr))
-		args = append(args, f.filter.Lt.Format("2006-01-02"))
+	if !f.Lt.IsZero() {
+		conds = append(conds, fmt.Sprintf("%s < ?", expr))
+		args = append(args, f.Lt.Format("2006-01-02"))
 	}
+	return conds, args
+}
 
-	if len(rangeParts) == 0 {
-		if f.filter.OrNull {
-			return []queryClause{{
-				sql: fmt.Sprintf("%s IS NULL", f.expr),
-			}}
+// orNullClause ANDs conds together. If orNull is set, it also matches rows
+// where nullExpr is NULL, or only those rows when there are no conds.
+func orNullClause(conds []string, args []any, orNull bool, nullExpr string) []queryClause {
+	if len(conds) == 0 {
+		if orNull {
+			return []queryClause{{sql: fmt.Sprintf("%s IS NULL", nullExpr)}}
 		}
 		return nil
 	}
 
-	rangeSQL := strings.Join(rangeParts, " AND ")
-	if f.filter.OrNull {
-		return []queryClause{{
-			sql:  fmt.Sprintf("((%s) OR %s IS NULL)", rangeSQL, f.expr),
-			args: args,
-		}}
+	sql := strings.Join(conds, " AND ")
+	if orNull {
+		sql = fmt.Sprintf("((%s) OR %s IS NULL)", sql, nullExpr)
+	}
+	return []queryClause{{sql: sql, args: args}}
+}
+
+// firstEventFilter filters by the date and type of each activist's first
+// event. Date.OrNull also matches activists who have no events.
+type firstEventFilter struct {
+	filter FirstEventFilter
+}
+
+func (f *firstEventFilter) getJoins() []joinSpec {
+	return []joinSpec{firstEventSubqueryJoin}
+}
+
+func (f *firstEventFilter) buildWhere() []queryClause {
+	dateExpr := fmt.Sprintf("%s.first_event_date", firstEventSubqueryJoin.Key)
+	conds, args := dateRangeConds(f.filter.Date, dateExpr)
+
+	if types := f.filter.Types; !types.IsEmpty() {
+		placeholders := make([]string, len(types.Values))
+		for i, v := range types.Values {
+			placeholders[i] = "?"
+			args = append(args, v)
+		}
+		op := "IN"
+		if types.Mode == "exclude" {
+			op = "NOT IN"
+		}
+		// event_type is NULL for activists with no events, so neither IN nor
+		// NOT IN matches them; only OrNull does.
+		conds = append(conds, fmt.Sprintf("%s.event_type %s (%s)",
+			firstEventSubqueryJoin.Key, op, strings.Join(placeholders, ",")))
 	}
 
-	return []queryClause{{
-		sql:  rangeSQL,
-		args: args,
-	}}
+	return orNullClause(conds, args, f.filter.Date.OrNull, dateExpr)
 }
 
 // intRangeFilter filters by an integer column using COALESCE to treat NULL as 0.

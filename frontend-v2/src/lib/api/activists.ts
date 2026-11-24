@@ -162,6 +162,16 @@ const TrainingFilter = z.object({
   not_completed: z.array(z.string()).optional(),
 })
 
+const EventTypeFilter = z.object({
+  mode: z.enum(['include', 'exclude']).optional(),
+  values: z.array(z.string()).optional(),
+})
+
+const FirstEventFilter = z.object({
+  date: DateRangeFilter.optional(),
+  types: EventTypeFilter.optional(),
+})
+
 // Mirrors activists.MaxActivistIDsFilter: the server rejects a longer ids
 // filter rather than truncating it.
 export const MAX_ACTIVIST_IDS_FILTER = 1000
@@ -178,7 +188,7 @@ const QueryActivistFilters = z.object({
   include_hidden: z.boolean().optional(),
   activist_level: ActivistLevelFilter.optional(),
   interest_date: DateRangeFilter.optional(),
-  first_event: DateRangeFilter.optional(),
+  first_event: FirstEventFilter.optional(),
   total_events: IntRangeFilter.optional(),
   total_interactions: IntRangeFilter.optional(),
   source: SourceFilter.optional(),

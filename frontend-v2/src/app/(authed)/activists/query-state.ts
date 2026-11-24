@@ -3,6 +3,7 @@ import type {
   ActivistLevelFilterValue,
   AssignedToFilterValue,
   DateRangeFilterValue,
+  FirstEventFilterValue,
   FollowupsFilterValue,
   IncludeExcludeFilterValue,
   IntRangeFilterValue,
@@ -16,7 +17,7 @@ export type FilterState = {
   lastEvent?: DateRangeFilterValue
   lastInteraction?: DateRangeFilterValue
   interestDate?: DateRangeFilterValue
-  firstEvent?: DateRangeFilterValue
+  firstEvent?: FirstEventFilterValue
   totalEvents?: IntRangeFilterValue
   totalInteractions?: IntRangeFilterValue
   activistLevel?: ActivistLevelFilterValue
