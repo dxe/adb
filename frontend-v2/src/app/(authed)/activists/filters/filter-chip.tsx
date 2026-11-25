@@ -82,9 +82,11 @@ export function FilterChip({
               <>
                 <span className="text-xs text-muted-foreground">{label}</span>
                 <div className="flex min-w-0 items-center gap-1">
+                  {/* Long summaries are cut off with an ellipsis rather than
+                      stretching the chip; the title shows the full text. */}
                   <span
                     className={cn(
-                      'block max-w-full truncate text-sm',
+                      'block max-w-72 truncate text-sm',
                       summaryClassName,
                     )}
                     title={summary}
