@@ -103,6 +103,8 @@ const ChapterListResp = z.object({
     z.object({
       ChapterID: z.number(),
       Name: z.string(),
+      // Facebook page ID (`fb_pages.id`); 0 if the chapter has no page.
+      ID: z.number().optional(),
     }),
   ),
 })
@@ -585,10 +587,6 @@ export interface EventListParams {
   event_date_end: string
   event_type: EventType
 }
-
-// The external events admin page is only used for SF Bay (parity with the
-// legacy Vue page), so the page ID is hardcoded.
-const SF_BAY_FACEBOOK_PAGE_ID = '1377014279263790'
 
 const ExternalEventSchema = z.object({
   ID: z.string(),
@@ -1515,16 +1513,30 @@ export class ApiClient {
     }
   }
 
-  getExternalEvents = async (signal?: AbortSignal) => {
+  // Lists upcoming events for the given chapter (the session's active chapter,
+  // which admins can change with the chapter switcher).
+  getExternalEvents = async (chapterId: number, signal?: AbortSignal) => {
     try {
+      const chapters = await this.getChapterList(signal)
+      const pageId = chapters.find((c) => c.ChapterID === chapterId)?.ID
+      if (!pageId) {
+        // Chapter has no Facebook page, so it has no external events.
+        return []
+      }
       // UTC date so SSR prefetch and client refetch agree on the "today" boundary.
       const startOfTodayUtc = `${new Date().toISOString().slice(0, 10)}T00:00:00Z`
       const resp = await this.client
-        .get(`${API_PATH.EXTERNAL_EVENTS_LIST}/${SF_BAY_FACEBOOK_PAGE_ID}`, {
+        .get(`${API_PATH.EXTERNAL_EVENTS_LIST}/${pageId}`, {
           searchParams: { start_time: startOfTodayUtc },
           signal,
         })
         .json()
+      const parsed = z
+        .object({ local_events_found: z.boolean().optional() })
+        .parse(resp)
+      // The endpoint falls back to SF Bay online events when a chapter has
+      // none of its own; that's wrong for this per-chapter admin view.
+      if (parsed.local_events_found === false) return []
       return ExternalEventsListResp.parse(resp).events
     } catch (err) {
       return this.handleKyError(err)

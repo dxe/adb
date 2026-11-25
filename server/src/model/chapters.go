@@ -135,7 +135,7 @@ func GetChaptersWithEventbriteTokens(db *sqlx.DB) ([]ChapterWithToken, error) {
 
 // for the chapter management admin page on the ADB itself – NOTE THAT THIS RETURNS TOKENS, SO IT SHOULD NOT BE MADE PUBLIC
 func GetAllChapters(db *sqlx.DB) ([]ChapterWithToken, error) {
-	query := `SELECT chapter_id, fb_pages.name, flag, fb_url, twitter_url, insta_url, email, region, fb_pages.lat, fb_pages.lng,
+	query := `SELECT chapter_id, fb_pages.id, fb_pages.name, flag, fb_url, twitter_url, insta_url, email, region, fb_pages.lat, fb_pages.lng,
 
 		@last_update := IFNULL((
 		  SELECT MAX(last_update) AS last_update

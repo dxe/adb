@@ -22,8 +22,9 @@ export default async function ExternalEventsListPage() {
   // prefetchQuery, not fetchQuery + redirectForHttpError: the endpoint isn't
   // admin-gated, so a failed prefetch just falls through to the client useQuery.
   await queryClient.prefetchQuery({
-    queryKey: [API_PATH.EXTERNAL_EVENTS_LIST],
-    queryFn: ({ signal }) => apiClient.getExternalEvents(signal),
+    queryKey: [API_PATH.EXTERNAL_EVENTS_LIST, session.user.ChapterID],
+    queryFn: ({ signal }) =>
+      apiClient.getExternalEvents(session.user!.ChapterID, signal),
   })
 
   return (
