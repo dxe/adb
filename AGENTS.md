@@ -35,8 +35,7 @@ Background context on how the stack fits together.
 
 ### frontend/backend routing
 
-- The Go server reverse-proxies `/v2/*` to the Next.js app in `./frontend-v2` (see `proxyHandler` in `server/src/main.go`). Next.js has `basePath: '/v2'` configured (`next.config.ts`), so it automatically prepends `/v2` to all routes. Next.js navigation (`<Link href>`, `router.push()`, `redirect()`, and route definitions) must therefore omit the `/v2` prefix — Next.js adds it. For example, `<Link href="/activists/123">`, not `<Link href="/v2/activists/123">`.
-- The Go API lives at the same origin. The `ApiClient` in `frontend-v2/src/lib/api.ts` calls paths like `api/activists`, `event/get`, etc. directly without a `/v2` prefix.
+- The Go server reverse-proxies `/v2/*` to the Next.js app in `./frontend-v2` (see `proxyHandler` in `server/src/main.go`). The Go API lives at the same origin, without the `/v2` prefix.
 
 ## frontend
 
@@ -48,32 +47,10 @@ Rules regarding the Next.js app in ./frontend-v2
 - "The navigation" is defined in `frontend-v2/src/components/nav-data.ts`.
 - "The member portal" is a separate server-rendered Go app in `server/src/members/` (own port), not part of `frontend-v2`.
 
-### frontend-file-formatting
-
-- Scope: ./frontend-v2
-- Rule: After modifying files, run `pnpx prettier <filename> --write`
-- Example: `pnpx prettier 'frontend-v2/src/app/login/page.tsx' --write`
-
-### frontend-v2-typecheck-and-lint
-
-- Scope: ./frontend-v2
-- Rule: `tsc` and `eslint` must be run from inside `./frontend-v2` (not `/workspace`) — that's where `tsconfig.json` and `eslint.config.mjs` live.
-- Typecheck: `cd frontend-v2 && pnpm exec tsc --noEmit` (do not use `pnpx tsc` — it hits a shim that refuses to run)
-- Lint: `cd frontend-v2 && pnpm lint` (equivalent to `eslint .`)
-
 ### frontend-v2-debugging
 
 - Scope: ./frontend-v2
 - Rule: Do not try to fix devserver issues such as live reloading issues without first running `mise run clean`, then `mise run deps` and asking user to restart devcontainer.
-
-### frontend-chapter-scoped-data
-
-- Scope: ./frontend-v2
-- Admins switch chapters via `/auth/switch_chapter` (full page load; the session
-  cookie's chapter changes).
-- Data that depends on the active chapter should take
-  `user.ChapterID` (from `useAuthedPageContext()` or `session.user`) as an
-  argument and include it in the TanStack Query key, including any server prefetch.
 
 ### playwright-mcp
 
