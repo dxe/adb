@@ -47,11 +47,26 @@ describe('first event URL codec', () => {
       types: { mode: 'include' as const, values: ['Outreach' as const] },
       orNull: true,
     }
-    expect(decodeFirstEvent('null;outreach')).toEqual({
+    expect(decodeFirstEvent(';outreach|null')).toEqual({
       date: undefined,
       ...value,
     })
-    expect(encodeFirstEvent(value)).toBe('null;outreach')
+    expect(encodeFirstEvent(value)).toBe(';outreach|null')
+  })
+
+  it('applies a trailing |null to dates and types together', () => {
+    const value = {
+      date: { gte: { mode: 'relative' as const, daysOffset: -30 } },
+      types: { mode: 'exclude' as const, values: ['Meeting' as const] },
+      orNull: true,
+    }
+    const encoded = encodeFirstEvent(value)
+    expect(encoded).toBe('-30..;~meeting|null')
+    expect(decodeFirstEvent(encoded)).toEqual({
+      date: { gte: { mode: 'relative', daysOffset: -30 }, lt: undefined },
+      types: value.types,
+      orNull: true,
+    })
   })
 
   it('ignores unknown types', () => {
