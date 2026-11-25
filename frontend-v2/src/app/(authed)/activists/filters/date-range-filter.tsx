@@ -3,7 +3,6 @@
 import { useId, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Button } from '@/components/ui/button'
 import {
   Select,
   SelectContent,
@@ -250,17 +249,6 @@ export function DateRangeFilter({
               updateDraft({ gte, lt, orNull: checked })
             }
           />
-        )}
-
-        {draft && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={() => setDraft(undefined)}
-          >
-            Clear
-          </Button>
         )}
       </div>
     </FilterChip>

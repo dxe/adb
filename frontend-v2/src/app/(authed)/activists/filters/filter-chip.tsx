@@ -25,6 +25,10 @@ interface FilterChipProps {
   /** Commits the draft. When set, the popover shows an Apply button and
    *  Enter in an input applies. Closing otherwise discards the draft. */
   onApply?: () => void
+  /** Empties the draft. Clear button is shown beside Apply; disabled when
+   *  canReset is false. */
+  onReset?: () => void
+  canReset?: boolean
 }
 
 export function FilterChip({
@@ -38,6 +42,8 @@ export function FilterChip({
   popoverClassName,
   onOpenChange,
   onApply,
+  onReset,
+  canReset,
 }: FilterChipProps) {
   const showClear = !!summary || removable
   const [open, setOpen] = useState(defaultOpen ?? false)
@@ -105,14 +111,28 @@ export function FilterChip({
           >
             {children}
             {onApply && (
-              <Button
-                type="button"
-                size="sm"
-                className="mt-4 w-full"
-                onClick={handleApply}
-              >
-                Apply
-              </Button>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {onReset && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="min-w-24 flex-1"
+                    disabled={!canReset}
+                    onClick={onReset}
+                  >
+                    Clear
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  size="sm"
+                  className="min-w-24 flex-1"
+                  onClick={handleApply}
+                >
+                  Apply
+                </Button>
+              </div>
             )}
           </div>
         </PopoverContent>

@@ -32,4 +32,16 @@ describe('filter Apply behavior', () => {
     await user.keyboard('{Escape}')
     expect(onChange).not.toHaveBeenCalled()
   })
+
+  it('keeps Clear visible, disabled until the draft has a value', async () => {
+    const { user } = setup()
+    const clear = screen.getByRole('button', { name: 'Clear' })
+    expect(clear).toBeDisabled()
+
+    await user.type(screen.getByPlaceholderText('No minimum'), '5')
+    expect(clear).toBeEnabled()
+
+    await user.click(clear)
+    expect(clear).toBeDisabled()
+  })
 })

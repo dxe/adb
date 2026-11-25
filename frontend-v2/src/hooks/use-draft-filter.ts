@@ -22,6 +22,10 @@ export interface DraftFilterChipProps {
   onOpenChange: (open: boolean) => void
   /** Commits the draft. FilterChip shows an Apply button when this is set. */
   onApply: () => void
+  /** Empties the draft (not committed until Apply). */
+  onReset: () => void
+  /** False when the draft is already empty, so Clear should be disabled. */
+  canReset: boolean
 }
 
 /**
@@ -45,5 +49,11 @@ export function useDraftFilter<T>(
     if (draft !== value) onChange(draft)
   }, [draft, value, onChange])
 
-  return [draft, setDraft, { onOpenChange, onApply }]
+  const onReset = useCallback(() => setDraft(undefined as T), [])
+
+  return [
+    draft,
+    setDraft,
+    { onOpenChange, onApply, onReset, canReset: !!draft },
+  ]
 }

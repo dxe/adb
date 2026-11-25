@@ -1,7 +1,6 @@
 'use client'
 
 import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
 import {
   decodeIncludeExcludeSet,
   encodeIncludeExclude,
@@ -63,16 +62,6 @@ export function SourceFilterChip({
         <p className="text-xs text-muted-foreground">
           Comma-separated. Prefix with - to exclude.
         </p>
-        {draft && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={() => setDraft(undefined)}
-          >
-            Clear
-          </Button>
-        )}
       </div>
     </FilterChip>
   )

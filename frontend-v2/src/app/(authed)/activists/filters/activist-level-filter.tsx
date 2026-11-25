@@ -1,7 +1,6 @@
 'use client'
 
 import { useReducer } from 'react'
-import { Button } from '@/components/ui/button'
 import {
   Select,
   SelectContent,
@@ -122,6 +121,8 @@ export function ActivistLevelFilter({
       onClear={() => onChange(undefined)}
       onOpenChange={onOpenChange}
       onApply={onApply}
+      onReset={() => dispatch({ type: 'clear' })}
+      canReset={hasFilter}
     >
       <div className="space-y-3">
         <div className="flex items-center justify-between">
@@ -148,16 +149,6 @@ export function ActivistLevelFilter({
             onToggle={() => handleToggle(level)}
           />
         ))}
-        {hasFilter && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={() => dispatch({ type: 'clear' })}
-          >
-            Clear
-          </Button>
-        )}
       </div>
     </FilterChip>
   )

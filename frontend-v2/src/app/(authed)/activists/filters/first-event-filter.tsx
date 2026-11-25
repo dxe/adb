@@ -1,7 +1,6 @@
 'use client'
 
 import { useId } from 'react'
-import { Button } from '@/components/ui/button'
 import {
   Select,
   SelectContent,
@@ -191,17 +190,6 @@ export function FirstEventFilter({
             onCheckedChange={(checked) => update({ orNull: checked })}
           />
         </div>
-
-        {draft && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={() => setDraft(undefined)}
-          >
-            Clear
-          </Button>
-        )}
       </div>
     </FilterChip>
   )
