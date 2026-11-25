@@ -20,6 +20,7 @@ import type {
   AbsoluteDateBound,
   DateRangeBoundValue,
   DateRangeFilterValue,
+  DateRangeValue,
   RelativeDateBound,
 } from '../filter-types'
 import { parseSafeInteger } from '@/lib/number-utils'
@@ -215,75 +216,19 @@ export function DateRangeFilter({
   removable,
   nullLabel,
 }: DateRangeFilterProps) {
-  const [draft, setDraft, onDraftOpenChange] = useDraftFilter(value, onChange)
-
+  const [draft, setDraft, onOpenChange] = useDraftFilter(value, onChange)
   const gte = draft?.gte
   const lt = draft?.lt
   const orNull = !!draft?.orNull
-  const hasGte = !!gte
-  const hasLt = !!lt
-  const exactlyOneBoundSet = hasGte !== hasLt
-  const nullOptionDisabled = !exactlyOneBoundSet
-  const orNullId = useId()
-  const hasDraft = !!draft
-  const detectedMode = inferModeFromBounds(gte, lt)
-  const [preferredMode, setPreferredMode] = useState<Mode>('relative')
-  const mode = detectedMode ?? preferredMode
+  const exactlyOneBoundSet = !!gte !== !!lt
 
-  const onOpenChange = (open: boolean) => {
-    if (open) {
-      setPreferredMode(inferModeFromBounds(value?.gte, value?.lt) ?? 'relative')
-    }
-    onDraftOpenChange(open)
-  }
-
-  const updateDraft = (next: DateRangeFilterValue | undefined) => {
+  const updateDraft = (next: DateRangeFilterValue) =>
     setDraft(normalizeDateRange(next))
-  }
-
-  const handleModeSwitch = (newMode: Mode) => {
-    setPreferredMode(newMode)
-    if (detectedMode && newMode !== detectedMode) {
-      // Clear values when switching modes (preserve orNull).
-      updateDraft(orNull ? { orNull: true } : undefined)
-    }
-  }
-
-  const handleAbsoluteStartChange = (date?: Date) =>
-    updateDraft({
-      gte: toAbsoluteBound(date),
-      lt,
-      orNull,
-    })
-  const handleAbsoluteEndChange = (date?: Date) =>
-    updateDraft({
-      gte,
-      lt: toAbsoluteBound(date),
-      orNull,
-    })
-
-  const gteRel = parseRelativeInput(gte)
-  const ltRel = parseRelativeInput(lt)
-
-  const handleRelGte = (amount: number | undefined, unit: DateUnit) =>
-    updateDraft({
-      gte: amount != null ? buildRelativeBound(amount, unit) : undefined,
-      lt,
-      orNull,
-    })
-  const handleRelLt = (amount: number | undefined, unit: DateUnit) =>
-    updateDraft({
-      gte,
-      lt: amount != null ? buildRelativeBound(amount, unit) : undefined,
-      orNull,
-    })
-
-  const summary = formatDateRange(value)
 
   return (
     <FilterChip
       label={label}
-      summary={summary}
+      summary={formatDateRange(value)}
       onClear={() => onChange(undefined)}
       defaultOpen={defaultOpen}
       removable={removable}
@@ -291,100 +236,23 @@ export function DateRangeFilter({
       onOpenChange={onOpenChange}
     >
       <div className="space-y-4">
-        <div className="flex rounded-md border overflow-hidden text-sm">
-          <button
-            type="button"
-            className={`flex-1 px-3 py-1.5 transition-colors ${
-              mode === 'absolute'
-                ? 'bg-primary text-primary-foreground'
-                : 'hover:bg-muted'
-            }`}
-            onClick={() => handleModeSwitch('absolute')}
-          >
-            Absolute
-          </button>
-          <button
-            type="button"
-            className={`flex-1 px-3 py-1.5 transition-colors border-l ${
-              mode === 'relative'
-                ? 'bg-primary text-primary-foreground'
-                : 'hover:bg-muted'
-            }`}
-            onClick={() => handleModeSwitch('relative')}
-          >
-            Relative
-          </button>
-        </div>
-
-        {mode === 'absolute' ? (
-          <>
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">On or after</Label>
-              <DatePicker
-                value={
-                  isAbsoluteBound(gte)
-                    ? ymdToDatePickerValue(gte.date)
-                    : undefined
-                }
-                onValueChange={handleAbsoluteStartChange}
-                placeholder="Select start date"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Before</Label>
-              <DatePicker
-                value={
-                  isAbsoluteBound(lt)
-                    ? ymdToDatePickerValue(lt.date)
-                    : undefined
-                }
-                onValueChange={handleAbsoluteEndChange}
-                placeholder="Select end date"
-              />
-            </div>
-          </>
-        ) : (
-          <>
-            <RelativeInput
-              label="On or after"
-              amount={gteRel?.amount}
-              unit={gteRel?.unit ?? 'months'}
-              onChange={handleRelGte}
-            />
-            <RelativeInput
-              label="Before"
-              amount={ltRel?.amount}
-              unit={ltRel?.unit ?? 'months'}
-              onChange={handleRelLt}
-            />
-          </>
-        )}
+        <DateRangeFields
+          value={draft}
+          onChange={(range) => updateDraft({ ...range, orNull })}
+        />
 
         {nullLabel && (
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id={orNullId}
-              checked={orNull && exactlyOneBoundSet}
-              disabled={nullOptionDisabled}
-              onCheckedChange={(checked) =>
-                updateDraft({ gte, lt, orNull: checked === true })
-              }
-            />
-            <label
-              htmlFor={orNullId}
-              className={`text-sm ${nullOptionDisabled ? 'text-muted-foreground' : ''}`}
-            >
-              {nullLabel}
-            </label>
-            {nullOptionDisabled && (
-              <span title="Set exactly one bound to enable this option.">
-                <CircleHelp className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              </span>
-            )}
-          </div>
+          <NullOptionCheckbox
+            label={nullLabel}
+            checked={orNull}
+            enabled={exactlyOneBoundSet}
+            onCheckedChange={(checked) =>
+              updateDraft({ gte, lt, orNull: checked })
+            }
+          />
         )}
 
-        {hasDraft && (
+        {draft && (
           <Button
             variant="outline"
             size="sm"
@@ -396,6 +264,178 @@ export function DateRangeFilter({
         )}
       </div>
     </FilterChip>
+  )
+}
+
+interface DateRangeFieldsProps {
+  value?: DateRangeValue
+  onChange: (value?: DateRangeValue) => void
+}
+
+/**
+ * The controls for editing a date range's bounds, in absolute or relative mode.
+ * Controlled, so it can be embedded in a popover with other controls; the
+ * caller owns the draft state.
+ */
+export function DateRangeFields({ value, onChange }: DateRangeFieldsProps) {
+  const gte = value?.gte
+  const lt = value?.lt
+  const detectedMode = inferModeFromBounds(gte, lt)
+  // The popover content mounts each time it opens, so this starts from the
+  // value's mode on every open.
+  const [preferredMode, setPreferredMode] = useState<Mode>(
+    () => detectedMode ?? 'relative',
+  )
+  const mode = detectedMode ?? preferredMode
+
+  const updateDraft = (next: DateRangeValue) => {
+    onChange(next.gte || next.lt ? next : undefined)
+  }
+
+  const handleModeSwitch = (newMode: Mode) => {
+    setPreferredMode(newMode)
+    if (detectedMode && newMode !== detectedMode) {
+      // Clear values when switching modes.
+      updateDraft({})
+    }
+  }
+
+  const handleAbsoluteStartChange = (date?: Date) =>
+    updateDraft({
+      gte: toAbsoluteBound(date),
+      lt,
+    })
+  const handleAbsoluteEndChange = (date?: Date) =>
+    updateDraft({
+      gte,
+      lt: toAbsoluteBound(date),
+    })
+
+  const gteRel = parseRelativeInput(gte)
+  const ltRel = parseRelativeInput(lt)
+
+  const handleRelGte = (amount: number | undefined, unit: DateUnit) =>
+    updateDraft({
+      gte: amount != null ? buildRelativeBound(amount, unit) : undefined,
+      lt,
+    })
+  const handleRelLt = (amount: number | undefined, unit: DateUnit) =>
+    updateDraft({
+      gte,
+      lt: amount != null ? buildRelativeBound(amount, unit) : undefined,
+    })
+
+  return (
+    <>
+      <div className="flex rounded-md border overflow-hidden text-sm">
+        <button
+          type="button"
+          className={`flex-1 px-3 py-1.5 transition-colors ${
+            mode === 'absolute'
+              ? 'bg-primary text-primary-foreground'
+              : 'hover:bg-muted'
+          }`}
+          onClick={() => handleModeSwitch('absolute')}
+        >
+          Absolute
+        </button>
+        <button
+          type="button"
+          className={`flex-1 px-3 py-1.5 transition-colors border-l ${
+            mode === 'relative'
+              ? 'bg-primary text-primary-foreground'
+              : 'hover:bg-muted'
+          }`}
+          onClick={() => handleModeSwitch('relative')}
+        >
+          Relative
+        </button>
+      </div>
+
+      {mode === 'absolute' ? (
+        <>
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">On or after</Label>
+            <DatePicker
+              value={
+                isAbsoluteBound(gte)
+                  ? ymdToDatePickerValue(gte.date)
+                  : undefined
+              }
+              onValueChange={handleAbsoluteStartChange}
+              placeholder="Select start date"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Before</Label>
+            <DatePicker
+              value={
+                isAbsoluteBound(lt) ? ymdToDatePickerValue(lt.date) : undefined
+              }
+              onValueChange={handleAbsoluteEndChange}
+              placeholder="Select end date"
+            />
+          </div>
+        </>
+      ) : (
+        <>
+          <RelativeInput
+            label="On or after"
+            amount={gteRel?.amount}
+            unit={gteRel?.unit ?? 'months'}
+            onChange={handleRelGte}
+          />
+          <RelativeInput
+            label="Before"
+            amount={ltRel?.amount}
+            unit={ltRel?.unit ?? 'months'}
+            onChange={handleRelLt}
+          />
+        </>
+      )}
+    </>
+  )
+}
+
+interface NullOptionCheckboxProps {
+  label: string
+  checked: boolean
+  /** While disabled, the checkbox shows as unchecked. */
+  enabled: boolean
+  /** Explains how to enable the checkbox while it's disabled. */
+  disabledHint?: string
+  onCheckedChange: (checked: boolean) => void
+}
+
+/** Checkbox for a filter's "or null" option, e.g. "Include activists with no events". */
+export function NullOptionCheckbox({
+  label,
+  checked,
+  enabled,
+  disabledHint = 'Set exactly one bound to enable this option.',
+  onCheckedChange,
+}: NullOptionCheckboxProps) {
+  const id = useId()
+  return (
+    <div className="flex items-center gap-2">
+      <Checkbox
+        id={id}
+        checked={checked && enabled}
+        disabled={!enabled}
+        onCheckedChange={(c) => onCheckedChange(c === true)}
+      />
+      <label
+        htmlFor={id}
+        className={`text-sm ${enabled ? '' : 'text-muted-foreground'}`}
+      >
+        {label}
+      </label>
+      {!enabled && (
+        <span title={disabledHint}>
+          <CircleHelp className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+        </span>
+      )}
+    </div>
   )
 }
 

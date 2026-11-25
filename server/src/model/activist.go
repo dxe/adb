@@ -382,6 +382,7 @@ type ActivistJSON struct {
 	FirstEvent            string `json:"first_event,omitempty"`
 	LastEvent             string `json:"last_event,omitempty"`
 	FirstEventName        string `json:"first_event_name,omitempty"`
+	FirstEventType        string `json:"first_event_type,omitempty"`
 	LastEventName         string `json:"last_event_name,omitempty"`
 	LastAction            string `json:"last_action,omitempty"`
 	MonthsSinceLastAction int    `json:"months_since_last_action,omitempty"`
@@ -628,6 +629,7 @@ func BuildActivistJSON(a ActivistExtra) ActivistJSON {
 		FirstEvent:            firstEvent,
 		LastEvent:             lastEvent,
 		FirstEventName:        a.FirstEventName,
+		FirstEventType:        a.FirstEventType,
 		LastEventName:         a.LastEventName,
 		LastAction:            lastAction,
 		MonthsSinceLastAction: a.MonthsSinceLastAction,

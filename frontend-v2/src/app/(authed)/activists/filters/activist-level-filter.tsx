@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { FilterChip } from './filter-chip'
+import { IncludeExcludeOption } from './include-exclude-option'
 import {
   ACTIVIST_LEVELS,
   type ActivistLevelFilterValue,
@@ -137,30 +138,15 @@ export function ActivistLevelFilter({
             </SelectContent>
           </Select>
         </div>
-        {ACTIVIST_LEVELS.map((level) => {
-          const isSelected = draft.values.has(level)
-          return (
-            <button
-              type="button"
-              key={level}
-              className="flex w-full items-center gap-2 rounded px-2 py-1 text-sm hover:bg-muted transition-colors"
-              onClick={() => handleToggle(level)}
-            >
-              <span
-                className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border text-xs font-bold ${
-                  isSelected
-                    ? draft.mode === 'include'
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-destructive text-destructive-foreground border-destructive'
-                    : 'border-input'
-                }`}
-              >
-                {isSelected ? (draft.mode === 'include' ? '+' : '-') : ''}
-              </span>
-              {level}
-            </button>
-          )
-        })}
+        {ACTIVIST_LEVELS.map((level) => (
+          <IncludeExcludeOption
+            key={level}
+            label={level}
+            selected={draft.values.has(level)}
+            mode={draft.mode}
+            onToggle={() => handleToggle(level)}
+          />
+        ))}
         {hasFilter && (
           <Button
             variant="outline"

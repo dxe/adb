@@ -11,6 +11,7 @@ import { Plus, RotateCcw, X } from 'lucide-react'
 import { ActivistLevelFilter } from './activist-level-filter'
 import { LastEventFilter } from './last-event-filter'
 import { DateRangeFilter } from './date-range-filter'
+import { FirstEventFilter } from './first-event-filter'
 import { IntRangeFilter } from './int-range-filter'
 import { TrainingFilter } from './training-filter'
 import { SelectFilterChip } from './select-filter-chip'
@@ -185,12 +186,10 @@ export function ActivistFilters({
 
         {/* Optional filter chips — only rendered when active or just added */}
         {isFilterVisible('firstEvent') && (
-          <DateRangeFilter
-            label="First event"
+          <FirstEventFilter
             value={filters.firstEvent}
             onChange={(v) => optionalOnChange('firstEvent', v)}
             removable
-            nullLabel="Include activists with no events"
           />
         )}
 

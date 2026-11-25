@@ -111,6 +111,12 @@ func getColumnSpec(colName ActivistColumnName) *activistColumn {
 			expr:  fmt.Sprintf("COALESCE(%s.event_name, 'n/a')", firstEventSubqueryJoin.Key),
 			alias: "first_event_name",
 		}
+	case ColFirstEventType:
+		return &activistColumn{
+			joins: []joinSpec{firstEventSubqueryJoin},
+			expr:  fmt.Sprintf("COALESCE(%s.event_type, '')", firstEventSubqueryJoin.Key),
+			alias: "first_event_type",
+		}
 	case ColLastEvent:
 		// TODO: rename to last_event_date once legacy activist query is removed
 		return &activistColumn{

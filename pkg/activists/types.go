@@ -80,6 +80,7 @@ const (
 	ColChapterName           ActivistColumnName = "chapter_name"
 	ColFirstEvent            ActivistColumnName = "first_event"
 	ColFirstEventName        ActivistColumnName = "first_event_name"
+	ColFirstEventType        ActivistColumnName = "first_event_type"
 	ColLastEvent             ActivistColumnName = "last_event"
 	ColLastEventName         ActivistColumnName = "last_event_name"
 	ColTotalEvents           ActivistColumnName = "total_events"
@@ -146,6 +147,7 @@ type ActivistEventData struct {
 	FirstEvent            mysql.NullTime `db:"first_event"`
 	LastEvent             mysql.NullTime `db:"last_event"`
 	FirstEventName        string         `db:"first_event_name"`
+	FirstEventType        string         `db:"first_event_type"`
 	LastEventName         string         `db:"last_event_name"`
 	LastAction            mysql.NullTime `db:"last_action"`
 	MonthsSinceLastAction int            `db:"months_since_last_action"`

@@ -30,9 +30,11 @@ func newSingleEventSection(now time.Time) reportSection {
 				Filters: activists.QueryActivistFilters{
 					ChapterId:     reportChapterID,
 					IncludeHidden: false,
-					FirstEvent: activists.DateRangeFilter{
-						Gte: dateOnly(now.AddDate(0, 0, -60)),
-						Lt:  dateOnly(now.AddDate(0, 0, -30)),
+					FirstEvent: activists.FirstEventFilter{
+						Date: activists.DateRange{
+							Gte: dateOnly(now.AddDate(0, 0, -60)),
+							Lt:  dateOnly(now.AddDate(0, 0, -30)),
+						},
 					},
 					TotalEvents: activists.IntRangeFilter{
 						Gte: intPtr(1),

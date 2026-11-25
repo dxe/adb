@@ -53,27 +53,105 @@ func (d DateOnly) MarshalJSON() ([]byte, error) {
 	return []byte(`"` + d.Format("2006-01-02") + `"`), nil
 }
 
-// DateRangeFilter filters by a date column with optional NULL inclusion.
+// DateRange is a range of dates. Either bound may be omitted.
+type DateRange struct {
+	Gte DateOnly `json:"gte"` // Greater than or equal to (inclusive)
+	Lt  DateOnly `json:"lt"`  // Less than (exclusive)
+}
+
+func (r *DateRange) IsEmpty() bool {
+	return r.Gte.IsZero() && r.Lt.IsZero()
+}
+
+func (r *DateRange) hasBothBounds() bool {
+	return !r.Gte.IsZero() && !r.Lt.IsZero()
+}
+
+func (r *DateRange) Validate() error {
+	if r.hasBothBounds() && !r.Gte.Before(r.Lt.Time) {
+		return shared.ValidationErrorf("invalid date range")
+	}
+	return nil
+}
+
+// validateOrNull rejects or_null with a closed date range, where including
+// NULLs is unlikely to be what was meant.
+func validateOrNull(r DateRange, orNull bool) error {
+	if orNull && r.hasBothBounds() {
+		return shared.ValidationErrorf("or_null is only valid for open-ended ranges (one bound must be missing)")
+	}
+	return nil
+}
+
+// DateRangeFilter filters by a nullable date column. OrNull also matches rows
+// where the date is NULL; with an empty Date, it matches only those rows.
 type DateRangeFilter struct {
-	Gte    DateOnly `json:"gte"` // Greater than or equal to (inclusive)
-	Lt     DateOnly `json:"lt"`  // Less than (exclusive)
-	OrNull bool     `json:"or_null,omitempty"`
+	Date   DateRange `json:"date"`
+	OrNull bool      `json:"or_null,omitempty"`
 }
 
 func (f *DateRangeFilter) IsEmpty() bool {
-	return f.Gte.IsZero() && f.Lt.IsZero() && !f.OrNull
+	return f.Date.IsEmpty() && !f.OrNull
 }
 
 func (f *DateRangeFilter) Validate() error {
-	if !f.Gte.IsZero() && !f.Lt.IsZero() {
-		if !f.Gte.Before(f.Lt.Time) {
-			return shared.ValidationErrorf("invalid date range")
-		}
-		if f.OrNull {
-			return shared.ValidationErrorf("or_null is only valid for open-ended ranges (one bound must be missing)")
+	if err := f.Date.Validate(); err != nil {
+		return err
+	}
+	return validateOrNull(f.Date, f.OrNull)
+}
+
+// EventTypeFilter filters by event type values using one mode.
+// mode="include" means match any listed values.
+// mode="exclude" means exclude any listed values.
+//
+// Values aren't restricted to the current event types, since older events may
+// have types that are no longer offered.
+type EventTypeFilter struct {
+	Mode   string   `json:"mode,omitempty"`
+	Values []string `json:"values,omitempty"`
+}
+
+func (f *EventTypeFilter) IsEmpty() bool {
+	return len(f.Values) == 0
+}
+
+func (f *EventTypeFilter) Validate() error {
+	if len(f.Values) == 0 {
+		return nil
+	}
+	if f.Mode != "include" && f.Mode != "exclude" {
+		return shared.ValidationErrorf("invalid event type mode: %q", f.Mode)
+	}
+	for i, v := range f.Values {
+		if strings.TrimSpace(v) == "" {
+			return shared.ValidationErrorf("values[%d] cannot be empty", i)
 		}
 	}
 	return nil
+}
+
+// FirstEventFilter filters by the date and type of each activist's first event.
+// Both parts must match the same event. OrNull also matches activists who have
+// no events; with no other conditions, it matches only them.
+type FirstEventFilter struct {
+	Date   DateRange       `json:"date"`
+	Types  EventTypeFilter `json:"types"`
+	OrNull bool            `json:"or_null,omitempty"`
+}
+
+func (f *FirstEventFilter) IsEmpty() bool {
+	return f.Date.IsEmpty() && f.Types.IsEmpty() && !f.OrNull
+}
+
+func (f *FirstEventFilter) Validate() error {
+	if err := f.Date.Validate(); err != nil {
+		return err
+	}
+	if err := f.Types.Validate(); err != nil {
+		return shared.ValidationErrorf("invalid types: %v", err)
+	}
+	return validateOrNull(f.Date, f.OrNull)
 }
 
 // IntRangeFilter filters by an integer column.
@@ -246,7 +324,7 @@ type QueryActivistFilters struct {
 
 	ActivistLevel     ActivistLevelFilter `json:"activist_level"`
 	InterestDate      DateRangeFilter     `json:"interest_date"`
-	FirstEvent        DateRangeFilter     `json:"first_event"`
+	FirstEvent        FirstEventFilter    `json:"first_event"`
 	TotalEvents       IntRangeFilter      `json:"total_events"`
 	TotalInteractions IntRangeFilter      `json:"total_interactions"`
 	Source            SourceFilter        `json:"source"`

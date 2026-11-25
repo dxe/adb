@@ -61,11 +61,11 @@ var (
 		Key: firstEventSubqueryKey,
 		SQL: fmt.Sprintf(`
 LEFT JOIN LATERAL (
-	SELECT e.date as first_event_date, e.name as event_name
+	SELECT e.date as first_event_date, e.name as event_name, e.event_type as event_type
 	FROM event_attendance ea
 	JOIN events e ON e.id = ea.event_id
 	WHERE ea.activist_id = %s.id
-	ORDER BY e.date ASC
+	ORDER BY e.date ASC, e.id ASC
 	LIMIT 1
 ) %s ON TRUE`, activistTableAlias, firstEventSubqueryKey),
 	}

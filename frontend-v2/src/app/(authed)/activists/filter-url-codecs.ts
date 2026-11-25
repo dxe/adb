@@ -3,7 +3,11 @@ import type {
   ActivistLevelFilterValue,
   DateRangeBoundValue,
   DateRangeFilterValue,
+  EventTypeFilterValue,
+  FirstEventFilterValue,
+  FirstEventTypeValue,
 } from './filter-types'
+import { FIRST_EVENT_TYPES } from './filter-types'
 import type { FilterState } from './query-state'
 import { parseOptionalSafeInteger, parseSafeInteger } from '@/lib/number-utils'
 
@@ -94,6 +98,73 @@ export function encodeDateRange(
   if (!gteToken && !ltToken && effectiveOrNull) return 'null'
   const range = `${gteToken || ''}..${ltToken || ''}`
   return effectiveOrNull ? `${range}|null` : range
+}
+
+const eventTypeSlug = (value: string) => value.toLowerCase().replace(/ /g, '-')
+
+const EVENT_TYPE_FROM_SLUG = new Map<string, FirstEventTypeValue>(
+  FIRST_EVENT_TYPES.map((value) => [eventTypeSlug(value), value]),
+)
+
+/**
+ * Syntax: [date range][;[~]type,type][|null]
+ *   "-30.."                    -> first event in the last 30 days
+ *   "-30..;outreach,action"    -> ... and it was an Outreach or Action
+ *   ";~meeting"                -> first event wasn't a Meeting
+ *   ";~meeting|null"           -> ... or there are no events
+ *   "null"                     -> only activists with no events
+ * A trailing "|null" applies to the whole filter ("or no first event"). The
+ * date range uses the decodeDateRange syntax. Types are slugs of
+ * FIRST_EVENT_TYPES; "~" excludes them.
+ */
+export function decodeFirstEvent(
+  value?: string,
+): FirstEventFilterValue | undefined {
+  if (!value) return undefined
+  let orNull = false
+  let rest = value
+  if (rest.endsWith('|null')) {
+    orNull = true
+    rest = rest.slice(0, -5)
+  }
+  const sep = rest.indexOf(';')
+  const dateRaw = sep === -1 ? rest : rest.slice(0, sep)
+  const typesRaw = sep === -1 ? '' : rest.slice(sep + 1)
+
+  const date = decodeDateRange(dateRaw)
+  let types: EventTypeFilterValue | undefined
+  if (typesRaw) {
+    const mode = typesRaw.startsWith('~') ? 'exclude' : 'include'
+    const values = (mode === 'exclude' ? typesRaw.slice(1) : typesRaw)
+      .split(',')
+      .map((slug) => EVENT_TYPE_FROM_SLUG.get(slug.trim()))
+      .filter((v): v is FirstEventTypeValue => !!v)
+    if (values.length > 0) types = { mode, values }
+  }
+
+  orNull = orNull || !!date?.orNull
+  if (!date && !types && !orNull) return undefined
+  return {
+    date: date?.gte || date?.lt ? { gte: date.gte, lt: date.lt } : undefined,
+    types,
+    orNull: orNull || undefined,
+  }
+}
+
+/** Build [date range][;[~]type,type][|null]. */
+export function encodeFirstEvent(
+  value?: FirstEventFilterValue,
+): string | undefined {
+  const date = value?.date
+  const types = value?.types
+  if (!types || types.values.length === 0) {
+    return encodeDateRange(date?.gte, date?.lt, value?.orNull)
+  }
+  // Same rule as encodeDateRange: "or null" is dropped for a fully bounded range.
+  const orNull = !!value?.orNull && !(date?.gte && date?.lt)
+  const dateToken = encodeDateRange(date?.gte, date?.lt) ?? ''
+  const typesToken = `${types.mode === 'exclude' ? '~' : ''}${types.values.map(eventTypeSlug).join(',')}`
+  return `${dateToken};${typesToken}${orNull ? '|null' : ''}`
 }
 
 /** Parse "1..4" into string parts. */
@@ -225,6 +296,14 @@ export const parseDateRangeParam = (
 export const serializeDateRangeParam = (
   value?: FilterState['lastEvent'],
 ): string | undefined => encodeDateRange(value?.gte, value?.lt, value?.orNull)
+
+export const parseFirstEventParam = (
+  value?: string,
+): FilterState['firstEvent'] => decodeFirstEvent(value)
+
+export const serializeFirstEventParam = (
+  value?: FilterState['firstEvent'],
+): string | undefined => encodeFirstEvent(value)
 
 export const parseIntRangeParam = (
   value?: string,

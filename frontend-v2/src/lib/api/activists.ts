@@ -55,6 +55,7 @@ export const ActivistJSON = z.object({
   followup_date: z.string().optional(),
   first_event: z.string().optional(),
   first_event_name: z.string().optional(),
+  first_event_type: z.string().optional(),
   last_event: z.string().optional(),
   last_event_name: z.string().optional(),
   total_events: z.number().optional(),
@@ -134,9 +135,16 @@ const ActivistNameFilter = z.object({
   name_contains: z.string().optional(),
 })
 
-const DateRangeFilter = z.object({
+const DateRange = z.object({
   gte: z.string().optional(),
   lt: z.string().optional(),
+})
+export type ApiDateRange = z.infer<typeof DateRange>
+
+// or_null also matches activists whose date is NULL; with no date bounds, it
+// matches only them.
+const DateRangeFilter = z.object({
+  date: DateRange.optional(),
   or_null: z.boolean().optional(),
 })
 export type ApiDateRangeFilter = z.infer<typeof DateRangeFilter>
@@ -162,6 +170,19 @@ const TrainingFilter = z.object({
   not_completed: z.array(z.string()).optional(),
 })
 
+const EventTypeFilter = z.object({
+  mode: z.enum(['include', 'exclude']).optional(),
+  values: z.array(z.string()).optional(),
+})
+
+// or_null also matches activists with no events; with no other conditions, it
+// matches only them.
+const FirstEventFilter = z.object({
+  date: DateRange.optional(),
+  types: EventTypeFilter.optional(),
+  or_null: z.boolean().optional(),
+})
+
 // Mirrors activists.MaxActivistIDsFilter: the server rejects a longer ids
 // filter rather than truncating it.
 export const MAX_ACTIVIST_IDS_FILTER = 1000
@@ -178,7 +199,7 @@ const QueryActivistFilters = z.object({
   include_hidden: z.boolean().optional(),
   activist_level: ActivistLevelFilter.optional(),
   interest_date: DateRangeFilter.optional(),
-  first_event: DateRangeFilter.optional(),
+  first_event: FirstEventFilter.optional(),
   total_events: IntRangeFilter.optional(),
   total_interactions: IntRangeFilter.optional(),
   source: SourceFilter.optional(),

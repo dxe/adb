@@ -79,10 +79,13 @@ var (
 // Filter types and helpers.
 type (
 	DateOnly            = activists.DateOnly
+	DateRange           = activists.DateRange
 	DateRangeFilter     = activists.DateRangeFilter
 	IntRangeFilter      = activists.IntRangeFilter
 	NameFilter          = activists.NameFilter
 	ActivistLevelFilter = activists.ActivistLevelFilter
+	FirstEventFilter    = activists.FirstEventFilter
+	EventTypeFilter     = activists.EventTypeFilter
 	SourceFilter        = activists.SourceFilter
 	TrainingFilter      = activists.TrainingFilter
 )
@@ -171,6 +174,7 @@ const (
 	ColChapterName           = activists.ColChapterName
 	ColFirstEvent            = activists.ColFirstEvent
 	ColFirstEventName        = activists.ColFirstEventName
+	ColFirstEventType        = activists.ColFirstEventType
 	ColLastEvent             = activists.ColLastEvent
 	ColLastEventName         = activists.ColLastEventName
 	ColTotalEvents           = activists.ColTotalEvents

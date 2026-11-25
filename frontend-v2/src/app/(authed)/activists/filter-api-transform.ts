@@ -1,10 +1,12 @@
 import type {
+  ApiDateRange,
   ApiDateRangeFilter,
   ApiIntRangeFilter,
   QueryActivistShape,
 } from '@/lib/api'
 import type {
   DateRangeBoundValue,
+  DateRangeFilterValue,
   IncludeExcludeFilterValue,
   ProspectFilterValue,
 } from './filter-types'
@@ -37,21 +39,28 @@ export function resolveDateBound(
 }
 
 /**
- * Converts typed date range state into API filter fields.
+ * Converts typed date range bounds into API date range fields.
  * Resolves relative day offsets (integers) to absolute YYYY-MM-DD dates.
  */
 export function toApiDateRange(
-  value?: FilterState['lastEvent'],
+  value?: Pick<DateRangeFilterValue, 'gte' | 'lt'>,
   referenceDate: Date = new Date(),
-): ApiDateRangeFilter | undefined {
+): ApiDateRange | undefined {
   if (!value) return undefined
   const gte = value.gte ? resolveDateBound(value.gte, referenceDate) : undefined
   const lt = value.lt ? resolveDateBound(value.lt, referenceDate) : undefined
-  const or_null = value.orNull || undefined
-  if (gte === undefined && lt === undefined && or_null === undefined) {
-    return undefined
-  }
-  return { gte, lt, or_null }
+  if (gte === undefined && lt === undefined) return undefined
+  return { gte, lt }
+}
+
+/** Converts typed date range state, including orNull, into an API filter. */
+export function toApiDateRangeFilter(
+  value?: DateRangeFilterValue,
+  referenceDate: Date = new Date(),
+): ApiDateRangeFilter | undefined {
+  const date = toApiDateRange(value, referenceDate)
+  const or_null = value?.orNull || undefined
+  return date || or_null ? { date, or_null } : undefined
 }
 
 /** Converts typed int range state into numeric bounds for API filters. */
@@ -133,29 +142,40 @@ export const toApiLastEvent = (
   value: FilterState['lastEvent'],
   context: FilterApiContext,
 ): Partial<ApiFilters> => ({
-  last_event: toApiDateRange(value, context.referenceDate),
+  last_event: toApiDateRangeFilter(value, context.referenceDate),
 })
 
 export const toApiLastInteraction = (
   value: FilterState['lastInteraction'],
   context: FilterApiContext,
 ): Partial<ApiFilters> => ({
-  last_interaction: toApiDateRange(value, context.referenceDate),
+  last_interaction: toApiDateRangeFilter(value, context.referenceDate),
 })
 
 export const toApiInterestDate = (
   value: FilterState['interestDate'],
   context: FilterApiContext,
 ): Partial<ApiFilters> => ({
-  interest_date: toApiDateRange(value, context.referenceDate),
+  interest_date: toApiDateRangeFilter(value, context.referenceDate),
 })
 
 export const toApiFirstEvent = (
   value: FilterState['firstEvent'],
   context: FilterApiContext,
 ): Partial<ApiFilters> => ({
-  first_event: toApiDateRange(value, context.referenceDate),
+  first_event: toApiFirstEventValue(value, context.referenceDate),
 })
+
+function toApiFirstEventValue(
+  value: FilterState['firstEvent'],
+  referenceDate: Date,
+): ApiFilters['first_event'] {
+  const date = toApiDateRange(value?.date, referenceDate)
+  const types =
+    value?.types && value.types.values.length > 0 ? value.types : undefined
+  const or_null = value?.orNull || undefined
+  return date || types || or_null ? { date, types, or_null } : undefined
+}
 
 export const toApiTotalEvents = (
   value: FilterState['totalEvents'],

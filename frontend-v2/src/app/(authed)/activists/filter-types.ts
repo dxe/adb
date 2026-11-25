@@ -1,4 +1,5 @@
 import type { LocalDateYmd } from './date-time'
+import { EVENT_TYPES } from '../events/event-form-schema'
 
 export type AbsoluteDateBound = {
   mode: 'absolute'
@@ -13,9 +14,31 @@ export type RelativeDateBound = {
 
 export type DateRangeBoundValue = AbsoluteDateBound | RelativeDateBound
 
-export type DateRangeFilterValue = {
+export type DateRangeValue = {
   gte?: DateRangeBoundValue
   lt?: DateRangeBoundValue
+}
+
+/** A date range that can also match NULL dates (see orNull in the API). */
+export type DateRangeFilterValue = DateRangeValue & {
+  orNull?: boolean
+}
+
+// Event types the first event filter offers. Unlike the event form, includes
+// connections, since they count as attended events.
+export const FIRST_EVENT_TYPES = [...EVENT_TYPES, 'Connection'] as const
+
+export type FirstEventTypeValue = (typeof FIRST_EVENT_TYPES)[number]
+
+export type EventTypeFilterValue = {
+  mode: 'include' | 'exclude'
+  values: FirstEventTypeValue[]
+}
+
+export type FirstEventFilterValue = {
+  date?: DateRangeValue
+  types?: EventTypeFilterValue
+  /** Also match activists with no events. */
   orNull?: boolean
 }
 

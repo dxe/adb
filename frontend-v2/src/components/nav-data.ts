@@ -342,7 +342,7 @@ export const navbarData: NavbarData = {
               'first_event_name',
               'last_event',
             ],
-            firstEvent: { gte: daysAgo(7) },
+            firstEvent: { date: { gte: daysAgo(7) } },
             sort: [{ column: 'first_event', desc: false }],
           }),
           page: 'ActivistListV2',
@@ -358,7 +358,7 @@ export const navbarData: NavbarData = {
               'total_events',
               'first_event',
             ],
-            firstEvent: { gte: daysAgo(90), lt: daysAgo(30) },
+            firstEvent: { date: { gte: daysAgo(90), lt: daysAgo(30) } },
             totalEvents: { gte: 1, lt: 3 },
             sort: [{ column: 'first_event', desc: true }],
           }),
@@ -375,7 +375,9 @@ export const navbarData: NavbarData = {
               'total_events',
               'first_event',
             ],
-            firstEvent: { gte: { mode: 'absolute', date: '2026-01-01' } },
+            firstEvent: {
+              date: { gte: { mode: 'absolute', date: '2026-01-01' } },
+            },
             totalEvents: { gte: 4 },
             activistLevel: {
               mode: 'exclude',
@@ -389,7 +391,7 @@ export const navbarData: NavbarData = {
         {
           label: 'New Activists Pending Workshop',
           href: activistsHref({
-            firstEvent: { gte: daysAgo(180) },
+            firstEvent: { date: { gte: daysAgo(180) } },
             activistLevel: { mode: 'include', values: ['Supporter'] },
             training: { include: [], exclude: ['training0'] },
             columns: [
