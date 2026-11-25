@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   matchesAssignedToFilter,
   resolveDateBound,
-  toApiDateRange,
+  toApiDateRangeFilter,
   toApiFirstEvent,
 } from './filter-api-transform'
 
@@ -55,19 +55,33 @@ describe('filter-api-transform', () => {
     const referenceDate = new Date('2026-03-16T23:30:00-07:00')
 
     expect(
-      toApiDateRange(
+      toApiDateRangeFilter(
         {
           gte: { mode: 'relative', daysOffset: -360 },
           lt: { mode: 'relative', daysOffset: 0 },
-          orNull: true,
         },
         referenceDate,
       ),
     ).toEqual({
-      gte: '2025-03-21',
-      lt: '2026-03-16',
+      date: { gte: '2025-03-21', lt: '2026-03-16' },
+      or_null: undefined,
+    })
+  })
+
+  it('puts or_null beside the date range', () => {
+    const referenceDate = new Date('2026-03-16T23:30:00-07:00')
+
+    expect(
+      toApiDateRangeFilter(
+        { lt: { mode: 'relative', daysOffset: -1 }, orNull: true },
+        referenceDate,
+      ),
+    ).toEqual({ date: { gte: undefined, lt: '2026-03-15' }, or_null: true })
+    expect(toApiDateRangeFilter({ orNull: true }, referenceDate)).toEqual({
+      date: undefined,
       or_null: true,
     })
+    expect(toApiDateRangeFilter({}, referenceDate)).toBeUndefined()
   })
 
   it('nests the first event date range and types', () => {
@@ -87,8 +101,9 @@ describe('filter-api-transform', () => {
       ),
     ).toEqual({
       first_event: {
-        date: { gte: '2026-03-15', lt: undefined, or_null: true },
+        date: { gte: '2026-03-15', lt: undefined },
         types: { mode: 'exclude', values: ['Meeting'] },
+        or_null: true,
       },
     })
     expect(

@@ -134,9 +134,16 @@ const ActivistNameFilter = z.object({
   name_contains: z.string().optional(),
 })
 
-const DateRangeFilter = z.object({
+const DateRange = z.object({
   gte: z.string().optional(),
   lt: z.string().optional(),
+})
+export type ApiDateRange = z.infer<typeof DateRange>
+
+// or_null also matches activists whose date is NULL; with no date bounds, it
+// matches only them.
+const DateRangeFilter = z.object({
+  date: DateRange.optional(),
   or_null: z.boolean().optional(),
 })
 export type ApiDateRangeFilter = z.infer<typeof DateRangeFilter>
@@ -167,9 +174,12 @@ const EventTypeFilter = z.object({
   values: z.array(z.string()).optional(),
 })
 
+// or_null also matches activists with no events; with no other conditions, it
+// matches only them.
 const FirstEventFilter = z.object({
-  date: DateRangeFilter.optional(),
+  date: DateRange.optional(),
   types: EventTypeFilter.optional(),
+  or_null: z.boolean().optional(),
 })
 
 // Mirrors activists.MaxActivistIDsFilter: the server rejects a longer ids

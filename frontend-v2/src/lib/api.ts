@@ -437,6 +437,7 @@ export {
   QueryActivistCountOptions,
 } from './api/activists'
 export type {
+  ApiDateRange,
   ApiDateRangeFilter,
   ApiIntRangeFilter,
   ActivistJSON as ActivistJSONType,

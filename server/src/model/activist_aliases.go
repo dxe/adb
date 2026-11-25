@@ -79,6 +79,7 @@ var (
 // Filter types and helpers.
 type (
 	DateOnly            = activists.DateOnly
+	DateRange           = activists.DateRange
 	DateRangeFilter     = activists.DateRangeFilter
 	IntRangeFilter      = activists.IntRangeFilter
 	NameFilter          = activists.NameFilter

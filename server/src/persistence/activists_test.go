@@ -197,14 +197,15 @@ func TestQueryActivists_FirstEventFilter(t *testing.T) {
 		{
 			name: "date only",
 			filter: model.FirstEventFilter{
-				Date: model.DateRangeFilter{Gte: mustDateOnly(t, "2025-01-01")},
+				Date: model.DateRange{Gte: mustDateOnly(t, "2025-01-01")},
 			},
 			want: []string{"Alice", "Bob"},
 		},
 		{
 			name: "date only, or null",
 			filter: model.FirstEventFilter{
-				Date: model.DateRangeFilter{Gte: mustDateOnly(t, "2025-01-01"), OrNull: true},
+				Date:   model.DateRange{Gte: mustDateOnly(t, "2025-01-01")},
+				OrNull: true,
 			},
 			want: []string{"Alice", "Bob", "Carol"},
 		},
@@ -225,7 +226,7 @@ func TestQueryActivists_FirstEventFilter(t *testing.T) {
 		{
 			name: "types and date match the same event",
 			filter: model.FirstEventFilter{
-				Date:  model.DateRangeFilter{Gte: mustDateOnly(t, "2025-01-01")},
+				Date:  model.DateRange{Gte: mustDateOnly(t, "2025-01-01")},
 				Types: model.EventTypeFilter{Mode: "include", Values: []string{"Outreach"}},
 			},
 			want: []string{"Alice"},
@@ -233,16 +234,22 @@ func TestQueryActivists_FirstEventFilter(t *testing.T) {
 		{
 			name: "types and date, or null",
 			filter: model.FirstEventFilter{
-				Date:  model.DateRangeFilter{Gte: mustDateOnly(t, "2025-01-01"), OrNull: true},
-				Types: model.EventTypeFilter{Mode: "include", Values: []string{"Outreach"}},
+				Date:   model.DateRange{Gte: mustDateOnly(t, "2025-01-01")},
+				OrNull: true,
+				Types:  model.EventTypeFilter{Mode: "include", Values: []string{"Outreach"}},
 			},
 			want: []string{"Alice", "Carol"},
 		},
 		{
+			name:   "or null only",
+			filter: model.FirstEventFilter{OrNull: true},
+			want:   []string{"Carol"},
+		},
+		{
 			name: "types, or null with no date bounds",
 			filter: model.FirstEventFilter{
-				Date:  model.DateRangeFilter{OrNull: true},
-				Types: model.EventTypeFilter{Mode: "exclude", Values: []string{"Outreach"}},
+				OrNull: true,
+				Types:  model.EventTypeFilter{Mode: "exclude", Values: []string{"Outreach"}},
 			},
 			want: []string{"Bob", "Carol"},
 		},
@@ -264,5 +271,27 @@ func TestQueryActivistFilters_ValidateFirstEventTypes(t *testing.T) {
 	for _, types := range invalid {
 		f := model.QueryActivistFilters{FirstEvent: model.FirstEventFilter{Types: types}}
 		require.Error(t, f.Validate(), "%+v", types)
+	}
+}
+
+func TestQueryActivistFilters_ValidateOrNullNeedsOpenRange(t *testing.T) {
+	closed := model.DateRange{
+		Gte: mustDateOnly(t, "2025-01-01"),
+		Lt:  mustDateOnly(t, "2025-02-01"),
+	}
+	open := model.DateRange{Gte: mustDateOnly(t, "2025-01-01")}
+
+	for _, f := range []model.QueryActivistFilters{
+		{LastEvent: model.DateRangeFilter{Date: closed, OrNull: true}},
+		{FirstEvent: model.FirstEventFilter{Date: closed, OrNull: true}},
+	} {
+		require.Error(t, f.Validate())
+	}
+	for _, f := range []model.QueryActivistFilters{
+		{LastEvent: model.DateRangeFilter{Date: closed}},
+		{LastEvent: model.DateRangeFilter{Date: open, OrNull: true}},
+		{FirstEvent: model.FirstEventFilter{Date: open, OrNull: true}},
+	} {
+		require.NoError(t, f.Validate())
 	}
 }

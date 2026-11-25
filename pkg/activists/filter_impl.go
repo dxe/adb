@@ -104,13 +104,12 @@ func (f *dateRangeFilter) getJoins() []joinSpec {
 }
 
 func (f *dateRangeFilter) buildWhere() []queryClause {
-	conds, args := dateRangeConds(f.filter, f.expr)
+	conds, args := dateRangeConds(f.filter.Date, f.expr)
 	return orNullClause(conds, args, f.filter.OrNull, f.expr)
 }
 
-// dateRangeConds returns the SQL conditions for a date range's bounds,
-// ignoring OrNull.
-func dateRangeConds(f DateRangeFilter, expr string) ([]string, []any) {
+// dateRangeConds returns the SQL conditions for a date range's bounds.
+func dateRangeConds(f DateRange, expr string) ([]string, []any) {
 	var conds []string
 	var args []any
 	if !f.Gte.IsZero() {
@@ -142,7 +141,7 @@ func orNullClause(conds []string, args []any, orNull bool, nullExpr string) []qu
 }
 
 // firstEventFilter filters by the date and type of each activist's first
-// event. Date.OrNull also matches activists who have no events.
+// event. OrNull also matches activists who have no events.
 type firstEventFilter struct {
 	filter FirstEventFilter
 }
@@ -171,7 +170,7 @@ func (f *firstEventFilter) buildWhere() []queryClause {
 			firstEventSubqueryJoin.Key, op, strings.Join(placeholders, ",")))
 	}
 
-	return orNullClause(conds, args, f.filter.Date.OrNull, dateExpr)
+	return orNullClause(conds, args, f.filter.OrNull, dateExpr)
 }
 
 // intRangeFilter filters by an integer column using COALESCE to treat NULL as 0.
