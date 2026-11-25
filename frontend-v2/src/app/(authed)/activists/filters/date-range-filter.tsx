@@ -3,7 +3,6 @@
 import { useId, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Button } from '@/components/ui/button'
 import {
   Select,
   SelectContent,
@@ -216,7 +215,7 @@ export function DateRangeFilter({
   removable,
   nullLabel,
 }: DateRangeFilterProps) {
-  const [draft, setDraft, onOpenChange] = useDraftFilter(value, onChange)
+  const [draft, setDraft, chipProps] = useDraftFilter(value, onChange)
   const gte = draft?.gte
   const lt = draft?.lt
   const orNull = !!draft?.orNull
@@ -233,7 +232,7 @@ export function DateRangeFilter({
       defaultOpen={defaultOpen}
       removable={removable}
       popoverClassName="w-80"
-      onOpenChange={onOpenChange}
+      {...chipProps}
     >
       <div className="space-y-4">
         <DateRangeFields
@@ -250,17 +249,6 @@ export function DateRangeFilter({
               updateDraft({ gte, lt, orNull: checked })
             }
           />
-        )}
-
-        {draft && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={() => setDraft(undefined)}
-          >
-            Clear
-          </Button>
         )}
       </div>
     </FilterChip>
@@ -488,7 +476,7 @@ function RelativeInput({
           className="w-20"
           value={amount ?? ''}
           onChange={(e) => handleAmountChange(e.target.value)}
-          placeholder="0"
+          placeholder="#"
         />
         <Select
           value={localUnit}

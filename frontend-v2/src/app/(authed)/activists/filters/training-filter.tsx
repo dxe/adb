@@ -1,6 +1,5 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
 import { FilterChip } from './filter-chip'
 import { IncludeExcludeOption } from './include-exclude-option'
 import { useDraftFilter } from '@/hooks/use-draft-filter'
@@ -48,11 +47,9 @@ export function TrainingFilter({
   defaultOpen,
   removable,
 }: TrainingFilterProps) {
-  const [draft, setDraft, onOpenChange] = useDraftFilter(value, onChange)
+  const [draft, setDraft, chipProps] = useDraftFilter(value, onChange)
   const include = new Set(draft?.include ?? [])
   const exclude = new Set(draft?.exclude ?? [])
-  const draftCount = include.size + exclude.size
-  const hasDraft = draftCount > 0
 
   const updateDraft = (next: IncludeExcludeFilterValue | undefined) => {
     setDraft(normalizeIncludeExclude(next))
@@ -88,7 +85,7 @@ export function TrainingFilter({
       onClear={() => onChange(undefined)}
       defaultOpen={defaultOpen}
       removable={removable}
-      onOpenChange={onOpenChange}
+      {...chipProps}
     >
       <div className="space-y-3">
         <h4 className="font-medium text-sm">Training</h4>
@@ -110,17 +107,6 @@ export function TrainingFilter({
             />
           )
         })}
-        {hasDraft && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={() => setDraft(undefined)}
-          >
-            Clear
-          </Button>
-        )}
       </div>
     </FilterChip>
   )

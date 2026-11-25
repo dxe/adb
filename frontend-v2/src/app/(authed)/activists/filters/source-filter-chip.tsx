@@ -1,7 +1,6 @@
 'use client'
 
 import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
 import {
   decodeIncludeExcludeSet,
   encodeIncludeExclude,
@@ -39,9 +38,8 @@ export function SourceFilterChip({
   removable,
 }: SourceFilterChipProps) {
   const committedText = formatSourceValue(value)
-  const [draft, setDraft, onOpenChange] = useDraftFilter(
-    committedText,
-    (next) => onChange(parseSourceValue(next)),
+  const [draft, setDraft, chipProps] = useDraftFilter(committedText, (next) =>
+    onChange(parseSourceValue(next)),
   )
 
   return (
@@ -52,7 +50,7 @@ export function SourceFilterChip({
       onClear={() => onChange(undefined)}
       defaultOpen={defaultOpen}
       removable={removable}
-      onOpenChange={onOpenChange}
+      {...chipProps}
     >
       <div className="space-y-3">
         <h4 className="font-medium text-sm">Source</h4>
@@ -64,16 +62,6 @@ export function SourceFilterChip({
         <p className="text-xs text-muted-foreground">
           Comma-separated. Prefix with - to exclude.
         </p>
-        {draft && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={() => setDraft(undefined)}
-          >
-            Clear
-          </Button>
-        )}
       </div>
     </FilterChip>
   )

@@ -2,7 +2,6 @@
 
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Button } from '@/components/ui/button'
 import { FilterChip } from './filter-chip'
 import { useDraftFilter } from '@/hooks/use-draft-filter'
 import type { IntRangeFilterValue } from '../filter-types'
@@ -40,10 +39,9 @@ export function IntRangeFilter({
   defaultOpen,
   removable,
 }: IntRangeFilterProps) {
-  const [draft, setDraft, onOpenChange] = useDraftFilter(value, onChange)
+  const [draft, setDraft, chipProps] = useDraftFilter(value, onChange)
   const gte = draft?.gte
   const lt = draft?.lt
-  const hasDraft = !!draft
 
   // Summary is derived from the committed value, not the draft.
   const summary = formatIntRange(value?.gte, value?.lt)
@@ -59,7 +57,7 @@ export function IntRangeFilter({
       onClear={() => onChange(undefined)}
       defaultOpen={defaultOpen}
       removable={removable}
-      onOpenChange={onOpenChange}
+      {...chipProps}
     >
       <div className="space-y-4">
         <div className="space-y-2">
@@ -94,16 +92,6 @@ export function IntRangeFilter({
             placeholder="No maximum"
           />
         </div>
-        {hasDraft && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={() => setDraft(undefined)}
-          >
-            Clear
-          </Button>
-        )}
       </div>
     </FilterChip>
   )
