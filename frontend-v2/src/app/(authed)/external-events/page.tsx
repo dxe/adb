@@ -12,18 +12,18 @@ import ExternalEventsPage from './external-events-page'
 
 export default async function ExternalEventsListPage() {
   const session = await getCachedSession()
-  if (!session.user?.Roles.includes('admin')) {
+  if (!session.user?.Roles.some((r) => r === 'admin' || r === 'organizer')) {
     forbidden()
   }
 
   const apiClient = new ApiClient(await getCookies())
   const queryClient = new QueryClient()
 
-  // prefetchQuery, not fetchQuery + redirectForHttpError: the endpoint isn't
-  // admin-gated, so a failed prefetch just falls through to the client useQuery.
+  // prefetchQuery, not fetchQuery + redirectForHttpError: a failed prefetch just falls through to the client useQuery.
   await queryClient.prefetchQuery({
-    queryKey: [API_PATH.EXTERNAL_EVENTS_LIST],
-    queryFn: ({ signal }) => apiClient.getExternalEvents(signal),
+    queryKey: [API_PATH.EXTERNAL_EVENTS_LIST, session.user.ChapterID],
+    queryFn: ({ signal }) =>
+      apiClient.getExternalEvents(session.user.ChapterID, signal),
   })
 
   return (

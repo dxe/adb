@@ -454,7 +454,7 @@ export const navbarData: NavbarData = {
           label: 'Facebook Events',
           href: '/v2/external-events',
           page: 'FacebookEvents_beta',
-          roleRequired: ['admin'],
+          roleRequired: ['organizer'],
         },
         {
           label: 'Configuration',

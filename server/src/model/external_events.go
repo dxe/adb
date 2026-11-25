@@ -187,22 +187,61 @@ func AddEventbriteDetailsToEventByID(db *sqlx.DB, event ExternalEvent) error {
 	return nil
 }
 
-func FeatureExternalEvent(db *sqlx.DB, eventId string, featured bool) error {
-	_, err := db.Exec(`UPDATE fb_events
-		SET featured = ?
-		WHERE id = ?`, featured, eventId)
-	if err != nil {
-		return errors.Wrap(err, "failed to update event (failed to feature event)")
-	}
-	return nil
+// ExternalEventRepository reads external (Facebook/Eventbrite) events by ADB
+// chapter ID so callers don't need to know about Facebook page IDs.
+type ExternalEventRepository interface {
+	// ListUpcomingForChapter returns non-canceled events from the chapter's own
+	// page that haven't ended as of `since`. It returns no events if the chapter
+	// has no page.
+	ListUpcomingForChapter(chapterID int, since time.Time) ([]ExternalEvent, error)
+
+	// GetChapterID returns the ID of the chapter that owns the event's page, or
+	// ErrNotFound.
+	GetChapterID(eventID string) (int, error)
+
+	// SetFeatured and Cancel only touch the event if it belongs to chapterID's
+	// page; otherwise they return ErrNotFound. (A redundant check: callers are
+	// expected to have authorized the user for chapterID already.)
+	SetFeatured(chapterID int, eventID string, featured bool) error
+	Cancel(chapterID int, eventID string) error
 }
 
-func CancelExternalEvent(db *sqlx.DB, eventId string) error {
-	_, err := db.Exec(`UPDATE fb_events
-		SET is_canceled = 1
-		WHERE id = ?`, eventId)
-	if err != nil {
-		return errors.Wrap(err, "failed to update event")
+// ListExternalEventsForChapter returns upcoming events for a chapter, which
+// the user must be an admin or organizer of.
+func ListExternalEventsForChapter(repo ExternalEventRepository, user ADBUser, chapterID int, since time.Time) ([]ExternalEvent, error) {
+	if !UserHasOrganizerAccess(user) {
+		return nil, ValidationErrorf("lacking permission to view external events")
 	}
-	return nil
+	if err := CheckChapterAccess(user, chapterID); err != nil {
+		return nil, err
+	}
+	return repo.ListUpcomingForChapter(chapterID, since)
+}
+
+func FeatureExternalEvent(repo ExternalEventRepository, user ADBUser, eventID string, featured bool) error {
+	return modifyExternalEvent(repo, user, eventID, func(chapterID int) error {
+		return repo.SetFeatured(chapterID, eventID, featured)
+	})
+}
+
+func CancelExternalEvent(repo ExternalEventRepository, user ADBUser, eventID string) error {
+	return modifyExternalEvent(repo, user, eventID, func(chapterID int) error {
+		return repo.Cancel(chapterID, eventID)
+	})
+}
+
+// modifyExternalEvent authorizes the user (admin, or organizer of the chapter
+// that owns the event) and then runs the write.
+func modifyExternalEvent(repo ExternalEventRepository, user ADBUser, eventID string, write func(chapterID int) error) error {
+	if !UserHasOrganizerAccess(user) {
+		return ValidationErrorf("lacking permission to modify external events")
+	}
+	chapterID, err := repo.GetChapterID(eventID)
+	if err != nil {
+		return err
+	}
+	if err := CheckChapterAccess(user, chapterID); err != nil {
+		return err
+	}
+	return write(chapterID)
 }

@@ -56,9 +56,9 @@ export const API_PATH = {
   WORKING_GROUP_LIST: 'working_group/list',
   WORKING_GROUP_SAVE: 'working_group/save',
   WORKING_GROUP_DELETE: 'working_group/delete',
-  EXTERNAL_EVENTS_LIST: 'external_events',
-  EXTERNAL_EVENT_FEATURE: 'admin/external_events/feature',
-  EXTERNAL_EVENT_CANCEL: 'admin/external_events/cancel',
+  EXTERNAL_EVENTS_LIST: 'api/external-events',
+  EXTERNAL_EVENT_FEATURE: 'api/external-events/feature',
+  EXTERNAL_EVENT_CANCEL: 'api/external-events/cancel',
 }
 
 export const StaticResourcesHashResp = z.object({
@@ -585,10 +585,6 @@ export interface EventListParams {
   event_date_end: string
   event_type: EventType
 }
-
-// The external events admin page is only used for SF Bay (parity with the
-// legacy Vue page), so the page ID is hardcoded.
-const SF_BAY_FACEBOOK_PAGE_ID = '1377014279263790'
 
 const ExternalEventSchema = z.object({
   ID: z.string(),
@@ -1515,16 +1511,17 @@ export class ApiClient {
     }
   }
 
-  getExternalEvents = async (signal?: AbortSignal) => {
+  // Lists upcoming events for a chapter. The server only allows admins, or
+  // organizers of that chapter.
+  getExternalEvents = async (chapterId: number, signal?: AbortSignal) => {
     try {
-      // UTC date so SSR prefetch and client refetch agree on the "today" boundary.
-      const startOfTodayUtc = `${new Date().toISOString().slice(0, 10)}T00:00:00Z`
       const resp = await this.client
-        .get(`${API_PATH.EXTERNAL_EVENTS_LIST}/${SF_BAY_FACEBOOK_PAGE_ID}`, {
-          searchParams: { start_time: startOfTodayUtc },
+        .get(API_PATH.EXTERNAL_EVENTS_LIST, {
+          searchParams: { chapter_id: chapterId },
           signal,
         })
         .json()
+      this.throwIfApiError(resp)
       return ExternalEventsListResp.parse(resp).events
     } catch (err) {
       return this.handleKyError(err)
