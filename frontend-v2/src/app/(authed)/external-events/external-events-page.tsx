@@ -2,13 +2,16 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { Loader2 } from 'lucide-react'
+import { useAuthedPageContext } from '@/hooks/useAuthedPageContext'
 import { API_PATH, apiClient } from '@/lib/api'
 import { ExternalEventsTable } from './external-events-table'
 
 export default function ExternalEventsPage() {
+  const { user } = useAuthedPageContext()
   const { data: events, isLoading } = useQuery({
-    queryKey: [API_PATH.EXTERNAL_EVENTS_LIST],
-    queryFn: ({ signal }) => apiClient.getExternalEvents(signal),
+    queryKey: [API_PATH.EXTERNAL_EVENTS_LIST, user.ChapterID],
+    queryFn: ({ signal }) =>
+      apiClient.getExternalEvents(user.ChapterID, signal),
   })
 
   return (

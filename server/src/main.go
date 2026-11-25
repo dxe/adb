@@ -246,7 +246,8 @@ func router() (*mux.Router, *sqlx.DB) {
 	db := model.NewDB(config.DBDataSource())
 	userRepo := persistence.NewUserRepository(db)
 	activistRepo := persistence.NewActivistRepository(db)
-	main := MainController{db: db, userRepo: userRepo, activistRepo: activistRepo}
+	externalEventRepo := persistence.NewExternalEventRepository(db)
+	main := MainController{db: db, userRepo: userRepo, activistRepo: activistRepo, externalEventRepo: externalEventRepo}
 	csrfProtect := csrf.Protect(
 		[]byte(config.CsrfAuthKey),
 		csrf.CookieName(csrfCookieName),
@@ -364,8 +365,9 @@ func router() (*mux.Router, *sqlx.DB) {
 	admin.Handle("/chapter/list", alice.New(main.apiIntlCoordinatorAuthMiddleware).ThenFunc(main.ChapterListHandler))
 	admin.Handle("/chapter/delete", alice.New(main.apiIntlCoordinatorAuthMiddleware).ThenFunc(main.ChapterDeleteHandler))
 	admin.Handle("/chapter/save", alice.New(main.apiIntlCoordinatorAuthMiddleware).ThenFunc(main.ChapterSaveHandler))
-	admin.Handle("/admin/external_events/feature", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.AdminFeatureEventHandler))
-	admin.Handle("/admin/external_events/cancel", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.AdminCancelEventHandler))
+	admin.Handle("/api/external-events", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ExternalEventsListHandler)).Methods(http.MethodGet)
+	admin.Handle("/api/external-events/feature", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ExternalEventFeatureHandler)).Methods(http.MethodPost)
+	admin.Handle("/api/external-events/cancel", alice.New(main.apiOrganizerAccessAuthMiddleware).ThenFunc(main.ExternalEventCancelHandler)).Methods(http.MethodPost)
 	admin.Handle("/api/admin/send-test-email", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.AdminSendTestEmailHandler)).Methods(http.MethodPost)
 	admin.Handle("/auth/switch_chapter", alice.New(main.authAdminMiddleware).ThenFunc(main.SwitchActiveChapterHandler))
 	admin.Handle("/api/users", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.UsersListHandler)).Methods(http.MethodGet)
@@ -399,6 +401,8 @@ type MainController struct {
 	db           *sqlx.DB
 	userRepo     model.UserRepository
 	activistRepo model.ActivistRepository
+
+	externalEventRepo model.ExternalEventRepository
 }
 
 func (c MainController) authAccessMiddleware(h http.Handler, hasAccess func(model.ADBUser) bool) http.Handler {
@@ -1684,6 +1688,14 @@ func (c MainController) ActivistTimelineHandler(w http.ResponseWriter, r *http.R
 	transport.ActivistTimelineHandler(w, r, authedUser, c.db)
 }
 
+func (c MainController) ExternalEventsListHandler(w http.ResponseWriter, r *http.Request) {
+	authedUser, authed := c.getAuthedADBUser(r)
+	if !authed {
+		panic("ExternalEventsListHandler requires authed ADB user")
+	}
+	transport.ExternalEventsListHandler(w, r, authedUser, c.externalEventRepo)
+}
+
 func (c MainController) UsersListHandler(w http.ResponseWriter, r *http.Request) {
 	transport.UsersListHandler(w, r, c.userRepo)
 }
@@ -1703,27 +1715,12 @@ func (c MainController) UserListHandler(w http.ResponseWriter, r *http.Request) 
 	transport.UserListHandler(w, r, c.userRepo)
 }
 
-func (c MainController) AdminFeatureEventHandler(w http.ResponseWriter, r *http.Request) {
-	var eventData struct {
-		ID       string `json:"id"`
-		Featured bool   `json:"featured"`
+func (c MainController) ExternalEventFeatureHandler(w http.ResponseWriter, r *http.Request) {
+	authedUser, authed := c.getAuthedADBUser(r)
+	if !authed {
+		panic("ExternalEventFeatureHandler requires authed ADB user")
 	}
-
-	err := json.NewDecoder(r.Body).Decode(&eventData)
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-
-	err = model.FeatureExternalEvent(c.db, eventData.ID, eventData.Featured)
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-
-	writeJSON(w, map[string]interface{}{
-		"status": "success",
-	})
+	transport.ExternalEventFeatureHandler(w, r, authedUser, c.externalEventRepo)
 }
 
 func (c MainController) AdminSendTestEmailHandler(w http.ResponseWriter, r *http.Request) {
@@ -1758,26 +1755,12 @@ func (c MainController) AdminSendTestEmailHandler(w http.ResponseWriter, r *http
 	})
 }
 
-func (c MainController) AdminCancelEventHandler(w http.ResponseWriter, r *http.Request) {
-	var eventData struct {
-		ID string `json:"id"`
+func (c MainController) ExternalEventCancelHandler(w http.ResponseWriter, r *http.Request) {
+	authedUser, authed := c.getAuthedADBUser(r)
+	if !authed {
+		panic("ExternalEventCancelHandler requires authed ADB user")
 	}
-
-	err := json.NewDecoder(r.Body).Decode(&eventData)
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-
-	err = model.CancelExternalEvent(c.db, eventData.ID)
-	if err != nil {
-		sendErrorMessage(w, err)
-		return
-	}
-
-	writeJSON(w, map[string]interface{}{
-		"status": "success",
-	})
+	transport.ExternalEventCancelHandler(w, r, authedUser, c.externalEventRepo)
 }
 
 func (c MainController) HealthStatusHandler(w http.ResponseWriter, r *http.Request) {
