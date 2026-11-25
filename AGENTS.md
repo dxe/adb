@@ -1,7 +1,5 @@
 # Agents
 
-Note: CLAUDE.md is a symlink to this file.
-
 ## environments
 
 This repo runs in the devcontainer (local dev machine) and in the Claude Code cloud VM (no devcontainer; `$CLAUDE_CODE_REMOTE` is `true`).
