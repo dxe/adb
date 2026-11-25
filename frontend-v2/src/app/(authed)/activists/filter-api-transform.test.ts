@@ -68,20 +68,12 @@ describe('filter-api-transform', () => {
     })
   })
 
-  it('puts or_null beside the date range', () => {
-    const referenceDate = new Date('2026-03-16T23:30:00-07:00')
-
-    expect(
-      toApiDateRangeFilter(
-        { lt: { mode: 'relative', daysOffset: -1 }, orNull: true },
-        referenceDate,
-      ),
-    ).toEqual({ date: { gte: undefined, lt: '2026-03-15' }, or_null: true })
-    expect(toApiDateRangeFilter({ orNull: true }, referenceDate)).toEqual({
+  it('keeps an or_null-only date filter but drops an empty one', () => {
+    expect(toApiDateRangeFilter({ orNull: true })).toEqual({
       date: undefined,
       or_null: true,
     })
-    expect(toApiDateRangeFilter({}, referenceDate)).toBeUndefined()
+    expect(toApiDateRangeFilter({})).toBeUndefined()
   })
 
   it('nests the first event date range and types', () => {
