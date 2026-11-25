@@ -31,18 +31,18 @@ func TestExternalEvents_ListOnlyReturnsOwnChapter(t *testing.T) {
 	defer func() { _ = db.Close() }()
 	repo := NewExternalEventRepository(db)
 
-	chapterA := seedChapterWithEvent(t, db, 9001, "Chapter A", "evt-a")
-	chapterB := seedChapterWithEvent(t, db, 9002, "Chapter B", "evt-b")
+	chapterA := seedChapterWithEvent(t, db, 9001, "Chapter A", "1001")
+	chapterB := seedChapterWithEvent(t, db, 9002, "Chapter B", "1002")
 
 	events, err := repo.ListUpcomingForChapter(chapterA, time.Now().UTC())
 	require.NoError(t, err)
 	require.Len(t, events, 1)
-	require.Equal(t, "evt-a", events[0].ID)
+	require.Equal(t, "1001", events[0].ID)
 
 	events, err = repo.ListUpcomingForChapter(chapterB, time.Now().UTC())
 	require.NoError(t, err)
 	require.Len(t, events, 1)
-	require.Equal(t, "evt-b", events[0].ID)
+	require.Equal(t, "1002", events[0].ID)
 }
 
 func TestExternalEvents_ListForChapterWithoutPageIsEmpty(t *testing.T) {
@@ -50,7 +50,7 @@ func TestExternalEvents_ListForChapterWithoutPageIsEmpty(t *testing.T) {
 	defer func() { _ = db.Close() }()
 	repo := NewExternalEventRepository(db)
 
-	seedChapterWithEvent(t, db, 9001, "Chapter A", "evt-a")
+	seedChapterWithEvent(t, db, 9001, "Chapter A", "1001")
 	// Chapter with no Facebook page (id 0).
 	_, err := db.Exec(`INSERT INTO fb_pages (id, name, fb_url) VALUES (0, 'No Page', '')`)
 	require.NoError(t, err)
@@ -71,25 +71,25 @@ func TestExternalEvents_FeatureAndCancelRejectOtherChapters(t *testing.T) {
 	defer func() { _ = db.Close() }()
 	repo := NewExternalEventRepository(db)
 
-	chapterA := seedChapterWithEvent(t, db, 9001, "Chapter A", "evt-a")
-	chapterB := seedChapterWithEvent(t, db, 9002, "Chapter B", "evt-b")
+	chapterA := seedChapterWithEvent(t, db, 9001, "Chapter A", "1001")
+	chapterB := seedChapterWithEvent(t, db, 9002, "Chapter B", "1002")
 
 	// Chapter B can't touch chapter A's event.
-	require.ErrorIs(t, repo.SetFeaturedForChapter(chapterB, "evt-a", true), model.ErrExternalEventNotFound)
-	require.ErrorIs(t, repo.CancelForChapter(chapterB, "evt-a"), model.ErrExternalEventNotFound)
+	require.ErrorIs(t, repo.SetFeaturedForChapter(chapterB, "1001", true), model.ErrExternalEventNotFound)
+	require.ErrorIs(t, repo.CancelForChapter(chapterB, "1001"), model.ErrExternalEventNotFound)
 
 	var featured, canceled bool
-	require.NoError(t, db.Get(&featured, `SELECT featured FROM fb_events WHERE id = 'evt-a'`))
-	require.NoError(t, db.Get(&canceled, `SELECT is_canceled FROM fb_events WHERE id = 'evt-a'`))
+	require.NoError(t, db.Get(&featured, `SELECT featured FROM fb_events WHERE id = '1001'`))
+	require.NoError(t, db.Get(&canceled, `SELECT is_canceled FROM fb_events WHERE id = '1001'`))
 	require.False(t, featured)
 	require.False(t, canceled)
 
 	// Chapter A can.
-	require.NoError(t, repo.SetFeaturedForChapter(chapterA, "evt-a", true))
-	require.NoError(t, db.Get(&featured, `SELECT featured FROM fb_events WHERE id = 'evt-a'`))
+	require.NoError(t, repo.SetFeaturedForChapter(chapterA, "1001", true))
+	require.NoError(t, db.Get(&featured, `SELECT featured FROM fb_events WHERE id = '1001'`))
 	require.True(t, featured)
 
-	require.NoError(t, repo.CancelForChapter(chapterA, "evt-a"))
+	require.NoError(t, repo.CancelForChapter(chapterA, "1001"))
 	events, err := repo.ListUpcomingForChapter(chapterA, time.Now().UTC())
 	require.NoError(t, err)
 	require.Empty(t, events)
