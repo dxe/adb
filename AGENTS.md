@@ -66,6 +66,15 @@ Rules regarding the Next.js app in ./frontend-v2
 - Scope: ./frontend-v2
 - Rule: Do not try to fix devserver issues such as live reloading issues without first running `mise run clean`, then `mise run deps` and asking user to restart devcontainer.
 
+### frontend-chapter-scoped-data
+
+- Scope: ./frontend-v2
+- Admins switch chapters via `/auth/switch_chapter` (full page load; the session
+  cookie's chapter changes).
+- Data that depends on the active chapter should take
+  `user.ChapterID` (from `useAuthedPageContext()` or `session.user`) as an
+  argument and include it in the TanStack Query key, including any server prefetch.
+
 ### playwright-mcp
 
 - If running in the devcontainer, `mise run install-playwright` before invoking Playwright MCP to install the browser.
