@@ -187,26 +187,6 @@ func AddEventbriteDetailsToEventByID(db *sqlx.DB, event ExternalEvent) error {
 	return nil
 }
 
-func FeatureExternalEvent(db *sqlx.DB, eventId string, featured bool) error {
-	_, err := db.Exec(`UPDATE fb_events
-		SET featured = ?
-		WHERE id = ?`, featured, eventId)
-	if err != nil {
-		return errors.Wrap(err, "failed to update event (failed to feature event)")
-	}
-	return nil
-}
-
-func CancelExternalEvent(db *sqlx.DB, eventId string) error {
-	_, err := db.Exec(`UPDATE fb_events
-		SET is_canceled = 1
-		WHERE id = ?`, eventId)
-	if err != nil {
-		return errors.Wrap(err, "failed to update event")
-	}
-	return nil
-}
-
 // ExternalEventRepository reads external (Facebook/Eventbrite) events by ADB
 // chapter ID so callers don't need to know about Facebook page IDs.
 type ExternalEventRepository interface {
@@ -214,4 +194,11 @@ type ExternalEventRepository interface {
 	// page that haven't ended as of `since`. It returns no events if the chapter
 	// has no page.
 	ListUpcomingForChapter(chapterID int, since time.Time) ([]ExternalEvent, error)
+
+	// SetFeaturedForChapter and CancelForChapter only touch events belonging to
+	// the chapter's own page; they return ErrExternalEventNotFound otherwise.
+	SetFeaturedForChapter(chapterID int, eventID string, featured bool) error
+	CancelForChapter(chapterID int, eventID string) error
 }
+
+var ErrExternalEventNotFound = errors.New("external event not found")

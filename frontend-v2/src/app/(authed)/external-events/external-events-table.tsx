@@ -52,8 +52,9 @@ export function ExternalEventsTable({ events }: { events: ExternalEvent[] }) {
           ? 'Successfully featured event.'
           : 'Successfully unfeatured event.',
       )
-      queryClient.setQueryData(
-        [API_PATH.EXTERNAL_EVENTS_LIST],
+      // Prefix match: the list's query key also includes the chapter ID.
+      queryClient.setQueriesData(
+        { queryKey: [API_PATH.EXTERNAL_EVENTS_LIST] },
         (old: ExternalEvent[] | undefined) =>
           old?.map((event) =>
             event.ID === id ? { ...event, Featured: featured } : event,

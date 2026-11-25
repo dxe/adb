@@ -33,3 +33,30 @@ func (r *DBExternalEventRepository) ListUpcomingForChapter(chapterID int, since 
 	}
 	return model.GetExternalEvents(r.db, pageID, since, time.Time{})
 }
+
+func (r *DBExternalEventRepository) ownedByChapter(chapterID int, eventID string) error {
+	var found int
+	err := r.db.Get(&found, `SELECT 1 FROM fb_events e
+		JOIN fb_pages p ON p.id = e.page_id
+		WHERE e.id = ? AND p.chapter_id = ?`, eventID, chapterID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return model.ErrExternalEventNotFound
+	}
+	return errors.Wrap(err, "failed to check event's chapter")
+}
+
+func (r *DBExternalEventRepository) SetFeaturedForChapter(chapterID int, eventID string, featured bool) error {
+	if err := r.ownedByChapter(chapterID, eventID); err != nil {
+		return err
+	}
+	_, err := r.db.Exec(`UPDATE fb_events SET featured = ? WHERE id = ?`, featured, eventID)
+	return errors.Wrap(err, "failed to feature event")
+}
+
+func (r *DBExternalEventRepository) CancelForChapter(chapterID int, eventID string) error {
+	if err := r.ownedByChapter(chapterID, eventID); err != nil {
+		return err
+	}
+	_, err := r.db.Exec(`UPDATE fb_events SET is_canceled = 1 WHERE id = ?`, eventID)
+	return errors.Wrap(err, "failed to cancel event")
+}

@@ -10,8 +10,7 @@ export default function ExternalEventsPage() {
   const { user } = useAuthedPageContext()
   const { data: events, isLoading } = useQuery({
     queryKey: [API_PATH.EXTERNAL_EVENTS_LIST, user.ChapterID],
-    queryFn: ({ signal }) =>
-      apiClient.getExternalEvents(user.ChapterID, signal),
+    queryFn: ({ signal }) => apiClient.getExternalEvents(signal),
   })
 
   return (

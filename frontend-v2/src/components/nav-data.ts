@@ -26,6 +26,12 @@ export const navbarData: NavbarData = {
           label: 'All Events',
           href: '/v2/events',
           page: 'EventList_beta',
+        },
+        {
+          label: 'Facebook Events',
+          href: '/v2/external-events',
+          page: 'FacebookEvents_beta',
+          roleRequired: ['organizer'],
           separatorBelow: true,
         },
         {
@@ -448,12 +454,6 @@ export const navbarData: NavbarData = {
           label: 'Users',
           href: '/v2/users',
           page: 'UserList',
-          roleRequired: ['admin'],
-        },
-        {
-          label: 'Facebook Events',
-          href: '/v2/external-events',
-          page: 'FacebookEvents_beta',
           roleRequired: ['admin'],
         },
         {

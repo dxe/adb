@@ -1511,13 +1511,13 @@ export class ApiClient {
     }
   }
 
-  // Lists upcoming events for the given chapter (the session's active chapter,
-  // which admins can change with the chapter switcher).
-  getExternalEvents = async (chapterId: number, signal?: AbortSignal) => {
+  // Lists upcoming events for the session's active chapter (which admins can
+  // change with the chapter switcher). The server picks the chapter from the
+  // session; callers include the chapter ID in their query key for caching.
+  getExternalEvents = async (signal?: AbortSignal) => {
     try {
       const resp = await this.client
         .get(API_PATH.EXTERNAL_EVENTS_LIST, {
-          searchParams: { chapter_id: chapterId },
           signal,
         })
         .json()
