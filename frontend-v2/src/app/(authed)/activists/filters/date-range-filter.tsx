@@ -476,7 +476,7 @@ function RelativeInput({
           className="w-20"
           value={amount ?? ''}
           onChange={(e) => handleAmountChange(e.target.value)}
-          placeholder="0"
+          placeholder="#"
         />
         <Select
           value={localUnit}
