@@ -246,7 +246,8 @@ func router() (*mux.Router, *sqlx.DB) {
 	db := model.NewDB(config.DBDataSource())
 	userRepo := persistence.NewUserRepository(db)
 	activistRepo := persistence.NewActivistRepository(db)
-	main := MainController{db: db, userRepo: userRepo, activistRepo: activistRepo}
+	externalEventRepo := persistence.NewExternalEventRepository(db)
+	main := MainController{db: db, userRepo: userRepo, activistRepo: activistRepo, externalEventRepo: externalEventRepo}
 	csrfProtect := csrf.Protect(
 		[]byte(config.CsrfAuthKey),
 		csrf.CookieName(csrfCookieName),
@@ -364,6 +365,7 @@ func router() (*mux.Router, *sqlx.DB) {
 	admin.Handle("/chapter/list", alice.New(main.apiIntlCoordinatorAuthMiddleware).ThenFunc(main.ChapterListHandler))
 	admin.Handle("/chapter/delete", alice.New(main.apiIntlCoordinatorAuthMiddleware).ThenFunc(main.ChapterDeleteHandler))
 	admin.Handle("/chapter/save", alice.New(main.apiIntlCoordinatorAuthMiddleware).ThenFunc(main.ChapterSaveHandler))
+	admin.Handle("/api/external-events", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.ExternalEventsListHandler)).Methods(http.MethodGet)
 	admin.Handle("/admin/external_events/feature", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.AdminFeatureEventHandler))
 	admin.Handle("/admin/external_events/cancel", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.AdminCancelEventHandler))
 	admin.Handle("/api/admin/send-test-email", alice.New(main.apiAdminAuthMiddleware).ThenFunc(main.AdminSendTestEmailHandler)).Methods(http.MethodPost)
@@ -399,6 +401,8 @@ type MainController struct {
 	db           *sqlx.DB
 	userRepo     model.UserRepository
 	activistRepo model.ActivistRepository
+
+	externalEventRepo model.ExternalEventRepository
 }
 
 func (c MainController) authAccessMiddleware(h http.Handler, hasAccess func(model.ADBUser) bool) http.Handler {
@@ -1684,6 +1688,9 @@ func (c MainController) ActivistTimelineHandler(w http.ResponseWriter, r *http.R
 	transport.ActivistTimelineHandler(w, r, authedUser, c.db)
 }
 
+func (c MainController) ExternalEventsListHandler(w http.ResponseWriter, r *http.Request) {
+	transport.ExternalEventsListHandler(w, r, c.externalEventRepo)
+}
 func (c MainController) UsersListHandler(w http.ResponseWriter, r *http.Request) {
 	transport.UsersListHandler(w, r, c.userRepo)
 }

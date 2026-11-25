@@ -56,7 +56,7 @@ export const API_PATH = {
   WORKING_GROUP_LIST: 'working_group/list',
   WORKING_GROUP_SAVE: 'working_group/save',
   WORKING_GROUP_DELETE: 'working_group/delete',
-  EXTERNAL_EVENTS_LIST: 'external_events',
+  EXTERNAL_EVENTS_LIST: 'api/external-events',
   EXTERNAL_EVENT_FEATURE: 'admin/external_events/feature',
   EXTERNAL_EVENT_CANCEL: 'admin/external_events/cancel',
 }
@@ -103,8 +103,6 @@ const ChapterListResp = z.object({
     z.object({
       ChapterID: z.number(),
       Name: z.string(),
-      // Facebook page ID (`fb_pages.id`); 0 if the chapter has no page.
-      ID: z.number().optional(),
     }),
   ),
 })
@@ -1517,26 +1515,13 @@ export class ApiClient {
   // which admins can change with the chapter switcher).
   getExternalEvents = async (chapterId: number, signal?: AbortSignal) => {
     try {
-      const chapters = await this.getChapterList(signal)
-      const pageId = chapters.find((c) => c.ChapterID === chapterId)?.ID
-      if (!pageId) {
-        // Chapter has no Facebook page, so it has no external events.
-        return []
-      }
-      // UTC date so SSR prefetch and client refetch agree on the "today" boundary.
-      const startOfTodayUtc = `${new Date().toISOString().slice(0, 10)}T00:00:00Z`
       const resp = await this.client
-        .get(`${API_PATH.EXTERNAL_EVENTS_LIST}/${pageId}`, {
-          searchParams: { start_time: startOfTodayUtc },
+        .get(API_PATH.EXTERNAL_EVENTS_LIST, {
+          searchParams: { chapter_id: chapterId },
           signal,
         })
         .json()
-      const parsed = z
-        .object({ local_events_found: z.boolean().optional() })
-        .parse(resp)
-      // The endpoint falls back to SF Bay online events when a chapter has
-      // none of its own; that's wrong for this per-chapter admin view.
-      if (parsed.local_events_found === false) return []
+      this.throwIfApiError(resp)
       return ExternalEventsListResp.parse(resp).events
     } catch (err) {
       return this.handleKyError(err)

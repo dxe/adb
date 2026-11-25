@@ -206,3 +206,12 @@ func CancelExternalEvent(db *sqlx.DB, eventId string) error {
 	}
 	return nil
 }
+
+// ExternalEventRepository reads external (Facebook/Eventbrite) events by ADB
+// chapter ID so callers don't need to know about Facebook page IDs.
+type ExternalEventRepository interface {
+	// ListUpcomingForChapter returns non-canceled events from the chapter's own
+	// page that haven't ended as of `since`. It returns no events if the chapter
+	// has no page.
+	ListUpcomingForChapter(chapterID int, since time.Time) ([]ExternalEvent, error)
+}
