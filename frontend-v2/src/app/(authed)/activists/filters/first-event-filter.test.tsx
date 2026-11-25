@@ -11,6 +11,25 @@ function renderFilter(value?: FirstEventFilterValue) {
   )
 }
 
+describe('FirstEventFilter event types', () => {
+  it('hides the type checkboxes until a mode is picked', () => {
+    renderFilter()
+    expect(screen.getByLabelText('First event type is')).toHaveTextContent(
+      /^\s*$/,
+    )
+    expect(screen.queryByLabelText('Outreach')).toBeNull()
+  })
+
+  it('shows the mode and checked types', () => {
+    renderFilter({ types: { mode: 'exclude', values: ['Outreach'] } })
+    expect(screen.getByLabelText('First event type is')).toHaveTextContent(
+      'not one of',
+    )
+    expect(screen.getByLabelText('Outreach')).toBeChecked()
+    expect(screen.getByLabelText('Meeting')).not.toBeChecked()
+  })
+})
+
 describe('FirstEventFilter null option', () => {
   it('is disabled with no date bounds or types', () => {
     renderFilter()
@@ -23,8 +42,12 @@ describe('FirstEventFilter null option', () => {
   })
 
   it('is enabled with types and no date bounds', () => {
-    renderFilter({ types: { mode: 'include', values: ['Outreach'] } })
+    renderFilter({
+      types: { mode: 'include', values: ['Outreach'] },
+      orNull: true,
+    })
     expect(screen.getByLabelText(NULL_LABEL)).toBeEnabled()
+    expect(screen.getByLabelText(NULL_LABEL)).toBeChecked()
   })
 
   it('is disabled with both date bounds, even with types', () => {
@@ -36,17 +59,6 @@ describe('FirstEventFilter null option', () => {
       types: { mode: 'include', values: ['Outreach'] },
     })
     expect(screen.getByLabelText(NULL_LABEL)).toBeDisabled()
-  })
-
-  it('shows selected types as pressed', () => {
-    renderFilter({ types: { mode: 'include', values: ['Outreach'] } })
-    expect(
-      screen.getByRole('button', { name: /^\+?\s*Outreach$/ }),
-    ).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByRole('button', { name: /^Meeting$/ })).toHaveAttribute(
-      'aria-pressed',
-      'false',
-    )
   })
 })
 
@@ -63,8 +75,8 @@ describe('formatFirstEvent', () => {
   it('describes excluded types and "or none"', () => {
     expect(
       formatFirstEvent({
-        date: { orNull: true },
         types: { mode: 'exclude', values: ['Meeting'] },
+        orNull: true,
       }),
     ).toBe('not Meeting or none')
   })

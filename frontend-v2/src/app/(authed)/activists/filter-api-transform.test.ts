@@ -94,8 +94,9 @@ describe('filter-api-transform', () => {
     expect(
       toApiFirstEvent(
         {
-          date: { gte: { mode: 'relative', daysOffset: -1 }, orNull: true },
+          date: { gte: { mode: 'relative', daysOffset: -1 } },
           types: { mode: 'exclude', values: ['Meeting'] },
+          orNull: true,
         },
         context,
       ),

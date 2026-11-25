@@ -14,9 +14,13 @@ export type RelativeDateBound = {
 
 export type DateRangeBoundValue = AbsoluteDateBound | RelativeDateBound
 
-export type DateRangeFilterValue = {
+export type DateRangeValue = {
   gte?: DateRangeBoundValue
   lt?: DateRangeBoundValue
+}
+
+/** A date range that can also match NULL dates (see orNull in the API). */
+export type DateRangeFilterValue = DateRangeValue & {
   orNull?: boolean
 }
 
@@ -32,8 +36,10 @@ export type EventTypeFilterValue = {
 }
 
 export type FirstEventFilterValue = {
-  date?: DateRangeFilterValue
+  date?: DateRangeValue
   types?: EventTypeFilterValue
+  /** Also match activists with no events. */
+  orNull?: boolean
 }
 
 export type IntRangeFilterValue = {

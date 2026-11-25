@@ -1,6 +1,8 @@
 'use client'
 
+import { useId } from 'react'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Select,
   SelectContent,
@@ -9,11 +11,15 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { FilterChip } from './filter-chip'
-import { DateRangeFields, formatDateRange } from './date-range-filter'
+import {
+  DateRangeFields,
+  NullOptionCheckbox,
+  formatDateRange,
+} from './date-range-filter'
 import { useDraftFilter } from '@/hooks/use-draft-filter'
 import {
   FIRST_EVENT_TYPES,
-  type DateRangeFilterValue,
+  type DateRangeValue,
   type EventTypeFilterValue,
   type FirstEventFilterValue,
   type FirstEventTypeValue,
@@ -26,32 +32,40 @@ interface FirstEventFilterProps {
   removable?: boolean
 }
 
+// Select value for "no type condition". Radix Select items can't use ''.
+const ANY_TYPE = 'any'
+type TypeModeOption = EventTypeFilterValue['mode'] | typeof ANY_TYPE
+
+const hasTypes = (types?: EventTypeFilterValue) =>
+  !!types && types.values.length > 0
+
 /**
  * "Include activists with no events" applies when the date range has exactly
  * one bound, or has no bounds but event types are selected (then it means
  * "first event was one of these types, or no events").
  */
 function isNullOptionEnabled(
-  date?: DateRangeFilterValue,
+  date?: DateRangeValue,
   types?: EventTypeFilterValue,
 ): boolean {
   const boundCount = (date?.gte ? 1 : 0) + (date?.lt ? 1 : 0)
   if (boundCount === 1) return true
-  return boundCount === 0 && !!types && types.values.length > 0
+  return boundCount === 0 && hasTypes(types)
 }
 
+/**
+ * Drops parts of a draft that don't filter anything: a type mode with no
+ * types picked, or "no events" when the checkbox is disabled.
+ */
 function normalizeFirstEvent(
-  value: FirstEventFilterValue,
+  value?: FirstEventFilterValue,
 ): FirstEventFilterValue | undefined {
-  const types =
-    value.types && value.types.values.length > 0 ? value.types : undefined
-  let date = value.date
-  if (date?.orNull && !isNullOptionEnabled(date, types)) {
-    date = { gte: date.gte, lt: date.lt }
-  }
-  if (date && !date.gte && !date.lt && !date.orNull) date = undefined
-  if (!date && !types) return undefined
-  return { date, types }
+  if (!value) return undefined
+  const date = value.date?.gte || value.date?.lt ? value.date : undefined
+  const types = hasTypes(value.types) ? value.types : undefined
+  const orNull = (value.orNull && isNullOptionEnabled(date, types)) || undefined
+  if (!date && !types && !orNull) return undefined
+  return { date, types, orNull }
 }
 
 export function formatFirstEvent(
@@ -59,15 +73,12 @@ export function formatFirstEvent(
 ): string | undefined {
   if (!value) return undefined
   const types = value.types
-  const typesText =
-    types && types.values.length > 0
-      ? `${types.mode === 'exclude' ? 'not ' : ''}${types.values.join(', ')}`
-      : undefined
-  const dateText = formatDateRange(
-    value.date && { gte: value.date.gte, lt: value.date.lt },
-  )
+  const typesText = hasTypes(types)
+    ? `${types!.mode === 'exclude' ? 'not ' : ''}${types!.values.join(', ')}`
+    : undefined
+  const dateText = formatDateRange(value.date)
   const text = [typesText, dateText].filter(Boolean).join(' · ')
-  if (value.date?.orNull) return text ? `${text} or none` : 'None'
+  if (value.orNull) return text ? `${text} or none` : 'None'
   return text || undefined
 }
 
@@ -77,36 +88,44 @@ export function FirstEventFilter({
   defaultOpen,
   removable,
 }: FirstEventFilterProps) {
-  const [draft, setDraft, onOpenChange] = useDraftFilter(value, onChange)
+  // The draft may hold a type mode with no types picked yet, so normalize only
+  // when committing. Skip committing an empty draft over an empty value, which
+  // would remove a just-added chip.
+  const commit = (next?: FirstEventFilterValue) => {
+    const normalized = normalizeFirstEvent(next)
+    if (normalized || value) onChange(normalized)
+  }
+  const [draft, setDraft, onOpenChange] = useDraftFilter(value, commit)
   const date = draft?.date
   const types = draft?.types
-  const mode = types?.mode ?? 'include'
+  const orNull = !!draft?.orNull
   const selected = new Set<FirstEventTypeValue>(types?.values ?? [])
+  const typeModeId = useId()
 
-  const update = (next: FirstEventFilterValue) =>
-    setDraft(normalizeFirstEvent(next))
+  const update = (next: Partial<FirstEventFilterValue>) =>
+    setDraft({ date, types, orNull: orNull || undefined, ...next })
 
-  const setTypes = (
-    nextMode: EventTypeFilterValue['mode'],
-    values: Set<FirstEventTypeValue>,
-  ) =>
+  const handleTypeModeChange = (mode: TypeModeOption) =>
     update({
-      date,
-      // Keep the list in display order rather than click order.
-      types: {
-        mode: nextMode,
-        values: FIRST_EVENT_TYPES.filter((t) => values.has(t)),
-      },
+      types:
+        mode === ANY_TYPE ? undefined : { mode, values: types?.values ?? [] },
     })
 
-  const handleToggle = (type: FirstEventTypeValue) => {
+  const handleToggle = (type: FirstEventTypeValue, checked: boolean) => {
+    if (!types) return
     const next = new Set(selected)
-    if (next.has(type)) {
-      next.delete(type)
-    } else {
+    if (checked) {
       next.add(type)
+    } else {
+      next.delete(type)
     }
-    setTypes(mode, next)
+    // Keep the list in display order rather than click order.
+    update({
+      types: {
+        mode: types.mode,
+        values: FIRST_EVENT_TYPES.filter((t) => next.has(t)),
+      },
+    })
   }
 
   return (
@@ -122,60 +141,54 @@ export function FirstEventFilter({
       <div className="space-y-4">
         <DateRangeFields
           value={date}
-          onChange={(d) => update({ date: d, types })}
-          nullLabel="Include activists with no events"
-          nullOptionEnabled={isNullOptionEnabled(date, types)}
-          nullOptionDisabledHint="Set exactly one date bound, or select event types, to enable this option."
+          onChange={(nextDate) => update({ date: nextDate })}
         />
 
-        <div className="space-y-2 border-t pt-4">
-          <div className="flex items-center justify-between">
-            <h4 className="text-sm font-medium">Event type</h4>
+        <div className="space-y-3 border-t pt-4">
+          <div className="flex items-center gap-3">
+            <label htmlFor={typeModeId} className="text-sm font-medium">
+              First event type is
+            </label>
             <Select
-              value={mode}
-              onValueChange={(v) =>
-                setTypes(v as EventTypeFilterValue['mode'], selected)
-              }
+              value={types?.mode ?? ANY_TYPE}
+              onValueChange={(v) => handleTypeModeChange(v as TypeModeOption)}
             >
-              <SelectTrigger
-                className="h-7 w-[100px] text-xs"
-                aria-label="Event type mode"
-              >
+              <SelectTrigger id={typeModeId} className="h-8 w-32">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="include">Include</SelectItem>
-                <SelectItem value="exclude">Exclude</SelectItem>
+                <SelectItem value={ANY_TYPE} aria-label="Any type">
+                  {/* Blank, so the sentence reads as unfinished until a mode
+                      is picked. */}
+                  {' '}
+                </SelectItem>
+                <SelectItem value="include">one of</SelectItem>
+                <SelectItem value="exclude">not one of</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          <div className="grid grid-cols-2 gap-x-2">
-            {FIRST_EVENT_TYPES.map((type) => {
-              const isSelected = selected.has(type)
-              return (
-                <button
-                  type="button"
+          {types && (
+            <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+              {FIRST_EVENT_TYPES.map((type) => (
+                <EventTypeCheckbox
                   key={type}
-                  aria-pressed={isSelected}
-                  className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-sm hover:bg-muted transition-colors"
-                  onClick={() => handleToggle(type)}
-                >
-                  <span
-                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border text-xs font-bold ${
-                      isSelected
-                        ? mode === 'include'
-                          ? 'bg-primary text-primary-foreground border-primary'
-                          : 'bg-destructive text-destructive-foreground border-destructive'
-                        : 'border-input'
-                    }`}
-                  >
-                    {isSelected ? (mode === 'include' ? '+' : '-') : ''}
-                  </span>
-                  {type}
-                </button>
-              )
-            })}
-          </div>
+                  type={type}
+                  checked={selected.has(type)}
+                  onCheckedChange={(checked) => handleToggle(type, checked)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="border-t pt-4">
+          <NullOptionCheckbox
+            label="Include activists with no events"
+            checked={orNull}
+            enabled={isNullOptionEnabled(date, types)}
+            disabledHint="Set exactly one date bound, or pick event types, to enable this option."
+            onCheckedChange={(checked) => update({ orNull: checked })}
+          />
         </div>
 
         {draft && (
@@ -190,5 +203,30 @@ export function FirstEventFilter({
         )}
       </div>
     </FilterChip>
+  )
+}
+
+function EventTypeCheckbox({
+  type,
+  checked,
+  onCheckedChange,
+}: {
+  type: FirstEventTypeValue
+  checked: boolean
+  onCheckedChange: (checked: boolean) => void
+}) {
+  const id = useId()
+  return (
+    <div className="flex items-start gap-2">
+      <Checkbox
+        id={id}
+        className="mt-0.5"
+        checked={checked}
+        onCheckedChange={(c) => onCheckedChange(c === true)}
+      />
+      <label htmlFor={id} className="text-sm leading-tight">
+        {type}
+      </label>
+    </div>
   )
 }

@@ -111,8 +111,10 @@ const EVENT_TYPE_FROM_SLUG = new Map<string, FirstEventTypeValue>(
  *   "-30.."                  -> first event in the last 30 days
  *   "-30..;outreach,action"  -> ... and it was an Outreach or Action
  *   ";~meeting"              -> first event wasn't a Meeting
- * The date range uses the decodeDateRange syntax. Types are slugs of
- * FIRST_EVENT_TYPES; "~" excludes them.
+ *   "null;~meeting"          -> ... or there are no events
+ * The date range uses the decodeDateRange syntax, whose "|null"/"null" sets
+ * the filter's orNull (kept there so older links still work). Types are slugs
+ * of FIRST_EVENT_TYPES; "~" excludes them.
  */
 export function decodeFirstEvent(
   value?: string,
@@ -135,8 +137,9 @@ export function decodeFirstEvent(
 
   if (!date && !types) return undefined
   return {
-    date: date ? { ...date, orNull: date.orNull || undefined } : undefined,
+    date: date?.gte || date?.lt ? { gte: date.gte, lt: date.lt } : undefined,
     types,
+    orNull: date?.orNull || undefined,
   }
 }
 
@@ -145,7 +148,7 @@ export function encodeFirstEvent(
   value?: FirstEventFilterValue,
 ): string | undefined {
   const date = value?.date
-  const dateToken = encodeDateRange(date?.gte, date?.lt, date?.orNull)
+  const dateToken = encodeDateRange(date?.gte, date?.lt, value?.orNull)
   const types = value?.types
   if (!types || types.values.length === 0) return dateToken
   const typesToken = `${types.mode === 'exclude' ? '~' : ''}${types.values.map(eventTypeSlug).join(',')}`

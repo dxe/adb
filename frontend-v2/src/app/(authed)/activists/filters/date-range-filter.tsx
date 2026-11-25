@@ -20,6 +20,7 @@ import type {
   AbsoluteDateBound,
   DateRangeBoundValue,
   DateRangeFilterValue,
+  DateRangeValue,
   RelativeDateBound,
 } from '../filter-types'
 import { parseSafeInteger } from '@/lib/number-utils'
@@ -216,6 +217,13 @@ export function DateRangeFilter({
   nullLabel,
 }: DateRangeFilterProps) {
   const [draft, setDraft, onOpenChange] = useDraftFilter(value, onChange)
+  const gte = draft?.gte
+  const lt = draft?.lt
+  const orNull = !!draft?.orNull
+  const exactlyOneBoundSet = !!gte !== !!lt
+
+  const updateDraft = (next: DateRangeFilterValue) =>
+    setDraft(normalizeDateRange(next))
 
   return (
     <FilterChip
@@ -230,9 +238,19 @@ export function DateRangeFilter({
       <div className="space-y-4">
         <DateRangeFields
           value={draft}
-          onChange={setDraft}
-          nullLabel={nullLabel}
+          onChange={(range) => updateDraft({ ...range, orNull })}
         />
+
+        {nullLabel && (
+          <NullOptionCheckbox
+            label={nullLabel}
+            checked={orNull}
+            enabled={exactlyOneBoundSet}
+            onCheckedChange={(checked) =>
+              updateDraft({ gte, lt, orNull: checked })
+            }
+          />
+        )}
 
         {draft && (
           <Button
@@ -250,35 +268,18 @@ export function DateRangeFilter({
 }
 
 interface DateRangeFieldsProps {
-  value?: DateRangeFilterValue
-  onChange: (value?: DateRangeFilterValue) => void
-  /** Label for the "or null" checkbox. Omit to hide the checkbox. */
-  nullLabel?: string
-  /** Whether the "or null" checkbox can be checked. Defaults to whether
-   *  exactly one bound is set. */
-  nullOptionEnabled?: boolean
-  /** Explains how to enable the "or null" checkbox while it's disabled. */
-  nullOptionDisabledHint?: string
+  value?: DateRangeValue
+  onChange: (value?: DateRangeValue) => void
 }
 
 /**
- * The controls for editing a date range: absolute/relative mode, both bounds
- * and the "or null" checkbox. Controlled, so it can be embedded in a popover
- * with other controls; the caller owns the draft state.
+ * The controls for editing a date range's bounds, in absolute or relative mode.
+ * Controlled, so it can be embedded in a popover with other controls; the
+ * caller owns the draft state.
  */
-export function DateRangeFields({
-  value,
-  onChange,
-  nullLabel,
-  nullOptionEnabled: nullOptionEnabledProp,
-  nullOptionDisabledHint = 'Set exactly one bound to enable this option.',
-}: DateRangeFieldsProps) {
+export function DateRangeFields({ value, onChange }: DateRangeFieldsProps) {
   const gte = value?.gte
   const lt = value?.lt
-  const orNull = !!value?.orNull
-  const exactlyOneBoundSet = !!gte !== !!lt
-  const nullOptionEnabled = nullOptionEnabledProp ?? exactlyOneBoundSet
-  const orNullId = useId()
   const detectedMode = inferModeFromBounds(gte, lt)
   // The popover content mounts each time it opens, so this starts from the
   // value's mode on every open.
@@ -287,15 +288,15 @@ export function DateRangeFields({
   )
   const mode = detectedMode ?? preferredMode
 
-  const updateDraft = (next: DateRangeFilterValue | undefined) => {
-    onChange(normalizeDateRange(next))
+  const updateDraft = (next: DateRangeValue) => {
+    onChange(next.gte || next.lt ? next : undefined)
   }
 
   const handleModeSwitch = (newMode: Mode) => {
     setPreferredMode(newMode)
     if (detectedMode && newMode !== detectedMode) {
-      // Clear values when switching modes (preserve orNull).
-      updateDraft(orNull ? { orNull: true } : undefined)
+      // Clear values when switching modes.
+      updateDraft({})
     }
   }
 
@@ -303,13 +304,11 @@ export function DateRangeFields({
     updateDraft({
       gte: toAbsoluteBound(date),
       lt,
-      orNull,
     })
   const handleAbsoluteEndChange = (date?: Date) =>
     updateDraft({
       gte,
       lt: toAbsoluteBound(date),
-      orNull,
     })
 
   const gteRel = parseRelativeInput(gte)
@@ -319,13 +318,11 @@ export function DateRangeFields({
     updateDraft({
       gte: amount != null ? buildRelativeBound(amount, unit) : undefined,
       lt,
-      orNull,
     })
   const handleRelLt = (amount: number | undefined, unit: DateUnit) =>
     updateDraft({
       gte,
       lt: amount != null ? buildRelativeBound(amount, unit) : undefined,
-      orNull,
     })
 
   return (
@@ -396,31 +393,49 @@ export function DateRangeFields({
           />
         </>
       )}
-
-      {nullLabel && (
-        <div className="flex items-center gap-2">
-          <Checkbox
-            id={orNullId}
-            checked={orNull && nullOptionEnabled}
-            disabled={!nullOptionEnabled}
-            onCheckedChange={(checked) =>
-              updateDraft({ gte, lt, orNull: checked === true })
-            }
-          />
-          <label
-            htmlFor={orNullId}
-            className={`text-sm ${nullOptionEnabled ? '' : 'text-muted-foreground'}`}
-          >
-            {nullLabel}
-          </label>
-          {!nullOptionEnabled && (
-            <span title={nullOptionDisabledHint}>
-              <CircleHelp className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-            </span>
-          )}
-        </div>
-      )}
     </>
+  )
+}
+
+interface NullOptionCheckboxProps {
+  label: string
+  checked: boolean
+  /** While disabled, the checkbox shows as unchecked. */
+  enabled: boolean
+  /** Explains how to enable the checkbox while it's disabled. */
+  disabledHint?: string
+  onCheckedChange: (checked: boolean) => void
+}
+
+/** Checkbox for a filter's "or null" option, e.g. "Include activists with no events". */
+export function NullOptionCheckbox({
+  label,
+  checked,
+  enabled,
+  disabledHint = 'Set exactly one bound to enable this option.',
+  onCheckedChange,
+}: NullOptionCheckboxProps) {
+  const id = useId()
+  return (
+    <div className="flex items-center gap-2">
+      <Checkbox
+        id={id}
+        checked={checked && enabled}
+        disabled={!enabled}
+        onCheckedChange={(c) => onCheckedChange(c === true)}
+      />
+      <label
+        htmlFor={id}
+        className={`text-sm ${enabled ? '' : 'text-muted-foreground'}`}
+      >
+        {label}
+      </label>
+      {!enabled && (
+        <span title={disabledHint}>
+          <CircleHelp className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+        </span>
+      )}
+    </div>
   )
 }
 

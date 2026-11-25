@@ -173,7 +173,7 @@ function toApiFirstEventValue(
   const date = toApiDateRange(value?.date, referenceDate)
   const types =
     value?.types && value.types.values.length > 0 ? value.types : undefined
-  const or_null = value?.date?.orNull || undefined
+  const or_null = value?.orNull || undefined
   return date || types || or_null ? { date, types, or_null } : undefined
 }
 

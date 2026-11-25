@@ -4,8 +4,9 @@ import { decodeFirstEvent, encodeFirstEvent } from './filter-url-codecs'
 describe('first event URL codec', () => {
   it('still reads date-only values from older links', () => {
     expect(decodeFirstEvent('-30..|null')).toEqual({
-      date: { gte: { mode: 'relative', daysOffset: -30 }, orNull: true },
+      date: { gte: { mode: 'relative', daysOffset: -30 }, lt: undefined },
       types: undefined,
+      orNull: true,
     })
     expect(
       encodeFirstEvent({
@@ -42,10 +43,15 @@ describe('first event URL codec', () => {
   })
 
   it('keeps "or none" alongside types', () => {
+    const value = {
+      types: { mode: 'include' as const, values: ['Outreach' as const] },
+      orNull: true,
+    }
     expect(decodeFirstEvent('null;outreach')).toEqual({
-      date: { orNull: true },
-      types: { mode: 'include', values: ['Outreach'] },
+      date: undefined,
+      ...value,
     })
+    expect(encodeFirstEvent(value)).toBe('null;outreach')
   })
 
   it('ignores unknown types', () => {
