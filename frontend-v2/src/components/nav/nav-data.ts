@@ -1,6 +1,6 @@
 import { buildActivistsHref } from '@/app/(authed)/activists/activists-href'
 import type { ParsedActivistQueryParams } from '@/app/(authed)/activists/search-params'
-import type { NavbarData } from '@/lib/nav-access'
+import type { NavbarData } from './nav-access'
 
 const activistsHref = (query: Partial<ParsedActivistQueryParams>) =>
   `/v2${buildActivistsHref(query)}`

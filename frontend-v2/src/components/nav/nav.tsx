@@ -1,7 +1,7 @@
 'use client'
 
 import { navbarData } from './nav-data'
-import { evaluateNavAccess, type NavDropdownItem } from '@/lib/nav-access'
+import { evaluateNavAccess, type NavDropdownItem } from './nav-access'
 import { CircleUser } from 'lucide-react'
 import { useState, useMemo, useRef, useEffect } from 'react'
 import Image from 'next/image'
