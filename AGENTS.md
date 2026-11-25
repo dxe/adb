@@ -42,7 +42,7 @@ Rules regarding the Next.js app in ./frontend-v2
 ### UI vocabulary
 
 - "The X page": most pages are found under `frontend-v2/src/app/(authed)/`, e.g. `activists`, `chapters`, `users`.
-- "The navigation" is defined in `frontend-v2/src/components/nav-data.ts`.
+- "The navigation" lives in `frontend-v2/src/components/nav/` (menu data in `nav-data.ts`; see that folder's AGENTS.md for visibility rules).
 - "The member portal" is a separate server-rendered Go app in `server/src/members/` (own port), not part of `frontend-v2`.
 
 ### frontend-v2-debugging

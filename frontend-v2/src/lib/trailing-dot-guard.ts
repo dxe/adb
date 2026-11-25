@@ -21,8 +21,8 @@
  * with the filter UI. Loading an already-dotted link leaves the address bar
  * untouched until the next filter change.
  *
- * Hrefs in `src/components/nav-data.ts` bypass this function (activist ones get
- * the same guard from `buildActivistsHref`), so `src/components/nav-hrefs.test.ts`
+ * Hrefs in `src/components/nav/nav-data.ts` bypass this function (activist ones get
+ * the same guard from `buildActivistsHref`), so `src/components/nav/nav-hrefs.test.ts`
  * enforces the rule on all of them. Keep both in sync with what counts as a safe
  * ending here.
  */
