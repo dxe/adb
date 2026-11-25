@@ -209,6 +209,12 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     defaultWidth: 200,
   },
   {
+    name: 'first_event_type',
+    label: 'First Event Type',
+    category: 'Event Attendance',
+    defaultWidth: 160,
+  },
+  {
     name: 'last_event',
     label: 'Last Event Date',
     category: 'Event Attendance',

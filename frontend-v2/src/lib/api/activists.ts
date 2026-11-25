@@ -55,6 +55,7 @@ export const ActivistJSON = z.object({
   followup_date: z.string().optional(),
   first_event: z.string().optional(),
   first_event_name: z.string().optional(),
+  first_event_type: z.string().optional(),
   last_event: z.string().optional(),
   last_event_name: z.string().optional(),
   total_events: z.number().optional(),

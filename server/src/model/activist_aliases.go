@@ -174,6 +174,7 @@ const (
 	ColChapterName           = activists.ColChapterName
 	ColFirstEvent            = activists.ColFirstEvent
 	ColFirstEventName        = activists.ColFirstEventName
+	ColFirstEventType        = activists.ColFirstEventType
 	ColLastEvent             = activists.ColLastEvent
 	ColLastEventName         = activists.ColLastEventName
 	ColTotalEvents           = activists.ColTotalEvents

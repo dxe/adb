@@ -295,3 +295,24 @@ func TestQueryActivistFilters_ValidateOrNullNeedsOpenRange(t *testing.T) {
 		require.NoError(t, f.Validate())
 	}
 }
+
+func TestQueryActivists_FirstEventTypeColumn(t *testing.T) {
+	repo := setUpFirstEventActivists(t)
+
+	result, err := repo.QueryActivists(model.QueryActivistOptions{
+		Shape: model.QueryActivistShape{
+			Columns: []model.ActivistColumnName{model.ColName, model.ColID, model.ColFirstEventType},
+		},
+	})
+	require.NoError(t, err)
+	got := map[string]string{}
+	for _, a := range result.Activists {
+		got[a.Name] = a.FirstEventType
+	}
+	require.Equal(t, map[string]string{
+		"Alice": "Outreach",
+		"Bob":   "Meeting",
+		"Carol": "",
+		"Dan":   "Outreach",
+	}, got)
+}
