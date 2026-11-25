@@ -17,7 +17,7 @@ describe('FirstEventFilter event types', () => {
     expect(screen.getByLabelText('First event type is')).toHaveTextContent(
       /^\s*$/,
     )
-    expect(screen.queryByLabelText('Outreach')).toBeNull()
+    expect(screen.queryByRole('checkbox', { name: 'Outreach' })).toBeNull()
   })
 
   it('shows the mode and checked types', () => {
@@ -25,8 +25,8 @@ describe('FirstEventFilter event types', () => {
     expect(screen.getByLabelText('First event type is')).toHaveTextContent(
       'not one of',
     )
-    expect(screen.getByLabelText('Outreach')).toBeChecked()
-    expect(screen.getByLabelText('Meeting')).not.toBeChecked()
+    expect(screen.getByRole('checkbox', { name: /Outreach/ })).toBeChecked()
+    expect(screen.getByRole('checkbox', { name: /Meeting/ })).not.toBeChecked()
   })
 })
 

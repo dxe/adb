@@ -2,7 +2,6 @@
 
 import { useId } from 'react'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
 import {
   Select,
   SelectContent,
@@ -11,6 +10,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { FilterChip } from './filter-chip'
+import { IncludeExcludeOption } from './include-exclude-option'
 import {
   DateRangeFields,
   NullOptionCheckbox,
@@ -111,13 +111,13 @@ export function FirstEventFilter({
         mode === ANY_TYPE ? undefined : { mode, values: types?.values ?? [] },
     })
 
-  const handleToggle = (type: FirstEventTypeValue, checked: boolean) => {
+  const handleToggle = (type: FirstEventTypeValue) => {
     if (!types) return
     const next = new Set(selected)
-    if (checked) {
-      next.add(type)
-    } else {
+    if (next.has(type)) {
       next.delete(type)
+    } else {
+      next.add(type)
     }
     // Keep the list in display order rather than click order.
     update({
@@ -168,13 +168,14 @@ export function FirstEventFilter({
             </Select>
           </div>
           {types && (
-            <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+            <div className="grid grid-cols-2 gap-x-1">
               {FIRST_EVENT_TYPES.map((type) => (
-                <EventTypeCheckbox
+                <IncludeExcludeOption
                   key={type}
-                  type={type}
-                  checked={selected.has(type)}
-                  onCheckedChange={(checked) => handleToggle(type, checked)}
+                  label={type}
+                  selected={selected.has(type)}
+                  mode={types.mode}
+                  onToggle={() => handleToggle(type)}
                 />
               ))}
             </div>
@@ -203,30 +204,5 @@ export function FirstEventFilter({
         )}
       </div>
     </FilterChip>
-  )
-}
-
-function EventTypeCheckbox({
-  type,
-  checked,
-  onCheckedChange,
-}: {
-  type: FirstEventTypeValue
-  checked: boolean
-  onCheckedChange: (checked: boolean) => void
-}) {
-  const id = useId()
-  return (
-    <div className="flex items-start gap-2">
-      <Checkbox
-        id={id}
-        className="mt-0.5"
-        checked={checked}
-        onCheckedChange={(c) => onCheckedChange(c === true)}
-      />
-      <label htmlFor={id} className="text-sm leading-tight">
-        {type}
-      </label>
-    </div>
   )
 }

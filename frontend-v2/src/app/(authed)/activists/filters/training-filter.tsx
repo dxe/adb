@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { FilterChip } from './filter-chip'
+import { IncludeExcludeOption } from './include-exclude-option'
 import { useDraftFilter } from '@/hooks/use-draft-filter'
 import type { IncludeExcludeFilterValue } from '../filter-types'
 
@@ -96,28 +97,17 @@ export function TrainingFilter({
           click again to clear.
         </p>
         {TRAINING_COLUMNS.map(({ value: col, label }) => {
-          const isIncluded = include.has(col)
+          // Unlike the other include/exclude filters, each training has its
+          // own mode.
           const isExcluded = exclude.has(col)
           return (
-            <button
-              type="button"
+            <IncludeExcludeOption
               key={col}
-              className="flex w-full items-center gap-2 rounded px-2 py-1 text-sm hover:bg-muted transition-colors"
-              onClick={() => handleToggle(col)}
-            >
-              <span
-                className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border text-xs font-bold ${
-                  isIncluded
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : isExcluded
-                      ? 'bg-destructive text-destructive-foreground border-destructive'
-                      : 'border-input'
-                }`}
-              >
-                {isIncluded ? '+' : isExcluded ? '-' : ''}
-              </span>
-              {label}
-            </button>
+              label={label}
+              selected={include.has(col) || isExcluded}
+              mode={isExcluded ? 'exclude' : 'include'}
+              onToggle={() => handleToggle(col)}
+            />
           )
         })}
         {hasDraft && (
