@@ -95,7 +95,7 @@ export function FirstEventFilter({
     const normalized = normalizeFirstEvent(next)
     if (normalized || value) onChange(normalized)
   }
-  const [draft, setDraft, onOpenChange] = useDraftFilter(value, commit)
+  const [draft, setDraft, chipProps] = useDraftFilter(value, commit)
   const date = draft?.date
   const types = draft?.types
   const orNull = !!draft?.orNull
@@ -136,7 +136,7 @@ export function FirstEventFilter({
       defaultOpen={defaultOpen}
       removable={removable}
       popoverClassName="w-96"
-      onOpenChange={onOpenChange}
+      {...chipProps}
     >
       <div className="space-y-4">
         <DateRangeFields

@@ -1,10 +1,11 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { ChevronDown, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 interface FilterChipProps {
@@ -18,9 +19,12 @@ interface FilterChipProps {
   children: React.ReactNode
   defaultOpen?: boolean
   popoverClassName?: string
-  /** Called when the popover opens or closes. Used by useDraftFilter to
-   *  sync/commit draft state. Not called when the × button is pressed. */
+  /** Called when the popover opens, so drafts can sync from the committed
+   *  value. Closing never commits; only onApply does. */
   onOpenChange?: (open: boolean) => void
+  /** Commits the draft. When set, the popover shows an Apply button and
+   *  Enter in an input applies. Closing otherwise discards the draft. */
+  onApply?: () => void
 }
 
 export function FilterChip({
@@ -33,36 +37,23 @@ export function FilterChip({
   defaultOpen,
   popoverClassName,
   onOpenChange,
+  onApply,
 }: FilterChipProps) {
   const showClear = !!summary || removable
   const [open, setOpen] = useState(defaultOpen ?? false)
-  // When × is clicked we close the popover and call onClear directly.
-  // The ref prevents onOpenChange from also firing (which would commit
-  // stale draft state over the cleared value).
-  const clearingRef = useRef(false)
-
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen)
-    if (newOpen) {
-      // Always sync draft from value when opening.
-      onOpenChange?.(true)
-    } else if (!clearingRef.current) {
-      // Commit draft on normal close, but not when × was clicked.
-      onOpenChange?.(false)
-    }
-    clearingRef.current = false
+    if (newOpen) onOpenChange?.(true)
   }
 
   const handleClear = () => {
-    clearingRef.current = true
     setOpen(false)
     onClear()
-    // If the popover was already closed, Radix won't call handleOpenChange
-    // to consume clearingRef. Reset it asynchronously so it doesn't block
-    // the next open.
-    requestAnimationFrame(() => {
-      clearingRef.current = false
-    })
+  }
+
+  const handleApply = () => {
+    onApply?.()
+    setOpen(false)
   }
 
   return (
@@ -100,7 +91,30 @@ export function FilterChip({
           </button>
         </PopoverTrigger>
         <PopoverContent className={popoverClassName ?? 'w-64'}>
-          {children}
+          <div
+            onKeyDown={(e) => {
+              if (
+                onApply &&
+                e.key === 'Enter' &&
+                e.target instanceof HTMLInputElement
+              ) {
+                e.preventDefault()
+                handleApply()
+              }
+            }}
+          >
+            {children}
+            {onApply && (
+              <Button
+                type="button"
+                size="sm"
+                className="mt-4 w-full"
+                onClick={handleApply}
+              >
+                Apply
+              </Button>
+            )}
+          </div>
         </PopoverContent>
       </Popover>
       {showClear && (

@@ -216,7 +216,7 @@ export function DateRangeFilter({
   removable,
   nullLabel,
 }: DateRangeFilterProps) {
-  const [draft, setDraft, onOpenChange] = useDraftFilter(value, onChange)
+  const [draft, setDraft, chipProps] = useDraftFilter(value, onChange)
   const gte = draft?.gte
   const lt = draft?.lt
   const orNull = !!draft?.orNull
@@ -233,7 +233,7 @@ export function DateRangeFilter({
       defaultOpen={defaultOpen}
       removable={removable}
       popoverClassName="w-80"
-      onOpenChange={onOpenChange}
+      {...chipProps}
     >
       <div className="space-y-4">
         <DateRangeFields

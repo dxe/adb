@@ -89,13 +89,13 @@ export function ActivistLevelFilter({
   const hasFilter = draft.values.size > 0
 
   const onOpenChange = (open: boolean) => {
-    if (open) {
-      dispatch({ type: 'reset', value })
-    } else {
-      const nextValue = toValue(draft)
-      if (!isSameValue(nextValue, value)) {
-        onChange(nextValue)
-      }
+    if (open) dispatch({ type: 'reset', value })
+  }
+
+  const onApply = () => {
+    const nextValue = toValue(draft)
+    if (!isSameValue(nextValue, value)) {
+      onChange(nextValue)
     }
   }
 
@@ -121,6 +121,7 @@ export function ActivistLevelFilter({
       summary={summary}
       onClear={() => onChange(undefined)}
       onOpenChange={onOpenChange}
+      onApply={onApply}
     >
       <div className="space-y-3">
         <div className="flex items-center justify-between">

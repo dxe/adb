@@ -48,7 +48,7 @@ export function TrainingFilter({
   defaultOpen,
   removable,
 }: TrainingFilterProps) {
-  const [draft, setDraft, onOpenChange] = useDraftFilter(value, onChange)
+  const [draft, setDraft, chipProps] = useDraftFilter(value, onChange)
   const include = new Set(draft?.include ?? [])
   const exclude = new Set(draft?.exclude ?? [])
   const draftCount = include.size + exclude.size
@@ -88,7 +88,7 @@ export function TrainingFilter({
       onClear={() => onChange(undefined)}
       defaultOpen={defaultOpen}
       removable={removable}
-      onOpenChange={onOpenChange}
+      {...chipProps}
     >
       <div className="space-y-3">
         <h4 className="font-medium text-sm">Training</h4>

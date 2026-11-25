@@ -40,7 +40,7 @@ export function IntRangeFilter({
   defaultOpen,
   removable,
 }: IntRangeFilterProps) {
-  const [draft, setDraft, onOpenChange] = useDraftFilter(value, onChange)
+  const [draft, setDraft, chipProps] = useDraftFilter(value, onChange)
   const gte = draft?.gte
   const lt = draft?.lt
   const hasDraft = !!draft
@@ -59,7 +59,7 @@ export function IntRangeFilter({
       onClear={() => onChange(undefined)}
       defaultOpen={defaultOpen}
       removable={removable}
-      onOpenChange={onOpenChange}
+      {...chipProps}
     >
       <div className="space-y-4">
         <div className="space-y-2">
