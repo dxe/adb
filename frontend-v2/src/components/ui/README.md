@@ -27,6 +27,10 @@ toJSDate(date: CalendarDate): Date        // new Date(y, m-1, d)
 
 **Accessibility:** `aria-label` props are required on `AriaDatePicker`, `Calendar`, and the icon-only buttons because React Aria enforces accessible names and will warn in the console without them.
 
+### popover.tsx
+
+`PopoverContent` takes an extra `container?: HTMLElement | null` prop, forwarded to `PopoverPrimitive.Portal`. It lets a popover render inside an enclosing modal `Dialog` instead of `<body>`, since a modal blocks wheel/touch scrolling on content portaled outside it (see `tag-input.tsx`).
+
 ### select.tsx
 
 SelectTrigger includes custom border styling for improved visual feedback:
