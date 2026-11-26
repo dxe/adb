@@ -17,7 +17,7 @@ require github.com/dxe/adb/pkg v0.0.0-20260225225627-b212e5a48a8e
 
 require (
 	github.com/coreos/go-oidc v2.5.0+incompatible
-	github.com/go-sql-driver/mysql v1.10.1
+	github.com/go-sql-driver/mysql v1.10.2
 	github.com/gorilla/csrf v1.7.3
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/securecookie v1.1.2
@@ -33,7 +33,7 @@ require (
 	github.com/urfave/negroni v1.0.0
 	golang.org/x/oauth2 v0.38.0
 	golang.org/x/text v0.44.0
-	google.golang.org/api v0.315.0
+	google.golang.org/api v0.316.0
 )
 
 require (
